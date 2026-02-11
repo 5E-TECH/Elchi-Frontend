@@ -20,7 +20,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label }) => {
       className={({ isActive }) =>
         `flex gap-2 pl-5.5 py-2 ${
           isActive
-            ? "bg-gradient-to-r from-[#ccb5ff] to-[#8247ff] rounded-r-[50px]"
+            ? "bg-linear-to-r from-[#ccb5ff] to-[#8247ff] rounded-r-[50px]"
             : "hover:bg-gray-300 dark:hover:bg-gray-700 rounded-r-full"
         }`
       }>

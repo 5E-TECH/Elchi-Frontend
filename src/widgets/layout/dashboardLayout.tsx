@@ -14,7 +14,7 @@ const DashboardLayout = () => {
 
   return (
     <div
-      className={`h-screen grid grid-rows-[auto_1fr_auto] max-[650px]:grid-cols-[1fr] bg-[#F4F5FA] dark:bg-[var(--color-dark-bg-py)] dark:text-[#E7E3FCE5] pr-4 relative transition-all duration-300 ease-in-out ${
+      className={`h-screen grid grid-rows-[auto_1fr_auto] max-[650px]:grid-cols-[1fr] bg-[#F4F5FA] dark:bg-(--color-dark-bg-py) dark:text-[#E7E3FCE5] pr-4 relative transition-all duration-300 ease-in-out ${
         !sidebarRedux.isOpen ? "grid-cols-[60px_1fr]" : "grid-cols-[250px_1fr]"
       }`}
     >
@@ -24,13 +24,13 @@ const DashboardLayout = () => {
       </div>
 
       {/* Sidebar */}
-      <aside className="row-span-1 overflow-y-auto bg-[#F4F5FA] dark:bg-[var(--color-dark-bg-py)] max-[650px]:hidden">
+      <aside className="row-span-1 overflow-y-auto bg-[#F4F5FA] dark:bg-(--color-dark-bg-py) max-[650px]:hidden">
         <Sidebar />
       </aside>
 
       {/* Dashboard container */}
-      <div className="overflow-y-auto bg-[#F4F5FA] dark:bg-[var(--color-dark-bg-py)] pl-4 pb-8">
-        <main className="w-full h-full bg-[#fff] dark:bg-[#312d48] rounded-4xl overflow-y-auto">
+      <div className="overflow-y-auto bg-[#F4F5FA] dark:bg-(--color-dark-bg-py) pl-4 pb-8">
+        <main className="w-full h-full bg-white dark:bg-[#312d48] rounded-4xl overflow-y-auto">
           <Outlet />
         </main>
       </div>

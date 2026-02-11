@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { SIDEBAR_CONFIG, type UserRole } from "../model/menuConfig";
+import { SIDEBAR_CONFIG } from "../model/menuConfig";
 import type { RootState } from "../../../app/config/store";
 
 const Sidebar = () => {
@@ -25,10 +25,10 @@ const Sidebar = () => {
   }, [userRole, t]);
 
   return (
-    <div className="bg-[var(--color-bg-py)] pt-6 dark:bg-[var(--color-dark-bg-py)] dark:text-[#E7E3FCE5] h-full">
+    <div className="bg-(--color-bg-py) pt-6 dark:bg-(--color-dark-bg-py) dark:text-[#E7E3FCE5] h-full">
       <ul
         className={`flex flex-col gap-1.5 mr-4 transition-all duration-300 ease-in-out ${
-          !sidebarRedux.isOpen ? "w-[60px]" : "w-61"
+          !sidebarRedux.isOpen ? "w-15" : "w-61"
         }`}
       >
         {links.map((link:any) => (
