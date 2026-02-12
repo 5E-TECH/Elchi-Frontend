@@ -9,25 +9,24 @@ interface SidebarLinkProps {
   end?: boolean;
 }
 
-const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label }) => {
+const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, end }) => {
 
   const sidebarRedux = useSelector((state: RootState) => state.sidebar);
 
   return (
     <NavLink
       to={to}
-      // end={end}
+      end={end}
       className={({ isActive }) =>
-        `flex gap-2 pl-5.5 py-2 ${
-          isActive
-            ? "bg-linear-to-r from-[#ccb5ff] to-[#8247ff] rounded-r-[50px]"
-            : "hover:bg-gray-300 dark:hover:bg-gray-700 rounded-r-full"
+        `flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-300 font-medium ${isActive
+          ? "bg-white text-[--main] shadow-lg"
+          : "text-white hover:bg-white/10"
         }`
       }>
-      {icon}
+      <span className="text-xl">{icon}</span>
       {
-        sidebarRedux.isOpen && 
-      <span>{label}</span>
+        sidebarRedux.isOpen &&
+        <span className="truncate">{label}</span>
       }
     </NavLink>
   );

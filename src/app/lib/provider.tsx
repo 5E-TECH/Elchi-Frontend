@@ -3,12 +3,13 @@ import { memo, Suspense, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "../config/store";
+import { ThemeProvider } from "../providers/theme/ThemeContext";
 
 const queryClient = new QueryClient();
 
 const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
-    <div>
+    <ThemeProvider>
       <BrowserRouter>
         <Provider store={store}>
           <QueryClientProvider client={queryClient}>
@@ -18,8 +19,8 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
           </QueryClientProvider>
         </Provider>
       </BrowserRouter>
-    </div>
+    </ThemeProvider>
   );
-};
+}; // Fixed wrapper structure
 
 export default memo(AppProvider);
