@@ -1,7 +1,7 @@
 import { lazy, memo } from "react";
 import { useRoutes } from "react-router-dom";
 
-const Login = lazy(() => import("../../features/auth/ui/LoginForm"));
+const Login = lazy(() => import("../../features/auth"));
 const DashboardLayout = lazy(() => import("../../widgets/layout/dashboardLayout"))
 const DashboardPage = lazy(() => import("../../pages/dashboard/DashboardPage"))
 
