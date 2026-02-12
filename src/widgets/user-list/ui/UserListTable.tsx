@@ -18,11 +18,13 @@ const users: User[] = [
 
 export const UserListTable = memo(() => {
     return (
-        <div className="bg-[#1E1E2E] rounded-xl border border-white/5 overflow-hidden mt-6">
+        <div className="bg-primary rounded-xl border border-primary/5 overflow-hidden mt-6">
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-[var(--primary)] text-white text-xs uppercase tracking-wider">
+                        <tr className="text-primary text-xs uppercase tracking-wider" style={{
+                            background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)'
+                        }}>
                             <th className="p-4 font-semibold rounded-tl-xl">#</th>
                             <th className="p-4 font-semibold">Ismi</th>
                             <th className="p-4 font-semibold">Telefon</th>
@@ -31,19 +33,19 @@ export const UserListTable = memo(() => {
                             <th className="p-4 font-semibold text-center rounded-tr-xl">Harakat</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-primary/5">
                         {users.map((user, index) => (
-                            <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
-                                <td className="p-4 text-gray-400 text-sm font-medium">{index + 1}</td>
+                            <tr key={user.id} className="hover:bg-main/5 transition-colors">
+                                <td className="p-4 text-maindark/60 text-sm font-medium">{index + 1}</td>
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center font-bold text-xs">
+                                        <div className="w-8 h-8 rounded-full bg-main/10 text-main flex items-center justify-center font-bold text-xs">
                                             {user.fullName.charAt(0).toUpperCase()}
                                         </div>
-                                        <span className="text-white text-sm font-medium">{user.fullName}</span>
+                                        <span className="text-maindark text-sm font-medium">{user.fullName}</span>
                                     </div>
                                 </td>
-                                <td className="p-4 text-gray-400 text-sm font-mono">{user.phone}</td>
+                                <td className="p-4 text-maindark/60 text-sm font-mono">{user.phone}</td>
                                 <td className="p-4 text-center">
                                     <UserRoleBadge role={user.role} />
                                 </td>
@@ -52,12 +54,12 @@ export const UserListTable = memo(() => {
                                 </td>
                                 <td className="p-4">
                                     <div className="flex items-center justify-center gap-2">
-                                        <button className="p-2 rounded-lg hover:bg-emerald-500/10 text-emerald-500 transition-colors">
-                                            <div className="w-8 h-4 rounded-full bg-emerald-500/20 relative flex items-center p-0.5">
-                                                <div className="w-3 h-3 bg-emerald-500 rounded-full ml-auto"></div>
+                                        <button className="p-2 rounded-lg hover:bg-main/10 text-main transition-colors">
+                                            <div className="w-8 h-4 rounded-full bg-main/20 relative flex items-center p-0.5">
+                                                <div className="w-3 h-3 bg-main rounded-full ml-auto"></div>
                                             </div>
                                         </button>
-                                        <button className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
+                                        <button className="p-2 rounded-lg hover:bg-main/5 text-maindark/40 hover:text-maindark transition-colors">
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
@@ -69,11 +71,11 @@ export const UserListTable = memo(() => {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-white/5 flex items-center justify-between">
-                <span className="text-sm text-gray-400">1-8 dan 150 tasi ko'rsatilmoqda</span>
+            <div className="p-4 border-t border-primary/5 flex items-center justify-between">
+                <span className="text-sm text-maindark/60">1-8 dan 150 tasi ko'rsatilmoqda</span>
                 <div className="flex gap-2">
-                    <button className="px-3 py-1 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-50" disabled>Previous</button>
-                    <button className="px-3 py-1 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5">Next</button>
+                    <button className="px-3 py-1 rounded-lg border border-main/10 text-maindark/60 hover:text-maindark hover:bg-main/5 disabled:opacity-50" disabled>Previous</button>
+                    <button className="px-3 py-1 rounded-lg border border-main/10 text-maindark/60 hover:text-maindark hover:bg-main/5">Next</button>
                 </div>
             </div>
         </div>
