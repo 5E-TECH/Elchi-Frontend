@@ -6,7 +6,7 @@ import Sidebar from "../Sidebar/ui/Sidebar"; // Adjusted import path
 
 const DashboardLayout = () => {
   return (
-    <div className="flex min-h-screen bg-primary font-sans text-main transition-colors duration-300">
+    <div className="flex min-h-screen bg-primary font-sans text-main dark:bg-primarydark transition-colors duration-300">
       {/* Sidebar */}
       <Sidebar />
 

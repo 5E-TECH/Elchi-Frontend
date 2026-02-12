@@ -5,4 +5,9 @@
   --color-maindark: #272c52;
   --color-primary: #ffffff;
   --color-primarydark: #4c5798;
+  --color-sidebar: #f4f5fa;
+  --color-background: #322d48;
 }
+
+
+@custom-variant dark (&:where(.dark, .dark *));
