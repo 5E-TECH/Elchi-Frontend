@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
 import type { UserRole } from '../../../../entities/user/types/user';
 import { RoleSelector } from './RoleSelector';
-import { Eye, EyeOff, Send, Shield, Users, Truck, Store, Building, Calendar, User, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Send, Shield, Users, Truck, Store, Building, Calendar, User} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Role mapping for payload
@@ -260,13 +260,6 @@ export const CreateUserForm = memo(() => {
         <div className="w-full h-full flex flex-col overflow-hidden bg-slate-50 dark:bg-background transition-colors duration-300">
             {/* Header Section */}
             <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-slate-100 dark:border-white/5">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-slate-500 dark:text-white/70 hover:text-main dark:hover:text-white transition-colors font-medium text-sm px-4 py-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl"
-                >
-                    <ArrowLeft size={20} />
-                    <span>Orqaga</span>
-                </button>
                 <div className="text-right">
                     <h2 className="text-lg font-bold text-slate-800 dark:text-white">
                         Yangi {role === 'manager' ? "Ro'yxatchi" : role.charAt(0).toUpperCase() + role.slice(1)}

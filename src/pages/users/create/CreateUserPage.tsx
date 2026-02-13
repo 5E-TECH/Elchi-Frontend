@@ -7,7 +7,7 @@ const CreateUserPage = memo(() => {
     const navigate = useNavigate();
 
     return (
-        <div className="border-10">
+        <div className="">
             <button
                 onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors group"

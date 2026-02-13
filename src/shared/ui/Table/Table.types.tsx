@@ -1,0 +1,27 @@
+export interface ColumnConfig<T> {
+  key: keyof T;
+  label: string;
+  width?: string;
+  sortable?: boolean;
+  render?: (value: any, row: T, index: number) => React.ReactNode;
+  renderHeader?: (label: string) => React.ReactNode;
+  className?: string;
+}
+
+export interface TableProps<T> {
+  data: T[];
+  columns: ColumnConfig<T>[];
+  keyExtractor?: (item: T, index: number) => string | number;
+  loading?: boolean;
+  emptyMessage?: string;
+  onRowClick?: (row: T, index: number) => void;
+  className?: string;
+  striped?: boolean;
+  bordered?: boolean;
+  hoverable?: boolean;
+}
+
+export interface SortConfig {
+  key: string;
+  direction: 'asc' | 'desc';
+}
