@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import styles from './Table.module.css';
 import type { TableProps, ColumnConfig, SortConfig } from './Table.types';
 
 export const Table = <T extends Record<string, any>>({
@@ -11,7 +10,6 @@ export const Table = <T extends Record<string, any>>({
   onRowClick,
   className = '',
   striped = true,
-//   bordered = false,
   bordered = true,
   hoverable = true,
 }: TableProps<T>) => {
@@ -72,35 +70,12 @@ export const Table = <T extends Record<string, any>>({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-950">
+    <div className={`overflow-x-auto rounded-lg shadow-sm bg-white dark:bg-slate-950 ${bordered ? 'border border-gray-200 dark:border-slate-700' : ''}`}>
       <table className={`w-full border-collapse ${className}`}>
         <thead>
           <tr className="border-b border-gray-200 dark:border-slate-700" style={{
             background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)'
           }}>
-  const tableClassName = [
-    styles.table,
-    striped && styles.striped,
-    bordered && styles.bordered,
-    hoverable && styles.hoverable,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  if (loading) {
-    return <div className={styles.loading}>Yuklanmoqda...</div>;
-  }
-
-  if (data.length === 0) {
-    return <div className={styles.empty}>{emptyMessage}</div>;
-  }
-
-  return (
-    <div className={styles.tableWrapper}>
-      <table className={tableClassName}>
-        <thead>
-          <tr>
             {columns.map((column) => (
               <th
                 key={String(column.key)}
@@ -114,12 +89,6 @@ export const Table = <T extends Record<string, any>>({
                   <span>{column.label}</span>
                   {column.sortable && (
                     <span className="text-white text-xs opacity-80">
-                className={column.sortable ? styles.sortable : ''}
-              >
-                <div className={styles.headerContent}>
-                  <span>{column.label}</span>
-                  {column.sortable && (
-                    <span className={styles.sortIndicator}>
                       {sortConfig?.key === String(column.key) && (
                         sortConfig.direction === 'asc' ? '↑' : '↓'
                       )}
@@ -145,8 +114,8 @@ export const Table = <T extends Record<string, any>>({
                 className={`border-b ${
                   hoverable ? 'hover:opacity-80 transition-opacity' : ''
                 } ${onRowClick ? 'cursor-pointer' : ''} ${
-                  striped && rowIndex % 2 === 0 
-                    ? 'bg-white dark:bg-slate-950 border-gray-200 dark:border-slate-700' 
+                  striped && rowIndex % 2 === 0
+                    ? 'bg-white dark:bg-slate-950 border-gray-200 dark:border-slate-700'
                     : 'bg-gray-50 dark:bg-slate-900/40 border-gray-200 dark:border-slate-800'
                 }`}
                 style={
@@ -168,24 +137,6 @@ export const Table = <T extends Record<string, any>>({
               </tr>
             ))
           )}
-          {sortedData.map((row, rowIndex) => (
-            <tr
-              key={keyExtractor(row, rowIndex)}
-              onClick={() => onRowClick?.(row, rowIndex)}
-              className={onRowClick ? styles.clickable : ''}
-            >
-              {columns.map((column) => (
-                <td
-                  key={String(column.key)}
-                  className={column.className}
-                >
-                  {column.render
-                    ? column.render(row[column.key], row, rowIndex)
-                    : String(row[column.key] ?? '—')}
-                </td>
-              ))}
-            </tr>
-          ))}
         </tbody>
       </table>
     </div>
