@@ -3,7 +3,7 @@ import { CreateUserForm } from '../../../features/user/create-user/ui/CreateUser
 
 export const CreateUserWidget = memo(() => {
     return (
-        <div className="w-full max-w-5xl mx-auto">
+        <div className="w-full m-6  mx-auto">
             <CreateUserForm />
         </div>
     );
