@@ -18,7 +18,7 @@ export const useLogin = () => {
   const client = useQueryClient();
 
   const signinUser = useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
+    mutationFn: async (credentials: { phoneNumber: string; password: string }) => {
       const response = await api.post<LoginResponse>("user/signin", credentials);
 
       if (response.data.success) {
