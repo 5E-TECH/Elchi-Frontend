@@ -98,7 +98,7 @@ const CreateProductPage = () => {
           {/* Product Image Upload */}
           <div className="space-y-2">
             <label className="text-gray-700 dark:text-gray-300 font-medium text-sm">Product image</label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[160px]">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-40">
               <div className="w-12 h-12 bg-main/10 rounded-xl flex items-center justify-center mb-3 text-main">
                 <Image size={24} />
               </div>
