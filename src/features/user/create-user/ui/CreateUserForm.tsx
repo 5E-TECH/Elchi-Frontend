@@ -295,21 +295,21 @@ export const CreateUserForm = memo(() => {
         </p>
       )}
     </div>
-  );
+  // );
 
-  return (
-    <div className="w-full h-full flex flex-col overflow-hidden bg-slate-50 dark:bg-background transition-colors duration-300">
-      {/* Header Section */}
-      <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-slate-100 dark:border-white/5">
-        <div className="text-right">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">
-            Yangi{" "}
-            {role === "manager"
-              ? "Ro'yxatchi"
-              : role.charAt(0).toUpperCase() + role.slice(1)}
-          </h2>
-        </div>
-      </div>
+  // return (
+  //   <div className="w-full h-full flex flex-col overflow-hidden bg-slate-50 dark:bg-background transition-colors duration-300">
+  //     {/* Header Section */}
+  //     <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-slate-100 dark:border-white/5">
+  //       <div className="text-right">
+  //         <h2 className="text-lg font-bold text-slate-800 dark:text-white">
+  //           Yangi{" "}
+  //           {role === "manager"
+  //             ? "Ro'yxatchi"
+  //             : role.charAt(0).toUpperCase() + role.slice(1)}
+  //         </h2>
+  //       </div>
+  //     </div>
 
       {/* Main Container */}
       <div className="flex flex-1 gap-6 overflow-hidden px-6 py-6">
