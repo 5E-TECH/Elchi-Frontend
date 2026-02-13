@@ -3,9 +3,9 @@ import { Search, Filter, RefreshCw, ChevronDown } from 'lucide-react';
 
 export const UserFilters = memo(() => {
     return (
-        <div className="bg-primary dark:bg-maindark p-5 rounded-2xl shadow-lg shadow-black/10 flex flex-col xl:flex-row items-center gap-4 mb-6">
-            <div className="flex items-center gap-3 text-main font-semibold text-lg mr-2 min-w-max">
-                <div className="p-2 rounded-lg">
+        <div className="bg-primary dark:bg-main p-5 rounded-2xl shadow-lg shadow-black/10 flex flex-col xl:flex-row items-center gap-4 mb-6">
+            <div className="flex items-center gap-3 text-main dark:text-primary font-semibold text-lg mr-2 min-w-max">
+                <div className="p-2 rounded-lg dark:text-primary">
                     <Filter size={20} />
                 </div>
                 Filtrlar
@@ -44,7 +44,7 @@ export const UserFilters = memo(() => {
                 </div>
             </div>
 
-            <button className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-primary/90 hover:text-primary bg-transparent border-2 border-primary hover:bg-primary/10 transition-all whitespace-nowrap active:scale-95 w-full xl:w-auto font-medium hover:shadow-md">
+            <button className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-main  dark:bg-primary hover:text-maindark bg-transparent border-2 border-main  transition-all whitespace-nowrap active:scale-95 w-full xl:w-auto font-medium hover:shadow-md">
                 <RefreshCw size={18} />
                 Tozalash
             </button>

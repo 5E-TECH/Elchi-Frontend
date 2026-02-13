@@ -9,7 +9,7 @@ const UserListPage = memo(() => {
     const navigate = useNavigate();
 
     return (
-        <div className="p-6 rounded-2xl bg-primary dark:bg-[#2A2555]">
+        <div className="p-6 rounded-2xl bg-primary dark:bg-maindark">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
@@ -24,7 +24,7 @@ const UserListPage = memo(() => {
 
                 <button
                     onClick={() => navigate('/all-users/create-user')}
-                    className="flex items-center gap-2 bg-main dark:bg-maindark text-white px-6 py-3 rounded-xl font-bold transition-all shadow-xl hover:-translate-y-1 active:translate-y-0"
+                    className="flex items-center gap-2 bg-main text-white px-6 py-3 rounded-xl font-bold transition-all shadow-xl hover:-translate-y-1 active:translate-y-0"
                 >
                     <Plus size={22} strokeWidth={2.5} />
                     Qo'shish
