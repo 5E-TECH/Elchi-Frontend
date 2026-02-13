@@ -1,0 +1,135 @@
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Header Styling */
+.table thead {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #6c757d;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+  background-color: #f8f9fa;
+}
+
+.table th:first-child {
+  border-radius: 12px 0 0 0;
+  padding-left: 20px;
+}
+
+.table th:last-child {
+  border-radius: 0 12px 0 0;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sortable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.sortable:hover {
+  color: #576adb;
+}
+
+.sortIndicator {
+  font-size: 11px;
+  color: #576adb;
+  min-width: 12px;
+  opacity: 0.6;
+}
+
+/* Body Styling */
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e9ecef;
+  color: #495057;
+}
+
+.table td:first-child {
+  padding-left: 20px;
+}
+
+.table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Row Hover Effect */
+.hoverable tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background-color: #f0f2ff;
+}
+
+/* Striped Rows */
+.striped tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+.striped tbody tr:nth-child(odd) {
+  background-color: transparent;
+}
+
+/* States */
+.loading,
+.empty {
+  padding: 40px;
+  text-align: center;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.loading {
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .table th,
+  .table td {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    padding-left: 12px;
+  }
+
+  .headerContent {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}

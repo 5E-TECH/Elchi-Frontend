@@ -1,10 +1,11 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { User } from '../../../entities/user/types/user';
 import { UserStatusBadge } from '../../../entities/user/ui/UserStatusBadge';
 import { UserRoleBadge } from '../../../entities/user/ui/UserRoleBadge';
+import { Table } from '../../../shared/ui/Table/Table';
+import type { ColumnConfig } from '../../../shared/ui/Table/Table.types';
 
-// Mock data
 const users: User[] = [
     { id: '1', fullName: 'XanaUz', phone: '+998 88 859 42 42', role: 'marketing', status: 'active' },
     { id: '2', fullName: 'ozar.uz', phone: '+998 99 831 72 41', role: 'marketing', status: 'active' },
@@ -17,67 +18,96 @@ const users: User[] = [
 ];
 
 export const UserListTable = memo(() => {
-    return (
-        <div className="bg-primary rounded-xl border border-primary/5 overflow-hidden mt-6">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="text-primary text-xs uppercase tracking-wider" style={{
-                            background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)'
-                        }}>
-                            <th className="p-4 font-semibold rounded-tl-xl">#</th>
-                            <th className="p-4 font-semibold">Ismi</th>
-                            <th className="p-4 font-semibold">Telefon</th>
-                            <th className="p-4 font-semibold text-center">Roli</th>
-                            <th className="p-4 font-semibold text-center">Holati</th>
-                            <th className="p-4 font-semibold text-center rounded-tr-xl">Harakat</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-primary/5">
-                        {users.map((user, index) => (
-                            <tr key={user.id} className="hover:bg-main/5 transition-colors">
-                                <td className="p-4 text-maindark/60 text-sm font-medium">{index + 1}</td>
-                                <td className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-main/10 text-main flex items-center justify-center font-bold text-xs">
-                                            {user.fullName.charAt(0).toUpperCase()}
-                                        </div>
-                                        <span className="text-maindark text-sm font-medium">{user.fullName}</span>
-                                    </div>
-                                </td>
-                                <td className="p-4 text-maindark/60 text-sm font-mono">{user.phone}</td>
-                                <td className="p-4 text-center">
-                                    <UserRoleBadge role={user.role} />
-                                </td>
-                                <td className="p-4 text-center">
-                                    <UserStatusBadge status={user.status} />
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <button className="p-2 rounded-lg hover:bg-main/10 text-main transition-colors">
-                                            <div className="w-8 h-4 rounded-full bg-main/20 relative flex items-center p-0.5">
-                                                <div className="w-3 h-3 bg-main rounded-full ml-auto"></div>
-                                            </div>
-                                        </button>
-                                        <button className="p-2 rounded-lg hover:bg-main/5 text-maindark/40 hover:text-maindark transition-colors">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
-            {/* Pagination */}
-            <div className="p-4 border-t border-primary/5 flex items-center justify-between">
-                <span className="text-sm text-maindark/60">1-8 dan 150 tasi ko'rsatilmoqda</span>
+    const toggleUser = (userId: string) => {
+        setSelectedUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.has(userId) ? newSet.delete(userId) : newSet.add(userId);
+            return newSet;
+        });
+    };
+
+    const columns: ColumnConfig<User>[] = [
+        {
+            key: 'fullName',
+            label: 'Ismi',
+            width: '30%',
+            sortable: true,
+            render: (value) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
+                        {String(value).charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-gray-900 text-sm font-medium">{value}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'phone',
+            label: 'Telefon',
+            width: '25%',
+            sortable: true,
+            className: 'text-gray-600 text-sm font-mono',
+        },
+        {
+            key: 'role',
+            label: 'Roli',
+            width: '15%',
+            sortable: true,
+            render: (value) => <UserRoleBadge role={value as any} />,
+        },
+        {
+            key: 'status',
+            label: 'Holati',
+            width: '15%',
+            render: (value) => <UserStatusBadge status={value as any} />,
+        },
+        {
+            key: 'id',
+            label: 'Harakat',
+            width: '15%',
+            render: (_, user) => (
+                <div className="flex items-center justify-center gap-2">
+                    <button
+                        onClick={() => toggleUser(user.id)}
+                        className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+                    >
+                        <div className="w-8 h-4 rounded-full bg-blue-200 relative flex items-center p-0.5">
+                            <div
+                                className={`w-3 h-3 bg-blue-600 rounded-full transition-all ${
+                                    selectedUsers.has(user.id) ? 'ml-auto' : 'ml-0'
+                                }`}
+                            />
+                        </div>
+                    </button>
+                    <button className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors">
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <Table data={users} columns={columns} keyExtractor={(user) => user.id} hoverable />
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+                <span className="text-sm text-gray-600">1-{users.length} dan 150 tasi ko'rsatilmoqda</span>
                 <div className="flex gap-2">
-                    <button className="px-3 py-1 rounded-lg border border-main/10 text-maindark/60 hover:text-maindark hover:bg-main/5 disabled:opacity-50" disabled>Previous</button>
-                    <button className="px-3 py-1 rounded-lg border border-main/10 text-maindark/60 hover:text-maindark hover:bg-main/5">Next</button>
+                    <button 
+                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 transition-colors" 
+                        disabled
+                    >
+                        Previous
+                    </button>
+                    <button className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-100 transition-colors">
+                        Next
+                    </button>
                 </div>
             </div>
         </div>
     );
 });
+
+UserListTable.displayName = 'UserListTable';
