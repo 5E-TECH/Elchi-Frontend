@@ -8,8 +8,8 @@ interface HeaderNameProps {
 
 const HeaderName = ({ name, description, icon }: HeaderNameProps) => {
   return (
-    <div className="flex items-center gap-4 p-4 rounded-2xl shadow-md ">
-      <div className="flex items-center justify-center w-12 h-12 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
+    <div className="flex items-center gap-4 p-4 rounded-2xl shadow-md bg-white dark:bg-maindark">
+      <div className="flex items-center justify-center w-12 h-12 bg-main/10 text-main rounded-xl">
         {icon}
       </div>
       <div className="flex flex-col">
