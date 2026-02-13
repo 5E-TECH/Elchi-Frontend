@@ -26,12 +26,13 @@ const LoginForm = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(loginSchema),
     mode: "onTouched",
     defaultValues: {
-      username: "",
+      phoneNumber: "+998 ",
     },
   });
 
@@ -40,7 +41,7 @@ const LoginForm = () => {
     dispatch(setError(null));
 
     signinUser.mutate(
-      { username: data.username, password: data.password },
+      data,
       {
         onSuccess: (responseData: any) => {
           dispatch(loginSuccess(responseData));
@@ -65,6 +66,37 @@ const LoginForm = () => {
     );
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+
+    if (!value.startsWith("+998")) {
+      value = "+998" + value.replace(/\+998/g, "");
+    }
+
+    const numbers = value.replace(/[^\d]/g, "");
+
+    let formattedValue = "+998";
+
+    if (numbers.length > 3) {
+      formattedValue += " " + numbers.slice(3, 5);
+    }
+    if (numbers.length > 5) {
+      formattedValue += " " + numbers.slice(5, 8);
+    }
+    if (numbers.length > 8) {
+      formattedValue += " " + numbers.slice(8, 10);
+    }
+    if (numbers.length > 10) {
+      formattedValue += " " + numbers.slice(10, 12);
+    }
+
+    if (formattedValue.length > 17) {
+      formattedValue = formattedValue.slice(0, 17);
+    }
+
+    setValue("phoneNumber", formattedValue, { shouldValidate: true });
+  };
+
   return (
     <div className="flex items-center justify-center">
       <div className="bg-primary pb-8 sm:px-10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] w-115 max-w-full mx-4">
@@ -76,19 +108,21 @@ const LoginForm = () => {
           <div>
             <div className="mb-4">
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 ml-1">
-                Username
+                Telefon raqam
               </label>
               <input
-                {...register("username")}
+                {...register("phoneNumber", {
+                  onChange: handlePhoneChange,
+                })}
                 type="text"
                 disabled={loading}
-                className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.username ? "border-red-500" : "border-gray-200"
+                className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phoneNumber ? "border-red-500" : "border-gray-200"
                   } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-                placeholder="Username"
+                placeholder="+998 90 123 45 67"
               />
-              {errors.username && (
+              {errors.phoneNumber && (
                 <p className="text-red-500 text-xs mt-1 ml-1">
-                  {errors.username.message as string}
+                  {errors.phoneNumber.message as string}
                 </p>
               )}
             </div>
