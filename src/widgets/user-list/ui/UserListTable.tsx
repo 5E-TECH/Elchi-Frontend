@@ -3,8 +3,8 @@ import { Trash2 } from 'lucide-react';
 import type { User } from '../../../entities/user/types/user';
 import { UserStatusBadge } from '../../../entities/user/ui/UserStatusBadge';
 import { UserRoleBadge } from '../../../entities/user/ui/UserRoleBadge';
-import { Table } from '../../../shared/ui/Table/Table';
-import type { ColumnConfig } from '../../../shared/ui/Table/Table.types';
+import { Table } from '../../../shared/components/Table/Table';
+import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
 
 const users: User[] = [
     { id: '1', fullName: 'XanaUz', phone: '+998 88 859 42 42', role: 'marketing', status: 'active' },
