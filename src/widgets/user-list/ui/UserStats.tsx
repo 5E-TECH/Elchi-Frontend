@@ -37,7 +37,7 @@ export const UserStats = memo(() => {
             {stats.map((stat, index) => (
                 <div
                     key={index}
-                    className="bg-primary dark:bg-maindark text-primary p-6 rounded-2xl relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 shadow-xl shadow-black/10"
+                    className="bg-primary dark:bg-main text-primary p-6 rounded-2xl relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 shadow-xl shadow-black/10"
                 >
                     {/* Decorative Background Blob */}
                     <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full opacity-20 bg-linear-to-br blur-2xl group-hover:scale-150 transition-transform duration-700`}></div>
@@ -45,10 +45,10 @@ export const UserStats = memo(() => {
                     <div className="relative z-10">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-main text-sm font-medium mb-1">{stat.label}</p>
-                                <h3 className="text-3xl font-bold text-main">{stat.value}</h3>
+                                <p className="text-main dark:text-primary text-sm font-medium mb-1">{stat.label}</p>
+                                <h3 className="text-3xl font-bold text-main dark:text-primary">{stat.value}</h3>
                             </div>
-                            <div className={`p-3.5 rounded-xl ${stat.bg} ${stat.text} shadow-lg backdrop-blur-sm`}>
+                            <div className={`p-3.5 rounded-xl dark:text-primary dark:bg-maindark ${stat.bg} ${stat.text} shadow-lg backdrop-blur-sm`}>
                                 <stat.icon size={24} strokeWidth={2.5} />
                             </div>
                         </div>
