@@ -3,8 +3,9 @@ import { type UserState, type User } from "./types";
 
 const initialState: UserState = {
   user: null,
-  isAuthenticated: !!localStorage.getItem("x-auth-token"),
-  token: localStorage.getItem("x-auth-token"),
+  isAuthenticated: !!localStorage.getItem("accessToken"),
+  accessToken: localStorage.getItem("accessToken"),
+  refreshToken: localStorage.getItem("refreshToken"),
   loading: false,
   error: null,
 };
@@ -13,13 +14,16 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    loginSuccess: (state, action: PayloadAction<{ token: string; user: User }>) => {
+    loginSuccess: (state, action: PayloadAction<{ accessToken: string; refreshToken: string; user: User }>) => {
       state.loading = false;
-      state.token = action.payload.token;
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
       state.user = action.payload.user;
       state.isAuthenticated = true;
       state.error = null;
-      localStorage.setItem("x-auth-token", action.payload.token);
+      localStorage.setItem("accessToken", action.payload.accessToken);
+      localStorage.setItem("refreshToken", action.payload.refreshToken);
+      localStorage.setItem("role", action.payload.user.role);
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -30,10 +34,13 @@ export const userSlice = createSlice({
     },
     logout: (state) => {
       state.user = null;
-      state.token = null;
+      state.accessToken = null;
+      state.refreshToken = null;
       state.isAuthenticated = false;
       state.error = null;
-      localStorage.removeItem("x-auth-token");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("role");
     }
   },
 });

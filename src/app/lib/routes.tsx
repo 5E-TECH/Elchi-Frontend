@@ -12,25 +12,29 @@ const ProductCreate = lazy(() => import("../../pages/products/create"))
 
 
 const AppRouter = () => {
-  return useRoutes([{ path: "/", element: <Login /> },
-  {
-    path: "/dashboard", element: <DashboardLayout />,
-    children: [
-      { index: true, element: <DashboardPage /> }
-    ]
-  },
-  {
-    path: "/all-users",
-    element: <DashboardLayout />,
-    children: [
-      { index: true, element: <UserListPage /> },
-      { path: "create-user", element: <CreateUserPage /> },
-    ],
-  },
-  {path: "/products", element: <DashboardLayout />, children: [
-    { index: true, element: <ProductTable /> },
-    { path: "create-product", element: <ProductCreate /> },
-  ]}
+  return useRoutes([
+    { path: "/", element: <Login /> },
+    { path: "/login", element: <Login /> },
+    {
+      path: "/dashboard", element: <DashboardLayout />,
+      children: [
+        { index: true, element: <DashboardPage /> }
+      ]
+    },
+    {
+      path: "/all-users",
+      element: <DashboardLayout />,
+      children: [
+        { index: true, element: <UserListPage /> },
+        { path: "create-user", element: <CreateUserPage /> },
+      ],
+    },
+    {
+      path: "/products", element: <DashboardLayout />, children: [
+        { index: true, element: <ProductTable /> },
+        { path: "create-product", element: <ProductCreate /> },
+      ]
+    }
   ]);
 };
 

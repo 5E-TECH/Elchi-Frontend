@@ -71,12 +71,12 @@ const CreateProductPage = () => {
   return (
     <div className="space-y-8">
       {/* Product Information Section */}
-      <div className="bg-white dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800">
+      <div className="bg-sidebar dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800">
         <div className="bg-main px-6 py-4">
           <h2 className="text-white text-lg font-semibold flex items-center gap-2">
-            <Box className="text-white" /> Product information
+            <Box className="text-primary" /> Product information
           </h2>
-          <p className="text-white/80 text-sm">Yangi mahsulot ma'lumotlarini kiriting</p>
+          <p className="text-primary/80 text-sm">Yangi mahsulot ma'lumotlarini kiriting</p>
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -88,7 +88,7 @@ const CreateProductPage = () => {
               <input
                 type="text"
                 placeholder="Product name..."
-                className="w-full bg-gray-50 dark:bg-background text-gray-900 dark:text-white pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-main transition-colors"
+                className="w-full bg-gray-50 dark:bg-primarydark text-gray-900 dark:text-white pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-main transition-colors"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
               />
@@ -102,9 +102,9 @@ const CreateProductPage = () => {
               <div className="w-12 h-12 bg-main/10 rounded-xl flex items-center justify-center mb-3 text-main">
                 <Image size={24} />
               </div>
-              <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">Drag and drop your image here</p>
+              <p className="text-primarydark dark:text-gray-300 text-sm mb-2">Drag and drop your image here</p>
               <p className="text-gray-400 text-xs mb-4">or</p>
-              <button className="px-4 py-2 bg-main/10 text-main rounded-lg text-sm font-medium hover:bg-main/20 transition-colors">
+              <button className="px-4 py-2 bg-main/10 text-primarydark rounded-lg text-sm font-medium hover:bg-main/20 transition-colors">
                 Choose image
               </button>
             </div>
@@ -112,14 +112,14 @@ const CreateProductPage = () => {
         </div>
 
         <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3">
-          <Button label="Clear" className="bg-transparent border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5" icon={<X size={18} />} />
+          <Button label="Clear" className="border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5" icon={<X size={18} />} />
           <Button label="Save" icon={<Box size={18} />} />
         </div>
       </div>
 
       {/* Existing Products Table Section */}
       <div className="bg-white dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800">
-        <div className="bg-main px-6 py-4">
+        <div className="bg-primarydark px-6 py-4">
           <h2 className="text-white text-lg font-semibold flex items-center gap-2">
             <Box className="text-white" /> Mavjud mahsulotlar
           </h2>

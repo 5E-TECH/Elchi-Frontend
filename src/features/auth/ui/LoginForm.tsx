@@ -12,7 +12,7 @@ import {
   setError,
 } from "../../../entities/user/model/slice";
 import type { RootState, AppDispatch } from "../../../app/config/store";
-import { useLogin } from "../api/login";
+import { useLogin, fetchProfile } from "../api/login";
 
 const LoginForm = () => {
   const [show, setShow] = useState(false);
@@ -43,9 +43,23 @@ const LoginForm = () => {
     signinUser.mutate(
       data,
       {
-        onSuccess: (responseData: any) => {
+        onSuccess: async (responseData: any) => {
+          // Save token, user, and role to Redux and localStorage
           dispatch(loginSuccess(responseData));
-          navigate("/dashboard");
+
+          // Verify token by fetching profile
+          try {
+            await fetchProfile();
+
+            // If no error, navigate to dashboard
+            setTimeout(() => {
+              navigate("/dashboard");
+              dispatch(setLoading(false));
+            }, 100);
+          } catch (error) {
+            console.error("Profile fetch error:", error);
+            dispatch(setError("Profil ma'lumotlarini yuklashda xatolik"));
+          }
         },
         onError: (err: any) => {
           let message = "Tizim hatoligi";
