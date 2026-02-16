@@ -71,12 +71,12 @@ export const UserFilters = memo(() => {
                         type="text"
                         name="search"
                         value={(filters.userSearch as string) || ''}
-                        onChange={(e) => {
-                            // Bu yerda Redux ga saqlash uchun dispatch qilish kerak
-                            // Lekin oddiy input uchun alohida komponent yaratish yaxshiroq
-                        }}
+                        // onChange={(e) => {
+                        //     // Bu yerda Redux ga saqlash uchun dispatch qilish kerak
+                        //     // Lekin oddiy input uchun alohida komponent yaratish yaxshiroq
+                        // }}
                         placeholder="Foydalanuvchini qidirish..."
-                        className="w-full bg-primary dark:bg-[#1a1f3a] border-2 border-primary dark:border-[#4c5798]/20 rounded-xl pl-11 pr-4 py-3 text-maindark dark:text-white focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/30 outline-none transition-all placeholder:text-maindark/40 dark:placeholder:text-white/30 hover:shadow-md font-medium"
+                        className="w-full bg-primary dark:bg-[#1a1f3a] border-2 border-primary dark:border-primarydark/20 rounded-xl pl-11 pr-4 py-3 text-maindark dark:text-white focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/30 outline-none transition-all placeholder:text-maindark/40 dark:placeholder:text-white/30 hover:shadow-md font-medium"
                     />
                 </div>
             </div>
