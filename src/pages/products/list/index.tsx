@@ -6,6 +6,7 @@ import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import PopupSelect from "../../../shared/components/popupSelect";
 import { useNavigate } from "react-router-dom"; // Added useNavigate
+import { useProducts } from "../../../entities/product";
 
 interface Product {
   id: number;
@@ -36,6 +37,10 @@ const ProductTable = () => {
     navigate(`/products/create-product?marketId=${market.id}`);
     setShow(false);
   };
+
+  const { getProducts } = useProducts();
+  const { data: products } = getProducts();
+  const productData = products?.data || [];
 
   const columns: ColumnConfig<Product>[] = [
     {
@@ -83,7 +88,7 @@ const ProductTable = () => {
       </div>
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         <Table<Product>
-          data={[]}
+          data={productData}
           columns={columns}
           keyExtractor={(item) => item.id}
           hoverable

@@ -1,7 +1,7 @@
 import * as yup from "yup";
 
 export const loginSchema = yup.object().shape({
-  phoneNumber: yup
+  phone_number: yup
     .string()
     .required("Telefon raqam shart")
     .matches(/^\+998 \d{2} \d{3} \d{2} \d{2}$/, "Format: +998 90 123 45 67"),

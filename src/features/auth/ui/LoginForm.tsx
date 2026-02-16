@@ -32,7 +32,7 @@ const LoginForm = () => {
     resolver: yupResolver(loginSchema),
     mode: "onTouched",
     defaultValues: {
-      phoneNumber: "+998 ",
+      phone_number: "+998 ",
     },
   });
 
@@ -40,14 +40,21 @@ const LoginForm = () => {
     dispatch(setLoading(true));
     dispatch(setError(null));
 
+    const payload = {
+      phone_number: data.phone_number.replace(/\s/g, ""), // Remove spaces
+      password: data.password,
+    };
+
+    console.log("Sending Login Payload:", payload);
+
     signinUser.mutate(
-      data,
+      payload,
       {
         onSuccess: async (responseData: any) => {
           // Save token, user, and role to Redux and localStorage
           dispatch(loginSuccess(responseData));
           console.log("successs");
-          
+
           navigate("/")
         },
         onError: (err: any) => {
@@ -97,10 +104,9 @@ const LoginForm = () => {
       formattedValue = formattedValue.slice(0, 17);
     }
 
-    setValue("phoneNumber", formattedValue, { shouldValidate: true });
+    setValue("phone_number", formattedValue, { shouldValidate: true });
   };
-  console.log("loginnn");
-  
+
 
   return (
     <div className="flex items-center justify-center">
@@ -116,18 +122,18 @@ const LoginForm = () => {
                 Telefon raqam
               </label>
               <input
-                {...register("phoneNumber", {
+                {...register("phone_number", {
                   onChange: handlePhoneChange,
                 })}
                 type="text"
                 disabled={loading}
-                className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phoneNumber ? "border-red-500" : "border-gray-200"
+                className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phone_number ? "border-red-500" : "border-gray-200"
                   } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                 placeholder="+998 90 123 45 67"
               />
-              {errors.phoneNumber && (
+              {errors.phone_number && (
                 <p className="text-red-500 text-xs mt-1 ml-1">
-                  {errors.phoneNumber.message as string}
+                  {errors.phone_number.message as string}
                 </p>
               )}
             </div>

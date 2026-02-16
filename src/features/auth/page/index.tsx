@@ -16,7 +16,6 @@ const Auth = () => {
   const token = useSelector((state: RootState) => state.user.accessToken);
   const [loading, setLoading] = useState(true);
   const [valid, setValid] = useState(false);
-  console.log("token:", token);
 
   useEffect(() => {
     if (!token) {
@@ -27,8 +26,6 @@ const Auth = () => {
     api
       .get("auth/my-profile")
       .then((res) => {
-        console.log("my-profile response:", res); // ← Response ni ko'ring
-        console.log("my-profile data:", res.data); // ← Data ni ko'ring
         
         setValid(true);
         
@@ -42,11 +39,8 @@ const Auth = () => {
           }
         }
         
-        console.log("auth success");
       })
-      .catch((err) => {
-        console.log("auth error:", err); // ← Xatoni ko'ring
-        console.log("auth error response:", err.response); // ← Response ni ko'ring
+      .catch(() => {
         dispatch(logout());
         setValid(false);
       })
