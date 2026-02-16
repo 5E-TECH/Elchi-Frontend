@@ -40,7 +40,7 @@ const Header = () => {
             <h4 className="text-sm font-bold">Admin User</h4>
             <p className="text-xs ">Super Admin</p>
           </div>
-        <div className="w-10 h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20">
+          <div className="w-10 h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20">
             <User color="#ffffff" className="w-5 h-5" />
           </div>
         </div>
