@@ -10,7 +10,7 @@ export const api = axios.create({
 
 
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("x-auth-token")
+    const token = localStorage.getItem("accessToken")
 
     if (token) {
         config.headers.Authorization = `Bearer ${token}`
@@ -24,7 +24,8 @@ api.interceptors.response.use(
         const status = error.response?.status;
 
         if (status === 401) {
-            localStorage.removeItem("x-auth-token");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
             window.location.href = "/login";
         }
         //  else if (status === 403) {

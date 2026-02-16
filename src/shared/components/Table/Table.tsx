@@ -63,17 +63,17 @@ export const Table = <T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12 bg-white dark:bg-slate-950 rounded-lg border border-gray-200 dark:border-slate-700">
+      <div className="flex items-center justify-center p-12 bg-primary dark:bg-maindark rounded-lg border border-gray-200 dark:border-primarydark">
         <p className="text-gray-600 dark:text-slate-400">Yuklanmoqda...</p>
       </div>
     );
   }
 
   return (
-    <div className={`overflow-x-auto rounded-lg shadow-sm bg-white dark:bg-slate-950 ${bordered ? 'border border-gray-200 dark:border-slate-700' : ''}`}>
+    <div className={`overflow-x-auto rounded-lg shadow-sm bg-primary dark:bg-primarydark ${bordered ? 'border border-gray-200 dark:border-primarydark' : ''}`}>
       <table className={`w-full border-collapse ${className}`}>
         <thead>
-          <tr className="border-b border-gray-200 dark:border-slate-700" style={{
+          <tr style={{
             background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)'
           }}>
             {columns.map((column) => (
@@ -115,8 +115,8 @@ export const Table = <T extends Record<string, any>>({
                   hoverable ? 'hover:opacity-80 transition-opacity' : ''
                 } ${onRowClick ? 'cursor-pointer' : ''} ${
                   striped && rowIndex % 2 === 0
-                    ? 'bg-white dark:bg-slate-950 border-gray-200 dark:border-slate-700'
-                    : 'bg-gray-50 dark:bg-slate-900/40 border-gray-200 dark:border-slate-800'
+                    ? 'bg-primary dark:bg-maindark border-gray-200 dark:border-primarydark'
+                    : 'bg-gray-50 dark:bg-maindark border-gray-200 dark:border-primarydark'
                 }`}
                 style={
                   !striped || rowIndex % 2 !== 0 ? {} : {

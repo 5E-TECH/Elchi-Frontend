@@ -104,7 +104,7 @@ const PopupSelect = <T extends Record<string, any>>({
                 key={key}
                 onClick={() => handleItemClick(item)}
                 className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border  ${isSelected
-                  ? "bg-indigo-50 dark:bg-transparent shadow-[0_0_0_1px_rgba(99,102,241,1)]"
+                  ? "bg-main dark:bg-transparent shadow-[0_0_0_1px_rgba(99,102,241,1)]"
                   : "bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-white/5"
                   }`}
               >
@@ -112,7 +112,7 @@ const PopupSelect = <T extends Record<string, any>>({
                   renderItem(item, isSelected)
                 ) : (
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-primarydark flex items-center justify-center text-primary dark:text-gray-300 font-medium text-sm">
+                    <div className="w-10 h-10 rounded-lg bg-gray-400 dark:bg-primarydark flex items-center justify-center text-primary dark:text-gray-300 font-medium text-sm">
                       {key}
                     </div>
                     <div>
@@ -141,7 +141,7 @@ const PopupSelect = <T extends Record<string, any>>({
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
           <Button
             label={cancelLabel}
-            className="bg-transparent border border-gray-200 dark:border-primarydark text-primarydark dark:text-primary hover:bg-gray-50 dark:hover:bg-primary/5"
+            className="border border-gray-200 dark:border-primarydark text-primarydark dark:text-primary hover:bg-gray-50 dark:hover:bg-primary/5"
             onClick={onClose}
           />
           <Button
