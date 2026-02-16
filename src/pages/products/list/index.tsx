@@ -64,7 +64,7 @@ const ProductTable = () => {
   ];
 
   return (
-    <div>
+    <div className="p-6 rounded-2xl bg-primary dark:bg-maindark">
       <div className="flex justify-between items-center mb-6">
         <div>
           <HeaderName
