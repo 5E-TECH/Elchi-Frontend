@@ -79,17 +79,17 @@ const PopupSelect = <T extends Record<string, any>>({
             icon={icon}
           />
           <X
-            className="absolute top-6 right-6 cursor-pointer text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
+            className="absolute top-6 right-6 cursor-pointer text-gray-400 hover:text-red-500 dark:text-gray-400 dark:hover:text-gray-200"
             onClick={onClose}
           />
         </div>
 
-        <div className="relative mb-4">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <div className="relative mb-4 px-2">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
             placeholder={placeholder}
-            className="w-full bg-gray-50 dark:bg-[#2A2555] text-gray-900 dark:text-white pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none placeholder-gray-400 dark:placeholder-gray-500"
+            className="w-full bg-primary dark:bg-primarydark text-gray-900 dark:text-primary pl-12 pr-4 py-3 rounded-xl border border-gray-400 dark:border-primarydark focus:outline-none placeholder-gray-400 dark:placeholder-gray-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -105,7 +105,7 @@ const PopupSelect = <T extends Record<string, any>>({
                 onClick={() => handleItemClick(item)}
                 className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border  ${isSelected
                   ? "bg-main dark:bg-transparent shadow-[0_0_0_1px_rgba(99,102,241,1)]"
-                  : "bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-white/5"
+                  : "bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-primary/5"
                   }`}
               >
                 {renderItem ? (
