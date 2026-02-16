@@ -1,8 +1,12 @@
 import { lazy, memo } from "react";
 import { useRoutes } from "react-router-dom";
-import Auth from "../../features/auth";
 
+// ✅ Auth component (Protected route):
+const Auth = lazy(() => import("../../features/auth/page"));
+
+// ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
+
 const DashboardLayout = lazy(
   () => import("../../widgets/layout/dashboardLayout"),
 );
@@ -17,31 +21,30 @@ const ProductCreate = lazy(() => import("../../pages/products/create"));
 
 const AppRouter = () => {
   return useRoutes([
-    // { path: "/", element: <Login /> },
     { path: "/login", element: <Login /> },
     {
       path: "/",
       element: <Auth />,
       children: [
         {
-          path: "/dashboard",
-          element: <DashboardLayout />,
-          children: [{ index: true, element: <DashboardPage /> }],
-        },
-        {
-          path: "/all-users",
+          path: "/",
           element: <DashboardLayout />,
           children: [
-            { index: true, element: <UserListPage /> },
-            { path: "create-user", element: <CreateUserPage /> },
-          ],
-        },
-        {
-          path: "/products",
-          element: <DashboardLayout />,
-          children: [
-            { index: true, element: <ProductTable /> },
-            { path: "create-product", element: <ProductCreate /> },
+            { index: true, element: <DashboardPage /> },
+            {
+              path: "all-users",
+              children: [
+                { index: true, element: <UserListPage /> },
+                { path: "create-user", element: <CreateUserPage /> },
+              ],
+            },
+            {
+              path: "products",
+              children: [
+                { index: true, element: <ProductTable /> },
+                { path: "create-product", element: <ProductCreate /> },
+              ],
+            },
           ],
         },
       ],
