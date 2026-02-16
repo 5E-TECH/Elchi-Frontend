@@ -75,9 +75,8 @@ export const UserListTable = memo(() => {
                     >
                         <div className="w-8 h-4 rounded-full bg-blue-200 relative flex items-center p-0.5">
                             <div
-                                className={`w-3 h-3 bg-blue-600 rounded-full transition-all ${
-                                    selectedUsers.has(user.id) ? 'ml-auto' : 'ml-0'
-                                }`}
+                                className={`w-3 h-3 bg-blue-600 rounded-full transition-all ${selectedUsers.has(user.id) ? 'ml-auto' : 'ml-0'
+                                    }`}
                             />
                         </div>
                     </button>
@@ -93,12 +92,12 @@ export const UserListTable = memo(() => {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             <Table data={[]} columns={columns} keyExtractor={(user) => user.id} hoverable />
             <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50" style={{
-            background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)'
-          }}>
+                background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)'
+            }}>
                 <span className="text-sm text-primary">1-{users.length} dan 150 tasi ko'rsatilmoqda</span>
                 <div className="flex gap-2">
-                    <button 
-                        className="px-4 py-2 rounded-lg border border-primary text-primary text-sm font-medium transition-colors" 
+                    <button
+                        className="px-4 py-2 rounded-lg border border-primary text-primary text-sm font-medium transition-colors"
                         disabled
                     >
                         Previous
