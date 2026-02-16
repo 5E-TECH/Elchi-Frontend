@@ -13,7 +13,7 @@ interface LoginResponse {
 
 
 export const fetchProfile = async () => {
-  const response = await api.get("/auth/my-profile");
+  const response = await api.get("auth/my-profile");
   return response.data;
 };
 
@@ -21,8 +21,8 @@ export const useLogin = () => {
   const client = useQueryClient();
 
   const signinUser = useMutation({
-    mutationFn: async (credentials: { phoneNumber: string; password: string }) => {
-      const response = await api.post<LoginResponse>("/auth/login", credentials);
+    mutationFn: async (credentials: { phone_number: string; password: string }) => {
+      const response = await api.post<LoginResponse>("auth/login", credentials);
       return response.data;
     },
     onSuccess: () => client.invalidateQueries({ queryKey: [login] }),
