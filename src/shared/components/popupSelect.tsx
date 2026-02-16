@@ -71,7 +71,7 @@ const PopupSelect = <T extends Record<string, any>>({
 
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className={`bg-white dark:bg-maindark w-[92vw] max-w-140 rounded-2xl px-5 md:px-8 py-7 md:py-10 text-main dark:text-primary shadow-2xl flex flex-col max-h-[90vh] ${className}`}>
+      <div className={`bg-primary dark:bg-maindark w-[92vw] max-w-140 rounded-2xl px-5 md:px-8 py-7 md:py-10 text-main dark:text-primary shadow-2xl flex flex-col max-h-[90vh] ${className}`}>
         <div className="flex justify-between items-center mb-6">
           <HeaderName
             name={title}
@@ -89,7 +89,7 @@ const PopupSelect = <T extends Record<string, any>>({
           <input
             type="text"
             placeholder={placeholder}
-            className="w-full bg-gray-50 dark:bg-[#2A2555] text-gray-900 dark:text-white pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-indigo-500 placeholder-gray-400 dark:placeholder-gray-500"
+            className="w-full bg-gray-50 dark:bg-[#2A2555] text-gray-900 dark:text-white pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none placeholder-gray-400 dark:placeholder-gray-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -103,8 +103,8 @@ const PopupSelect = <T extends Record<string, any>>({
               <div
                 key={key}
                 onClick={() => handleItemClick(item)}
-                className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all border ${isSelected
-                  ? "bg-indigo-50 dark:bg-transparent border-indigo-500 shadow-[0_0_0_1px_rgba(99,102,241,1)]"
+                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border  ${isSelected
+                  ? "bg-indigo-50 dark:bg-transparent shadow-[0_0_0_1px_rgba(99,102,241,1)]"
                   : "bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-white/5"
                   }`}
               >
@@ -112,11 +112,11 @@ const PopupSelect = <T extends Record<string, any>>({
                   renderItem(item, isSelected)
                 ) : (
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-medium text-sm">
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-primarydark flex items-center justify-center text-primary dark:text-gray-300 font-medium text-sm">
                       {key}
                     </div>
                     <div>
-                      <h3 className="text-gray-900 dark:text-white font-medium text-lg leading-tight">
+                      <h3 className="text-maindark dark:text-primary font-medium text-lg leading-tight">
                         {labelKey ? item[labelKey] : String(item)}
                       </h3>
                       {secondaryLabelKey && (
@@ -141,14 +141,14 @@ const PopupSelect = <T extends Record<string, any>>({
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
           <Button
             label={cancelLabel}
-            className="bg-transparent border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
+            className="bg-transparent border border-gray-200 dark:border-primarydark text-primarydark dark:text-primary hover:bg-gray-50 dark:hover:bg-primary/5"
             onClick={onClose}
           />
           <Button
             label={selectLabel}
             className={`px-8 ${!selectedItem
-              ? "opacity-50 cursor-not-allowed bg-indigo-400 dark:bg-indigo-800"
-              : "bg-indigo-600 hover:bg-indigo-700"
+              ? "opacity-50 cursor-not-allowed"
+              : "bg-main hover:bg-main"
               }`}
             onClick={handleSelect}
           />
