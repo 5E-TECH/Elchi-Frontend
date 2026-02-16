@@ -15,6 +15,9 @@ export const Table = <T extends Record<string, any>>({
 }: TableProps<T>) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
+
+
+  
   // Sorting logikasi
   const sortedData = useMemo(() => {
     if (!sortConfig) return data;

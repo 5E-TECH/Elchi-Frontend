@@ -48,7 +48,7 @@ export const UserStats = memo(() => {
                                 <p className="text-main dark:text-primary text-sm font-medium mb-1">{stat.label}</p>
                                 <h3 className="text-3xl font-bold text-main dark:text-primary">{stat.value}</h3>
                             </div>
-                            <div className={`p-3.5 rounded-xl dark:text-primary dark:bg-maindark ${stat.bg} ${stat.text} shadow-lg backdrop-blur-sm`}>
+                            <div className={`p-3.5 rounded-xl dark:bg-maindark ${stat.bg} ${stat.text} shadow-lg backdrop-blur-sm`}>
                                 <stat.icon size={24} strokeWidth={2.5} />
                             </div>
                         </div>
