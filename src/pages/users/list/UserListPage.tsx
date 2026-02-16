@@ -9,7 +9,7 @@ const UserListPage = memo(() => {
     const navigate = useNavigate();
 
     return (
-        <div className="p-6 rounded-2xl bg-primary dark:bg-maindark">
+        <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
