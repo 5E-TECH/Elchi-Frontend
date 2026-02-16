@@ -1,42 +1,44 @@
-// store/slices/filterSlice.ts
+// Universal Filter Slice - barcha selectlar uchun
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+// Dynamic filter state - istalgan maydon qo'shish mumkin
 interface FilterState {
-  role: string;
-  status: string;
-  search: string;
+  [key: string]: string | number | boolean | null;
 }
 
-const initialState: FilterState = {
-  role: '',
-  status: '',
-  search: ''
-};
+const initialState: FilterState = {};
 
 const filterSlice = createSlice({
   name: 'filters',
   initialState,
   reducers: {
-    setRole: (state, action: PayloadAction<string>) => {
-      state.role = action.payload;
+    // Bitta maydonni o'zgartirish
+    setFilterValue: (state, action: PayloadAction<{ key: string; value: any }>) => {
+      state[action.payload.key] = action.payload.value;
     },
-    setStatus: (state, action: PayloadAction<string>) => {
-      state.status = action.payload;
+
+    // Bir nechta maydonni bir vaqtda o'zgartirish
+    setMultipleFilters: (state, action: PayloadAction<Record<string, any>>) => {
+      return { ...state, ...action.payload };
     },
-    setSearch: (state, action: PayloadAction<string>) => {
-      state.search = action.payload;
+
+    // Bitta maydonni o'chirish
+    removeFilterValue: (state, action: PayloadAction<string>) => {
+      delete state[action.payload];
     },
-    resetFilters: (state) => {
-      state.role = '';
-      state.status = '';
-      state.search = '';
+
+    // Barcha filterlarni tozalash (pathname o'zgarganda)
+    resetFilters: () => {
+      return {};
     },
-    setFilters: (state, action: PayloadAction<FilterState>) => {
-        state
-      return action.payload;
-    }
   }
 });
 
-export const { setRole, setStatus, setSearch, resetFilters, setFilters } = filterSlice.actions;
+export const {
+  setFilterValue,
+  setMultipleFilters,
+  removeFilterValue,
+  resetFilters
+} = filterSlice.actions;
+
 export default filterSlice.reducer;

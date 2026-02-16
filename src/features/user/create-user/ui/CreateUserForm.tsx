@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect } from "react";
 import type { UserRole } from "../../../../entities/user/types/user";
 import { RoleSelector } from "./RoleSelector";
+import Select from "../../../../shared/ui/Select";
 import {
   Eye,
   EyeOff,
@@ -149,11 +150,10 @@ export const CreateUserForm = memo(() => {
 
   const inputClasses = (hasError: boolean, hasIcon: boolean) => `
         w-full bg-slate-50 dark:bg-[#1a1f3a] border 
-        ${
-          hasError
-            ? "border-red-400 dark:border-red-500 focus:ring-red-400/20"
-            : "border-slate-200 dark:border-[#4c5798]/20 focus:border-main dark:focus:border-main focus:ring-main/10"
-        } 
+        ${hasError
+      ? "border-red-400 dark:border-red-500 focus:ring-red-400/20"
+      : "border-slate-200 dark:border-[#4c5798]/20 focus:border-main dark:focus:border-main focus:ring-main/10"
+    } 
         rounded-xl ${hasIcon ? "pl-10" : "px-4"} pr-4 py-3 
         text-slate-800 dark:text-white text-sm font-medium
         placeholder:text-slate-400 dark:placeholder:text-white/30 
@@ -239,63 +239,7 @@ export const CreateUserForm = memo(() => {
     </div>
   );
 
-  const renderSelect = (
-    label: string,
-    name: string,
-    options: { value: string; label: string }[],
-    placeholder: string,
-    required: boolean = true,
-  ) => (
-    <div className="space-y-0 relative">
-      <label className={labelClasses}>
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="relative">
-        <select
-          name={name}
-          value={(formData as any)[name]}
-          onChange={handleInputChange}
-          required={required}
-          className={`${inputClasses(!!errors[name], false)} appearance-none cursor-pointer text-sm`}
-        >
-          <option value="" disabled className="dark:text-white/50">
-            {placeholder}
-          </option>
-          {options.map((opt) => (
-            <option
-              key={opt.value}
-              value={opt.value}
-              className="dark:bg-[#1a1f3a]"
-            >
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-white/40">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M2.5 4.5L6 8L9.5 4.5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-      </div>
-      {errors[name] && (
-        <p className="absolute -bottom-4 right-0 text-[10px] text-red-500 font-medium">
-          {errors[name]}
-        </p>
-      )}
-    </div>
-  );
+
 
   return (
     <div className="w-full h-full rounded-2xl flex flex-col overflow-hidden bg-slate-50 dark:bg-maindark transition-colors duration-300">
@@ -337,15 +281,14 @@ export const CreateUserForm = memo(() => {
           {/* Form Header */}
           <div className="px-6 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 shrink-0 flex items-center gap-4">
             <div
-              className={`p-2 rounded-xl bg-linear-to-br text-white shadow-md ${
-                role === "admin"
-                  ? "from-purple-500 to-indigo-600"
-                  : role === "manager"
-                    ? "from-blue-500 to-cyan-500"
-                    : role === "courier"
-                      ? "from-orange-500 to-amber-500"
-                      : "from-emerald-500 to-teal-500"
-              }`}
+              className={`p-2 rounded-xl bg-linear-to-br text-white shadow-md ${role === "admin"
+                ? "from-purple-500 to-indigo-600"
+                : role === "manager"
+                  ? "from-blue-500 to-cyan-500"
+                  : role === "courier"
+                    ? "from-orange-500 to-amber-500"
+                    : "from-emerald-500 to-teal-500"
+                }`}
             >
               <ShieldIcon role={role} size={20} />
             </div>
@@ -392,10 +335,12 @@ export const CreateUserForm = memo(() => {
 
                 {role === "courier" && (
                   <div className="grid grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {renderSelect(
-                      "Viloyat",
-                      "region",
-                      [
+                    <Select
+                      label="Viloyat"
+                      name="region"
+                      value={formData.region}
+                      onChange={handleInputChange}
+                      options={[
                         { value: "tashkent", label: "Toshkent shahri" },
                         { value: "samarkand", label: "Samarqand" },
                         { value: "bukhara", label: "Buxoro" },
@@ -407,9 +352,11 @@ export const CreateUserForm = memo(() => {
                         { value: "surkhandarya", label: "Surxondaryo" },
                         { value: "jizzakh", label: "Jizzax" },
                         { value: "navoi", label: "Navoi" },
-                      ],
-                      "Tanlang",
-                    )}
+                      ]}
+                      placeholder="Tanlang"
+                      error={errors.region}
+                      required
+                    />
                     {renderInput(
                       "Uyga",
                       "homeRate",
@@ -436,15 +383,19 @@ export const CreateUserForm = memo(() => {
                       "Nomi",
                       null,
                     )}
-                    {renderSelect(
-                      "Yetkazish Turi",
-                      "deliveryType",
-                      [
+                    <Select
+                      label="Yetkazish Turi"
+                      name="deliveryType"
+                      value={formData.deliveryType}
+                      onChange={handleInputChange}
+                      options={[
                         { value: "center", label: "Markazgacha" },
                         { value: "door", label: "Eshikkacha" },
-                      ],
-                      "Tanlang",
-                    )}
+                      ]}
+                      placeholder="Tanlang"
+                      error={errors.deliveryType}
+                      required
+                    />
                     {renderInput(
                       "Uyga",
                       "homeRate",
@@ -479,15 +430,14 @@ export const CreateUserForm = memo(() => {
               disabled={loading}
               className={`
                                 relative overflow-hidden flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-sm
-                                ${
-                                  role === "admin"
-                                    ? "bg-linear-to-r from-purple-600 to-indigo-600"
-                                    : role === "manager"
-                                      ? "bg-linear-to-r from-blue-500 to-cyan-500"
-                                      : role === "courier"
-                                        ? "bg-linear-to-r from-orange-500 to-amber-500"
-                                        : "bg-linear-to-r from-emerald-500 to-teal-500"
-                                }
+                                ${role === "admin"
+                  ? "bg-linear-to-r from-purple-600 to-indigo-600"
+                  : role === "manager"
+                    ? "bg-linear-to-r from-blue-500 to-cyan-500"
+                    : role === "courier"
+                      ? "bg-linear-to-r from-orange-500 to-amber-500"
+                      : "bg-linear-to-r from-emerald-500 to-teal-500"
+                }
                             `}
             >
               {loading ? (
