@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo, type ReactElement } from 'react';
 import type { TableProps, ColumnConfig, SortConfig } from './Table.types';
 
-export const Table = <T extends Record<string, any>>({
+export const Table = memo(<T extends Record<string, any>>({
   data,
   columns,
   keyExtractor = (_, index) => index,
@@ -17,7 +17,7 @@ export const Table = <T extends Record<string, any>>({
 
 
 
-  
+
   // Sorting logikasi
   const sortedData = useMemo(() => {
     if (!sortConfig) return data;
@@ -81,9 +81,8 @@ export const Table = <T extends Record<string, any>>({
                 key={String(column.key)}
                 style={{ width: column.width }}
                 onClick={() => handleSort(column)}
-                className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-white ${
-                  column.sortable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
-                }`}
+                className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-white ${column.sortable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <span>{column.label}</span>
@@ -111,13 +110,11 @@ export const Table = <T extends Record<string, any>>({
               <tr
                 key={keyExtractor(row, rowIndex)}
                 onClick={() => onRowClick?.(row, rowIndex)}
-                className={`border-b ${
-                  hoverable ? 'hover:opacity-80 transition-opacity' : ''
-                } ${onRowClick ? 'cursor-pointer' : ''} ${
-                  striped && rowIndex % 2 === 0
+                className={`border-b ${hoverable ? 'hover:opacity-80 transition-opacity' : ''
+                  } ${onRowClick ? 'cursor-pointer' : ''} ${striped && rowIndex % 2 === 0
                     ? 'bg-primary dark:bg-maindark border-gray-200 dark:border-primarydark'
                     : 'bg-gray-50 dark:bg-maindark border-gray-200 dark:border-primarydark'
-                }`}
+                  }`}
                 style={
                   !striped || rowIndex % 2 !== 0 ? {} : {
                     backgroundImage: 'linear-gradient(to right, rgba(76, 87, 152, 0.05), rgba(87, 106, 219, 0.05))'
@@ -141,4 +138,4 @@ export const Table = <T extends Record<string, any>>({
       </table>
     </div>
   );
-};
+}) as <T extends Record<string, any>>(props: TableProps<T>) => ReactElement;

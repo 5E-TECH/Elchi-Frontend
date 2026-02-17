@@ -1,12 +1,13 @@
 import { memo, useState } from "react";
 import HeaderName from "../../../shared/components/headerName";
-import { BookMarked, Plus, ScanLine } from "lucide-react"; // Added BookMarked
+import { BookMarked, Plus, ScanLine, SquarePen, Trash2 } from "lucide-react"; // Added BookMarked
 import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import PopupSelect from "../../../shared/components/popupSelect";
 import { useNavigate } from "react-router-dom"; // Added useNavigate
 import { useProducts } from "../../../entities/product";
+import { useMarkets } from "../../../entities/markets";
 
 interface Product {
   id: number;
@@ -18,24 +19,29 @@ interface Market {
   id: number;
   name: string;
   phone: string;
+  index: number;
 }
 
-const mockMarkets: Market[] = [
-  { id: 1, name: "Vaveon", phone: "+998990271111" },
-  { id: 2, name: "0.13", phone: "+998775261313" },
-  { id: 3, name: "1700", phone: "+998936188383" },
-  { id: 4, name: "2555", phone: "+998976302555" },
-  { id: 5, name: "076", phone: "+998935735733" },
-  { id: 6, name: "4292", phone: "+998993774292" },
-];
+
 
 const ProductTable = () => {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
 
+  const { getMarkets } = useMarkets();
+  const { data } = getMarkets();
+
+  const markets = data?.data?.items?.map((item: any, index: number) => ({
+    ...item,
+    index: index + 1,
+    phone: item.phone_number,
+  })) || [];
+
   const handleSelectMarket = (market: Market) => {
     navigate(`/products/create-product?marketId=${market.id}`);
     setShow(false);
+    console.log(market.id);
+    
   };
 
   const { getProducts } = useProducts();
@@ -61,8 +67,8 @@ const ProductTable = () => {
       width: "20%",
       render: (_: number, __: Product) => (
         <div className="flex gap-2">
-          <Button label="Edit" icon={<Plus />} />
-          <Button label="Delete" icon={<ScanLine />} />
+          <Button label="Edit" icon={<SquarePen size={18} />} />
+          <Button label="Delete" icon={<Trash2 size={18} />} />
         </div>
       ),
     },
@@ -99,9 +105,9 @@ const ProductTable = () => {
         isOpen={show}
         onClose={() => setShow(false)}
         title="Select Market"
-        data={mockMarkets}
+        data={markets}
         onSelect={handleSelectMarket}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.index}
         searchKeys={["name"]}
         icon={<BookMarked />}
         selectLabel="Select"
