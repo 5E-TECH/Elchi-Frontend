@@ -1,20 +1,28 @@
 import { memo, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { Search, Filter, RefreshCw } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Filter, RefreshCw } from 'lucide-react';
 import Select from '../../../../shared/ui/Select';
+import { GlobalSearchInput } from '../../../search';
+import { resetFilters } from '../../../Select/model/FilterSlice';
+import { clearAllSearch } from '../../../search/model/searchSlice';
+import { useQueryParams } from '../../../../shared/lib/useQueryParams';
 import type { RootState } from '../../../../app/config/store';
 
 export const UserFilters = memo(() => {
+    const dispatch = useDispatch();
+    const { clearAllParams } = useQueryParams();
+
     // Redux dan filter qiymatlarini olish
     const filters = useSelector((state: RootState) => state.filter);
 
-    // Role options
+    // Role options - Backend API ga mos value lar
     const roleOptions = [
         { value: 'admin', label: 'Admin' },
         { value: 'manager', label: 'Ro\'yxatchi' },
         { value: 'courier', label: 'Kuryer' },
-        { value: 'marketing', label: 'Market' },
+        { value: 'market', label: 'Market' },  // marketing emas, market
         { value: 'operator', label: 'Operator' },
+        { value: 'superadmin', label: 'Super Admin' },
     ];
 
     // Status options
@@ -33,6 +41,20 @@ export const UserFilters = memo(() => {
             console.log("========================================");
         }
     }, [filters]);
+
+    // Tozalash funksiyasi
+    const handleReset = () => {
+        // 1. Redux filterlarni tozalash
+        dispatch(resetFilters());
+
+        // 2. Redux searchni tozalash
+        dispatch(clearAllSearch());
+
+        // 3. URL params tozalash
+        clearAllParams();
+
+        console.log("✅ Barcha filterlar tozalandi");
+    };
 
     return (
         <div className="bg-primary dark:bg-main p-5 rounded-2xl shadow-lg shadow-black/10 flex flex-col xl:flex-row items-center gap-4 mb-6">
@@ -64,28 +86,16 @@ export const UserFilters = memo(() => {
                     reduxKey="userStatus"
                 />
 
-                {/* Search Input */}
-                <div className="relative xl:col-span-2 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-maindark/60 dark:text-white/60 group-hover:text-main transition-colors z-10" size={18} />
-                    <input
-                        type="text"
-                        name="search"
-                        value={(filters.userSearch as string) || ''}
-                        // onChange={(e) => {
-                        //     // Bu yerda Redux ga saqlash uchun dispatch qilish kerak
-                        //     // Lekin oddiy input uchun alohida komponent yaratish yaxshiroq
-                        // }}
-                        placeholder="Foydalanuvchini qidirish..."
-                        className="w-full bg-primary dark:bg-[#1a1f3a] border-2 border-primary dark:border-primarydark/20 rounded-xl pl-11 pr-4 py-3 text-maindark dark:text-white focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/30 outline-none transition-all placeholder:text-maindark/40 dark:placeholder:text-white/30 hover:shadow-md font-medium"
-                    />
-                </div>
+                {/* Global Search Input - Redux va URL params bilan */}
+                <GlobalSearchInput
+                    searchKey="userSearch"
+                    placeholder="Foydalanuvchini qidirish..."
+                    className="xl:col-span-2"
+                />
             </div>
 
             <button
-                onClick={() => {
-                    // Redux ni tozlash uchun resetFilters dispatch qilish kerak
-                    // Bu yerda dispatch qilish kerak
-                }}
+                onClick={handleReset}
                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-main dark:text-primary dark:bg-primary hover:text-maindark dark:hover:text-maindark bg-transparent border-2 border-main dark:border-primary transition-all whitespace-nowrap active:scale-95 w-full xl:w-auto font-medium hover:shadow-md"
             >
                 <RefreshCw size={18} />

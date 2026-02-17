@@ -26,6 +26,14 @@ const roleConfig: Record<UserRole, { label: string; className: string }> = {
         label: 'Kuryer',
         className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
     },
+    market: {
+        label: 'Market',
+        className: 'bg-green-500/10 text-green-500 border-green-500/20',
+    },
+    superadmin: {
+        label: 'Super Admin',
+        className: 'bg-red-500/10 text-red-500 border-red-500/20',
+    },
 };
 
 export const UserRoleBadge = memo(({ role }: UserRoleBadgeProps) => {
@@ -39,3 +47,5 @@ export const UserRoleBadge = memo(({ role }: UserRoleBadgeProps) => {
         </span>
     );
 });
+
+UserRoleBadge.displayName = 'UserRoleBadge';

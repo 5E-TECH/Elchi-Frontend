@@ -1,47 +1,75 @@
-// User API Service
-import { api } from '../../../shared/api/api';
-import type { User } from '../types/user';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../../shared/api/api";
+import type { CreateAdminRequest } from "../types/user";
 
-// API Response types
-export interface UserListResponse {
-    success: boolean;
-    data: User[];
-    pagination?: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-    };
+export const user = "user";
+
+export interface IUserFilter {
+  search?: string;
+  status?: string;
+  role?: string;
+  page?: number;
+  limit?: number;
 }
 
-// API Request params
-export interface GetUsersParams {
-    search?: string;
-    id?: string;
-    status?: string;
-    page?: number;
-    limit?: number;
-}
+export const useUser = () => {
+  const client = useQueryClient();
 
-// Get all users with filters
-export const getUsers = async (params?: GetUsersParams): Promise<UserListResponse> => {
-    const response = await api.get<UserListResponse>('/users', { params });
-    return response.data;
-};
+  const getUser = (params?: IUserFilter) =>
+    useQuery({
+      queryKey: [user, params],
+      queryFn: () => api.get("users", { params }).then((res: any) => res.data),
+    });
 
-// Get single user by ID
-export const getUserById = async (id: string): Promise<User> => {
-    const response = await api.get<{ success: boolean; data: User }>(`/users/${id}`);
-    return response.data.data;
-};
+  const createAdmin = useMutation({
+    mutationFn: (data: CreateAdminRequest) => api.post("admins", data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
 
-// Delete user
-export const deleteUser = async (id: string): Promise<void> => {
-    await api.delete(`/users/${id}`);
-};
+  //   const getUserById = (id: string | undefined, params?: IUserFilter) =>
+  //     useQuery({
+  //       queryKey: [user, params, id],
+  //       queryFn: () => api.get(`user/${id}`, { params }).then((res) => res.data),
+  //     });
 
-// Update user status
-export const updateUserStatus = async (id: string, status: string): Promise<User> => {
-    const response = await api.patch<{ success: boolean; data: User }>(`/users/${id}/status`, { status });
-    return response.data.data;
+  //   const getAdminAndRegister = (enabled = true, params?: IUserFilter) =>
+  //     useQuery({
+  //       queryKey: [user, params],
+  //       queryFn: () =>
+  //         api
+  //           .get("user/registrator-and-admin", { params })
+  //           .then((res) => res.data),
+  //       enabled,
+  //     });
+
+  //   const updateUser = useMutation({
+  //     mutationFn: ({ role, id, data }: { role: string; id: string; data: any }) =>
+  //       api.patch(`user/${role}/${id}`, data),
+  //     onSuccess: () =>
+  //       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  //   });
+
+  //   const removeUser = useMutation({
+  //     mutationFn: (id: string) =>
+  //       api.delete(`user/${id}`).then((res) => res.data),
+  //     onSuccess: () => client.invalidateQueries({ queryKey: [user] }),
+  //   });
+
+  //   const getUsersExceptMarket = (params?: IUserFilter) =>
+  //     useQuery({
+  //       queryKey: [user, params],
+  //       queryFn: () =>
+  //         api.get("user/except-market", { params }).then((res) => res.data),
+  //     });
+
+  return {
+    createAdmin,
+    getUser,
+    // getUsersExceptMarket,
+    // getAdminAndRegister,
+    // getUserById,
+    // updateUser,
+    // removeUser,
+  };
 };
