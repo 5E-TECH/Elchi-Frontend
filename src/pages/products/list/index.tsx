@@ -40,11 +40,10 @@ const ProductTable = () => {
   const handleSelectMarket = (market: Market) => {
     navigate(`/products/create-product?marketId=${market.id}`);
     setShow(false);
-    console.log(market.id);
-    
+
   };
 
-  const { getProducts } = useProducts();
+  const { getProducts, deleteProduct } = useProducts();
   const { data: products } = getProducts();
   const productData = products?.data || [];
 
@@ -66,13 +65,18 @@ const ProductTable = () => {
       label: "Action",
       width: "20%",
       render: (_: number, __: Product) => (
-        <div className="flex gap-2">
-          <Button label="Edit" icon={<SquarePen size={18} />} />
-          <Button label="Delete" icon={<Trash2 size={18} />} />
+        <div className="flex items-center gap-2">
+          <button className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors">
+            <SquarePen size={18} />
+          </button>
+          <button onClick={() => deleteProduct.mutate(__.id)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-red-500 transition-colors cursor-pointer">
+            <Trash2 size={18} />
+          </button>
         </div>
       ),
     },
   ];
+  
 
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
@@ -92,7 +96,8 @@ const ProductTable = () => {
           />
         </div>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+      
+      <div className="bg-white rounded-xl overflow-hidden shadow-sm">
         <Table<Product>
           data={productData}
           columns={columns}

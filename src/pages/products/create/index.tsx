@@ -7,12 +7,13 @@ import {
   useRef,
   type FormEvent,
 } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Box, Image, X, Trash2, Edit } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Box, Image, X, Trash2, Edit, MoveLeft } from "lucide-react";
 import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useProducts } from "../../../entities/product";
+import HeaderName from "../../../shared/components/headerName";
 
 interface ExistingProduct {
   id: number;
@@ -52,18 +53,18 @@ const ActionCell = memo(
       <button
         type="button"
         onClick={onEdit}
-        className="p-1 hover:text-blue-600 transition-colors"
+        className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors"
         aria-label="Edit product"
       >
-        <Edit className="w-4 h-4" />
+        <Edit size={18} />
       </button>
       <button
         type="button"
         onClick={onDelete}
-        className="p-1 hover:text-red-600 transition-colors"
+        className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-red-500 transition-colors"
         aria-label="Delete product"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 size={18} />
       </button>
     </div>
   ),
@@ -85,6 +86,10 @@ const CreateProductPage = () => {
   const marketId = searchParams.get("marketId") ?? "";
 
   const { createProduct, getProducts } = useProducts();
+
+  const navigate = useNavigate();
+
+  console.log(marketId);
 
   const { data } = getProducts(
     useMemo(() => ({ market_id: marketId }), [marketId]),
@@ -206,14 +211,16 @@ const CreateProductPage = () => {
   return (
     <div className="space-y-8">
       {/* Product Information Section */}
-      <form onSubmit={handleSubmit} className="bg-sidebar dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800">
-        <div className="bg-main px-6 py-4">
-          <h2 className="text-white text-lg font-semibold flex items-center gap-2">
-            <Box className="text-primary" /> Product information
-          </h2>
-          <p className="text-primary/80 text-sm">
-            Yangi mahsulot ma'lumotlarini kiriting
-          </p>
+      <form
+        onSubmit={handleSubmit}
+        className="bg-sidebar dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800"
+      >
+        <div onClick={() => navigate(-1)}>
+          <HeaderName
+            name="Create Product"
+            description="Yangi mahsulot ma'lumotlarini kiriting"
+            icon={<MoveLeft size={20} className="text-white" />}
+          />
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -265,7 +272,9 @@ const CreateProductPage = () => {
                 <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
                   <div className="flex flex-col items-center gap-1">
                     <Image size={24} className="text-gray-400" />
-                    <span className="text-helpertext text-xs text-gray-500 dark:text-gray-400">Upload Image</span>
+                    <span className="text-helpertext text-xs text-gray-500 dark:text-gray-400">
+                      Upload Image
+                    </span>
                   </div>
                   <input
                     type="file"
@@ -299,25 +308,14 @@ const CreateProductPage = () => {
       </form>
 
       {/* Existing Products Table Section */}
-      <div className="bg-white dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800">
-        <div className="bg-primarydark px-6 py-4">
-          <h2 className="text-white text-lg font-semibold flex items-center gap-2">
-            <Box className="text-white" /> Mavjud mahsulotlar
-          </h2>
-          <p className="text-white/80 text-sm">
-            Bu marketga tegishli barcha mahsulotlar
-          </p>
-        </div>
-
-        <div>
-          <Table<ExistingProduct>
-            data={products}
-            columns={columns}
-            keyExtractor={keyExtractor}
-            hoverable
-            className="border-none"
-          />
-        </div>
+      <div>
+        <Table<ExistingProduct>
+          data={products}
+          columns={columns}
+          keyExtractor={keyExtractor}
+          hoverable
+          className="border-none"
+        />
       </div>
     </div>
   );

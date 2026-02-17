@@ -44,9 +44,25 @@ export const useProducts = () => {
     },
   });
 
+
+  const getByMarketId = (marketId: number, enabled: boolean = true) => useQuery({
+    queryKey: [products, marketId],
+    queryFn: () => api.get(`product/market/${marketId}`).then((res) => res.data),
+    enabled,
+  })
+
+  const deleteProduct = useMutation({
+    mutationFn: (id: number) => api.delete(`product/${id}`),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ["product"] });
+    }
+  })
+
   return {
     createProduct,
     getProducts,
     updateProduct,
+    getByMarketId,
+    deleteProduct,
   };
 };
