@@ -18,7 +18,7 @@ export const useDebounce = <T extends (...args: any[]) => void>(
     callback: T,
     delay: number
 ): ((...args: Parameters<T>) => void) => {
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const timeoutRef = useRef<any | null>(null);
     const callbackRef = useRef(callback);
 
     // Callback yangilanganda ref ni yangilash
