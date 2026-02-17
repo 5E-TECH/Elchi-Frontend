@@ -58,3 +58,11 @@ export interface CreateAdminResponse {
     success: boolean;
     data: User;  // Yaratilgan admin ma'lumotlari
 }
+
+// ==================== USER DETAIL ====================
+
+// User detail response
+export interface UserDetailResponse {
+    success: boolean;
+    data: User;
+}

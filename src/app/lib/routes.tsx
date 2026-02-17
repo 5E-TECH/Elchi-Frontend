@@ -15,6 +15,9 @@ const UserListPage = lazy(() => import("../../pages/users/list/UserListPage"));
 const CreateUserPage = lazy(
   () => import("../../pages/users/create/CreateUserPage"),
 );
+const UserDetailPage = lazy(
+  () => import("../../pages/users/detail/UserDetailPage"),
+);
 
 const ProductTable = lazy(() => import("../../pages/products/list"));
 const ProductCreate = lazy(() => import("../../pages/products/create"));
@@ -36,6 +39,7 @@ const AppRouter = () => {
               children: [
                 { index: true, element: <UserListPage /> },
                 { path: "create-user", element: <CreateUserPage /> },
+                { path: ":id", element: <UserDetailPage /> },
               ],
             },
             {

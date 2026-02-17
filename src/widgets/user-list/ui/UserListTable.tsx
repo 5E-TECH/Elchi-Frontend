@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
 import { Trash2, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { User } from '../../../entities/user/types/user';
 import { UserStatusBadge } from '../../../entities/user/ui/UserStatusBadge';
 import { UserRoleBadge } from '../../../entities/user/ui/UserRoleBadge';
@@ -31,6 +32,7 @@ export const UserListTable = memo(({
     onPageChange
 }: UserListTableProps) => {
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+    const navigate = useNavigate();
 
     // Backend dan ma'lumot olish
     // const { getUser } = useUser();
@@ -173,7 +175,13 @@ export const UserListTable = memo(({
 
     return (
         <div className="bg-white dark:bg-[#1a1f3a] rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
-            <Table data={users} columns={columns} keyExtractor={(user) => user.id} hoverable />
+            <Table
+                data={users}
+                columns={columns}
+                keyExtractor={(user) => user.id}
+                hoverable
+                onRowClick={(user) => navigate(`/all-users/${user.id}`)}
+            />
 
             {/* Pagination */}
             <div

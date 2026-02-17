@@ -27,6 +27,13 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
+  const getUserById = (id: string) =>
+    useQuery({
+      queryKey: [user, "detail", id],
+      queryFn: () => api.get(`users/${id}`).then((res: any) => res.data),
+      enabled: !!id,  // Faqat id mavjud bo'lsa so'rov yuborilsin
+    });
+
   //   const getUserById = (id: string | undefined, params?: IUserFilter) =>
   //     useQuery({
   //       queryKey: [user, params, id],
@@ -66,9 +73,9 @@ export const useUser = () => {
   return {
     createAdmin,
     getUser,
+    getUserById,  // ✅ User detail
     // getUsersExceptMarket,
     // getAdminAndRegister,
-    // getUserById,
     // updateUser,
     // removeUser,
   };
