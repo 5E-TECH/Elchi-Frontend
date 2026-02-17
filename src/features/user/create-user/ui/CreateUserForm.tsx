@@ -162,14 +162,14 @@ export const CreateUserForm = memo(() => {
         payment_day: Number(formData.paymentDay),
       };
 
-      console.log("=== ADMIN YARATISH ===");
-      console.log("Payload:", payload);
-      console.log("======================");
+      // console.log("=== ADMIN YARATISH ===");
+      // console.log("Payload:", payload);
+      // console.log("======================");
 
       createAdmin.mutate(payload, {
-        onSuccess: (data) => {
-          console.log("✅ Admin yaratildi:", data);
-          alert(`Admin "${formData.fullName}" muvaffaqiyatli yaratildi!`);
+        onSuccess: () => {
+          // console.log("✅ Admin yaratildi:", data);
+          // alert(`Admin "${formData.fullName}" muvaffaqiyatli yaratildi!`);
 
           // Form ni tozalash
           setFormData({
@@ -186,7 +186,7 @@ export const CreateUserForm = memo(() => {
           });
 
           // User list sahifasiga o'tish
-          navigate('/users');
+          // navigate('/users');
         },
         onError: (error: any) => {
           console.error("❌ Xatolik:", error);
