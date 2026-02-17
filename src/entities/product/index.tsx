@@ -23,8 +23,30 @@ export const useProducts = () => {
       enabled,
     });
 
+  const updateProduct = useMutation({
+    mutationFn: ({
+      id,
+      data,
+      isMarket,
+    }: {
+      id: string;
+      data: any;
+      isMarket?: boolean;
+    }) => {
+      if (isMarket) {
+        return api.patch(`/product/my/${id}`, data); // market uchun
+      } else {
+        return api.patch(`/product/${id}`, data); // admin/registrator uchun
+      }
+    },
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ["product"] });
+    },
+  });
+
   return {
     createProduct,
     getProducts,
+    updateProduct,
   };
 };

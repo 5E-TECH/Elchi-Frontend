@@ -18,8 +18,15 @@ export const useMarkets = () => {
       enabled,
     });
 
+    const getMarketById = (id: number, enabled: boolean = true) => useQuery({
+      queryKey: [markets, id],
+      queryFn: () => api.get(`markets/${id}`).then((res) => res.data),
+      enabled,
+    })
+
   return {
     createMarket,
     getMarkets,
+    getMarketById,
   };
 };
