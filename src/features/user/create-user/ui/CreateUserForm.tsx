@@ -1,7 +1,8 @@
 import React, { memo, useState, useEffect } from "react";
-import type { UserRole } from "../../../../entities/user/types/user";
+import type { UserRole, CreateAdminRequest } from "../../../../entities/user/types/user";
 import { RoleSelector } from "./RoleSelector";
 import Select from "../../../../shared/ui/Select";
+import { useUser } from "../../../../entities/user/api/userApi";
 import {
   Eye,
   EyeOff,
@@ -23,13 +24,17 @@ const ROLE_LABELS: Record<UserRole, string> = {
   courier: "Kuryer",
   marketing: "Market",
   operator: "Operator",
+  market: "Market",
+  superadmin: "Super Admin",
 };
 
 export const CreateUserForm = memo(() => {
   const navigate = useNavigate();
   const [role, setRole] = useState<UserRole>("admin");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  // useUser hook dan createAdmin ni olish
+  const { createAdmin } = useUser();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -56,7 +61,46 @@ export const CreateUserForm = memo(() => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Summa formatlanishi
+    if (name === "salary") {
+      // Barcha bo'sh joylarni o'chirish
+      const cleanValue = value.replace(/\s/g, "");
+      // Faqat raqamlarni qoldirish
+      const numbers = cleanValue.replace(/\D/g, "");
+
+      // Agar raqam bo'lsa, formatlab ko'rsatish
+      if (numbers) {
+        // Raqamni 3 ta guruhga bo'lish (o'ngdan chapga)
+        const parts = [];
+        let remaining = numbers;
+
+        while (remaining.length > 3) {
+          parts.unshift(remaining.slice(-3));
+          remaining = remaining.slice(0, -3);
+        }
+
+        if (remaining) {
+          parts.unshift(remaining);
+        }
+
+        const formatted = parts.join(" ");
+        setFormData((prev) => ({ ...prev, [name]: formatted }));
+      } else {
+        setFormData((prev) => ({ ...prev, [name]: "" }));
+      }
+    }
+    // Sana validatsiyasi (1-30) - FAQAT SANA UCHUN
+    else if (name === "paymentDay") {
+      const num = parseInt(value);
+      if (value === "" || (num >= 1 && num <= 30)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+    }
+    else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -70,13 +114,17 @@ export const CreateUserForm = memo(() => {
     if (!formData.phone.trim())
       newErrors.phone = "Telefon raqam talab qilinadi";
     if (!formData.password.trim()) newErrors.password = "Parol talab qilinadi";
-    else if (formData.password.length < 6)
-      newErrors.password = "Min 6 ta belgi";
+    else if (formData.password.length < 4)
+      newErrors.password = "Min 4 ta belgi";
 
     // Role-specific validations
     if (role === "admin" || role === "manager") {
       if (!formData.salary) newErrors.salary = "Maosh kiritilmadi";
       if (!formData.paymentDay) newErrors.paymentDay = "Sana kiritilmadi";
+      else {
+        const day = Number(formData.paymentDay);
+        if (day < 1 || day > 30) newErrors.paymentDay = "1-30 oralig'ida bo'lishi kerak";
+      }
     }
 
     if (role === "courier") {
@@ -104,48 +152,56 @@ export const CreateUserForm = memo(() => {
       return;
     }
 
-    setLoading(true);
+    // Faqat Admin uchun backend API ga so'rov yuborish
+    if (role === "admin") {
+      const payload: CreateAdminRequest = {
+        name: formData.fullName,
+        phone_number: `+998${formData.phone}`,  // +998 qo'shish
+        password: formData.password,
+        salary: Number(formData.salary.replace(/\s/g, "")),  // Bo'sh joylarni o'chirish
+        payment_day: Number(formData.paymentDay),
+      };
 
-    let payload: any = {
-      role: ROLE_LABELS[role],
-      fullName: formData.fullName,
-      phone: formData.phone,
-      password: formData.password,
-    };
+      console.log("=== ADMIN YARATISH ===");
+      console.log("Payload:", payload);
+      console.log("======================");
 
-    if (role === "admin" || role === "manager") {
-      payload = {
-        ...payload,
-        salary: Number(formData.salary),
-        paymentDay: Number(formData.paymentDay),
-      };
-    } else if (role === "courier") {
-      payload = {
-        ...payload,
-        region: formData.region,
-        homeRate: Number(formData.homeRate),
-        centerRate: Number(formData.centerRate),
-      };
-    } else if (role === "marketing") {
-      payload = {
-        ...payload,
-        marketName: formData.marketName,
-        deliveryType: formData.deliveryType,
-        homeRate: Number(formData.homeRate),
-        centerRate: Number(formData.centerRate),
-      };
+      createAdmin.mutate(payload, {
+        onSuccess: (data) => {
+          console.log("✅ Admin yaratildi:", data);
+          alert(`Admin "${formData.fullName}" muvaffaqiyatli yaratildi!`);
+
+          // Form ni tozalash
+          setFormData({
+            fullName: "",
+            phone: "",
+            password: "",
+            salary: "",
+            paymentDay: "",
+            region: "",
+            homeRate: "",
+            centerRate: "",
+            marketName: "",
+            deliveryType: "",
+          });
+
+          // User list sahifasiga o'tish
+          navigate('/users');
+        },
+        onError: (error: any) => {
+          console.error("❌ Xatolik:", error);
+          const errorMessage = error?.response?.data?.message || "Admin yaratishda xatolik yuz berdi";
+          alert(`Xatolik: ${errorMessage}`);
+        },
+      });
+    } else {
+      // Boshqa rollar uchun hozircha faqat console.log
+      console.log("--- FORM SUBMITTED (NOT IMPLEMENTED) ---");
+      console.log("Role:", ROLE_LABELS[role]);
+      console.log("FormData:", formData);
+      console.log("----------------------------------------");
+      alert(`${ROLE_LABELS[role]} yaratish hali backend ga ulanmagan!`);
     }
-
-    console.log("--- FORM SUBMITTED ---");
-    console.log("Role:", ROLE_LABELS[role]);
-    console.log("Payload:", payload);
-    console.log("----------------------");
-
-    setTimeout(() => {
-      setLoading(false);
-      // navigate('/all-users');
-      alert(`Foydalanuvchi (${ROLE_LABELS[role]}) yaratildi!`);
-    }, 1000);
   };
 
   const inputClasses = (hasError: boolean, hasIcon: boolean) => `
@@ -322,7 +378,7 @@ export const CreateUserForm = memo(() => {
                 {/* Role Specifics */}
                 {(role === "admin" || role === "manager") && (
                   <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {renderInput("Maosh", "salary", "number", "Summa", null)}
+                    {renderInput("Maosh", "salary", "text", "Summa", null)}
                     {renderInput(
                       "To'lov Kuni",
                       "paymentDay",
@@ -427,7 +483,7 @@ export const CreateUserForm = memo(() => {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={createAdmin.isPending}
               className={`
                                 relative overflow-hidden flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-sm
                                 ${role === "admin"
@@ -440,7 +496,7 @@ export const CreateUserForm = memo(() => {
                 }
                             `}
             >
-              {loading ? (
+              {createAdmin.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Saqlash...</span>

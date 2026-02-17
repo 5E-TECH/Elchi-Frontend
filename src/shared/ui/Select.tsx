@@ -2,6 +2,7 @@ import { memo, type ChangeEvent } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { SelectProps } from "./Select.types";
 import { setFilterValue } from "../../features/Select/model/FilterSlice";
+import { useQueryParams } from "../lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
 
 const Select = memo(
@@ -22,6 +23,7 @@ const Select = memo(
         reduxKey,
     }: SelectProps) => {
         const dispatch = useDispatch();
+        const { setParam } = useQueryParams();
 
         // Redux dan qiymatni olish (agar useRedux true bo'lsa)
         const reduxValue = useSelector((state: RootState) => {
@@ -40,6 +42,9 @@ const Select = memo(
             // Agar useRedux true bo'lsa, Redux ga saqlash
             if (useRedux && reduxKey) {
                 dispatch(setFilterValue({ key: reduxKey, value: newValue }));
+
+                // URL params ga ham saqlash
+                setParam(reduxKey, newValue);
             }
 
             // Agar onChange callback berilgan bo'lsa, uni ham chaqirish
@@ -94,7 +99,7 @@ const Select = memo(
                         aria-invalid={!!error}
                         aria-describedby={error ? `${name}-error` : undefined}
                     >
-                        <option value="" disabled className="dark:text-white/50">
+                        <option value="" className="dark:text-white/50">
                             {loading ? "Yuklanmoqda..." : placeholder}
                         </option>
                         {options.map((opt) => (

@@ -1,4 +1,4 @@
-import { memo, useEffect } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { UserPlus, Users } from "lucide-react";
@@ -7,33 +7,63 @@ import { UserListTable } from "../../../widgets/user-list/ui/UserListTable";
 import { UserFilters } from "../../../features/user/filter-users/ui/UserFilters";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
+import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import type { RootState } from "../../../app/config/store";
+import { useUser } from "../../../entities/user/api/userApi";
 
 const UserListPage = memo(() => {
   const navigate = useNavigate();
+  const { getAllParams } = useQueryParams();
 
   // Redux dan filter qiymatlarini olish
   const filters = useSelector((state: RootState) => state.filter);
+  const searchFilters = useSelector((state: RootState) => state.search);
 
-  // Filter qiymatlari o'zgarganda backend ga so'rov jo'natish
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
+  // URL params dan barcha qiymatlarni olish
+  const urlParams = getAllParams();
+
+  // API params yaratish (URL params va Redux dan)
+  const apiParams = useMemo(() => {
+    const params: any = {
+      page,
+      limit,
+    };
+
+    // Role (URL params yoki Redux)
+    const role = urlParams.userRole || filters.userRole;
+    if (role) params.role = role;
+
+    // Status (URL params yoki Redux)
+    const status = urlParams.userStatus || filters.userStatus;
+    if (status) params.status = status;
+
+    // Search (URL params yoki Redux)
+    const search = urlParams.userSearch || searchFilters.userSearch;
+    if (search) params.search = search;
+
+    return params;
+  }, [page, limit, urlParams, filters, searchFilters]);
+
+  // Backend dan userlarni olish
+  const { getUser } = useUser();
+  const { data, isLoading, isError, error } = getUser(apiParams);
+
+  // Filter qiymatlari o'zgarganda sahifani 1 ga qaytarish
   useEffect(() => {
-    // Faqat filter qiymatlari mavjud bo'lsa
-    if (filters.userRole || filters.userStatus || filters.userSearch) {
-      console.log("=== USER LIST PAGE - BACKEND GA SO'ROV ===");
-      console.log("Role:", filters.userRole || "(tanlanmagan)");
-      console.log("Status:", filters.userStatus || "(tanlanmagan)");
-      console.log("Search:", filters.userSearch || "(bo'sh)");
-      console.log("==========================================");
+    setPage(1);
+  }, [filters.userRole, filters.userStatus, searchFilters.userSearch]);
 
-      // Bu yerda backend ga so'rov jo'natish
-      // Misol:
-      // fetchUsers({ 
-      //   role: filters.userRole, 
-      //   status: filters.userStatus, 
-      //   search: filters.userSearch 
-      // });
-    }
-  }, [filters.userRole, filters.userStatus, filters.userSearch]);
+  // Console log (debug uchun)
+  useEffect(() => {
+    console.log("=== USER LIST PAGE - API PARAMS ===");
+    console.log("API Params:", apiParams);
+    console.log("URL Params:", urlParams);
+    console.log("===================================");
+  }, [apiParams, urlParams]);
 
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
@@ -49,7 +79,15 @@ const UserListPage = memo(() => {
 
       <UserFilters />
 
-      <UserListTable />
+      <UserListTable
+        users={data?.data?.items || []}
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
+        pagination={data?.data?.meta}
+        currentPage={page}
+        onPageChange={setPage}
+      />
     </div>
   );
 });
