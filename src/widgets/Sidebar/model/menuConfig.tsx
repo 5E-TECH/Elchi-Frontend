@@ -27,7 +27,7 @@ export interface NavItem {
  */
 export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
   admin: [
-    { to: "/dashboard", icon: House, label: "dashboard", end: true },
+    { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/order/markets/new-orders", icon: Calendar1, label: "new_orders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
