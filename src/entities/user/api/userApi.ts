@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
-import type { CreateAdminRequest } from "../types/user";
+import type { CreateAdminRequest, CreateMarketRequest } from "../types/user";
 
 export const user = "user";
 
@@ -23,6 +23,12 @@ export const useUser = () => {
 
   const createAdmin = useMutation({
     mutationFn: (data: CreateAdminRequest) => api.post("admins", data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
+  const createMarket = useMutation({
+    mutationFn: (data: CreateMarketRequest) => api.post("markets", data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
@@ -72,11 +78,8 @@ export const useUser = () => {
 
   return {
     createAdmin,
+    createMarket,
     getUser,
-    getUserById,  // ✅ User detail
-    // getUsersExceptMarket,
-    // getAdminAndRegister,
-    // updateUser,
-    // removeUser,
+    getUserById,
   };
 };
