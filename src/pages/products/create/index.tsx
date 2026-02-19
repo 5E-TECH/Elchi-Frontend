@@ -7,7 +7,7 @@ import {
   useRef,
   type FormEvent,
 } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Box, Image, X, Trash2, Edit, MoveLeft } from "lucide-react";
 import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
@@ -82,21 +82,17 @@ const CreateProductPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevPreviewRef = useRef<string | null>(null);
 
-  const [searchParams] = useSearchParams();
-  const marketId = searchParams.get("marketId") ?? "";
+  const { createProduct, getByMarketId } = useProducts();
+  const { id } = useParams<{ id: string }>();
 
-  const { createProduct, getProducts } = useProducts();
+  const { data: marketD } = getByMarketId(id);
+  const marketData = marketD?.data || []
+
+
+
 
   const navigate = useNavigate();
 
-  console.log(marketId);
-
-  const { data } = getProducts(
-    useMemo(() => ({ market_id: marketId }), [marketId]),
-    Boolean(marketId),
-  );
-
-  const products: ExistingProduct[] = data?.data?.items ?? [];
 
   useEffect(() => {
     const prev = prevPreviewRef.current;
@@ -105,12 +101,12 @@ const CreateProductPage = () => {
     };
   }, [preview]);
 
-  const handleEdit = useCallback((id: number) => {
-    console.log("edit", id);
+  const handleEdit = useCallback((_id: number) => {
+
   }, []);
 
-  const handleDelete = useCallback((id: number) => {
-    console.log("delete", id);
+  const handleDelete = useCallback((_id: number) => {
+
   }, []);
 
   const columns = useMemo<ColumnConfig<ExistingProduct>[]>(
@@ -119,6 +115,7 @@ const CreateProductPage = () => {
         key: "id",
         label: "#",
         width: "5%",
+        render: (_: number, __: ExistingProduct, index: number) => index + 1,
       },
       {
         key: "name",
@@ -187,11 +184,11 @@ const CreateProductPage = () => {
   const handleSubmit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      if (!name.trim() || !marketId || isPending) return;
+      if (!name.trim() || !id || isPending) return;
 
       const formData = new FormData();
       formData.append("name", name.trim());
-      formData.append("market_id", marketId);
+      formData.append("market_id", id);
       if (img) formData.append("image", img);
 
       setIsPending(true);
@@ -205,7 +202,7 @@ const CreateProductPage = () => {
         },
       });
     },
-    [name, marketId, img, isPending, createProduct, resetForm],
+    [name, id, img, isPending, createProduct, resetForm],
   );
 
   return (
@@ -310,14 +307,14 @@ const CreateProductPage = () => {
       {/* Existing Products Table Section */}
       <div>
         <Table<ExistingProduct>
-          data={products}
+          data={marketData}
           columns={columns}
           keyExtractor={keyExtractor}
           hoverable
           className="border-none"
         />
       </div>
-    </div>
+    </div >
   );
 };
 

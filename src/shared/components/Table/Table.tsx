@@ -106,7 +106,7 @@ export const Table = memo(<T extends Record<string, any>>({
               </td>
             </tr>
           ) : (
-            sortedData.map((row, rowIndex) => (
+            sortedData?.map((row, rowIndex) => (
               <tr
                 key={keyExtractor(row, rowIndex)}
                 onClick={() => onRowClick?.(row, rowIndex)}

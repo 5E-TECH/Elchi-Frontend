@@ -46,7 +46,7 @@ const AppRouter = () => {
               path: "products",
               children: [
                 { index: true, element: <ProductTable /> },
-                { path: "create-product", element: <ProductCreate /> },
+                { path: "create-product/:id", element: <ProductCreate /> },
               ],
             },
           ],
