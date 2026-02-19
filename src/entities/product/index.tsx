@@ -13,7 +13,10 @@ export const useProducts = () => {
           "Content-Type": "multipart/form-data",
         },
       }),
-    onSuccess: () => client.invalidateQueries({ queryKey: [products] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [products] });
+      client.invalidateQueries({ queryKey: ["market"] });
+    },
   });
 
   const getProducts = (params?: any, enabled: boolean = true) =>
@@ -44,25 +47,27 @@ export const useProducts = () => {
     },
   });
 
-
-  const getByMarketId = (marketId: number, enabled: boolean = true) => useQuery({
-    queryKey: [products, marketId],
-    queryFn: () => api.get(`product/market/${marketId}`).then((res) => res.data),
-    enabled,
-  })
+  // Inside useProducts.ts
+  const getByMarketId = (id: string | undefined, enabled?: boolean) => {
+    return useQuery({
+      queryKey: ["market", id],
+      queryFn: () => api.get(`/product/market/${id}`).then((res) => res.data), // or however you fetch
+      enabled: !!id && enabled !== false, // Only fetch if ID exists
+    });
+  };
 
   const deleteProduct = useMutation({
     mutationFn: (id: number) => api.delete(`product/${id}`),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ["product"] });
-    }
-  })
+    },
+  });
 
   return {
     createProduct,
     getProducts,
     updateProduct,
-    getByMarketId,
     deleteProduct,
+    getByMarketId
   };
 };
