@@ -3,6 +3,7 @@ import type { UserRole, CreateAdminRequest } from "../../../../entities/user/typ
 import { RoleSelector } from "./RoleSelector";
 import Select from "../../../../shared/ui/Select";
 import { useUser } from "../../../../entities/user/api/userApi";
+import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import {
   Eye,
   EyeOff,
@@ -35,6 +36,7 @@ export const CreateUserForm = memo(() => {
 
   // useUser hook dan createAdmin ni olish
   const { createAdmin } = useUser();
+  const { apiRequest } = useAppNotification();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -145,7 +147,7 @@ export const CreateUserForm = memo(() => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -156,21 +158,17 @@ export const CreateUserForm = memo(() => {
     if (role === "admin") {
       const payload: CreateAdminRequest = {
         name: formData.fullName,
-        phone_number: `+998${formData.phone}`,  // +998 qo'shish
+        phone_number: `+998${formData.phone}`,
         password: formData.password,
-        salary: Number(formData.salary.replace(/\s/g, "")),  // Bo'sh joylarni o'chirish
+        salary: Number(formData.salary.replace(/\s/g, "")),
         payment_day: Number(formData.paymentDay),
       };
 
-      // console.log("=== ADMIN YARATISH ===");
-      // console.log("Payload:", payload);
-      // console.log("======================");
-
-      createAdmin.mutate(payload, {
+      await apiRequest({
+        request: () => createAdmin.mutateAsync(payload),
+        successMessage: `Admin "${formData.fullName}" muvaffaqiyatli yaratildi!`,
+        errorMessage: "Admin yaratishda xatolik yuz berdi",
         onSuccess: () => {
-          // console.log("✅ Admin yaratildi:", data);
-          // alert(`Admin "${formData.fullName}" muvaffaqiyatli yaratildi!`);
-
           // Form ni tozalash
           setFormData({
             fullName: "",
@@ -184,23 +182,12 @@ export const CreateUserForm = memo(() => {
             marketName: "",
             deliveryType: "",
           });
-
-          // User list sahifasiga o'tish
-          // navigate('/users');
-        },
-        onError: (error: any) => {
-          console.error("❌ Xatolik:", error);
-          const errorMessage = error?.response?.data?.message || "Admin yaratishda xatolik yuz berdi";
-          alert(`Xatolik: ${errorMessage}`);
+          navigate(-1);
         },
       });
     } else {
-      // Boshqa rollar uchun hozircha faqat console.log
-      console.log("--- FORM SUBMITTED (NOT IMPLEMENTED) ---");
-      console.log("Role:", ROLE_LABELS[role]);
-      console.log("FormData:", formData);
-      console.log("----------------------------------------");
-      alert(`${ROLE_LABELS[role]} yaratish hali backend ga ulanmagan!`);
+      // Boshqa rollar uchun hali backend ulanmagan
+      console.log("Role:", ROLE_LABELS[role], "| FormData:", formData);
     }
   };
 
