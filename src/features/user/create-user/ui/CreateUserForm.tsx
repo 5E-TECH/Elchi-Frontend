@@ -81,7 +81,7 @@ const INITIAL_FORM = {
   homeRate: "",
   centerRate: "",
   marketName: "",
-  deliveryType: "" as "home" | "center" | "",
+  deliveryType: "" as "address" | "center" | "",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -194,6 +194,9 @@ export const CreateUserForm = memo(() => {
 
     // ── Market ──
     if (role === "marketing") {
+      // deliveryType dan aniq mapping — type cast emas, aniq qiymat
+      const defaultTariff = formData.deliveryType === "center" ? "center" : "address";
+
       const payload: CreateMarketRequest = {
         name: formData.fullName,
         phone_number: rawPhone,
@@ -201,7 +204,7 @@ export const CreateUserForm = memo(() => {
         password: formData.password,
         tariff_home: parseAmount(formData.homeRate),
         tariff_center: parseAmount(formData.centerRate),
-        default_tariff: formData.deliveryType as "home" | "center",
+        default_tariff: defaultTariff,
       };
 
       await apiRequest({
@@ -315,7 +318,7 @@ export const CreateUserForm = memo(() => {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-full h-full rounded-2xl flex flex-col overflow-hidden bg-slate-50 dark:bg-maindark transition-colors duration-300">
+    <div className="w-full h-full  rounded-2xl flex flex-col overflow-hidden transition-colors duration-300">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-slate-100 dark:border-white/5">
         <div className="text-right">
@@ -351,15 +354,15 @@ export const CreateUserForm = memo(() => {
         {/* Form Area */}
         <div className="flex-1 bg-white dark:bg-maindark rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/20 border border-slate-100 dark:border-primarydark/20 flex flex-col overflow-hidden">
           {/* Form Header */}
-          <div className="px-6 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 shrink-0 flex items-center gap-4">
+          <div className="px-6 py-4 border-b border-slate-100  dark:border-white/5 bg-slate-50/50 dark:bg-main shrink-0 flex items-center gap-4">
             <div
               className={`p-2 rounded-xl bg-linear-to-br text-white shadow-md ${role === "admin"
-                  ? "from-purple-500 to-indigo-600"
-                  : role === "manager"
-                    ? "from-blue-500 to-cyan-500"
-                    : role === "courier"
-                      ? "from-orange-500 to-amber-500"
-                      : "from-emerald-500 to-teal-500"
+                ? "from-purple-500 to-indigo-600"
+                : role === "manager"
+                  ? "from-blue-500 to-cyan-500"
+                  : role === "courier"
+                    ? "from-orange-500 to-amber-500"
+                    : "from-emerald-500 to-teal-500"
                 }`}
             >
               <ShieldIcon role={role} size={20} />
@@ -432,7 +435,7 @@ export const CreateUserForm = memo(() => {
                       onChange={handleInputChange}
                       options={[
                         { value: "center", label: "Markazgacha" },
-                        { value: "home", label: "Eshikkacha" },
+                        { value: "address", label: "Eshikkacha" },
                       ]}
                       placeholder="Tanlang"
                       error={errors.deliveryType}
@@ -460,12 +463,12 @@ export const CreateUserForm = memo(() => {
               onClick={handleSubmit}
               disabled={isPending}
               className={`relative overflow-hidden flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-sm ${role === "admin"
-                  ? "bg-linear-to-r from-purple-600 to-indigo-600"
-                  : role === "manager"
-                    ? "bg-linear-to-r from-blue-500 to-cyan-500"
-                    : role === "courier"
-                      ? "bg-linear-to-r from-orange-500 to-amber-500"
-                      : "bg-linear-to-r from-emerald-500 to-teal-500"
+                ? "bg-linear-to-r from-purple-600 to-indigo-600"
+                : role === "manager"
+                  ? "bg-linear-to-r from-blue-500 to-cyan-500"
+                  : role === "courier"
+                    ? "bg-linear-to-r from-orange-500 to-amber-500"
+                    : "bg-linear-to-r from-emerald-500 to-teal-500"
                 }`}
             >
               {isPending ? (

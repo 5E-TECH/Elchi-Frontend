@@ -12,7 +12,7 @@ import {
 //   LucideIcon,
 } from "lucide-react";
 
-export type UserRole = "admin" | "manager" | "user";
+export type UserRole = "admin" | "market" | "user";
 
 export interface NavItem {
   to: string;
@@ -38,7 +38,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { to: "/regions", icon: MapPinned, label: "region" },
     { to: "/logs", icon: FileText, label: "logs" },
   ],
-  manager: [
+  market: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/order/markets/new-orders", icon: Calendar1, label: "new_orders" },

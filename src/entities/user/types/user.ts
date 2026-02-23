@@ -63,13 +63,13 @@ export interface CreateAdminResponse {
 
 // Market yaratish uchun request body
 export interface CreateMarketRequest {
-    name: string;                       // Market nomi
-    phone_number: string;               // Telefon (+998...)
-    username: string;                   // Username
-    password: string;                   // Parol
-    tariff_home: number;                // Uyga tarif (so'm)
-    tariff_center: number;              // Markazga tarif (so'm)
-    default_tariff: 'home' | 'center'; // Asosiy tarif turi
+    name: string;                          // Market nomi
+    phone_number: string;                  // Telefon (+998...)
+    username: string;                      // Username
+    password: string;                      // Parol
+    tariff_home: number;                   // Uyga tarif (so'm)
+    tariff_center: number;                 // Markazga tarif (so'm)
+    default_tariff: 'address' | 'center'; // Asosiy tarif turi
 }
 
 // Market yaratish response
