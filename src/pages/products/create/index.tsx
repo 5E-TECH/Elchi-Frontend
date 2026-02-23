@@ -19,7 +19,6 @@ interface ExistingProduct {
   id: number;
   name: string;
   image: string;
-  market_name: string;
 }
 
 const ProductNameCell = memo(({ item }: { item: ExistingProduct }) => (
@@ -124,12 +123,6 @@ const CreateProductPage = () => {
         render: (_: string, item: ExistingProduct) => (
           <ProductNameCell item={item} />
         ),
-      },
-      {
-        key: "market_name",
-        label: "Market name",
-        width: "30%",
-        render: (value: string) => <MarketNameCell value={value} />,
       },
       {
         key: "actions" as keyof ExistingProduct,

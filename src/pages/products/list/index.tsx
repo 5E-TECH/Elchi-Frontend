@@ -17,7 +17,10 @@ import type { RootState } from "../../../app/config/store";
 interface Product {
   id: number;
   name: string;
-  market_name: string;
+  market: {
+    id: number;
+    name: string;
+  };
 }
 
 interface Market {
@@ -71,8 +74,12 @@ const ProductTable = () => {
   }, [urlParams, searchFilters, filterValue]);
 
   const { getProducts, deleteProduct } = useProducts();
-  const { data: products } = getProducts(apiParams);
+  const { data: products, isLoading } = getProducts(apiParams);
   const productData = products?.data || [];
+
+  const handleDelete = (id: number) => {
+    deleteProduct.mutate(id);
+  };
 
   const columns: ColumnConfig<Product>[] = [
     {
@@ -82,10 +89,10 @@ const ProductTable = () => {
       sortable: true,
     },
     {
-      key: "market_name",
+      key: "market",
       label: "Market name",
       width: "40%",
-      sortable: true,
+      render: (value: Product["market"]) => value?.name || "—",
     },
     {
       key: "id", // using 'id' as key for action column since 'action' is not in Product
@@ -97,7 +104,10 @@ const ProductTable = () => {
             <SquarePen size={18} />
           </button>
           <button
-            onClick={() => deleteProduct.mutate(__.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(__.id);
+            }}
             className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-red-500 transition-colors cursor-pointer"
           >
             <Trash2 size={18} />
@@ -150,6 +160,7 @@ const ProductTable = () => {
           columns={columns}
           keyExtractor={(item) => item.id}
           hoverable
+          loading={isLoading}
         />
       </div>
 
