@@ -8,7 +8,7 @@ const CreateUserPage = memo(() => {
     const navigate = useNavigate();
 
     return (
-        <div className="">
+        <div className="bg-sidebar rounded-2xl dark:bg-maindark">
             <div className='' onClick={() => navigate(-1)}>
                 <HeaderName name='Yangi Foydalanuvchi ' icon={<ArrowLeft/>} description='Yangi foydalanuvchi kiritish' />
             </div>
