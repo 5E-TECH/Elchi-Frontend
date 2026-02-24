@@ -51,7 +51,7 @@ const Markets = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 p-4 rounded-2xl w-full bg-white dark:bg-background border border-gray-200 dark:border-white/10">
+        <div className="flex items-center gap-3 p-4 rounded-2xl w-full bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10">
           <div className="p-2.5 rounded-xl bg-main/10 dark:bg-main/20 text-main">
             <Store size={20} />
           </div>
@@ -65,7 +65,7 @@ const Markets = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 p-4 rounded-2xl w-full bg-white dark:bg-background border border-gray-200 dark:border-white/10">
+        <div className="flex items-center gap-3 p-4 rounded-2xl w-full bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500">
             <ShoppingCart size={20} />
           </div>
@@ -79,7 +79,7 @@ const Markets = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 p-4 rounded-2xl w-full bg-white dark:bg-background border border-gray-200 dark:border-white/10">
+        <div className="flex items-center gap-3 p-4 rounded-2xl w-full bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10">
           <div className="p-2.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500">
             <Package size={20} />
           </div>

@@ -13,13 +13,15 @@ import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useProducts } from "../../../entities/product";
-import HeaderName from "../../../shared/components/headerName";
+import PopupConfirm from "../../../shared/components/popupConfirm";
 
 interface ExistingProduct {
   id: number;
   name: string;
   image: string;
 }
+
+// ─── Cell Components ────────────────────────────────────────────────────────────
 
 const ProductNameCell = memo(({ item }: { item: ExistingProduct }) => (
   <div className="flex items-center gap-2">
@@ -38,60 +40,26 @@ const ProductNameCell = memo(({ item }: { item: ExistingProduct }) => (
 ));
 ProductNameCell.displayName = "ProductNameCell";
 
-const MarketNameCell = memo(({ value }: { value: string }) => (
-  <div className="flex items-center gap-1">
-    <Image className="w-4 h-4 text-gray-500" />
-    <span>{value}</span>
-  </div>
-));
-MarketNameCell.displayName = "MarketNameCell";
 
-const ActionCell = memo(
-  ({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) => (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={onEdit}
-        className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors"
-        aria-label="Edit product"
-      >
-        <Edit size={18} />
-      </button>
-      <button
-        type="button"
-        onClick={onDelete}
-        className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-red-500 transition-colors"
-        aria-label="Delete product"
-      >
-        <Trash2 size={18} />
-      </button>
-    </div>
-  ),
-);
-ActionCell.displayName = "ActionCell";
-
-// ─── Main Component ────────────────────────────────────────────────────────────
+// ─── Main Component ─────────────────────────────────────────────────────────────
 
 const CreateProductPage = () => {
   const [name, setName] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const [img, setImage] = useState<File | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ExistingProduct | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevPreviewRef = useRef<string | null>(null);
 
-  const { createProduct, getByMarketId } = useProducts();
+  const { createProduct, getByMarketId, deleteProduct } = useProducts();
   const { id } = useParams<{ id: string }>();
 
   const { data: marketD } = getByMarketId(id);
-  const marketData = marketD?.data || []
-
-
-
+  const marketData = marketD?.data || [];
 
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const prev = prevPreviewRef.current;
@@ -100,13 +68,28 @@ const CreateProductPage = () => {
     };
   }, [preview]);
 
+  // ─── Delete Handlers ────────────────────────────────────────────────────
+
+  const handleDeleteRequest = useCallback((product: ExistingProduct) => {
+    setDeleteTarget(product);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleteTarget) return;
+    deleteProduct.mutate(deleteTarget.id, {
+      onSuccess: () => setDeleteTarget(null),
+    });
+  }, [deleteTarget, deleteProduct]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteTarget(null);
+  }, []);
+
   const handleEdit = useCallback((_id: number) => {
-
+    // TODO: implement edit
   }, []);
 
-  const handleDelete = useCallback((_id: number) => {
-
-  }, []);
+  // ─── Table Columns ─────────────────────────────────────────────────────
 
   const columns = useMemo<ColumnConfig<ExistingProduct>[]>(
     () => [
@@ -129,17 +112,33 @@ const CreateProductPage = () => {
         label: "Action",
         width: "20%",
         render: (_: unknown, item: ExistingProduct) => (
-          <ActionCell
-            onEdit={() => handleEdit(item.id)}
-            onDelete={() => handleDelete(item.id)}
-          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleEdit(item.id)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors"
+              aria-label="Edit product"
+            >
+              <Edit size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDeleteRequest(item)}
+              className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-red-500 transition-colors"
+              aria-label="Delete product"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
         ),
       },
     ],
-    [handleEdit, handleDelete],
+    [handleEdit, handleDeleteRequest],
   );
 
   const keyExtractor = useCallback((item: ExistingProduct) => item.id, []);
+
+  // ─── Form Handlers ─────────────────────────────────────────────────────
 
   const resetForm = useCallback(() => {
     setName("");
@@ -205,14 +204,26 @@ const CreateProductPage = () => {
         onSubmit={handleSubmit}
         className="bg-sidebar dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800"
       >
-        <div onClick={() => navigate(-1)}>
-          <HeaderName
-            name="Create Product"
-            description="Yangi mahsulot ma'lumotlarini kiriting"
-            icon={<MoveLeft size={20} className="text-white" />}
-          />
+        {/* Header with gradient bar */}
+        <div
+          onClick={() => navigate(-1)}
+          className="cursor-pointer px-6 py-4 flex items-center gap-3"
+          style={{
+            background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)',
+          }}
+        >
+          <div className="p-2 rounded-lg bg-white/10">
+            <MoveLeft size={20} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white m-0">Create Product</h2>
+            <p className="text-white/60 text-sm m-0">
+              Yangi mahsulot ma'lumotlarini kiriting
+            </p>
+          </div>
         </div>
 
+        {/* Form content */}
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Product Name Input */}
           <div className="space-y-2">
@@ -239,10 +250,10 @@ const CreateProductPage = () => {
 
           {/* Product Image Upload */}
           <div className="flex flex-col">
-            <label className="text-helpertext text-md mb-2 font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-sm mb-2 font-medium text-gray-700 dark:text-gray-300">
               Category Image
             </label>
-            <div className="border-2 border-dashed border-[#E8E9EB] dark:border-gray-700 rounded-2xl h-30 md:h-37.5 flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-primarydark transition overflow-hidden relative">
+            <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl h-30 md:h-37.5 flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-primarydark transition overflow-hidden relative">
               {preview ? (
                 <>
                   <img
@@ -262,7 +273,7 @@ const CreateProductPage = () => {
                 <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
                   <div className="flex flex-col items-center gap-1">
                     <Image size={24} className="text-gray-400" />
-                    <span className="text-helpertext text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       Upload Image
                     </span>
                   </div>
@@ -280,6 +291,7 @@ const CreateProductPage = () => {
           </div>
         </div>
 
+        {/* Footer buttons */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-maindark">
           <Button
             label="Clear"
@@ -298,16 +310,29 @@ const CreateProductPage = () => {
       </form>
 
       {/* Existing Products Table Section */}
-      <div>
-        <Table<ExistingProduct>
-          data={marketData}
-          columns={columns}
-          keyExtractor={keyExtractor}
-          hoverable
-          className="border-none"
-        />
-      </div>
-    </div >
+      <Table<ExistingProduct>
+        data={marketData}
+        columns={columns}
+        keyExtractor={keyExtractor}
+        hoverable
+        className="border-none"
+      />
+
+      {/* Delete Confirmation Popup */}
+      <PopupConfirm
+        isOpen={!!deleteTarget}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="O'chirishni tasdiqlang"
+        message={
+          <>
+            <strong className="text-gray-700 dark:text-gray-200">"{deleteTarget?.name}"</strong> ni
+            rostdan o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.
+          </>
+        }
+        isLoading={deleteProduct.isPending}
+      />
+    </div>
   );
 };
 

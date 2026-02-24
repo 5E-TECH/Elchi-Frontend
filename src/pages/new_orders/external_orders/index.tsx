@@ -10,7 +10,7 @@ import {
 
 // Integratsiya kartasi komponenti
 const IntegrationCard = ({ name, market, count, synced }: any) => (
-  <div className="bg-white dark:bg-background border border-gray-200 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-background/80 transition-all duration-200">
+  <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-all duration-200">
     <div className="flex items-center gap-4">
       <div className="p-3 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500">
         <LinkIcon size={24} />
@@ -55,10 +55,10 @@ const ExternalOrders = () => {
               <input
                 type="text"
                 placeholder="Market qidirish..."
-                className="bg-white dark:bg-background border border-gray-200 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-main w-64 transition-colors"
+                className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-main w-64 transition-colors"
               />
             </div>
-            <button className="p-2.5 rounded-xl bg-white dark:bg-background border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-background/80 transition-colors">
+            <button className="p-2.5 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-colors">
               <RotateCcw size={18} className="text-gray-400 dark:text-gray-500" />
             </button>
           </div>
