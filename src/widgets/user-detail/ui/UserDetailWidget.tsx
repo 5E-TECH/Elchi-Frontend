@@ -1,9 +1,10 @@
-import { memo } from 'react';
-import { Loader2, AlertCircle, UserX } from 'lucide-react';
+import { memo, useState } from 'react';
+import { Loader2, AlertCircle, UserX, Pencil } from 'lucide-react';
 import type { User } from '../../../entities/user/types/user';
 import { UserDetailHeader } from '../../../entities/user/ui/UserDetailHeader';
 import { UserInfoCards } from '../../../entities/user/ui/UserInfoCards';
 import { UserStatsCard } from '../../../entities/user/ui/UserStatsCard';
+import { UpdateUserModal } from '../../../features/user/update-user/ui/UpdateUserModal';
 
 interface UserDetailWidgetProps {
   user?: User;
@@ -13,6 +14,7 @@ interface UserDetailWidgetProps {
 }
 
 export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserDetailWidgetProps) => {
+  const [showEdit, setShowEdit] = useState(false);
 
   // ── Loading ──
   if (isLoading) {
@@ -66,18 +68,42 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
 
   // ── Success ──
   return (
-    <div className="flex gap-6 items-start">
-      {/* Chap — Profil Sidebar */}
-      <div className="w-72 shrink-0">
-        <UserDetailHeader user={user} />
+    <>
+      <div className="flex gap-6 items-start">
+        {/* Chap — Profil Sidebar */}
+        <div className="w-72 shrink-0">
+          <UserDetailHeader user={user} />
+        </div>
+
+        {/* O'ng — Kontent */}
+        <div className="flex-1 min-w-0 space-y-5">
+          {/* Edit tugmasi — sahifa yuqorisida */}
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowEdit(true)}
+              className="
+                flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm
+                bg-main text-white hover:bg-main/90
+                shadow-md shadow-main/20 transition-all duration-200
+                active:scale-95
+              "
+            >
+              <Pencil size={15} strokeWidth={2.5} />
+              <span>Tahrirlash</span>
+            </button>
+          </div>
+
+          <UserInfoCards user={user} />
+          <UserStatsCard user={user} />
+        </div>
       </div>
 
-      {/* O'ng — Kontent */}
-      <div className="flex-1 min-w-0 space-y-5">
-        <UserInfoCards user={user} />
-        <UserStatsCard user={user} />
-      </div>
-    </div>
+      {/* Update Modal */}
+      <UpdateUserModal
+        userId={showEdit ? user.id : null}
+        onClose={() => setShowEdit(false)}
+      />
+    </>
   );
 });
 

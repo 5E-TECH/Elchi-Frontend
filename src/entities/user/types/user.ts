@@ -91,8 +91,25 @@ export interface CreateCourierRequest {
 
 // ==================== USER DETAIL ====================
 
-// User detail response
 export interface UserDetailResponse {
     success: boolean;
     data: User;
 }
+
+// ==================== UPDATE USER ====================
+
+export interface UpdateUserRequest {
+    name?: string;
+    phone_number?: string;
+    username?: string;
+    password?: string;
+    status?: UserStatus;
+    salary?: number;
+    payment_day?: number;
+    tariff_home?: number;
+    tariff_center?: number;
+    add_order?: boolean;
+    default_tariff?: 'address' | 'center';
+    region_id?: string;
+}
+
