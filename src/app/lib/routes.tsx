@@ -3,6 +3,10 @@ import { useRoutes } from "react-router-dom";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
+const Orders = lazy(() => import("../../pages/orders"));
+const OrderCreate = lazy(() => import("../../pages/orders/create"));
+
+
 
 // ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
@@ -40,6 +44,13 @@ const AppRouter = () => {
                 { index: true, element: <UserListPage /> },
                 { path: "create-user", element: <CreateUserPage /> },
                 { path: ":id", element: <UserDetailPage /> },
+              ],
+            },
+            {
+              path: "orders",
+              children: [
+                { index: true, element: <Orders /> },
+                { path: "add", element: <OrderCreate /> },
               ],
             },
             {

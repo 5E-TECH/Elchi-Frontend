@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
-import type { CreateAdminRequest, CreateMarketRequest, UserStatus } from "../types/user";
+import type { CreateAdminRequest, CreateCourierRequest, CreateMarketRequest, UserStatus } from "../types/user";
 
 export const user = "user";
 
@@ -32,6 +32,19 @@ export const useUser = () => {
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
+
+  const createCourier = useMutation({
+    mutationFn: (data: CreateCourierRequest) => api.post("couriers", data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
+  const getRegions = () =>
+    useQuery({
+      queryKey: ["regions"],
+      queryFn: () => api.get("region").then((res: any) => res.data),
+      staleTime: 5 * 60 * 1000,
+    });
 
   const getUserById = (id: string) =>
     useQuery({
@@ -86,6 +99,8 @@ export const useUser = () => {
   return {
     createAdmin,
     createMarket,
+    createCourier,
+    getRegions,
     getUser,
     getUserById,
     updateUserStatus,

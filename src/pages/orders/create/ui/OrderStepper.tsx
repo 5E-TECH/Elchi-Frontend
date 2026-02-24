@@ -1,0 +1,83 @@
+import { memo } from "react";
+import { Check } from "lucide-react";
+
+interface Step {
+    id: number;
+    label: string;
+    description: string;
+}
+
+interface OrderStepperProps {
+    steps: Step[];
+    currentStep: number;
+}
+
+const OrderStepper = ({ steps, currentStep }: OrderStepperProps) => {
+    return (
+        <div className="w-full">
+            <div className="flex items-start">
+                {steps.map((step, index) => {
+                    const isDone = currentStep > step.id;
+                    const isActive = currentStep === step.id;
+                    const isLast = index === steps.length - 1;
+
+                    return (
+                        <div key={step.id} className="flex items-start flex-1">
+                            {/* Step circle + label */}
+                            <div className="flex flex-col items-center">
+                                {/* Circle */}
+                                <div
+                                    className={`
+                    w-10 h-10 rounded-full flex items-center justify-center
+                    font-bold text-sm transition-all duration-300 border-2
+                    ${isDone
+                                            ? "bg-main border-main text-primary"
+                                            : isActive
+                                                ? "bg-primary dark:bg-maindark border-main text-main shadow-lg shadow-main/20"
+                                                : "bg-sidebar dark:bg-primarydark border-transparent text-gray-400 dark:text-gray-500"
+                                        }
+                  `}
+                                >
+                                    {isDone ? <Check size={16} strokeWidth={2.5} /> : step.id}
+                                </div>
+
+                                {/* Label */}
+                                <div className="mt-2 text-center">
+                                    <p
+                                        className={`text-xs font-semibold tracking-wide ${isActive
+                                                ? "text-main"
+                                                : isDone
+                                                    ? "text-main/70 dark:text-main/60"
+                                                    : "text-gray-400 dark:text-gray-500"
+                                            }`}
+                                    >
+                                        {step.label}
+                                    </p>
+                                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 hidden sm:block">
+                                        {step.description}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Connector line */}
+                            {!isLast && (
+                                <div className="flex-1 mx-2 mt-5">
+                                    <div className="h-0.5 w-full bg-gray-200 dark:bg-primarydark relative overflow-hidden">
+                                        <div
+                                            className={`
+                        absolute inset-y-0 left-0 bg-main transition-all duration-500
+                        ${isDone ? "w-full" : "w-0"}
+                      `}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+export default memo(OrderStepper);

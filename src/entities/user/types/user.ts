@@ -78,6 +78,17 @@ export interface CreateMarketResponse {
     data: User;
 }
 
+// ==================== CREATE COURIER ====================
+
+export interface CreateCourierRequest {
+    region_id: string;     // Viloyat ID (backenddan olinadi)
+    name: string;          // Kuryer ismi
+    phone_number: string;  // Telefon (+998...)
+    password: string;      // Parol
+    tariff_home: number;   // Uyga tarif (so'm)
+    tariff_center: number; // Markazga tarif (so'm)
+}
+
 // ==================== USER DETAIL ====================
 
 // User detail response

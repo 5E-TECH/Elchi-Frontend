@@ -2,8 +2,10 @@ import React, { memo, useState, useEffect } from "react";
 import type {
   UserRole,
   CreateAdminRequest,
+  CreateCourierRequest,
   CreateMarketRequest,
 } from "../../../../entities/user/types/user";
+
 import { RoleSelector } from "./RoleSelector";
 import Select from "../../../../shared/ui/Select";
 import { useUser } from "../../../../entities/user/api/userApi";
@@ -93,8 +95,19 @@ export const CreateUserForm = memo(() => {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { createAdmin, createMarket } = useUser();
+  const { createAdmin, createMarket, createCourier, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
+
+  // Viloyatlar API dan olinadi
+  const { data: regionsData } = getRegions();
+  const regionList: { id: string; name: string }[] = (() => {
+    const d = regionsData;
+    if (Array.isArray(d)) return d;
+    if (d?.data?.items && Array.isArray(d.data.items)) return d.data.items;
+    if (d?.data && Array.isArray(d.data)) return d.data;
+    if (d?.items && Array.isArray(d.items)) return d.items;
+    return [];
+  })();
 
   // Role o'zgarganda xatolar va forma tozalansin
   useEffect(() => {
@@ -192,6 +205,26 @@ export const CreateUserForm = memo(() => {
       return;
     }
 
+    // ── Courier ──
+    if (role === "courier") {
+      const payload: CreateCourierRequest = {
+        region_id: formData.region,
+        name: formData.fullName,
+        phone_number: rawPhone,
+        password: formData.password,
+        tariff_home: parseAmount(formData.homeRate),
+        tariff_center: parseAmount(formData.centerRate),
+      };
+
+      await apiRequest({
+        request: () => createCourier.mutateAsync(payload),
+        successMessage: `Kuryer "${formData.fullName}" muvaffaqiyatli yaratildi!`,
+        errorMessage: "Kuryer yaratishda xatolik yuz berdi",
+        onSuccess: () => navigate(-1),
+      });
+      return;
+    }
+
     // ── Market ──
     if (role === "marketing") {
       // deliveryType dan aniq mapping — type cast emas, aniq qiymat
@@ -216,7 +249,7 @@ export const CreateUserForm = memo(() => {
       return;
     }
 
-    // ── Boshqa rollar (hali ulanmagan) ──
+    // ── Boshqa rollar ──
     console.log("Role:", ROLE_LABELS[role], "| FormData:", formData);
   };
 
@@ -313,7 +346,7 @@ export const CreateUserForm = memo(() => {
     </div>
   );
 
-  const isPending = createAdmin.isPending || createMarket.isPending;
+  const isPending = createAdmin.isPending || createMarket.isPending || createCourier.isPending;
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -402,20 +435,11 @@ export const CreateUserForm = memo(() => {
                       name="region"
                       value={formData.region}
                       onChange={handleInputChange}
-                      options={[
-                        { value: "tashkent", label: "Toshkent shahri" },
-                        { value: "samarkand", label: "Samarqand" },
-                        { value: "bukhara", label: "Buxoro" },
-                        { value: "khiva", label: "Xiva" },
-                        { value: "andijan", label: "Andijon" },
-                        { value: "fergana", label: "Farg'ona" },
-                        { value: "namangan", label: "Namangan" },
-                        { value: "kashkadarya", label: "Qashqadaryo" },
-                        { value: "surkhandarya", label: "Surxondaryo" },
-                        { value: "jizzakh", label: "Jizzax" },
-                        { value: "navoi", label: "Navoi" },
-                      ]}
-                      placeholder="Tanlang"
+                      options={regionList.map((r) => ({
+                        value: String(r.id),
+                        label: r.name,
+                      }))}
+                      placeholder={regionList.length ? "Tanlang" : "Yuklanmoqda..."}
                       error={errors.region}
                       required
                     />
