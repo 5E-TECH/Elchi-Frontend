@@ -1,4 +1,4 @@
-import { memo, useState, useMemo, type FormEvent } from "react";
+import { memo, useState, useMemo } from "react";
 import HeaderName from "../../../shared/components/headerName";
 import {
   BookMarked,
@@ -20,7 +20,6 @@ import { GlobalSearchInput } from "../../../features/search";
 import { useSelector } from "react-redux";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import type { RootState } from "../../../app/config/store";
-import PopupUpdate from "../../../shared/components/popupUpdate";
 
 interface Product {
   id: number;
@@ -42,8 +41,8 @@ const ProductTable = () => {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [filterValue, setFilterValue] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  // const [image, setImage] = useState<File | null>(null);
+  // const [preview, setPreview] = useState<string | null>(null);
 
   const filterOptions = [
     { value: "active", label: "Active" },
@@ -83,7 +82,7 @@ const ProductTable = () => {
     return params;
   }, [urlParams, searchFilters, filterValue]);
 
-  const { getProducts, deleteProduct, updateProduct } = useProducts();
+  const { getProducts, deleteProduct } = useProducts();
   const { data: products, isLoading } = getProducts(apiParams);
   const productData = products?.data || [];
 
@@ -127,9 +126,9 @@ const ProductTable = () => {
     },
   ];
 
-  const [form, setForm] = useState({
-    name: "",
-  });
+  // const [form, setForm] = useState({
+  //   name: "",
+  // });
 
   // const processedData = data.map((element: any) => {
   //   let imgUrl = element.img;
@@ -140,18 +139,18 @@ const ProductTable = () => {
   //   return { ...element, img: imgUrl };
   // });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  // const handleChange = (
+  //   e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  // ) => {
+  //   setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  // };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
-  };
+  // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
+  //   setImage(file);
+  //   setPreview(URL.createObjectURL(file));
+  // };
 
   // const handleSave = (e: FormEvent<HTMLFormElement>) => {
   //   e.preventDefault();
