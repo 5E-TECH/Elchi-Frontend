@@ -13,61 +13,70 @@ interface UserDetailWidgetProps {
 }
 
 export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserDetailWidgetProps) => {
-  // Loading state
+
+  // ── Loading ──
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-main animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-white/60 font-medium">Yuklanmoqda...</p>
+      <div className="flex items-center justify-center min-h-80">
+        <div className="text-center space-y-3">
+          <div className="w-14 h-14 bg-main/10 dark:bg-main/20 rounded-2xl flex items-center justify-center mx-auto">
+            <Loader2 className="w-7 h-7 text-main animate-spin" />
+          </div>
+          <p className="text-sm font-medium text-slate-500 dark:text-white/50">Yuklanmoqda...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
+  // ── Error ──
   if (isError) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 dark:bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-500" />
+      <div className="flex items-center justify-center min-h-80">
+        <div className="text-center space-y-3">
+          <div className="w-14 h-14 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto">
+            <AlertCircle className="w-7 h-7 text-red-500" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Xatolik yuz berdi</h3>
-          <p className="text-slate-600 dark:text-white/60">
-            {error?.response?.data?.message || "Ma'lumotlarni yuklashda xatolik"}
-          </p>
+          <div>
+            <p className="font-bold text-slate-800 dark:text-white">Xatolik yuz berdi</p>
+            <p className="text-sm text-slate-500 dark:text-white/40 mt-1">
+              {error?.response?.data?.message ?? "Ma'lumotlarni yuklashda xatolik"}
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Empty state
+  // ── Empty ──
   if (!user) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <UserX className="w-8 h-8 text-slate-400" />
+      <div className="flex items-center justify-center min-h-80">
+        <div className="text-center space-y-3">
+          <div className="w-14 h-14 bg-slate-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mx-auto">
+            <UserX className="w-7 h-7 text-slate-400" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Foydalanuvchi topilmadi</h3>
-          <p className="text-slate-600 dark:text-white/60">Bu foydalanuvchi mavjud emas</p>
+          <div>
+            <p className="font-bold text-slate-800 dark:text-white">Topilmadi</p>
+            <p className="text-sm text-slate-500 dark:text-white/40 mt-1">Bu foydalanuvchi mavjud emas</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Success state
+  // ── Success ──
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <UserDetailHeader user={user} />
+    <div className="flex gap-6 items-start">
+      {/* Chap — Profil Sidebar */}
+      <div className="w-72 shrink-0">
+        <UserDetailHeader user={user} />
+      </div>
 
-      {/* Info Cards */}
-      <UserInfoCards user={user} />
-
-      {/* Stats Card (role-based) */}
-      <UserStatsCard user={user} />
+      {/* O'ng — Kontent */}
+      <div className="flex-1 min-w-0 space-y-5">
+        <UserInfoCards user={user} />
+        <UserStatsCard user={user} />
+      </div>
     </div>
   );
 });
