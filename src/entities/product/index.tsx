@@ -27,23 +27,15 @@ export const useProducts = () => {
     });
 
   const updateProduct = useMutation({
-    mutationFn: ({
-      id,
-      data,
-      isMarket,
-    }: {
-      id: string;
-      data: any;
-      isMarket?: boolean;
-    }) => {
-      if (isMarket) {
-        return api.patch(`/product/my/${id}`, data); // market uchun
-      } else {
-        return api.patch(`/product/${id}`, data); // admin/registrator uchun
-      }
-    },
+    mutationFn: ({ id, data }: { id: number; data: FormData }) =>
+      api.patch(`product/${id}`, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }),
     onSuccess: () => {
-      client.invalidateQueries({ queryKey: ["product"] });
+      client.invalidateQueries({ queryKey: [products] });
+      client.invalidateQueries({ queryKey: ["market"] });
     },
   });
 
@@ -68,6 +60,6 @@ export const useProducts = () => {
     getProducts,
     updateProduct,
     deleteProduct,
-    getByMarketId
+    getByMarketId,
   };
 };

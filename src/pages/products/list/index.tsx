@@ -1,6 +1,13 @@
 import { memo, useState, useMemo } from "react";
 import HeaderName from "../../../shared/components/headerName";
-import { BookMarked, Plus, ScanLine, SquarePen, Trash2 } from "lucide-react"; // Added BookMarked
+import {
+  BookMarked,
+  Package,
+  Plus,
+  ScanLine,
+  SquarePen,
+  Trash2,
+} from "lucide-react"; // Added BookMarked
 import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
@@ -34,6 +41,8 @@ const ProductTable = () => {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [filterValue, setFilterValue] = useState("");
+  // const [image, setImage] = useState<File | null>(null);
+  // const [preview, setPreview] = useState<string | null>(null);
 
   const filterOptions = [
     { value: "active", label: "Active" },
@@ -117,6 +126,60 @@ const ProductTable = () => {
     },
   ];
 
+  // const [form, setForm] = useState({
+  //   name: "",
+  // });
+
+  // const processedData = data.map((element: any) => {
+  //   let imgUrl = element.img;
+  //   if (imgUrl && !/^https?:\/\//.test(imgUrl)) {
+  //     imgUrl = `${BASE_ASSETS_URL}${imgUrl.startsWith("/") ? "" : "/"
+  //       }${imgUrl}`;
+  //   }
+  //   return { ...element, img: imgUrl };
+  // });
+
+  // const handleChange = (
+  //   e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  // ) => {
+  //   setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  // };
+
+  // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
+  //   setImage(file);
+  //   setPreview(URL.createObjectURL(file));
+  // };
+
+  // const handleSave = (e: FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   setErrorMessage(null);
+
+  //   if (!selectedId) return;
+
+  //   const formData = new FormData();
+  //   formData.append("name", form.name);
+  //   if (image) formData.append("img", image);
+
+  //   updateProduct.mutate(
+  //     { id: selectedId, data: formData },
+  //     {
+  //       onSuccess: () => {
+  //         setShow(false);
+  //         setErrorMessage(null);
+  //       },
+  //       onError: (error: any) => {
+  //         setDisable(false);
+  //         const serverError =
+  //           error?.response?.data?.message ||
+  //           "Something went wrong. Please try again.";
+  //         setErrorMessage(serverError);
+  //       },
+  //     },
+  //   );
+  // };
+
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
       <div className="flex justify-between items-center mb-6">
@@ -136,21 +199,34 @@ const ProductTable = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-10 mb-6">
+      <div className="flex items-center gap-4 mb-6 p-4 rounded-xl border border-white/5 bg-white/2 dark:bg-white/3">
         <div className="w-full">
           <GlobalSearchInput
             searchKey="product_search"
-            placeholder="Search products..."
-            className="md:col-span-3"
+            placeholder="Search..." // Rasmdagi kabi text
+            className="w-full"
           />
         </div>
-        <div className="w-[45%]">
+
+        <div className="w-[30%]">
           <SelectInput
             value={filterValue}
             onChange={(e) => setFilterValue(e.target.value)}
             options={filterOptions}
-            placeholder="Filter by Status"
+            placeholder="Select market" // Rasmdagi kabi text
           />
+        </div>
+
+        <div className="flex items-center gap-3 px-6 py-2 rounded-xl border border-white/10 min-w-fit">
+          <div className="p-2.5 rounded-lg bg-maindark text-purple-400">
+            <Package size={20} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-400 font-medium">Jami</span>
+            <span className="text-lg font-bold text-white leading-tight">
+              {products?.total_count || 0} ta
+            </span>
+          </div>
         </div>
       </div>
 
@@ -178,6 +254,24 @@ const ProductTable = () => {
         labelKey="name"
         secondaryLabelKey="phone"
       />
+
+      {/* <PopupUpdate
+        isOpen={true}
+        onClose={handleClose}
+        onSave={handleUpdate}
+        title="Mahsulotni tahrirlash"
+        imageProps={{
+          label: "Mahsulot rasmi",
+          value: currentImageUrl, // Eskisi
+          previewUrl: preview, // Yangi tanlangan preview
+          onChange: (file) => setFile(file),
+        }}
+      >
+        <div className="space-y-2">
+          <label className="text-sm text-gray-400">Nomi</label>
+          <input className="w-full bg-[#161624] border border-white/10 rounded-xl py-3 px-4 text-white" />
+        </div>
+      </PopupUpdate> */}
     </div>
   );
 };
