@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
-import type { CreateAdminRequest, CreateMarketRequest } from "../types/user";
+import type { CreateAdminRequest, CreateMarketRequest, UserStatus } from "../types/user";
 
 export const user = "user";
 
@@ -76,10 +76,18 @@ export const useUser = () => {
   //         api.get("user/except-market", { params }).then((res) => res.data),
   //     });
 
+  const updateUserStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
+      api.patch(`users/${id}/status`, { status }).then((res: any) => res.data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
   return {
     createAdmin,
     createMarket,
     getUser,
     getUserById,
+    updateUserStatus,
   };
 };

@@ -1,11 +1,12 @@
 import { memo, useState } from 'react';
-import { Trash2, Loader2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { User } from '../../../entities/user/types/user';
 import { UserStatusBadge } from '../../../entities/user/ui/UserStatusBadge';
 import { UserRoleBadge } from '../../../entities/user/ui/UserRoleBadge';
 import { Table } from '../../../shared/components/Table/Table';
 import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
+import { useUser } from '../../../entities/user/api/userApi';
 
 interface UserListTableProps {
     users: User[];
@@ -31,28 +32,41 @@ export const UserListTable = memo(({
     currentPage,
     onPageChange
 }: UserListTableProps) => {
-    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
     const navigate = useNavigate();
+    const { updateUserStatus } = useUser();
 
-    // Backend dan ma'lumot olish
-    // const { getUser } = useUser();
-    // const { data, isLoading, isError } = getUser();
-    console.log(selectedUsers);
+    // Hozirda so'rov ketayotgan userlar ID lari
+    const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
 
+    const handleStatusToggle = (user: User, e: React.MouseEvent) => {
+        e.stopPropagation(); // Row click ga o'tmasin
+        if (loadingIds.has(user.id)) return; // Ikki marta bosilmasin
+
+        const newStatus = user.status === 'active' ? 'inactive' : 'active';
+
+        // Loading boshlan
+        setLoadingIds(prev => new Set([...prev, user.id]));
+
+        updateUserStatus.mutate(
+            { id: user.id, status: newStatus },
+            {
+                onSettled: () => {
+                    // So'rov tugagach (success yoki error) loading o'chiriladi
+                    setLoadingIds(prev => {
+                        const next = new Set(prev);
+                        next.delete(user.id);
+                        return next;
+                    });
+                },
+            }
+        );
+    };
 
     // console.log('=== BACKEND DATA ===');
     // console.log('Full Response:', data);
     // console.log('Users:', data?.data?.items);
     // console.log('Meta:', data?.data?.meta);
     // console.log('===================');
-
-    const toggleUser = (userId: string) => {
-        setSelectedUsers(prev => {
-            const newSet = new Set(prev);
-            newSet.has(userId) ? newSet.delete(userId) : newSet.add(userId);
-            return newSet;
-        });
-    };
 
     const columns: ColumnConfig<User>[] = [
         {
@@ -93,40 +107,88 @@ export const UserListTable = memo(({
             key: 'id',
             label: 'Harakat',
             width: '15%',
-            render: (_, user) => (
-                <div className="flex items-center justify-center gap-2">
-                    <button
-                        onClick={() => toggleUser(user.id)}
-                        className="p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors"
-                    >
-                        <div className={`w-8 h-4 rounded-full relative flex items-center p-0.5 transition-colors ${user.status === 'active'
-                            ? 'bg-blue-200 dark:bg-blue-800'
-                            : 'bg-gray-200 dark:bg-gray-700'
-                            }`}>
-                            <div
-                                className={`w-3 h-3 rounded-full transition-all ${user.status === 'active'
-                                    ? 'bg-blue-600 dark:bg-blue-400 ml-auto'
-                                    : 'bg-gray-600 dark:bg-gray-400 ml-0'
-                                    }`}
-                            />
-                        </div>
-                    </button>
-                    <button className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                        <Trash2 size={16} />
-                    </button>
-                </div>
-            ),
+            render: (_, user) => {
+                const isActive = user.status === 'active';
+                const isPending = loadingIds.has(user.id);
+
+                return (
+                    <div className="flex items-center w-[45%] justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+
+                        {/* ── Switch Toggle ── */}
+                        <button
+                            onClick={(e) => handleStatusToggle(user, e)}
+                            disabled={isPending}
+                            title={isActive ? "Faolsizlashtirish" : "Faollashtirish"}
+                            role="switch"
+                            aria-checked={isActive}
+                            className={`
+                                relative w-11 h-6 rounded-full
+                                transition-all duration-300 ease-in-out
+                                focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+                                ${isPending
+                                    ? 'cursor-not-allowed opacity-70 bg-slate-300 dark:bg-white/20 focus-visible:ring-slate-400'
+                                    : isActive
+                                        ? 'bg-emerald-500 hover:bg-emerald-600 focus-visible:ring-emerald-500 shadow-md shadow-emerald-500/30'
+                                        : 'bg-slate-300 dark:bg-white/20 hover:bg-slate-400 dark:hover:bg-white/30 focus-visible:ring-slate-400'
+                                }
+                            `}
+                        >
+                            {/* Thumb */}
+                            <span
+                                className={`
+                                    absolute top-0.5 left-0.5
+                                    w-5 h-5 rounded-full bg-white shadow-sm
+                                    flex items-center justify-center
+                                    transition-all duration-300 ease-in-out
+                                    ${isActive && !isPending ? 'translate-x-5' : 'translate-x-0'}
+                                `}
+                            >
+                                {isPending ? (
+                                    /* Spinner: aylanuvchi yoy */
+                                    <span
+                                        className="w-3 h-3 rounded-full border-2 border-slate-300 border-t-main animate-spin block"
+                                    />
+                                ) : isActive ? (
+                                    /* Check mark */
+                                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                        <path d="M1 4L3.5 6.5L9 1" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                ) : (
+                                    /* X mark */
+                                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                                        <path d="M1.5 1.5L6.5 6.5M6.5 1.5L1.5 6.5" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
+                                    </svg>
+                                )}
+                            </span>
+                        </button>
+
+                        {/* ── Delete Button ── */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); }}
+                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200"
+                        >
+                            <Trash2 size={20} />
+                        </button>
+                    </div>
+                );
+            },
         },
     ];
+
 
     // Loading state
     if (isLoading) {
         return (
-            <div className="bg-white dark:bg-[#1a1f3a] rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-maindark rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-center py-20">
-                    <div className="text-center">
-                        <Loader2 className="w-12 h-12 text-main animate-spin mx-auto mb-4" />
-                        <p className="text-gray-600 dark:text-gray-400">Yuklanmoqda...</p>
+                    <div className="text-center space-y-3">
+                        <span className="relative flex h-12 w-12 mx-auto">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-main opacity-30" />
+                            <span className="relative inline-flex rounded-full h-12 w-12 bg-main/20 items-center justify-center">
+                                <span className="w-5 h-5 rounded-full bg-main animate-pulse" />
+                            </span>
+                        </span>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Yuklanmoqda...</p>
                     </div>
                 </div>
             </div>
@@ -136,7 +198,7 @@ export const UserListTable = memo(({
     // Error state
     if (isError) {
         return (
-            <div className="bg-white dark:bg-[#1a1f3a] rounded-xl border border-red-200 dark:border-red-900/20 overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-maindark rounded-xl border border-red-200 dark:border-red-900/20 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -157,7 +219,7 @@ export const UserListTable = memo(({
     // Empty state
     if (users.length === 0) {
         return (
-            <div className="bg-white dark:bg-[#1a1f3a] rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-maindark rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -174,7 +236,7 @@ export const UserListTable = memo(({
     }
 
     return (
-        <div className="bg-white dark:bg-[#1a1f3a] rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-maindark rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
             <Table
                 data={users}
                 columns={columns}
