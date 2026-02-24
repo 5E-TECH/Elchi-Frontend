@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
-import type { CreateAdminRequest, CreateCourierRequest, CreateMarketRequest, UserStatus } from "../types/user";
+import type { CreateAdminRequest, CreateCourierRequest, CreateMarketRequest, UpdateUserRequest, UserStatus } from "../types/user";
 
 export const user = "user";
 
@@ -96,6 +96,13 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
+  const updateUser = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
+      api.patch(`users/${id}`, data).then((res: any) => res.data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
   return {
     createAdmin,
     createMarket,
@@ -104,5 +111,6 @@ export const useUser = () => {
     getUser,
     getUserById,
     updateUserStatus,
+    updateUser,
   };
 };
