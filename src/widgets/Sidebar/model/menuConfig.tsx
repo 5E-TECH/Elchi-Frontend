@@ -29,7 +29,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
   admin: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/order/markets/new-orders", icon: Calendar1, label: "new_orders" },
+    { to: "/new-orders", icon: Calendar1, label: "new_orders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/all-users", icon: UserRound, label: "users" },
