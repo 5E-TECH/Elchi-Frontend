@@ -90,7 +90,7 @@ export const GlobalSearchInput = memo(({
                 value={localValue}
                 onChange={handleChange}
                 placeholder={placeholder}
-                className="w-full bg-primary dark:bg-[#1a1f3a] border-2 border-gray-200 dark:border-[#4c5798]/30 rounded-xl pl-11 pr-4 py-3 text-maindark dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/20 outline-none transition-all hover:border-main/50 dark:hover:border-main/50 hover:shadow-sm focus:shadow-md shadow-sm"
+                className="w-full bg-primary dark:bg-maindark border-2 border-gray-200 dark:border-primarydark/30 rounded-xl pl-11 pr-4 py-3 text-maindark dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/20 outline-none transition-all hover:border-main/50 dark:hover:border-main/50 hover:shadow-sm focus:shadow-md shadow-sm"
             />
         </div>
     );

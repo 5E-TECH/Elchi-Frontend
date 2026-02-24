@@ -39,12 +39,12 @@ const SelectInput = memo(({
         onChange={onChange}
         disabled={disabled}
         className={`
-          px-4 py-2 border rounded-lg text-base
+          px-4 py-3 border rounded-xl text-base
           transition duration-200 ease-in-out
           focus:outline-none focus:ring-2 focus:ring-blue-500
           ${disabled
             ? 'bg-gray-100 cursor-not-allowed text-gray-500 border-gray-300'
-            : 'bg-white border-gray-300 hover:border-gray-400'
+            : 'bg-white dark:bg-maindark dark:text-primary dark:border-primarydark/50 border-gray-300 hover:border-gray-400'
           }
           ${error ? 'border-red-500 focus:ring-red-500' : ''}
         `}
