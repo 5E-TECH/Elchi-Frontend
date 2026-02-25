@@ -86,7 +86,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
     const isMarket = user.role === 'market' || user.role === 'marketing';
     const sc = STATUS_MAP[user.status];
     console.log(sc);
-    
+
     // const StatusIcon = sc.icon;
 
     return (
@@ -180,6 +180,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                         )}
                     </>
                 )}
+
 
                 {/* ── Courier: Tarif ── */}
                 {isCourier && (

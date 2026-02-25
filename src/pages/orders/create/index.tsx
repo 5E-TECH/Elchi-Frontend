@@ -4,19 +4,17 @@ import { ChevronLeft, ChevronRight, SendHorizontal, ListPlus } from "lucide-reac
 import HeaderName from "../../../shared/components/headerName";
 import OrderStepper from "./ui/OrderStepper";
 import Step1Market from "./ui/Step1Market";
-import Step2Customer from "./ui/Step2Customer";
-import Step3Details from "./ui/Step3Details";
+import Step2Combined from "./ui/Step2Combined";
 import { useOrders } from "../../../entities/order/api/orderApi";
 import type { CreateOrderRequest, DeliveryType } from "../../../entities/order/types/order";
 
 // ── Step config ──────────────────────────────────────────────
 const STEPS = [
   { id: 1, label: "1-qadam", description: "Market tanlang" },
-  { id: 2, label: "2-qadam", description: "Mijoz ma'lumotlari" },
-  { id: 3, label: "3-qadam", description: "Buyurtma tafsilotlari" },
+  { id: 2, label: "2-qadam", description: "Mijoz va buyurtma ma'lumotlari" },
 ];
 
-// ── Initial state ────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────
 interface Market { id: number; name: string; phone?: string }
 
 interface CustomerData {
@@ -42,10 +40,14 @@ const INIT_DETAILS: DetailsData = {
 
 // ── Validation ───────────────────────────────────────────────
 const isStep1Valid = (market: Market | null) => !!market;
-const isStep2Valid = (c: CustomerData) =>
-  c.phone.trim().length >= 9 && c.name.trim() && c.district_id && c.address.trim();
-const isStep3Valid = (d: DetailsData) =>
-  d.items.length > 0 && d.total_price !== "";
+
+const isStep2Valid = (c: CustomerData, d: DetailsData) =>
+  c.phone.trim().length >= 9 &&
+  !!c.name.trim() &&
+  !!c.district_id &&
+  !!c.address.trim() &&
+  d.items.length > 0 &&
+  d.total_price !== "";
 
 // ── Component ────────────────────────────────────────────────
 const OrderCreate = () => {
@@ -58,12 +60,12 @@ const OrderCreate = () => {
   const [details, setDetails] = useState<DetailsData>(INIT_DETAILS);
 
   const canNext =
-    step === 1 ? isStep1Valid(market) :
-      step === 2 ? isStep2Valid(customer) :
-        isStep3Valid(details);
+    step === 1
+      ? isStep1Valid(market)
+      : isStep2Valid(customer, details);
 
-  const handleNext = () => { if (step < 3 && canNext) setStep((s) => s + 1); };
   const handleBack = () => { if (step > 1) setStep((s) => s - 1); };
+  const handleNext = () => { if (step < 2 && canNext) setStep((s) => s + 1); };
 
   const handleSubmit = async () => {
     if (!market || !canNext) return;
@@ -94,7 +96,7 @@ const OrderCreate = () => {
   return (
     <div className="flex flex-col gap-6 min-h-full">
       {/* ── Page header ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm">
+      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4">
         <HeaderName
           name="Yangi buyurtma"
           description="Buyurtma yaratish uchun qadamlarni bajaring"
@@ -107,24 +109,23 @@ const OrderCreate = () => {
         <OrderStepper steps={STEPS} currentStep={step} />
       </div>
 
-      {/* ── Step content card ── */}
+      {/* ── Step content ── */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-6 flex-1">
         {step === 1 && (
           <Step1Market selectedMarket={market} onSelect={setMarket} />
         )}
-        {step === 2 && (
-          <Step2Customer data={customer} onChange={setCustomer} />
-        )}
-        {step === 3 && market && (
-          <Step3Details
+        {step === 2 && market && (
+          <Step2Combined
             marketId={String(market.id)}
-            data={details}
-            onChange={setDetails}
+            customer={customer}
+            onCustomerChange={setCustomer}
+            details={details}
+            onDetailsChange={setDetails}
           />
         )}
       </div>
 
-      {/* ── Navigation buttons ── */}
+      {/* ── Navigation ── */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-6 py-4 flex items-center justify-between">
         {/* Back */}
         <button
@@ -147,7 +148,7 @@ const OrderCreate = () => {
         </span>
 
         {/* Next / Submit */}
-        {step < 3 ? (
+        {step < 2 ? (
           <button
             onClick={handleNext}
             disabled={!canNext}
