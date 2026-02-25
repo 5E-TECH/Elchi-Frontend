@@ -1,5 +1,5 @@
 import { memo, useState, useEffect } from 'react';
-import { Wallet, Home, Building2, Clock, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { Wallet, Clock, TrendingUp, CheckCircle2 } from 'lucide-react';
 import type { User } from '../types/user';
 
 interface UserStatsCardProps {
@@ -162,74 +162,24 @@ const AdminStats = ({ user }: { user: User }) => {
     );
 };
 
-// ─── Courier Stats ────────────────────────────────────────────────────────────
-
-const CourierStats = ({ user }: { user: User }) => {
-    const home = user.tariff_home ?? 0;
-    const center = user.tariff_center ?? 0;
-    const max = Math.max(home, center, 1);
-
-    const StatCard = ({
-        icon: Icon, label, value, sub, gradient, progress,
-    }: {
-        icon: React.ElementType; label: string; value: string; sub?: string; gradient: string; progress?: number;
-    }) => (
-        <div className={`relative overflow-hidden rounded-2xl p-5 bg-linear-to-br ${gradient} text-white shadow-md`}>
-            <div className="absolute -top-5 -right-5 w-24 h-24 bg-white/10 rounded-full" />
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-black/10 rounded-full" />
-            <div className="relative z-10">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                    <Icon size={20} className="text-white" />
-                </div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-1">{label}</p>
-                <p className="text-xl font-black leading-tight tabular-nums">{value}</p>
-                {sub && <p className="text-white/60 text-xs mt-1">{sub}</p>}
-                {progress !== undefined && (
-                    <div className="mt-4 h-1.5 bg-white/20 rounded-full overflow-hidden">
-                        <div className="h-full bg-white/50 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progress}%` }} />
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-
-    return (
-        <div className="grid grid-cols-2 gap-4">
-            <StatCard
-                icon={Home} label="Uyga Tarif"
-                value={`${formatNum(home)} so'm`} sub="Bir yetkazish"
-                gradient="from-orange-500 to-amber-500"
-                progress={(home / max) * 100}
-            />
-            <StatCard
-                icon={Building2} label="Markazga Tarif"
-                value={`${formatNum(center)} so'm`} sub="Bir yetkazish"
-                gradient="from-orange-600 to-red-500"
-                progress={(center / max) * 100}
-            />
-        </div>
-    );
-};
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export const UserStatsCard = memo(({ user }: UserStatsCardProps) => {
     const isAdmin = user.role === 'admin' || user.role === 'manager' || user.role === 'superadmin';
-    const isCourier = user.role === 'courier';
 
-    if (!isAdmin && !isCourier) return null;
+    if (!isAdmin) return null;
 
     return (
         <div className="bg-white dark:bg-maindark rounded-2xl border border-slate-100 dark:border-primarydark/20 shadow-sm overflow-hidden">
             <div className="flex items-center gap-2.5 px-6 py-4 border-b border-slate-100 dark:border-white/5">
                 <div className="w-1 h-5 bg-main rounded-full" />
                 <h3 className="text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white">
-                    {isAdmin ? "Moliyaviy Ko'rsatkichlar" : "Tarif Ko'rsatkichlari"}
+                    Moliyaviy Ko'rsatkichlar
                 </h3>
             </div>
             <div className="p-5">
-                {isAdmin && <AdminStats user={user} />}
-                {isCourier && <CourierStats user={user} />}
+                <AdminStats user={user} />
             </div>
         </div>
     );

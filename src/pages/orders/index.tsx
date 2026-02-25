@@ -9,7 +9,7 @@ const Orders = () => {
 
   return (
     <div className="bg-sidebar h-full rounded-2xl dark:bg-maindark">
-      <div className="flex items-center justify-between pr-4">
+      <div className="flex items-center justify-between px-4">
         <HeaderName
           name="Buyurtmalar ro'yxati"
           description="Barcha buyurtmalar ro'yxati"
