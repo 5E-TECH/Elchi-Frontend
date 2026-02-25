@@ -14,5 +14,13 @@ export const useOrders = () => {
     });
 
 
-    return { getTodayOrders}
+    const getTodayOrdersByMarket = (marketId: number, params?: any, enabled: boolean = true) =>
+    useQuery({
+      queryKey: [orders, marketId, params],
+      queryFn: () => api.get(`orders/markets/${marketId}/new`, { params }).then((res) => res.data),
+      enabled
+    })
+
+
+    return { getTodayOrders, getTodayOrdersByMarket }
 };
