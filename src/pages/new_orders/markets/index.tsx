@@ -3,6 +3,7 @@ import { memo } from "react";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useOrders } from "../../../entities/orders";
+import { useNavigate } from "react-router-dom";
 
 interface MarketOrder {
   id: number;
@@ -47,6 +48,8 @@ const Markets = () => {
 
   const { getTodayOrders } = useOrders();
   const { data: todayOrders } = getTodayOrders();
+
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6">
@@ -96,6 +99,7 @@ const Markets = () => {
 
       <Table<MarketOrder>
         data={todayOrders || []}
+        onRowClick={(row) => navigate(`/new-orders/${row.id}`)}
         columns={columns}
         keyExtractor={(item) => item.id}
         hoverable
