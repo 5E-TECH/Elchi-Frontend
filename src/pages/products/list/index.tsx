@@ -6,6 +6,7 @@ import {
   Plus,
   ScanLine,
   SquarePen,
+  Store,
   Trash2,
 } from "lucide-react";
 import Button from "../../../shared/components/button";
@@ -46,23 +47,23 @@ const ProductTable = () => {
   const [filterValue, setFilterValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
-  const filterOptions = [
-    { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
-    { value: "out_of_stock", label: "Out of Stock" },
-  ];
-
   // ─── Data Fetching ──────────────────────────────────────────────────────
 
   const { getMarkets } = useMarkets();
   const { data } = getMarkets();
 
-  const markets =
+  const markets: Market[] =
     data?.data?.items?.map((item: any, index: number) => ({
       ...item,
       index: index + 1,
       phone: item.phone_number,
     })) || [];
+
+  // SelectInput uchun market options
+  const marketOptions = markets.map((m) => ({
+    value: String(m.id),
+    label: m.name,
+  }));
 
   const handleSelectMarket = useCallback(
     (market: Market) => {
@@ -81,7 +82,7 @@ const ProductTable = () => {
 
     const search = urlParams.product_search || searchFilters.product_search;
     if (search) params.search = search;
-    if (filterValue) params.status = filterValue;
+    if (filterValue) params.market_id = filterValue;
 
     return params;
   }, [urlParams, searchFilters, filterValue]);
@@ -124,12 +125,27 @@ const ProductTable = () => {
         label: "Product name",
         width: "35%",
         sortable: true,
+        render: (v: string) => (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
+              <Package size={14} className="text-main" />
+            </div>
+            <span className="font-semibold text-gray-900 dark:text-white">{v}</span>
+          </div>
+        ),
       },
       {
         key: "market",
         label: "Market name",
         width: "40%",
-        render: (value: Product["market"]) => value?.name || "—",
+        render: (value: Product["market"]) => (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <Store size={14} className="text-emerald-500" />
+            </div>
+            <span className="font-semibold text-gray-900 dark:text-white">{value?.name || "—"}</span>
+          </div>
+        ),
       },
       {
         key: "name",
@@ -193,8 +209,8 @@ const ProductTable = () => {
           <SelectInput
             value={filterValue}
             onChange={(e) => setFilterValue(e.target.value)}
-            options={filterOptions}
-            placeholder="Select market"
+            options={marketOptions}
+            placeholder="Market tanlang..."
           />
         </div>
 

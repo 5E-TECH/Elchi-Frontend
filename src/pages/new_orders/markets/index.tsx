@@ -1,9 +1,12 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 import { ShoppingCart, Store, TrendingUp } from "lucide-react";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useOrders } from "../../../entities/orders";
 import { useNavigate } from "react-router-dom";
+import { GlobalSearchInput, useDebounce } from "../../../features/search";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
 
 // ─── API dan kelgan tuzilma ──────────────────────────────────────────────────
 interface MarketInfo {
@@ -110,8 +113,23 @@ const StatCard = ({ icon, label, value, iconCls }: {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const Markets = () => {
   const { getTodayOrders } = useOrders();
-  const { data: response, isLoading } = getTodayOrders();
   const navigate = useNavigate();
+
+  // Redux dan search qiymatini olish (GlobalSearchInput Redux ga yozadi)
+  const searchQuery = useSelector((state: RootState) =>
+    (state.search["market_search"] as string) || ""
+  );
+
+  // Backend ga yuborish uchun debounce (500ms)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const applyDebounce = useDebounce((val: string) => setDebouncedSearch(val), 500);
+
+  useEffect(() => {
+    applyDebounce(searchQuery);
+  }, [searchQuery, applyDebounce]);
+
+  const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
+  const { data: response, isLoading } = getTodayOrders(params);
 
   // API dan kelgan array ni jadval uchun flat qilamiz
   const rows: TableRow[] = useMemo(() => {
@@ -131,7 +149,10 @@ const Markets = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stat kartalar */}
+      {/* Search */}
+      <div>
+        <GlobalSearchInput searchKey="market_search" placeholder="Market nomi yoki telefon qidirish..." />
+      </div>
       <div className="flex items-center justify-between gap-4">
         <StatCard
           icon={<Store size={20} />}
