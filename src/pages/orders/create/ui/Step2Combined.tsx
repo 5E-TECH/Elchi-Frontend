@@ -22,7 +22,6 @@ export interface CustomerFormData {
 export interface OrderDetailData {
     items: OrderItem[];
     total_price: string;
-    to_be_paid: string;
     where_deliver: DeliveryType;
     operator: string;
     comment: string;
@@ -96,6 +95,14 @@ const formatPhone = (raw: string): string => {
     if (d.length <= 7) return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5)}`;
     return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7, 9)}`;
 };
+
+// Narxni inson o'qishi uchun formatlash: 1000000 → "1 000 000"
+const formatPrice = (raw: string): string => {
+    const num = raw.replace(/\D/g, "");
+    if (!num) return "";
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+};
+const stripPrice = (val: string): string => val.replace(/\D/g, "");
 
 // onChange da faqat raqamlarni olib state ga yozamiz
 const stripPhone = (val: string) => val.replace(/\D/g, "").slice(0, 9);
@@ -495,7 +502,7 @@ const Step2Combined = memo(
                                 {(
                                     [
                                         { value: "center" as DeliveryType, label: "Markaz", icon: Building2 },
-                                        { value: "home" as DeliveryType, label: "Uy", icon: Home },
+                                        { value: "address" as DeliveryType, label: "Uy", icon: Home },
                                     ] as const
                                 ).map(({ value, label, icon: Icon }) => (
                                     <button
@@ -522,31 +529,23 @@ const Step2Combined = memo(
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                                 Umumiy summa *
                             </label>
-                            <input
-                                type="number"
-                                placeholder="0"
-                                value={details.total_price}
-                                onChange={(e) =>
-                                    updateDetails("total_price", e.target.value)
-                                }
-                                className={inputCls}
-                            />
-                        </div>
-
-                        {/* To be paid */}
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                To'lanadigan summa
-                            </label>
-                            <input
-                                type="number"
-                                placeholder="0"
-                                value={details.to_be_paid}
-                                onChange={(e) =>
-                                    updateDetails("to_be_paid", e.target.value)
-                                }
-                                className={inputCls}
-                            />
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="0"
+                                    value={formatPrice(details.total_price)}
+                                    onChange={(e) =>
+                                        updateDetails("total_price", stripPrice(e.target.value))
+                                    }
+                                    className={`${inputCls} font-mono tracking-wider`}
+                                />
+                                {details.total_price && (
+                                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                                        so'm
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         {/* Operator */}
