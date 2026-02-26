@@ -112,9 +112,17 @@ const ProductTable = () => {
   const columns: ColumnConfig<Product>[] = useMemo(
     () => [
       {
+        key: "id",
+        label: "#",
+        width: "5%",
+        render: (_: number, _row: Product, index: number) => (
+          <span className="font-semibold text-gray-400 dark:text-gray-500">{index + 1}</span>
+        ),
+      },
+      {
         key: "name",
         label: "Product name",
-        width: "40%",
+        width: "35%",
         sortable: true,
       },
       {
@@ -124,10 +132,10 @@ const ProductTable = () => {
         render: (value: Product["market"]) => value?.name || "—",
       },
       {
-        key: "id",
+        key: "name",
         label: "Action",
         width: "20%",
-        render: (_: number, row: Product) => (
+        render: (_: string, row: Product) => (
           <div className="flex items-center gap-2">
             <button
               type="button"

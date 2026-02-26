@@ -28,6 +28,7 @@ const ProductCreate = lazy(() => import("../../pages/products/create"));
 
 const NewOrders = lazy(() => import("../../pages/new_orders"));
 const NewOrderDetail = lazy(() => import("../../pages/new_orders/components/new_orderDetail"));
+const NewOrderUpdate = lazy(() => import("../../pages/new_orders/components/new_orderUpdate"));
 
 const AppRouter = () => {
   return useRoutes([
@@ -67,7 +68,8 @@ const AppRouter = () => {
               path: "new-orders",
               children: [
                 { index: true, element: <NewOrders /> },
-                { path: ":id", element: <NewOrderDetail /> },
+                { path: ":marketId", element: <NewOrderDetail /> },
+                { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
               ]
             },
           ],
