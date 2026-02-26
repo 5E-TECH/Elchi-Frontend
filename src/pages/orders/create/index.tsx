@@ -24,8 +24,10 @@ interface CustomerData {
 
 interface DetailsData {
   items: { product_id: string; quantity: number }[];
-  total_price: string; to_be_paid: string;
-  where_deliver: DeliveryType; operator: string; comment: string;
+  total_price: string;
+  where_deliver: DeliveryType;
+  operator: string;
+  comment: string;
 }
 
 const INIT_CUSTOMER: CustomerData = {
@@ -34,8 +36,11 @@ const INIT_CUSTOMER: CustomerData = {
 };
 
 const INIT_DETAILS: DetailsData = {
-  items: [], total_price: "", to_be_paid: "",
-  where_deliver: "center", operator: "", comment: "",
+  items: [],
+  total_price: "",
+  where_deliver: "center",
+  operator: "",
+  comment: "",
 };
 
 // ── Validation ───────────────────────────────────────────────
@@ -45,7 +50,6 @@ const isStep2Valid = (c: CustomerData, d: DetailsData) =>
   c.phone.trim().length >= 9 &&
   !!c.name.trim() &&
   !!c.district_id &&
-  !!c.address.trim() &&
   d.items.length > 0 &&
   d.total_price !== "";
 
@@ -67,25 +71,39 @@ const OrderCreate = () => {
   const handleBack = () => { if (step > 1) setStep((s) => s - 1); };
   const handleNext = () => { if (step < 2 && canNext) setStep((s) => s + 1); };
 
+  // Extra phone ni XX-XXX-XX-XX formatida qaytaradi
+  const formatExtraNumber = (raw: string): string => {
+    const d = raw.replace(/\D/g, "").slice(0, 9);
+    if (d.length < 9) return d;
+    return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5, 7)}-${d.slice(7, 9)}`;
+  };
+
   const handleSubmit = async () => {
     if (!market || !canNext) return;
 
     const payload: CreateOrderRequest = {
       market_id: String(market.id),
-      where_deliver: details.where_deliver,
-      total_price: Number(details.total_price),
-      to_be_paid: Number(details.to_be_paid),
-      paid_amount: 0,
-      status: "new",
-      comment: details.comment,
-      operator: details.operator,
-      district_id: customer.district_id,
-      address: customer.address,
+
+      // Mijoz ma'lumotlari — nested object
+      customer: {
+        name: customer.name,
+        phone_number: `+998${customer.phone}`,
+        district_id: customer.district_id,
+        ...(customer.extra_phone && {
+          extra_number: formatExtraNumber(customer.extra_phone),
+        }),
+        ...(customer.address && { address: customer.address }),
+      },
+
+      // Top-level maydonlar
       items: details.items,
-      phone: `+998${customer.phone}`,
-      extra_phone: customer.extra_phone ? `+998${customer.extra_phone}` : undefined,
-      name: customer.name,
+      district_id: customer.district_id,
       region_id: customer.region_id,
+      total_price: Number(details.total_price),
+      where_deliver: details.where_deliver,
+      ...(customer.address && { address: customer.address }),
+      ...(details.comment && { comment: details.comment }),
+      ...(details.operator && { operator: details.operator }),
     };
 
     createOrder.mutate(payload, {
@@ -94,7 +112,7 @@ const OrderCreate = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 min-h-full">
+    <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-6 min-h-full">
       {/* ── Page header ── */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4">
         <HeaderName
