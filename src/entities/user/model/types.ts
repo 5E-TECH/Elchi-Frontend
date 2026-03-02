@@ -15,5 +15,6 @@ export interface UserState {
     accessToken: string | null;
     refreshToken: string | null;
     loading: boolean;
+    isAppInitializing: boolean;
     error: string | null;
 }

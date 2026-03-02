@@ -7,6 +7,7 @@ const initialState: UserState = {
   accessToken: localStorage.getItem("accessToken"),
   refreshToken: localStorage.getItem("refreshToken"),
   loading: false,
+  isAppInitializing: !!localStorage.getItem("accessToken"), // If token exists, we are initializing (fetching profile)
   error: null,
 };
 
@@ -28,6 +29,9 @@ export const userSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
+    setAppInitializing: (state, action: PayloadAction<boolean>) => {
+      state.isAppInitializing = action.payload;
+    },
     setError: (state, action: PayloadAction<string | null>) => {
       state.loading = false;
       state.error = action.payload;
@@ -45,5 +49,5 @@ export const userSlice = createSlice({
   },
 });
 
-export const { loginSuccess, setLoading, setError, logout } = userSlice.actions;
+export const { loginSuccess, setLoading, setAppInitializing, setError, logout } = userSlice.actions;
 export default userSlice.reducer;

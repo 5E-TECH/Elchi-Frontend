@@ -1,6 +1,33 @@
-export type UserRole = 'admin' | 'manager' | 'marketing' | 'operator' | 'courier' | 'market' | 'superadmin';
+export type UserRole = 'admin' | 'manager' | 'marketing' | 'operator' | 'courier' | 'market' | 'superadmin' | 'customer';
 
 export type UserStatus = 'active' | 'inactive' | 'blocked';
+
+export interface OrderItem {
+    id: string;
+    product_id: string;
+    order_id: string;
+    quantity: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Order {
+    id: string;
+    market_id: string;
+    customer_id: string;
+    product_quantity: number;
+    where_deliver: 'home' | 'center';
+    total_price: number;
+    to_be_paid: number;
+    paid_amount: number;
+    status: string;
+    comment: string | null;
+    district_id: string;
+    region_id: string;
+    createdAt: string;
+    updatedAt: string;
+    items?: OrderItem[];
+}
 
 // Backend dan kelgan user ma'lumotlari
 export interface User {
@@ -20,6 +47,7 @@ export interface User {
     default_tariff: 'home' | 'center';
     avatar?: string;
     balance?: number;
+    orders?: Order[];
 }
 
 export interface UserStats {
