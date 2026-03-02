@@ -1,13 +1,25 @@
-import { memo, useCallback } from "react";
-import { Filter, X, Search, Store, Tag, Calendar } from "lucide-react";
+import { memo } from "react";
+import { useDispatch } from "react-redux";
+import {
+    Filter,
+    X,
+    Store,
+    MapPin,
+    Truck,
+    Tag,
+    Download,
+    RefreshCw,
+} from "lucide-react";
 import { useUser } from "../../../entities/user/api/userApi";
-import type { OrderListParams, OrderStatus } from "../../../entities/order/types/order";
+import type { OrderStatus } from "../../../entities/order/types/order";
+import { setFilterValue, resetFilters } from "../../../features/Select/model/FilterSlice";
+import { useQueryParams } from "../../../shared/lib/useQueryParams";
+import Select from "../../../shared/ui/Select";
+import FilterSearch from "../../../shared/ui/FilterSearch";
+import FilterDateRange from "../../../shared/ui/FilterDateRange";
+import { setSearchValue, clearAllSearch } from "../../../features/search/model/searchSlice";
 
-interface Props {
-    params: OrderListParams;
-    onChange: (p: OrderListParams) => void;
-}
-
+// ── Holat variantlari ─────────────────────────────────────────────────────
 const ALL_STATUSES: { value: OrderStatus | ""; label: string }[] = [
     { value: "", label: "Barcha holat" },
     { value: "new", label: "Yangi" },
@@ -22,188 +34,277 @@ const ALL_STATUSES: { value: OrderStatus | ""; label: string }[] = [
     { value: "closed", label: "Yopildi" },
 ];
 
-const selectCls = `
-    w-full px-3.5 py-2.5 rounded-xl text-sm appearance-none cursor-pointer
-    bg-white dark:bg-primarydark
-    border border-gray-200 dark:border-white/10
-    text-maindark dark:text-primary placeholder:text-gray-400
-    focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
-    transition-all duration-200 pr-9
-`;
+// ── Redux key-lari (UserListPage patterndek) ──────────────────────────────
+export const ORDER_FILTER_KEYS = {
+    marketId: "orderMarketId",
+    regionId: "orderRegionId",
+    courierId: "orderCourierId",
+    status: "orderStatus",
+    dateFrom: "orderDateFrom",
+    dateTo: "orderDateTo",
+    search: "orderSearch",
+} as const;
 
-const inputCls = `
-    w-full px-3.5 py-2.5 rounded-xl text-sm
-    bg-white dark:bg-primarydark
-    border border-gray-200 dark:border-white/10
-    text-maindark dark:text-primary placeholder:text-gray-400
-    focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
-    transition-all duration-200
-`;
+// ── Props ─────────────────────────────────────────────────────────────────
+interface Props {
+    onExport?: () => void;
+}
 
-const ChevronDown = () => (
-    <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-    </svg>
-);
+// ── Komponent ─────────────────────────────────────────────────────────────
+const OrderFilters = memo(({ onExport }: Props) => {
+    const dispatch = useDispatch();
+    const { setParam, removeParam, clearAllParams, getParam } = useQueryParams();
 
-const OrderFilters = ({ params, onChange }: Props) => {
-    const { getUser } = useUser();
-    const { data: marketsData } = getUser({ role: "market", limit: 100 });
+    // ─── URL dan joriy qiymatlarni olish ───────────────────────────────────
+    const marketId = getParam(ORDER_FILTER_KEYS.marketId) ?? "";
+    const regionId = getParam(ORDER_FILTER_KEYS.regionId) ?? "";
+    const courierId = getParam(ORDER_FILTER_KEYS.courierId) ?? "";
+    const status = getParam(ORDER_FILTER_KEYS.status) ?? "";
+    const dateFrom = getParam(ORDER_FILTER_KEYS.dateFrom) ?? "";
+    const dateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? "";
+    const search = getParam(ORDER_FILTER_KEYS.search) ?? "";
 
-    // market list
-    const markets: { id: string; name: string }[] =
-        marketsData?.data?.items?.map((m: any) => ({ id: String(m.id), name: m.name })) ?? [];
+    const hasFilter = !!(marketId || regionId || courierId || status || dateFrom || dateTo || search);
 
-    const hasFilter = !!(
-        params.status ||
-        params.market_id ||
-        params.customer_id
+    // ─── API lar ───────────────────────────────────────────────────────────
+    const { getUser, getRegions } = useUser();
+
+    const { data: marketsData, isLoading: marketsLoading } = getUser({ role: "market", limit: 100 });
+    const markets = ((marketsData?.data?.items ?? []) as { id: string | number; name: string }[]).map(
+        (m) => ({ value: String(m.id), label: m.name })
     );
 
-    const update = useCallback(
-        (key: keyof OrderListParams, value: string | number | undefined) =>
-            onChange({ ...params, [key]: value || undefined, page: 1 }),
-        [params, onChange]
+    const { data: couriersData, isLoading: couriersLoading } = getUser({ role: "courier", limit: 100 });
+    const couriers = ((couriersData?.data?.items ?? []) as { id: string | number; name: string }[]).map(
+        (c) => ({ value: String(c.id), label: c.name })
     );
 
-    const clearAll = () => onChange({ page: 1, limit: params.limit });
+    const { data: regionsData, isLoading: regionsLoading } = getRegions();
+    const regions = ((regionsData?.data ?? regionsData ?? []) as { id: string | number; name: string }[]).map(
+        (r) => ({ value: String(r.id), label: r.name })
+    );
+
+    // ─── Update: Redux + URL ───────────────────────────────────────────────
+    const update = (reduxKey: string, urlKey: string, value: string) => {
+        // 1. Redux ga saqlash
+        dispatch(setFilterValue({ key: reduxKey, value }));
+        // 2. URL params ga saqlash
+        if (value) {
+            setParam(urlKey, value);
+        } else {
+            removeParam(urlKey);
+        }
+    };
+
+    // Search uchun alohida (searchSlice)
+    const updateSearch = (value: string) => {
+        dispatch(setSearchValue({ key: ORDER_FILTER_KEYS.search, value }));
+        if (value) {
+            setParam(ORDER_FILTER_KEYS.search, value);
+        } else {
+            removeParam(ORDER_FILTER_KEYS.search);
+        }
+    };
+
+    // ─── Barcha filterlarni tozalash ──────────────────────────────────────
+    const handleReset = () => {
+        dispatch(resetFilters());
+        dispatch(clearAllSearch());
+        // Faqat order filter key-larini tozalash
+        Object.values(ORDER_FILTER_KEYS).forEach((key) => removeParam(key));
+        // URLni butunlay tozalash uchun
+        clearAllParams();
+    };
 
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
 
-            {/* ── Header row ── */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            {/* ── 1-qator: sarlavha | date range | search ── */}
+            <div className="flex flex-wrap items-center gap-3">
+                {/* Sarlavha */}
+                <div className="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-white/50 uppercase tracking-wider shrink-0">
                     <Filter size={13} className="text-main" />
                     Saralash
                 </div>
+
+                <div className="flex-1" />
+
+                {/* Date range picker */}
+                <FilterDateRange
+                    dateFrom={dateFrom}
+                    dateTo={dateTo}
+                    onChangeDateFrom={(v) =>
+                        update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, v)
+                    }
+                    onChangeDateTo={(v) =>
+                        update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, v)
+                    }
+                />
+
+                {/* Search */}
+                <FilterSearch
+                    value={search}
+                    onChange={updateSearch}
+                    placeholder="Buyurtmani qidiring..."
+                    className="w-56"
+                />
+            </div>
+
+            {/* ── 2-qator: selectlar ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* MARKET */}
+                <Select
+                    label="Market"
+                    name={ORDER_FILTER_KEYS.marketId}
+                    value={marketId}
+                    onChange={(e) =>
+                        update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, e.target.value)
+                    }
+                    options={markets}
+                    placeholder="Marketni tanlang"
+                    icon={Store}
+                    loading={marketsLoading}
+                />
+
+                {/* VILOYAT */}
+                <Select
+                    label="Viloyat"
+                    name={ORDER_FILTER_KEYS.regionId}
+                    value={regionId}
+                    onChange={(e) =>
+                        update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, e.target.value)
+                    }
+                    options={regions}
+                    placeholder="Hududni tanlang"
+                    icon={MapPin}
+                    loading={regionsLoading}
+                />
+
+                {/* KURYER */}
+                <Select
+                    label="Kuryer"
+                    name={ORDER_FILTER_KEYS.courierId}
+                    value={courierId}
+                    onChange={(e) =>
+                        update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, e.target.value)
+                    }
+                    options={couriers}
+                    placeholder="Kuryerni tanlang"
+                    icon={Truck}
+                    loading={couriersLoading}
+                />
+
+                {/* HOLAT */}
+                <Select
+                    label="Holat"
+                    name={ORDER_FILTER_KEYS.status}
+                    value={status}
+                    onChange={(e) =>
+                        update(ORDER_FILTER_KEYS.status, ORDER_FILTER_KEYS.status, e.target.value)
+                    }
+                    options={ALL_STATUSES}
+                    placeholder="Holatni tanlang"
+                    icon={Tag}
+                />
+            </div>
+
+            {/* ── 3-qator: tozalash | chiplar | export ── */}
+            <div className="flex flex-wrap items-center gap-2">
+                {/* Tozalash tugmasi */}
                 {hasFilter && (
                     <button
-                        onClick={clearAll}
-                        className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-500 transition-colors"
+                        onClick={handleReset}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-500 transition-colors"
                     >
-                        <X size={13} />
+                        <RefreshCw size={13} />
                         Tozalash
                     </button>
                 )}
+
+                {/* Aktiv filter chip-lar */}
+                {hasFilter && (
+                    <div className="flex flex-wrap gap-1.5 flex-1">
+                        {marketId && (
+                            <FilterChip
+                                label={`Market: ${markets.find((m) => m.value === marketId)?.label ?? `#${marketId}`}`}
+                                onRemove={() =>
+                                    update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, "")
+                                }
+                            />
+                        )}
+                        {regionId && (
+                            <FilterChip
+                                label={`Viloyat: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
+                                onRemove={() =>
+                                    update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, "")
+                                }
+                            />
+                        )}
+                        {courierId && (
+                            <FilterChip
+                                label={`Kuryer: ${couriers.find((c) => c.value === courierId)?.label ?? `#${courierId}`}`}
+                                onRemove={() =>
+                                    update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "")
+                                }
+                            />
+                        )}
+                        {status && (
+                            <FilterChip
+                                label={`Holat: ${ALL_STATUSES.find((s) => s.value === status)?.label}`}
+                                onRemove={() =>
+                                    update(ORDER_FILTER_KEYS.status, ORDER_FILTER_KEYS.status, "")
+                                }
+                            />
+                        )}
+                        {dateFrom && (
+                            <FilterChip
+                                label={`Dan: ${dateFrom}`}
+                                onRemove={() =>
+                                    update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, "")
+                                }
+                            />
+                        )}
+                        {dateTo && (
+                            <FilterChip
+                                label={`Gacha: ${dateTo}`}
+                                onRemove={() =>
+                                    update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, "")
+                                }
+                            />
+                        )}
+                        {search && (
+                            <FilterChip
+                                label={`Qidiruv: "${search}"`}
+                                onRemove={() => updateSearch("")}
+                            />
+                        )}
+                    </div>
+                )}
+
+                <div className="flex-1" />
+
+                {/* Export Excel */}
+                {onExport && (
+                    <button
+                        onClick={onExport}
+                        className="
+                            flex items-center gap-2 px-4 py-2 rounded-xl
+                            bg-emerald-500 hover:bg-emerald-600
+                            text-white text-xs font-semibold
+                            transition-all duration-200
+                            shadow-sm hover:shadow-md hover:shadow-emerald-500/25
+                        "
+                    >
+                        <Download size={14} />
+                        Export Excel
+                    </button>
+                )}
             </div>
-
-            {/* ── Filter grid ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-
-                {/* MARKET — select */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                        <Store size={11} className="text-main/70" />
-                        Market
-                    </label>
-                    <div className="relative">
-                        <select
-                            value={params.market_id ?? ""}
-                            onChange={(e) => update("market_id", e.target.value)}
-                            className={selectCls}
-                        >
-                            <option value="">Marketni tanlang</option>
-                            {markets.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                    {m.name}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown />
-                    </div>
-                </div>
-
-                {/* CUSTOMER ID */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                        <Search size={11} className="text-main/70" />
-                        Mijoz ID
-                    </label>
-                    <input
-                        type="text"
-                        placeholder="Mijoz ID kiriting..."
-                        value={params.customer_id ?? ""}
-                        onChange={(e) => update("customer_id", e.target.value)}
-                        className={inputCls}
-                    />
-                </div>
-
-                {/* HOLAT — select */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                        <Tag size={11} className="text-main/70" />
-                        Holat
-                    </label>
-                    <div className="relative">
-                        <select
-                            value={params.status ?? ""}
-                            onChange={(e) => update("status", e.target.value as OrderStatus)}
-                            className={selectCls}
-                        >
-                            {ALL_STATUSES.map((s) => (
-                                <option key={s.value} value={s.value}>
-                                    {s.label}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown />
-                    </div>
-                </div>
-
-                {/* LIMIT */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                        <Calendar size={11} className="text-main/70" />
-                        Sahifadagi miqdor
-                    </label>
-                    <div className="relative">
-                        <select
-                            value={params.limit ?? 15}
-                            onChange={(e) =>
-                                onChange({ ...params, limit: Number(e.target.value), page: 1 })
-                            }
-                            className={selectCls}
-                        >
-                            {[10, 15, 25, 50].map((n) => (
-                                <option key={n} value={n}>
-                                    {n} ta
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown />
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Active filter chips ── */}
-            {hasFilter && (
-                <div className="flex flex-wrap gap-2 pt-0.5">
-                    {params.market_id && (
-                        <FilterChip
-                            label={`Market: ${markets.find((m) => m.id === params.market_id)?.name ?? `#${params.market_id}`}`}
-                            onRemove={() => update("market_id", undefined)}
-                        />
-                    )}
-                    {params.customer_id && (
-                        <FilterChip
-                            label={`Mijoz: #${params.customer_id}`}
-                            onRemove={() => update("customer_id", undefined)}
-                        />
-                    )}
-                    {params.status && (
-                        <FilterChip
-                            label={`Holat: ${ALL_STATUSES.find((s) => s.value === params.status)?.label}`}
-                            onRemove={() => update("status", undefined)}
-                        />
-                    )}
-                </div>
-            )}
         </div>
     );
-};
+});
 
+// ── Filter chip ───────────────────────────────────────────────────────────
 const FilterChip = ({ label, onRemove }: { label?: string; onRemove: () => void }) => (
     <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-[11px] font-semibold bg-main/10 text-main border border-main/20">
         {label}
@@ -216,4 +317,6 @@ const FilterChip = ({ label, onRemove }: { label?: string; onRemove: () => void 
     </span>
 );
 
-export default memo(OrderFilters);
+OrderFilters.displayName = "OrderFilters";
+
+export default OrderFilters;

@@ -7,7 +7,8 @@ export const UserStats = memo(() => {
             label: 'Barcha Foydalanuvchilar',
             value: '150',
             icon: Users,
-            color: 'from-blue-400 to-blue-600',
+            colorFrom: '#3b82f6',
+            colorTo: '#2563eb',
             bg: 'bg-blue-500/10',
             text: 'text-blue-500',
             progress: 70
@@ -16,7 +17,8 @@ export const UserStats = memo(() => {
             label: 'Marketlar',
             value: '92',
             icon: Store,
-            color: 'from-emerald-400 to-emerald-600',
+            colorFrom: '#10b981',
+            colorTo: '#059669',
             bg: 'bg-emerald-500/10',
             text: 'text-emerald-500',
             progress: 45
@@ -25,46 +27,70 @@ export const UserStats = memo(() => {
             label: 'Xodimlar',
             value: '58',
             icon: UserCheck,
-            color: 'from-purple-400 to-purple-600',
-            bg: 'bg-purple-500/10',
-            text: 'text-purple-500',
+            colorFrom: '#8b5cf6',
+            colorTo: '#7c3aed',
+            bg: 'bg-purple-light/10',
+            text: 'text-purple-light',
             progress: 30
         }
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {stats.map((stat, index) => (
-                <div
-                    key={index}
-                    className="bg-primary dark:bg-main text-primary p-6 rounded-2xl relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 shadow-xl shadow-black/10"
-                >
-                    {/* Decorative Background Blob */}
-                    <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full opacity-20 bg-linear-to-br blur-2xl group-hover:scale-150 transition-transform duration-700`}></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+            {stats.map((stat, index) => {
+                const IconComponent = stat.icon;
+                return (
+                    <div
+                        key={index}
+                        className="relative overflow-hidden rounded-2xl p-5 md:p-6 bg-primary dark:bg-maindark/80 border border-maindark/5 dark:border-primary/5 shadow-lg shadow-maindark/5 group hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-default"
+                        style={{
+                            boxShadow: `0 4px 24px ${stat.colorFrom}18, 0 1px 4px rgba(0,0,0,0.06)`,
+                        }}
+                    >
+                        {/* Decorative blob */}
+                        <div
+                            className="absolute -right-8 -top-8 w-36 h-36 rounded-full blur-3xl opacity-15 group-hover:opacity-25 transition-opacity duration-500"
+                            style={{ background: `radial-gradient(circle, ${stat.colorFrom}, ${stat.colorTo})` }}
+                        />
 
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-main dark:text-primary text-sm font-medium mb-1">{stat.label}</p>
-                                <h3 className="text-3xl font-bold text-main dark:text-primary">{stat.value}</h3>
-                            </div>
-                            <div className={`p-3.5 rounded-xl dark:bg-maindark ${stat.bg} ${stat.text} shadow-lg backdrop-blur-sm`}>
-                                <stat.icon size={24} strokeWidth={2.5} />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <div className="flex-1 bg-maindark/50 rounded-full h-2 overflow-hidden backdrop-blur-sm">
+                        <div className="relative z-10">
+                            {/* Top row: label + icon */}
+                            <div className="flex items-start justify-between mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-maindark/60 dark:text-primary/60 mb-1 leading-snug">
+                                        {stat.label}
+                                    </p>
+                                    <h3 className="text-3xl font-bold text-maindark dark:text-primary tracking-tight">
+                                        {stat.value}
+                                    </h3>
+                                </div>
+                                {/* Icon badge */}
                                 <div
-                                    className={`h-full rounded-full bg-linear-to-r ${stat.color} transition-all duration-1000 ease-out`}
-                                    style={{ width: `${stat.progress}%` }}
-                                ></div>
+                                    className={`p-3 rounded-xl ${stat.bg} ${stat.text} shadow-md backdrop-blur-sm shrink-0`}
+                                >
+                                    <IconComponent size={22} strokeWidth={2.5} />
+                                </div>
                             </div>
-                            <span className="text-xs font-medium text-primary/50">{stat.progress}%</span>
+
+                            {/* Progress bar */}
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 bg-maindark/8 dark:bg-primary/10 rounded-full h-2 overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full transition-all duration-1000 ease-out"
+                                        style={{
+                                            width: `${stat.progress}%`,
+                                            background: `linear-gradient(to right, ${stat.colorFrom}, ${stat.colorTo})`
+                                        }}
+                                    />
+                                </div>
+                                <span className="text-xs font-semibold text-maindark/50 dark:text-primary/50 w-8 text-right">
+                                    {stat.progress}%
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 });

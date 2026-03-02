@@ -1,54 +1,92 @@
-import { memo, useState } from "react";
-import { ListOrdered, Plus, ShoppingCart, TrendingUp, Clock } from "lucide-react";
+import { memo, useEffect, useMemo, useState } from "react";
+import { ListOrdered, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import HeaderName from "../../shared/components/headerName";
 import Button from "../../shared/components/button";
 import { useOrders } from "../../entities/order/api/orderApi";
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
-import OrderFilters from "./list/OrderFilters";
+import OrderFilters, { ORDER_FILTER_KEYS } from "./list/OrderFilters";
 import OrdersTable from "./list/OrdersTable";
 import OrderPagination from "./list/OrderPagination";
+import { useQueryParams } from "../../shared/lib/useQueryParams";
+import type { RootState } from "../../app/config/store";
 
 const LIMIT = 15;
 
-// ── Stat card ─────────────────────────────────────────────────────────────
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-}
-const StatCard = ({ label, value, icon, color }: StatCardProps) => (
-  <div className="flex items-center gap-3 bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-5 py-4">
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-      {icon}
-    </div>
-    <div>
-      <p className="text-xl font-bold text-maindark dark:text-primary leading-tight">{value}</p>
-      <p className="text-xs text-gray-400 mt-0.5">{label}</p>
-    </div>
-  </div>
-);
 
 // ── Main component ─────────────────────────────────────────────────────────
 const Orders = () => {
   const navigate = useNavigate();
   const { getOrders } = useOrders();
+  const { getAllParams } = useQueryParams();
 
-  const [params, setParams] = useState<OrderListParams>({
-    page: 1,
-    limit: LIMIT,
-  });
+  // Redux filterlarni olish (UserListPage patterndek)
+  const filters = useSelector((state: RootState) => state.filter);
+  const searchFilters = useSelector((state: RootState) => state.search);
 
-  const { data, isLoading } = getOrders(params);
+  // Pagination
+  const [page, setPage] = useState(1);
+
+  // URL params
+  const urlParams = getAllParams();
+
+  // API params qurishda Redux + URL params birga ishlatiladi (UserListPage patterndek)
+  const apiParams = useMemo((): OrderListParams => {
+    const params: OrderListParams = {
+      page,
+      limit: LIMIT,
+    };
+
+    // Market
+    const marketId = urlParams[ORDER_FILTER_KEYS.marketId] || filters[ORDER_FILTER_KEYS.marketId];
+    if (marketId) params.market_id = String(marketId);
+
+    // Viloyat / Region
+    const regionId = urlParams[ORDER_FILTER_KEYS.regionId] || filters[ORDER_FILTER_KEYS.regionId];
+    if (regionId) params.region_id = String(regionId);
+
+    // Kuryer
+    const courierId = urlParams[ORDER_FILTER_KEYS.courierId] || filters[ORDER_FILTER_KEYS.courierId];
+    if (courierId) params.courier_id = String(courierId);
+
+    // Holat
+    const status = urlParams[ORDER_FILTER_KEYS.status] || filters[ORDER_FILTER_KEYS.status];
+    if (status) params.status = String(status) as OrderListParams["status"];
+
+    // Sana oralig'i
+    const dateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] || filters[ORDER_FILTER_KEYS.dateFrom];
+    if (dateFrom) params.start_day = String(dateFrom);
+
+    const dateTo = urlParams[ORDER_FILTER_KEYS.dateTo] || filters[ORDER_FILTER_KEYS.dateTo];
+    if (dateTo) params.end_day = String(dateTo);
+
+    // Qidiruv (searchSlice)
+    const search =
+      urlParams[ORDER_FILTER_KEYS.search] || searchFilters[ORDER_FILTER_KEYS.search];
+    if (search) params.search = search;
+
+    return params;
+  }, [page, urlParams, filters, searchFilters]);
+
+  // Filter o'zgarganda sahifani 1 ga qaytarish
+  useEffect(() => {
+    setPage(1);
+  }, [
+    filters[ORDER_FILTER_KEYS.marketId],
+    filters[ORDER_FILTER_KEYS.regionId],
+    filters[ORDER_FILTER_KEYS.courierId],
+    filters[ORDER_FILTER_KEYS.status],
+    filters[ORDER_FILTER_KEYS.dateFrom],
+    filters[ORDER_FILTER_KEYS.dateTo],
+    searchFilters[ORDER_FILTER_KEYS.search],
+  ]);
+
+  const { data, isLoading } = getOrders(apiParams);
 
   const items: OrderListItem[] = data?.data ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / LIMIT) || 1;
-
-  // Stat hisoblash (client-side, faqat joriy sahifa uchun)
-  const newCount = items.filter((o) => o.status === "new").length;
-  const onRoadCount = items.filter((o) => o.status === "on the road").length;
 
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-5 min-h-full">
@@ -69,33 +107,13 @@ const Orders = () => {
         </div>
       </div>
 
-      {/* ── Stats ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          label="Jami buyurtmalar"
-          value={total}
-          icon={<ShoppingCart size={18} className="text-main" />}
-          color="bg-main/10"
-        />
-        <StatCard
-          label="Yangi (joriy sahifa)"
-          value={newCount}
-          icon={<TrendingUp size={18} className="text-green-500" />}
-          color="bg-green-50 dark:bg-green-900/20"
-        />
-        <StatCard
-          label="Yo'lda (joriy sahifa)"
-          value={onRoadCount}
-          icon={<Clock size={18} className="text-amber-500" />}
-          color="bg-amber-50 dark:bg-amber-900/20"
-        />
-      </div>
-
       {/* ── Filters + Table ── */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm flex flex-col gap-4 p-5">
 
         {/* Filters */}
-        <OrderFilters params={params} onChange={setParams} />
+        <OrderFilters
+          onExport={() => console.log("Export Excel:", apiParams)}
+        />
 
         {/* Divider */}
         <div className="border-t border-gray-100 dark:border-primarydark/60" />
@@ -109,11 +127,11 @@ const Orders = () => {
         {/* Pagination */}
         {!isLoading && (
           <OrderPagination
-            page={params.page ?? 1}
+            page={page}
             totalPages={totalPages}
             total={total}
             limit={LIMIT}
-            onChange={(p) => setParams((prev) => ({ ...prev, page: p }))}
+            onChange={(p) => setPage(p)}
           />
         )}
       </div>

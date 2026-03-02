@@ -7,8 +7,14 @@
   --color-primarydark: #4c5798;
   --color-sidebar: #f4f5fa;
   --color-background: #322d48;
+  --color-purple: #7c3aed;
+  --color-purple-light: #8b5cf6;
+  --color-purple-dark: #5b21b6;
+  --color-glass: rgba(255, 255, 255, 0.08);
+  --color-glass-border: rgba(255, 255, 255, 0.15);
+  --color-surface: rgba(255, 255, 255, 0.6);
+  --color-surface-dark: rgba(39, 44, 82, 0.85);
 }
-
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -44,5 +50,137 @@
 
   .animate-shimmer {
     animation: shimmer 2s infinite;
+  }
+
+  /* Bottom nav slide-up animation */
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+  }
+
+  /* Hamburger menu slide-down animation */
+  @keyframes slideDown {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.25s ease-out forwards;
+  }
+
+  /* ── PageLoader Animations ── */
+  @keyframes loaderFadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes loaderFadeOut {
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes logoReveal {
+    0% {
+      opacity: 0;
+      transform: scale(0.8) translateY(8px);
+    }
+
+    60% {
+      opacity: 1;
+      transform: scale(1.04) translateY(-2px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes spinRing {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes dotBounce {
+
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+
+    40% {
+      transform: translateY(-10px);
+      opacity: 1;
+    }
+  }
+
+  .animate-loader-in {
+    animation: loaderFadeIn 0.35s ease-out forwards;
+  }
+
+  .animate-loader-out {
+    animation: loaderFadeOut 0.4s ease-in forwards;
+  }
+
+  .animate-logo-reveal {
+    animation: logoReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .animate-spin-ring {
+    animation: spinRing 1.6s linear infinite;
+  }
+
+  .animate-dot-bounce {
+    animation: dotBounce 1.4s ease-in-out infinite;
+  }
+
+  /* Glass card utility */
+  .glass-card {
+    background: var(--color-surface);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--color-glass-border);
+  }
+
+  .glass-card-dark {
+    background: var(--color-surface-dark);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--color-glass-border);
   }
 }

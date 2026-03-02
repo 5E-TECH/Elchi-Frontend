@@ -84,6 +84,11 @@ export interface OrderListParams {
     status?: OrderStatus | "";
     market_id?: string;
     customer_id?: string;
+    region_id?: string;
+    courier_id?: string;
+    search?: string;
+    start_day?: string;
+    end_day?: string;
 }
 
 // Mijoz ma'lumotlari (nested object)

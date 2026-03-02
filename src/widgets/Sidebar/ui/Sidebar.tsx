@@ -25,7 +25,8 @@ const Sidebar = () => {
   useEffect(() => {
     const checkDarkMode = () => {
       const theme = localStorage.getItem("theme");
-      const isDark = theme === "dark" || 
+      const isDark =
+        theme === "dark" ||
         (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches);
       setIsDarkMode(isDark);
     };
@@ -96,8 +97,14 @@ const Sidebar = () => {
             !sidebarRedux.isOpen ? "mx-auto" : ""
           }`}
         >
-          {sidebarRedux.isOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          {sidebarRedux.isOpen && <span className="ml-2 text-sm font-medium">Yashirish</span>}
+          {sidebarRedux.isOpen ? (
+            <ChevronLeft size={20} />
+          ) : (
+            <ChevronRight size={20} />
+          )}
+          {sidebarRedux.isOpen && (
+            <span className="ml-2 text-sm font-medium">Yashirish</span>
+          )}
         </button>
 
         {sidebarRedux.isOpen && (
