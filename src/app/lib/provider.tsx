@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 import store from "../config/store";
 import { ThemeProvider } from "../providers/theme/ThemeContext";
 import { NotificationProvider } from "../providers/notification/NotificationProvider";
+import PageLoader from "../../shared/ui/PageLoader";
 
 const queryClient = new QueryClient();
 
@@ -15,7 +16,7 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
         <Provider store={store}>
           <QueryClientProvider client={queryClient}>
             <NotificationProvider>
-              <Suspense fallback={<div>Loading...</div>}>
+              <Suspense fallback={<PageLoader />}>
                 {children}
               </Suspense>
             </NotificationProvider>

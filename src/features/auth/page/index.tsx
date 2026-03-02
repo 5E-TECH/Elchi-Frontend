@@ -9,6 +9,7 @@ import {
 } from "../model/loginSlice";
 import { api } from "../../../shared/api/api";
 import { logout } from "../../../entities/user/model/slice";
+import PageLoader from "../../../shared/ui/PageLoader";
 // import Suspensee from "../../shared/ui/Suspensee";
 // Test for deployment
 const Auth = () => {
@@ -50,7 +51,7 @@ const Auth = () => {
   if (loading)
     return (
       <div>
-        <h2>loading...!!!</h2>
+        <PageLoader/>
       </div>
     );
 
