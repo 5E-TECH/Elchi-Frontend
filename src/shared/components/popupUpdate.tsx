@@ -36,28 +36,28 @@ const UpdatePopup = ({
 }: UpdatePopupProps) => {
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className="bg-[#1e1e2d] w-[92vw] max-w-md rounded-3xl text-white shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-white/5">
+      <div className="bg-sidebar dark:bg-maindark w-[92vw] max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200 dark:border-white/5">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-white/5">
+        <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
           <div className="flex items-center gap-3">
-            {icon && <div className="text-purple-500">{icon}</div>}
-            <h3 className="text-xl font-semibold tracking-wide">{title}</h3>
+            {icon && <div className="text-main">{icon}</div>}
+            <h3 className="text-xl font-semibold tracking-wide text-maindark dark:text-primary">{title}</h3>
           </div>
           <X
-            className="cursor-pointer text-gray-400 hover:text-white transition-colors"
+            className="cursor-pointer text-gray-400 hover:text-maindark dark:hover:text-primary transition-colors"
             onClick={onClose}
           />
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-sidebar dark:bg-maindark">
           {/* Universal Image Update Section */}
           {imageProps && (
             <div className="space-y-2">
-              <label className="text-sm text-gray-400 ml-1">
+              <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">
                 {imageProps.label}
               </label>
-              <label className="relative h-44 rounded-2xl overflow-hidden border border-dashed border-white/10 group cursor-pointer flex flex-col items-center justify-center bg-white/2 hover:bg-white/4 transition-all">
+              <label className="relative h-44 rounded-2xl overflow-hidden border border-dashed border-gray-200 dark:border-white/10 group cursor-pointer flex flex-col items-center justify-center bg-gray-50 dark:bg-white/2 hover:bg-gray-100 dark:hover:bg-white/4 transition-all">
                 <input
                   type="file"
                   className="hidden"
@@ -78,8 +78,8 @@ const UpdatePopup = ({
                   />
                 ) : (
                   <div className="text-center space-y-2">
-                    <ImagePlus className="mx-auto text-gray-500" size={32} />
-                    <span className="text-xs text-gray-500">Rasm yuklash</span>
+                    <ImagePlus className="mx-auto text-gray-400 dark:text-gray-500" size={32} />
+                    <span className="text-xs text-gray-400 dark:text-gray-500">Rasm yuklash</span>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-sm">
@@ -94,17 +94,17 @@ const UpdatePopup = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 flex gap-4 border-t border-white/5 bg-white/2">
+        <div className="p-6 flex gap-4 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/2">
           <Button
             label={cancelLabel}
             onClick={onClose}
-            className="flex-1 border border-white/10 text-gray-300 hover:bg-white/5 bg-transparent py-3"
+            className="flex-1 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 bg-transparent py-3"
           />
           <Button
             label={isLoading ? "Saqlanmoqda..." : saveLabel}
             onClick={onSave}
             disabled={isLoading}
-            className={`flex-1 py-3 shadow-lg shadow-indigo-500/20 ${!isLoading ? "bg-[#6366f1] hover:bg-[#5558e3]" : "opacity-50"}`}
+            className={`flex-1 py-3 shadow-lg shadow-main/20 ${!isLoading ? "bg-main hover:bg-primarydark" : "opacity-50"}`}
           />
         </div>
       </div>

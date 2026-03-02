@@ -2,10 +2,13 @@ import { memo, useState, useRef, useEffect, useCallback } from "react";
 import HeaderName from "../../../shared/components/headerName";
 import { MoveLeft, Printer, Globe, FileText, ChevronDown, CheckCircle2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { GlobalSearchInput } from "../../../features/search";
+import { GlobalSearchInput, useDebounce } from "../../../features/search";
 import { useOrders } from "../../../entities/orders";
 import { OrderCard, Checkbox, fmt } from "./OrderCard";
 import type { ApiOrder } from "./OrderCard";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
+import PopupConfirm from "../../../shared/components/popupConfirm";
 
 const printOptions = [
   { key: "thermal", icon: <Printer size={18} />, bg: "bg-blue-500/10 text-blue-500", title: "Termal printer", sub: "MQTT orqali" },
@@ -20,9 +23,25 @@ const NewOrderDetail = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  const { getTodayOrdersByMarket } = useOrders();
-  const { data: res, isLoading } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0);
+  const { getTodayOrdersByMarket, deleteOrder } = useOrders();
+
+  // Redux dan search qiymatini olish
+  const searchQuery = useSelector((state: RootState) =>
+    (state.search["new_order_detail_search"] as string) || ""
+  );
+
+  // Backend ga yuborish uchun debounce (500ms)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const applyDebounce = useDebounce((val: string) => setDebouncedSearch(val), 500);
+
+  useEffect(() => {
+    applyDebounce(searchQuery);
+  }, [searchQuery, applyDebounce]);
+
+  const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
+  const { data: res, isLoading } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
   const orders: ApiOrder[] = res?.data ?? res ?? [];
 
   useEffect(() => {
@@ -42,7 +61,20 @@ const NewOrderDetail = () => {
   }, [orders]);
 
   const handleEdit = useCallback((id: string) => navigate(`/new-orders/${marketId}/edit/${id}`), [navigate, marketId]);
-  const handleDelete = (id: string) => console.log("Delete:", id);
+
+  // 1-bosqich: popup ochish
+  const handleDelete = useCallback((id: string) => {
+    setDeleteTargetId(id);
+  }, []);
+
+  // 2-bosqich: tasdiqlash → API
+  const handleConfirmDelete = useCallback(() => {
+    if (!deleteTargetId) return;
+    deleteOrder.mutate(deleteTargetId, {
+      onSuccess: () => setDeleteTargetId(null),
+      onError: () => setDeleteTargetId(null),
+    });
+  }, [deleteTargetId, deleteOrder]);
 
   const allSelected = selectedIds.size === orders.length && orders.length > 0;
   const totalSum = orders.reduce((s, o) => s + o.total_price, 0);
@@ -129,6 +161,16 @@ const NewOrderDetail = () => {
           Accept ({selectedIds.size} ta buyurtma)
         </button>
       </div>
+
+      {/* Delete tasdiqlash popupi */}
+      <PopupConfirm
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteOrder.isPending}
+        title="Buyurtmani o'chirish"
+        message="Bu buyurtma butunlay o'chiriladi. Davom etasizmi?"
+      />
     </div>
   );
 };
