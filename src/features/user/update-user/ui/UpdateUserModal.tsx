@@ -92,6 +92,7 @@ export const UpdateUserModal = memo(
         const isAdmin = role === "admin" || role === "manager" || role === "superadmin";
         const isCourier = role === "courier";
         const isMarket = role === "market" || role === "marketing";
+        const isCustomer = role === "customer";
 
         // ── Form state ──────────────────────────────────────────────────────────────
         const [form, setForm] = useState<Record<string, string>>({});
@@ -289,9 +290,11 @@ export const UpdateUserModal = memo(
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                                 {/* ── Umumiy (barcha rollar) ── */}
-                                <div className="col-span-full">
-                                    <SectionDivider title="Asosiy ma'lumotlar" />
-                                </div>
+                                {!isCustomer && (
+                                    <div className="col-span-full">
+                                        <SectionDivider title="Asosiy ma'lumotlar" />
+                                    </div>
+                                )}
 
                                 {/* Name */}
                                 <div className="relative">
@@ -329,37 +332,41 @@ export const UpdateUserModal = memo(
                                     </div>
                                 </div>
 
-                                {/* Password */}
-                                <div className="relative">
-                                    <label className={labelCls}>
-                                        <Lock size={11} className="inline mr-1 mb-px" />
-                                        Yangi parol (ixtiyoriy)
-                                    </label>
-                                    <input
-                                        name="password"
-                                        type="password"
-                                        value={form.password ?? ""}
-                                        onChange={handleInput}
-                                        placeholder="••••••"
-                                        className={inputCls}
-                                    />
-                                </div>
+                                {!isCustomer && (
+                                    <>
+                                        {/* Password */}
+                                        <div className="relative">
+                                            <label className={labelCls}>
+                                                <Lock size={11} className="inline mr-1 mb-px" />
+                                                Yangi parol (ixtiyoriy)
+                                            </label>
+                                            <input
+                                                name="password"
+                                                type="password"
+                                                value={form.password ?? ""}
+                                                onChange={handleInput}
+                                                placeholder="••••••"
+                                                className={inputCls}
+                                            />
+                                        </div>
 
-                                {/* Status */}
-                                <div className="relative">
-                                    <Select
-                                        label="Holati"
-                                        name="status"
-                                        value={form.status ?? ""}
-                                        onChange={handleInput as any}
-                                        options={[
-                                            { value: "active", label: "Faol" },
-                                            { value: "inactive", label: "Faol emas" },
-                                            { value: "blocked", label: "Bloklangan" },
-                                        ]}
-                                        placeholder="Tanlang"
-                                    />
-                                </div>
+                                        {/* Status */}
+                                        <div className="relative">
+                                            <Select
+                                                label="Holati"
+                                                name="status"
+                                                value={form.status ?? ""}
+                                                onChange={handleInput as any}
+                                                options={[
+                                                    { value: "active", label: "Faol" },
+                                                    { value: "inactive", label: "Faol emas" },
+                                                    { value: "blocked", label: "Bloklangan" },
+                                                ]}
+                                                placeholder="Tanlang"
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
                                 {/* ── Admin / Manager: Moliyaviy ── */}
                                 {isAdmin && (
@@ -520,7 +527,7 @@ export const UpdateUserModal = memo(
                                 )}
 
                                 {/* ── Operator / Superadmin: faqat umumiy fieldlar ── */}
-                                {!isAdmin && !isCourier && !isMarket && (
+                                {!isAdmin && !isCourier && !isMarket && !isCustomer && (
                                     <div className="col-span-full">
                                         <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5">
                                             <MapPin size={14} className="text-slate-400" />

@@ -91,7 +91,7 @@ export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
                 <h2 className="mt-3 text-lg font-bold text-slate-800 dark:text-white text-center leading-tight">
                     {user.name}
                 </h2>
-                {user.username && (
+                {user.username && user.role !== 'customer' && (
                     <p className="text-sm text-slate-400 dark:text-white/40 mt-0.5">{user.username}</p>
                 )}
 
