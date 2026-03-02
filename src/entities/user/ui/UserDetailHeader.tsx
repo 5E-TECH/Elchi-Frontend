@@ -25,6 +25,7 @@ const roleConfig: Record<string, {
     marketing: { from: 'from-emerald-500', to: 'to-teal-600', icon: Store, label: 'Market' },
     operator: { from: 'from-pink-500', to: 'to-rose-600', icon: Headphones, label: 'Operator' },
     superadmin: { from: 'from-red-500', to: 'to-orange-600', icon: Crown, label: 'Super Admin' },
+    customer: { from: 'from-blue-500', to: 'to-indigo-600', icon: Users, label: 'Mijoz' },
 };
 
 const statusConfig: Record<User['status'], {

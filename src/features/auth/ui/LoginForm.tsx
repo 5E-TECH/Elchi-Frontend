@@ -9,6 +9,7 @@ import { loginSchema } from "../../../shared/lib/validation/loginSchema";
 import {
   loginSuccess,
   setLoading,
+  setAppInitializing,
   setError,
 } from "../../../entities/user/model/slice";
 import type { RootState, AppDispatch } from "../../../app/config/store";
@@ -38,6 +39,7 @@ const LoginForm = () => {
 
   const onSubmit = (data: any) => {
     dispatch(setLoading(true));
+    dispatch(setAppInitializing(true));
     dispatch(setError(null));
 
     const payload = {
@@ -71,6 +73,7 @@ const LoginForm = () => {
           }
 
           dispatch(setError(message));
+          dispatch(setAppInitializing(false));
         },
       },
     );

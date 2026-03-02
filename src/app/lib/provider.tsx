@@ -1,28 +1,62 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { memo, Suspense, type ReactNode } from "react";
+import { memo, Suspense, useState, useEffect, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
+import { Provider, useSelector } from "react-redux";
 import store from "../config/store";
+import type { RootState } from "../config/store";
 import { ThemeProvider } from "../providers/theme/ThemeContext";
 import { NotificationProvider } from "../providers/notification/NotificationProvider";
 import PageLoader from "../../shared/ui/PageLoader";
 
 const queryClient = new QueryClient();
 
+const GlobalLoader = ({ children }: { children: ReactNode }) => {
+  const isAppInitializing = useSelector((state: RootState) => state.user.isAppInitializing);
+  const [showLoader, setShowLoader] = useState(isAppInitializing);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    if (isAppInitializing) {
+      setShowLoader(true);
+    } else {
+      // Minimal 500ms ko'rinishni ta'minlash (UX uchun)
+      timer = setTimeout(() => {
+        setShowLoader(false);
+      }, 500);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isAppInitializing]);
+
+  return (
+    <>
+      {showLoader && <PageLoader />}
+      <div className={showLoader ? "opacity-0 invisible" : "opacity-100 visible transition-all duration-500"}>
+        {children}
+      </div>
+    </>
+  );
+};
+
 const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Provider store={store}>
+      <Provider store={store}>
+        <BrowserRouter>
           <QueryClientProvider client={queryClient}>
             <NotificationProvider>
-              <Suspense fallback={<PageLoader />}>
-                {children}
-              </Suspense>
+              <GlobalLoader>
+                <Suspense fallback={<PageLoader />}>
+                  {children}
+                </Suspense>
+              </GlobalLoader>
             </NotificationProvider>
           </QueryClientProvider>
-        </Provider>
-      </BrowserRouter>
+        </BrowserRouter>
+      </Provider>
     </ThemeProvider>
   );
 };

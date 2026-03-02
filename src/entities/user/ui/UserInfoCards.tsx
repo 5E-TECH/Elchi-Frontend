@@ -13,6 +13,7 @@ import {
     CheckCircle2,
     XCircle,
     MinusCircle,
+    Package,
 } from 'lucide-react';
 import type { User } from '../types/user';
 
@@ -28,6 +29,7 @@ const formatMoney = (n: number) =>
 const ROLE_LABELS: Record<string, string> = {
     admin: 'Admin', manager: "Ro'yxatchi", courier: 'Kuryer',
     market: 'Market', marketing: 'Market', operator: 'Operator', superadmin: 'Super Admin',
+    customer: 'Mijoz',
 };
 
 const STATUS_MAP: Record<User['status'], {
@@ -84,6 +86,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
     const isAdmin = user.role === 'admin' || user.role === 'manager' || user.role === 'superadmin';
     const isCourier = user.role === 'courier';
     const isMarket = user.role === 'market' || user.role === 'marketing';
+    const isCustomer = user.role === 'customer';
     const sc = STATUS_MAP[user.status];
     console.log(sc);
 
@@ -153,6 +156,16 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                         iconColor="text-indigo-500"
                         label="Username"
                         value={<span className="text-indigo-500">{user.username}</span>}
+                    />
+                )}
+
+                {isCustomer && (
+                    <InfoChip
+                        icon={Package}
+                        iconBg="bg-blue-50 dark:bg-blue-500/10"
+                        iconColor="text-blue-500"
+                        label="Jami Buyurtmalar"
+                        value={user.orders?.length ?? 0}
                     />
                 )}
 

@@ -2,21 +2,13 @@ import { memo, useEffect, useState } from 'react';
 import logo from '../assets/logoo.png';
 
 /**
- * PageLoader — Brendga mos, zamonaviy loading animatsiyasi.
- * React Suspense fallback sifatida ishlatiladi.
- *
- * Animatsiya bosqichlari:
- * 1. Overlay fade-in
- * 2. Logo scale + fade reveal
- * 3. Gradient ring aylanishi (logo atrofida)
- * 4. 3 ta bounce dot (pastda)
- * 5. Komponent unmount bo'lishida smooth fade-out
+ * PageLoader — "Quantum Pulse" Edition
+ * Premium, 3D-effect, high-fidelity loading animation.
  */
 const PageLoader = () => {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        // Minimal delay bilan trigger — smooth kirish uchun
         const timer = setTimeout(() => setIsVisible(true), 30);
         return () => clearTimeout(timer);
     }, []);
@@ -24,139 +16,144 @@ const PageLoader = () => {
     return (
         <div
             className={`
-        fixed inset-0 z-[9999]
-        flex flex-col items-center justify-center
-        transition-opacity duration-400
-        ${isVisible ? 'animate-loader-in' : 'opacity-0'}
-      `}
+                fixed inset-0 z-[9999]
+                flex flex-col items-center justify-center
+                transition-all duration-700
+                ${isVisible ? 'animate-loader-in' : 'opacity-0'}
+            `}
             style={{
-                background: `linear-gradient(135deg, var(--color-maindark) 0%, #1a1835 50%, var(--color-maindark) 100%)`,
+                background: `linear-gradient(135deg, #0f172a 0%, var(--color-maindark) 50%, #1e1b4b 100%)`,
             }}
             role="status"
             aria-label="Yuklanmoqda"
         >
-            {/* ── Fon dekor nurlari ── */}
-            <div
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                aria-hidden="true"
-            >
-                {/* Chap yuqori gradient doira */}
+            {/* ── Background Aurora Effects ── */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none animate-aurora">
                 <div
-                    className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-20 blur-3xl"
-                    style={{ background: `radial-gradient(circle, var(--color-main), transparent 70%)` }}
+                    className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full opacity-20 blur-[100px]"
+                    style={{ background: 'var(--color-main)' }}
                 />
-                {/* O'ng pastki gradient doira */}
                 <div
-                    className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-15 blur-3xl"
-                    style={{ background: `radial-gradient(circle, var(--color-purple), transparent 70%)` }}
+                    className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-15 blur-[100px]"
+                    style={{ background: 'var(--color-purple)' }}
                 />
-                {/* Markaziy yumshoq glow */}
-                <div
-                    className="absolute inset-0 flex items-center justify-center"
-                >
+
+                {/* Particles */}
+                {[...Array(12)].map((_, i) => (
                     <div
-                        className="w-64 h-64 rounded-full opacity-10 blur-2xl"
-                        style={{ background: `radial-gradient(circle, var(--color-main), transparent 60%)` }}
+                        key={i}
+                        className="absolute w-1 h-1 bg-white rounded-full animate-float-particle"
+                        style={{
+                            top: `${Math.random() * 100}%`,
+                            left: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 5}s`,
+                            opacity: Math.random() * 0.3
+                        }}
                     />
-                </div>
+                ))}
             </div>
 
-            {/* ── Logo + Ring konteyner ── */}
-            <div className="relative flex items-center justify-center mb-10">
+            {/* ── Main Animation Core ── */}
+            <div className="relative flex items-center justify-center mb-12">
 
-                {/* Aylanuvchi gradient ring (tashqi) */}
+                {/* Outer Ring - Dynamic Conic */}
                 <div
                     className="absolute animate-spin-ring"
-                    aria-hidden="true"
                     style={{
-                        width: '140px',
-                        height: '140px',
+                        width: '180px',
+                        height: '180px',
                         borderRadius: '50%',
-                        background: `conic-gradient(
-              from 0deg,
-              var(--color-main),
-              var(--color-purple),
-              var(--color-main)
-            )`,
+                        background: `conic-gradient(from 0deg, transparent, var(--color-main), transparent)`,
+                        padding: '2px',
+                        maskImage: `radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px))`,
+                        WebkitMaskImage: `radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px))`,
+                        opacity: 0.4
+                    }}
+                />
+
+                {/* Middle Ring - Reverse Rotation */}
+                <div
+                    className="absolute animate-spin-ring-rev"
+                    style={{
+                        width: '155px',
+                        height: '155px',
+                        borderRadius: '50%',
+                        border: '2px dashed var(--color-purple-light)',
+                        opacity: 0.2
+                    }}
+                />
+
+                {/* Inner Glow Ring */}
+                <div
+                    className="absolute animate-spin-ring-slow"
+                    style={{
+                        width: '130px',
+                        height: '130px',
+                        borderRadius: '50%',
+                        background: `linear-gradient(to right, var(--color-main), var(--color-purple))`,
                         padding: '3px',
                         maskImage: `radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))`,
                         WebkitMaskImage: `radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))`,
+                        filter: 'blur(1px)'
                     }}
                 />
 
-                {/* Ichki statik ring (depth effekti) */}
-                <div
-                    className="absolute"
-                    aria-hidden="true"
-                    style={{
-                        width: '120px',
-                        height: '120px',
-                        borderRadius: '50%',
-                        border: '1px solid var(--color-glass-border)',
-                    }}
-                />
-
-                {/* Logo konteyner */}
+                {/* Logo Container with Glassmorphism */}
                 <div
                     className={`
-            relative z-10 flex items-center justify-center
-            w-24 h-24 rounded-full
-            ${isVisible ? 'animate-logo-reveal' : 'opacity-0'}
-          `}
+                        relative z-10 flex items-center justify-center
+                        w-28 h-28 rounded-full animate-pulse-glow
+                        ${isVisible ? 'animate-logo-reveal' : 'opacity-0'}
+                    `}
                     style={{
-                        background: `rgba(255, 255, 255, 0.06)`,
-                        backdropFilter: 'blur(8px)',
-                        border: '1px solid var(--color-glass-border)',
-                        boxShadow: `0 0 40px rgba(87, 106, 219, 0.3)`,
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        backdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: '0 0 50px rgba(87, 106, 219, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.05)'
                     }}
                 >
                     <img
                         src={logo}
                         alt="Elchi Logo"
-                        className="w-14 h-14 object-contain"
+                        className="w-16 h-16 object-contain filter drop-shadow(0 0 8px rgba(255,255,255,0.3))"
                         draggable={false}
                     />
                 </div>
             </div>
 
-            {/* ── Brand nomi ── */}
-            <div
-                className={`
-          mb-8 text-center
-          ${isVisible ? 'animate-logo-reveal' : 'opacity-0'}
-        `}
-                style={{ animationDelay: '0.2s', animationFillMode: 'both' }}
-            >
+            {/* ── Brand Typography ── */}
+            <div className={`text-center transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
                 <h1
-                    className="text-2xl font-bold tracking-widest uppercase"
-                    style={{ color: 'var(--color-primary)' }}
+                    className="text-3xl font-black tracking-[0.6em] uppercase animate-letter-expand"
+                    style={{
+                        color: 'var(--color-primary)',
+                        textShadow: '0 0 20px rgba(255, 255, 255, 0.2)'
+                    }}
                 >
                     Elchi
                 </h1>
-                <p
-                    className="text-sm mt-1 tracking-wider"
-                    style={{ color: 'rgba(255, 255, 255, 0.45)' }}
-                >
-                    Admin Panel
-                </p>
+                <div className="flex items-center justify-center gap-3 mt-4">
+                    <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-white/20" />
+                    <p
+                        className="text-xs font-medium tracking-[0.3em] uppercase opacity-40"
+                        style={{ color: 'var(--color-primary)' }}
+                    >
+                        Pochta Xizmati
+                    </p>
+                    <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-white/20" />
+                </div>
             </div>
 
-            {/* ── Bounce Dots ── */}
-            <div
-                className="flex items-end gap-2"
-                aria-hidden="true"
-            >
+            {/* ── Progress Indicators ── */}
+            <div className="absolute bottom-12 flex gap-3">
                 {[0, 1, 2].map((i) => (
-                    <span
+                    <div
                         key={i}
-                        className="block rounded-full animate-dot-bounce"
+                        className="w-1.5 h-1.5 rounded-full animate-dot-bounce"
                         style={{
-                            width: '8px',
-                            height: '8px',
-                            background: i === 1
-                                ? `var(--color-main)`
-                                : `var(--color-purple-light)`,
-                            animationDelay: `${i * 0.18}s`,
+                            background: i === 1 ? 'var(--color-main)' : 'rgba(255, 255, 255, 0.2)',
+                            animationDelay: `${i * 0.15}s`,
+                            boxShadow: i === 1 ? '0 0 10px var(--color-main)' : 'none'
                         }}
                     />
                 ))}

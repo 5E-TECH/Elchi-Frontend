@@ -8,8 +8,7 @@ import {
   setRole,
 } from "../model/loginSlice";
 import { api } from "../../../shared/api/api";
-import { logout } from "../../../entities/user/model/slice";
-import PageLoader from "../../../shared/ui/PageLoader";
+import { logout, setAppInitializing } from "../../../entities/user/model/slice";
 // import Suspensee from "../../shared/ui/Suspensee";
 // Test for deployment
 const Auth = () => {
@@ -20,16 +19,16 @@ const Auth = () => {
 
   useEffect(() => {
     if (!token) {
-      setLoading(false);
+      dispatch(setAppInitializing(false));
       return;
     }
 
     api
       .get("auth/my-profile")
       .then((res) => {
-        
+
         setValid(true);
-        
+
         // ✅ Safe access:
         const userData = res.data?.data;
         if (userData) {
@@ -39,21 +38,19 @@ const Auth = () => {
             dispatch(setRegion(userData.region.name));
           }
         }
-        
+
       })
       .catch(() => {
         dispatch(logout());
         setValid(false);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        dispatch(setAppInitializing(false));
+        setLoading(false);
+      });
   }, [token, dispatch]);
 
-  if (loading)
-    return (
-      <div>
-        <PageLoader/>
-      </div>
-    );
+  if (loading) return null;
 
   return valid ? <Outlet /> : <Navigate replace to="/login" />;
 };

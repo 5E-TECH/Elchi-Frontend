@@ -4,6 +4,7 @@ import type { User } from '../../../entities/user/types/user';
 import { UserDetailHeader } from '../../../entities/user/ui/UserDetailHeader';
 import { UserInfoCards } from '../../../entities/user/ui/UserInfoCards';
 import { UserStatsCard } from '../../../entities/user/ui/UserStatsCard';
+import { CustomerOrdersTable } from '../../../entities/user/ui/CustomerOrdersTable';
 import { UpdateUserModal } from '../../../features/user/update-user/ui/UpdateUserModal';
 
 interface UserDetailWidgetProps {
@@ -94,7 +95,11 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
           </div>
 
           <UserInfoCards user={user} />
-          <UserStatsCard user={user} />
+          {user.role === 'customer' ? (
+            <CustomerOrdersTable orders={user.orders || []} />
+          ) : (
+            <UserStatsCard user={user} />
+          )}
         </div>
       </div>
 
