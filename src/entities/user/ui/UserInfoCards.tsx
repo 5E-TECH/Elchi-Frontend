@@ -149,7 +149,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                     }
                 /> */}
 
-                {user.username && (
+                {user.username && user.role !== 'customer' && (
                     <InfoChip
                         icon={AtSign}
                         iconBg="bg-indigo-50 dark:bg-indigo-500/10"
