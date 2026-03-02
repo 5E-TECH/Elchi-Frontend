@@ -130,6 +130,9 @@ const NewOrderUpdate = () => {
   const { data: res, isLoading } = getOrderById(orderId ?? "", !!orderId);
   const order: OrderDetail | null = res?.data ?? null;
 
+  const userId = res?.data?.customer?.id
+  console.log("USER ID:", userId)
+
   const statusCfg = order ? (statusConfig[order.status] ?? statusConfig.new) : null;
   const regionName = order?.customer?.region?.name ?? order?.region?.name ?? "—";
   const districtName = order?.customer?.district?.name ?? order?.district?.name ?? "—";
@@ -261,8 +264,8 @@ const NewOrderUpdate = () => {
                     </button>
                   }
                 />
-                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-main/8 dark:bg-main/10 border border-main/20">
-                  <div className="w-12 h-12 rounded-full bg-linear-to-br from-main to-primarydark flex items-center justify-center text-white font-black text-xl shadow-lg shadow-main/30 shrink-0">
+                <div onClick={() => navigate(`/new-orders/userDetail/${userId}`)} className="flex items-center gap-3 p-3.5 rounded-xl bg-main/8 dark:bg-main/10 border border-main/20">
+                  <div className=" w-12 h-12 rounded-full bg-linear-to-br from-main to-primarydark flex items-center justify-center text-white font-black text-xl shadow-lg shadow-main/30 shrink-0">
                     {order.customer.name.charAt(0).toUpperCase()}
                   </div>
                   <div>

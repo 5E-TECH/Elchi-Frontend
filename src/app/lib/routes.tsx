@@ -70,6 +70,7 @@ const AppRouter = () => {
                 { index: true, element: <NewOrders /> },
                 { path: ":marketId", element: <NewOrderDetail /> },
                 { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
+                { path: "userDetail/:id", element: <UserDetailPage /> },
               ]
             },
           ],
