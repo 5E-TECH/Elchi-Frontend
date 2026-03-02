@@ -35,6 +35,14 @@ export const useOrders = () => {
       enabled,
     });
 
+  const updateNewOrder = useMutation({
+    mutationFn: ({ orderId, data }: { orderId: string; data: any }) =>
+      api.patch(`orders/${orderId}/full`, data).then((res) => res.data),
+    onSuccess: () => {
+      // Barcha orders cache ni yangilash
+      client.invalidateQueries({ queryKey: [orders] });
+    },
+  })
 
   const deleteOrder = useMutation({
     mutationFn: (orderId: string) =>
@@ -45,5 +53,5 @@ export const useOrders = () => {
     },
   });
 
-  return { getTodayOrders, getTodayOrdersByMarket, getOrderById, deleteOrder };
+  return { getTodayOrders, getTodayOrdersByMarket, getOrderById, updateNewOrder, deleteOrder };
 };

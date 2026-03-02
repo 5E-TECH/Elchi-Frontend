@@ -1,45 +1,143 @@
-import { memo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  MoveLeft, Package, User, Phone, MapPin,
-  Building, Map, Home, ShoppingBag,
-  CreditCard, Banknote, Edit2, ChevronDown,
+  MoveLeft,
+  Package,
+  User,
+  Phone,
+  MapPin,
+  Building,
+  Map,
+  Home,
+  ShoppingBag,
+  CreditCard,
+  Banknote,
+  Edit2,
+  ChevronDown,
+  Minus,
+  Plus,
+  Trash2,
+  MessageSquare,
+  Truck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import { useOrders } from "../../../entities/orders";
+import { useUser } from "../../../entities/user/api/userApi";
+import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-interface District { id: string; name: string; region?: { name: string } }
-interface Region { id: string; name: string; districts?: District[] }
-interface Customer { id: string; name: string; phone_number: string; district?: District; region?: Region }
-interface OrderItem { id: string; quantity: number; product: { id: string; name: string; image_url?: string | null } | null }
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface District {
+  id: string;
+  name: string;
+  region_id?: string;
+  region?: { id: string; name: string };
+}
+interface Region {
+  id: string;
+  name: string;
+  districts?: District[];
+}
+interface Customer {
+  id: string;
+  name: string;
+  phone_number: string;
+  district?: District;
+  region?: Region;
+}
+interface OrderItem {
+  id: string;
+  quantity: number;
+  product: { id: string; name: string; image_url?: string | null } | null;
+}
 interface OrderDetail {
-  id: string; where_deliver: "center" | "home" | "address";
-  total_price: number; to_be_paid: number; paid_amount: number;
-  status: string; comment: string | null; address: string | null;
-  items: OrderItem[]; customer: Customer; district?: District; region?: Region;
+  id: string;
+  where_deliver: "center" | "address";
+  total_price: number;
+  to_be_paid: number;
+  paid_amount: number;
+  status: string;
+  comment: string | null;
+  address: string | null;
+  district_id?: string;
+  items: OrderItem[];
+  customer: Customer;
+  district?: District;
+  region?: Region;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+interface AddressForm {
+  region_id: string;
+  district_id: string;
+  address: string;
+}
+interface CustomerForm {
+  name: string;
+  phone: string;
+}
+interface OrderForm {
+  where_deliver: string;
+  total_price: string;
+  comment: string;
+  items: OrderItem[];
+}
+
+// ─── Constants (module-level — re-render da qayta yaratilmaydi) ───────────────
 const fmt = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
-const deliverLabel: Record<string, string> = { center: "Markazga", home: "Uyga", address: "Manzilga" };
-const statusConfig: Record<string, { label: string; cls: string }> = {
-  new: { label: "New", cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
-  processing: { label: "Jarayonda", cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
-  completed: { label: "Tayyor", cls: "bg-blue-500/20 text-blue-400 border border-blue-500/30" },
+
+const DELIVER_LABELS: Record<string, string> = {
+  center: "Markazga",
+  address: "Manzilga",
 };
-const fieldCls = "w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 text-gray-800 dark:text-white text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all";
-const iconCls = "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 pointer-events-none";
 
-// ─── Subcomponents ────────────────────────────────────────────────────────────
-const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`rounded-2xl bg-white dark:bg-white/4 border border-gray-200 dark:border-white/8 ${className}`}>{children}</div>
-);
+const DELIVER_OPTIONS = [
+  { value: "center", label: "Markazga" },
+  { value: "address", label: "Manzilga" },
+] as const;
 
-const SectionHead = ({ icon, title, sub, iconCls: ic = "bg-main/20 text-main", action }: {
-  icon: React.ReactNode; title: string; sub?: string; iconCls?: string; action?: React.ReactNode;
+const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
+  new: {
+    label: "New",
+    cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
+  },
+  processing: {
+    label: "Jarayonda",
+    cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+  },
+  completed: {
+    label: "Tayyor",
+    cls: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+  },
+};
+
+const FIELD_CLS =
+  "w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 text-gray-800 dark:text-white text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all";
+const ICON_CLS =
+  "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 pointer-events-none";
+
+const PAYMENT_ROWS = (order: OrderDetail) => [
+  { label: "Total", value: fmt(order.total_price), cls: "text-gray-900 dark:text-white font-bold" },
+  { label: "To be paid", value: fmt(order.to_be_paid), cls: "text-amber-500 font-bold" },
+  { label: "Paid", value: fmt(order.paid_amount), cls: "text-emerald-500 font-bold" },
+];
+
+// ─── Pure UI Subcomponents (memo ile — props o'zgarmasa re-render bo'lmaydi) ──
+const Card = memo(({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`rounded-2xl bg-white dark:bg-white/4 border border-gray-200 dark:border-white/8 ${className}`}>
+    {children}
+  </div>
+));
+
+const SectionHead = memo(({
+  icon, title, sub, iconCls: ic = "bg-main/20 text-main", action,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  sub?: string;
+  iconCls?: string;
+  action?: React.ReactNode;
 }) => (
   <div className="flex items-center justify-between">
     <div className="flex items-center gap-3">
@@ -51,47 +149,71 @@ const SectionHead = ({ icon, title, sub, iconCls: ic = "bg-main/20 text-main", a
     </div>
     {action}
   </div>
-);
+));
 
-const InfoRow = ({ icon, label, value, iconCls: ic = "bg-main/20 text-main" }: {
-  icon: React.ReactNode; label: string; value: string; iconCls?: string;
+const InfoRow = memo(({
+  icon, label, value, iconCls: ic = "bg-main/20 text-main",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  iconCls?: string;
 }) => (
   <div className="flex items-center gap-3 py-3 border-b border-gray-100 dark:border-white/6 last:border-0">
-    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${ic}`}>{icon}</div>
+    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${ic}`}>
+      {icon}
+    </div>
     <div className="flex flex-col">
-      <span className="text-[10px] text-gray-400 dark:text-white/40 uppercase tracking-wider font-medium">{label}</span>
+      <span className="text-[10px] text-gray-400 dark:text-white/40 uppercase tracking-wider font-medium">
+        {label}
+      </span>
       <span className="text-sm font-semibold text-gray-900 dark:text-white">{value}</span>
     </div>
   </div>
-);
+));
 
-const EditBtn = ({ onClick }: { onClick?: () => void }) => (
-  <button onClick={onClick} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 text-xs font-semibold transition-colors">
+const EditBtn = memo(({ onClick }: { onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 text-xs font-semibold transition-colors"
+  >
     <Edit2 size={12} /> Edit
   </button>
-);
+));
 
-const Skeleton = () => (
+const Skeleton = memo(() => (
   <div className="animate-pulse space-y-4">
-    {[64, 200, 120].map((h) => <div key={h} className="rounded-2xl bg-gray-100 dark:bg-white/5" style={{ height: h }} />)}
+    {[64, 200, 120].map((h) => (
+      <div key={h} className="rounded-2xl bg-gray-100 dark:bg-white/5" style={{ height: h }} />
+    ))}
   </div>
-);
+));
 
-// ─── Popup Field Components ────────────────────────────────────────────────────
-const SelectField = ({ label, icon: Icon, value, onChange, placeholder, options }: {
-  label: string; icon: LucideIcon; value: string;
-  onChange: (v: string) => void; placeholder: string;
-  options: { value: string; label: string }[];
+// ─── Popup Field Components ───────────────────────────────────────────────────
+const SelectField = memo(({
+  label, icon: Icon, value, onChange, placeholder, options,
+}: {
+  label: string;
+  icon: LucideIcon;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  options: ReadonlyArray<{ value: string; label: string }>;
 }) => (
   <div className="space-y-1.5">
     <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">{label}</label>
     <div className="relative">
-      <div className={iconCls}><Icon size={16} /></div>
-      <select value={value} onChange={(e) => onChange(e.target.value)}
-        className={`${fieldCls} pl-10 pr-10 appearance-none cursor-pointer`}>
+      <div className={ICON_CLS}><Icon size={16} /></div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${FIELD_CLS} pl-10 pr-10 appearance-none cursor-pointer`}
+      >
         <option value="" className="bg-sidebar dark:bg-maindark">{placeholder}</option>
         {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-sidebar dark:bg-maindark">{o.label}</option>
+          <option key={o.value} value={o.value} className="bg-sidebar dark:bg-maindark">
+            {o.label}
+          </option>
         ))}
       </select>
       <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 dark:text-white/40">
@@ -99,77 +221,221 @@ const SelectField = ({ label, icon: Icon, value, onChange, placeholder, options 
       </div>
     </div>
   </div>
-);
+));
 
-const InputField = ({ label, icon: Icon, value, onChange, placeholder }: {
-  label: string; icon: LucideIcon; value: string;
-  onChange: (v: string) => void; placeholder: string;
+const InputField = memo(({
+  label, icon: Icon, value, onChange, placeholder,
+}: {
+  label: string;
+  icon: LucideIcon;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
 }) => (
   <div className="space-y-1.5">
     <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">{label}</label>
     <div className="relative">
-      <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white/40 pointer-events-none"><Icon size={16} /></div>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className={`${fieldCls} pl-10 pr-4 placeholder:text-gray-400 dark:placeholder:text-white/25`} />
+      <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white/40 pointer-events-none">
+        <Icon size={16} />
+      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`${FIELD_CLS} pl-10 pr-4 placeholder:text-gray-400 dark:placeholder:text-white/25`}
+      />
     </div>
   </div>
-);
+));
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderUpdate = () => {
   const navigate = useNavigate();
-  const { marketId, orderId } = useParams();
+  const { orderId } = useParams<{ orderId: string }>();
+  const queryClient = useQueryClient();
 
+  // ─── State ──────────────────────────────────────────────────────────────────
   const [addressPopupOpen, setAddressPopupOpen] = useState(false);
-  const [addressForm, setAddressForm] = useState({ region: "", district: "", address: "" });
+  const [addressForm, setAddressForm] = useState<AddressForm>({
+    region_id: "", district_id: "", address: "",
+  });
 
   const [customerPopupOpen, setCustomerPopupOpen] = useState(false);
-  const [customerForm, setCustomerForm] = useState({ name: "", phone: "" });
+  const [customerForm, setCustomerForm] = useState<CustomerForm>({ name: "", phone: "" });
 
-  const { getOrderById } = useOrders();
+  const [orderPopupOpen, setOrderPopupOpen] = useState(false);
+  const [orderForm, setOrderForm] = useState<OrderForm>({
+    where_deliver: "", total_price: "", comment: "", items: [],
+  });
+
+  // ─── Data fetching ───────────────────────────────────────────────────────────
+  const { getOrderById, updateNewOrder } = useOrders();
+  const { updateUser } = useUser();
+  const { getRegions, getDistricts } = useLogistics();
+
   const { data: res, isLoading } = getOrderById(orderId ?? "", !!orderId);
-  const order: OrderDetail | null = res?.data ?? null;
+  const order = useMemo<OrderDetail | null>(() => res?.data ?? null, [res]);
+  const userId = order?.customer?.id;
 
-  const userId = res?.data?.customer?.id
-  console.log("USER ID:", userId)
+  const { data: regionsData } = getRegions();
+  const { data: districtsData } = getDistricts(addressForm.region_id || undefined);
 
-  const statusCfg = order ? (statusConfig[order.status] ?? statusConfig.new) : null;
-  const regionName = order?.customer?.region?.name ?? order?.region?.name ?? "—";
-  const districtName = order?.customer?.district?.name ?? order?.district?.name ?? "—";
-  const addressText = order?.address ?? "—";
+  // ─── Memoized derived state ──────────────────────────────────────────────────
+  const regions = useMemo(
+    () => (Array.isArray(regionsData?.data) ? regionsData.data : regionsData ?? []).map(
+      (r: Region) => ({ value: r.id, label: r.name }),
+    ),
+    [regionsData],
+  );
 
-  const handleOpenAddressPopup = () => {
+  const districts = useMemo(
+    () => (Array.isArray(districtsData) ? districtsData : []).map(
+      (d: District) => ({ value: d.id, label: d.name }),
+    ),
+    [districtsData],
+  );
+
+  const statusCfg = useMemo(
+    () => order ? (STATUS_CONFIG[order.status] ?? STATUS_CONFIG.new) : null,
+    [order],
+  );
+
+  const regionName = useMemo(
+    () => order?.district?.region?.name ?? order?.region?.name ?? "—",
+    [order],
+  );
+  const districtName = useMemo(() => order?.district?.name ?? "—", [order]);
+  const addressText = useMemo(() => order?.address ?? "—", [order]);
+
+  // ─── Handlers — Address popup ─────────────────────────────────────────────
+  const handleOpenAddressPopup = useCallback(() => {
     setAddressForm({
-      region: order?.customer?.region?.name ?? order?.region?.name ?? "",
-      district: order?.customer?.district?.name ?? order?.district?.name ?? "",
+      region_id: order?.district?.region_id ?? order?.region?.id ?? "",
+      district_id: order?.district_id ?? order?.district?.id ?? "",
       address: order?.address ?? "",
     });
     setAddressPopupOpen(true);
-  };
+  }, [order]);
 
-  const set = (key: keyof typeof addressForm) => (v: string) =>
-    setAddressForm((p) => ({ ...p, [key]: v }));
+  const handleCloseAddressPopup = useCallback(() => setAddressPopupOpen(false), []);
 
-  const setC = (key: keyof typeof customerForm) => (v: string) =>
-    setCustomerForm((p) => ({ ...p, [key]: v }));
+  const handleRegionChange = useCallback((v: string) =>
+    setAddressForm((p) => ({ ...p, region_id: v, district_id: "" })), []);
 
-  const handleOpenCustomerPopup = () => {
-    setCustomerForm({ name: order?.customer?.name ?? "", phone: order?.customer?.phone_number ?? "" });
+  const handleDistrictChange = useCallback((v: string) =>
+    setAddressForm((p) => ({ ...p, district_id: v })), []);
+
+  const handleAddressChange = useCallback((v: string) =>
+    setAddressForm((p) => ({ ...p, address: v })), []);
+
+  const handleSaveAddress = useCallback(() => {
+    if (!orderId) return;
+    updateNewOrder.mutate(
+      { orderId, data: addressForm },
+      { onSuccess: () => setAddressPopupOpen(false) },
+    );
+  }, [orderId, addressForm, updateNewOrder]);
+
+  // ─── Handlers — Customer popup ────────────────────────────────────────────
+  const handleOpenCustomerPopup = useCallback(() => {
+    setCustomerForm({
+      name: order?.customer?.name ?? "",
+      phone: order?.customer?.phone_number ?? "",
+    });
     setCustomerPopupOpen(true);
-  };
+  }, [order]);
 
-  const handleSaveAddress = () => {
-    // TODO: API ga yuborish
-    console.log("Manzil saqlandi:", addressForm);
-    setAddressPopupOpen(false);
-  };
+  const handleCloseCustomerPopup = useCallback(() => setCustomerPopupOpen(false), []);
 
+  const handleCustomerNameChange = useCallback((v: string) =>
+    setCustomerForm((p) => ({ ...p, name: v })), []);
+
+  const handleCustomerPhoneChange = useCallback((v: string) =>
+    setCustomerForm((p) => ({ ...p, phone: v })), []);
+
+  const handleSaveCustomer = useCallback(() => {
+    if (!userId) return;
+    updateUser.mutate(
+      { id: userId, data: { name: customerForm.name, phone_number: customerForm.phone } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["orders"] });
+          setCustomerPopupOpen(false);
+        },
+      },
+    );
+  }, [userId, customerForm, updateUser, queryClient]);
+
+  // ─── Handlers — Order popup ───────────────────────────────────────────────
+  const handleOpenOrderPopup = useCallback(() => {
+    setOrderForm({
+      where_deliver: order?.where_deliver ?? "",
+      total_price: String(order?.total_price ?? ""),
+      comment: order?.comment ?? "",
+      items: order?.items.map((i) => ({ ...i })) ?? [],
+    });
+    setOrderPopupOpen(true);
+  }, [order]);
+
+  const handleCloseOrderPopup = useCallback(() => setOrderPopupOpen(false), []);
+
+  const handleOrderDeliverChange = useCallback((v: string) =>
+    setOrderForm((p) => ({ ...p, where_deliver: v })), []);
+
+  const handleOrderPriceChange = useCallback((v: string) =>
+    setOrderForm((p) => ({ ...p, total_price: v })), []);
+
+  const handleOrderCommentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+      setOrderForm((p) => ({ ...p, comment: e.target.value })),
+    [],
+  );
+
+  const handleSaveOrder = useCallback(() => {
+    if (!orderId) return;
+    updateNewOrder.mutate(
+      {
+        orderId,
+        data: {
+          where_deliver: orderForm.where_deliver,
+          total_price: Number(orderForm.total_price),
+          comment: orderForm.comment,
+          items: orderForm.items.map((i) => ({ product_id: i.product?.id, quantity: i.quantity })),
+        },
+      },
+      { onSuccess: () => setOrderPopupOpen(false) },
+    );
+  }, [orderId, orderForm, updateNewOrder]);
+
+  const adjustQty = useCallback((itemId: string, delta: number) =>
+    setOrderForm((p) => ({
+      ...p,
+      items: p.items.map((i) =>
+        i.id === itemId ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i
+      ),
+    })), []);
+
+  const removeItem = useCallback((itemId: string) =>
+    setOrderForm((p) => ({ ...p, items: p.items.filter((i) => i.id !== itemId) })), []);
+
+  const handleNavigateBack = useCallback(() => navigate(-1), [navigate]);
+  const handleNavigateToCustomer = useCallback(
+    () => navigate(`/new-orders/userDetail/${userId}`),
+    [navigate, userId],
+  );
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-full rounded-2xl bg-sidebar dark:bg-maindark p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div onClick={() => navigate(-1)} className="cursor-pointer">
-          <HeaderName icon={<MoveLeft />} name={order?.customer?.name ?? "Buyurtma"} description="Order details" />
+        <div onClick={handleNavigateBack} className="cursor-pointer">
+          <HeaderName
+            icon={<MoveLeft />}
+            name={order?.customer?.name ?? "Buyurtma"}
+            description="Order details"
+          />
         </div>
         {statusCfg && (
           <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg.cls}`}>
@@ -180,37 +446,53 @@ const NewOrderUpdate = () => {
 
       {/* Content */}
       {isLoading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5"><Skeleton /><Skeleton /></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Skeleton /><Skeleton />
+        </div>
       ) : !order ? (
         <div className="h-64 flex items-center justify-center text-gray-400 dark:text-white/30">
           <p className="font-bold uppercase tracking-widest text-sm">Ma'lumot topilmadi</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* ── CHAP ── */}
+          {/* ── LEFT ── */}
           <div className="space-y-4">
             {/* Order Products */}
             <Card>
               <div className="p-5 space-y-4">
                 <SectionHead
-                  icon={<ShoppingBag size={16} />} title="Order products"
+                  icon={<ShoppingBag size={16} />}
+                  title="Order products"
                   sub={`${order.items.length} ta mahsulot`}
-                  action={<EditBtn onClick={() => navigate(`/new-orders/${marketId}/edit/${orderId}`)} />}
+                  action={<EditBtn onClick={handleOpenOrderPopup} />}
                 />
                 <div className="grid grid-cols-[1fr_auto] text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/30 border-b border-gray-100 dark:border-white/6 pb-2">
-                  <span>PRODUCT</span><span>QUANTITY</span>
+                  <span>PRODUCT</span>
+                  <span>QUANTITY</span>
                 </div>
                 <div className="space-y-2">
                   {order.items.map((item) => (
-                    <div key={item.id} className="grid grid-cols-[1fr_auto] items-center gap-3 py-2 border-b border-gray-50 dark:border-white/4 last:border-0">
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-[1fr_auto] items-center gap-3 py-2 border-b border-gray-50 dark:border-white/4 last:border-0"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
-                          {item.product?.image_url
-                            ? <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
-                            : <Package size={18} className="text-gray-300 dark:text-white/20" />}
+                          {item.product?.image_url ? (
+                            <img
+                              src={item.product.image_url}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <Package size={18} className="text-gray-300 dark:text-white/20" />
+                          )}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.product?.name ?? `Mahsulot #${item.id}`}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {item.product?.name ?? `Mahsulot #${item.id}`}
+                          </p>
                           <p className="text-xs text-gray-400 dark:text-white/40">ID: {item.id}</p>
                         </div>
                       </div>
@@ -222,7 +504,9 @@ const NewOrderUpdate = () => {
                 </div>
                 <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/6">
                   <span className="text-xs text-gray-400 dark:text-white/40 font-medium">Yetkazish:</span>
-                  <span className="text-xs font-bold text-main">{deliverLabel[order.where_deliver] ?? order.where_deliver}</span>
+                  <span className="text-xs font-bold text-main">
+                    {DELIVER_LABELS[order.where_deliver] ?? order.where_deliver}
+                  </span>
                 </div>
               </div>
             </Card>
@@ -231,14 +515,18 @@ const NewOrderUpdate = () => {
             <Card>
               <div className="p-5 space-y-1">
                 <div className="mb-4">
-                  <SectionHead icon={<CreditCard size={16} />} title="To'lov" sub="Summa tafsilotlari" iconCls="bg-emerald-500/15 text-emerald-500" />
+                  <SectionHead
+                    icon={<CreditCard size={16} />}
+                    title="To'lov"
+                    sub="Summa tafsilotlari"
+                    iconCls="bg-emerald-500/15 text-emerald-500"
+                  />
                 </div>
-                {[
-                  { label: "Total", value: fmt(order.total_price), cls: "text-gray-900 dark:text-white font-bold" },
-                  { label: "To be paid", value: fmt(order.to_be_paid), cls: "text-amber-500 font-bold" },
-                  { label: "Paid", value: fmt(order.paid_amount), cls: "text-emerald-500 font-bold" },
-                ].map(({ label, value, cls }) => (
-                  <div key={label} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/6 last:border-0">
+                {PAYMENT_ROWS(order).map(({ label, value, cls }) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/6 last:border-0"
+                  >
                     <div className="flex items-center gap-2">
                       <Banknote size={14} className="text-gray-400 dark:text-white/30" />
                       <span className="text-sm text-gray-500 dark:text-white/60">{label}</span>
@@ -250,32 +538,51 @@ const NewOrderUpdate = () => {
             </Card>
           </div>
 
-          {/* ── O'NG ── */}
+          {/* ── RIGHT ── */}
           <div className="space-y-4">
             {/* Customer */}
             <Card>
               <div className="p-5 space-y-4">
                 <SectionHead
-                  icon={<User size={16} />} title="Customer details" sub="Mijoz haqida ma'lumot"
+                  icon={<User size={16} />}
+                  title="Customer details"
+                  sub="Mijoz haqida ma'lumot"
                   iconCls="bg-blue-500/15 text-blue-500"
                   action={
-                    <button onClick={handleOpenCustomerPopup} className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white/40 hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors">
+                    <button
+                      onClick={handleOpenCustomerPopup}
+                      className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white/40 hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors"
+                    >
                       <Edit2 size={14} />
                     </button>
                   }
                 />
-                <div onClick={() => navigate(`/new-orders/userDetail/${userId}`)} className="flex items-center gap-3 p-3.5 rounded-xl bg-main/8 dark:bg-main/10 border border-main/20">
-                  <div className=" w-12 h-12 rounded-full bg-linear-to-br from-main to-primarydark flex items-center justify-center text-white font-black text-xl shadow-lg shadow-main/30 shrink-0">
+                <div
+                  onClick={handleNavigateToCustomer}
+                  className="flex items-center gap-3 p-3.5 rounded-xl bg-main/8 dark:bg-main/10 border border-main/20 cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-full bg-linear-to-br from-main to-primarydark flex items-center justify-center text-white font-black text-xl shadow-lg shadow-main/30 shrink-0">
                     {order.customer.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-gray-900 dark:text-white">{order.customer.name}</p>
-                    <p className="text-xs text-gray-400 dark:text-white/40">Profilni ko'rish uchun bosing</p>
+                    <p className="font-bold text-sm text-gray-900 dark:text-white">
+                      {order.customer.name}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-white/40">
+                      Profilni ko'rish uchun bosing
+                    </p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1">CONTACT INFORMATION</p>
-                  <InfoRow icon={<Phone size={15} />} label="PHONE" value={order.customer.phone_number} iconCls="bg-emerald-500/15 text-emerald-500" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1">
+                    CONTACT INFORMATION
+                  </p>
+                  <InfoRow
+                    icon={<Phone size={15} />}
+                    label="PHONE"
+                    value={order.customer.phone_number}
+                    iconCls="bg-emerald-500/15 text-emerald-500"
+                  />
                 </div>
               </div>
             </Card>
@@ -284,14 +591,31 @@ const NewOrderUpdate = () => {
             <Card>
               <div className="p-5 space-y-3">
                 <SectionHead
-                  icon={<MapPin size={16} />} title="Address" sub="Yetkazib berish manzili"
+                  icon={<MapPin size={16} />}
+                  title="Address"
+                  sub="Yetkazib berish manzili"
                   iconCls="bg-amber-500/15 text-amber-500"
                   action={<EditBtn onClick={handleOpenAddressPopup} />}
                 />
                 <div>
-                  <InfoRow icon={<Map size={15} />} label="Region" value={regionName} iconCls="bg-blue-500/15 text-blue-500" />
-                  <InfoRow icon={<Building size={15} />} label="District" value={districtName} iconCls="bg-purple-500/15 text-purple-500" />
-                  <InfoRow icon={<Home size={15} />} label="Address" value={addressText} iconCls="bg-emerald-500/15 text-emerald-500" />
+                  <InfoRow
+                    icon={<Map size={15} />}
+                    label="Region"
+                    value={regionName}
+                    iconCls="bg-blue-500/15 text-blue-500"
+                  />
+                  <InfoRow
+                    icon={<Building size={15} />}
+                    label="District"
+                    value={districtName}
+                    iconCls="bg-purple-500/15 text-purple-500"
+                  />
+                  <InfoRow
+                    icon={<Home size={15} />}
+                    label="Address"
+                    value={addressText}
+                    iconCls="bg-emerald-500/15 text-emerald-500"
+                  />
                 </div>
               </div>
             </Card>
@@ -299,46 +623,182 @@ const NewOrderUpdate = () => {
         </div>
       )}
 
-      {/* Address Edit Popup */}
+      {/* ─── Address Edit Popup ─────────────────────────────────────────────── */}
       <UpdatePopup
         isOpen={addressPopupOpen}
-        onClose={() => setAddressPopupOpen(false)}
+        onClose={handleCloseAddressPopup}
         onSave={handleSaveAddress}
+        isLoading={updateNewOrder.isPending}
         title="Manzilni tahrirlash"
         icon={<MapPin size={20} />}
       >
         <SelectField
-          label="Viloyat" icon={Map} value={addressForm.region}
-          onChange={(v) => setAddressForm((p) => ({ ...p, region: v, district: "" }))}
+          label="Viloyat"
+          icon={Map}
+          value={addressForm.region_id}
+          onChange={handleRegionChange}
           placeholder="Viloyatni tanlang"
-          options={addressForm.region ? [{ value: addressForm.region, label: addressForm.region }] : []}
+          options={regions}
         />
         <SelectField
-          label="Tuman" icon={Building} value={addressForm.district}
-          onChange={set("district")}
-          placeholder="Tumanni tanlang"
-          options={addressForm.district ? [{ value: addressForm.district, label: addressForm.district }] : []}
+          label="Tuman"
+          icon={Building}
+          value={addressForm.district_id}
+          onChange={handleDistrictChange}
+          placeholder={addressForm.region_id ? "Tumanni tanlang" : "Avval viloyat tanlang"}
+          options={districts}
         />
         <InputField
-          label="To'liq manzil" icon={Home}
-          value={addressForm.address} onChange={set("address")}
+          label="To'liq manzil"
+          icon={Home}
+          value={addressForm.address}
+          onChange={handleAddressChange}
           placeholder="Manzilni kiriting"
         />
       </UpdatePopup>
 
-      {/* Customer Edit Popup */}
+      {/* ─── Customer Edit Popup ────────────────────────────────────────────── */}
       <UpdatePopup
         isOpen={customerPopupOpen}
-        onClose={() => setCustomerPopupOpen(false)}
-        onSave={() => { console.log("Mijoz saqlandi:", customerForm); setCustomerPopupOpen(false); }}
+        onClose={handleCloseCustomerPopup}
+        onSave={handleSaveCustomer}
+        isLoading={updateUser.isPending}
         title="Edit customer information"
         icon={<User size={20} />}
       >
-        <InputField label="Ism" icon={User} value={customerForm.name} onChange={setC("name")} placeholder="Mijoz ismi" />
-        <InputField label="Telefon raqam" icon={Phone} value={customerForm.phone} onChange={setC("phone")} placeholder="+998 XX XXX XX XX" />
+        <InputField
+          label="Ism"
+          icon={User}
+          value={customerForm.name}
+          onChange={handleCustomerNameChange}
+          placeholder="Mijoz ismi"
+        />
+        <InputField
+          label="Telefon raqam"
+          icon={Phone}
+          value={customerForm.phone}
+          onChange={handleCustomerPhoneChange}
+          placeholder="+998 XX XXX XX XX"
+        />
+      </UpdatePopup>
+
+      {/* ─── Order Edit Popup ───────────────────────────────────────────────── */}
+      <UpdatePopup
+        isOpen={orderPopupOpen}
+        onClose={handleCloseOrderPopup}
+        onSave={handleSaveOrder}
+        isLoading={updateNewOrder.isPending}
+        title="Edit order"
+        icon={<ShoppingBag size={20} />}
+      >
+        {/* Mahsulotlar */}
+        <div className="space-y-2">
+          {orderForm.items.map((item) => (
+            <OrderItemRow
+              key={item.id}
+              item={item}
+              onAdjust={adjustQty}
+              onRemove={removeItem}
+            />
+          ))}
+        </div>
+
+        {/* Yetkazish turi */}
+        <SelectField
+          label="Yetkazish turi"
+          icon={Truck}
+          value={orderForm.where_deliver}
+          onChange={handleOrderDeliverChange}
+          placeholder="Turni tanlang"
+          options={DELIVER_OPTIONS}
+        />
+
+        {/* Total amount */}
+        <InputField
+          label="Total amount"
+          icon={Banknote}
+          value={orderForm.total_price}
+          onChange={handleOrderPriceChange}
+          placeholder="Narxni kiriting"
+        />
+
+        {/* Izoh */}
+        <div className="space-y-1.5">
+          <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">Izoh</label>
+          <div className="relative">
+            <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white/40 pointer-events-none">
+              <MessageSquare size={16} />
+            </div>
+            <textarea
+              value={orderForm.comment}
+              onChange={handleOrderCommentChange}
+              placeholder="Izoh kiriting..."
+              rows={4}
+              className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all resize-none placeholder:text-gray-400 dark:placeholder:text-white/25"
+            />
+          </div>
+        </div>
       </UpdatePopup>
     </div>
   );
 };
+
+// ─── OrderItemRow: alohida memo komponent (har item uchun re-render izolyatsiyasi) ─
+const OrderItemRow = memo(({
+  item,
+  onAdjust,
+  onRemove,
+}: {
+  item: OrderItem;
+  onAdjust: (id: string, delta: number) => void;
+  onRemove: (id: string) => void;
+}) => {
+  const handleDec = useCallback(() => onAdjust(item.id, -1), [item.id, onAdjust]);
+  const handleInc = useCallback(() => onAdjust(item.id, 1), [item.id, onAdjust]);
+  const handleRemove = useCallback(() => onRemove(item.id), [item.id, onRemove]);
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+      <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+        {item.product?.image_url ? (
+          <img
+            src={item.product.image_url}
+            alt={item.product.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <Package size={18} className="text-gray-300 dark:text-white/20" />
+        )}
+      </div>
+      <span className="flex-1 text-sm font-semibold text-gray-900 dark:text-white truncate">
+        {item.product?.name ?? "—"}
+      </span>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={handleDec}
+          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:text-main transition-colors"
+        >
+          <Minus size={12} />
+        </button>
+        <span className="w-6 text-center text-sm font-bold text-gray-900 dark:text-white">
+          {item.quantity}
+        </span>
+        <button
+          onClick={handleInc}
+          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:text-main transition-colors"
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+      <button
+        onClick={handleRemove}
+        className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+      >
+        <Trash2 size={13} />
+      </button>
+    </div>
+  );
+});
 
 export default memo(NewOrderUpdate);
