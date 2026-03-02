@@ -34,6 +34,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   operator: "Operator",
   market: "Market",
   superadmin: "Super Admin",
+  customer: "Mijoz",
 };
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
