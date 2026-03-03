@@ -70,14 +70,14 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
   // ── Success ──
   return (
     <>
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* Chap — Profil Sidebar */}
-        <div className="w-72 shrink-0">
+        <div className="w-full lg:w-72 shrink-0">
           <UserDetailHeader user={user} />
         </div>
 
         {/* O'ng — Kontent */}
-        <div className="flex-1 min-w-0 space-y-5">
+        <div className="w-full flex-1 min-w-0 space-y-5">
           {/* Edit tugmasi — sahifa yuqorisida */}
           <div className="flex justify-end">
             <button
