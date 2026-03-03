@@ -25,7 +25,7 @@ const NewOrderDetail = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  const { getTodayOrdersByMarket, deleteOrder } = useOrders();
+  const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder } = useOrders();
 
   // Redux dan search qiymatini olish
   const searchQuery = useSelector((state: RootState) =>
@@ -41,7 +41,7 @@ const NewOrderDetail = () => {
   }, [searchQuery, applyDebounce]);
 
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
-  const { data: res, isLoading } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
+  const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
   const orders: ApiOrder[] = res?.data ?? res ?? [];
 
   useEffect(() => {
@@ -78,6 +78,24 @@ const NewOrderDetail = () => {
 
   const allSelected = selectedIds.size === orders.length && orders.length > 0;
   const totalSum = orders.reduce((s, o) => s + o.total_price, 0);
+
+
+  const handleAccapted = () => {
+    const payload = { order_ids: [...selectedIds] };
+    createReceiveOrder.mutate(payload, {
+      onSuccess: () => {
+        setSelectedIds(new Set());
+        if (selectedIds.size < orders.length) {
+          refetch();
+        } else {
+          navigate(-1);
+        }
+      },
+      onError: (err: any) => {
+        console.error("Receive xatolik:", err);
+      },
+    });
+  };
 
   return (
     <div className="flex flex-col h-full rounded-2xl bg-sidebar dark:bg-maindark overflow-hidden relative">
@@ -153,12 +171,12 @@ const NewOrderDetail = () => {
       {/* Sticky Accept Button */}
       <div className={`sticky bottom-0 px-6 py-4 bg-linear-to-t from-sidebar dark:from-maindark via-sidebar/95 dark:via-maindark/95 to-transparent pt-8 transition-all duration-300
         ${selectedIds.size > 0 ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"}`}>
-        <button onClick={() => console.log("Accepted:", [...selectedIds])}
+        <button onClick={handleAccapted}
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base text-white
             bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
             hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer">
           <CheckCircle2 size={20} />
-          Accept ({selectedIds.size} ta buyurtma)
+          Qabul qilish ({selectedIds.size} ta buyurtma)
         </button>
       </div>
 
