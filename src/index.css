@@ -279,4 +279,70 @@
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--color-glass-border);
   }
+
+  /* ── Mail Card ── */
+  .mail-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-height: 180px;
+  }
+
+  .mail-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+  }
+
+  .mail-card-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #10b981 0%, #059669 40%, #047857 100%);
+    border-radius: 1rem;
+    z-index: 0;
+  }
+
+  .mail-card:hover .mail-card-bg {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 40%, #059669 100%);
+  }
+
+  /* Shimmer overlay */
+  .mail-card-shimmer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: 1rem;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.08) 50%,
+      transparent 60%
+    );
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .mail-card:hover .mail-card-shimmer {
+    opacity: 1;
+    animation: mailShimmer 1.2s ease-in-out infinite;
+  }
+
+  @keyframes mailShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Status badge */
+  .mail-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
 }

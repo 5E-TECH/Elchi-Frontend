@@ -1,6 +1,7 @@
 import { memo, useState, useRef, useEffect, useCallback } from "react";
 import HeaderName from "../../../shared/components/headerName";
-import { MoveLeft, Printer, Globe, FileText, ChevronDown, CheckCircle2 } from "lucide-react";
+import { MoveLeft, Printer, Globe, FileText, ChevronDown, CheckCircle2, Loader2 } from "lucide-react";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useNavigate, useParams } from "react-router-dom";
 import { GlobalSearchInput, useDebounce } from "../../../features/search";
 import { useOrders } from "../../../entities/orders";
@@ -25,7 +26,8 @@ const NewOrderDetail = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  const { getTodayOrdersByMarket, deleteOrder } = useOrders();
+  const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder } = useOrders();
+  const { api: notifApi } = useAppNotification();
 
   // Redux dan search qiymatini olish
   const searchQuery = useSelector((state: RootState) =>
@@ -41,7 +43,7 @@ const NewOrderDetail = () => {
   }, [searchQuery, applyDebounce]);
 
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
-  const { data: res, isLoading } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
+  const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
   const orders: ApiOrder[] = res?.data ?? res ?? [];
 
   useEffect(() => {
@@ -78,6 +80,28 @@ const NewOrderDetail = () => {
 
   const allSelected = selectedIds.size === orders.length && orders.length > 0;
   const totalSum = orders.reduce((s, o) => s + o.total_price, 0);
+
+
+  const handleAccapted = useCallback(() => {
+    // snapshot: setSelectedIds(new Set()) dan KEYIN selectedIds.size o'zgaradi,
+    // lekin closure eski qiymatni ko'radi — shuning uchun oldindan saqlaymiz
+    const ids = [...selectedIds];
+    const isAll = ids.length === orders.length;
+    createReceiveOrder.mutate({ order_ids: ids }, {
+      onSuccess: () => {
+        setSelectedIds(new Set());
+        if (isAll) {
+          navigate(-1);
+        } else {
+          refetch();
+        }
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.message ?? err?.message ?? "Qabul qilishda xatolik";
+        notifApi.error({ message: "Xatolik", description: msg, placement: "topRight", duration: 5 });
+      },
+    });
+  }, [selectedIds, orders.length, createReceiveOrder, navigate, refetch, notifApi]);
 
   return (
     <div className="flex flex-col h-full rounded-2xl bg-sidebar dark:bg-maindark overflow-hidden relative">
@@ -153,12 +177,19 @@ const NewOrderDetail = () => {
       {/* Sticky Accept Button */}
       <div className={`sticky bottom-0 px-6 py-4 bg-linear-to-t from-sidebar dark:from-maindark via-sidebar/95 dark:via-maindark/95 to-transparent pt-8 transition-all duration-300
         ${selectedIds.size > 0 ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"}`}>
-        <button onClick={() => console.log("Accepted:", [...selectedIds])}
+        <button
+          onClick={handleAccapted}
+          disabled={createReceiveOrder.isPending}
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base text-white
             bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
-            hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer">
-          <CheckCircle2 size={20} />
-          Accept ({selectedIds.size} ta buyurtma)
+            hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer
+            disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 disabled:hover:shadow-emerald-500/30">
+          {createReceiveOrder.isPending
+            ? <Loader2 size={20} className="animate-spin" />
+            : <CheckCircle2 size={20} />}
+          {createReceiveOrder.isPending
+            ? "Qabul qilinmoqda..."
+            : `Qabul qilish (${selectedIds.size} ta buyurtma)`}
         </button>
       </div>
 

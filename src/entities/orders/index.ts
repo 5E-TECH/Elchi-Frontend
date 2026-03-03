@@ -6,6 +6,16 @@ const orders = "orders";
 export const useOrders = () => {
   const client = useQueryClient();
 
+
+  const createReceiveOrder = useMutation({
+    mutationFn: (data: any) =>
+      api.post("orders/receive", data).then((res) => res.data),
+    onSuccess: () => {
+      // Barcha orders cache ni yangilash
+      client.invalidateQueries({ queryKey: [orders] });
+    }
+  });
+
   const getTodayOrders = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [orders, params],
@@ -53,5 +63,5 @@ export const useOrders = () => {
     },
   });
 
-  return { getTodayOrders, getTodayOrdersByMarket, getOrderById, updateNewOrder, deleteOrder };
+  return { createReceiveOrder, getTodayOrders, getTodayOrdersByMarket, getOrderById, updateNewOrder, deleteOrder };
 };
