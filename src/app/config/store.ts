@@ -4,6 +4,7 @@ import userReducer from "../../entities/user/model/slice";
 import logout from "../../entities/user/model/slice";
 import filterslice from "../../features/Select/model/FilterSlice";
 import searchSlice from "../../features/search/model/searchSlice";
+import roleReducer from "../../features/auth/model/loginSlice";
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
     user: userReducer,
     filter: filterslice,
     search: searchSlice,
+    role: roleReducer,
     logout
   },
 });

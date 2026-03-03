@@ -6,12 +6,14 @@ import { SIDEBAR_CONFIG } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { useLogout } from "../../../shared/lib/useLogout";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoIcon from "../../../shared/assets/logo qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import LogoIcondark from "../../../shared/assets/logo oq.png";
 
 const Sidebar = () => {
+  const { logout } = useLogout();
   const { t } = useTranslation(["sidebar"]);
   const dispatch = useDispatch();
   const sidebarRedux = useSelector((state: RootState) => state.sidebar);
@@ -61,23 +63,20 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`h-screen sticky top-0 left-0 flex flex-col bg-sidebar dark:bg-maindark text-maindark dark:text-primary transition-all duration-300 ease-in-out shadow-xl z-50 ${
-        !sidebarRedux.isOpen ? "w-24" : "w-72"
-      }`}
+      className={`h-screen sticky top-0 left-0 hidden md:flex flex-col bg-sidebar dark:bg-maindark text-maindark dark:text-primary transition-all duration-300 ease-in-out shadow-xl z-50 ${!sidebarRedux.isOpen ? "w-24" : "w-72"
+        }`}
     >
       {/* Header with Logo */}
       <div className="flex items-center justify-center h-24 bg-sidebar dark:bg-maindark overflow-hidden">
         <div
-          className={`transition-all duration-300 flex items-center justify-center ${
-            !sidebarRedux.isOpen ? "w-full px-2" : "w-full px-6"
-          }`}
+          className={`transition-all duration-300 flex items-center justify-center ${!sidebarRedux.isOpen ? "w-full px-2" : "w-full px-6"
+            }`}
         >
           <img
             src={sidebarRedux.isOpen ? currentLogoText : currentLogoIcon}
             alt="Elchi Logo"
-            className={`object-contain transition-all duration-300 ${
-              !sidebarRedux.isOpen ? "w-12 h-12" : "w-40 h-auto"
-            }`}
+            className={`object-contain transition-all duration-300 ${!sidebarRedux.isOpen ? "w-12 h-12" : "w-40 h-auto"
+              }`}
           />
         </div>
       </div>
@@ -93,9 +92,8 @@ const Sidebar = () => {
       <div className="p-4 flex items-center justify-between bg-primary/5 dark:bg-maindark/50">
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className={`flex items-center justify-center p-2 rounded-lg transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10 ${
-            !sidebarRedux.isOpen ? "mx-auto" : ""
-          }`}
+          className={`flex items-center justify-center p-2 rounded-lg transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10 ${!sidebarRedux.isOpen ? "mx-auto" : ""
+            }`}
         >
           {sidebarRedux.isOpen ? (
             <ChevronLeft size={20} />
@@ -108,7 +106,10 @@ const Sidebar = () => {
         </button>
 
         {sidebarRedux.isOpen && (
-          <button className="flex items-center justify-center p-2 rounded-lg hover:bg-red-500/20 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-all duration-300">
+          <button
+            onClick={logout}
+            className="flex items-center justify-center p-2 rounded-lg hover:bg-red-500/20 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-all duration-300"
+          >
             <LogOut size={20} />
           </button>
         )}

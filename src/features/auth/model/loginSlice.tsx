@@ -3,14 +3,14 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 interface IState {
   id: string | null,
   role: string | null,
-  region:string | null,
-  name:string | null
+  region: string | null,
+  name: string | null
 }
 
 const initialState: IState = {
   id: null,
   role: null,
-  region:null,
+  region: null,
   name: localStorage.getItem("name") || null
 };
 
@@ -31,6 +31,8 @@ export const roleSlice = createSlice({
     removeRole: (state) => {
       state.id = null;
       state.role = null;
+      state.region = null;
+      state.name = null;
     },
     setId: (state, action: PayloadAction<string>) => {
       state.id = action.payload;
@@ -38,5 +40,5 @@ export const roleSlice = createSlice({
   },
 });
 
-export const { setRole, removeRole, setId, setRegion, setName} = roleSlice.actions;
+export const { setRole, removeRole, setId, setRegion, setName } = roleSlice.actions;
 export default roleSlice.reducer;

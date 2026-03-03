@@ -1,30 +1,42 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Outlet } from "react-router-dom";
-import Header from "../header/ui/Header"; // Adjusted import path
-import Footer from "../footer/ui/Footer"; // Adjusted import path
-import Sidebar from "../Sidebar/ui/Sidebar"; // Adjusted import path
+import Header from "../header/ui/Header";
+import Footer from "../footer/ui/Footer";
+import Sidebar from "../Sidebar/ui/Sidebar";
+import BottomNav from "../Sidebar/ui/BottomNav";
+import MobileMenu from "../Sidebar/ui/MobileMenu";
 
 const DashboardLayout = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <div className="flex min-h-screen font-sans text-main dark:bg-primarydark transition-colors duration-300 relative">
-      {/* Sidebar */}
+      {/* Sidebar - Desktop only */}
       <Sidebar />
 
-      {/* Main Content Wrapper - Flex Column for Sticky Footer */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      {/* Main Content Wrapper */}
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
 
         {/* Header - Sticky */}
-        <Header />
+        <Header onMenuClick={() => setIsMenuOpen(true)} />
 
-        {/* Content - Grows to fill space */}
-        <main className="flex-1 p-4 md:p-6 custom-scrollbar">
+        {/* Content */}
+        <main className="flex-1 p-4 md:p-6 custom-scrollbar pb-24 md:pb-6">
           <Outlet />
         </main>
 
-        {/* Footer - Stays at bottom naturally due to flex-1 above */}
+        {/* Footer */}
         <Footer />
-
       </div>
+
+      {/* Mobile Navigation */}
+      <BottomNav onMenuClick={() => setIsMenuOpen(true)} />
+
+      {/* Mobile Drawer Menu */}
+      <MobileMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      />
     </div>
   );
 };
