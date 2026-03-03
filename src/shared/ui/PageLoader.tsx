@@ -54,14 +54,14 @@ const PageLoader = () => {
             </div>
 
             {/* ── Main Animation Core ── */}
-            <div className="relative flex items-center justify-center mb-12">
+            <div className="relative flex items-center justify-center mb-16">
 
                 {/* Outer Ring - Dynamic Conic */}
                 <div
                     className="absolute animate-spin-ring"
                     style={{
-                        width: '180px',
-                        height: '180px',
+                        width: '360px',
+                        height: '360px',
                         borderRadius: '50%',
                         background: `conic-gradient(from 0deg, transparent, var(--color-main), transparent)`,
                         padding: '2px',
@@ -75,8 +75,8 @@ const PageLoader = () => {
                 <div
                     className="absolute animate-spin-ring-rev"
                     style={{
-                        width: '155px',
-                        height: '155px',
+                        width: '310px',
+                        height: '310px',
                         borderRadius: '50%',
                         border: '2px dashed var(--color-purple-light)',
                         opacity: 0.2
@@ -87,8 +87,8 @@ const PageLoader = () => {
                 <div
                     className="absolute animate-spin-ring-slow"
                     style={{
-                        width: '130px',
-                        height: '130px',
+                        width: '260px',
+                        height: '260px',
                         borderRadius: '50%',
                         background: `linear-gradient(to right, var(--color-main), var(--color-purple))`,
                         padding: '3px',
@@ -102,20 +102,20 @@ const PageLoader = () => {
                 <div
                     className={`
                         relative z-10 flex items-center justify-center
-                        w-28 h-28 rounded-full animate-pulse-glow
+                        w-56 h-56 rounded-full animate-pulse-glow
                         ${isVisible ? 'animate-logo-reveal' : 'opacity-0'}
                     `}
                     style={{
                         background: 'rgba(255, 255, 255, 0.03)',
                         backdropFilter: 'blur(16px)',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
-                        boxShadow: '0 0 50px rgba(87, 106, 219, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.05)'
+                        boxShadow: '0 0 80px rgba(87, 106, 219, 0.25), inset 0 0 30px rgba(255, 255, 255, 0.05)'
                     }}
                 >
                     <img
                         src={logo}
                         alt="Elchi Logo"
-                        className="w-16 h-16 object-contain filter drop-shadow(0 0 8px rgba(255,255,255,0.3))"
+                        className="w-32 h-32 object-contain filter drop-shadow(0 0 12px rgba(255,255,255,0.4))"
                         draggable={false}
                     />
                 </div>

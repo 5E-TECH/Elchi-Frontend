@@ -94,9 +94,9 @@ const AdminStats = ({ user }: { user: User }) => {
                 <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/10 rounded-full" />
                 <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-black/10 rounded-full" />
 
-                <div className="relative z-10 flex items-start justify-between gap-4">
+                <div className="relative z-10 flex flex-col sm:flex-row items-start justify-between gap-6 sm:gap-4">
                     {/* Chap: ma'lumotlar */}
-                    <div className="flex-1 min-w-0">
+                    <div className="w-full flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                                 <Wallet size={16} className="text-white" />
@@ -106,13 +106,13 @@ const AdminStats = ({ user }: { user: User }) => {
 
                         {/* Maosh: earned / total */}
                         <div className="mb-1">
-                            <p className="text-2xl font-black tabular-nums leading-none">
+                            <p className="text-xl sm:text-2xl font-black tabular-nums leading-none flex flex-wrap items-baseline">
                                 <span>{formatNum(earned)}</span>
                                 <span className="text-white/40 font-medium mx-1">/</span>
                                 <span className="text-white/70">{formatNum(user.salary)}</span>
-                                <span className="text-sm font-semibold text-white/60 ml-1">so'm</span>
+                                <span className="text-xs sm:text-sm font-semibold text-white/60 ml-1">so'm</span>
                             </p>
-                            <p className="text-white text-xs mt-1">{passedDays}/{totalDays} kun — {progress.toFixed(0)}% to'plandi</p>
+                            <p className="text-white text-[10px] sm:text-xs mt-1">{passedDays}/{totalDays} kun — {progress.toFixed(0)}% to'plandi</p>
                         </div>
 
                         {/* Progress bar */}
@@ -134,7 +134,7 @@ const AdminStats = ({ user }: { user: User }) => {
                                         ? <TrendingUp size={13} className="text-white/70" />
                                         : <Clock size={13} className="text-white/50" />
                                 }
-                                <span className="text-white text-[11px] font-medium">
+                                <span className="text-white text-[10px] sm:text-[11px] font-medium">
                                     {remainDays <= 1
                                         ? "🎉 To'lov bugun!"
                                         : remainDays <= 3
@@ -142,16 +142,16 @@ const AdminStats = ({ user }: { user: User }) => {
                                             : `${remainDays} kun qoldi`}
                                 </span>
                             </div>
-                            <span className="text-white text-[11px]">Keyingisi: {nextPayDate}</span>
+                            <span className="text-white text-[10px] sm:text-[11px]">Keyingisi: {nextPayDate}</span>
                         </div>
                     </div>
 
                     {/* O'ng: Progress ring */}
-                    <div className="flex flex-col items-center gap-1 shrink-0">
+                    <div className="flex flex-row sm:flex-col items-center gap-3 sm:gap-1 shrink-0 w-full sm:w-auto justify-center py-2 sm:py-0 border-t border-white/10 sm:border-0">
                         <div className="relative">
-                            <ProgressRing progress={progress} size={76} stroke={6} color="rgba(255,255,255,0.9)" />
+                            <ProgressRing progress={progress} size={70} stroke={6} color="rgba(255,255,255,0.9)" />
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-sm font-black text-white">{progress.toFixed(0)}%</span>
+                                <span className="text-xs font-black text-white">{progress.toFixed(0)}%</span>
                             </div>
                         </div>
                         <span className="text-[10px] text-white font-bold">Tsikl</span>
