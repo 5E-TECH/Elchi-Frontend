@@ -58,6 +58,7 @@ const CreateProductPage = () => {
 
   const { data: marketD } = getByMarketId(id);
   const marketData = marketD?.data || [];
+  const marketName: string | null = marketD?.data?.[0]?.market?.name ?? null;
 
   const navigate = useNavigate();
 
@@ -218,7 +219,7 @@ const CreateProductPage = () => {
           <div>
             <h2 className="text-lg font-bold text-white m-0">Create Product</h2>
             <p className="text-white/60 text-sm m-0">
-              Yangi mahsulot ma'lumotlarini kiriting
+              {marketName ?? "Market"}
             </p>
           </div>
         </div>
@@ -337,3 +338,4 @@ const CreateProductPage = () => {
 };
 
 export default memo(CreateProductPage);
+
