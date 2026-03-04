@@ -42,7 +42,7 @@ export const UserStats = memo(() => {
                 return (
                     <div
                         key={index}
-                        className="relative overflow-hidden rounded-2xl p-5 md:p-6 bg-primary dark:bg-maindark/80 border border-maindark/5 dark:border-primary/5 shadow-lg shadow-maindark/5 group hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-default"
+                        className="relative overflow-hidden rounded-2xl p-5 md:p-6 bg-primary dark:bg-main border border-maindark/5 dark:border-primary/5 shadow-lg shadow-maindark/5 group hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-default"
                         style={{
                             boxShadow: `0 4px 24px ${stat.colorFrom}18, 0 1px 4px rgba(0,0,0,0.06)`,
                         }}
@@ -57,7 +57,7 @@ export const UserStats = memo(() => {
                             {/* Top row: label + icon */}
                             <div className="flex items-start justify-between mb-4">
                                 <div>
-                                    <p className="text-sm font-medium text-maindark/60 dark:text-primary/60 mb-1 leading-snug">
+                                    <p className="text-sm font-medium text-maindark/60 dark:text-primary mb-1 leading-snug">
                                         {stat.label}
                                     </p>
                                     <h3 className="text-3xl font-bold text-maindark dark:text-primary tracking-tight">
