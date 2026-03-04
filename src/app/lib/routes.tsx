@@ -6,8 +6,6 @@ const Auth = lazy(() => import("../../features/auth/page"));
 const Orders = lazy(() => import("../../pages/orders"));
 const OrderCreate = lazy(() => import("../../pages/orders/create"));
 
-
-
 // ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
 
@@ -27,10 +25,19 @@ const ProductTable = lazy(() => import("../../pages/products/list"));
 const ProductCreate = lazy(() => import("../../pages/products/create"));
 
 const NewOrders = lazy(() => import("../../pages/new_orders"));
-const NewOrderDetail = lazy(() => import("../../pages/new_orders/components/new_orderDetail"));
-const NewOrderUpdate = lazy(() => import("../../pages/new_orders/components/new_orderUpdate"));
+const NewOrderDetail = lazy(
+  () => import("../../pages/new_orders/components/new_orderDetail"),
+);
+const NewOrderUpdate = lazy(
+  () => import("../../pages/new_orders/components/new_orderUpdate"),
+);
 
 const Mails = lazy(() => import("../../pages/mails"));
+
+const Payments = lazy(() => import("../../pages/payments"));
+const MainCashbox = lazy(
+  () => import("../../pages/payments/components/mainCashbox"),
+);
 
 const AppRouter = () => {
   return useRoutes([
@@ -71,16 +78,24 @@ const AppRouter = () => {
               children: [
                 { index: true, element: <NewOrders /> },
                 { path: ":marketId", element: <NewOrderDetail /> },
-                { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
+                {
+                  path: ":marketId/edit/:orderId",
+                  element: <NewOrderUpdate />,
+                },
                 { path: "userDetail/:id", element: <UserDetailPage /> },
-              ]
+              ],
             },
             {
               path: "mails",
+              children: [{ index: true, element: <Mails /> }],
+            },
+            {
+              path: "payments",
               children: [
-                { index: true, element: <Mails /> },
-              ]
-            }
+                { index: true, element: <Payments /> },
+                { path: "main-cashbox", element: <MainCashbox /> },
+              ],
+            },
           ],
         },
       ],
