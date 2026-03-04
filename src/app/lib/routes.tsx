@@ -31,6 +31,7 @@ const NewOrderDetail = lazy(() => import("../../pages/new_orders/components/new_
 const NewOrderUpdate = lazy(() => import("../../pages/new_orders/components/new_orderUpdate"));
 
 const Mails = lazy(() => import("../../pages/mails"));
+const MailDetail = lazy(() => import("../../pages/mails/detail"));
 
 const AppRouter = () => {
   return useRoutes([
@@ -79,6 +80,7 @@ const AppRouter = () => {
               path: "mails",
               children: [
                 { index: true, element: <Mails /> },
+                { path: ":postId", element: <MailDetail /> },
               ]
             }
           ],
