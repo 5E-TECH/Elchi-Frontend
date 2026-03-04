@@ -2,23 +2,12 @@ import { memo, useMemo } from 'react';
 import { MapPin, Package, ChevronRight, TrendingUp } from 'lucide-react';
 import { useMails } from '../../../entities/mails';
 
-// ─── O'zbekiston viloyatlari xaritasi ───────────────────────────────────────
-const REGIONS: Record<string, string> = {
-  '1': 'Toshkent shahri',
-  '2': 'Toshkent viloyati',
-  '3': 'Andijon',
-  '4': 'Namangan',
-  '5': 'Farg\'ona',
-  '6': 'Sirdaryo',
-  '7': 'Jizzax',
-  '8': 'Samarqand',
-  '9': 'Qashqadaryo',
-  '10': 'Surxondaryo',
-  '11': 'Buxoro',
-  '12': 'Navoiy',
-  '13': 'Xorazm',
-  '14': 'Qoraqalpog\'iston Respublikasi',
-};
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface Region {
+  id: string;
+  name: string;
+  sato_code: string;
+}
 
 interface MailItem {
   id: string;
@@ -29,16 +18,18 @@ interface MailItem {
   order_quantity: number;
   qr_code_token: string;
   region_id: string;
+  region: Region;
   status: string;
 }
 
-// ─── Pul formati ────────────────────────────────────────────────────────────
+// ─── Pul formati ─────────────────────────────────────────────────────────────
 const formatPrice = (price: number): string =>
   price.toLocaleString('uz-UZ') + " so'm";
 
-// ─── Yagona Karta Komponenti ─────────────────────────────────────────────────
+// ─── Yagona Karta Komponenti ──────────────────────────────────────────────────
 const MailCard = memo(({ item }: { item: MailItem }) => {
-  const regionName = REGIONS[item.region_id] ?? `Viloyat ${item.region_id}`;
+  // API dan to'g'ridan-to'g'ri region.name olamiz
+  const regionName = item.region?.name ?? `Viloyat ${item.region_id}`;
 
   return (
     <div className="mail-card group relative overflow-hidden rounded-2xl cursor-pointer">
@@ -73,6 +64,9 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
           <h3 className="text-white font-bold text-lg leading-tight">
             {regionName}
           </h3>
+          {item.region?.sato_code && (
+            <p className="text-white/50 text-xs mt-0.5">{item.region.sato_code}</p>
+          )}
         </div>
 
         {/* Divider */}
@@ -103,15 +97,15 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
 });
 MailCard.displayName = 'MailCard';
 
-// ─── Skeleton Karta ──────────────────────────────────────────────────────────
+// ─── Skeleton Karta ───────────────────────────────────────────────────────────
 const MailCardSkeleton = memo(() => (
   <div className="rounded-2xl overflow-hidden animate-pulse">
-    <div className="h-[180px] bg-emerald-500/20 dark:bg-emerald-800/30 rounded-2xl" />
+    <div className="h-45 bg-emerald-500/20 dark:bg-emerald-800/30 rounded-2xl" />
   </div>
 ));
 MailCardSkeleton.displayName = 'MailCardSkeleton';
 
-// ─── Asosiy Komponent ────────────────────────────────────────────────────────
+// ─── Asosiy Komponent ─────────────────────────────────────────────────────────
 const TodaysMails = () => {
   const { getNewMails } = useMails();
   const { data: response, isLoading, isError } = getNewMails();
