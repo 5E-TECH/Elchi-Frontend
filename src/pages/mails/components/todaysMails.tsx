@@ -100,7 +100,7 @@ MailCard.displayName = 'MailCard';
 // ─── Skeleton Karta ───────────────────────────────────────────────────────────
 const MailCardSkeleton = memo(() => (
   <div className="rounded-2xl overflow-hidden animate-pulse">
-    <div className="h-[180px] bg-emerald-500/20 dark:bg-emerald-800/30 rounded-2xl" />
+    <div className="h-45 bg-emerald-500/20 dark:bg-emerald-800/30 rounded-2xl" />
   </div>
 ));
 MailCardSkeleton.displayName = 'MailCardSkeleton';
