@@ -66,14 +66,14 @@ export const UserStats = memo(() => {
                                 </div>
                                 {/* Icon badge */}
                                 <div
-                                    className={`p-3 rounded-xl ${stat.bg} ${stat.text} shadow-md backdrop-blur-sm shrink-0`}
+                                    className={`p-3 rounded-xl  dark:bg-maindark ${stat.bg} ${stat.text} shadow-md backdrop-blur-sm shrink-0`}
                                 >
                                     <IconComponent size={22} strokeWidth={2.5} />
                                 </div>
                             </div>
 
                             {/* Progress bar */}
-                            <div className="flex items-center gap-3">
+                            {/* <div className="flex items-center gap-3">
                                 <div className="flex-1 bg-maindark/8 dark:bg-primary/10 rounded-full h-2 overflow-hidden">
                                     <div
                                         className="h-full rounded-full transition-all duration-1000 ease-out"
@@ -86,7 +86,7 @@ export const UserStats = memo(() => {
                                 <span className="text-xs font-semibold text-maindark/50 dark:text-primary/50 w-8 text-right">
                                     {stat.progress}%
                                 </span>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                 );
