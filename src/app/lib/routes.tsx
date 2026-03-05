@@ -88,17 +88,16 @@ const AppRouter = () => {
             },
             {
               path: "mails",
-              children: [{ index: true, element: <Mails /> }
-                { path: ":postId", element: <MailDetail /> },],
+              children: [
+                { index: true, element: <Mails /> },
+                { path: ":postId", element: <MailDetail /> },
+              ],
             },
             {
               path: "payments",
               children: [
-                
                 { index: true, element: <Payments /> },
                 { path: "main-cashbox", element: <MainCashbox /> },
-              ]
-            }
               ],
             },
           ],
