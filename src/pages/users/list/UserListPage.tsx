@@ -67,7 +67,7 @@ const UserListPage = memo(() => {
           label="+ Qo'shish"
           icon={<UserPlus size={18} />}
           onClick={() => navigate("create-user")}
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto dark:bg-main"
         />
       </div>
 
