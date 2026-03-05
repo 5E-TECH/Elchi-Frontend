@@ -20,7 +20,7 @@ export const useOrders = () => {
     useQuery({
       queryKey: [orders, params],
       queryFn: () =>
-        api.get("orders/markets/today", { params }).then((res) => res.data),
+        api.get("orders/markets/new", { params }).then((res) => res.data),
       enabled,
     });
 
