@@ -4,12 +4,16 @@ interface HeaderNameProps {
   name: string;
   description?: string;
   icon: ReactNode;
+  onIconClick?: () => void;
 }
 
-const HeaderName = ({ name, description, icon }: HeaderNameProps) => {
+const HeaderName = ({ name, description, icon, onIconClick }: HeaderNameProps) => {
   return (
     <div className="flex items-center gap-4 py-4 rounded-2xl text-maindark">
-      <div className="flex items-center justify-center w-12 h-12 shadow-xl bg-main dark:bg-main/10 text-primary rounded-xl">
+      <div
+        onClick={onIconClick}
+        className={`flex items-center justify-center w-12 h-12 shadow-xl bg-main dark:bg-main/10 text-primary rounded-xl ${onIconClick ? "cursor-pointer hover:bg-main/80 transition-colors" : ""}`}
+      >
         {icon}
       </div>
       <div className="flex flex-col">

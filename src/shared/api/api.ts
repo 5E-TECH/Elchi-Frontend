@@ -3,9 +3,12 @@ import { BASE_URL } from "../const";
 
 export const api = axios.create({
     baseURL: BASE_URL,
+    headers: {
+        "Content-Type": "application/json",
+    },
     paramsSerializer: {
-        indexes: null  // Creates ?status=paid&status=sold instead of status[0]=paid
-    } as any // Cast to any to avoid TS error if types don't match perfectly without qs
+        indexes: null
+    } as any
 })
 
 

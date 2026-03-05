@@ -1,5 +1,5 @@
 import { lazy, memo } from "react";
-import { useRoutes } from "react-router-dom";
+import { Navigate, useRoutes } from "react-router-dom";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -39,6 +39,7 @@ const Payments = lazy(() => import("../../pages/payments"));
 const MainCashbox = lazy(
   () => import("../../pages/payments/components/mainCashbox"),
 );
+const CashDetail = lazy(() => import("../../pages/payments/components/cashDetail"))
 
 const AppRouter = () => {
   return useRoutes([
@@ -88,24 +89,25 @@ const AppRouter = () => {
             },
             {
               path: "mails",
-              children: [{ index: true, element: <Mails /> }
-                { path: ":postId", element: <MailDetail /> },],
+              children: [
+                { index: true, element: <Mails /> },
+                { path: ":postId", element: <MailDetail /> },
+              ],
             },
             {
               path: "payments",
               children: [
-                
                 { index: true, element: <Payments /> },
                 { path: "main-cashbox", element: <MainCashbox /> },
-              ]
-            }
+                { path: "cash-detail", element: <CashDetail /> },
               ],
             },
           ],
         },
       ],
     },
-  ]);
+    { path: "*", element: <Navigate replace to="/login" /> },
+  ])
 };
 
 export default memo(AppRouter);
