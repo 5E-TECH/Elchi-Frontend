@@ -29,6 +29,15 @@ export interface Order {
     items?: OrderItem[];
 }
 
+// Region ma'lumotlari (courier uchun)
+export interface Region {
+    id: string;
+    name: string;
+    sato_code: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
 // Backend dan kelgan user ma'lumotlari
 export interface User {
     id: string;
@@ -45,6 +54,8 @@ export interface User {
     tariff_home: number | null;
     tariff_center: number | null;
     default_tariff: 'home' | 'center';
+    region_id?: string | null;
+    region?: Region | null;
     avatar?: string;
     balance?: number;
     orders?: Order[];

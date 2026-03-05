@@ -195,9 +195,23 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                 )}
 
 
-                {/* ── Courier: Tarif ── */}
+                {/* ── Courier: Viloyat + Tarif ── */}
                 {isCourier && (
                     <>
+                        <Divider title="Ish Hududi" />
+
+                        <InfoChip
+                            icon={MapPin}
+                            iconBg="bg-green-50 dark:bg-green-500/10"
+                            iconColor="text-green-500"
+                            label="Ishlash Viloyati"
+                            value={
+                                user.region?.name
+                                    ? <span className="text-green-600 dark:text-green-400 font-bold">{user.region.name}</span>
+                                    : <span className="text-slate-400 italic">Belgilanmagan</span>
+                            }
+                        />
+
                         <Divider title="Tarif" />
 
                         <InfoChip
