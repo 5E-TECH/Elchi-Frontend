@@ -33,6 +33,7 @@ const NewOrderUpdate = lazy(
 );
 
 const Mails = lazy(() => import("../../pages/mails"));
+const MailDetail = lazy(() => import("../../pages/mails/detail"));
 
 const Payments = lazy(() => import("../../pages/payments"));
 const MainCashbox = lazy(
@@ -87,13 +88,17 @@ const AppRouter = () => {
             },
             {
               path: "mails",
-              children: [{ index: true, element: <Mails /> }],
+              children: [{ index: true, element: <Mails /> }
+                { path: ":postId", element: <MailDetail /> },],
             },
             {
               path: "payments",
               children: [
+                
                 { index: true, element: <Payments /> },
                 { path: "main-cashbox", element: <MainCashbox /> },
+              ]
+            }
               ],
             },
           ],

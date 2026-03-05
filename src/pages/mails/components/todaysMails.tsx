@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { MapPin, Package, ChevronRight, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useMails } from '../../../entities/mails';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -28,11 +29,18 @@ const formatPrice = (price: number): string =>
 
 // ─── Yagona Karta Komponenti ──────────────────────────────────────────────────
 const MailCard = memo(({ item }: { item: MailItem }) => {
+  const navigate = useNavigate();
   // API dan to'g'ridan-to'g'ri region.name olamiz
   const regionName = item.region?.name ?? `Viloyat ${item.region_id}`;
 
   return (
-    <div className="mail-card group relative overflow-hidden rounded-2xl cursor-pointer">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/mails/${item.id}`)}
+      onKeyDown={(e) => e.key === 'Enter' && navigate(`/mails/${item.id}`)}
+      className="mail-card group relative overflow-hidden rounded-2xl cursor-pointer"
+    >
       {/* Gradient fon */}
       <div className="mail-card-bg" />
 
