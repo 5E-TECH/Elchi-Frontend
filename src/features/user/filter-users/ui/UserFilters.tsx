@@ -96,7 +96,7 @@ export const UserFilters = memo(() => {
 
             <button
                 onClick={handleReset}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-main dark:text-primary dark:bg-primary hover:text-maindark dark:hover:text-maindark bg-transparent border-2 border-main dark:border-primary transition-all whitespace-nowrap active:scale-95 w-full xl:w-auto font-medium hover:shadow-md"
+                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-main dark:text-main dark:bg-primary hover:text-maindark dark:hover:text-maindark bg-transparent border-2 border-main dark:border-primary transition-all whitespace-nowrap active:scale-95 w-full xl:w-auto font-medium hover:shadow-md"
             >
                 <RefreshCw size={18} />
                 Tozalash
