@@ -40,7 +40,9 @@ const Payments = lazy(() => import("../../pages/payments"));
 const MainCashbox = lazy(
   () => import("../../pages/payments/components/mainCashbox"),
 );
-const CashDetail = lazy(() => import("../../pages/payments/components/cashDetail"))
+const CashDetail = lazy(
+  () => import("../../pages/payments/components/cashDetail"),
+);
 
 const AppRouter = () => {
   return useRoutes([
@@ -54,7 +56,7 @@ const AppRouter = () => {
           element: <DashboardLayout />,
           children: [
             { index: true, element: <DashboardPage /> },
-            {path: "profile", element: <Profile />},
+            { path: "profile", element: <Profile /> },
             {
               path: "all-users",
               children: [
@@ -101,14 +103,14 @@ const AppRouter = () => {
               children: [
                 { index: true, element: <Payments /> },
                 { path: "main-cashbox", element: <MainCashbox /> },
-4                { path: "cash-detail", element: <CashDetail /> },
+                { path: "cash-detail", element: <CashDetail /> },
               ],
             },
           ],
         },
       ],
     },
-  ])
+  ]);
 };
 
 export default memo(AppRouter);
