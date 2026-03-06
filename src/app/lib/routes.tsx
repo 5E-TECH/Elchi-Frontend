@@ -1,10 +1,11 @@
 import { lazy, memo } from "react";
-import { Navigate, useRoutes } from "react-router-dom";
+import { useRoutes } from "react-router-dom";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
 const Orders = lazy(() => import("../../pages/orders"));
 const OrderCreate = lazy(() => import("../../pages/orders/create"));
+const Profile = lazy(() => import("../../pages/profile/ui/ProfilePage"));
 
 // ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
@@ -53,6 +54,7 @@ const AppRouter = () => {
           element: <DashboardLayout />,
           children: [
             { index: true, element: <DashboardPage /> },
+            {path: "profile", element: <Profile />},
             {
               path: "all-users",
               children: [
@@ -106,7 +108,6 @@ const AppRouter = () => {
         },
       ],
     },
-    { path: "*", element: <Navigate replace to="/login" /> },
   ])
 };
 

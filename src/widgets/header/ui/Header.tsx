@@ -4,6 +4,7 @@ import { useTheme } from "../../../app/providers/theme/ThemeContext";
 import { useLogout } from "../../../shared/lib/useLogout";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -13,6 +14,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const { logout } = useLogout();
   const { theme, toggleTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const navigate = useNavigate()
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between dark:bg-maindark px-4 md:px-6 py-3 md:py-4 bg-sidebar backdrop-blur-md transition-colors duration-300 shadow-sm border-b border-black/5 dark:border-white/5 h-17.5 md:h-auto">
@@ -108,7 +111,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               <h4 className="text-sm font-bold">Admin User</h4>
               <p className="text-xs ">Super Admin</p>
             </div>
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20">
+            <div onClick={() => navigate("profile")} className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20">
               <User color="#ffffff" className="w-4 h-4 md:w-5 md:h-5" />
             </div>
           </div>

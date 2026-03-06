@@ -64,16 +64,15 @@ const LoginForm = () => {
           if (err.response) {
             const status = err.response.status;
             if (status === 400) message = "Noto'g'ri ma'lumot kiritildi";
-            if (status === 401) message = "Parol noto'g'ri yoki foydalanuvchi topilmadi";
+            if (status === 401)
+              message = "Parol noto'g'ri yoki foydalanuvchi topilmadi";
             if (status === 404) message = "Bunday foydalanuvchi mavjud emas";
-            if (status === 405) message = "Server xatoligi (405) — API manzilini tekshiring";
             if (status === 500) message = "Serverda xatolik yuz berdi";
           } else {
             message = err.message || "Tarmoq xatoligi";
           }
 
           dispatch(setError(message));
-          dispatch(setLoading(false));
           dispatch(setAppInitializing(false));
         },
       },
