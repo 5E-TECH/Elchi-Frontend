@@ -5,6 +5,7 @@ import { useRoutes } from "react-router-dom";
 const Auth = lazy(() => import("../../features/auth/page"));
 const Orders = lazy(() => import("../../pages/orders"));
 const OrderCreate = lazy(() => import("../../pages/orders/create"));
+const Profile = lazy(() => import("../../pages/profile/ui/ProfilePage"));
 
 // ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
@@ -39,6 +40,9 @@ const Payments = lazy(() => import("../../pages/payments"));
 const MainCashbox = lazy(
   () => import("../../pages/payments/components/mainCashbox"),
 );
+const CashDetail = lazy(
+  () => import("../../pages/payments/components/cashDetail"),
+);
 
 const AppRouter = () => {
   return useRoutes([
@@ -52,6 +56,7 @@ const AppRouter = () => {
           element: <DashboardLayout />,
           children: [
             { index: true, element: <DashboardPage /> },
+            { path: "profile", element: <Profile /> },
             {
               path: "all-users",
               children: [
@@ -98,6 +103,7 @@ const AppRouter = () => {
               children: [
                 { index: true, element: <Payments /> },
                 { path: "main-cashbox", element: <MainCashbox /> },
+                { path: "cash-detail", element: <CashDetail /> },
               ],
             },
           ],

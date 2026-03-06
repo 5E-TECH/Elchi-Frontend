@@ -1,9 +1,10 @@
 import { memo } from 'react';
+import UserDetailPage from '../../users/detail/UserDetailPage';
 
 const ProfilePage = () => {
   return (
     <div>
-      <h2>ProfilePage</h2>
+      <UserDetailPage />
     </div>
   );
 };

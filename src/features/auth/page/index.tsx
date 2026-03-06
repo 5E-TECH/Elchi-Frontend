@@ -20,6 +20,7 @@ const Auth = () => {
   useEffect(() => {
     if (!token) {
       dispatch(setAppInitializing(false));
+      setLoading(false);
       return;
     }
 
