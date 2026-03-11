@@ -14,22 +14,33 @@ import {
   Minus,
   Plus,
   DollarSign,
-
+  User,
 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import LogoTextDark from "../../../shared/assets/logoo.png";
 import CashboxView from "./CashboxView";
 import type { HistoryItem } from "./CashboxView";
+import PopupSelect from "../../../shared/components/popupSelect";
+import CashboxFormPopup from "./CashboxFormPopup";
+import { useUser } from "../../../entities/user/api/userApi";
+import { useCashBox } from "../../../entities/payments";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
-const ACTIONS = [
+type ActionLabel =
+  | "Receive from courier"
+  | "Pay to market"
+  | "Spend from cashbox"
+  | "Refill cashbox"
+  | "Pay salary";
+
+const ACTIONS: { icon: React.ReactNode; label: ActionLabel; color: string }[] = [
   { icon: <Truck size={22} />, label: "Receive from courier", color: "from-emerald-500 to-emerald-600" },
   { icon: <Store size={22} />, label: "Pay to market", color: "from-blue-500 to-blue-600" },
   { icon: <Minus size={22} />, label: "Spend from cashbox", color: "from-rose-500 to-rose-600" },
   { icon: <Plus size={22} />, label: "Refill cashbox", color: "from-emerald-500 to-teal-500" },
   { icon: <DollarSign size={22} />, label: "Pay salary", color: "from-amber-400 to-orange-500" },
-] as const;
+];
 
 const HISTORY: HistoryItem[] = [
   { name: "Abdullaev Shohruh", type: "Market to'lovi", method: "Naqd", amount: -10_000_000, time: "07:25", trend: "down" },
@@ -41,7 +52,51 @@ const HISTORY: HistoryItem[] = [
 
 const MainCashbox = () => {
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [isSalaryPopupOpen, setIsSalaryPopupOpen] = useState(false);
+  const [isCourierPopupOpen, setIsCourierPopupOpen] = useState(false);
+  const [isMarketPopupOpen, setIsMarketPopupOpen] = useState(false);
+  const [isSpendPopupOpen, setIsSpendPopupOpen] = useState(false);
+  const [isRefillPopupOpen, setIsRefillPopupOpen] = useState(false);
   const navigate = useNavigate();
+
+  const { getUser } = useUser();
+  const { cashboxSpand, cashboxFill, getSourceTypes } = useCashBox();
+  const { data: usersData, isLoading: usersLoading } = getUser({ limit: 100 });
+  const { data: couriersData, isLoading: couriersLoading } = getUser({ role: "courier", limit: 100 });
+  const { data: marketsData, isLoading: marketsLoading } = getUser({ role: "market", limit: 100 });
+  const { data: srcTypesData } = getSourceTypes();
+  const employees = usersData?.data?.items ?? [];
+  const couriers = couriersData?.data?.items ?? [];
+  const markets = marketsData?.data?.items ?? [];
+  const sourceTypes = (srcTypesData?.data ?? []) as { id: string | number; name: string }[];
+
+  const handleActionClick = (label: ActionLabel) => {
+    if (label === "Pay salary") setIsSalaryPopupOpen(true);
+    else if (label === "Receive from courier") setIsCourierPopupOpen(true);
+    else if (label === "Pay to market") setIsMarketPopupOpen(true);
+    else if (label === "Spend from cashbox") setIsSpendPopupOpen(true);
+    else if (label === "Refill cashbox") setIsRefillPopupOpen(true);
+  };
+
+  const handleSalarySelect = (employee: any) => {
+    setIsSalaryPopupOpen(false);
+    console.log("Selected employee for salary:", employee);
+    // TODO: salary to'lov formi
+  };
+
+  const handleCourierSelect = (courier: any) => {
+    setIsCourierPopupOpen(false);
+    navigate("/payments/cash-detail", {
+      state: { type: "courier", entity: courier },
+    });
+  };
+
+  const handleMarketSelect = (market: any) => {
+    setIsMarketPopupOpen(false);
+    navigate("/payments/cash-detail", {
+      state: { type: "market", entity: market },
+    });
+  };
 
   return (
     <div className="p-6 bg-sidebar dark:bg-maindark min-h-full flex flex-col gap-6 rounded-2xl">
@@ -111,8 +166,14 @@ const MainCashbox = () => {
           {/* Quick actions */}
           <div className="grid grid-cols-5 gap-2">
             {ACTIONS.map(({ icon, label, color }) => (
-              <button key={label} className="flex flex-col items-center gap-2 group">
-                <div className={`w-14 h-14 rounded-full bg-linear-to-br ${color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-200`}>
+              <button
+                key={label}
+                onClick={() => handleActionClick(label)}
+                className="flex flex-col items-center gap-2 group"
+              >
+                <div
+                  className={`w-14 h-14 rounded-full bg-linear-to-br ${color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-200`}
+                >
                   {icon}
                 </div>
                 <span className="text-[10px] text-center text-gray-500 dark:text-white/50 leading-tight font-medium">
@@ -151,6 +212,159 @@ const MainCashbox = () => {
           history={HISTORY}
         />
       </div>
+
+      {/* Pay Salary — ishchi tanlash popup */}
+      <PopupSelect
+        isOpen={isSalaryPopupOpen}
+        onClose={() => setIsSalaryPopupOpen(false)}
+        data={usersLoading ? [] : employees}
+        title="Select employee"
+        description="Maosh to'lash uchun"
+        icon={<User size={20} />}
+        keyExtractor={(emp: any) => emp.id}
+        searchKeys={["name"]}
+        labelKey="name"
+        secondaryLabelKey="role"
+        onSelect={handleSalarySelect}
+        placeholder="Search..."
+        selectLabel="Select"
+        cancelLabel="Cancel"
+        renderItem={(emp: any, isSelected: boolean) => (
+          <div className="flex items-center gap-3 w-full">
+            {/* Avatar / Index */}
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 transition-colors ${isSelected
+                ? "bg-white/20 text-white"
+                : "bg-amber-500/15 text-amber-500"
+                }`}
+            >
+              {emp.name?.charAt(0)?.toUpperCase() ?? <User size={16} />}
+            </div>
+
+            {/* Name + role */}
+            <div className="flex-1 min-w-0">
+              <p
+                className={`font-semibold text-sm truncate ${isSelected ? "text-white" : "text-gray-900 dark:text-white"
+                  }`}
+              >
+                {emp.name}
+              </p>
+              {emp.role && (
+                <p
+                  className={`text-xs mt-0.5 capitalize ${isSelected ? "text-white/60" : "text-main"
+                    }`}
+                >
+                  {emp.role}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      />
+
+      {/* Receive from courier popup */}
+      <PopupSelect
+        isOpen={isCourierPopupOpen}
+        onClose={() => setIsCourierPopupOpen(false)}
+        data={couriersLoading ? [] : couriers}
+        title="Select courier"
+        description="Kuryerdan qabul qilish"
+        icon={<Truck size={20} />}
+        keyExtractor={(c: any) => c.id}
+        searchKeys={["name"]}
+        onSelect={handleCourierSelect}
+        placeholder="Search..."
+        selectLabel="Select"
+        cancelLabel="Cancel"
+        renderItem={(c: any, isSelected: boolean) => (
+          <div className="flex items-center gap-3 w-full">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-emerald-500/15 text-emerald-500"
+              }`}>
+              {c.name?.charAt(0)?.toUpperCase() ?? "?"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`font-semibold text-sm truncate ${isSelected ? "text-white" : "text-gray-900 dark:text-white"
+                }`}>{c.name}</p>
+              {c.role && (
+                <p className={`text-xs mt-0.5 capitalize ${isSelected ? "text-white/60" : "text-emerald-500"
+                  }`}>{c.role}</p>
+              )}
+            </div>
+          </div>
+        )}
+      />
+
+      {/* Pay to market popup */}
+      <PopupSelect
+        isOpen={isMarketPopupOpen}
+        onClose={() => setIsMarketPopupOpen(false)}
+        data={marketsLoading ? [] : markets}
+        title="Select market"
+        description="Marketga to'lov qilish"
+        icon={<Store size={20} />}
+        keyExtractor={(m: any) => m.id}
+        searchKeys={["name"]}
+        onSelect={handleMarketSelect}
+        placeholder="Search..."
+        selectLabel="Select"
+        cancelLabel="Cancel"
+        renderItem={(m: any, isSelected: boolean) => (
+          <div className="flex items-center gap-3 w-full">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-blue-500/15 text-blue-500"
+              }`}>
+              {m.name?.charAt(0)?.toUpperCase() ?? "?"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`font-semibold text-sm truncate ${isSelected ? "text-white" : "text-gray-900 dark:text-white"
+                }`}>{m.name}</p>
+              {m.role && (
+                <p className={`text-xs mt-0.5 capitalize ${isSelected ? "text-white/60" : "text-blue-400"
+                  }`}>{m.role}</p>
+              )}
+            </div>
+          </div>
+        )}
+      />
+
+      {/* Spend from cashbox popup */}
+      <CashboxFormPopup
+        isOpen={isSpendPopupOpen}
+        onClose={() => setIsSpendPopupOpen(false)}
+        title="Spend from cashbox"
+        description="Chiqim operatsiyasi"
+        icon={<Minus size={20} />}
+        accentColor="from-rose-500 to-rose-600"
+        submitLabel="Receive"
+        submitIcon={<Minus size={16} />}
+        sourceTypes={sourceTypes}
+        isLoading={cashboxSpand.isPending}
+        onSubmit={({ amount, source_type_id, comment }) => {
+          cashboxSpand.mutate(
+            { data: { amount, source_type_id, comment } },
+            { onSuccess: () => setIsSpendPopupOpen(false) }
+          );
+        }}
+      />
+
+      {/* Refill cashbox popup */}
+      <CashboxFormPopup
+        isOpen={isRefillPopupOpen}
+        onClose={() => setIsRefillPopupOpen(false)}
+        title="Refill cashbox"
+        description="Kirim operatsiyasi"
+        icon={<Plus size={20} />}
+        accentColor="from-emerald-500 to-teal-500"
+        submitLabel="Refill"
+        submitIcon={<Plus size={16} />}
+        sourceTypes={sourceTypes}
+        isLoading={cashboxFill.isPending}
+        onSubmit={({ amount, source_type_id, comment }) => {
+          cashboxFill.mutate(
+            { data: { amount, source_type_id, comment } },
+            { onSuccess: () => setIsRefillPopupOpen(false) }
+          );
+        }}
+      />
     </div>
   );
 };

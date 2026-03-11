@@ -64,13 +64,13 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
     return (
         <div onClick={onToggle}
             className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer ${isSelected
-                ? "border-main/40 shadow-lg shadow-main/10"
-                : "border-gray-100 dark:border-white/5 bg-white dark:bg-primarydark hover:border-main/20 hover:shadow-md shadow-sm"}`}>
+                ? "border-emerald-500 shadow-xl shadow-emerald-500/25 bg-white dark:bg-maindark"
+                : "border-gray-100 dark:border-white/5 bg-white dark:bg-maindark hover:border-main/20 hover:shadow-md shadow-sm"}`}>
 
-            {isSelected && <div className="absolute inset-0 bg-linear-to-br from-main/8 via-main/4 to-transparent pointer-events-none" />}
-            <div className={`h-0.5 w-full transition-all ${isSelected ? "bg-linear-to-r from-main to-main/30" : "bg-transparent"}`} />
+            {isSelected && <div className="absolute inset-0 bg-linear-to-br from-emerald-500/8 via-emerald-500/4 to-transparent pointer-events-none" />}
+            <div className={`h-0.5 w-full transition-all ${isSelected ? "bg-linear-to-r from-emerald-500 to-emerald-300/40" : "bg-transparent"}`} />
 
-            <div className="p-4 flex gap-4 relative">
+            <div className="p-5 flex gap-4 relative">
                 {/* Chap: checkbox + ID */}
                 <div className="flex flex-col items-center gap-2 pt-0.5 min-w-fit">
                     <Checkbox checked={isSelected} onChange={onToggle} />
@@ -90,17 +90,22 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
                     </div>
 
                     {/* Mijoz */}
-                    <div className="flex items-start gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-linear-to-br from-main/20 to-main/5 border border-main/10 flex items-center justify-center shrink-0 font-bold text-main text-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-linear-to-br from-main/20 to-main/5 border border-main/10 flex items-center justify-center shrink-0 font-bold text-main text-base">
                             {(order.customer?.name ?? "?").charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-main transition-colors truncate">
+                            <h3 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-main transition-colors truncate">
                                 {order.customer?.name ?? "—"}
                             </h3>
-                            <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
-                                <span className="flex items-center gap-1"><Phone size={10} /> {order.customer?.phone_number ?? "—"}</span>
-                                <span className="flex items-center gap-1 min-w-0"><MapPin size={10} className="shrink-0" /><span className="truncate">{location}</span></span>
+                            <div className="flex items-center gap-4 flex-wrap mt-0.5">
+                                <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                    <Phone size={12} /> {order.customer?.phone_number ?? "—"}
+                                </span>
+                                <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 min-w-0">
+                                    <MapPin size={12} className="shrink-0" />
+                                    <span className="truncate">{location}</span>
+                                </span>
                             </div>
                         </div>
                     </div>

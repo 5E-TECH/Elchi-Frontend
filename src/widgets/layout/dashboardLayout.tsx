@@ -10,22 +10,22 @@ const DashboardLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen font-sans text-main dark:bg-primarydark transition-colors duration-300 relative">
+    <div className="flex h-screen font-sans text-main dark:bg-primarydark transition-colors duration-300 relative overflow-hidden">
       {/* Sidebar - Desktop only */}
       <Sidebar />
 
       {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
 
         {/* Header - Sticky */}
         <Header onMenuClick={() => setIsMenuOpen(true)} />
 
         {/* Content */}
-        <main className="flex-1 p-4 md:p-6 custom-scrollbar pb-24 md:pb-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar pb-24 md:pb-6">
           <Outlet />
         </main>
 
-        {/* Footer */}
+        {/* Footer - doim pastda */}
         <Footer />
       </div>
 

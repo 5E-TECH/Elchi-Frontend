@@ -88,31 +88,29 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Footer with Toggle Button */}
-      <div className="p-4 flex items-center justify-between bg-primary/5 dark:bg-maindark/50">
+      {/* Footer with Toggle Button and Logout */}
+      <div className={`p-4 flex bg-primary/5 dark:bg-maindark/50 ${!sidebarRedux.isOpen ? "flex-col space-y-4 items-center" : "items-center justify-between"}`}>
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className={`flex items-center justify-center p-2 rounded-lg transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10 ${!sidebarRedux.isOpen ? "mx-auto" : ""
-            }`}
+          className="flex items-center justify-center p-2 rounded-lg transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10"
         >
           {sidebarRedux.isOpen ? (
-            <ChevronLeft size={20} />
+            <>
+              <ChevronLeft size={20} />
+              <span className="ml-2 text-sm font-medium">Yashirish</span>
+            </>
           ) : (
             <ChevronRight size={20} />
           )}
-          {sidebarRedux.isOpen && (
-            <span className="ml-2 text-sm font-medium">Yashirish</span>
-          )}
         </button>
 
-        {sidebarRedux.isOpen && (
-          <button
-            onClick={logout}
-            className="flex items-center justify-center p-2 rounded-lg hover:bg-red-500/20 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-all duration-300"
-          >
-            <LogOut size={20} />
-          </button>
-        )}
+        <button
+          onClick={logout}
+          className="flex items-center justify-center p-2 rounded-lg hover:bg-red-500/20 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-all duration-300"
+          title={!sidebarRedux.isOpen ? t("sidebar:logout") : ""}
+        >
+          <LogOut size={20} />
+        </button>
       </div>
     </aside>
   );

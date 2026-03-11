@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useMemo } from "react";
 import {
   BadgeDollarSign,
   Store,
@@ -7,12 +7,16 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownLeft,
+  User,
+  CalendarDays,
 } from "lucide-react";
 import HeaderName from "../../shared/components/headerName";
 import FilterSelect from "../../shared/ui/FilterSelect";
 import PaymentHistoryTable from "./components/patmentHistoryTable";
 import PopupSelect from "../../shared/components/popupSelect";
 import { useNavigate } from "react-router-dom";
+import { useCashBox } from "../../entities/payments";
+import { useUser } from "../../entities/user/api/userApi";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -87,46 +91,105 @@ const CARDS = [
   },
 ] as const;
 
-// ── Filterlar ─────────────────────────────────────────────────────────────────
-const FILTERS = [
-  { name: "operation_type", label: "Operation type" },
-  { name: "source_type", label: "Source type" },
-  { name: "created_by", label: "Created by" },
-  { name: "cashbox_type", label: "Cashbox type" },
+// ── Dropdown filter config ────────────────────────────────────────────────────
+const DROPDOWN_FILTERS = [
+  { name: "operation_type", label: "Operation type", icon: TrendingUp },
+  { name: "source_type", label: "Source type", icon: BadgeDollarSign },
+  { name: "created_by", label: "Created by", icon: User },
 ] as const;
 
-type FilterKey = (typeof FILTERS)[number]["name"];
-type Filters = Record<FilterKey, string>;
+type DropdownKey = (typeof DROPDOWN_FILTERS)[number]["name"];
+
+interface Filters extends Record<DropdownKey, string> {
+  from_date: string;
+  to_date: string;
+}
 
 const INIT: Filters = {
   operation_type: "",
   source_type: "",
   created_by: "",
-  cashbox_type: "",
+  from_date: "",
+  to_date: "",
 };
 
 // ── Asosiy sahifa ─────────────────────────────────────────────────────────────
 const Payments = () => {
   const [filters, setFilters] = useState<Filters>(INIT);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
   const [isGivenPopupOpen, setIsGivenPopupOpen] = useState(false);
   const [isReceivedPopupOpen, setIsReceivedPopupOpen] = useState(false);
 
-  const set = (key: FilterKey) => (val: string) =>
+  const setFilter = (key: keyof Filters) => (val: string) => {
     setFilters((f) => ({ ...f, [key]: val }));
+    setPage(1);
+  };
 
   const navigate = useNavigate();
+  const { getFinanceHistory, getOperationTypes, getSourceTypes } = useCashBox();
+  const { getUser } = useUser();
 
-  const handleCardClick = (
-    path: string | null,
-    showPopup: "given" | "received" | null
-  ) => {
+  // Faqat bo'sh bo'lmagan filterlarni API ga yuborish
+  const queryParams = useMemo(() => {
+    const params: Record<string, any> = { page, limit };
+    (Object.entries(filters) as [keyof Filters, string][]).forEach(([key, value]) => {
+      if (value) {
+        params[key] = value;
+      }
+    });
+    return params;
+  }, [page, limit, filters]);
+
+  const { data: historyData, isLoading: historyLoading } = getFinanceHistory(queryParams);
+
+  const { data: opTypes, isLoading: opLoading } = getOperationTypes();
+  const { data: srcTypes, isLoading: srcLoading } = getSourceTypes();
+  const { data: creatorsData, isLoading: creatorsLoading } = getUser({ limit: 100 });
+
+  // Optionlarni formatlash
+  const opOptions = useMemo(
+    () => (opTypes?.data || []).map((t: any) => ({ value: String(t.id), label: t.name })),
+    [opTypes]
+  );
+  const srcOptions = useMemo(
+    () => (srcTypes?.data || []).map((t: any) => ({ value: String(t.id), label: t.name })),
+    [srcTypes]
+  );
+  const creatorOptions = useMemo(
+    () =>
+      (creatorsData?.data?.items || []).map((u: any) => ({
+        value: String(u.id),
+        label: u.name,
+      })),
+    [creatorsData]
+  );
+
+  const handleCardClick = (path: string | null, showPopup: "given" | "received" | null) => {
     if (showPopup === "given") setIsGivenPopupOpen(true);
     else if (showPopup === "received") setIsReceivedPopupOpen(true);
     else if (path) navigate(path);
   };
 
+  const filterOptionsMap: Record<DropdownKey, { value: string; label: string }[]> = {
+    operation_type: opOptions,
+    source_type: srcOptions,
+    created_by: creatorOptions,
+  };
+
+  const loadingMap: Record<DropdownKey, boolean> = {
+    operation_type: opLoading,
+    source_type: srcLoading,
+    created_by: creatorsLoading,
+  };
+
+  // API pagination → component ken'g'lik
+  const pagination = historyData?.data?.pagination ?? historyData?.data?.meta;
+
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-6 min-h-full">
+      {/* Header */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border px-4 shadow-sm">
         <HeaderName
           name="Payments"
@@ -170,23 +233,75 @@ const Payments = () => {
       {/* Filters */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border p-5 shadow-sm">
         <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">Filters</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {FILTERS.map(({ name, label }) => (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {/* Dropdown filterlar */}
+          {DROPDOWN_FILTERS.map(({ name, label, icon }) => (
             <FilterSelect
               key={name}
               name={name}
               label={label}
               value={filters[name]}
-              onChange={set(name)}
-              options={[]}
+              onChange={setFilter(name)}
+              options={filterOptionsMap[name] || []}
               placeholder="Tanlang"
+              icon={icon}
+              loading={loadingMap[name]}
             />
           ))}
+
+          {/* From date */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-500 dark:text-white/50 flex items-center gap-1.5">
+              <CalendarDays size={13} className="text-main" />
+              From date
+            </label>
+            <input
+              type="date"
+              value={filters.from_date}
+              onChange={(e) => setFilter("from_date")(e.target.value)}
+              className="w-full h-10 rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-glass px-3 text-sm text-gray-700 dark:text-white/80 focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all dark:[color-scheme:dark]"
+            />
+          </div>
+
+          {/* To date */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-500 dark:text-white/50 flex items-center gap-1.5">
+              <CalendarDays size={13} className="text-main" />
+              To date
+            </label>
+            <input
+              type="date"
+              value={filters.to_date}
+              onChange={(e) => setFilter("to_date")(e.target.value)}
+              className="w-full h-10 rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-glass px-3 text-sm text-gray-700 dark:text-white/80 focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all dark:[color-scheme:dark]"
+            />
+          </div>
         </div>
+
+        {/* Active filterlar & Reset */}
+        {Object.values(filters).some(Boolean) && (
+          <div className="flex items-center justify-end mt-3">
+            <button
+              onClick={() => {
+                setFilters(INIT);
+                setPage(1);
+              }}
+              className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
+            >
+              ✕ Filterlarni tozalash
+            </button>
+          </div>
+        )}
       </div>
 
       {/* History table */}
-      <PaymentHistoryTable />
+      <PaymentHistoryTable
+        data={historyData?.data?.items ?? []}
+        isLoading={historyLoading}
+        pagination={pagination}
+        onPageChange={setPage}
+        currentPage={page}
+      />
 
       {/* To be given — market tanlash popup */}
       <PopupSelect
@@ -196,17 +311,17 @@ const Payments = () => {
         title="To be given"
         description="Marketni tanlang"
         icon={<Store size={20} />}
-        keyExtractor={(m) => m.id}
+        keyExtractor={(m: any) => m.id}
         searchKeys={["name"]}
         labelKey="name"
         secondaryLabelKey="amount"
-        onSelect={(market) => {
+        onSelect={(market: any) => {
           setIsGivenPopupOpen(false);
           navigate("/payments/cash-detail", {
             state: { type: "market", entity: market },
           });
         }}
-        renderItem={(market, isSelected) => (
+        renderItem={(market: any, isSelected: boolean) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <div
@@ -234,16 +349,16 @@ const Payments = () => {
         title="To be received"
         description="Kuryerni tanlang"
         icon={<Truck size={20} />}
-        keyExtractor={(c) => c.id}
+        keyExtractor={(c: any) => c.id}
         searchKeys={["name", "region"]}
         labelKey="name"
-        onSelect={(courier) => {
+        onSelect={(courier: any) => {
           setIsReceivedPopupOpen(false);
           navigate("/payments/cash-detail", {
             state: { type: "courier", entity: courier },
           });
         }}
-        renderItem={(courier, isSelected) => (
+        renderItem={(courier: any, isSelected: boolean) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <div
@@ -263,10 +378,10 @@ const Payments = () => {
             </div>
             <span
               className={`text-sm font-semibold ${courier.amount < 0
-                  ? "text-rose-400"
-                  : isSelected
-                    ? "text-white/80"
-                    : "text-gray-500 dark:text-white/50"
+                ? "text-rose-400"
+                : isSelected
+                  ? "text-white/80"
+                  : "text-gray-500 dark:text-white/50"
                 }`}
             >
               {courier.amount < 0 ? "-" : ""}
