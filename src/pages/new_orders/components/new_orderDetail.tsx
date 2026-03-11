@@ -104,7 +104,7 @@ const NewOrderDetail = () => {
   }, [selectedIds, orders.length, createReceiveOrder, navigate, refetch, notifApi]);
 
   return (
-    <div className="flex flex-col h-full rounded-2xl bg-sidebar dark:bg-maindark overflow-hidden relative">
+    <div className="flex flex-col h-full rounded-2xl bg-sidebar dark:bg-maindark overflow-hidden">
 
       {/* Header */}
       <div className="p-6 pb-4">
@@ -142,7 +142,7 @@ const NewOrderDetail = () => {
         </div>
 
         {/* Select All */}
-        <div className="mt-4 flex items-center justify-between px-4 py-3 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/5">
+        <div className="mt-4 flex items-center justify-between px-4 py-3 rounded-xl bg-white dark:bg-maindark border border-gray-200 dark:border-white/5">
           <div onClick={toggleSelectAll} className="flex items-center gap-3 cursor-pointer">
             <Checkbox checked={allSelected} onChange={toggleSelectAll} />
             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -156,7 +156,7 @@ const NewOrderDetail = () => {
       </div>
 
       {/* Orders List */}
-      <div className="flex-1 overflow-y-auto px-6 pb-4 space-y-3">
+      <div className="flex-1 overflow-y-auto min-h-0 px-6 pb-4 space-y-3">
         {isLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="w-8 h-8 rounded-full border-2 border-main/20 border-t-main animate-spin" />
@@ -174,22 +174,25 @@ const NewOrderDetail = () => {
         )}
       </div>
 
-      {/* Sticky Accept Button */}
-      <div className={`sticky bottom-0 px-6 py-4 bg-linear-to-t from-sidebar dark:from-maindark via-sidebar/95 dark:via-maindark/95 to-transparent pt-8 transition-all duration-300
-        ${selectedIds.size > 0 ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"}`}>
+      {/* Sticky Footer — doim pastda qotib turadi */}
+      <div className="shrink-0 bg-sidebar dark:bg-maindark border-t border-gray-100 dark:border-white/5 px-6 py-4">
         <button
           onClick={handleAccapted}
-          disabled={createReceiveOrder.isPending}
-          className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base text-white
+          disabled={createReceiveOrder.isPending || selectedIds.size === 0}
+          className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base text-white
             bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
             hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer
-            disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 disabled:hover:shadow-emerald-500/30">
+            disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
+            ${selectedIds.size === 0 ? "opacity-40" : "opacity-100"}`}
+        >
           {createReceiveOrder.isPending
             ? <Loader2 size={20} className="animate-spin" />
             : <CheckCircle2 size={20} />}
           {createReceiveOrder.isPending
             ? "Qabul qilinmoqda..."
-            : `Qabul qilish (${selectedIds.size} ta buyurtma)`}
+            : selectedIds.size > 0
+              ? `Qabul qilish — ${selectedIds.size} ta buyurtma`
+              : "Buyurtmalarni tanlang"}
         </button>
       </div>
 
