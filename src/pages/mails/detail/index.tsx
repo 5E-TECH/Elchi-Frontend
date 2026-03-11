@@ -1,7 +1,7 @@
 import { memo, useMemo, useCallback, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, MapPin } from "lucide-react";
-import { useMailDetail, useMails } from "../../../entities/mails";
+import { useMailDetail, useMails, useReceivePost } from "../../../entities/mails";
 import HeaderName from "../../../shared/components/headerName";
 
 // ─── UI komponentlar ──────────────────────────────────────────────────────────
@@ -14,6 +14,7 @@ import SendPostModal from "./ui/SendPostModal";
 import { useMailDetailState } from "./model/useMailDetailState";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const MailDetailSkeleton = memo(() => (
@@ -52,11 +53,14 @@ ErrorState.displayName = "ErrorState";
 // ─── Asosiy Page ──────────────────────────────────────────────────────────────
 const MailDetailPage = () => {
   const { postId } = useParams<{ postId: string }>();
-  const {role} = useSelector((state: RootState) => state.role);
+  const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
-  const { getTodayMailsCourier} = useMails();
-  const { data: response, isLoading, isError } = isCourier ? getTodayMailsCourier(postId ?? "") : useMailDetail(postId ?? "");
+  const { getTodayMailsCourier } = useMails();
+  const { data: response, isLoading, isError } = isCourier
+    ? getTodayMailsCourier(postId ?? "")
+    : useMailDetail(postId ?? "");
   const navigate = useNavigate();
+  const { apiRequest } = useAppNotification();
 
   const orders = response?.data?.allOrdersByPostId ?? [];
   const homeStats = response?.data?.homeOrders;
@@ -66,8 +70,11 @@ const MailDetailPage = () => {
   const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, clearSelection } =
     useMailDetailState(orders);
 
-  // ─── Modal state ───────────────────────────────────────────────────────────
+  // ─── Modal state (faqat courier bo'lmaganlar uchun) ────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
+  const receivePost = useReceivePost();
 
   // ─── Region nomi ──────────────────────────────────────────────────────────
   const regionName = useMemo(
@@ -78,11 +85,30 @@ const MailDetailPage = () => {
   // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
   const regionId = useMemo(() => orders[0]?.region_id ?? "", [orders]);
 
-  // ─── Modal ochish ─────────────────────────────────────────────────────────
+  // ─── Modal ochish (Send — courier bo'lmaganlar uchun) ─────────────────────
   const handleSend = useCallback(() => {
     if (selectedIds.size === 0) return;
     setIsModalOpen(true);
   }, [selectedIds]);
+
+  // ─── Pochtani qabul qilish (faqat courier uchun) ─────────────────────────
+  const handleReceive = useCallback(() => {
+    if (selectedIds.size === 0 || !postId) return;
+
+    apiRequest({
+      request: () =>
+        receivePost.mutateAsync({
+          postId,
+          payload: { order_ids: Array.from(selectedIds) },
+        }),
+      successMessage: "Pochta muvaffaqiyatli qabul qilindi.",
+      errorMessage: "Pochtani qabul qilishda xatolik yuz berdi.",
+      onSuccess: () => {
+        clearSelection();
+        navigate("/mails");
+      },
+    });
+  }, [selectedIds, postId, receivePost, apiRequest, clearSelection, navigate]);
 
   // ─── Muvaffaqiyatli yuborilgandan keyin ───────────────────────────────────
   const handleSendSuccess = useCallback(() => {
@@ -135,20 +161,27 @@ const MailDetailPage = () => {
         onToggleOne={toggleOne}
       />
 
-      {/* Pochta jo'natish tugmasi */}
+      {/* Rol asosida tugma */}
       {orders.length > 0 && (
-        <SendButton selectedCount={selectedIds.size} onSend={handleSend} />
+        <SendButton
+          selectedCount={selectedIds.size}
+          isCourier={isCourier}
+          onSend={handleSend}
+          onReceive={handleReceive}
+        />
       )}
 
-      {/* Pochta jo'natish modali */}
-      <SendPostModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        postId={postId ?? ""}
-        regionId={regionId}
-        selectedIds={selectedIds}
-        onSuccess={handleSendSuccess}
-      />
+      {/* Pochta jo'natish modali — faqat courier bo'lmaganlar uchun */}
+      {!isCourier && (
+        <SendPostModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          postId={postId ?? ""}
+          regionId={regionId}
+          selectedIds={selectedIds}
+          onSuccess={handleSendSuccess}
+        />
+      )}
     </div>
   );
 };

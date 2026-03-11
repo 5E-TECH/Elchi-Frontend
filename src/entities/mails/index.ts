@@ -153,13 +153,13 @@ export const useMails = () => {
   const getNewMailsCourier = () =>
     useQuery({
       queryKey: [MAILS_KEY, "new"],
-      queryFn: () => api.get("post/courier/my").then((res) => res.data),
+      queryFn: () => api.get("post/on-the-road").then((res) => res.data),
     });
 
-    const getTodayMailsCourier = (id:string) =>
+  const getTodayMailsCourier = (id: string) =>
     useQuery({
       queryKey: [MAILS_KEY, "new"],
-      queryFn: () => api.get(`post/courier/orders/${id}`).then((res) => res.data),
+      queryFn: () => api.get(`post/orders/${id}`).then((res) => res.data),
     });
 
   const getRefusedMails = () =>
@@ -236,6 +236,24 @@ export const useSendPost = () => {
   return useMutation({
     mutationFn: ({ postId, payload }: { postId: string; payload: SendPostPayload }) =>
       api.patch(`post/${postId}`, payload).then((res) => res.data),
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
+    },
+  });
+};
+
+// ─── Receive Post Payload ─────────────────────────────────────────────────────
+export interface ReceivePostPayload {
+  order_ids: string[];
+}
+
+// ─── PATCH: Courier tomonidan pochtani qabul qilish ──────────────────────────
+export const useReceivePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ postId, payload }: { postId: string; payload: ReceivePostPayload }) =>
+      api.patch(`post/receive/${postId}`, payload).then((res) => res.data),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
     },

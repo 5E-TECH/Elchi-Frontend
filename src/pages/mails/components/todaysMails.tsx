@@ -35,7 +35,7 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
   // API dan to'g'ridan-to'g'ri region.name olamiz
   const regionName = item.region?.name ?? `Viloyat ${item.region_id}`;
   const {role, region} = useSelector((state: RootState) => state.role);
-  console.log(role, region);
+  // console.log(role, region);
   
 
 
@@ -134,7 +134,7 @@ const TodaysMails = () => {
     isError,
   } = isCourier ? getNewMailsCourier() : getNewMails();
 
-  const mails: MailItem[] = response?.data?.data ?? [];
+  const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
 
   // Umumiy hisob-kitoblar
   const stats = useMemo(() => {
