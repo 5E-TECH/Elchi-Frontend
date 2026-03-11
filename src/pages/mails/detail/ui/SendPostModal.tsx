@@ -37,7 +37,6 @@ const CourierCard = memo(
                     : "border-gray-100 dark:border-white/10 bg-white dark:bg-white/4 hover:border-main/40 hover:bg-gray-50 dark:hover:bg-white/6"
                 }`}
         >
-            {/* Avatar */}
             <div
                 className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all duration-200 ${selected
                         ? "bg-main text-white"
@@ -47,7 +46,6 @@ const CourierCard = memo(
                 <User size={18} />
             </div>
 
-            {/* Ma'lumotlar */}
             <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                 <span
                     className={`text-sm font-semibold truncate ${selected ? "text-main" : "text-gray-800 dark:text-white"
@@ -63,7 +61,6 @@ const CourierCard = memo(
                 </div>
             </div>
 
-            {/* Check icon */}
             {selected && (
                 <CheckCircle2 size={20} className="text-main shrink-0" />
             )}
@@ -82,11 +79,12 @@ const SendPostModal = memo(
         selectedIds,
         onSuccess,
     }: SendPostModalProps) => {
-        const { api: notify } = useAppNotification();
+        // ✅ apiRequest — CreateUserForm dagi kabi
+        const { apiRequest } = useAppNotification();
+
         const [selectedCourierId, setSelectedCourierId] = useState<string>("");
         const [autoHandled, setAutoHandled] = useState(false);
 
-        // ─── API hooks ────────────────────────────────────────────────────────
         const {
             data: couriersResp,
             isLoading,
@@ -95,108 +93,91 @@ const SendPostModal = memo(
 
         const sendPost = useSendPost();
 
-        // ─── Real courier ro'yxati (backend: data.items) ──────────────────────
         const couriers = couriersResp?.data?.items ?? [];
         const orderIds = Array.from(selectedIds);
 
-        // ─── Auto-handle: 0 yoki 1 courier ────────────────────────────────────
+        // ─── Reset on close ────────────────────────────────────────────────
+        const resetState = () => {
+            setSelectedCourierId("");
+            setAutoHandled(false);
+            sendPost.reset();
+        };
+
+        const handleClose = () => {
+            if (sendPost.isPending) return;
+            resetState();
+            onClose();
+        };
+
+        // ─── Auto-handle: 0 yoki 1 courier ────────────────────────────────
         useEffect(() => {
             if (!isOpen || isLoading || isError || autoHandled) return;
 
             // 0 courier — notification, yop
             if (couriers.length === 0) {
                 setAutoHandled(true);
-                notify.warning({
-                    message: "Courier topilmadi",
-                    description: "Bu viloyatda aktiv courier mavjud emas.",
-                    placement: "topRight",
-                    duration: 4,
+                // apiRequest error sifatida ko'rsatish
+                apiRequest({
+                    request: () => Promise.reject(new Error("no_courier")),
+                    errorMessage: "Bu viloyatda aktiv courier mavjud emas.",
+                    successMessage: "",
                 });
                 onClose();
                 return;
             }
 
-            // 1 courier — popup ochilmasdan darhol yuborish
+            // ✅ 1 courier — popup ochilmaydi, to'g'ridan-to'g'ri yuborish
             if (couriers.length === 1) {
                 setAutoHandled(true);
-                sendPost.mutate(
-                    {
-                        postId,
-                        payload: { orderIds, courierId: couriers[0].id },
-                    },
-                    {
-                        onSuccess: () => {
-                            notify.success({
-                                message: "Muvaffaqiyatli",
-                                description: `Pochta ${couriers[0].name} ga jo'natildi.`,
-                                placement: "topRight",
-                                duration: 4,
-                            });
-                            onSuccess();
-                            onClose();
-                        },
-                        onError: () => {
-                            notify.error({
-                                message: "Xatolik",
-                                description: "Pochtani jo'natishda xatolik yuz berdi.",
-                                placement: "topRight",
-                                duration: 5,
-                            });
-                            onClose();
-                        },
-                    },
-                );
-                return;
-            }
+                const courier = couriers[0];
 
-            // 2+ courier — popup ko'rsatiladi (alohida handle)
-        }, [isOpen, isLoading, isError, couriers, autoHandled]);
-
-        // ─── Modal yopilganda state tozalash ─────────────────────────────────
-        const handleClose = () => {
-            if (sendPost.isPending) return;
-            setSelectedCourierId("");
-            setAutoHandled(false);
-            sendPost.reset();
-            onClose();
-        };
-
-        // ─── 2+ courier: yuborish ─────────────────────────────────────────────
-        const handleSend = () => {
-            if (!selectedCourierId || sendPost.isPending) return;
-            sendPost.mutate(
-                {
-                    postId,
-                    payload: { orderIds, courierId: selectedCourierId },
-                },
-                {
+                apiRequest({
+                    request: () =>
+                        sendPost.mutateAsync({
+                            postId,
+                            payload: { orderIds, courierId: courier.id },
+                        }),
+                    successMessage: `Pochta ${courier.name} ga muvaffaqiyatli jo'natildi.`,
+                    errorMessage: "Pochtani jo'natishda xatolik yuz berdi.",
                     onSuccess: () => {
-                        notify.success({
-                            message: "Muvaffaqiyatli",
-                            description: "Pochta muvaffaqiyatli jo'natildi.",
-                            placement: "topRight",
-                            duration: 4,
-                        });
-                        setSelectedCourierId("");
-                        setAutoHandled(false);
-                        sendPost.reset();
+                        resetState();
                         onSuccess();
                         onClose();
                     },
                     onError: () => {
-                        notify.error({
-                            message: "Xatolik",
-                            description: "Pochtani jo'natishda xatolik yuz berdi.",
-                            placement: "topRight",
-                            duration: 5,
-                        });
+                        resetState();
+                        onClose();
                     },
+                });
+                return;
+            }
+
+            // 2+ courier — popup ko'rsatiladi
+        }, [isOpen, isLoading, isError, couriers, autoHandled]);
+
+        // ─── 2+ courier: yuborish ──────────────────────────────────────────
+        const handleSend = () => {
+            if (!selectedCourierId || sendPost.isPending) return;
+
+            const courier = couriers.find((c) => c.id === selectedCourierId);
+
+            apiRequest({
+                request: () =>
+                    sendPost.mutateAsync({
+                        postId,
+                        payload: { orderIds, courierId: selectedCourierId },
+                    }),
+                successMessage: `Pochta ${courier?.name ?? ""} ga muvaffaqiyatli jo'natildi.`,
+                errorMessage: "Pochtani jo'natishda xatolik yuz berdi.",
+                onSuccess: () => {
+                    resetState();
+                    onSuccess();
+                    onClose();
                 },
-            );
+            });
         };
 
-        // ─── Faqat 2+ courier da popup ko'rsatiladi ───────────────────────────
-        // 0 yoki 1 courier bo'lsa useEffect da handle qilinadi, popup ochilmaydi
+        // ✅ Faqat 2+ courier da popup ko'rsatiladi
         const showPopup = isOpen && (isLoading || isError || couriers.length >= 2);
 
         return (
@@ -229,7 +210,6 @@ const SendPostModal = memo(
 
                     {/* Content */}
                     <div className="px-5 py-4">
-                        {/* Loading */}
                         {isLoading && (
                             <div className="flex flex-col items-center justify-center py-10 gap-4">
                                 <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
@@ -241,7 +221,6 @@ const SendPostModal = memo(
                             </div>
                         )}
 
-                        {/* Xato */}
                         {isError && !isLoading && (
                             <div className="flex flex-col items-center justify-center py-10 gap-3">
                                 <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center">
@@ -256,13 +235,12 @@ const SendPostModal = memo(
                             </div>
                         )}
 
-                        {/* 2+ courier — tanlash ro'yxati */}
                         {!isLoading && !isError && couriers.length >= 2 && (
                             <>
                                 <p className="text-xs text-gray-400 dark:text-white/50 mb-3">
                                     Quyidagi courierlardan birini tanlang:
                                 </p>
-                                <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
+                                <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
                                     {couriers.map((courier) => (
                                         <CourierCard
                                             key={courier.id}
@@ -276,7 +254,7 @@ const SendPostModal = memo(
                         )}
                     </div>
 
-                    {/* Footer — faqat 2+ courier da */}
+                    {/* Footer */}
                     {!isLoading && !isError && couriers.length >= 2 && (
                         <div className="px-5 pb-5">
                             <button

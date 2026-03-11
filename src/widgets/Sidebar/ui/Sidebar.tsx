@@ -2,7 +2,7 @@ import { memo, useMemo, useEffect, useState } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { SIDEBAR_CONFIG } from "../model/menuConfig";
+import { SIDEBAR_CONFIG, type UserRole } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
@@ -19,11 +19,11 @@ const Sidebar = () => {
   const sidebarRedux = useSelector((state: RootState) => state.sidebar);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // User role'ni Redux dan oling
-  // const userRole = useSelector((state: RootState) => state.auth.role) as UserRole;
-  const userRole = "admin";
+  // ─── User role'ni Redux dan oling ────────────────────────────────────────
+  const { role } = useSelector((state: RootState) => state.role);
+  const userRole = (role as UserRole) || "admin";
 
-  // Dark mode holatini kuzatish
+  // ─── Dark mode holatini kuzatish ─────────────────────────────────────────
   useEffect(() => {
     const checkDarkMode = () => {
       const theme = localStorage.getItem("theme");
@@ -35,7 +35,6 @@ const Sidebar = () => {
 
     checkDarkMode();
 
-    // MutationObserver orqali HTML class o'zgarishini kuzatish
     const observer = new MutationObserver(checkDarkMode);
     observer.observe(document.documentElement, {
       attributes: true,
@@ -45,11 +44,11 @@ const Sidebar = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Rolga mos navigation items'ni olish
+  // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
   const links = useMemo(() => {
-    const navItems = SIDEBAR_CONFIG[userRole] || SIDEBAR_CONFIG.user;
+    const navItems = SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin;
 
-    return navItems.map((item: any) => ({
+    return navItems.map((item) => ({
       to: item.to,
       icon: <item.icon />,
       label: t(item.label),
@@ -57,7 +56,7 @@ const Sidebar = () => {
     }));
   }, [userRole, t]);
 
-  // Logo rasmlarini tanlash
+  // ─── Logo rasmlarini tanlash ──────────────────────────────────────────────
   const currentLogoText = isDarkMode ? LogoTextdark : LogoText;
   const currentLogoIcon = isDarkMode ? LogoIcondark : LogoIcon;
 
@@ -83,7 +82,7 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-2 custom-scrollbar bg-sidebar dark:bg-maindark">
-        {links.map((link: any) => (
+        {links.map((link) => (
           <SidebarLink key={link.to} {...link} />
         ))}
       </nav>

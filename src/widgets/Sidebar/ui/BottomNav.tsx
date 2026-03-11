@@ -1,7 +1,10 @@
 import { memo } from "react";
 import { NavLink } from "react-router-dom";
-import { Menu, House, ShoppingBag, UserRound, MapPinned } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { SIDEBAR_CONFIG, type UserRole } from "../model/menuConfig";
+import type { RootState } from "../../../app/config/store";
 
 interface BottomNavProps {
     onMenuClick: () => void;
@@ -10,12 +13,12 @@ interface BottomNavProps {
 const BottomNav = ({ onMenuClick }: BottomNavProps) => {
     const { t } = useTranslation(["sidebar"]);
 
-    const navItems = [
-        { to: "/", icon: House, label: "dashboard", end: true },
-        { to: "/orders", icon: ShoppingBag, label: "orders" },
-        { to: "/all-users", icon: UserRound, label: "users" },
-        { to: "/regions", icon: MapPinned, label: "region" },
-    ];
+    // ─── Redux dan haqiqiy rolni oling ───────────────────────────────────────
+    const { role } = useSelector((state: RootState) => state.role);
+    const userRole = (role as UserRole) || "admin";
+
+    // ─── Rolga mos itemlarni olib, faqat birinchi 4 tasini ko'rsatish ────────
+    const navItems = (SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin).slice(0, 4);
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden animate-slide-up">

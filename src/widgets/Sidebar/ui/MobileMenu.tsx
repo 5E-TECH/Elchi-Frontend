@@ -22,7 +22,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const userRole = (roleState.role as UserRole) || "admin";
 
     const links = useMemo(() => {
-        const navItems = SIDEBAR_CONFIG[userRole] || SIDEBAR_CONFIG.user;
+        const navItems = SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin;
         return navItems.map((item: any) => ({
             to: item.to,
             icon: <item.icon size={20} />,

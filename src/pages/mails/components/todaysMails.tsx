@@ -1,7 +1,9 @@
-import { memo, useMemo } from 'react';
-import { MapPin, Package, ChevronRight, TrendingUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useMails } from '../../../entities/mails';
+import { memo, useMemo } from "react";
+import { MapPin, Package, ChevronRight, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useMails } from "../../../entities/mails";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Region {
@@ -25,20 +27,24 @@ interface MailItem {
 
 // ─── Pul formati ─────────────────────────────────────────────────────────────
 const formatPrice = (price: number): string =>
-  price.toLocaleString('uz-UZ') + " so'm";
+  price.toLocaleString("uz-UZ") + " so'm";
 
 // ─── Yagona Karta Komponenti ──────────────────────────────────────────────────
 const MailCard = memo(({ item }: { item: MailItem }) => {
   const navigate = useNavigate();
   // API dan to'g'ridan-to'g'ri region.name olamiz
   const regionName = item.region?.name ?? `Viloyat ${item.region_id}`;
+  const {role, region} = useSelector((state: RootState) => state.role);
+  // console.log(role, region);
+  
+
 
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={() => navigate(`/mails/${item.id}`)}
-      onKeyDown={(e) => e.key === 'Enter' && navigate(`/mails/${item.id}`)}
+      onKeyDown={(e) => e.key === "Enter" && navigate(`/mails/${item.id}`)}
       className="mail-card group relative overflow-hidden rounded-2xl cursor-pointer"
     >
       {/* Gradient fon */}
@@ -49,7 +55,6 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
 
       {/* Karta ichidagi kontent */}
       <div className="relative z-10 p-5 flex flex-col gap-3">
-
         {/* Yuqori qator: icon + badge + arrow */}
         <div className="flex items-start justify-between">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30">
@@ -70,10 +75,12 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
         {/* Viloyat nomi */}
         <div>
           <h3 className="text-white font-bold text-lg leading-tight">
-            {regionName}
+            {role === "courier" ? region : regionName}
           </h3>
           {item.region?.sato_code && (
-            <p className="text-white/50 text-xs mt-0.5">{item.region.sato_code}</p>
+            <p className="text-white/50 text-xs mt-0.5">
+              {item.region.sato_code}
+            </p>
           )}
         </div>
 
@@ -88,7 +95,8 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
               Buyurtmalar:
             </span>
             <span className="text-white font-bold text-sm">
-              {item.order_quantity} <span className="font-normal opacity-70">ta</span>
+              {item.order_quantity}{" "}
+              <span className="font-normal opacity-70">ta</span>
             </span>
           </div>
 
@@ -103,7 +111,7 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
     </div>
   );
 });
-MailCard.displayName = 'MailCard';
+MailCard.displayName = "MailCard";
 
 // ─── Skeleton Karta ───────────────────────────────────────────────────────────
 const MailCardSkeleton = memo(() => (
@@ -111,14 +119,22 @@ const MailCardSkeleton = memo(() => (
     <div className="h-45 bg-emerald-500/20 dark:bg-emerald-800/30 rounded-2xl" />
   </div>
 ));
-MailCardSkeleton.displayName = 'MailCardSkeleton';
+MailCardSkeleton.displayName = "MailCardSkeleton";
 
 // ─── Asosiy Komponent ─────────────────────────────────────────────────────────
 const TodaysMails = () => {
-  const { getNewMails } = useMails();
-  const { data: response, isLoading, isError } = getNewMails();
+  const {role} = useSelector((state: RootState) => state.role);
+  const isCourier = role === "courier";
 
-  const mails: MailItem[] = response?.data ?? [];
+  const { getNewMails, getNewMailsCourier } = useMails();
+
+  const {
+    data: response,
+    isLoading,
+    isError,
+  } = isCourier ? getNewMailsCourier() : getNewMails();
+
+  const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
 
   // Umumiy hisob-kitoblar
   const stats = useMemo(() => {
@@ -171,21 +187,27 @@ const TodaysMails = () => {
 
   return (
     <div className="space-y-5">
-
       {/* Umumiy statistika */}
       <div className="flex items-center gap-6 px-1">
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold text-gray-800 dark:text-white">
             {stats.totalRegions}
           </span>
-          <span className="text-gray-500 dark:text-gray-400 text-sm">viloyat</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">
+            {
+              role === "courier" ? "pochta" : "viloyat"
+            }
+            {/* viloyat */}
+          </span>
         </div>
         <div className="w-px h-5 bg-gray-200 dark:bg-white/10" />
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold text-gray-800 dark:text-white">
             {stats.totalOrders}
           </span>
-          <span className="text-gray-500 dark:text-gray-400 text-sm">buyurtma</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">
+            buyurtma
+          </span>
         </div>
         <div className="w-px h-5 bg-gray-200 dark:bg-white/10" />
         <div className="flex items-center gap-2">
@@ -201,7 +223,6 @@ const TodaysMails = () => {
           <MailCard key={mail.id} item={mail} />
         ))}
       </div>
-
     </div>
   );
 };

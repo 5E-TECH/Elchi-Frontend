@@ -150,6 +150,18 @@ export const useMails = () => {
       queryFn: () => api.get("post/new").then((res) => res.data),
     });
 
+  const getNewMailsCourier = () =>
+    useQuery({
+      queryKey: [MAILS_KEY, "new"],
+      queryFn: () => api.get("post/on-the-road").then((res) => res.data),
+    });
+
+  const getTodayMailsCourier = (id: string) =>
+    useQuery({
+      queryKey: [MAILS_KEY, "new"],
+      queryFn: () => api.get(`post/orders/${id}`).then((res) => res.data),
+    });
+
   const getRefusedMails = () =>
     useQuery({
       queryKey: [MAILS_KEY, "refused"],
@@ -162,7 +174,7 @@ export const useMails = () => {
       queryFn: () => api.get("post/old").then((res) => res.data),
     });
 
-  return { getNewMails, getRefusedMails, getOldMails };
+  return { getNewMails, getRefusedMails, getOldMails, getNewMailsCourier, getTodayMailsCourier };
 };
 
 export const useMailDetail = (postId: string) =>
@@ -224,6 +236,24 @@ export const useSendPost = () => {
   return useMutation({
     mutationFn: ({ postId, payload }: { postId: string; payload: SendPostPayload }) =>
       api.patch(`post/${postId}`, payload).then((res) => res.data),
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
+    },
+  });
+};
+
+// ─── Receive Post Payload ─────────────────────────────────────────────────────
+export interface ReceivePostPayload {
+  order_ids: string[];
+}
+
+// ─── PATCH: Courier tomonidan pochtani qabul qilish ──────────────────────────
+export const useReceivePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ postId, payload }: { postId: string; payload: ReceivePostPayload }) =>
+      api.patch(`post/receive/${postId}`, payload).then((res) => res.data),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
     },
