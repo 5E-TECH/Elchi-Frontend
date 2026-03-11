@@ -1,7 +1,7 @@
 import { memo, useMemo, useCallback, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, MapPin } from "lucide-react";
-import { useMailDetail } from "../../../entities/mails";
+import { useMailDetail, useMails } from "../../../entities/mails";
 import HeaderName from "../../../shared/components/headerName";
 
 // ─── UI komponentlar ──────────────────────────────────────────────────────────
@@ -12,6 +12,8 @@ import SendPostModal from "./ui/SendPostModal";
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const MailDetailSkeleton = memo(() => (
@@ -50,7 +52,10 @@ ErrorState.displayName = "ErrorState";
 // ─── Asosiy Page ──────────────────────────────────────────────────────────────
 const MailDetailPage = () => {
   const { postId } = useParams<{ postId: string }>();
-  const { data: response, isLoading, isError } = useMailDetail(postId ?? "");
+  const {role} = useSelector((state: RootState) => state.role);
+  const isCourier = role === "courier";
+  const { getTodayMailsCourier} = useMails();
+  const { data: response, isLoading, isError } = isCourier ? getTodayMailsCourier(postId ?? "") : useMailDetail(postId ?? "");
   const navigate = useNavigate();
 
   const orders = response?.data?.allOrdersByPostId ?? [];

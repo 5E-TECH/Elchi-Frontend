@@ -150,6 +150,18 @@ export const useMails = () => {
       queryFn: () => api.get("post/new").then((res) => res.data),
     });
 
+  const getNewMailsCourier = () =>
+    useQuery({
+      queryKey: [MAILS_KEY, "new"],
+      queryFn: () => api.get("post/courier/my").then((res) => res.data),
+    });
+
+    const getTodayMailsCourier = (id:string) =>
+    useQuery({
+      queryKey: [MAILS_KEY, "new"],
+      queryFn: () => api.get(`post/courier/orders/${id}`).then((res) => res.data),
+    });
+
   const getRefusedMails = () =>
     useQuery({
       queryKey: [MAILS_KEY, "refused"],
@@ -162,7 +174,7 @@ export const useMails = () => {
       queryFn: () => api.get("post/old").then((res) => res.data),
     });
 
-  return { getNewMails, getRefusedMails, getOldMails };
+  return { getNewMails, getRefusedMails, getOldMails, getNewMailsCourier, getTodayMailsCourier };
 };
 
 export const useMailDetail = (postId: string) =>

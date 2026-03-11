@@ -31,10 +31,12 @@ const Auth = () => {
 
         // ✅ Safe access:
         const userData = res.data?.data;
+        
         if (userData) {
           dispatch(setRole(userData.role));
           dispatch(setId(userData.id));
           if (userData.region?.name) {
+            
             dispatch(setRegion(userData.region.name));
           }
         }

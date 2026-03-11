@@ -10,7 +10,7 @@ interface IState {
 const initialState: IState = {
   id: null,
   role: null,
-  region: null,
+  region: localStorage.getItem("region") || null,
   name: localStorage.getItem("name") || null
 };
 
@@ -27,6 +27,7 @@ export const roleSlice = createSlice({
     },
     setRegion: (state, action: PayloadAction<string>) => {
       state.region = action.payload;
+      localStorage.setItem("region", action.payload);
     },
     removeRole: (state) => {
       state.id = null;
