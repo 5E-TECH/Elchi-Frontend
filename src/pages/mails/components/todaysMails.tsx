@@ -32,12 +32,12 @@ const formatPrice = (price: number): string =>
 // ─── Yagona Karta Komponenti ──────────────────────────────────────────────────
 const MailCard = memo(({ item }: { item: MailItem }) => {
   const navigate = useNavigate();
+  // console.log(item);
+
   // API dan to'g'ridan-to'g'ri region.name olamiz
   const regionName = item.region?.name ?? `Viloyat ${item.region_id}`;
-  const {role, region} = useSelector((state: RootState) => state.role);
+  const { role } = useSelector((state: RootState) => state.role);
   // console.log(role, region);
-  
-
 
   return (
     <div
@@ -75,13 +75,21 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
         {/* Viloyat nomi */}
         <div>
           <h3 className="text-white font-bold text-lg leading-tight">
-            {role === "courier" ? region : regionName}
+            {role === "courier"
+              ? new Date(item?.createdAt).toLocaleString("uz-UZ", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : regionName}{" "}
           </h3>
-          {item.region?.sato_code && (
+          {/* {item.region?.sato_code && (
             <p className="text-white/50 text-xs mt-0.5">
               {item.region.sato_code}
             </p>
-          )}
+          )} */}
         </div>
 
         {/* Divider */}
@@ -123,7 +131,7 @@ MailCardSkeleton.displayName = "MailCardSkeleton";
 
 // ─── Asosiy Komponent ─────────────────────────────────────────────────────────
 const TodaysMails = () => {
-  const {role} = useSelector((state: RootState) => state.role);
+  const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
 
   const { getNewMails, getNewMailsCourier } = useMails();
@@ -194,9 +202,7 @@ const TodaysMails = () => {
             {stats.totalRegions}
           </span>
           <span className="text-gray-500 dark:text-gray-400 text-sm">
-            {
-              role === "courier" ? "pochta" : "viloyat"
-            }
+            {role === "courier" ? "pochta" : "viloyat"}
             {/* viloyat */}
           </span>
         </div>
