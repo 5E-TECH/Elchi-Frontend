@@ -309,12 +309,10 @@
     inset: 0;
     z-index: 1;
     border-radius: 1rem;
-    background: linear-gradient(
-      105deg,
-      transparent 40%,
-      rgba(255, 255, 255, 0.08) 50%,
-      transparent 60%
-    );
+    background: linear-gradient(105deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.08) 50%,
+        transparent 60%);
     background-size: 200% 100%;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -326,8 +324,13 @@
   }
 
   @keyframes mailShimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   /* Status badge */
