@@ -5,15 +5,13 @@ import { useSelector, useDispatch } from "react-redux";
 import { SIDEBAR_CONFIG, type UserRole } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
-import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
-import { useLogout } from "../../../shared/lib/useLogout";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoIcon from "../../../shared/assets/logo qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import LogoIcondark from "../../../shared/assets/logo oq.png";
 
 const Sidebar = () => {
-  const { logout } = useLogout();
   const { t } = useTranslation(["sidebar"]);
   const dispatch = useDispatch();
   const sidebarRedux = useSelector((state: RootState) => state.sidebar);
@@ -101,14 +99,6 @@ const Sidebar = () => {
           ) : (
             <ChevronRight size={20} />
           )}
-        </button>
-
-        <button
-          onClick={logout}
-          className="flex items-center justify-center p-2 rounded-lg hover:bg-red-500/20 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-all duration-300"
-          title={!sidebarRedux.isOpen ? t("sidebar:logout") : ""}
-        >
-          <LogOut size={20} />
         </button>
       </div>
     </aside>
