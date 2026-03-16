@@ -45,6 +45,13 @@ export const useOrders = () => {
       enabled,
     });
 
+    const getOrderCourier = () =>
+    useQuery({
+      queryKey: [orders],
+      queryFn: () => api.get(`orders/courier/orders`).then((res) => res.data),
+    });
+
+
   const updateNewOrder = useMutation({
     mutationFn: ({ orderId, data }: { orderId: string; data: any }) =>
       api.patch(`orders/${orderId}/full`, data).then((res) => res.data),
@@ -53,6 +60,8 @@ export const useOrders = () => {
       client.invalidateQueries({ queryKey: [orders] });
     },
   })
+
+
 
   const deleteOrder = useMutation({
     mutationFn: (orderId: string) =>
@@ -63,5 +72,5 @@ export const useOrders = () => {
     },
   });
 
-  return { createReceiveOrder, getTodayOrders, getTodayOrdersByMarket, getOrderById, updateNewOrder, deleteOrder };
+  return { createReceiveOrder, getTodayOrders, getTodayOrdersByMarket, getOrderById, getOrderCourier, updateNewOrder, deleteOrder };
 };
