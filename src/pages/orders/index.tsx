@@ -11,6 +11,7 @@ import OrdersTable from "./list/OrdersTable";
 import OrderPagination from "./list/OrderPagination";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
+import CourierOrders from "./list/courier/index"
 
 const LIMIT = 15;
 
@@ -24,6 +25,8 @@ const Orders = () => {
   // Redux filterlarni olish (UserListPage patterndek)
   const filters = useSelector((state: RootState) => state.filter);
   const searchFilters = useSelector((state: RootState) => state.search);
+  const role = useSelector((state: RootState) => state.role.role);
+
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -87,6 +90,14 @@ const Orders = () => {
   const items: OrderListItem[] = data?.data ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / LIMIT) || 1;
+
+  if (role === "courier") {
+    return (
+      <div>
+        <CourierOrders/>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-5 min-h-full">
