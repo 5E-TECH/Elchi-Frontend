@@ -50,8 +50,11 @@ type OrdersTableProps = {
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
   onRestore?: (order: Order) => void;
-  // "all" tabda ekanligi — harakat ustunini moslashtirish uchun
   showAllActions?: boolean;
+  // ✅ Yangi: checkbox uchun
+  selectedIds?: Set<string>;
+  onSelectChange?: (id: string, checked: boolean) => void;
+  onSelectAll?: (checked: boolean) => void;
 };
 
 const statusConfig: Record<Order_status, { icon: JSX.Element; className: string }> = {
@@ -106,7 +109,6 @@ const fallbackStatus = {
   className: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
 };
 
-// Sotish + Bekor tugmalari ko'rsatiladigan statuslar
 const ACTIVE_STATUSES: string[] = [
   Order_status.WAITING,
   Order_status.ON_THE_ROAD,
@@ -114,161 +116,199 @@ const ACTIVE_STATUSES: string[] = [
   Order_status.RECEIVED,
 ];
 
-const OrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore, showAllActions = false }: OrdersTableProps) => {
+const OrdersTable = ({
+  orders,
+  loading,
+  onDeliver,
+  onCancel,
+  onRestore,
+  showAllActions = false,
+  selectedIds,
+  onSelectChange,
+  onSelectAll,
+}: OrdersTableProps) => {
+
+  // Checkbox ustuni faqat selectedIds berilganda ko'rinadi
+  const showCheckbox = !!selectedIds;
+  const allChecked = showCheckbox && orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
+  const someChecked = showCheckbox && orders.some((o) => selectedIds.has(o.id));
+
   const columns: ColumnConfig<Order>[] = useMemo(
-    () => [
-      {
-        key: "id",
-        label: "#",
-        width: "50px",
-        render: (_, __, rowIndex) => (
-          <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-            {(rowIndex ?? 0) + 1}
-          </span>
-        ),
-      },
-      {
-        key: "customer",
-        label: "Mijoz",
-        render: (_, row) => (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shrink-0">
-              <User size={14} className="text-white" />
-            </div>
-            <span className="font-semibold text-sm">{row.customer?.name ?? "—"}</span>
-          </div>
-        ),
-      },
-      {
-        key: "customer",
-        label: "Telefon",
-        render: (_, row) => (
-          <span className="text-sm text-gray-600 dark:text-gray-300">
-            {row.customer?.phone_number ?? "—"}
-          </span>
-        ),
-      },
-      {
-        key: "district",
-        label: "Manzili",
-        render: (_, row) => (
-          <span className="text-sm">{row.district?.name ?? "—"}</span>
-        ),
-      },
-      {
-        key: "market",
-        label: "Market",
-        render: (_, row) => (
-          <span className="text-sm font-medium">{row.market?.name ?? "—"}</span>
-        ),
-      },
-      {
-        key: "status",
-        label: "Holat",
-        render: (val) => {
-          const cfg = statusConfig[val as Order_status] ?? fallbackStatus;
-          return (
-            <span className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full w-fit ${cfg.className}`}>
-              {cfg.icon}
-              {val as string}
+    () => {
+      const base: ColumnConfig<Order>[] = [
+        // ✅ Checkbox ustuni — faqat showCheckbox bo'lganda
+        ...(showCheckbox ? [{
+          key: "id" as keyof Order,
+          label: (
+            <input
+              type="checkbox"
+              checked={allChecked}
+              ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked; }}
+              onChange={(e) => onSelectAll?.(e.target.checked)}
+              className="w-4 h-4 accent-red-500 cursor-pointer"
+            />
+          ) as any,
+          width: "40px",
+          render: (_: any, row: Order) => (
+            <input
+              type="checkbox"
+              checked={selectedIds.has(row.id)}
+              onChange={(e) => { e.stopPropagation(); onSelectChange?.(row.id, e.target.checked); }}
+              className="w-4 h-4 accent-red-500 cursor-pointer"
+            />
+          ),
+        }] : []),
+        {
+          key: "id",
+          label: "#",
+          width: "50px",
+          render: (_, __, rowIndex) => (
+            <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+              {(rowIndex ?? 0) + 1}
             </span>
-          );
+          ),
         },
-      },
-      {
-        key: "total_price",
-        label: "Narx",
-        sortable: true,
-        render: (val) => (
-          <span className="font-bold text-sm">
-            {Number(val).toLocaleString("uz-UZ")}
-          </span>
-        ),
-      },
-      {
-        key: "where_deliver",
-        label: "Qayergacha",
-        render: (val) => (
-          <span className="text-sm">
-            {val === "center" ? "Markazgacha" : "Uygacha"}
-          </span>
-        ),
-      },
-      {
-        key: "created_at",
-        label: "Sana",
-        sortable: true,
-        render: (val) => (
-          <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-            {new Date(val as string).toLocaleString("uz-UZ", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        ),
-      },
-      {
-        key: "id",
-        label: "Harakat",
-        render: (_, row) => {
-          // "all" tabda emas (pending/cancelled) → har doim Sotish+Bekor
-          if (!showAllActions) {
-            return (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDeliver?.(row); }}
-                  className="px-3 py-1 text-xs font-semibold rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
-                >
-                  Sotish
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onCancel?.(row); }}
-                  className="px-3 py-1 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
-                >
-                  Bekor
-                </button>
+        {
+          key: "customer",
+          label: "Mijoz",
+          render: (_, row) => (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shrink-0">
+                <User size={14} className="text-white" />
               </div>
-            );
-          }
-
-          // "all" tabda — statusga qarab
-          if (ACTIVE_STATUSES.includes(row.status)) {
-            // Faol buyurtmalar: Sotish + Bekor
-            return (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDeliver?.(row); }}
-                  className="px-3 py-1 text-xs font-semibold rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
-                >
-                  Sotish
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onCancel?.(row); }}
-                  className="px-3 py-1 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
-                >
-                  Bekor
-                </button>
-              </div>
-            );
-          }
-
-          // Tugallangan yoki bekor qilingan: faqat restore icon
-          return (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRestore?.(row); }}
-              className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title="Qayta tiklash"
-            >
-              <RotateCcw size={15} />
-            </button>
-          );
+              <span className="font-semibold text-sm">{row.customer?.name ?? "—"}</span>
+            </div>
+          ),
         },
-      },
-    ],
-    [onDeliver, onCancel, onRestore, showAllActions]
+        {
+          key: "customer",
+          label: "Telefon",
+          render: (_, row) => (
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {row.customer?.phone_number ?? "—"}
+            </span>
+          ),
+        },
+        {
+          key: "district",
+          label: "Manzili",
+          render: (_, row) => (
+            <span className="text-sm">{row.district?.name ?? "—"}</span>
+          ),
+        },
+        {
+          key: "market",
+          label: "Market",
+          render: (_, row) => (
+            <span className="text-sm font-medium">{row.market?.name ?? "—"}</span>
+          ),
+        },
+        {
+          key: "status",
+          label: "Holat",
+          render: (val) => {
+            const cfg = statusConfig[val as Order_status] ?? fallbackStatus;
+            return (
+              <span className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full w-fit ${cfg.className}`}>
+                {cfg.icon}
+                {val as string}
+              </span>
+            );
+          },
+        },
+        {
+          key: "total_price",
+          label: "Narx",
+          sortable: true,
+          render: (val) => (
+            <span className="font-bold text-sm">
+              {Number(val).toLocaleString("uz-UZ")}
+            </span>
+          ),
+        },
+        {
+          key: "where_deliver",
+          label: "Qayergacha",
+          render: (val) => (
+            <span className="text-sm">
+              {val === "center" ? "Markazgacha" : "Uygacha"}
+            </span>
+          ),
+        },
+        {
+          key: "created_at",
+          label: "Sana",
+          sortable: true,
+          render: (val) => (
+            <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+              {new Date(val as string).toLocaleString("uz-UZ", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          ),
+        },
+        {
+          key: "id",
+          label: "Harakat",
+          render: (_, row) => {
+            if (!showAllActions) {
+              return (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeliver?.(row); }}
+                    className="px-3 py-1 text-xs font-semibold rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
+                  >
+                    Sotish
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onCancel?.(row); }}
+                    className="px-3 py-1 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
+                  >
+                    Bekor
+                  </button>
+                </div>
+              );
+            }
+
+            if (ACTIVE_STATUSES.includes(row.status)) {
+              return (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeliver?.(row); }}
+                    className="px-3 py-1 text-xs font-semibold rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
+                  >
+                    Sotish
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onCancel?.(row); }}
+                    className="px-3 py-1 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
+                  >
+                    Bekor
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <button
+                onClick={(e) => { e.stopPropagation(); onRestore?.(row); }}
+                className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Qayta tiklash"
+              >
+                <RotateCcw size={15} />
+              </button>
+            );
+          },
+        },
+      ];
+
+      return base;
+    },
+    [onDeliver, onCancel, onRestore, showAllActions, selectedIds, allChecked, someChecked, onSelectChange, onSelectAll]
   );
 
   return (

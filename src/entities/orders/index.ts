@@ -90,6 +90,23 @@ export const useOrders = () => {
   });
 
 
+    const RollbackOrder = useMutation({
+    mutationFn: (orderId: string) =>
+      api.post(`orders/rollback/${orderId}`).then((res) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [orders] });
+    },
+  });
+
+    const SendToPost = useMutation({
+    mutationFn: (order_ids: string[]) =>
+      api.post(`post/cancel`, { order_ids }).then((res) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [orders] });
+    },
+  });
+
+
 
   const deleteOrder = useMutation({
     mutationFn: (orderId: string) =>
@@ -100,5 +117,5 @@ export const useOrders = () => {
     },
   });
 
-  return { createReceiveOrder, getTodayOrders, getTodayOrdersByMarket, getOrderById, getOrderCourier, updateNewOrder, deleteOrder, SellOrder, PartlySellOrder };
+  return { createReceiveOrder, getTodayOrders, getTodayOrdersByMarket, getOrderById, getOrderCourier, SendToPost, RollbackOrder, updateNewOrder, deleteOrder, SellOrder, PartlySellOrder };
 };
