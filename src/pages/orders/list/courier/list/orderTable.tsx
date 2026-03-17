@@ -4,7 +4,7 @@ import type { ColumnConfig } from "../../../../../shared/components/Table/Table.
 import {
   BadgeCheck, Clock, XCircle, User,
   Truck, PackageCheck, Hourglass,
-  Sparkles, CircleDollarSign, CheckCircle2,
+  Sparkles, CircleDollarSign, CheckCircle2, RotateCcw,
 } from "lucide-react";
 
 export const Order_status = {
@@ -49,6 +49,9 @@ type OrdersTableProps = {
   onRowClick?: (order: Order) => void;
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
+  onRestore?: (order: Order) => void;
+  // "all" tabda ekanligi — harakat ustunini moslashtirish uchun
+  showAllActions?: boolean;
 };
 
 const statusConfig: Record<Order_status, { icon: JSX.Element; className: string }> = {
@@ -103,7 +106,15 @@ const fallbackStatus = {
   className: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
 };
 
-const OrdersTable = ({ orders, loading, onDeliver, onCancel }: OrdersTableProps) => {
+// Sotish + Bekor tugmalari ko'rsatiladigan statuslar
+const ACTIVE_STATUSES: string[] = [
+  Order_status.WAITING,
+  Order_status.ON_THE_ROAD,
+  Order_status.NEW,
+  Order_status.RECEIVED,
+];
+
+const OrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore, showAllActions = false }: OrdersTableProps) => {
   const columns: ColumnConfig<Order>[] = useMemo(
     () => [
       {
@@ -141,9 +152,7 @@ const OrdersTable = ({ orders, loading, onDeliver, onCancel }: OrdersTableProps)
         key: "district",
         label: "Manzili",
         render: (_, row) => (
-          <span className="text-sm">
-            {row.district?.name ?? "—"}
-          </span>
+          <span className="text-sm">{row.district?.name ?? "—"}</span>
         ),
       },
       {
@@ -204,28 +213,63 @@ const OrdersTable = ({ orders, loading, onDeliver, onCancel }: OrdersTableProps)
       {
         key: "id",
         label: "Harakat",
-        render: (_, row) => (
-          <div className="flex items-center gap-1">
+        render: (_, row) => {
+          // "all" tabda emas (pending/cancelled) → har doim Sotish+Bekor
+          if (!showAllActions) {
+            return (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDeliver?.(row); }}
+                  className="px-3 py-1 text-xs font-semibold rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
+                >
+                  Sotish
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onCancel?.(row); }}
+                  className="px-3 py-1 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
+                >
+                  Bekor
+                </button>
+              </div>
+            );
+          }
+
+          // "all" tabda — statusga qarab
+          if (ACTIVE_STATUSES.includes(row.status)) {
+            // Faol buyurtmalar: Sotish + Bekor
+            return (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDeliver?.(row); }}
+                  className="px-3 py-1 text-xs font-semibold rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
+                >
+                  Sotish
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onCancel?.(row); }}
+                  className="px-3 py-1 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
+                >
+                  Bekor
+                </button>
+              </div>
+            );
+          }
+
+          // Tugallangan yoki bekor qilingan: faqat restore icon
+          return (
             <button
-              onClick={(e) => { e.stopPropagation(); onDeliver?.(row); }}
-              className="px-3 py-1 text-xs font-semibold rounded-md bg-green-500 hover:bg-green-600 text-white transition-colors"
+              onClick={(e) => { e.stopPropagation(); onRestore?.(row); }}
+              className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Qayta tiklash"
             >
-              Sotish
+              <RotateCcw size={15} />
             </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onCancel?.(row); }}
-              className="px-3 py-1 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors"
-            >
-              Bekor
-            </button>
-          </div>
-        ),
+          );
+        },
       },
     ],
-    [onDeliver, onCancel]
+    [onDeliver, onCancel, onRestore, showAllActions]
   );
-  console.log(orders);
-  
 
   return (
     <Table
