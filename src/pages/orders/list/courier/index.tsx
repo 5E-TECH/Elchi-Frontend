@@ -3,32 +3,85 @@ import HeaderName from "../../../../shared/components/headerName";
 import { ListOrdered } from "lucide-react";
 import Tabs from "./list/tabs";
 import OrdersTable from "./list/orderTable";
+import SellModal from "./list/SellModal";
 import { useOrders } from "../../../../entities/orders";
+import { useQueryParams } from "../../../../shared/lib/useQueryParams";
+
+type Order = Parameters<typeof OrdersTable>[0]["orders"][number];
+
+// Tab → backend status mapping
+const TAB_STATUS_MAP: Record<string, string | undefined> = {
+  pending:   "waiting",
+  cancelled: "cancelled",
+  all:       undefined,
+};
+
+// Backend status → tab mapping (teskari)
+const STATUS_TAB_MAP: Record<string, string> = {
+  waiting:   "pending",
+  cancelled: "cancelled",
+};
 
 const CourierOrders = () => {
-  const [activeTab, setActiveTab] = useState("pending");
+  const { getParam, setParam, removeParam } = useQueryParams();
 
-  const { getOrderCourier } = useOrders();
-  const { data, isLoading } = getOrderCourier();
+  // URL dagi ?status= dan boshlang'ich tabni aniqlaymiz
+  const initialStatus = getParam("status");
+  const initialTab = initialStatus ? (STATUS_TAB_MAP[initialStatus] ?? "pending") : "pending";
 
-  // Response: { statusCode, message, data: { data: [...] } }
-  const orders = Array.isArray(data?.data?.data) 
-    ? data.data.data 
-    : Array.isArray(data?.data) 
-    ? data.data 
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [sellOrder, setSellOrder] = useState<Order | null>(null);
+
+  const { getOrderCourier, SellOrder, PartlySellOrder } = useOrders();
+
+  // Hozirgi tabga mos status — URL dan o'qiymiz (source of truth)
+  const statusParam = getParam("status") ?? undefined;
+  const params = statusParam ? { status: statusParam } : undefined;
+
+  const { data, isLoading } = getOrderCourier(params);
+  const { mutate: sellMutate, isPending: isSelling } = SellOrder;
+  const { mutate: partlySellMutate, isPending: isPartlySelling } = PartlySellOrder;
+
+  const orders: Order[] = Array.isArray(data?.data?.data)
+    ? data.data.data
+    : Array.isArray(data?.data)
+    ? data.data
     : [];
-    // console.log(orders);
-    
 
-  const filteredOrders = orders.filter((order: any) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "pending") return order.status === "pending" || order.status === "on the road";
-    if (activeTab === "cancelled") return order.status === "cancelled";
-    return true;
-  });
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    const status = TAB_STATUS_MAP[tabId];
+    if (status) {
+      setParam("status", status);
+    } else {
+      removeParam("status");
+    }
+  };
 
-  console.log(filteredOrders);
-  
+  const handleSell = (
+    orderId: string,
+    payload: { comment: string; extraCost: number }
+  ) => {
+    sellMutate(
+      { orderId, data: payload },
+      { onSuccess: () => setSellOrder(null) }
+    );
+  };
+
+  const handlePartlySell = (
+    orderId: string,
+    payload: {
+      order_item_info: { product_id: string; quantity: number }[];
+      totalPrice: number;
+      extraCost: number;
+      comment: string;
+    }
+  ) => {
+    partlySellMutate(
+      { orderId, data: payload },
+      { onSuccess: () => setSellOrder(null) }
+    );
+  };
 
   return (
     <div>
@@ -40,11 +93,25 @@ const CourierOrders = () => {
             icon={<ListOrdered />}
           />
         </div>
-        <Tabs onChange={setActiveTab} defaultTab="pending" />
+        <Tabs onChange={handleTabChange} defaultTab={activeTab} />
         <div className="mt-3">
-          <OrdersTable orders={orders} loading={isLoading} />
+          <OrdersTable
+            orders={orders}
+            loading={isLoading}
+            onDeliver={(order) => setSellOrder(order)}
+            showAllActions={activeTab === "all"}
+          />
         </div>
       </div>
+
+      <SellModal
+        order={sellOrder}
+        open={!!sellOrder}
+        onClose={() => setSellOrder(null)}
+        onSell={handleSell}
+        onPartlySell={handlePartlySell}
+        isLoading={isSelling || isPartlySelling}
+      />
     </div>
   );
 };

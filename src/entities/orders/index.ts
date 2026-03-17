@@ -45,10 +45,11 @@ export const useOrders = () => {
       enabled,
     });
 
-    const getOrderCourier = () =>
+     const getOrderCourier = (params?: { status?: string }) =>
     useQuery({
-      queryKey: [orders],
-      queryFn: () => api.get(`orders/courier/orders`).then((res) => res.data),
+      queryKey: [orders, "courier", params],
+      queryFn: () =>
+        api.get(`orders/courier/orders`, { params }).then((res) => res.data),
     });
 
 
@@ -61,6 +62,33 @@ export const useOrders = () => {
     },
   })
 
+  const SellOrder = useMutation({
+    mutationFn: ({ orderId, data }: { orderId: string; data: { comment: string; extraCost: number } }) =>
+      api.post(`orders/sell/${orderId}`, data).then((res) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [orders] });
+    },
+  });
+
+
+    const PartlySellOrder = useMutation({
+    mutationFn: ({
+      orderId,
+      data,
+    }: {
+      orderId: string;
+      data: {
+        order_item_info: { product_id: string; quantity: number }[];
+        totalPrice: number;
+        extraCost: number;
+        comment: string;
+      };
+    }) => api.post(`orders/partly-sell/${orderId}`, data).then((res) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [orders] });
+    },
+  });
+
 
 
   const deleteOrder = useMutation({
@@ -72,5 +100,5 @@ export const useOrders = () => {
     },
   });
 
-  return { createReceiveOrder, getTodayOrders, getTodayOrdersByMarket, getOrderById, getOrderCourier, updateNewOrder, deleteOrder };
+  return { createReceiveOrder, getTodayOrders, getTodayOrdersByMarket, getOrderById, getOrderCourier, updateNewOrder, deleteOrder, SellOrder, PartlySellOrder };
 };
