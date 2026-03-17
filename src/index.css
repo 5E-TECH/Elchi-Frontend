@@ -14,6 +14,11 @@
   --color-glass-border: rgba(255, 255, 255, 0.15);
   --color-surface: rgba(255, 255, 255, 0.6);
   --color-surface-dark: rgba(39, 44, 82, 0.85);
+  /* ── Semantic colors ── */
+  --color-info: #3b82f6;
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));

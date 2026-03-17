@@ -3,25 +3,33 @@ import { Calendar, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { Table } from '../../../shared/components/Table/Table';
 import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
 
+// ─── Utils ────────────────────────────────────────────────────────────────────
+
 const fmt = (n: number) => n.toLocaleString('uz-UZ');
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';
   try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('uz-UZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const date = new Date(Number(dateStr));
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
   } catch {
     return dateStr;
   }
 };
 
-// API dan kelayotgan actual field nomlari
+const getName = (val: any): string => {
+  if (!val) return '-';
+  if (typeof val === 'object' && val.name) return val.name;
+  return String(val);
+};
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 export interface PaymentRow {
   id: string;
   amount: number;
@@ -50,12 +58,7 @@ interface PaymentHistoryTableProps {
   currentPage?: number;
 }
 
-// Nested object yoki string bo'lishi mumkin bo'lgan fielddan nom olish
-const getName = (val: any): string => {
-  if (!val) return '-';
-  if (typeof val === 'object' && val.name) return val.name;
-  return String(val);
-};
+// ─── Columns ──────────────────────────────────────────────────────────────────
 
 const COLUMNS: ColumnConfig<PaymentRow>[] = [
   {
@@ -85,7 +88,7 @@ const COLUMNS: ColumnConfig<PaymentRow>[] = [
   },
   {
     key: 'source_type',
-    label: 'Source type',
+    label: 'Cashbox type',
     render: (_, row) => (
       <span className="text-gray-600 dark:text-gray-300">{getName(row.source_type)}</span>
     ),
@@ -97,13 +100,6 @@ const COLUMNS: ColumnConfig<PaymentRow>[] = [
       <span className="px-2.5 py-1 rounded-lg bg-main/15 text-main text-xs font-semibold">
         {getName(row.operation_type)}
       </span>
-    ),
-  },
-  {
-    key: 'cashbox',
-    label: 'Cashbox',
-    render: (_, row) => (
-      <span className="text-gray-500 dark:text-gray-400 text-sm">{getName(row.cashbox)}</span>
     ),
   },
   {
@@ -127,6 +123,8 @@ const COLUMNS: ColumnConfig<PaymentRow>[] = [
   },
 ];
 
+// ─── PaymentHistoryTable ──────────────────────────────────────────────────────
+
 const PaymentHistoryTable = ({
   data = [],
   isLoading = false,
@@ -144,12 +142,12 @@ const PaymentHistoryTable = ({
         <div className="flex items-center gap-2">
           <History size={16} className="text-main" />
           <span className="text-sm font-bold text-gray-700 dark:text-white/70">Finance History</span>
+          {pagination && (
+            <span className="text-xs text-gray-400 dark:text-white/40 ml-1">
+              · <span className="font-bold text-main">{pagination.total}</span> total
+            </span>
+          )}
         </div>
-        {pagination && (
-          <span className="text-xs text-gray-400 dark:text-white/40">
-            Total: <span className="font-bold text-main">{pagination.total}</span>
-          </span>
-        )}
       </div>
 
       {/* Table */}
@@ -182,10 +180,11 @@ const PaymentHistoryTable = ({
                 <button
                   key={p}
                   onClick={() => onPageChange(p)}
-                  className={`min-w-[32px] h-8 rounded-lg text-xs font-bold transition-colors ${p === activePage
+                  className={`min-w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+                    p === activePage
                       ? 'bg-main text-white shadow-sm shadow-main/30'
                       : 'border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main'
-                    }`}
+                  }`}
                 >
                   {p}
                 </button>

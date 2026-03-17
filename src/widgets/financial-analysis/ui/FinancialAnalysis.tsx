@@ -18,13 +18,21 @@ import {
   BarChart2,
   Info,
   TrendingDown,
+  TrendingUp,
 } from "lucide-react";
+import { useDashboard } from "../../../entities/dashboard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ChartType = "Area" | "Bar" | "Combo";
 type Period = "Daily" | "Weekly" | "Monthly" | "Yearly";
 type ColorVariant = "success" | "info" | "warning" | "error";
+
+export interface FinancialAnalysisProps {
+  totalOrders: number;  // orders.acceptedCount
+  sold: number;         // orders.soldAndPaid
+  profit: number;       // orders.profit
+}
 
 interface FinanceCardProps {
   title: string;
@@ -34,6 +42,7 @@ interface FinanceCardProps {
   valueLabel?: string;
   trend?: string;
   trendValue?: string;
+  trendUp?: boolean;
   compareLabel?: string;
   compareValue?: string;
   icon: React.ReactNode;
@@ -46,20 +55,17 @@ interface PeriodStatItem {
   color: string;
 }
 
-// ─── Static data ──────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const CHART_TYPES: ChartType[] = ["Area", "Bar", "Combo"];
 const PERIODS: Period[] = ["Daily", "Weekly", "Monthly", "Yearly"];
 
-const PERIOD_STATS: PeriodStatItem[] = [
-  {
-    label: "Total Revenue:",
-    value: "248.3M UZS",
-    color: "var(--color-success)",
-  },
-  { label: "Orders:", value: "16793", color: "var(--color-info)" },
-  { label: "Average:", value: "8.0M UZS", color: "var(--color-main)" },
-];
+const VARIANT_COLOR: Record<ColorVariant, string> = {
+  info: "var(--color-info)",
+  success: "var(--color-success)",
+  error: "var(--color-error)",
+  warning: "var(--color-warning)",
+};
 
 const CHART_DATA = [
   { date: "11.02", revenue: 4.2 },
@@ -97,16 +103,16 @@ const CHART_DATA = [
 
 // ─── Chart constants ──────────────────────────────────────────────────────────
 
-const PURPLE_HEX = "#576adb";
-const GREEN_HEX = "#3ecf8e";
+const MAIN_COLOR = "#576adb";
+const GREEN_COLOR = "#22c55e";
 
-const sharedAxisProps = {
+const AXIS_PROPS = {
   tick: { fill: "rgba(244,245,250,0.35)", fontSize: 10 },
   axisLine: false as const,
   tickLine: false as const,
 };
 
-const sharedGridProps = {
+const GRID_PROPS = {
   stroke: "rgba(76,87,152,0.25)",
   strokeDasharray: "4 4",
   vertical: false,
@@ -114,93 +120,17 @@ const sharedGridProps = {
 
 const formatY = (v: number) => (v === 0 ? "0" : `${v.toFixed(0)}M`);
 
-// ─── Chart variants ───────────────────────────────────────────────────────────
-
-const AreaVariant = () => (
-  <AreaChart data={CHART_DATA}>
-    <defs>
-      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor={PURPLE_HEX} stopOpacity={0.25} />
-        <stop offset="100%" stopColor={PURPLE_HEX} stopOpacity={0} />
-      </linearGradient>
-    </defs>
-    <CartesianGrid {...sharedGridProps} />
-    <XAxis dataKey="date" {...sharedAxisProps} interval={2} />
-    <YAxis tickFormatter={formatY} {...sharedAxisProps} />
-    <Tooltip content={<CustomTooltip />} />
-    <Area
-      type="monotone"
-      dataKey="revenue"
-      stroke={PURPLE_HEX}
-      strokeWidth={2}
-      fill="url(#revenueGrad)"
-      dot={false}
-      activeDot={{ r: 5, fill: PURPLE_HEX, stroke: "#fff", strokeWidth: 2 }}
-    />
-  </AreaChart>
-);
-
-const BarVariant = () => (
-  <BarChart data={CHART_DATA} barSize={10}>
-    <CartesianGrid {...sharedGridProps} />
-    <XAxis dataKey="date" {...sharedAxisProps} interval={2} />
-    <YAxis tickFormatter={formatY} {...sharedAxisProps} />
-    <Tooltip content={<CustomTooltip />} />
-    <Bar
-      dataKey="revenue"
-      fill={PURPLE_HEX}
-      fillOpacity={0.7}
-      radius={[3, 3, 0, 0]}
-    />
-  </BarChart>
-);
-
-const ComboVariant = () => (
-  <ComposedChart data={CHART_DATA} barSize={10}>
-    <CartesianGrid {...sharedGridProps} />
-    <XAxis dataKey="date" {...sharedAxisProps} interval={2} />
-    <YAxis tickFormatter={formatY} {...sharedAxisProps} />
-    <Tooltip content={<CustomTooltip />} />
-    <Bar
-      dataKey="revenue"
-      fill={PURPLE_HEX}
-      fillOpacity={0.35}
-      radius={[3, 3, 0, 0]}
-    />
-    <Line
-      type="monotone"
-      dataKey="revenue"
-      stroke={GREEN_HEX}
-      strokeWidth={2}
-      dot={false}
-      activeDot={{ r: 4, fill: GREEN_HEX }}
-    />
-  </ComposedChart>
-);
-
-const CHART_MAP: Record<ChartType, React.ReactElement> = {
-  Area: <AreaVariant />,
-  Bar: <BarVariant />,
-  Combo: <ComboVariant />,
-};
-
 // ─── CustomTooltip ────────────────────────────────────────────────────────────
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div
-      className="rounded-xl px-3 py-2 text-[11px]"
-      style={{
-        background: "var(--color-maindark)",
-        border: "1px solid rgba(76,87,152,0.5)",
-        color: "var(--color-primary)",
-      }}
+      className="rounded-xl px-3 py-2 text-[11px]
+        bg-sidebar dark:bg-maindark
+        border border-black/[0.07] dark:border-primarydark/50"
     >
-      <p
-        className="mb-1 font-semibold"
-        style={{ color: "var(--color-sidebar)", opacity: 0.5 }}
-      >
+      <p className="mb-1 font-semibold text-maindark/50 dark:text-sidebar/50">
         {label}
       </p>
       {payload.map((entry: any, i: number) => (
@@ -212,206 +142,235 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+// ─── Chart Variants ───────────────────────────────────────────────────────────
+
+const AreaVariant = () => (
+  <AreaChart data={CHART_DATA}>
+    <defs>
+      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={MAIN_COLOR} stopOpacity={0.3} />
+        <stop offset="100%" stopColor={MAIN_COLOR} stopOpacity={0} />
+      </linearGradient>
+    </defs>
+    <CartesianGrid {...GRID_PROPS} />
+    <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
+    <YAxis tickFormatter={formatY} {...AXIS_PROPS} />
+    <Tooltip content={<CustomTooltip />} />
+    <Area
+      type="monotone"
+      dataKey="revenue"
+      stroke={MAIN_COLOR}
+      strokeWidth={2}
+      fill="url(#revenueGrad)"
+      dot={false}
+      activeDot={{ r: 5, fill: MAIN_COLOR, stroke: "var(--color-primary)", strokeWidth: 2 }}
+    />
+  </AreaChart>
+);
+
+const BarVariant = () => (
+  <BarChart data={CHART_DATA} barSize={10}>
+    <CartesianGrid {...GRID_PROPS} />
+    <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
+    <YAxis tickFormatter={formatY} {...AXIS_PROPS} />
+    <Tooltip content={<CustomTooltip />} />
+    <Bar dataKey="revenue" fill={MAIN_COLOR} fillOpacity={0.7} radius={[3, 3, 0, 0]} />
+  </BarChart>
+);
+
+const ComboVariant = () => (
+  <ComposedChart data={CHART_DATA} barSize={10}>
+    <CartesianGrid {...GRID_PROPS} />
+    <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
+    <YAxis tickFormatter={formatY} {...AXIS_PROPS} />
+    <Tooltip content={<CustomTooltip />} />
+    <Bar dataKey="revenue" fill={MAIN_COLOR} fillOpacity={0.35} radius={[3, 3, 0, 0]} />
+    <Line
+      type="monotone"
+      dataKey="revenue"
+      stroke={GREEN_COLOR}
+      strokeWidth={2}
+      dot={false}
+      activeDot={{ r: 4, fill: GREEN_COLOR }}
+    />
+  </ComposedChart>
+);
+
+const CHART_MAP: Record<ChartType, React.ReactElement> = {
+  Area: <AreaVariant />,
+  Bar: <BarVariant />,
+  Combo: <ComboVariant />,
+};
+
 // ─── FinanceCard ──────────────────────────────────────────────────────────────
 
-const FinanceCard = memo(
-  ({
-    title,
-    subtitle,
-    value,
-    currency = "UZS",
-    valueLabel,
-    trend,
-    trendValue,
-    compareLabel,
-    compareValue,
-    icon,
-    variant,
-  }: FinanceCardProps) => {
-    const accentColor = `var(--color-${variant})`;
-    return (
-      <div
-        className="relative flex flex-col rounded-xl overflow-hidden"
-        style={{
-          background: "var(--color-maindark)",
-          border: "1px solid rgba(76,87,152,0.25)",
-        }}
-      >
-        <span
-          className="absolute top-0 left-0 right-0 h-0.75"
-          style={{ background: accentColor }}
-        />
+const FinanceCard = memo(({
+  title, subtitle, value, currency = "UZS",
+  valueLabel, trend, trendValue, trendUp = false,
+  compareLabel, compareValue, icon, variant,
+}: FinanceCardProps) => {
+  const accentColor = VARIANT_COLOR[variant];
+  const trendColor = trendUp ? "var(--color-success)" : "var(--color-error)";
 
-        <div className="flex flex-col flex-1 p-4 pt-5">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-7.5 h-7.5 rounded-lg flex items-center justify-center shrink-0"
-                style={{
-                  background: accentColor,
-                  color: "var(--color-primary)",
-                }}
-              >
-                {icon}
-              </div>
-              <div>
-                <p
-                  className="text-[13px] font-semibold leading-tight"
-                  style={{ color: "var(--color-primary)" }}
-                >
-                  {title}
-                </p>
-                <p
-                  className="text-2.5 leading-tight mt-px"
-                  style={{ color: "var(--color-sidebar)", opacity: 0.45 }}
-                >
-                  {subtitle}
-                </p>
-              </div>
+  return (
+    <div
+      className="relative flex flex-col rounded-xl overflow-hidden
+        bg-sidebar dark:bg-maindark
+        border border-black/[0.07] dark:border-primarydark/25"
+    >
+      <span
+        className="absolute top-0 left-0 right-0 h-0.75"
+        style={{ background: accentColor }}
+      />
+
+      <div className="flex flex-col flex-1 p-4 pt-5">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: accentColor, color: "var(--color-primary)" }}
+            >
+              {icon}
             </div>
-            <Info
-              size={13}
-              style={{ color: "var(--color-sidebar)", opacity: 0.3 }}
-              className="mt-0.5"
-            />
+            <div>
+              <p className="text-[13px] font-semibold leading-tight text-maindark dark:text-primary">
+                {title}
+              </p>
+              <p className="text-[11px] leading-tight mt-px text-maindark/45 dark:text-sidebar/45">
+                {subtitle}
+              </p>
+            </div>
+          </div>
+          <Info
+            size={13}
+            style={{ color: "var(--color-sidebar)", opacity: 0.3 }}
+            className="mt-0.5 shrink-0"
+          />
+        </div>
+
+        <div className="flex items-end justify-between">
+          <div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-[24px] font-bold leading-none tracking-tight text-maindark dark:text-primary">
+                {value}
+              </span>
+              {currency && (
+                <span className="text-[11px] font-semibold text-maindark/45 dark:text-sidebar/45">
+                  {currency}
+                </span>
+              )}
+            </div>
+            {valueLabel && (
+              <p className="text-[11px] mt-0.5 text-maindark/40 dark:text-sidebar/40">
+                {valueLabel}
+              </p>
+            )}
           </div>
 
-          {/* Value + trend */}
-          <div className="flex items-end justify-between mb-1">
-            <div>
-              <div className="flex items-baseline gap-1">
-                <span
-                  className="text-[22px] font-bold leading-none tracking-tight"
-                  style={{ color: "var(--color-primary)" }}
-                >
-                  {value}
-                </span>
-                {currency && (
-                  <span
-                    className="text-2.5 font-semibold"
-                    style={{ color: "var(--color-sidebar)", opacity: 0.45 }}
-                  >
-                    {currency}
-                  </span>
-                )}
-              </div>
-              {valueLabel && (
-                <p
-                  className="text-2.5 mt-0.5"
-                  style={{ color: "var(--color-sidebar)", opacity: 0.4 }}
-                >
-                  {valueLabel}
+          {trend && (
+            <div className="text-right">
+              <p
+                className="text-[12px] font-bold flex items-center gap-0.5 justify-end"
+                style={{ color: trendColor }}
+              >
+                {trendUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                {trend}
+              </p>
+              {trendValue && (
+                <p className="text-[11px] font-semibold mt-px" style={{ color: trendColor }}>
+                  {trendValue}
                 </p>
               )}
             </div>
-
-            {trend && (
-              <div className="text-right">
-                <p
-                  className="text-[11px] font-bold"
-                  style={{ color: "var(--color-error)" }}
-                >
-                  ↓ {trend}
-                </p>
-                {trendValue && (
-                  <p
-                    className="text-2.5 font-semibold mt-px"
-                    style={{ color: "var(--color-error)" }}
-                  >
-                    {trendValue}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </div>
-
-        {/* Compare footer */}
-        {compareLabel && (
-          <div
-            className="flex items-center justify-between px-4 py-2.5 text-[11px]"
-            style={{ borderTop: "1px solid rgba(76,87,152,0.2)" }}
-          >
-            <span
-              className="flex items-center gap-1"
-              style={{ color: "var(--color-sidebar)", opacity: 0.45 }}
-            >
-              <TrendingDown size={11} />
-              {compareLabel}
-            </span>
-            <span
-              className="font-semibold"
-              style={{ color: "var(--color-primary)" }}
-            >
-              {compareValue}
-            </span>
-          </div>
-        )}
       </div>
-    );
-  },
-);
+
+      {compareLabel && (
+        <div
+          className="flex items-center justify-between px-4 py-2.5 text-[11px]
+            border-t border-black/[0.07] dark:border-primarydark/20"
+        >
+          <span className="flex items-center gap-1 text-maindark/45 dark:text-sidebar/45">
+            <TrendingDown size={11} />
+            {compareLabel}
+          </span>
+          <span className="font-semibold text-maindark dark:text-primary">
+            {compareValue}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+});
+
 FinanceCard.displayName = "FinanceCard";
 
 // ─── PeriodStatsCard ──────────────────────────────────────────────────────────
 
-const PeriodStatsCard = memo(() => (
-  <div
-    className="relative flex flex-col rounded-xl overflow-hidden"
-    style={{
-      background: "var(--color-maindark)",
-      border: "1px solid rgba(76,87,152,0.25)",
-    }}
-  >
-    <span
-      className="absolute top-0 left-0 right-0 h-0.75"
-      style={{ background: "var(--color-error)" }}
-    />
-    <div className="flex flex-col flex-1 p-4 pt-5">
-      <div className="flex items-center gap-2 mb-4">
-        <div
-          className="w-7.5 h-7.5 rounded-lg flex items-center justify-center"
-          style={{
-            background: "var(--color-error)",
-            color: "var(--color-primary)",
-          }}
-        >
-          <BarChart2 size={15} />
-        </div>
-        <div>
-          <p
-            className="text-[13px] font-semibold leading-tight"
-            style={{ color: "var(--color-primary)" }}
-          >
-            Chart Period
-          </p>
-          <p
-            className="text-2.5 leading-tight mt-px"
-            style={{ color: "var(--color-sidebar)", opacity: 0.45 }}
-          >
-            Daily statistics
-          </p>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2.5">
-        {PERIOD_STATS.map(({ label, value, color }) => (
+const PeriodStatsCard = memo(({ totalOrders, sold, profit }: {
+  totalOrders: number;
+  sold: number;
+  profit: any; 
+}) => {
+  const periodStats: PeriodStatItem[] = [
+    {
+      label: "Total Revenue:",
+      value: `${profit?.toLocaleString()} UZS`,
+      color: "var(--color-success)",
+    },
+    {
+      label: "Orders:",
+      value: String(totalOrders),
+      color: "var(--color-info)",
+    },
+    {
+      label: "Sold:",
+      value: String(sold),
+      color: "var(--color-main)",
+    },
+  ];
+
+  return (
+    <div
+      className="relative flex flex-col rounded-xl overflow-hidden
+        bg-sidebar dark:bg-maindark
+        border border-black/[0.07] dark:border-primarydark/25"
+    >
+      <span
+        className="absolute top-0 left-0 right-0 h-0.75"
+        style={{ background: "var(--color-error)" }}
+      />
+      <div className="flex flex-col flex-1 p-4 pt-5">
+        <div className="flex items-center gap-2 mb-4">
           <div
-            key={label}
-            className="flex items-center justify-between text-[12px]"
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: "var(--color-error)", color: "var(--color-primary)" }}
           >
-            <span style={{ color: "var(--color-sidebar)", opacity: 0.5 }}>
-              {label}
-            </span>
-            <span className="font-semibold" style={{ color }}>
-              {value}
-            </span>
+            <BarChart2 size={16} />
           </div>
-        ))}
+          <div>
+            <p className="text-[13px] font-semibold leading-tight text-maindark dark:text-primary">
+              Chart Period
+            </p>
+            <p className="text-[11px] leading-tight mt-px text-maindark/45 dark:text-sidebar/45">
+              Daily statistics
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-3">
+          {periodStats.map(({ label, value, color }) => (
+            <div key={label} className="flex items-center justify-between text-[12px]">
+              <span className="text-maindark/50 dark:text-sidebar/50">{label}</span>
+              <span className="font-bold" style={{ color }}>{value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-));
+  );
+});
+
 PeriodStatsCard.displayName = "PeriodStatsCard";
 
 // ─── RevenueChart ─────────────────────────────────────────────────────────────
@@ -422,17 +381,12 @@ const RevenueChart = memo(() => {
 
   return (
     <div
-      className="rounded-2xl p-5 mt-5"
-      style={{
-        background: "var(--color-maindark)",
-        border: "1px solid rgba(76,87,152,0.3)",
-      }}
+      className="rounded-2xl p-5 mt-4
+        bg-sidebar dark:bg-maindark
+        border border-black/[0.07] dark:border-primarydark/30"
     >
       <div className="flex items-center justify-between mb-5">
-        <h3
-          className="text-[14px] font-semibold tracking-[-0.1px]"
-          style={{ color: "var(--color-primary)" }}
-        >
+        <h3 className="text-[14px] font-semibold tracking-[-0.1px] text-maindark dark:text-primary">
           Daily revenue trend
         </h3>
         <div
@@ -448,12 +402,8 @@ const RevenueChart = memo(() => {
               onClick={() => setActiveType(type)}
               className="px-3.5 py-1 rounded-md text-[11px] font-semibold transition-all duration-150"
               style={{
-                background:
-                  activeType === type ? "var(--color-main)" : "transparent",
-                color:
-                  activeType === type
-                    ? "var(--color-primary)"
-                    : "rgba(244,245,250,0.4)",
+                background: activeType === type ? "var(--color-main)" : "transparent",
+                color: activeType === type ? "var(--color-primary)" : "rgba(244,245,250,0.4)",
               }}
             >
               {type}
@@ -466,21 +416,29 @@ const RevenueChart = memo(() => {
         {chart()}
       </ResponsiveContainer>
 
-      <p
-        className="text-center text-2.5 mt-2.5 tracking-[0.2px]"
-        style={{ color: "rgba(244,245,250,0.3)" }}
-      >
-        Revenue = Market tariff - Courier tariff (only sold orders are counted)
+      <p className="text-center text-[11px] mt-2.5 tracking-[0.2px] text-maindark/30 dark:text-sidebar/30">
+        Revenue = Market tariff − Courier tariff (only sold orders are counted)
       </p>
     </div>
   );
 });
+
 RevenueChart.displayName = "RevenueChart";
 
 // ─── FinancialAnalysis ────────────────────────────────────────────────────────
 
-const FinancialAnalysis = () => {
+const FinancialAnalysis = memo(({ sold, profit }: FinancialAnalysisProps) => {
   const [period, setPeriod] = useState<Period>("Daily");
+
+  const {getRevenue} = useDashboard();
+  const {data} = getRevenue();
+  const revenueData = data?.data?.data;
+  
+  
+
+  // profit UZS da keladi (masalan: 60000), mingga bo'lib ko'rsatamiz
+  const profitFormatted = profit.toLocaleString();
+  const profitIsNegative = profit < 0;
 
   return (
     <section>
@@ -502,6 +460,7 @@ const FinancialAnalysis = () => {
             </p>
           </div>
         </div>
+
         <div
           className="flex p-0.75 rounded-lg gap-0.5"
           style={{
@@ -513,13 +472,10 @@ const FinancialAnalysis = () => {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className="px-3.5 py-1.25 rounded-md text-[11px] font-semibold transition-all duration-150"
+              className="px-3.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150"
               style={{
                 background: period === p ? "var(--color-main)" : "transparent",
-                color:
-                  period === p
-                    ? "var(--color-primary)"
-                    : "rgba(244,245,250,0.4)",
+                color: period === p ? "var(--color-primary)" : "rgba(244,245,250,0.4)",
               }}
             >
               {p}
@@ -529,51 +485,51 @@ const FinancialAnalysis = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* orders.profit */}
         <FinanceCard
           title="Today's Revenue"
           subtitle="Compared with yesterday"
-          value="1.1M"
+          value={profitFormatted}
           currency="UZS"
           valueLabel="Today"
-          trend="95.7%"
-          trendValue="-24,765,000"
-          compareLabel="Yesterday:"
-          compareValue="25.9M UZS"
+          trendUp={!profitIsNegative}
           icon={<DollarSign size={15} />}
           variant="success"
         />
+        {/* orders.soldAndPaid */}
         <FinanceCard
           title="Today's Orders"
           subtitle="Compared with yesterday"
-          value="74"
+          value={String(sold)}
           currency=""
           valueLabel="Today"
-          trend="95.7%"
-          trendValue="-1,641"
-          compareLabel="Yesterday:"
-          compareValue="2K"
           icon={<ShoppingCart size={15} />}
           variant="info"
         />
+        {/* orders.profit (weekly placeholder — same data for now) */}
         <FinanceCard
           title="This Week's Revenue"
           subtitle="Compared with last week"
-          value="52.1M"
+          value={profitFormatted}
           currency="UZS"
           valueLabel="This Week"
-          trend="9.1%"
-          trendValue="-5,240,000"
-          compareLabel="Last Week:"
-          compareValue="57.3M UZS"
+          trendUp={!profitIsNegative}
           icon={<DollarSign size={15} />}
           variant="warning"
         />
-        <PeriodStatsCard />
+        {/* orders.acceptedCount, soldAndPaid, profit */}
+        <PeriodStatsCard
+          totalOrders={revenueData?.[0]?.ordersCount}
+          sold={sold}
+          profit={revenueData?.[0]?.revenue}
+        />
       </div>
 
       <RevenueChart />
     </section>
   );
-};
+});
 
-export default memo(FinancialAnalysis);
+FinancialAnalysis.displayName = "FinancialAnalysis";
+
+export default FinancialAnalysis;
