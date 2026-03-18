@@ -19,7 +19,6 @@ import { useUser } from "../../entities/user/api/userApi";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
-// ── To be given uchun mock ma'lumotlar ───────────────────────────────────────
 const MARKETS = [
   { id: 1, name: "6060", amount: 20_036_003 },
   { id: 2, name: "0.13", amount: 0 },
@@ -36,106 +35,22 @@ const MARKETS = [
   { id: 13, name: "hayottabobat", amount: 0 },
 ];
 
-// ── To be received uchun mock ma'lumotlar ────────────────────────────────────
 const COURIERS = [
-  {
-    id: 1,
-    name: "toshkent javlon aka",
-    region: "Toshkent shahri",
-    amount: 2_200_000,
-  },
-  {
-    id: 2,
-    name: "Shaxrizod Ismatov",
-    region: "Toshkent shahri",
-    amount: 2_407_000,
-  },
-  {
-    id: 3,
-    name: "Toshkent shahar Oybek aka",
-    region: "Toshkent shahri",
-    amount: 11_000,
-  },
+  { id: 1, name: "toshkent javlon aka", region: "Toshkent shahri", amount: 2_200_000 },
+  { id: 2, name: "Shaxrizod Ismatov", region: "Toshkent shahri", amount: 2_407_000 },
+  { id: 3, name: "Toshkent shahar Oybek aka", region: "Toshkent shahri", amount: 11_000 },
   { id: 4, name: "G'ijdivon Rustam Aka", region: "Buxoro", amount: 6_097_000 },
   { id: 5, name: "Buxoro Axmed Aka", region: "Buxoro", amount: 2_717_000 },
-  {
-    id: 6,
-    name: "Toshkent shahar",
-    region: "Toshkent shahri",
-    amount: 164_000,
-  },
-  {
-    id: 7,
-    name: "Sirdaryo Abdurahmon Aka",
-    region: "Sirdaryo",
-    amount: 610_000,
-  },
-  {
-    id: 8,
-    name: "Toshkent Shokh_Ali",
-    region: "Toshkent viloyati",
-    amount: -19_741_999,
-  },
+  { id: 6, name: "Toshkent shahar", region: "Toshkent shahri", amount: 164_000 },
+  { id: 7, name: "Sirdaryo Abdurahmon Aka", region: "Sirdaryo", amount: 610_000 },
+  { id: 8, name: "Toshkent Shokh_Ali", region: "Toshkent viloyati", amount: -19_741_999 },
   { id: 9, name: "Jizzax Alisher", region: "Jizzax", amount: 5_428_000 },
-  {
-    id: 10,
-    name: "Navoiy Mehriddin Togo",
-    region: "Navoiy",
-    amount: -8_627_000,
-  },
-  {
-    id: 11,
-    name: "Samarqand Navro'z Aka",
-    region: "Samarqand",
-    amount: -22_061_998,
-  },
+  { id: 10, name: "Navoiy Mehriddin Togo", region: "Navoiy", amount: -8_627_000 },
+  { id: 11, name: "Samarqand Navro'z Aka", region: "Samarqand", amount: -22_061_998 },
   { id: 12, name: "Samarqand No'mon Aka", region: "Samarqand", amount: 0 },
-  {
-    id: 13,
-    name: "Qashqadaryo Ramzi",
-    region: "Qashqadaryo",
-    amount: 5_322_000,
-  },
+  { id: 13, name: "Qashqadaryo Ramzi", region: "Qashqadaryo", amount: 5_322_000 },
 ];
 
-// ── Stat cardlari ─────────────────────────────────────────────────────────────
-const CARDS = [
-  {
-    label: "To be given",
-    amount: 300_429_847,
-    icon: <Store size={20} />,
-    action: <ArrowUpRight size={16} />,
-    bg: "bg-maindark",
-    iconBg: "bg-main/20",
-    badge: null,
-    path: null,
-    showPopup: "given" as const,
-  },
-  {
-    label: "Amount in cashbox",
-    amount: 31_547_903,
-    icon: <Landmark size={20} />,
-    action: <TrendingUp size={16} />,
-    bg: "bg-gradient-to-br from-main to-main/80 shadow-main/30",
-    iconBg: "bg-white/20",
-    badge: "Asosiy kassa",
-    path: "main-cashbox",
-    showPopup: null as null,
-  },
-  {
-    label: "To be received",
-    amount: 78_527_844,
-    icon: <Truck size={20} />,
-    action: <ArrowDownLeft size={16} />,
-    bg: "bg-maindark",
-    iconBg: "bg-main/20",
-    badge: null,
-    path: null,
-    showPopup: "received" as const,
-  },
-] as const;
-
-// ── Dropdown filter config ────────────────────────────────────────────────────
 const DROPDOWN_FILTERS = [
   { name: "operation_type", label: "Operation type", icon: TrendingUp },
   { name: "source_type", label: "Source type", icon: BadgeDollarSign },
@@ -145,6 +60,23 @@ const DROPDOWN_FILTERS = [
 
 type DropdownKey = (typeof DROPDOWN_FILTERS)[number]["name"];
 
+const STATIC_FILTER_OPTIONS: Record<Exclude<DropdownKey, "created_by">, { value: string; label: string }[]> = {
+  operation_type: [
+    { value: "income", label: "Income" },
+    { value: "expense", label: "Expense" },
+  ],
+  source_type: [
+    { value: "market_payment", label: "Market payment" },
+    { value: "manual_expense", label: "Manual expense" },
+    { value: "manual_income", label: "Manual income" },
+    { value: "correction", label: "Correction" },
+    { value: "salary", label: "Salary" },
+  ],
+  cashbox_type: [
+    { value: "markets", label: "Markets" },
+    { value: "couriers", label: "Couriers" },
+  ],
+};
 
 const INIT = {
   operation_type: "",
@@ -153,99 +85,103 @@ const INIT = {
   cashbox_type: "",
 };
 
-// ── Asosiy sahifa ─────────────────────────────────────────────────────────────
 const Payments = () => {
   const [filters, setFilters] = useState(INIT);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-
   const [isGivenPopupOpen, setIsGivenPopupOpen] = useState(false);
   const [isReceivedPopupOpen, setIsReceivedPopupOpen] = useState(false);
 
   const setFilter = (key: keyof typeof INIT) => (val: string) => {
     setFilters((f) => ({ ...f, [key]: val }));
-    setPage(1);
   };
 
   const navigate = useNavigate();
-  const { getFinanceHistory, getOperationTypes, getSourceTypes } = useCashBox();
+  const { getFinanceHistory, getCashBoxInfo } = useCashBox();
   const { getUser } = useUser();
 
-  // Faqat bo'sh bo'lmagan filterlarni API ga yuborish
+  // ── API dan cashbox ma'lumotlarini olish ──────────────────────────────────
+  const { data: cashboxInfo, isLoading: cashboxLoading } = getCashBoxInfo();
+
+  // API response: { statusCode, message, data: { mainCashboxTotal, courierCashboxTotal, marketCashboxTotal, ... } }
+  const cashboxData = cashboxInfo?.data;
+  const mainCashboxTotal    = cashboxData?.mainCashboxTotal    ?? 0;
+  const courierCashboxTotal = cashboxData?.courierCashboxTotal ?? 0;
+  const marketCashboxTotal  = cashboxData?.marketCashboxTotal  ?? 0;
+
+  // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
+  const CARDS = [
+    {
+      label: "To be given",
+      amount: marketCashboxTotal,
+      icon: <Store size={20} />,
+      action: <ArrowUpRight size={16} />,
+      bg: "bg-maindark",
+      iconBg: "bg-main/20",
+      badge: null,
+      path: null,
+      showPopup: "given" as const,
+    },
+    {
+      label: "Amount in cashbox",
+      amount: mainCashboxTotal,
+      icon: <Landmark size={20} />,
+      action: <TrendingUp size={16} />,
+      bg: "bg-gradient-to-br from-main to-main/80 shadow-main/30",
+      iconBg: "bg-white/20",
+      badge: "Asosiy kassa",
+      path: "main-cashbox",
+      showPopup: null as null,
+    },
+    {
+      label: "To be received",
+      amount: courierCashboxTotal,
+      icon: <Truck size={20} />,
+      action: <ArrowDownLeft size={16} />,
+      bg: "bg-maindark",
+      iconBg: "bg-main/20",
+      badge: null,
+      path: null,
+      showPopup: "received" as const,
+    },
+  ] as const;
+
   const queryParams = useMemo(() => {
     const params: Record<string, any> = { page, limit };
     (Object.entries(filters) as [keyof typeof INIT, string][]).forEach(
-      ([key, value]) => {
-        if (value) {
-          params[key] = value;
-        }
-      },
+      ([key, value]) => { if (value) params[key] = value; }
     );
     return params;
   }, [page, limit, filters]);
 
-  const { data: historyData, isLoading: historyLoading } =
-    getFinanceHistory(queryParams);
+  const { data: historyData, isLoading: historyLoading } = getFinanceHistory(queryParams);
+  const { data: creatorsData, isLoading: creatorsLoading } = getUser({ limit: 100 });
 
-  const { data: opTypes, isLoading: opLoading } = getOperationTypes();
-  const { data: srcTypes, isLoading: srcLoading } = getSourceTypes();
-  const { data: creatorsData, isLoading: creatorsLoading } = getUser({
-    limit: 100,
-  });
-
-  // Optionlarni formatlash
-  const opOptions = useMemo(
-    () =>
-      (opTypes?.data || []).map((t: any) => ({
-        value: String(t.id),
-        label: t.name,
-      })),
-    [opTypes],
-  );
-  const srcOptions = useMemo(
-    () =>
-      (srcTypes?.data || []).map((t: any) => ({
-        value: String(t.id),
-        label: t.name,
-      })),
-    [srcTypes],
-  );
   const creatorOptions = useMemo(
-    () =>
-      (creatorsData?.data?.items || []).map((u: any) => ({
-        value: String(u.id),
-        label: u.name,
-      })),
+    () => (creatorsData?.data?.items || []).map((u: any) => ({ value: String(u.id), label: u.name })),
     [creatorsData],
   );
 
-  const handleCardClick = (
-    path: string | null,
-    showPopup: "given" | "received" | null,
-  ) => {
+  const handleCardClick = (path: string | null, showPopup: "given" | "received" | null) => {
     if (showPopup === "given") setIsGivenPopupOpen(true);
     else if (showPopup === "received") setIsReceivedPopupOpen(true);
     else if (path) navigate(path);
   };
 
-  const filterOptionsMap: Record<
-    DropdownKey,
-    { value: string; label: string }[]
-  > = {
-    operation_type: opOptions,
-    source_type: srcOptions,
+  const filterOptionsMap: Record<DropdownKey, { value: string; label: string }[]> = {
+    operation_type: STATIC_FILTER_OPTIONS.operation_type,
+    source_type: STATIC_FILTER_OPTIONS.source_type,
+    cashbox_type: STATIC_FILTER_OPTIONS.cashbox_type,
     created_by: creatorOptions,
-    cashbox_type: [], 
   };
 
   const loadingMap: Record<DropdownKey, boolean> = {
-    operation_type: opLoading,
-    source_type: srcLoading,
+    operation_type: false,
+    source_type: false,
     created_by: creatorsLoading,
     cashbox_type: false,
   };
 
-  // API pagination → component ken'g'lik
   const pagination = historyData?.data?.pagination ?? historyData?.data?.meta;
 
   return (
@@ -261,61 +197,44 @@ const Payments = () => {
 
       {/* Stats */}
       <div className="flex items-stretch gap-4">
-        {CARDS.map(
-          ({
-            label,
-            amount,
-            icon,
-            action,
-            bg,
-            iconBg,
-            badge,
-            path,
-            showPopup,
-          }) => (
-            <div
-              key={label}
-              onClick={() => handleCardClick(path, showPopup)}
-              className={`relative flex-1 overflow-hidden rounded-2xl p-6 border border-glass-border shadow-lg hover:scale-[1.02] transition-transform duration-300 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
-            >
-              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white opacity-[0.06]" />
-              <div className="flex items-start justify-between mb-5">
-                <div
-                  className={`flex items-center justify-center w-11 h-11 rounded-xl text-white ${iconBg}`}
-                >
-                  {icon}
-                </div>
-                <div className="flex items-center gap-2">
-                  {badge && (
-                    <div className="flex items-center gap-1.5 bg-glass px-2.5 py-1 rounded-lg border border-glass-border">
-                      <TrendingUp size={11} className="text-white/80" />
-                      <span className="text-white text-xs font-semibold">
-                        {badge}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/70">
-                    {action}
+        {CARDS.map(({ label, amount, icon, action, bg, iconBg, badge, path, showPopup }) => (
+          <div
+            key={label}
+            onClick={() => handleCardClick(path, showPopup)}
+            className={`relative flex-1 overflow-hidden rounded-2xl p-6 border border-glass-border shadow-lg hover:scale-[1.02] transition-transform duration-300 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
+          >
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white opacity-[0.06]" />
+            <div className="flex items-start justify-between mb-5">
+              <div className={`flex items-center justify-center w-11 h-11 rounded-xl text-white ${iconBg}`}>
+                {icon}
+              </div>
+              <div className="flex items-center gap-2">
+                {badge && (
+                  <div className="flex items-center gap-1.5 bg-glass px-2.5 py-1 rounded-lg border border-glass-border">
+                    <TrendingUp size={11} className="text-white/80" />
+                    <span className="text-white text-xs font-semibold">{badge}</span>
                   </div>
+                )}
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/70">
+                  {action}
                 </div>
               </div>
-              <p className="text-sm font-medium text-white/60 mb-2">{label}</p>
-              <p className="text-3xl font-extrabold text-white">
-                {fmt(amount)}
-              </p>
-              <p className="text-xs text-white/40 mt-1.5">UZS</p>
             </div>
-          ),
-        )}
+            <p className="text-sm font-medium text-white/60 mb-2">{label}</p>
+            {cashboxLoading ? (
+              <div className="h-9 w-32 rounded-lg bg-white/10 animate-pulse" />
+            ) : (
+              <p className="text-3xl font-extrabold text-white">{fmt(amount)}</p>
+            )}
+            <p className="text-xs text-white/40 mt-1.5">UZS</p>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border p-5 shadow-sm">
-        <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">
-          Filters
-        </p>
+        <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">Filters</p>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {/* Dropdown filterlar */}
           {DROPDOWN_FILTERS.map(({ name, label, icon }) => (
             <FilterSelect
               key={name}
@@ -330,15 +249,10 @@ const Payments = () => {
             />
           ))}
         </div>
-
-        {/* Active filterlar & Reset */}
         {Object.values(filters).some(Boolean) && (
           <div className="flex items-center justify-end mt-3">
             <button
-              onClick={() => {
-                setFilters(INIT);
-                setPage(1);
-              }}
+              onClick={() => { setFilters(INIT); setPage(1); }}
               className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
             >
               ✕ Filterlarni tozalash
@@ -356,7 +270,7 @@ const Payments = () => {
         currentPage={page}
       />
 
-      {/* To be given — market tanlash popup */}
+      {/* To be given popup */}
       <PopupSelect
         isOpen={isGivenPopupOpen}
         onClose={() => setIsGivenPopupOpen(false)}
@@ -370,36 +284,26 @@ const Payments = () => {
         secondaryLabelKey="amount"
         onSelect={(market: any) => {
           setIsGivenPopupOpen(false);
-          navigate("/payments/cash-detail", {
-            state: { type: "market", entity: market },
-          });
+          navigate("/payments/cash-detail", { state: { type: "market", entity: market } });
         }}
         renderItem={(market: any, isSelected: boolean) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
-                  isSelected ? "bg-white/20 text-white" : "bg-main/10 text-main"
-                }`}
-              >
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${isSelected ? "bg-white/20 text-white" : "bg-main/10 text-main"}`}>
                 <Store size={16} />
               </div>
-              <span
-                className={`font-medium ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
-              >
+              <span className={`font-medium ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}>
                 {market.name}
               </span>
             </div>
-            <span
-              className={`text-sm font-semibold ${isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}
-            >
+            <span className={`text-sm font-semibold ${isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}>
               {fmt(market.amount)} UZS
             </span>
           </div>
         )}
       />
 
-      {/* To be received — kuryer tanlash popup */}
+      {/* To be received popup */}
       <PopupSelect
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
@@ -412,47 +316,25 @@ const Payments = () => {
         labelKey="name"
         onSelect={(courier: any) => {
           setIsReceivedPopupOpen(false);
-          navigate("/payments/cash-detail", {
-            state: { type: "courier", entity: courier },
-          });
+          navigate("/payments/cash-detail", { state: { type: "courier", entity: courier } });
         }}
         renderItem={(courier: any, isSelected: boolean) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                  isSelected ? "bg-white/20" : "bg-orange-500/10"
-                }`}
-              >
-                <Truck
-                  size={16}
-                  className={isSelected ? "text-white" : "text-orange-400"}
-                />
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isSelected ? "bg-white/20" : "bg-orange-500/10"}`}>
+                <Truck size={16} className={isSelected ? "text-white" : "text-orange-400"} />
               </div>
               <div>
-                <p
-                  className={`font-medium text-sm ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
-                >
+                <p className={`font-medium text-sm ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}>
                   {courier.name}
                 </p>
-                <p
-                  className={`text-xs ${isSelected ? "text-white/60" : "text-gray-400 dark:text-white/40"}`}
-                >
+                <p className={`text-xs ${isSelected ? "text-white/60" : "text-gray-400 dark:text-white/40"}`}>
                   {courier.region}
                 </p>
               </div>
             </div>
-            <span
-              className={`text-sm font-semibold ${
-                courier.amount < 0
-                  ? "text-rose-400"
-                  : isSelected
-                    ? "text-white/80"
-                    : "text-gray-500 dark:text-white/50"
-              }`}
-            >
-              {courier.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(courier.amount))} UZS
+            <span className={`text-sm font-semibold ${courier.amount < 0 ? "text-rose-400" : isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}>
+              {courier.amount < 0 ? "-" : ""}{fmt(Math.abs(courier.amount))} UZS
             </span>
           </div>
         )}
