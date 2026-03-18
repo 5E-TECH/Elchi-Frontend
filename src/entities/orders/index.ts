@@ -6,14 +6,13 @@ const orders = "orders";
 export const useOrders = () => {
   const client = useQueryClient();
 
-
   const createReceiveOrder = useMutation({
     mutationFn: (data: any) =>
       api.post("orders/receive", data).then((res) => res.data),
     onSuccess: () => {
       // Barcha orders cache ni yangilash
       client.invalidateQueries({ queryKey: [orders] });
-    }
+    },
   });
 
   const getTodayOrders = (params?: any, enabled: boolean = true) =>
@@ -45,13 +44,12 @@ export const useOrders = () => {
       enabled,
     });
 
-     const getOrderCourier = (params?: { status?: string }) =>
+  const getOrderCourier = (params?: { status?: string }) =>
     useQuery({
       queryKey: [orders, "courier", params],
       queryFn: () =>
         api.get(`orders/courier/orders`, { params }).then((res) => res.data),
     });
-
 
   const updateNewOrder = useMutation({
     mutationFn: ({ orderId, data }: { orderId: string; data: any }) =>
@@ -60,18 +58,22 @@ export const useOrders = () => {
       // Barcha orders cache ni yangilash
       client.invalidateQueries({ queryKey: [orders] });
     },
-  })
+  });
 
   const SellOrder = useMutation({
-    mutationFn: ({ orderId, data }: { orderId: string; data: { comment: string; extraCost: number } }) =>
-      api.post(`orders/sell/${orderId}`, data).then((res) => res.data),
+    mutationFn: ({
+      orderId,
+      data,
+    }: {
+      orderId: string;
+      data: { comment: string; extraCost: number };
+    }) => api.post(`orders/sell/${orderId}`, data).then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [orders] });
     },
   });
 
-
-    const PartlySellOrder = useMutation({
+  const PartlySellOrder = useMutation({
     mutationFn: ({
       orderId,
       data,
@@ -83,14 +85,14 @@ export const useOrders = () => {
         extraCost: number;
         comment: string;
       };
-    }) => api.post(`orders/partly-sell/${orderId}`, data).then((res) => res.data),
+    }) =>
+      api.post(`orders/partly-sell/${orderId}`, data).then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [orders] });
     },
   });
 
-
-    const RollbackOrder = useMutation({
+  const RollbackOrder = useMutation({
     mutationFn: (orderId: string) =>
       api.post(`orders/rollback/${orderId}`).then((res) => res.data),
     onSuccess: () => {
@@ -98,7 +100,7 @@ export const useOrders = () => {
     },
   });
 
-    const SendToPost = useMutation({
+  const SendToPost = useMutation({
     mutationFn: (order_ids: string[]) =>
       api.post(`post/cancel`, { order_ids }).then((res) => res.data),
     onSuccess: () => {
@@ -106,7 +108,18 @@ export const useOrders = () => {
     },
   });
 
-
+  const CancelOrder = useMutation({
+    mutationFn: ({
+      orderId,
+      data,
+    }: {
+      orderId: string;
+      data: { comment: string; extraCost: number; paidAmount: number };
+    }) => api.post(`orders/cancel/${orderId}`, data).then((res) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [orders] });
+    },
+  });
 
   const deleteOrder = useMutation({
     mutationFn: (orderId: string) =>
@@ -117,5 +130,18 @@ export const useOrders = () => {
     },
   });
 
-  return { createReceiveOrder, getTodayOrders, getTodayOrdersByMarket, getOrderById, getOrderCourier, SendToPost, RollbackOrder, updateNewOrder, deleteOrder, SellOrder, PartlySellOrder };
+  return {
+    createReceiveOrder,
+    getTodayOrders,
+    getTodayOrdersByMarket,
+    getOrderById,
+    getOrderCourier,
+    SendToPost,
+    RollbackOrder,
+    updateNewOrder,
+    deleteOrder,
+    SellOrder,
+    PartlySellOrder,
+    CancelOrder
+  };
 };
