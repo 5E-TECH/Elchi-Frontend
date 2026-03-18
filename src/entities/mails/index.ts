@@ -168,20 +168,32 @@ export const useMails = () => {
       queryFn: () => api.get("post/rejected").then((res) => res.data),
     });
 
+  const getRefusedMailsCourier = () =>
+    useQuery({
+      queryKey: [MAILS_KEY, "refused-courier"],
+      queryFn: () => api.get("post/courier/rejected").then((res) => res.data),
+    });
+
   const getOldMails = () =>
     useQuery({
       queryKey: [MAILS_KEY, "old"],
       queryFn: () => api.get("post/old").then((res) => res.data),
     });
 
-  return { getNewMails, getRefusedMails, getOldMails, getNewMailsCourier, getTodayMailsCourier };
+  return {
+    getNewMails,
+    getRefusedMails,
+    getOldMails,
+    getNewMailsCourier,
+    getTodayMailsCourier,
+    getRefusedMailsCourier
+  };
 };
 
 export const useMailDetail = (postId: string) =>
   useQuery<MailDetailResponse>({
     queryKey: [MAILS_KEY, "detail", postId],
-    queryFn: () =>
-      api.get(`post/orders/${postId}`).then((res) => res.data),
+    queryFn: () => api.get(`post/orders/${postId}`).then((res) => res.data),
     enabled: !!postId,
   });
 
@@ -223,7 +235,9 @@ export const useGetCouriersByRegion = (regionId: string, enabled: boolean) =>
     queryKey: [MAILS_KEY, "couriers-by-region", regionId],
     queryFn: () =>
       api
-        .get(`couriers/region/${regionId}`, { params: { status: "active", limit: 100 } })
+        .get(`couriers/region/${regionId}`, {
+          params: { status: "active", limit: 100 },
+        })
         .then((res) => res.data),
     enabled: !!regionId && enabled,
     staleTime: 0,
@@ -234,10 +248,17 @@ export const useSendPost = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ postId, payload }: { postId: string; payload: SendPostPayload }) =>
-      api.patch(`post/${postId}`, payload).then((res) => res.data),
+    mutationFn: ({
+      postId,
+      payload,
+    }: {
+      postId: string;
+      payload: SendPostPayload;
+    }) => api.patch(`post/${postId}`, payload).then((res) => res.data),
     onSuccess: (_data, { postId }) => {
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
+      queryClient.invalidateQueries({
+        queryKey: [MAILS_KEY, "detail", postId],
+      });
     },
   });
 };
@@ -252,10 +273,17 @@ export const useReceivePost = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ postId, payload }: { postId: string; payload: ReceivePostPayload }) =>
-      api.patch(`post/receive/${postId}`, payload).then((res) => res.data),
+    mutationFn: ({
+      postId,
+      payload,
+    }: {
+      postId: string;
+      payload: ReceivePostPayload;
+    }) => api.patch(`post/receive/${postId}`, payload).then((res) => res.data),
     onSuccess: (_data, { postId }) => {
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "detail", postId] });
+      queryClient.invalidateQueries({
+        queryKey: [MAILS_KEY, "detail", postId],
+      });
     },
   });
 };

@@ -2,13 +2,15 @@ import { memo, useState, useEffect } from "react";
 import HeaderName from "../../../../shared/components/headerName";
 import { ListOrdered, Send } from "lucide-react";
 import Tabs from "./list/tabs";
-import OrdersTable from "./list/orderTable";
 import SellModal from "./list/SellModal";
+import CancelModal from "./list/CancelModal";
 import PopupConfirm from "../../../../shared/components/popupConfirm";
+import PendingOrdersTable from "./list/ordertable/pendingOrderTable";
+import AllOrdersTable from "./list/ordertable/AllOrdersTable";
+import CancelledOrdersTable from "./list/ordertable/CancelledOrdersTable";
 import { useOrders } from "../../../../entities/orders";
 import { useQueryParams } from "../../../../shared/lib/useQueryParams";
-
-type Order = Parameters<typeof OrdersTable>[0]["orders"][number];
+import type { Order } from "./list/ordertable/pendingOrderTable";
 
 const TAB_STATUS_MAP: Record<string, string | undefined> = {
   pending:   "waiting",
@@ -25,43 +27,47 @@ const CourierOrders = () => {
   const { getParam, setParam, removeParam } = useQueryParams();
 
   const initialStatus = getParam("status");
-  const initialTab = initialStatus ? (STATUS_TAB_MAP[initialStatus] ?? "pending") : "pending";
+  const initialTab = initialStatus
+    ? (STATUS_TAB_MAP[initialStatus] ?? "pending")
+    : "pending";
 
-  const [activeTab, setActiveTab] = useState(initialTab);
-  const [sellOrder, setSellOrder] = useState<Order | null>(null);
-  const [rollbackOrder, setRollbackOrder] = useState<Order | null>(null);
-
-  // ✅ Checkbox selection state
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab]           = useState(initialTab);
+  const [sellOrder, setSellOrder]           = useState<Order | null>(null);
+  const [cancelOrder, setCancelOrder]       = useState<Order | null>(null);
+  const [rollbackOrder, setRollbackOrder]   = useState<Order | null>(null);
+  const [selectedIds, setSelectedIds]       = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!getParam("status")) {
-      setParam("status", "waiting");
-    }
+    if (!getParam("status")) setParam("status", "waiting");
   }, []);
 
-  // Tab o'zgarganda selectionni tozalaymiz
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     setSelectedIds(new Set());
     const status = TAB_STATUS_MAP[tabId];
-    if (status) {
-      setParam("status", status);
-    } else {
-      removeParam("status");
-    }
+    if (status) setParam("status", status);
+    else removeParam("status");
   };
 
-  const { getOrderCourier, SellOrder, PartlySellOrder, RollbackOrder, SendToPost } = useOrders();
+  const {
+    getOrderCourier,
+    SellOrder,
+    PartlySellOrder,
+    RollbackOrder,
+    CancelOrder,
+    SendToPost,
+  } = useOrders();
 
   const statusParam = getParam("status") ?? undefined;
   const params = statusParam ? { status: statusParam } : undefined;
 
   const { data, isLoading } = getOrderCourier(params);
-  const { mutate: sellMutate, isPending: isSelling } = SellOrder;
+
+  const { mutate: sellMutate,       isPending: isSelling }       = SellOrder;
   const { mutate: partlySellMutate, isPending: isPartlySelling } = PartlySellOrder;
-  const { mutate: rollbackMutate, isPending: isRollbacking } = RollbackOrder;
-  const { mutate: sendToPostMutate, isPending: isSendingToPost } = SendToPost; // ✅
+  const { mutate: rollbackMutate,   isPending: isRollbacking }   = RollbackOrder;
+  const { mutate: cancelMutate,     isPending: isCancelling }    = CancelOrder;
+  const { mutate: sendToPostMutate, isPending: isSendingToPost } = SendToPost;
 
   const orders: Order[] = Array.isArray(data?.data?.data)
     ? data.data.data
@@ -69,13 +75,14 @@ const CourierOrders = () => {
     ? data.data
     : [];
 
+  // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleSell = (
     orderId: string,
-    payload: { comment: string; extraCost: number }
+    payload: { comment: string; extraCost: number },
   ) => {
     sellMutate(
       { orderId, data: payload },
-      { onSuccess: () => setSellOrder(null) }
+      { onSuccess: () => setSellOrder(null) },
     );
   };
 
@@ -86,11 +93,21 @@ const CourierOrders = () => {
       totalPrice: number;
       extraCost: number;
       comment: string;
-    }
+    },
   ) => {
     partlySellMutate(
       { orderId, data: payload },
-      { onSuccess: () => setSellOrder(null) }
+      { onSuccess: () => setSellOrder(null) },
+    );
+  };
+
+  const handleCancel = (
+    orderId: string,
+    payload: { comment: string; extraCost: number; paidAmount: number },
+  ) => {
+    cancelMutate(
+      { orderId, data: payload },
+      { onSuccess: () => setCancelOrder(null) },
     );
   };
 
@@ -101,7 +118,6 @@ const CourierOrders = () => {
     });
   };
 
-  // ✅ Checkbox handlers
   const handleSelectChange = (id: string, checked: boolean) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -111,14 +127,9 @@ const CourierOrders = () => {
   };
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(new Set(orders.map((o) => o.id)));
-    } else {
-      setSelectedIds(new Set());
-    }
+    setSelectedIds(checked ? new Set(orders.map((o) => o.id)) : new Set());
   };
 
-  // ✅ Pochtaga yuborish
   const handleSendToPost = () => {
     if (selectedIds.size === 0) return;
     sendToPostMutate(Array.from(selectedIds), {
@@ -126,9 +137,7 @@ const CourierOrders = () => {
     });
   };
 
-  // Faqat cancelled tabda checkbox ko'rinadi
-  const isCancelledTab = activeTab === "cancelled";
-
+  // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="relative">
       <div className="bg-sidebar dark:bg-maindark p-3 rounded-2xl">
@@ -139,24 +148,43 @@ const CourierOrders = () => {
             icon={<ListOrdered />}
           />
         </div>
+
         <Tabs onChange={handleTabChange} defaultTab={activeTab} />
+
         <div className="mt-3">
-          <OrdersTable
-            orders={orders}
-            loading={isLoading}
-            onDeliver={(order) => setSellOrder(order)}
-            onRestore={(order) => setRollbackOrder(order)}
-            showAllActions={activeTab === "all"}
-            // ✅ faqat cancelled tabda checkbox
-            selectedIds={isCancelledTab ? selectedIds : undefined}
-            onSelectChange={isCancelledTab ? handleSelectChange : undefined}
-            onSelectAll={isCancelledTab ? handleSelectAll : undefined}
-          />
+          {activeTab === "pending" && (
+            <PendingOrdersTable
+              orders={orders}
+              loading={isLoading}
+              onDeliver={(order) => setSellOrder(order)}
+              onCancel={(order) => setCancelOrder(order)}
+            />
+          )}
+
+          {activeTab === "all" && (
+            <AllOrdersTable
+              orders={orders}
+              loading={isLoading}
+              onDeliver={(order) => setSellOrder(order)}
+              onCancel={(order) => setCancelOrder(order)}
+              onRestore={(order) => setRollbackOrder(order)}
+            />
+          )}
+
+          {activeTab === "cancelled" && (
+            <CancelledOrdersTable
+              orders={orders}
+              loading={isLoading}
+              selectedIds={selectedIds}
+              onSelectChange={handleSelectChange}
+              onSelectAll={handleSelectAll}
+            />
+          )}
         </div>
       </div>
 
-      {/* ✅ Floating button — faqat cancelled tabda va kamida 1 ta tanlanganda */}
-      {isCancelledTab && selectedIds.size > 0 && (
+      {/* Floating button */}
+      {activeTab === "cancelled" && selectedIds.size > 0 && (
         <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={handleSendToPost}
@@ -173,6 +201,7 @@ const CourierOrders = () => {
         </div>
       )}
 
+      {/* Sell Modal */}
       <SellModal
         order={sellOrder}
         open={!!sellOrder}
@@ -182,6 +211,16 @@ const CourierOrders = () => {
         isLoading={isSelling || isPartlySelling}
       />
 
+      {/* Cancel Modal */}
+      <CancelModal
+        order={cancelOrder}
+        open={!!cancelOrder}
+        onClose={() => setCancelOrder(null)}
+        onCancel={handleCancel}
+        isLoading={isCancelling}
+      />
+
+      {/* Rollback Confirm */}
       <PopupConfirm
         isOpen={!!rollbackOrder}
         onClose={() => setRollbackOrder(null)}
