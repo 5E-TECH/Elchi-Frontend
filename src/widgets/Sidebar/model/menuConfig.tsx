@@ -34,7 +34,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { to: "/products", icon: Apple, label: "products" },
     { to: "/all-users", icon: UserRound, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
-    { to: "/m-balance", icon: Scale, label: "balance" },
+    { to: "/financial-balance", icon: Scale, label: "balance" },
     { to: "/regions", icon: MapPinned, label: "region" },
     { to: "/logs", icon: FileText, label: "logs" },
   ],

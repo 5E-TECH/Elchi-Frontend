@@ -44,6 +44,10 @@ const CashDetail = lazy(
   () => import("../../pages/payments/components/cashDetail"),
 );
 
+const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
+
+const Region = lazy(() => import("../../pages/region"));
+
 const AppRouter = () => {
   return useRoutes([
     { path: "/login", element: <Login /> },
@@ -106,6 +110,14 @@ const AppRouter = () => {
                 { path: "cash-detail", element: <CashDetail /> },
               ],
             },
+            {
+              path: "financial-balance",
+              element: <FinancialBalance />,
+            },
+            {
+              path: "regions",
+              element: <Region />,
+            }
           ],
         },
       ],

@@ -41,7 +41,7 @@ export const useCashBox = () => {
     useQuery({
       queryKey: [cashbox, params],
       queryFn: () =>
-        api.get(`cashbox/all-info`, { params }).then((res) => res.data),
+        api.get(`/finance/cashbox/all-info`, { params }).then((res) => res.data),
       enabled: bool,
     });
 
