@@ -8,7 +8,6 @@ import {
     CreditCard,
     Calendar,
     User,
-    Phone,
     Landmark,
     ExternalLink,
 } from "lucide-react";
