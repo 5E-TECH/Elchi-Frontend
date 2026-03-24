@@ -28,11 +28,6 @@ type ChartType = "Area" | "Bar" | "Combo";
 type Period = "Daily" | "Weekly" | "Monthly" | "Yearly";
 type ColorVariant = "success" | "info" | "warning" | "error";
 
-export interface FinancialAnalysisProps {
-  totalOrders: number;  // orders.acceptedCount
-  sold: number;         // orders.soldAndPaid
-  profit: number;       // orders.profit
-}
 
 interface FinanceCardProps {
   title: string;
@@ -311,7 +306,7 @@ FinanceCard.displayName = "FinanceCard";
 const PeriodStatsCard = memo(({ totalOrders, sold, profit }: {
   totalOrders: number;
   sold: number;
-  profit: any; 
+  profit: any;
 }) => {
   const periodStats: PeriodStatItem[] = [
     {
@@ -427,14 +422,26 @@ RevenueChart.displayName = "RevenueChart";
 
 // ─── FinancialAnalysis ────────────────────────────────────────────────────────
 
-const FinancialAnalysis = memo(({ sold, profit }: FinancialAnalysisProps) => {
+export interface FinancialAnalysisProps {
+  totalOrders: number;  // orders.acceptedCount
+  sold: number;         // orders.soldAndPaid
+  profit: number;       // orders.profit
+  startDate?: string;
+  endDate?: string;
+}
+
+const FinancialAnalysis = memo(({ sold, profit, startDate, endDate }: FinancialAnalysisProps) => {
   const [period, setPeriod] = useState<Period>("Daily");
 
-  const {getRevenue} = useDashboard();
-  const {data} = getRevenue();
+  const { getRevenue } = useDashboard();
+  const { data } = getRevenue({
+    start_day: startDate,
+    end_day: endDate,
+    period,
+  });
   const revenueData = data?.data?.data;
-  
-  
+
+
 
   // profit UZS da keladi (masalan: 60000), mingga bo'lib ko'rsatamiz
   const profitFormatted = profit.toLocaleString();

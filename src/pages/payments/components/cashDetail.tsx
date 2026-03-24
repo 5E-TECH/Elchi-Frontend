@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Wallet2,
   EyeOff,
@@ -9,18 +9,18 @@ import {
   Truck,
   CreditCard,
   PackageCheck,
-
+  Loader2,
 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import CashboxView from "./CashboxView";
 import type { HistoryItem } from "./CashboxView";
+import { useUser } from "../../../entities/user/api/userApi";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
 // ── Route state tipi ───────────────────────────────────────────────────────────
 export interface DetailState {
   type: "market" | "courier";
-  entity: { id: number; name: string; amount: number; region?: string };
 }
 
 // ── Statik config per type ─────────────────────────────────────────────────────
@@ -73,12 +73,16 @@ const HISTORY: HistoryItem[] = [
 
 // ── CashDetail sahifasi ────────────────────────────────────────────────────────
 const CashDetail = () => {
+  const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
+  const navigate = useNavigate();
+  const { getUserById } = useUser();
 
   const type = state?.type ?? "market";
-  const entity = state?.entity ?? { id: 0, name: "asl camera", amount: 24_271_000 };
+  const { data: userData, isLoading } = getUserById(id || "");
+  const entity = userData?.data || { name: "Yuklanmoqda...", amount: 0 };
+
   const cfg = CONFIG[type];
-  const navigate = useNavigate();
 
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [amount, setAmount] = useState("");
@@ -95,6 +99,14 @@ const CashDetail = () => {
     // API integratsiyasi uchun joy
     console.log({ type, entity, amount, paymentType, comment });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-main" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-sidebar dark:bg-maindark min-h-full flex flex-col gap-6 rounded-2xl">
@@ -141,7 +153,7 @@ const CashDetail = () => {
                 <Wallet2 size={11} /> umumiyBalans
               </p>
               <p className="text-3xl font-black text-white tracking-tight">
-                {balanceVisible ? `${fmt(entity.amount)} UZS` : "••••••• UZS"}
+                {balanceVisible ? `${fmt(entity.amount || entity.salary || 0)} UZS` : "••••••• UZS"}
               </p>
             </div>
           </div>

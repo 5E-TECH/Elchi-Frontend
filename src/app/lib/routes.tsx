@@ -107,7 +107,7 @@ const AppRouter = () => {
               children: [
                 { index: true, element: <Payments /> },
                 { path: "main-cashbox", element: <MainCashbox /> },
-                { path: "cash-detail", element: <CashDetail /> },
+                { path: "cash-detail/:id", element: <CashDetail /> },
               ],
             },
             {

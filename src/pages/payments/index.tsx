@@ -16,40 +16,10 @@ import PopupSelect from "../../shared/components/popupSelect";
 import { useNavigate } from "react-router-dom";
 import { useCashBox } from "../../entities/payments";
 import { useUser } from "../../entities/user/api/userApi";
+import { useMarkets } from "../../entities/markets";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
-const MARKETS = [
-  { id: 1, name: "6060", amount: 20_036_003 },
-  { id: 2, name: "0.13", amount: 0 },
-  { id: 3, name: "Credigo", amount: 1_855_000 },
-  { id: 4, name: "asl camera", amount: 24_271_000 },
-  { id: 5, name: "076", amount: 0 },
-  { id: 6, name: "023", amount: 0 },
-  { id: 7, name: "Sog'lomHayot", amount: 0 },
-  { id: 8, name: "donaxon.uz", amount: 185_000 },
-  { id: 9, name: "1211", amount: 2_070_000 },
-  { id: 10, name: "Shirina", amount: 0 },
-  { id: 11, name: "865", amount: 1_000 },
-  { id: 12, name: "2222", amount: 2_011_000 },
-  { id: 13, name: "hayottabobat", amount: 0 },
-];
-
-const COURIERS = [
-  { id: 1, name: "toshkent javlon aka", region: "Toshkent shahri", amount: 2_200_000 },
-  { id: 2, name: "Shaxrizod Ismatov", region: "Toshkent shahri", amount: 2_407_000 },
-  { id: 3, name: "Toshkent shahar Oybek aka", region: "Toshkent shahri", amount: 11_000 },
-  { id: 4, name: "G'ijdivon Rustam Aka", region: "Buxoro", amount: 6_097_000 },
-  { id: 5, name: "Buxoro Axmed Aka", region: "Buxoro", amount: 2_717_000 },
-  { id: 6, name: "Toshkent shahar", region: "Toshkent shahri", amount: 164_000 },
-  { id: 7, name: "Sirdaryo Abdurahmon Aka", region: "Sirdaryo", amount: 610_000 },
-  { id: 8, name: "Toshkent Shokh_Ali", region: "Toshkent viloyati", amount: -19_741_999 },
-  { id: 9, name: "Jizzax Alisher", region: "Jizzax", amount: 5_428_000 },
-  { id: 10, name: "Navoiy Mehriddin Togo", region: "Navoiy", amount: -8_627_000 },
-  { id: 11, name: "Samarqand Navro'z Aka", region: "Samarqand", amount: -22_061_998 },
-  { id: 12, name: "Samarqand No'mon Aka", region: "Samarqand", amount: 0 },
-  { id: 13, name: "Qashqadaryo Ramzi", region: "Qashqadaryo", amount: 5_322_000 },
-];
 
 const DROPDOWN_FILTERS = [
   { name: "operation_type", label: "Operation type", icon: TrendingUp },
@@ -99,15 +69,43 @@ const Payments = () => {
   const navigate = useNavigate();
   const { getFinanceHistory, getCashBoxInfo } = useCashBox();
   const { getUser } = useUser();
+  const { getMarkets } = useMarkets();
 
   // ── API dan cashbox ma'lumotlarini olish ──────────────────────────────────
   const { data: cashboxInfo, isLoading: cashboxLoading } = getCashBoxInfo();
 
+  // Faqat popup ochiq bo'lganda yuklanadi
+  const { data: marketsData, isLoading: marketsLoading } = getMarkets({}, isGivenPopupOpen);
+  const { data: couriersData, isLoading: couriersLoading } = getUser({ role: "courier", limit: 100 }, isReceivedPopupOpen);
+
   // API response: { statusCode, message, data: { mainCashboxTotal, courierCashboxTotal, marketCashboxTotal, ... } }
   const cashboxData = cashboxInfo?.data;
-  const mainCashboxTotal    = cashboxData?.mainCashboxTotal    ?? 0;
+  const mainCashboxTotal = cashboxData?.mainCashboxTotal ?? 0;
   const courierCashboxTotal = cashboxData?.courierCashboxTotal ?? 0;
-  const marketCashboxTotal  = cashboxData?.marketCashboxTotal  ?? 0;
+  const marketCashboxTotal = cashboxData?.marketCashboxTotal ?? 0;
+
+  // ── To be given popup uchun market list ───────────────────────────────────
+  const marketsList = useMemo(
+    () =>
+      (marketsData?.data?.items ?? []).map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        amount: m.amount ?? 0,
+      })),
+    [marketsData],
+  );
+
+  // ── To be received popup uchun kuryerlar list ─────────────────────────────
+  const couriersList = useMemo(
+    () =>
+      (couriersData?.data?.items ?? []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        region: c.region?.name || "Noma'lum",
+        amount: c.amount ?? 0,
+      })),
+    [couriersData],
+  );
 
   // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
   const CARDS = [
@@ -234,7 +232,7 @@ const Payments = () => {
       {/* Filters */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border p-5 shadow-sm">
         <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">Filters</p>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {DROPDOWN_FILTERS.map(({ name, label, icon }) => (
             <FilterSelect
               key={name}
@@ -270,13 +268,13 @@ const Payments = () => {
         currentPage={page}
       />
 
-      {/* To be given popup */}
+      {/* To be given popup — API dan marketlar */}
       <PopupSelect
         isOpen={isGivenPopupOpen}
         onClose={() => setIsGivenPopupOpen(false)}
-        data={MARKETS}
+        data={marketsList}
         title="To be given"
-        description="Marketni tanlang"
+        description={marketsLoading ? "Yuklanmoqda..." : "Marketni tanlang"}
         icon={<Store size={20} />}
         keyExtractor={(m: any) => m.id}
         searchKeys={["name"]}
@@ -284,7 +282,7 @@ const Payments = () => {
         secondaryLabelKey="amount"
         onSelect={(market: any) => {
           setIsGivenPopupOpen(false);
-          navigate("/payments/cash-detail", { state: { type: "market", entity: market } });
+          navigate(`/payments/cash-detail/${market.id}`, { state: { type: "market" } });
         }}
         renderItem={(market: any, isSelected: boolean) => (
           <div className="flex items-center justify-between w-full">
@@ -307,16 +305,16 @@ const Payments = () => {
       <PopupSelect
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
-        data={COURIERS}
+        data={couriersList}
         title="To be received"
-        description="Kuryerni tanlang"
+        description={couriersLoading ? "Yuklanmoqda..." : "Kuryerni tanlang"}
         icon={<Truck size={20} />}
         keyExtractor={(c: any) => c.id}
         searchKeys={["name", "region"]}
         labelKey="name"
         onSelect={(courier: any) => {
           setIsReceivedPopupOpen(false);
-          navigate("/payments/cash-detail", { state: { type: "courier", entity: courier } });
+          navigate(`/payments/cash-detail/${courier.id}`, { state: { type: "courier" } });
         }}
         renderItem={(courier: any, isSelected: boolean) => (
           <div className="flex items-center justify-between w-full">

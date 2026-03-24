@@ -1,77 +1,397 @@
-import { memo } from 'react';
-import {
-  Globe,
-  Search,
-  RotateCcw,
-  ChevronRight,
-  Link as LinkIcon,
-} from 'lucide-react';
+import { memo, useMemo, useState } from "react";
+import { Globe, QrCode, RefreshCw } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Table } from "../../../shared/components/Table/Table";
+import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
+import FilterSelect from "../../../shared/ui/FilterSelect";
+import FilterDateRange from "../../../shared/ui/FilterDateRange";
+import { api } from "../../../shared/api/api";
+import type { AxiosError } from "axios";
 
+type ExternalOrderStatus =
+  | "new"
+  | "processing"
+  | "completed"
+  | "cancelled"
+  | string;
 
-// Integratsiya kartasi komponenti
-const IntegrationCard = ({ name, market, count, synced }: any) => (
-  <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-all duration-200">
-    <div className="flex items-center gap-4">
-      <div className="p-3 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500">
-        <LinkIcon size={24} />
-      </div>
-      <div className="flex flex-col">
-        <h4 className="text-gray-800 dark:text-white font-semibold text-lg">{name}</h4>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">Market: {market}</p>
-        <div className="mt-1 flex items-center gap-2">
-          <span className={`${synced ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'} text-sm font-medium`}>
-            {synced ? `✓ ${synced} ta sinxronlangan` : count}
-          </span>
-          {synced && <RotateCcw size={12} className="text-gray-400 dark:text-gray-500" />}
-        </div>
-      </div>
-    </div>
-    <ChevronRight className="text-gray-400 dark:text-gray-600 group-hover:text-main transition-colors" size={20} />
-  </div>
-);
+type ExternalOrderItem = {
+  id?: string;
+  quantity?: number;
+  product?: { name?: string | null };
+};
+
+type ExternalOrder = {
+  id: string;
+  status?: ExternalOrderStatus;
+  total_price?: number;
+  createdAt?: string;
+  created_at?: string;
+  market?: { name?: string | null };
+  shop?: { name?: string | null };
+  items?: ExternalOrderItem[];
+};
+
+type Pagination = {
+  page: number;
+  limit: number;
+  total?: number;
+  totalPages: number;
+};
+
+const fmt = (n: number) => n.toLocaleString("uz-UZ");
+
+const statusLabel = (s?: string) => {
+  if (!s) return "—";
+  if (s === "new") return "Yangi";
+  if (s === "processing") return "Jarayonda";
+  if (s === "completed") return "Tayyor";
+  if (s === "cancelled") return "Bekor qilingan";
+  return s;
+};
+
+const statusClass = (s?: string) => {
+  if (s === "new") return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+  if (s === "processing") return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
+  if (s === "completed") return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+  if (s === "cancelled") return "bg-rose-500/10 text-rose-400";
+  return "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60";
+};
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null;
+
+const getPagination = (response: unknown): Pagination | null => {
+  if (!isRecord(response)) return null;
+
+  const data = isRecord(response.data) ? response.data : undefined;
+  const meta =
+    (data && (isRecord(data.pagination) ? data.pagination : undefined))
+    ?? (data && (isRecord(data.meta) ? data.meta : undefined))
+    ?? (isRecord(response.pagination) ? response.pagination : undefined)
+    ?? (isRecord(response.meta) ? response.meta : undefined);
+
+  if (!meta) return null;
+  const page = Number((meta.page as number | string | undefined) ?? 1);
+  const limit = Number((meta.limit as number | string | undefined) ?? 10);
+  const totalPages = Number((meta.totalPages as number | string | undefined) ?? (meta.total_pages as number | string | undefined) ?? 1);
+  const totalVal = meta.total as number | string | undefined;
+  const total = totalVal !== undefined ? Number(totalVal) : undefined;
+  return { page, limit, totalPages, total };
+};
+
+const getItems = (response: unknown): ExternalOrder[] => {
+  if (!isRecord(response)) return [];
+  const data = isRecord(response.data) ? response.data : undefined;
+
+  const items =
+    (data && Array.isArray(data.items) ? data.items : undefined)
+    ?? (data && Array.isArray(data.data) ? data.data : undefined)
+    ?? (data && Array.isArray(data) ? data : undefined)
+    ?? (Array.isArray(response.items) ? response.items : undefined)
+    ?? [];
+
+  return items as ExternalOrder[];
+};
+
+const getApiMessage = (err: unknown): string => {
+  const axiosErr = err as AxiosError<{ message?: unknown }>;
+  const msg = axiosErr?.response?.data?.message;
+  if (typeof msg === "string") return msg;
+  if (Array.isArray(msg)) return msg.map(String).join(", ");
+  return "";
+};
+
+const isNumericIdError = (err: unknown): boolean => {
+  const msg = getApiMessage(err);
+  return msg.includes("ID qiymatlari") && msg.includes("raqam");
+};
+
+const fetchExternalOrders = async (params: Record<string, string | number>): Promise<unknown> => {
+  const endpoints = [
+    "orders/external",
+    "orders/external-orders",
+    "orders/external_orders",
+  ] as const;
+
+  try {
+    const res = await api.get(endpoints[0], { params });
+    return res.data as unknown;
+  } catch (err) {
+    if (!isNumericIdError(err)) throw err;
+
+    // Backend routing `orders/:id` bilan to'qnashsa, alternativ route nomlarini sinab ko'ramiz.
+    for (const ep of endpoints.slice(1)) {
+      try {
+        const res = await api.get(ep, { params });
+        return res.data as unknown;
+      } catch {
+        // next
+      }
+    }
+    throw err;
+  }
+};
 
 const ExternalOrders = () => {
-  return (
-    <div className="space-y-8">
+  const [status, setStatus] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-      {/* Integratsiyalar bo'limi */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-end">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500">
-                <Globe size={24} />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Integratsiyalar</h2>
+  const handleStatusChange = (val: string) => {
+    setStatus(val);
+    setPage(1);
+  };
+
+  const handleDateFromChange = (val: string) => {
+    setDateFrom(val);
+    setPage(1);
+  };
+
+  const handleDateToChange = (val: string) => {
+    setDateTo(val);
+    setPage(1);
+  };
+
+  const params = useMemo(() => {
+    const p: Record<string, string | number> = { page, limit };
+    if (status) p.status = status;
+    if (dateFrom) p.start_day = dateFrom;
+    if (dateTo) p.end_day = dateTo;
+    return p;
+  }, [page, limit, status, dateFrom, dateTo]);
+
+  const query = useQuery({
+    queryKey: ["orders", "external", params],
+    queryFn: () => fetchExternalOrders(params),
+  });
+
+  const orders = useMemo(() => getItems(query.data), [query.data]);
+  const pagination = useMemo(() => getPagination(query.data), [query.data]);
+  const activePage = pagination?.page ?? page;
+  const totalPages = pagination?.totalPages ?? 1;
+  const rowOffset = (activePage - 1) * (pagination?.limit ?? limit);
+
+  const columns = useMemo<ColumnConfig<ExternalOrder>[]>(
+    () => [
+      {
+        key: "id",
+        label: "#",
+        width: "70px",
+        render: (_v, _row, rowIndex) => (
+          <span className="text-gray-400 dark:text-gray-500 font-semibold">
+            {rowOffset + rowIndex + 1}
+          </span>
+        ),
+      },
+      {
+        key: "market",
+        label: "Do'kon",
+        sortable: true,
+        render: (_v, row) => (
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
+              <QrCode size={14} className="text-main" />
             </div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              QR kod orqali tashqi buyurtmalarni qidirish uchun integratsiyani tanlang
-            </p>
+            <span className="font-semibold text-gray-900 dark:text-white truncate">
+              {row.market?.name ?? row.shop?.name ?? "—"}
+            </span>
+          </div>
+        ),
+      },
+      {
+        key: "items",
+        label: "Mahsulotlar",
+        render: (_v, row) => {
+          const list = row.items ?? [];
+          if (list.length === 0) {
+            return <span className="text-gray-400 dark:text-white/40">—</span>;
+          }
+          const text = list
+            .slice(0, 3)
+            .map((it) => {
+              const name = it.product?.name ?? "—";
+              const qty = it.quantity ?? 0;
+              return `${name}×${qty}`;
+            })
+            .join(", ");
+          const more = list.length > 3 ? ` +${list.length - 3}` : "";
+          return (
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {text}{more}
+            </span>
+          );
+        },
+      },
+      {
+        key: "total_price",
+        label: "Summa",
+        sortable: true,
+        render: (v) => (
+          <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+            {fmt(Number(v ?? 0))} so'm
+          </span>
+        ),
+      },
+      {
+        key: "status",
+        label: "Holat",
+        render: (v) => (
+          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${statusClass(String(v ?? ""))}`}>
+            {statusLabel(String(v ?? ""))}
+          </span>
+        ),
+      },
+      {
+        key: "createdAt",
+        label: "Sana",
+        render: (v, row) => {
+          const raw = (v ?? row.created_at ?? "") as string;
+          const d = raw ? new Date(raw) : null;
+          const text =
+            d && !Number.isNaN(d.getTime())
+              ? d.toLocaleString("uz-UZ", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : (raw || "—");
+          return (
+            <span className="text-xs text-gray-500 dark:text-white/50 whitespace-nowrap">
+              {text}
+            </span>
+          );
+        },
+      },
+    ],
+    [rowOffset],
+  );
+
+  const statusOptions = useMemo(
+    () => [
+      { value: "", label: "Barcha holat" },
+      { value: "new", label: "Yangi" },
+      { value: "processing", label: "Jarayonda" },
+      { value: "completed", label: "Tayyor" },
+      { value: "cancelled", label: "Bekor qilingan" },
+    ],
+    [],
+  );
+
+  const canPrev = activePage > 1;
+  const canNext = activePage < totalPages;
+
+  return (
+    <div className="space-y-6">
+      {/* Filters */}
+      <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500">
+              <Globe size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-800 dark:text-white m-0">Tashqi buyurtmalar</p>
+              <p className="text-xs text-gray-500 dark:text-white/50 m-0">
+                Filtrlar: holat va sana oralig'i
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
-              <input
-                type="text"
-                placeholder="Market qidirish..."
-                className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-main w-64 transition-colors"
-              />
-            </div>
-            <button className="p-2.5 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-colors">
-              <RotateCcw size={18} className="text-gray-400 dark:text-gray-500" />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => query.refetch()}
+              className="p-2.5 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-colors"
+              aria-label="Yangilash"
+            >
+              <RefreshCw size={18} className={query.isFetching ? "animate-spin text-gray-400" : "text-gray-400"} />
             </button>
           </div>
         </div>
 
-        {/* Kartalar setkasi */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <IntegrationCard name="Adosh" market="Adosh.uz" count="0" />
-          <IntegrationCard name="Ozar" market="ozar.uz" count="0" />
-          <IntegrationCard name="XanaUz" market="XanaUz" count="0" />
-          <IntegrationCard name="XaviUz" market="xavi.uz" synced="7" />
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FilterSelect
+            name="external_status"
+            label="Holat"
+            value={status}
+            onChange={handleStatusChange}
+            options={statusOptions}
+            placeholder="Holatni tanlang"
+          />
+          <div className="md:col-span-2">
+            <div className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+              Sana
+            </div>
+            <FilterDateRange
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              onChangeDateFrom={handleDateFromChange}
+              onChangeDateTo={handleDateToChange}
+              className="flex-wrap"
+            />
+          </div>
         </div>
       </div>
+
+      {/* Table */}
+      <Table<ExternalOrder>
+        data={orders}
+        columns={columns}
+        loading={query.isLoading}
+        keyExtractor={(row) => row.id}
+        hoverable
+        emptyMessage="Tashqi buyurtmalar yo'q"
+      />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-500 dark:text-white/40">
+            {activePage}-sahifa / {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => canPrev && setPage(activePage - 1)}
+              disabled={!canPrev}
+              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Oldingi
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => Math.abs(p - activePage) <= 2)
+              .map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPage(p)}
+                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${
+                    p === activePage
+                      ? "bg-main text-white shadow-sm shadow-main/30"
+                      : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+
+            <button
+              type="button"
+              onClick={() => canNext && setPage(activePage + 1)}
+              disabled={!canNext}
+              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Keyingi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

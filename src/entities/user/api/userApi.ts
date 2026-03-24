@@ -15,10 +15,11 @@ export interface IUserFilter {
 export const useUser = () => {
   const client = useQueryClient();
 
-  const getUser = (params?: IUserFilter) =>
+  const getUser = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
       queryKey: [user, params],
       queryFn: () => api.get("users", { params }).then((res: any) => res.data),
+      enabled,
     });
 
   const createAdmin = useMutation({

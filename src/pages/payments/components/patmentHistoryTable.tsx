@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { Table } from '../../../shared/components/Table/Table';
 import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
@@ -63,79 +63,6 @@ interface PaymentHistoryTableProps {
   currentPage?: number;
 }
 
-// ─── Columns ──────────────────────────────────────────────────────────────────
-
-const COLUMNS: ColumnConfig<PaymentRow>[] = [
-  {
-    key: 'id',
-    label: '#',
-    width: '60px',
-    render: (_, __, i) => <span className="font-bold text-main">{i + 1}</span>,
-  },
-  {
-    key: 'created_by',
-    label: 'Created by',
-    render: (val) => (
-      <span className="font-semibold text-gray-900 dark:text-white">
-        {val || '-'}
-      </span>
-    ),
-  },
-  {
-    key: 'source_type',
-    label: 'Source type',
-    render: (val) => (
-      <span className="text-gray-600 dark:text-gray-300 capitalize">{val || '-'}</span>
-    ),
-  },
-  {
-    key: 'operation_type',
-    label: 'Operation type',
-    render: (val) => {
-      const isIncome = val === 'income';
-      return (
-        <span
-          className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${isIncome
-              ? 'bg-emerald-500/15 text-emerald-400'
-              : 'bg-rose-500/15 text-rose-400'
-            }`}
-        >
-          {val || '-'}
-        </span>
-      );
-    },
-  },
-  {
-    key: 'amount',
-    label: 'Amount',
-    render: (val, row) => {
-      const isIncome = row.operation_type === 'income';
-      return (
-        <span className={`font-bold text-sm ${isIncome ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {isIncome ? '+' : '-'}{fmt(Math.abs(val))} UZS
-        </span>
-      );
-    },
-  },
-  {
-    key: 'payment_method',
-    label: 'Payment',
-    render: (val) => (
-      <span className="text-gray-500 dark:text-gray-400 capitalize text-xs">{val || '-'}</span>
-    ),
-  },
-  {
-    key: 'createdAt',
-    label: 'Date',
-    render: (val, row) => (
-      <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
-        <Calendar size={13} />
-        {formatDate((val || row.created_at || '') as string)}
-      </span>
-    ),
-  },
-];
-
 // ─── PaymentHistoryTable ──────────────────────────────────────────────────────
 
 const PaymentHistoryTable = ({
@@ -149,6 +76,81 @@ const PaymentHistoryTable = ({
 
   const activePage = pagination?.page ?? currentPage ?? 1;
   const hasPagination = pagination && pagination.totalPages > 1;
+  const rowOffset = (activePage - 1) * (pagination?.limit ?? 10);
+
+  const columns = useMemo<ColumnConfig<PaymentRow>[]>(
+    () => [
+      {
+        key: 'id',
+        label: '#',
+        width: '60px',
+        render: (_, __, i) => <span className="font-bold text-main">{rowOffset + i + 1}</span>,
+      },
+      {
+        key: 'created_by',
+        label: 'Created by',
+        render: (val) => (
+          <span className="font-semibold text-gray-900 dark:text-white">
+            {val || '-'}
+          </span>
+        ),
+      },
+      {
+        key: 'source_type',
+        label: 'Source type',
+        render: (val) => (
+          <span className="text-gray-600 dark:text-gray-300 capitalize">{val || '-'}</span>
+        ),
+      },
+      {
+        key: 'operation_type',
+        label: 'Operation type',
+        render: (val) => {
+          const isIncome = val === 'income';
+          return (
+            <span
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${isIncome
+                ? 'bg-emerald-500/15 text-emerald-400'
+                : 'bg-rose-500/15 text-rose-400'
+                }`}
+            >
+              {val || '-'}
+            </span>
+          );
+        },
+      },
+      {
+        key: 'amount',
+        label: 'Amount',
+        render: (val, row) => {
+          const isIncome = row.operation_type === 'income';
+          return (
+            <span className={`font-bold text-sm ${isIncome ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {isIncome ? '+' : '-'}{fmt(Math.abs(val))} UZS
+            </span>
+          );
+        },
+      },
+      {
+        key: 'payment_method',
+        label: 'Payment',
+        render: (val) => (
+          <span className="text-gray-500 dark:text-gray-400 capitalize text-xs">{val || '-'}</span>
+        ),
+      },
+      {
+        key: 'createdAt',
+        label: 'Date',
+        render: (val, row) => (
+          <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+            <Calendar size={13} />
+            {formatDate((val || row.created_at || '') as string)}
+          </span>
+        ),
+      },
+    ],
+    [rowOffset],
+  );
 
   return (
     <>
@@ -169,7 +171,7 @@ const PaymentHistoryTable = ({
         {/* Table */}
         <Table<PaymentRow>
           data={data}
-          columns={COLUMNS}
+          columns={columns}
           loading={isLoading}
           keyExtractor={(row) => row.id}
           emptyMessage="Finance tarixi topilmadi"

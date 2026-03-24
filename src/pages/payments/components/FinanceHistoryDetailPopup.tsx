@@ -85,12 +85,12 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
     return (
         <Popup isShow={!!row} onClose={onClose}>
             <div
-                className="w-[92vw] max-w-[360px] rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+                className="w-[92vw] max-w-90 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
                 style={{ background: "#1a1730", maxHeight: "90vh" }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* ── Header ── */}
-                <div className={`relative bg-gradient-to-br ${headerGrad} px-5 py-4`}>
+                <div className={`relative bg-linear-to-br ${headerGrad} px-5 py-4`}>
                     {/* Icon + title */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                             </div>
 
                             {/* Cashbox details */}
-                            <div className="divide-y divide-white/[0.06]">
+                            <div className="divide-y divide-white/6">
                                 <div className="flex items-center justify-between px-4 py-2.5 text-[12px]">
                                     <span className="text-white/50">Balance</span>
                                     <span className="font-bold text-white">{fmt(row.cashbox.balance)} UZS</span>
