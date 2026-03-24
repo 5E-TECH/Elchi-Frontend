@@ -1,40 +1,28 @@
 import { memo } from "react";
-import { LayoutDashboard, Calendar } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import { useDashboard } from "../../entities/dashboard";
+import FilterDateRange from "../../shared/ui/FilterDateRange";
 
-// ─── DateRangePicker ──────────────────────────────────────────────────────────
 
-const DateRangePicker = memo(() => (
-  <div
-    className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px]
-      bg-sidebar dark:bg-maindark border border-primarydark"
-  >
-    <input
-      type="text"
-      placeholder="Start date"
-      className="bg-transparent border-none outline-none w-20 text-[11px]
-        text-maindark dark:text-primary placeholder:text-primarydark"
-    />
-    <span className="text-primarydark">—</span>
-    <input
-      type="text"
-      placeholder="End date"
-      className="bg-transparent border-none outline-none w-20 text-[11px]
-        text-maindark dark:text-primary placeholder:text-primarydark"
-    />
-    <Calendar size={13} className="text-primarydark shrink-0" />
-  </div>
-));
 
-DateRangePicker.displayName = "DateRangePicker";
+import { useQueryParams } from "../../shared/lib/useQueryParams";
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
 const DashboardPage = () => {
+  const { getParam, setParam } = useQueryParams();
+
+  const startDate = getParam("startDate") ?? "";
+  const endDate = getParam("endDate") ?? "";
+  const hasDateFilter = Boolean(startDate || endDate);
+
   const { getDashboard } = useDashboard();
-  const { data } = getDashboard();
+  const { data } = getDashboard({
+    start_day: startDate,
+    end_day: endDate,
+  });
 
   const orders = data?.orders;
 
@@ -51,14 +39,19 @@ const DashboardPage = () => {
           </div>
           <div>
             <h1 className="text-[16px] font-bold leading-tight text-maindark dark:text-primary">
-              Today's Statistics
+              {hasDateFilter ? "Tanlangan davr statistikasi" : "Bugungi statistika"}
             </h1>
             <p className="text-[11px] text-maindark/50 dark:text-sidebar/50">
-              Date Range
+              {hasDateFilter ? "Sana oralig'i bo'yicha" : "Bugungi ko'rsatkichlar"}
             </p>
           </div>
         </div>
-        <DateRangePicker />
+        <FilterDateRange
+          dateFrom={startDate}
+          dateTo={endDate}
+          onChangeDateFrom={(val) => setParam("startDate", val)}
+          onChangeDateTo={(val) => setParam("endDate", val)}
+        />
       </div>
 
       {/* Stat cards */}
@@ -76,6 +69,8 @@ const DashboardPage = () => {
         totalOrders={orders?.acceptedCount ?? 0}
         sold={orders?.soldAndPaid ?? 0}
         profit={orders?.profit ?? 0}
+        startDate={startDate}
+        endDate={endDate}
       />
     </div>
   );

@@ -98,6 +98,16 @@ const CustomDatePicker = memo(({
     const handleClear = (e: React.MouseEvent) => {
         e.stopPropagation();
         onChange("");
+        setOpen(false);
+    };
+
+    const handleClearKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            onChange("");
+            setOpen(false);
+        }
     };
 
     const goPrevMonth = () => {
@@ -176,7 +186,10 @@ const CustomDatePicker = memo(({
                 {value && (
                     <span
                         role="button"
+                        tabIndex={0}
                         onClick={handleClear}
+                        onKeyDown={handleClearKeyDown}
+                        aria-label="Sanani tozalash"
                         className="ml-1 text-gray-400 hover:text-red-400 dark:text-white/30 dark:hover:text-red-400 transition-colors cursor-pointer"
                     >
                         <X size={12} />

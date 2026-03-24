@@ -3,6 +3,7 @@ import HeaderName from "../../../shared/components/headerName";
 import {
   BookMarked,
   Package,
+  Pencil,
   Plus,
   ScanLine,
   SquarePen,
@@ -14,6 +15,7 @@ import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import PopupSelect from "../../../shared/components/popupSelect";
 import PopupConfirm from "../../../shared/components/popupConfirm";
+import UpdatePopup from "../../../shared/components/popupUpdate";
 import { useNavigate } from "react-router-dom";
 import { useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
@@ -22,10 +24,15 @@ import { GlobalSearchInput } from "../../../features/search";
 import { useSelector } from "react-redux";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import type { RootState } from "../../../app/config/store";
+import { BASE_URL } from "../../../shared/const";
+import type { AxiosError } from "axios";
 
 interface Product {
   id: number;
   name: string;
+  image?: string | null;
+  image_url?: string | null;
+  actions?: undefined;
   market: {
     id: number;
     name: string;
@@ -47,17 +54,48 @@ const ProductTable = () => {
   const [filterValue, setFilterValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
+  // ─── Edit State ─────────────────────────────────────────────────────────
+  const [editTarget, setEditTarget] = useState<Product | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editImageFile, setEditImageFile] = useState<File | undefined>(undefined);
+  const [editPreviewUrl, setEditPreviewUrl] = useState<string | undefined>(undefined);
+
+  const resolveImageUrl = useCallback((raw?: string | null): string | undefined => {
+    if (!raw) return undefined;
+    const trimmed = String(raw).trim();
+    if (!trimmed) return undefined;
+    if (
+      trimmed.startsWith("http://")
+      || trimmed.startsWith("https://")
+      || trimmed.startsWith("data:")
+      || trimmed.startsWith("blob:")
+    ) {
+      return trimmed;
+    }
+
+    try {
+      const baseOrigin = new URL(BASE_URL).origin;
+      if (trimmed.startsWith("/")) return `${baseOrigin}${trimmed}`;
+      return `${baseOrigin}/${trimmed}`;
+    } catch {
+      return trimmed;
+    }
+  }, []);
+
   // ─── Data Fetching ──────────────────────────────────────────────────────
 
   const { getMarkets } = useMarkets();
   const { data } = getMarkets();
 
   const markets: Market[] =
-    data?.data?.items?.map((item: any, index: number) => ({
-      ...item,
-      index: index + 1,
-      phone: item.phone_number,
-    })) || [];
+    (data?.data?.items ?? []).map(
+      (item: { id: number; name: string; phone_number?: string }, index: number) => ({
+        id: item.id,
+        name: item.name,
+        phone: item.phone_number ?? "",
+        index: index + 1,
+      }),
+    );
 
   // SelectInput uchun market options
   const marketOptions = markets.map((m) => ({
@@ -87,7 +125,7 @@ const ProductTable = () => {
     return params;
   }, [urlParams, searchFilters, filterValue]);
 
-  const { getProducts, deleteProduct } = useProducts();
+  const { getProducts, deleteProduct, updateProduct } = useProducts();
   const { data: products, isLoading, isFetching } = getProducts(apiParams);
   const productData = products?.data || [];
 
@@ -106,6 +144,62 @@ const ProductTable = () => {
 
   const handleDeleteCancel = useCallback(() => {
     setDeleteTarget(null);
+  }, []);
+
+  // ─── Edit Handlers ──────────────────────────────────────────────────────
+
+  const handleEditRequest = useCallback((product: Product) => {
+    setEditTarget(product);
+    setEditName(product.name);
+    setEditImageFile(undefined);
+    setEditPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return undefined;
+    });
+  }, []);
+
+  const handleEditImageChange = useCallback((file: File) => {
+    setEditImageFile(file);
+    setEditPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+  }, []);
+
+  const handleEditSave = useCallback(async () => {
+    if (!editTarget) return;
+    const buildFormData = (nameKey: "name" | "product_name") => {
+      const formData = new FormData();
+      formData.append(nameKey, editName);
+      if (editImageFile) formData.append("image", editImageFile);
+      return formData;
+    };
+
+    const isNameNotAllowed = (err: unknown): boolean => {
+      const axiosErr = err as AxiosError<{ message?: unknown }>;
+      const msg = axiosErr?.response?.data?.message;
+      if (typeof msg === "string") return msg.includes("property name should not exist");
+      if (Array.isArray(msg)) return msg.some((m) => String(m).includes("property name should not exist"));
+      return false;
+    };
+
+    try {
+      await updateProduct.mutateAsync({ id: editTarget.id, data: buildFormData("name") });
+      setEditTarget(null);
+    } catch (err) {
+      if (!isNameNotAllowed(err)) return;
+      await updateProduct.mutateAsync({ id: editTarget.id, data: buildFormData("product_name") });
+      setEditTarget(null);
+    }
+  }, [editTarget, editName, editImageFile, updateProduct]);
+
+  const handleEditCancel = useCallback(() => {
+    setEditTarget(null);
+    setEditImageFile(undefined);
+    setEditPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return undefined;
+    });
   }, []);
 
   // ─── Table Columns ─────────────────────────────────────────────────────
@@ -148,14 +242,18 @@ const ProductTable = () => {
         ),
       },
       {
-        key: "name",
+        key: "actions",
         label: "Action",
         width: "20%",
-        render: (_: string, row: Product) => (
+        render: (_: unknown, row: Product) => (
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditRequest(row);
+              }}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors cursor-pointer"
               aria-label="Edit product"
             >
               <SquarePen size={18} />
@@ -175,7 +273,7 @@ const ProductTable = () => {
         ),
       },
     ],
-    [handleDeleteRequest],
+    [handleDeleteRequest, handleEditRequest],
   );
 
   // ─── Render ─────────────────────────────────────────────────────────────
@@ -223,7 +321,7 @@ const ProductTable = () => {
               Jami
             </span>
             <span className="text-lg font-bold text-gray-800 dark:text-white leading-tight">
-              {products?.total_count || 0} ta
+              {products?.total || 0} ta
             </span>
           </div>
         </div>
@@ -270,6 +368,36 @@ const ProductTable = () => {
         }
         isLoading={deleteProduct.isPending}
       />
+
+      {/* Edit Product Popup */}
+      <UpdatePopup
+        isOpen={!!editTarget}
+        onClose={handleEditCancel}
+        onSave={handleEditSave}
+        title="Mahsulotni tahrirlash"
+        icon={<Pencil size={20} />}
+        isLoading={updateProduct.isPending}
+        imageProps={{
+          label: "Rasm",
+          value: resolveImageUrl(editTarget?.image_url ?? editTarget?.image),
+          onChange: handleEditImageChange,
+          previewUrl: editPreviewUrl,
+        }}
+      >
+        {/* Mahsulot nomi */}
+        <div className="space-y-2">
+          <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">
+            Mahsulot nomi
+          </label>
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-main/40 transition-all"
+            placeholder="Mahsulot nomini kiriting..."
+          />
+        </div>
+      </UpdatePopup>
     </div>
   );
 };

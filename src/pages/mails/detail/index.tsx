@@ -1,7 +1,7 @@
 import { memo, useMemo, useCallback, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, MapPin } from "lucide-react";
-import { useMailDetail, useMails, useReceivePost } from "../../../entities/mails";
+import { useMailDetail, useReceivePost } from "../../../entities/mails";
 import HeaderName from "../../../shared/components/headerName";
 
 // ─── UI komponentlar ──────────────────────────────────────────────────────────
@@ -9,6 +9,8 @@ import MailStatCards from "./ui/MailStatCards";
 import OrdersTable from "./ui/OrdersTable";
 import SendButton from "./ui/SendButton";
 import SendPostModal from "./ui/SendPostModal";
+import PrintModeSelect from "./ui/PrintModeSelect";
+import { printOrders, type PrintMode } from "./lib/printMode";
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
@@ -55,14 +57,11 @@ const MailDetailPage = () => {
   const { postId } = useParams<{ postId: string }>();
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
-  const { getTodayMailsCourier } = useMails();
-  const { data: response, isLoading, isError } = isCourier
-    ? getTodayMailsCourier(postId ?? "")
-    : useMailDetail(postId ?? "");
+  const { data: response, isLoading, isError } = useMailDetail(postId ?? "");
   const navigate = useNavigate();
   const { apiRequest } = useAppNotification();
 
-  const orders = response?.data?.allOrdersByPostId ?? [];
+  const orders = useMemo(() => response?.data?.allOrdersByPostId ?? [], [response]);
   const homeStats = response?.data?.homeOrders;
   const centerStats = response?.data?.centerOrders;
 
@@ -115,6 +114,18 @@ const MailDetailPage = () => {
     clearSelection();
   }, [clearSelection]);
 
+  const selectedOrders = useMemo(
+    () => orders.filter((o) => selectedIds.has(o.id)),
+    [orders, selectedIds],
+  );
+
+  const handlePrint = useCallback(
+    (mode: PrintMode) => {
+      printOrders(mode, selectedOrders);
+    },
+    [selectedOrders],
+  );
+
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (isLoading)
     return (
@@ -135,12 +146,15 @@ const MailDetailPage = () => {
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-5">
       {/* Sarlavha */}
-      <div className="max-w-100" onClick={() => navigate(-1)}>
-        <HeaderName
-          name={`${regionName} Buyurtmalari`}
-          description={`${orders.length} ta buyurtma mavjud`}
-          icon={<MapPin size={20} className="text-white" />}
-        />
+      <div className="flex items-center justify-between gap-4">
+        <div className="max-w-100" onClick={() => navigate(-1)}>
+          <HeaderName
+            name={`${regionName} Buyurtmalari`}
+            description={`${orders.length} ta buyurtma mavjud`}
+            icon={<MapPin size={20} className="text-white" />}
+          />
+        </div>
+        <PrintModeSelect count={selectedIds.size} onSelect={handlePrint} />
       </div>
 
       {/* Stat kartalar */}
