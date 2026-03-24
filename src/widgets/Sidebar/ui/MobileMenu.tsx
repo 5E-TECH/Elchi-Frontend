@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { NavLink } from "react-router-dom";
-import { X, LogOut, ChevronRight, Search, Moon, Sun, Bell, User } from "lucide-react";
+import { X, LogOut, ChevronRight, Moon, Sun, Bell, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SIDEBAR_CONFIG, type UserRole } from "../model/menuConfig";
 import { useLogout } from "../../../shared/lib/useLogout";
@@ -8,10 +8,16 @@ import { useTheme } from "../../../app/providers/theme/ThemeContext";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
+import { Controller, useForm } from "react-hook-form";
+import { GlobalSearchInput } from "../../../features/search";
 
 interface MobileMenuProps {
     isOpen: boolean;
     onClose: () => void;
+}
+
+interface MobileMenuSearchValues {
+    search: string;
 }
 
 const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
@@ -20,6 +26,9 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const { theme, toggleTheme } = useTheme();
     const roleState = useSelector((state: RootState) => state.role);
     const userRole = (roleState.role as UserRole) || "admin";
+    const { control } = useForm<MobileMenuSearchValues>({
+        defaultValues: { search: "" },
+    });
 
     const links = useMemo(() => {
         const navItems = SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin;
@@ -56,14 +65,23 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                     </div>
 
                     {/* Search in Menu */}
-                    <div className="relative group">
-                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-main transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Qidiruv..."
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-main focus:bg-white/10 transition-all font-medium text-sm"
-                        />
-                    </div>
+                    <Controller
+                        control={control}
+                        name="search"
+                        render={({ field }) => (
+                            <GlobalSearchInput
+                                name={field.name}
+                                value={field.value}
+                                onBlur={field.onBlur}
+                                placeholder="Qidiruv..."
+                                className="w-full"
+                                inputClassName="bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-2xl py-3.5 focus:bg-white/10"
+                                iconClassName="text-white/40 group-focus-within:text-main"
+                                clearButtonClassName="text-white/40 hover:text-white"
+                                onValueChange={field.onChange}
+                            />
+                        )}
+                    />
                 </div>
 
                 {/* Navigation Links */}

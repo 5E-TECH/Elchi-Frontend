@@ -14,21 +14,21 @@ interface OrderStepperProps {
 
 const OrderStepper = ({ steps, currentStep }: OrderStepperProps) => {
     return (
-        <div className="w-full">
-            <div className="flex items-start">
+        <div className="w-full overflow-x-auto custom-scrollbar">
+            <div className="flex min-w-[320px] items-start sm:min-w-0">
                 {steps.map((step, index) => {
                     const isDone = currentStep > step.id;
                     const isActive = currentStep === step.id;
                     const isLast = index === steps.length - 1;
 
                     return (
-                        <div key={step.id} className="flex items-start flex-1">
+                        <div key={step.id} className="flex items-start flex-1 min-w-[140px] sm:min-w-0">
                             {/* Step circle + label */}
                             <div className="flex flex-col items-center">
                                 {/* Circle */}
                                 <div
                                     className={`
-                    w-10 h-10 rounded-full flex items-center justify-center
+                    w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center
                     font-bold text-sm transition-all duration-300 border-2
                     ${isDone
                                             ? "bg-main border-main text-primary"
@@ -42,9 +42,9 @@ const OrderStepper = ({ steps, currentStep }: OrderStepperProps) => {
                                 </div>
 
                                 {/* Label */}
-                                <div className="mt-2 text-center">
+                                <div className="mt-2 text-center px-1">
                                     <p
-                                        className={`text-xs font-semibold tracking-wide ${isActive
+                                        className={`text-[11px] sm:text-xs font-semibold tracking-wide ${isActive
                                                 ? "text-main"
                                                 : isDone
                                                     ? "text-main/70 dark:text-main/60"
@@ -61,7 +61,7 @@ const OrderStepper = ({ steps, currentStep }: OrderStepperProps) => {
 
                             {/* Connector line */}
                             {!isLast && (
-                                <div className="flex-1 mx-2 mt-5">
+                                <div className="flex-1 mx-2 mt-4.5 sm:mt-5">
                                     <div className="h-0.5 w-full bg-gray-200 dark:bg-primarydark relative overflow-hidden">
                                         <div
                                             className={`

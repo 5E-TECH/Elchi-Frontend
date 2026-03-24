@@ -162,6 +162,12 @@ export const useMails = () => {
       queryFn: () => api.get(`post/orders/${id}`).then((res) => res.data),
     });
 
+  const getRefusedMailsCourierByPostId = (id: string) =>
+    useQuery({
+      queryKey: [MAILS_KEY, "new"],
+      queryFn: () => api.get(`post/orders/rejected/${id}`).then((res) => res.data),
+    });
+
   const getRefusedMails = () =>
     useQuery({
       queryKey: [MAILS_KEY, "refused"],
@@ -186,7 +192,8 @@ export const useMails = () => {
     getOldMails,
     getNewMailsCourier,
     getTodayMailsCourier,
-    getRefusedMailsCourier
+    getRefusedMailsCourier,
+    getRefusedMailsCourierByPostId
   };
 };
 

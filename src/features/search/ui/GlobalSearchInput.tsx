@@ -1,99 +1,162 @@
-import { memo, useState, useEffect, type ChangeEvent } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Search } from 'lucide-react';
-import { setSearchValue } from '../model/searchSlice';
-import { useQueryParams } from '../../../shared/lib/useQueryParams';
-import { useDebounce } from '../../../shared/lib/useDebounce';
-import type { RootState } from '../../../app/config/store';
+import {
+  forwardRef,
+  memo,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type InputHTMLAttributes,
+} from "react";
+import { Search, X } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { setSearchValue } from "../model/searchSlice";
+import { useQueryParams } from "../../../shared/lib/useQueryParams";
+import { useDebounce } from "../../../shared/lib/useDebounce";
+import type { RootState } from "../../../app/config/store";
 
-interface GlobalSearchInputProps {
-    /**
-     * Redux va URL params uchun unique key
-     * Masalan: 'userSearch', 'productSearch'
-     */
-    searchKey: string;
+type NativeInputProps = Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "className" | "value" | "defaultValue" | "name" | "onChange"
+>;
 
-    /**
-     * Placeholder text
-     */
-    placeholder?: string;
-
-    /**
-     * Additional CSS classes
-     */
-    className?: string;
-
-    /**
-     * Debounce delay (ms)
-     * @default 1000
-     */
-    debounceDelay?: number;
+interface GlobalSearchInputProps extends NativeInputProps {
+  searchKey?: string;
+  name?: string;
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+  className?: string;
+  inputClassName?: string;
+  iconClassName?: string;
+  clearButtonClassName?: string;
+  debounceDelay?: number;
+  syncWithRedux?: boolean;
+  syncWithUrl?: boolean;
+  showClearButton?: boolean;
 }
 
-export const GlobalSearchInput = memo(({
-    searchKey,
-    placeholder = 'Qidirish...',
-    className = '',
-    debounceDelay = 1000,
-}: GlobalSearchInputProps) => {
+const GlobalSearchInputBase = forwardRef<HTMLInputElement, GlobalSearchInputProps>(
+  (
+    {
+      searchKey,
+      name,
+      value,
+      defaultValue = "",
+      onValueChange,
+      placeholder = "Qidirish...",
+      className = "",
+      inputClassName = "",
+      iconClassName = "",
+      clearButtonClassName = "",
+      debounceDelay = 1000,
+      syncWithRedux = true,
+      syncWithUrl = true,
+      showClearButton = true,
+      onBlur,
+      ...inputProps
+    },
+    ref,
+  ) => {
     const dispatch = useDispatch();
     const { setParam } = useQueryParams();
+    const generatedName = useId();
+    const resolvedName = name ?? searchKey ?? generatedName;
 
-    // Local state (input uchun)
-    const [localValue, setLocalValue] = useState('');
+    const reduxValue = useSelector((state: RootState) => {
+      if (!searchKey) return "";
+      return (state.search[searchKey] as string) || "";
+    });
 
-    // Redux dan qiymatni olish (faqat o'qish uchun)
-    const reduxValue = useSelector((state: RootState) =>
-        (state.search[searchKey] as string) || ''
+    const isControlled = value !== undefined;
+    const isGlobalMode = Boolean(searchKey) && !isControlled && !onValueChange;
+
+    const [localValue, setLocalValue] = useState(
+      isGlobalMode ? reduxValue : (value ?? defaultValue),
     );
 
-    // URL params ga saqlash uchun debounced function
-    const debouncedSaveToUrl = useDebounce((value: string) => {
-        setParam(searchKey, value);
-        console.log(`✅ URL params ga saqlandi: ${searchKey} = "${value}"`);
+    const debouncedSaveToUrl = useDebounce((nextValue: string) => {
+      if (searchKey && syncWithUrl) {
+        setParam(searchKey, nextValue);
+      }
     }, debounceDelay);
 
-    // Input o'zgarganda
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+    useEffect(() => {
+      if (isGlobalMode) {
+        setLocalValue(reduxValue);
+      }
+    }, [isGlobalMode, reduxValue]);
 
-        // 1. Local state ga darhol saqlash (input responsive bo'lishi uchun)
-        setLocalValue(value);
+    useEffect(() => {
+      if (isControlled) {
+        setLocalValue(value ?? "");
+      }
+    }, [isControlled, value]);
 
-        // 2. Redux ga darhol saqlash
-        dispatch(setSearchValue({ key: searchKey, value }));
+    const currentValue = useMemo(() => {
+      if (isControlled) return value ?? "";
+      return localValue;
+    }, [isControlled, localValue, value]);
 
-        // 3. URL params ga debounce bilan saqlash (1 sekund kutadi)
-        debouncedSaveToUrl(value);
+    const emitChange = (nextValue: string) => {
+      if (!isControlled) {
+        setLocalValue(nextValue);
+      }
+
+      if (isGlobalMode && searchKey) {
+        if (syncWithRedux) {
+          dispatch(setSearchValue({ key: searchKey, value: nextValue }));
+        }
+        debouncedSaveToUrl(nextValue);
+        return;
+      }
+
+      onValueChange?.(nextValue);
     };
 
-    // Redux qiymati o'zgarganda local state ni sync qilish
-    // (Tozalash button bosilganda Redux tozalanadi, local state ham tozalanishi kerak)
-    useEffect(() => {
-        setLocalValue(reduxValue);
-    }, [reduxValue]);
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+      emitChange(event.target.value);
+    };
+
+    const handleClear = () => {
+      emitChange("");
+    };
 
     return (
-        <div className={`relative group ${className}`}>
-            {/* Search Icon */}
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                <Search
-                    className="text-slate-400 dark:text-white/40 group-focus-within:text-main dark:group-focus-within:text-main transition-colors"
-                    size={18}
-                />
-            </div>
-
-            {/* Input */}
-            <input
-                type="text"
-                name={searchKey}
-                value={localValue}
-                onChange={handleChange}
-                placeholder={placeholder}
-                className="w-full bg-primary dark:bg-maindark border-2 border-gray-200 dark:border-primarydark/30 rounded-xl pl-11 pr-4 py-3 text-maindark dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/20 outline-none transition-all hover:border-main/50 dark:hover:border-main/50 hover:shadow-sm focus:shadow-md shadow-sm"
-            />
+      <div className={`relative group ${className}`}>
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+          <Search
+            className={`text-slate-400 dark:text-white/40 group-focus-within:text-main dark:group-focus-within:text-main transition-colors ${iconClassName}`}
+            size={18}
+          />
         </div>
-    );
-});
 
-GlobalSearchInput.displayName = 'GlobalSearchInput';
+        <input
+          {...inputProps}
+          ref={ref}
+          type="text"
+          name={resolvedName}
+          value={currentValue}
+          onChange={handleChange}
+          onBlur={onBlur}
+          placeholder={placeholder}
+          className={`w-full bg-primary dark:bg-maindark border-2 border-gray-200 dark:border-primarydark/30 rounded-xl pl-11 pr-4 py-3 text-maindark dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/20 outline-none transition-all hover:border-main/50 dark:hover:border-main/50 hover:shadow-sm focus:shadow-md shadow-sm ${showClearButton ? "pr-11" : ""} ${inputClassName}`}
+        />
+
+        {showClearButton && currentValue && !inputProps.disabled && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-white/40 dark:hover:text-white transition-colors ${clearButtonClassName}`}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+    );
+  },
+);
+
+GlobalSearchInputBase.displayName = "GlobalSearchInput";
+
+export const GlobalSearchInput = memo(GlobalSearchInputBase);

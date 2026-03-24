@@ -1,44 +1,37 @@
-import { memo, useState } from "react";
+import { memo, useEffect, type ReactNode } from "react";
 import {
-    User, Phone, MapPin, Home,
-    ShoppingBag, Plus, Minus, Trash2,
-    Search, Building2,
+  Building2,
+  Home,
+  MapPin,
+  Minus,
+  Phone,
+  Plus,
+  ShoppingBag,
+  Trash2,
+  User,
 } from "lucide-react";
+import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import { useProducts } from "../../../../entities/product";
-import type { DeliveryType, OrderItem } from "../../../../entities/order/types/order";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-export interface CustomerFormData {
-    phone: string;
-    extra_phone: string;
-    name: string;
-    region_id: string;
-    district_id: string;
-    address: string;
-}
-
-export interface OrderDetailData {
-    items: OrderItem[];
-    total_price: string;
-    where_deliver: DeliveryType;
-    operator: string;
-    comment: string;
-}
-
-interface Step2CombinedProps {
-    marketId: string;
-    customer: CustomerFormData;
-    onCustomerChange: (data: CustomerFormData) => void;
-    details: OrderDetailData;
-    onDetailsChange: (data: OrderDetailData) => void;
-}
-
-// ── Shared UI ─────────────────────────────────────────────────────────────────
+import type { DeliveryType } from "../../../../entities/order/types/order";
+import { GlobalSearchInput } from "../../../../features/search";
+import {
+  formatPhone,
+  formatPrice,
+  stripPhone,
+  stripPrice,
+  type OrderCreateFormValues,
+} from "../model/orderCreateForm";
+import {
+  FormFieldError,
+  getDisabledFieldClassName,
+  getFieldClassName,
+  getSelectFieldClassName,
+  SelectFieldShell,
+} from "./formFieldStyles";
 
 const inputCls = `
-  w-full px-3.5 py-2.5 rounded-xl text-sm
+  w-full min-h-12 px-3 py-2.5 rounded-xl text-sm
   bg-primary dark:bg-primarydark
   border border-gray-200 dark:border-primarydark/80
   text-maindark dark:text-primary placeholder:text-gray-400
@@ -47,544 +40,605 @@ const inputCls = `
 `;
 
 interface FieldProps {
-    label: string;
-    required?: boolean;
-    icon?: React.ReactNode;
-    children: React.ReactNode;
-    wide?: boolean;
+  label: string;
+  required?: boolean;
+  icon?: ReactNode;
+  children: ReactNode;
+  error?: string;
+  wide?: boolean;
 }
 
-const Field = ({ label, required, icon, children, wide }: FieldProps) => (
-    <div className={`flex flex-col gap-1.5${wide ? " col-span-2" : ""}`}>
-        <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            {icon}
-            {label}
-            {required && <span className="text-red-400 ml-0.5">*</span>}
-        </label>
-        {children}
-    </div>
+const Field = ({ label, required, icon, children, error, wide }: FieldProps) => (
+  <div className={`flex flex-col gap-1.5${wide ? " col-span-2" : ""}`}>
+    <label className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide leading-4">
+      <span className="shrink-0">{icon}</span>
+      <span className="break-words">{label}</span>
+      {required && <span className="text-[var(--color-error)] ml-0.5">*</span>}
+    </label>
+    {children}
+    <FormFieldError message={error} />
+  </div>
 );
 
 const SectionHeader = ({
-    icon,
-    title,
-    sub,
+  icon,
+  title,
+  sub,
 }: {
-    icon: React.ReactNode;
-    title: string;
-    sub?: string;
+  icon: ReactNode;
+  title: string;
+  sub?: string;
 }) => (
-    <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 rounded-xl bg-main/10 flex items-center justify-center shrink-0">
-            {icon}
-        </div>
-        <div>
-            <h3 className="font-semibold text-maindark dark:text-primary text-base leading-tight">
-                {title}
-            </h3>
-            {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-        </div>
+  <div className="flex items-center gap-3 mb-4">
+    <div className="w-9 h-9 rounded-xl bg-main/10 flex items-center justify-center shrink-0">
+      {icon}
     </div>
+    <div>
+      <h3 className="font-semibold text-maindark dark:text-primary text-base leading-tight">
+        {title}
+      </h3>
+      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+    </div>
+  </div>
 );
 
-// XX XXX XX XX formatter (9 ta raqam, O'zbekiston formati)
-const formatPhone = (raw: string): string => {
-    const d = raw.replace(/\D/g, "").slice(0, 9);
-    if (d.length <= 2) return d;
-    if (d.length <= 5) return `${d.slice(0, 2)} ${d.slice(2)}`;
-    if (d.length <= 7) return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5)}`;
-    return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7, 9)}`;
-};
+const Step2Combined = () => {
+  const { control: searchControl, watch: watchSearch } = useForm({
+    defaultValues: { productSearch: "" },
+  });
+  const productSearch = watchSearch("productSearch");
 
-// Narxni inson o'qishi uchun formatlash: 1000000 → "1 000 000"
-const formatPrice = (raw: string): string => {
-    const num = raw.replace(/\D/g, "");
-    if (!num) return "";
-    return num.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-};
-const stripPrice = (val: string): string => val.replace(/\D/g, "");
+  const {
+    control,
+    formState: { errors },
+    setValue,
+    getValues,
+  } = useFormContext<OrderCreateFormValues>();
 
-// onChange da faqat raqamlarni olib state ga yozamiz
-const stripPhone = (val: string) => val.replace(/\D/g, "").slice(0, 9);
+  const market = useWatch({ control, name: "market" });
+  const customer = useWatch({ control, name: "customer" });
+  const details = useWatch({ control, name: "details" });
+  const selectedRegionId = customer?.region_id ?? "";
 
-// ── Component ─────────────────────────────────────────────────────────────────
+  const { getRegions, getDistricts } = useLogistics();
+  const { data: regions, isLoading: regLoading } = getRegions();
+  const { data: districts, isLoading: distLoading } = getDistricts(selectedRegionId);
 
-const Step2Combined = memo(
-    ({
-        marketId,
-        customer,
-        onCustomerChange,
-        details,
-        onDetailsChange,
-    }: Step2CombinedProps) => {
-        const [productSearch, setProductSearch] = useState("");
+  const { getByMarketId } = useProducts();
+  const { data: productsData, isLoading: prodLoading } = getByMarketId(
+    market ? String(market.id) : "",
+  );
 
-        // ── Logistics ────────────────────────────────────────────────────────
-        const { getRegions, getDistricts } = useLogistics();
-        const { data: regions, isLoading: regLoading } = getRegions();
-        const { data: districts, isLoading: distLoading } = getDistricts(
-            customer.region_id
-        );
-
-        // ── Products ─────────────────────────────────────────────────────────
-        const { getByMarketId } = useProducts();
-        const { data: productsData, isLoading: prodLoading } =
-            getByMarketId(marketId);
-
-        const toArray = (val: any): any[] => {
-            if (Array.isArray(val)) return val;
-            if (val?.data && Array.isArray(val.data)) return val.data;
-            if (val?.items && Array.isArray(val.items)) return val.items;
-            if (val?.results && Array.isArray(val.results)) return val.results;
-            return [];
-        };
-
-        const regionList = toArray(regions);
-        const districtList = toArray(districts);
-        const allProducts = toArray(productsData);
-        const filteredProducts = allProducts.filter((p: any) =>
-            p.name?.toLowerCase().includes(productSearch.toLowerCase())
-        );
-
-        // ── Customer handlers ─────────────────────────────────────────────────
-        const updateCustomer = (
-            field: keyof CustomerFormData,
-            value: string
-        ) => {
-            const next = { ...customer, [field]: value };
-            if (field === "region_id") next.district_id = "";
-            onCustomerChange(next);
-        };
-
-        // ── Order item handlers ───────────────────────────────────────────────
-        const updateDetails = (field: keyof OrderDetailData, value: any) =>
-            onDetailsChange({ ...details, [field]: value });
-
-        const addProduct = (product: any) => {
-            const existing = details.items.find(
-                (i) => i.product_id === String(product.id)
-            );
-            if (existing) {
-                updateDetails(
-                    "items",
-                    details.items.map((i) =>
-                        i.product_id === String(product.id)
-                            ? { ...i, quantity: i.quantity + 1 }
-                            : i
-                    )
-                );
-            } else {
-                updateDetails("items", [
-                    ...details.items,
-                    { product_id: String(product.id), quantity: 1 },
-                ]);
-            }
-        };
-
-        const changeQty = (productId: string, delta: number) => {
-            updateDetails(
-                "items",
-                details.items
-                    .map((i) =>
-                        i.product_id === productId
-                            ? { ...i, quantity: Math.max(1, i.quantity + delta) }
-                            : i
-                    )
-                    .filter((i) => i.quantity > 0)
-            );
-        };
-
-        const removeItem = (productId: string) =>
-            updateDetails(
-                "items",
-                details.items.filter((i) => i.product_id !== productId)
-            );
-
-        const getProduct = (id: string) =>
-            allProducts.find((p: any) => String(p.id) === id);
-
-        // ── Render ────────────────────────────────────────────────────────────
-        return (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* ══ LEFT: Mijoz ma'lumotlari ══════════════════════════════════ */}
-                <div className="flex flex-col gap-5 bg-primary dark:bg-primarydark/30 rounded-2xl border border-gray-200 dark:border-primarydark p-5">
-                    <SectionHeader
-                        icon={<User size={18} className="text-main" />}
-                        title="Mijoz ma'lumotlari"
-                        sub="Yetkazib berish uchun ma'lumotlar"
-                    />
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Phone */}
-                        <Field label="Telefon" required icon={<Phone size={12} />}>
-                            <div className="relative">
-                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
-                                    +998
-                                </span>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    placeholder="XX XXX XX XX"
-                                    value={formatPhone(customer.phone)}
-                                    onChange={(e) =>
-                                        updateCustomer("phone", stripPhone(e.target.value))
-                                    }
-                                    className={`${inputCls} pl-14 font-mono tracking-wider`}
-                                />
-                            </div>
-                        </Field>
-
-                        {/* Extra phone */}
-                        <Field label="Qo'shimcha raqam" icon={<Phone size={12} />}>
-                            <div className="relative">
-                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
-                                    +998
-                                </span>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    placeholder="XX XXX XX XX"
-                                    value={formatPhone(customer.extra_phone)}
-                                    onChange={(e) =>
-                                        updateCustomer("extra_phone", stripPhone(e.target.value))
-                                    }
-                                    className={`${inputCls} pl-14 font-mono tracking-wider`}
-                                />
-                            </div>
-                        </Field>
-
-                        {/* Name */}
-                        <Field label="Ism" required icon={<User size={12} />}>
-                            <input
-                                type="text"
-                                placeholder="Ism kiriting"
-                                value={customer.name}
-                                onChange={(e) => updateCustomer("name", e.target.value)}
-                                className={inputCls}
-                            />
-                        </Field>
-
-                        {/* Region */}
-                        <Field label="Viloyat" required icon={<MapPin size={12} />}>
-                            <select
-                                value={customer.region_id}
-                                onChange={(e) =>
-                                    updateCustomer("region_id", e.target.value)
-                                }
-                                disabled={regLoading}
-                                className={`${inputCls} cursor-pointer`}
-                            >
-                                <option value="">
-                                    {regLoading ? "Yuklanmoqda..." : "Viloyat tanlang"}
-                                </option>
-                                {regionList.map((r: any) => (
-                                    <option key={r.id} value={r.id}>
-                                        {r.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </Field>
-
-                        {/* District */}
-                        <Field label="Tuman" required icon={<MapPin size={12} />}>
-                            <select
-                                value={customer.district_id}
-                                onChange={(e) =>
-                                    updateCustomer("district_id", e.target.value)
-                                }
-                                disabled={!customer.region_id || distLoading}
-                                className={`${inputCls} cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                                <option value="">
-                                    {!customer.region_id
-                                        ? "Avval viloyat tanlang"
-                                        : distLoading
-                                            ? "Yuklanmoqda..."
-                                            : "Tuman tanlang"}
-                                </option>
-                                {districtList.map((d: any) => (
-                                    <option key={d.id} value={d.id}>
-                                        {d.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </Field>
-
-                        {/* Address — full width */}
-                        <Field label="Manzil" required icon={<Home size={12} />} wide>
-                            <textarea
-                                rows={2}
-                                placeholder="To'liq manzil kiriting..."
-                                value={customer.address}
-                                onChange={(e) =>
-                                    updateCustomer("address", e.target.value)
-                                }
-                                className={`${inputCls} resize-none`}
-                            />
-                        </Field>
-                    </div>
-                </div>
-
-                {/* ══ RIGHT: Buyurtma tafsilotlari ══════════════════════════════ */}
-                <div className="flex flex-col gap-5 bg-primary dark:bg-primarydark/30 rounded-2xl border border-gray-200 dark:border-primarydark p-5">
-                    <SectionHeader
-                        icon={<ShoppingBag size={18} className="text-main" />}
-                        title="Buyurtma tafsilotlari"
-                        sub={`${details.items.length} ta mahsulot tanlangan`}
-                    />
-
-                    {/* Product picker + selected */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Product search list */}
-                        <div className="flex flex-col gap-2">
-                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                Mahsulot qo'shish
-                            </p>
-                            <div className="relative">
-                                <Search
-                                    size={13}
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Qidiring..."
-                                    value={productSearch}
-                                    onChange={(e) => setProductSearch(e.target.value)}
-                                    className={`${inputCls} pl-8`}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto custom-scrollbar pr-0.5">
-                                {prodLoading
-                                    ? Array.from({ length: 3 }).map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className="h-12 rounded-xl bg-gray-100 dark:bg-primarydark animate-pulse"
-                                        />
-                                    ))
-                                    : filteredProducts.length === 0
-                                        ? (
-                                            <div className="py-6 flex flex-col items-center gap-1.5 text-gray-400">
-                                                <ShoppingBag size={26} strokeWidth={1} />
-                                                <p className="text-xs">Topilmadi</p>
-                                            </div>
-                                        )
-                                        : filteredProducts.map((product: any) => {
-                                            const isAdded = details.items.some(
-                                                (i) => i.product_id === String(product.id)
-                                            );
-                                            return (
-                                                <button
-                                                    key={product.id}
-                                                    onClick={() => addProduct(product)}
-                                                    className={`
-                            flex items-center gap-2.5 px-3 py-2 rounded-xl text-left
-                            border-2 transition-all duration-200 group
-                            ${isAdded
-                                                            ? "border-main/40 bg-main/5 dark:bg-main/10"
-                                                            : "border-gray-200 dark:border-primarydark bg-primary dark:bg-primarydark hover:border-main/30"
-                                                        }
-                          `}
-                                                >
-                                                    <div className="w-8 h-8 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0 overflow-hidden">
-                                                        {product.image ? (
-                                                            <img
-                                                                src={product.image}
-                                                                alt={product.name}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <ShoppingBag
-                                                                size={13}
-                                                                className="text-main/50"
-                                                            />
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-xs font-semibold text-maindark dark:text-primary truncate">
-                                                            {product.name}
-                                                        </p>
-                                                        <p className="text-xs text-main font-mono">
-                                                            {product.price?.toLocaleString()} so'm
-                                                        </p>
-                                                    </div>
-                                                    <div
-                                                        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${isAdded
-                                                            ? "bg-main text-primary"
-                                                            : "bg-sidebar dark:bg-background text-main"
-                                                            }`}
-                                                    >
-                                                        <Plus size={12} />
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                            </div>
-                        </div>
-
-                        {/* Selected items */}
-                        <div className="flex flex-col gap-2">
-                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                Tanlangan
-                            </p>
-                            {details.items.length === 0 ? (
-                                <div className="flex-1 flex flex-col items-center justify-center py-8 gap-2 text-gray-400 border-2 border-dashed border-gray-200 dark:border-primarydark rounded-xl">
-                                    <ShoppingBag size={26} strokeWidth={1} />
-                                    <p className="text-xs text-center">
-                                        Mahsulot tanlang
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto custom-scrollbar pr-0.5">
-                                    {details.items.map((item) => {
-                                        const product = getProduct(item.product_id);
-                                        return (
-                                            <div
-                                                key={item.product_id}
-                                                className="flex items-center gap-2 p-2.5 rounded-xl bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark/60"
-                                            >
-                                                <div className="w-8 h-8 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0">
-                                                    <ShoppingBag
-                                                        size={12}
-                                                        className="text-main/50"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-semibold text-maindark dark:text-primary truncate">
-                                                        {product?.name ?? `#${item.product_id}`}
-                                                    </p>
-                                                    <p className="text-xs text-main font-mono">
-                                                        {product?.price?.toLocaleString()} so'm
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={() =>
-                                                            changeQty(item.product_id, -1)
-                                                        }
-                                                        className="w-6 h-6 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors"
-                                                    >
-                                                        <Minus size={10} />
-                                                    </button>
-                                                    <span className="w-5 text-center text-xs font-bold text-maindark dark:text-primary">
-                                                        {item.quantity}
-                                                    </span>
-                                                    <button
-                                                        onClick={() =>
-                                                            changeQty(item.product_id, 1)
-                                                        }
-                                                        className="w-6 h-6 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors"
-                                                    >
-                                                        <Plus size={10} />
-                                                    </button>
-                                                </div>
-                                                <button
-                                                    onClick={() => removeItem(item.product_id)}
-                                                    className="text-gray-300 hover:text-red-400 transition-colors ml-0.5"
-                                                >
-                                                    <Trash2 size={13} />
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Delivery + payment */}
-                    <div className="border-t border-gray-200 dark:border-primarydark pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Delivery type */}
-                        <div className="sm:col-span-2 flex flex-col gap-2">
-                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                Yetkazib berish
-                            </p>
-                            <div className="grid grid-cols-2 gap-3">
-                                {(
-                                    [
-                                        { value: "center" as DeliveryType, label: "Markaz", icon: Building2 },
-                                        { value: "address" as DeliveryType, label: "Uy", icon: Home },
-                                    ] as const
-                                ).map(({ value, label, icon: Icon }) => (
-                                    <button
-                                        key={value}
-                                        onClick={() => updateDetails("where_deliver", value)}
-                                        className={`
-                      flex items-center justify-center gap-2 py-2.5 rounded-xl
-                      border-2 font-semibold text-sm transition-all duration-200
-                      ${details.where_deliver === value
-                                                ? "border-main bg-main text-primary shadow-md shadow-main/20"
-                                                : "border-gray-200 dark:border-primarydark text-gray-500 dark:text-gray-400 hover:border-main/40"
-                                            }
-                    `}
-                                    >
-                                        <Icon size={15} />
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Total price */}
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                Umumiy summa *
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    placeholder="0"
-                                    value={formatPrice(details.total_price)}
-                                    onChange={(e) =>
-                                        updateDetails("total_price", stripPrice(e.target.value))
-                                    }
-                                    className={`${inputCls} font-mono tracking-wider`}
-                                />
-                                {details.total_price && (
-                                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
-                                        so'm
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Operator */}
-                        <div className="flex flex-col gap-1.5">
-                            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                <User size={12} /> Operator
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="Operator ismi"
-                                value={details.operator}
-                                onChange={(e) =>
-                                    updateDetails("operator", e.target.value)
-                                }
-                                className={inputCls}
-                            />
-                        </div>
-
-                        {/* Comment */}
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                Izoh (ixtiyoriy)
-                            </label>
-                            <textarea
-                                rows={2}
-                                placeholder="Izoh..."
-                                value={details.comment}
-                                onChange={(e) =>
-                                    updateDetails("comment", e.target.value)
-                                }
-                                className={`${inputCls} resize-none`}
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+  const toArray = (value: unknown): any[] => {
+    if (Array.isArray(value)) return value;
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "data" in value &&
+      Array.isArray((value as { data?: unknown[] }).data)
+    ) {
+      return (value as { data: unknown[] }).data;
     }
-);
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "items" in value &&
+      Array.isArray((value as { items?: unknown[] }).items)
+    ) {
+      return (value as { items: unknown[] }).items;
+    }
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "results" in value &&
+      Array.isArray((value as { results?: unknown[] }).results)
+    ) {
+      return (value as { results: unknown[] }).results;
+    }
+    return [];
+  };
 
-Step2Combined.displayName = "Step2Combined";
-export default Step2Combined;
+  const regionList = toArray(regions);
+  const districtList = toArray(districts);
+  const allProducts = toArray(productsData);
+  const filteredProducts = allProducts.filter((product: any) =>
+    product.name?.toLowerCase().includes(productSearch.toLowerCase()),
+  );
+
+  useEffect(() => {
+    setValue("customer.district_id", "");
+  }, [selectedRegionId, setValue]);
+
+  const updateItems = (
+    updater: (items: OrderCreateFormValues["details"]["items"]) => OrderCreateFormValues["details"]["items"],
+  ) => {
+    const currentItems = getValues("details.items");
+    setValue("details.items", updater(currentItems), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const addProduct = (product: any) => {
+    updateItems((items) => {
+      const existing = items.find((item) => item.product_id === String(product.id));
+
+      if (existing) {
+        return items.map((item) =>
+          item.product_id === String(product.id)
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        );
+      }
+
+      return [...items, { product_id: String(product.id), quantity: 1 }];
+    });
+  };
+
+  const changeQty = (productId: string, delta: number) => {
+    updateItems((items) =>
+      items
+        .map((item) =>
+          item.product_id === productId
+            ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+            : item,
+        )
+        .filter((item) => item.quantity > 0),
+    );
+  };
+
+  const removeItem = (productId: string) => {
+    updateItems((items) => items.filter((item) => item.product_id !== productId));
+  };
+
+  const getProduct = (id: string) =>
+    allProducts.find((product: any) => String(product.id) === id);
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-6">
+      <div className="flex flex-col gap-4 sm:gap-5 bg-primary dark:bg-primarydark/30 rounded-2xl border border-gray-200 dark:border-primarydark p-3 sm:p-5">
+        <SectionHeader
+          icon={<User size={18} className="text-main" />}
+          title="Mijoz ma'lumotlari"
+          sub="Yetkazib berish uchun kerakli ma'lumotlarni kiriting"
+        />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          <Controller
+            control={control}
+            name="customer.phone"
+            render={({ field }) => (
+              <Field
+                label="Telefon"
+                required
+                icon={<Phone size={12} />}
+                error={errors.customer?.phone?.message}
+              >
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
+                    +998
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="XX XXX XX XX"
+                    value={formatPhone(field.value)}
+                    onChange={(event) => field.onChange(stripPhone(event.target.value))}
+                    className={getFieldClassName(
+                      `${inputCls} pl-14 font-mono tracking-wider`,
+                      !!errors.customer?.phone?.message,
+                    )}
+                  />
+                </div>
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="customer.extra_phone"
+            render={({ field }) => (
+              <Field
+                label="Qo'shimcha raqam"
+                icon={<Phone size={12} />}
+                error={errors.customer?.extra_phone?.message}
+              >
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
+                    +998
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="XX XXX XX XX"
+                    value={formatPhone(field.value)}
+                    onChange={(event) => field.onChange(stripPhone(event.target.value))}
+                    className={getFieldClassName(
+                      `${inputCls} pl-14 font-mono tracking-wider`,
+                      !!errors.customer?.extra_phone?.message,
+                    )}
+                  />
+                </div>
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="customer.name"
+            render={({ field }) => (
+              <Field
+                label="Ism"
+                required
+                icon={<User size={12} />}
+                error={errors.customer?.name?.message}
+              >
+                <input
+                  {...field}
+                  type="text"
+                  placeholder="Ism kiriting"
+                  className={getFieldClassName(inputCls, !!errors.customer?.name?.message)}
+                />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="customer.region_id"
+            render={({ field }) => (
+              <Field
+                label="Viloyat"
+                required
+                icon={<MapPin size={12} />}
+                error={errors.customer?.region_id?.message}
+              >
+                <SelectFieldShell
+                  hasError={!!errors.customer?.region_id?.message}
+                  disabled={regLoading}
+                >
+                  <select
+                    {...field}
+                    disabled={regLoading}
+                    className={getSelectFieldClassName(
+                      getDisabledFieldClassName(`${inputCls} cursor-pointer`),
+                      !!errors.customer?.region_id?.message,
+                    )}
+                  >
+                    <option value="">
+                      {regLoading ? "Yuklanmoqda..." : "Viloyat tanlang"}
+                    </option>
+                    {regionList.map((region: any) => (
+                      <option key={region.id} value={region.id}>
+                        {region.name}
+                      </option>
+                    ))}
+                  </select>
+                </SelectFieldShell>
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="customer.district_id"
+            render={({ field }) => (
+              <Field
+                label="Tuman"
+                required
+                icon={<MapPin size={12} />}
+                error={errors.customer?.district_id?.message}
+              >
+                <SelectFieldShell
+                  hasError={!!errors.customer?.district_id?.message}
+                  disabled={!selectedRegionId || distLoading}
+                >
+                  <select
+                    {...field}
+                    disabled={!selectedRegionId || distLoading}
+                    className={getSelectFieldClassName(
+                      getDisabledFieldClassName(`${inputCls} cursor-pointer`),
+                      !!errors.customer?.district_id?.message,
+                    )}
+                  >
+                    <option value="">
+                      {!selectedRegionId
+                        ? "Avval viloyat tanlang"
+                        : distLoading
+                          ? "Yuklanmoqda..."
+                          : "Tuman tanlang"}
+                    </option>
+                    {districtList.map((district: any) => (
+                      <option key={district.id} value={district.id}>
+                        {district.name}
+                      </option>
+                    ))}
+                  </select>
+                </SelectFieldShell>
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="customer.address"
+            render={({ field }) => (
+              <Field
+                label="Manzil"
+                required
+                icon={<Home size={12} />}
+                error={errors.customer?.address?.message}
+                wide
+              >
+                <textarea
+                  {...field}
+                  rows={2}
+                  placeholder="To'liq manzil kiriting..."
+                  className={getFieldClassName(
+                    `${inputCls} resize-none`,
+                    !!errors.customer?.address?.message,
+                  )}
+                />
+              </Field>
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 sm:gap-5 bg-primary dark:bg-primarydark/30 rounded-2xl border border-gray-200 dark:border-primarydark p-3 sm:p-5">
+        <SectionHeader
+          icon={<ShoppingBag size={18} className="text-main" />}
+          title="Buyurtma tafsilotlari"
+          sub={`${details.items.length} ta mahsulot tanlangan`}
+        />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Mahsulot qo'shish
+            </p>
+            <Controller
+              control={searchControl}
+              name="productSearch"
+              render={({ field }) => (
+                <GlobalSearchInput
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onValueChange={field.onChange}
+                  placeholder="Qidiring..."
+                  className="w-full"
+                  inputClassName={`${inputCls} py-2 pl-11 shadow-none focus:shadow-none`}
+                  iconClassName="text-gray-400 group-focus-within:text-main"
+                  clearButtonClassName="text-gray-400 hover:text-main"
+                />
+              )}
+            />
+            <div className="flex flex-col gap-1.5 max-h-[220px] sm:max-h-[200px] overflow-y-auto custom-scrollbar pr-0.5">
+              {prodLoading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-12 rounded-xl bg-gray-100 dark:bg-primarydark animate-pulse"
+                  />
+                ))
+              ) : filteredProducts.length === 0 ? (
+                <div className="py-6 flex flex-col items-center gap-1.5 text-gray-400">
+                  <ShoppingBag size={26} strokeWidth={1} />
+                  <p className="text-xs">Topilmadi</p>
+                </div>
+              ) : (
+                filteredProducts.map((product: any) => {
+                  const isAdded = details.items.some(
+                    (item) => item.product_id === String(product.id),
+                  );
+
+                  return (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => addProduct(product)}
+                      className={`
+                        flex items-center gap-2 px-3 py-2.5 rounded-xl text-left
+                        border-2 transition-all duration-200 group cursor-pointer
+                        ${isAdded
+                          ? "border-main/40 bg-main/5 dark:bg-main/10"
+                          : "border-gray-200 dark:border-primarydark bg-primary dark:bg-primarydark hover:border-main/30"}
+                      `}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0 overflow-hidden">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ShoppingBag size={13} className="text-main/50" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-semibold text-maindark dark:text-primary truncate">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-main font-mono">
+                          {product.price?.toLocaleString()} so'm
+                        </p>
+                      </div>
+                      <div
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${isAdded ? "bg-main text-primary" : "bg-sidebar dark:bg-background text-main"}`}
+                      >
+                        <Plus size={12} />
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            <FormFieldError message={errors.details?.items?.message} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Tanlangan
+            </p>
+            {details.items.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-8 gap-2 text-gray-400 border-2 border-dashed border-gray-200 dark:border-primarydark rounded-xl">
+                <ShoppingBag size={26} strokeWidth={1} />
+                <p className="text-xs text-center">Mahsulot tanlang</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5 max-h-[240px] sm:max-h-[200px] overflow-y-auto custom-scrollbar pr-0.5">
+                {details.items.map((item) => {
+                  const product = getProduct(item.product_id);
+                  return (
+                    <div
+                      key={item.product_id}
+                      className="flex flex-col items-stretch gap-2 p-2.5 rounded-xl bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark/60 sm:flex-row sm:items-center"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0">
+                        <ShoppingBag size={12} className="text-main/50" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-semibold text-maindark dark:text-primary truncate">
+                          {product?.name ?? `#${item.product_id}`}
+                        </p>
+                        <p className="text-xs text-main font-mono">
+                          {product?.price?.toLocaleString()} so'm
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-end gap-1 sm:ml-auto">
+                        <button
+                          type="button"
+                          onClick={() => changeQty(item.product_id, -1)}
+                          className="w-6 h-6 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors cursor-pointer"
+                        >
+                          <Minus size={10} />
+                        </button>
+                        <span className="w-5 text-center text-xs font-bold text-maindark dark:text-primary">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => changeQty(item.product_id, 1)}
+                          className="w-6 h-6 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors cursor-pointer"
+                        >
+                          <Plus size={10} />
+                        </button>
+                      </div>
+                      <div className="flex justify-end sm:block">
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.product_id)}
+                          className="text-gray-300 hover:text-[var(--color-error)] transition-colors ml-0.5 cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 dark:border-primarydark pt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          <Controller
+            control={control}
+            name="details.where_deliver"
+            render={({ field }) => (
+              <div className="sm:col-span-2 flex flex-col gap-2">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Yetkazib berish
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                  {(
+                    [
+                      { value: "center" as DeliveryType, label: "Markaz", icon: Building2 },
+                      { value: "address" as DeliveryType, label: "Uy", icon: Home },
+                    ] as const
+                  ).map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => field.onChange(value)}
+                    className={getFieldClassName(`
+                        flex min-h-11 items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-center
+                        border-2 font-semibold text-sm transition-all duration-200 cursor-pointer
+                        ${field.value === value
+                          ? "border-main bg-main text-primary shadow-md shadow-main/20"
+                          : "border-gray-200 dark:border-primarydark text-gray-500 dark:text-gray-400 hover:border-main/40"}
+                      `, !!errors.details?.where_deliver?.message)}
+                    >
+                      <Icon size={15} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="details.total_price"
+            render={({ field }) => (
+              <Field label="Umumiy summa" required error={errors.details?.total_price?.message}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={formatPrice(field.value)}
+                  onChange={(event) => field.onChange(stripPrice(event.target.value))}
+                  className={getFieldClassName(`
+                    w-full px-3.5 py-2.5 rounded-xl text-sm font-mono
+                    bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark
+                    text-maindark dark:text-primary placeholder:text-gray-400
+                    focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
+                    transition-all duration-200
+                  `, !!errors.details?.total_price?.message)}
+                />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="details.operator"
+            render={({ field }) => (
+              <Field label="Operator" icon={<User size={12} />}>
+                <input
+                  {...field}
+                  type="text"
+                  placeholder="Operator ismi"
+                  className={getFieldClassName(inputCls, !!errors.details?.operator?.message)}
+                />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="details.comment"
+            render={({ field }) => (
+              <Field label="Izoh" wide>
+                <textarea
+                  {...field}
+                  rows={2}
+                  placeholder="Izoh..."
+                  className={getFieldClassName(
+                    `${inputCls} resize-none`,
+                    !!errors.details?.comment?.message,
+                  )}
+                />
+              </Field>
+            )}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default memo(Step2Combined);

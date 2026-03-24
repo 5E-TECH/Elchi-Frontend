@@ -1,214 +1,229 @@
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, SendHorizontal, ListPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListPlus, SendHorizontal } from "lucide-react";
+import { FormProvider, useForm, useWatch, type Resolver } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import HeaderName from "../../../shared/components/headerName";
 import OrderStepper from "./ui/OrderStepper";
 import Step1Market from "./ui/Step1Market";
 import Step2Combined from "./ui/Step2Combined";
+import { FormStateNote, getActionButtonClassName } from "./ui/formFieldStyles";
 import { useOrders } from "../../../entities/order/api/orderApi";
-import type { CreateOrderRequest, DeliveryType } from "../../../entities/order/types/order";
+import {
+  buildCreateOrderPayload,
+  ORDER_CREATE_DEFAULT_VALUES,
+  orderCreateSchema,
+  type OrderCreateFormValues,
+} from "./model/orderCreateForm";
 
-// ── Step config ──────────────────────────────────────────────
 const STEPS = [
   { id: 1, label: "1-qadam", description: "Market tanlang" },
   { id: 2, label: "2-qadam", description: "Mijoz va buyurtma ma'lumotlari" },
 ];
 
-// ── Types ─────────────────────────────────────────────────────
-interface Market { id: number; name: string; phone?: string }
+const StepActions = ({
+  step,
+  canNext,
+  isSubmitting,
+  onBack,
+  onNext,
+}: {
+  step: number;
+  canNext: boolean;
+  isSubmitting: boolean;
+  onBack: () => void;
+  onNext: () => void;
+}) => (
+  <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <button
+      type="button"
+      onClick={onBack}
+      className={`${getActionButtonClassName({ variant: "secondary" })} w-full sm:w-auto`}
+    >
+      <ChevronLeft size={16} />
+      {step === 1 ? "Orqaga" : "Oldingi"}
+    </button>
 
-interface CustomerData {
-  phone: string; extra_phone: string; name: string;
-  region_id: string; district_id: string; address: string;
-}
+    <div className="flex w-full flex-col items-center gap-2 px-0 text-center sm:w-auto sm:px-4">
+      <span className="text-xs text-gray-400 font-medium">
+        {step} / {STEPS.length}
+      </span>
+      {isSubmitting ? (
+        <FormStateNote
+          state="loading"
+          message="Buyurtma saqlanmoqda, iltimos kuting"
+        />
+      ) : canNext ? (
+        <FormStateNote
+          state="success"
+          message={
+            step < 2
+              ? "Keyingi bosqichga o'tish uchun ma'lumotlar tayyor"
+              : "Buyurtma yuborishga tayyor"
+          }
+        />
+      ) : (
+        <FormStateNote
+          state="info"
+          message={
+            step < 2
+              ? "Avval market tanlang"
+              : "Majburiy maydonlarni to'ldirib, mahsulot tanlang"
+          }
+        />
+      )}
+    </div>
 
-interface DetailsData {
-  items: { product_id: string; quantity: number }[];
-  total_price: string;
-  where_deliver: DeliveryType;
-  operator: string;
-  comment: string;
-}
+    {step < 2 ? (
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={!canNext}
+        className={getActionButtonClassName({
+          variant: "primary",
+          disabled: !canNext,
+        }) + " w-full sm:w-auto"}
+      >
+        Keyingi
+        <ChevronRight size={16} />
+      </button>
+    ) : (
+      <button
+        type="submit"
+        disabled={!canNext || isSubmitting}
+        className={getActionButtonClassName({
+          variant: "primary",
+          disabled: !canNext || isSubmitting,
+        }) + " w-full sm:w-auto"}
+      >
+        {isSubmitting ? (
+          <>
+            <span className="w-4 h-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+            Saqlanmoqda...
+          </>
+        ) : (
+          <>
+            <SendHorizontal size={16} />
+            Buyurtma yaratish
+          </>
+        )}
+      </button>
+    )}
+  </div>
+);
 
-const INIT_CUSTOMER: CustomerData = {
-  phone: "", extra_phone: "", name: "",
-  region_id: "", district_id: "", address: "",
-};
-
-const INIT_DETAILS: DetailsData = {
-  items: [],
-  total_price: "",
-  where_deliver: "center",
-  operator: "",
-  comment: "",
-};
-
-// ── Validation ───────────────────────────────────────────────
-const isStep1Valid = (market: Market | null) => !!market;
-
-const isStep2Valid = (c: CustomerData, d: DetailsData) =>
-  c.phone.trim().length >= 9 &&
-  !!c.name.trim() &&
-  !!c.district_id &&
-  d.items.length > 0 &&
-  d.total_price !== "";
-
-// ── Component ────────────────────────────────────────────────
-const OrderCreate = () => {
+const OrderCreateFormContent = () => {
   const navigate = useNavigate();
   const { createOrder } = useOrders();
-
   const [step, setStep] = useState(1);
-  const [market, setMarket] = useState<Market | null>(null);
-  const [customer, setCustomer] = useState<CustomerData>(INIT_CUSTOMER);
-  const [details, setDetails] = useState<DetailsData>(INIT_DETAILS);
 
-  const canNext =
-    step === 1
-      ? isStep1Valid(market)
-      : isStep2Valid(customer, details);
+  const methods = useForm<OrderCreateFormValues>({
+    resolver: yupResolver(orderCreateSchema) as Resolver<OrderCreateFormValues>,
+    mode: "onTouched",
+    defaultValues: ORDER_CREATE_DEFAULT_VALUES,
+  });
 
-  const handleBack = () => { if (step > 1) setStep((s) => s - 1); };
-  const handleNext = () => { if (step < 2 && canNext) setStep((s) => s + 1); };
+  const { control, handleSubmit, trigger } = methods;
 
-  // Extra phone ni XX-XXX-XX-XX formatida qaytaradi
-  const formatExtraNumber = (raw: string): string => {
-    const d = raw.replace(/\D/g, "").slice(0, 9);
-    if (d.length < 9) return d;
-    return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5, 7)}-${d.slice(7, 9)}`;
+  const market = useWatch({ control, name: "market" });
+  const customer = useWatch({ control, name: "customer" });
+  const details = useWatch({ control, name: "details" });
+
+  const canNext = useMemo(() => {
+    if (step === 1) {
+      return !!market;
+    }
+
+    return Boolean(
+      market &&
+        customer?.phone?.trim() &&
+        customer?.name?.trim() &&
+        customer?.region_id &&
+        customer?.district_id &&
+        details?.items?.length &&
+        details?.total_price?.trim(),
+    );
+  }, [customer, details, market, step]);
+
+  const handleBack = () => {
+    if (step === 1) {
+      navigate("/orders");
+      return;
+    }
+
+    setStep((current) => current - 1);
   };
 
-  const handleSubmit = async () => {
-    if (!market || !canNext) return;
+  const handleNext = async () => {
+    const isValid = await trigger("market");
+    if (isValid) {
+      setStep(2);
+    }
+  };
 
-    const payload: CreateOrderRequest = {
-      market_id: String(market.id),
-
-      // Mijoz ma'lumotlari — nested object
-      customer: {
-        name: customer.name,
-        phone_number: `+998${customer.phone}`,
-        district_id: customer.district_id,
-        ...(customer.extra_phone && {
-          extra_number: formatExtraNumber(customer.extra_phone),
-        }),
-        ...(customer.address && { address: customer.address }),
-      },
-
-      // Top-level maydonlar
-      items: details.items,
-      district_id: customer.district_id,
-      region_id: customer.region_id,
-      total_price: Number(details.total_price),
-      where_deliver: details.where_deliver,
-      ...(customer.address && { address: customer.address }),
-      ...(details.comment && { comment: details.comment }),
-      ...(details.operator && { operator: details.operator }),
-    };
-
-    createOrder.mutate(payload, {
+  const onSubmit = (values: OrderCreateFormValues) => {
+    createOrder.mutate(buildCreateOrderPayload(values), {
       onSuccess: () => navigate("/orders"),
     });
   };
 
+  const handleFinalSubmit = async () => {
+    const isValid = await trigger([
+      "customer.phone",
+      "customer.name",
+      "customer.region_id",
+      "customer.district_id",
+      "customer.address",
+      "details.items",
+      "details.total_price",
+      "details.where_deliver",
+    ]);
+
+    if (!isValid) return;
+
+    await handleSubmit(onSubmit)();
+  };
+
   return (
-    <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-6 min-h-full">
-      {/* ── Page header ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4">
-        <HeaderName
-          name="Yangi buyurtma"
-          description="Buyurtma yaratish uchun qadamlarni bajaring"
-          icon={<ListPlus />}
-        />
-      </div>
-
-      {/* ── Stepper ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-6 py-5">
-        <OrderStepper steps={STEPS} currentStep={step} />
-      </div>
-
-      {/* ── Step content ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-6 flex-1">
-        {step === 1 && (
-          <Step1Market selectedMarket={market} onSelect={setMarket} />
-        )}
-        {step === 2 && market && (
-          <Step2Combined
-            marketId={String(market.id)}
-            customer={customer}
-            onCustomerChange={setCustomer}
-            details={details}
-            onDetailsChange={setDetails}
+    <FormProvider {...methods}>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleFinalSubmit();
+        }}
+        className="p-3 sm:p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-3 sm:gap-6 min-h-full"
+      >
+        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 sm:px-4">
+          <HeaderName
+            name="Yangi buyurtma"
+            description="Buyurtma yaratish uchun qadamlarni bajaring"
+            icon={<ListPlus />}
           />
-        )}
-      </div>
+        </div>
 
-      {/* ── Navigation ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-6 py-4 flex items-center justify-between">
-        {/* Back */}
-        <button
-          onClick={step === 1 ? () => navigate("/orders") : handleBack}
-          className="
-            flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
-            border-2 border-gray-200 dark:border-primarydark
-            text-gray-500 dark:text-gray-400
-            hover:border-main/40 hover:text-main
-            transition-all duration-200
-          "
-        >
-          <ChevronLeft size={16} />
-          {step === 1 ? "Orqaga" : "Oldingi"}
-        </button>
+        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 py-3 sm:px-6 sm:py-5">
+          <OrderStepper steps={STEPS} currentStep={step} />
+        </div>
 
-        {/* Step indicator */}
-        <span className="text-xs text-gray-400 font-medium">
-          {step} / {STEPS.length}
-        </span>
+        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-6 flex-1">
+          {step === 1 && <Step1Market />}
+          {step === 2 && <Step2Combined />}
+        </div>
 
-        {/* Next / Submit */}
-        {step < 2 ? (
-          <button
-            onClick={handleNext}
-            disabled={!canNext}
-            className="
-              flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
-              bg-main text-primary
-              hover:bg-main/90 active:scale-95
-              disabled:opacity-40 disabled:cursor-not-allowed
-              transition-all duration-200 shadow-md shadow-main/20
-            "
-          >
-            Keyingi
-            <ChevronRight size={16} />
-          </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={!canNext || createOrder.isPending}
-            className="
-              flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold
-              bg-main text-primary
-              hover:bg-main/90 active:scale-95
-              disabled:opacity-40 disabled:cursor-not-allowed
-              transition-all duration-200 shadow-md shadow-main/20
-            "
-          >
-            {createOrder.isPending ? (
-              <>
-                <span className="w-4 h-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-                Saqlanmoqda...
-              </>
-            ) : (
-              <>
-                <SendHorizontal size={16} />
-                Buyurtma yaratish
-              </>
-            )}
-          </button>
-        )}
-      </div>
-    </div>
+        <StepActions
+          step={step}
+          canNext={canNext}
+          isSubmitting={createOrder.isPending}
+          onBack={handleBack}
+          onNext={() => {
+            void handleNext();
+          }}
+        />
+      </form>
+    </FormProvider>
   );
 };
+
+const OrderCreate = () => <OrderCreateFormContent />;
 
 export default memo(OrderCreate);
