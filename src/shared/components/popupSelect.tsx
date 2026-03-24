@@ -1,8 +1,10 @@
 import { memo, useState, type ReactNode, useMemo } from 'react';
 import HeaderName from './headerName';
-import { Check, Search, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import Button from './button';
 import Popup from '../ui/Popup';
+import { Controller, useForm } from "react-hook-form";
+import { GlobalSearchInput } from "../../features/search";
 
 interface PopupSelectProps<T> {
   isOpen: boolean;
@@ -41,8 +43,11 @@ const PopupSelect = <T extends Record<string, any>>({
   labelKey,
   secondaryLabelKey,
 }: PopupSelectProps<T>) => {
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
+  const { control, watch } = useForm({
+    defaultValues: { search: "" },
+  });
+  const searchTerm = watch("search");
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -84,16 +89,23 @@ const PopupSelect = <T extends Record<string, any>>({
           />
         </div>
 
-        <div className="relative mb-4 px-2">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder={placeholder}
-            className="w-full bg-primary dark:bg-primarydark text-gray-900 dark:text-primary pl-12 pr-4 py-3 rounded-xl border border-gray-400 dark:border-primarydark focus:outline-none placeholder-gray-400 dark:placeholder-gray-400"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <Controller
+          control={control}
+          name="search"
+          render={({ field }) => (
+            <GlobalSearchInput
+              name={field.name}
+              value={field.value}
+              onBlur={field.onBlur}
+              onValueChange={field.onChange}
+              placeholder={placeholder}
+              className="mb-4 px-2"
+              inputClassName="bg-primary dark:bg-primarydark text-gray-900 dark:text-primary border-gray-400 dark:border-primarydark py-3 placeholder:text-gray-400 dark:placeholder:text-gray-400 shadow-none focus:shadow-none"
+              iconClassName="text-gray-400 group-focus-within:text-main"
+              clearButtonClassName="text-gray-400 hover:text-main"
+            />
+          )}
+        />
 
         <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 mb-6 custom-scrollbar">
           {filteredData.map((item) => {

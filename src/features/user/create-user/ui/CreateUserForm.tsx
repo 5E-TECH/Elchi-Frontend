@@ -1,30 +1,27 @@
-import React, { memo, useState, useEffect } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
+import { Controller, useForm, useWatch, type Path } from "react-hook-form";
 import type {
-  UserRole,
   CreateAdminRequest,
   CreateCourierRequest,
   CreateMarketRequest,
+  UserRole,
 } from "../../../../entities/user/types/user";
-
 import { RoleSelector } from "./RoleSelector";
 import Select from "../../../../shared/ui/Select";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import {
+  Building,
+  Calendar,
   Eye,
   EyeOff,
   Send,
   Shield,
-  Users,
-  Truck,
   Store,
-  Building,
-  Calendar,
   User,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
+import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 
 const ROLE_LABELS: Record<UserRole, string> = {
   admin: "Admin",
@@ -37,9 +34,6 @@ const ROLE_LABELS: Record<UserRole, string> = {
   customer: "Mijoz",
 };
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
-/** Summani formatlaydi: 10000 → "10 000" */
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
   if (!digits) return "";
@@ -53,11 +47,9 @@ const formatAmount = (value: string): string => {
   return parts.join(" ");
 };
 
-/** Formatlangan summadan sof raqam oladi: "10 000" → 10000 */
 const parseAmount = (value: string): number =>
   Number(value.replace(/\s/g, ""));
 
-/** Telefon raqamni formatlaydi: "901234567" → "90 123 45 67" */
 const formatPhone = (value: string): string => {
   const digits = value.replace(/\D/g, "").slice(0, 9);
   const parts: string[] = [];
@@ -68,12 +60,24 @@ const formatPhone = (value: string): string => {
   return parts.join(" ");
 };
 
-/** Formatlangan telefondan sof raqam oladi: "90 123 45 67" → "901234567" */
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
 
-// ─── Initial State ────────────────────────────────────────────────────────────
+interface CreateUserFormValues {
+  role: UserRole;
+  fullName: string;
+  phone: string;
+  username: string;
+  password: string;
+  salary: string;
+  paymentDay: string;
+  region: string;
+  homeRate: string;
+  centerRate: string;
+  deliveryType: "address" | "center" | "";
+}
 
-const INITIAL_FORM = {
+const INITIAL_FORM: CreateUserFormValues = {
+  role: "admin",
   fullName: "",
   phone: "",
   username: "",
@@ -83,277 +87,358 @@ const INITIAL_FORM = {
   region: "",
   homeRate: "",
   centerRate: "",
-  marketName: "",
-  deliveryType: "" as "address" | "center" | "",
+  deliveryType: "",
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
+const inputClasses = (hasError: boolean, hasPrefix: boolean) => `
+  w-full bg-slate-50 dark:bg-[#1a1f3a] border
+  ${
+    hasError
+      ? "border-red-400 dark:border-red-500 focus:ring-red-400/20"
+      : "border-slate-200 dark:border-[#4c5798]/20 focus:border-main dark:focus:border-main focus:ring-main/10"
+  }
+  rounded-xl ${hasPrefix ? "pl-10" : "px-4"} pr-4 py-3
+  text-slate-800 dark:text-white text-sm font-medium
+  placeholder:text-slate-400 dark:placeholder:text-white/30
+  focus:outline-none focus:ring-2 transition-all duration-200 shadow-sm
+`;
+
+const labelClasses =
+  "block text-xs font-bold text-slate-500 dark:text-white/60 mb-1.5 ml-1 uppercase tracking-wide";
+
+const FieldError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return (
+    <p className="absolute -bottom-4 right-0 text-[10px] text-red-500 font-medium">
+      {message}
+    </p>
+  );
+};
+
+const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
+  name: "fullName",
+  full_name: "fullName",
+  fullName: "fullName",
+  phone: "phone",
+  phone_number: "phone",
+  phoneNumber: "phone",
+  username: "username",
+  password: "password",
+  salary: "salary",
+  payment_day: "paymentDay",
+  paymentDay: "paymentDay",
+  region: "region",
+  region_id: "region",
+  regionId: "region",
+  tariff_home: "homeRate",
+  tariffHome: "homeRate",
+  home_rate: "homeRate",
+  tariff_center: "centerRate",
+  tariffCenter: "centerRate",
+  center_rate: "centerRate",
+  default_tariff: "deliveryType",
+  defaultTariff: "deliveryType",
+  delivery_type: "deliveryType",
+  deliveryType: "deliveryType",
+};
 
 export const CreateUserForm = memo(() => {
   const navigate = useNavigate();
-  const [role, setRole] = useState<UserRole>("admin");
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState(INITIAL_FORM);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const methods = useForm<CreateUserFormValues>({
+    defaultValues: INITIAL_FORM,
+    mode: "onTouched",
+  });
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    setError,
+    clearErrors,
+  } = methods;
+
+  const role = useWatch({ control, name: "role" });
 
   const { createAdmin, createMarket, createCourier, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
 
-  // Viloyatlar API dan olinadi
   const { data: regionsData } = getRegions();
   const regionList: { id: string; name: string }[] = (() => {
-    const d = regionsData;
-    if (Array.isArray(d)) return d;
-    if (d?.data?.items && Array.isArray(d.data.items)) return d.data.items;
-    if (d?.data && Array.isArray(d.data)) return d.data;
-    if (d?.items && Array.isArray(d.items)) return d.items;
+    const data = regionsData;
+    if (Array.isArray(data)) return data;
+    if (data?.data?.items && Array.isArray(data.data.items)) return data.data.items;
+    if (data?.data && Array.isArray(data.data)) return data.data;
+    if (data?.items && Array.isArray(data.items)) return data.items;
     return [];
   })();
 
-  // Role o'zgarganda xatolar va forma tozalansin
   useEffect(() => {
-    setErrors({});
-    setFormData(INITIAL_FORM);
-  }, [role]);
+    reset({ ...INITIAL_FORM, role });
+  }, [role, reset]);
 
-  // ─── Input Handler ─────────────────────────────────────────────────────────
+  const isPending =
+    createAdmin.isPending || createMarket.isPending || createCourier.isPending;
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
+  const validateByRole = (values: CreateUserFormValues): boolean => {
+    let valid = true;
+    const rawPhone = parsePhone(values.phone);
 
-    if (name === "salary" || name === "homeRate" || name === "centerRate") {
-      setFormData((prev) => ({ ...prev, [name]: formatAmount(value) }));
-    } else if (name === "phone") {
-      setFormData((prev) => ({ ...prev, [name]: formatPhone(value) }));
-    } else if (name === "paymentDay") {
-      const num = parseInt(value);
-      if (value === "" || (num >= 1 && num <= 30)) {
-        setFormData((prev) => ({ ...prev, [name]: value }));
-      }
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+    if (!values.fullName.trim()) {
+      setError("fullName", { message: "Ism talab qilinadi" });
+      valid = false;
     }
 
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+    if (!rawPhone || rawPhone.length !== 9) {
+      setError("phone", { message: "9 ta raqam kiriting" });
+      valid = false;
     }
-  };
 
-  // ─── Validation ────────────────────────────────────────────────────────────
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    const rawPhone = parsePhone(formData.phone);
-
-    if (!formData.fullName.trim()) newErrors.fullName = "Ism talab qilinadi";
-    if (!rawPhone || rawPhone.length !== 9)
-      newErrors.phone = "9 ta raqam kiriting";
-    if (!formData.password.trim()) newErrors.password = "Parol talab qilinadi";
-    else if (formData.password.length < 4) newErrors.password = "Min 4 ta belgi";
+    if (!values.password.trim()) {
+      setError("password", { message: "Parol talab qilinadi" });
+      valid = false;
+    } else if (values.password.length < 4) {
+      setError("password", { message: "Min 4 ta belgi" });
+      valid = false;
+    }
 
     if (role === "admin" || role === "manager") {
-      if (!formData.salary) newErrors.salary = "Maosh kiritilmadi";
-      if (!formData.paymentDay) newErrors.paymentDay = "Sana kiritilmadi";
-      else {
-        const day = Number(formData.paymentDay);
-        if (day < 1 || day > 30) newErrors.paymentDay = "1-30 oralig'ida";
+      if (!values.salary) {
+        setError("salary", { message: "Maosh kiritilmadi" });
+        valid = false;
+      }
+
+      if (!values.paymentDay) {
+        setError("paymentDay", { message: "Sana kiritilmadi" });
+        valid = false;
+      } else {
+        const day = Number(values.paymentDay);
+        if (day < 1 || day > 30) {
+          setError("paymentDay", { message: "1-30 oralig'ida" });
+          valid = false;
+        }
       }
     }
 
     if (role === "courier") {
-      if (!formData.region) newErrors.region = "Viloyat tanlang";
-      if (!formData.homeRate) newErrors.homeRate = "Uy tarifi yo'q";
-      if (!formData.centerRate) newErrors.centerRate = "Markaz tarifi yo'q";
+      if (!values.region) {
+        setError("region", { message: "Viloyat tanlang" });
+        valid = false;
+      }
+      if (!values.homeRate) {
+        setError("homeRate", { message: "Uy tarifi yo'q" });
+        valid = false;
+      }
+      if (!values.centerRate) {
+        setError("centerRate", { message: "Markaz tarifi yo'q" });
+        valid = false;
+      }
     }
 
     if (role === "marketing") {
-      if (!formData.username.trim()) newErrors.username = "Username kiritilmadi";
-      if (!formData.homeRate) newErrors.homeRate = "Uy tarifi yo'q";
-      if (!formData.centerRate) newErrors.centerRate = "Markaz tarifi yo'q";
-      if (!formData.deliveryType) newErrors.deliveryType = "Tur tanlang";
+      if (!values.username.trim()) {
+        setError("username", { message: "Username kiritilmadi" });
+        valid = false;
+      }
+      if (!values.homeRate) {
+        setError("homeRate", { message: "Uy tarifi yo'q" });
+        valid = false;
+      }
+      if (!values.centerRate) {
+        setError("centerRate", { message: "Markaz tarifi yo'q" });
+        valid = false;
+      }
+      if (!values.deliveryType) {
+        setError("deliveryType", { message: "Tur tanlang" });
+        valid = false;
+      }
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return valid;
   };
 
-  // ─── Submit ────────────────────────────────────────────────────────────────
+  const onSubmit = async (values: CreateUserFormValues) => {
+    clearErrors();
+    if (!validateByRole(values)) return;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+    const rawPhone = `+998${parsePhone(values.phone)}`;
 
-    const rawPhone = `+998${parsePhone(formData.phone)}`;
-
-    // ── Admin ──
     if (role === "admin") {
       const payload: CreateAdminRequest = {
-        name: formData.fullName,
+        name: values.fullName,
         phone_number: rawPhone,
-        password: formData.password,
-        salary: parseAmount(formData.salary),
-        payment_day: Number(formData.paymentDay),
+        password: values.password,
+        salary: parseAmount(values.salary),
+        payment_day: Number(values.paymentDay),
       };
 
       await apiRequest({
         request: () => createAdmin.mutateAsync(payload),
-        successMessage: `Admin "${formData.fullName}" muvaffaqiyatli yaratildi!`,
+        successMessage: `Admin "${values.fullName}" muvaffaqiyatli yaratildi!`,
         errorMessage: "Admin yaratishda xatolik yuz berdi",
+        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
       });
       return;
     }
 
-    // ── Courier ──
     if (role === "courier") {
       const payload: CreateCourierRequest = {
-        region_id: formData.region,
-        name: formData.fullName,
+        region_id: values.region,
+        name: values.fullName,
         phone_number: rawPhone,
-        password: formData.password,
-        tariff_home: parseAmount(formData.homeRate),
-        tariff_center: parseAmount(formData.centerRate),
+        password: values.password,
+        tariff_home: parseAmount(values.homeRate),
+        tariff_center: parseAmount(values.centerRate),
       };
 
       await apiRequest({
         request: () => createCourier.mutateAsync(payload),
-        successMessage: `Kuryer "${formData.fullName}" muvaffaqiyatli yaratildi!`,
+        successMessage: `Kuryer "${values.fullName}" muvaffaqiyatli yaratildi!`,
         errorMessage: "Kuryer yaratishda xatolik yuz berdi",
+        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
       });
       return;
     }
 
-    // ── Market ──
     if (role === "marketing") {
-      // deliveryType dan aniq mapping — type cast emas, aniq qiymat
-      const defaultTariff = formData.deliveryType === "center" ? "center" : "address";
-
       const payload: CreateMarketRequest = {
-        name: formData.fullName,
+        name: values.fullName,
         phone_number: rawPhone,
-        username: formData.username,
-        password: formData.password,
-        tariff_home: parseAmount(formData.homeRate),
-        tariff_center: parseAmount(formData.centerRate),
-        default_tariff: defaultTariff,
+        username: values.username,
+        password: values.password,
+        tariff_home: parseAmount(values.homeRate),
+        tariff_center: parseAmount(values.centerRate),
+        default_tariff: values.deliveryType === "center" ? "center" : "address",
       };
 
       await apiRequest({
         request: () => createMarket.mutateAsync(payload),
-        successMessage: `Market "${formData.fullName}" muvaffaqiyatli yaratildi!`,
+        successMessage: `Market "${values.fullName}" muvaffaqiyatli yaratildi!`,
         errorMessage: "Market yaratishda xatolik yuz berdi",
+        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
       });
-      return;
     }
-
-    // ── Boshqa rollar ──
-    console.log("Role:", ROLE_LABELS[role], "| FormData:", formData);
   };
 
-  // ─── Helpers (UI) ──────────────────────────────────────────────────────────
+  const renderInput = ({
+    label,
+    name,
+    type = "text",
+    placeholder,
+    icon,
+    required = true,
+  }: {
+    label: string;
+    name: keyof CreateUserFormValues;
+    type?: string;
+    placeholder: string;
+    icon?: ReactNode;
+    required?: boolean;
+  }) => (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <div className="space-y-0 relative">
+          <label className={labelClasses}>
+            {label} {required && <span className="text-red-500">*</span>}
+          </label>
+          <div className="relative group">
+            {icon && (
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 group-focus-within:text-main transition-colors">
+                {icon}
+              </div>
+            )}
+            {name === "phone" && (
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/50 font-medium z-10 text-sm select-none">
+                +998
+              </div>
+            )}
+            <input
+              type={type}
+              name={field.name}
+              value={field.value}
+              onBlur={field.onBlur}
+              onChange={(event) => {
+                const { value } = event.target;
 
-  const inputClasses = (hasError: boolean, hasPrefix: boolean) => `
-    w-full bg-slate-50 dark:bg-[#1a1f3a] border 
-    ${hasError
-      ? "border-red-400 dark:border-red-500 focus:ring-red-400/20"
-      : "border-slate-200 dark:border-[#4c5798]/20 focus:border-main dark:focus:border-main focus:ring-main/10"
-    } 
-    rounded-xl ${hasPrefix ? "pl-10" : "px-4"} pr-4 py-3 
-    text-slate-800 dark:text-white text-sm font-medium
-    placeholder:text-slate-400 dark:placeholder:text-white/30 
-    focus:outline-none focus:ring-2 transition-all duration-200 shadow-sm
-  `;
+                if (name === "salary" || name === "homeRate" || name === "centerRate") {
+                  field.onChange(formatAmount(value));
+                  return;
+                }
 
-  const labelClasses =
-    "block text-xs font-bold text-slate-500 dark:text-white/60 mb-1.5 ml-1 uppercase tracking-wide";
+                if (name === "phone") {
+                  field.onChange(formatPhone(value));
+                  return;
+                }
 
-  const renderInput = (
-    label: string,
-    name: string,
-    type: string = "text",
-    placeholder: string,
-    Icon?: React.ElementType | null,
-    required: boolean = true,
-  ) => (
-    <div className="space-y-0 relative">
-      <label className={labelClasses}>
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="relative group">
-        {Icon && (
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 group-focus-within:text-main transition-colors">
-            <Icon size={18} />
+                if (name === "paymentDay") {
+                  const numericValue = parseInt(value, 10);
+                  if (value === "" || (numericValue >= 1 && numericValue <= 30)) {
+                    field.onChange(value);
+                  }
+                  return;
+                }
+
+                field.onChange(value);
+              }}
+              placeholder={placeholder}
+              className={inputClasses(
+                !!fieldState.error,
+                !!icon || name === "phone",
+              )}
+              style={name === "phone" ? { paddingLeft: "3.5rem" } : undefined}
+            />
           </div>
-        )}
-        {name === "phone" && (
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/50 font-medium z-10 text-sm select-none">
-            +998
-          </div>
-        )}
-        <input
-          type={type}
-          name={name}
-          value={(formData as Record<string, string>)[name]}
-          onChange={handleInputChange}
-          placeholder={placeholder}
-          required={required}
-          className={inputClasses(!!errors[name], !!Icon || name === "phone")}
-          style={name === "phone" ? { paddingLeft: "3.5rem" } : {}}
-        />
-      </div>
-      {errors[name] && (
-        <p className="absolute -bottom-4 right-0 text-[10px] text-red-500 font-medium">
-          {errors[name]}
-        </p>
+          <FieldError message={fieldState.error?.message} />
+        </div>
       )}
-    </div>
+    />
   );
 
   const renderPasswordInput = () => (
-    <div className="space-y-0 relative">
-      <label className={labelClasses}>
-        Parol <span className="text-red-500">*</span>
-      </label>
-      <div className="relative group">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 group-focus-within:text-main transition-colors">
-          <Shield size={18} />
+    <Controller
+      control={control}
+      name="password"
+      render={({ field, fieldState }) => (
+        <div className="space-y-0 relative">
+          <label className={labelClasses}>
+            Parol <span className="text-red-500">*</span>
+          </label>
+          <div className="relative group">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 group-focus-within:text-main transition-colors">
+              <Shield size={18} />
+            </div>
+            <input
+              type={showPassword ? "text" : "password"}
+              name={field.name}
+              value={field.value}
+              onBlur={field.onBlur}
+              onChange={field.onChange}
+              placeholder="••••••"
+              className={inputClasses(!!fieldState.error, true)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-white/40 dark:hover:text-white transition-colors p-1"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          <FieldError message={fieldState.error?.message} />
         </div>
-        <input
-          type={showPassword ? "text" : "password"}
-          name="password"
-          value={formData.password}
-          onChange={handleInputChange}
-          placeholder="••••••"
-          required
-          className={inputClasses(!!errors.password, true)}
-        />
-        <button
-          type="button"
-          onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-white/40 dark:hover:text-white transition-colors p-1"
-        >
-          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-        </button>
-      </div>
-      {errors.password && (
-        <p className="absolute -bottom-4 right-0 text-[10px] text-red-500 font-medium">
-          {errors.password}
-        </p>
       )}
-    </div>
+    />
   );
 
-  const isPending = createAdmin.isPending || createMarket.isPending || createCourier.isPending;
-
-  // ─── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <div className="w-full h-full  rounded-2xl flex flex-col overflow-hidden transition-colors duration-300">
-      {/* Header */}
+    <div className="w-full h-full rounded-2xl flex flex-col overflow-hidden transition-colors duration-300">
       <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-slate-100 dark:border-white/5">
         <div className="text-right">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">
@@ -365,15 +450,16 @@ export const CreateUserForm = memo(() => {
         </div>
       </div>
 
-      {/* Main Container */}
       <div className="flex flex-1 gap-6 overflow-hidden px-6 py-6">
-        {/* Sidebar — Role Selection */}
         <div className="w-72 flex flex-col gap-4 shrink-0">
           <div className="bg-white dark:bg-maindark p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-primarydark/20">
             <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
               Rol Tanlash
             </h3>
-            <RoleSelector selectedRole={role} onSelect={setRole} />
+            <RoleSelector
+              selectedRole={role}
+              onSelect={(nextRole) => setValue("role", nextRole)}
+            />
           </div>
 
           <div className="bg-linear-to-br from-main to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-main/20">
@@ -385,19 +471,18 @@ export const CreateUserForm = memo(() => {
           </div>
         </div>
 
-        {/* Form Area */}
         <div className="flex-1 bg-white dark:bg-maindark rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/20 border border-slate-100 dark:border-primarydark/20 flex flex-col overflow-hidden">
-          {/* Form Header */}
-          <div className="px-6 py-4 border-b border-slate-100  dark:border-white/5 bg-slate-50/50 dark:bg-main shrink-0 flex items-center gap-4">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-main shrink-0 flex items-center gap-4">
             <div
-              className={`p-2 rounded-xl bg-linear-to-br text-white shadow-md ${role === "admin"
-                ? "from-purple-500 to-indigo-600"
-                : role === "manager"
-                  ? "from-blue-500 to-cyan-500"
-                  : role === "courier"
-                    ? "from-orange-500 to-amber-500"
-                    : "from-emerald-500 to-teal-500"
-                }`}
+              className={`p-2 rounded-xl bg-linear-to-br text-white shadow-md ${
+                role === "admin"
+                  ? "from-purple-500 to-indigo-600"
+                  : role === "manager"
+                    ? "from-blue-500 to-cyan-500"
+                    : role === "courier"
+                      ? "from-orange-500 to-amber-500"
+                      : "from-emerald-500 to-teal-500"
+              }`}
             >
               <ShieldIcon role={role} size={20} />
             </div>
@@ -406,76 +491,125 @@ export const CreateUserForm = memo(() => {
             </h1>
           </div>
 
-          {/* Form Content — Scrollable */}
           <div className="flex-1 px-6 py-6 overflow-y-auto">
-            <form onSubmit={handleSubmit} className="w-full">
+            <form onSubmit={handleSubmit(onSubmit)} className="w-full">
               <div className="space-y-8">
-
-                {/* ── Umumiy ma'lumotlar ── */}
                 <div className="grid grid-cols-3 gap-6">
-                  {renderInput("Ism Familya", "fullName", "text", "F.I.O", User)}
-                  {renderInput("Telefon", "phone", "tel", "90 123 45 67")}
+                  {renderInput({
+                    label: "Ism Familya",
+                    name: "fullName",
+                    placeholder: "F.I.O",
+                    icon: <User size={18} />,
+                  })}
+                  {renderInput({
+                    label: "Telefon",
+                    name: "phone",
+                    type: "tel",
+                    placeholder: "90 123 45 67",
+                  })}
                   {renderPasswordInput()}
                 </div>
 
                 <div className="h-px bg-slate-100 dark:bg-white/5" />
 
-                {/* ── Admin / Manager ── */}
                 {(role === "admin" || role === "manager") && (
                   <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {renderInput("Maosh (so'm)", "salary", "text", "Masalan: 5 000 000", null)}
-                    {renderInput("To'lov Kuni", "paymentDay", "number", "1–30", Calendar)}
+                    {renderInput({
+                      label: "Maosh (so'm)",
+                      name: "salary",
+                      placeholder: "Masalan: 5 000 000",
+                    })}
+                    {renderInput({
+                      label: "To'lov Kuni",
+                      name: "paymentDay",
+                      type: "number",
+                      placeholder: "1–30",
+                      icon: <Calendar size={18} />,
+                    })}
                   </div>
                 )}
 
-                {/* ── Courier ── */}
                 {role === "courier" && (
                   <div className="grid grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <Select
-                      label="Viloyat"
+                    <Controller
+                      control={control}
                       name="region"
-                      value={formData.region}
-                      onChange={handleInputChange}
-                      options={regionList.map((r) => ({
-                        value: String(r.id),
-                        label: r.name,
-                      }))}
-                      placeholder={regionList.length ? "Tanlang" : "Yuklanmoqda..."}
-                      error={errors.region}
-                      required
+                      render={({ field, fieldState }) => (
+                        <Select
+                          label="Viloyat"
+                          name={field.name}
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={regionList.map((region) => ({
+                            value: String(region.id),
+                            label: region.name,
+                          }))}
+                          placeholder={regionList.length ? "Tanlang" : "Yuklanmoqda..."}
+                          error={fieldState.error?.message}
+                          required
+                        />
+                      )}
                     />
-                    {renderInput("Uyga (so'm)", "homeRate", "text", "Masalan: 10 000", Building)}
-                    {renderInput("Markazga (so'm)", "centerRate", "text", "Masalan: 8 000", Store)}
+                    {renderInput({
+                      label: "Uyga (so'm)",
+                      name: "homeRate",
+                      placeholder: "Masalan: 10 000",
+                      icon: <Building size={18} />,
+                    })}
+                    {renderInput({
+                      label: "Markazga (so'm)",
+                      name: "centerRate",
+                      placeholder: "Masalan: 8 000",
+                      icon: <Store size={18} />,
+                    })}
                   </div>
                 )}
 
-                {/* ── Market (marketing) ── */}
                 {role === "marketing" && (
                   <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {renderInput("Username", "username", "text", "market_01", User)}
-                    <Select
-                      label="Asosiy Tarif"
+                    {renderInput({
+                      label: "Username",
+                      name: "username",
+                      placeholder: "market_01",
+                      icon: <User size={18} />,
+                    })}
+                    <Controller
+                      control={control}
                       name="deliveryType"
-                      value={formData.deliveryType}
-                      onChange={handleInputChange}
-                      options={[
-                        { value: "center", label: "Markazgacha" },
-                        { value: "address", label: "Eshikkacha" },
-                      ]}
-                      placeholder="Tanlang"
-                      error={errors.deliveryType}
-                      required
+                      render={({ field, fieldState }) => (
+                        <Select
+                          label="Asosiy Tarif"
+                          name={field.name}
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={[
+                            { value: "center", label: "Markazgacha" },
+                            { value: "address", label: "Eshikkacha" },
+                          ]}
+                          placeholder="Tanlang"
+                          error={fieldState.error?.message}
+                          required
+                        />
+                      )}
                     />
-                    {renderInput("Uyga Tarif (so'm)", "homeRate", "text", "Masalan: 10 000", Building)}
-                    {renderInput("Markazga Tarif (so'm)", "centerRate", "text", "Masalan: 8 000", Store)}
+                    {renderInput({
+                      label: "Uyga Tarif (so'm)",
+                      name: "homeRate",
+                      placeholder: "Masalan: 10 000",
+                      icon: <Building size={18} />,
+                    })}
+                    {renderInput({
+                      label: "Markazga Tarif (so'm)",
+                      name: "centerRate",
+                      placeholder: "Masalan: 8 000",
+                      icon: <Store size={18} />,
+                    })}
                   </div>
                 )}
-
               </div>
             </form>
           </div>
 
-          {/* Footer Actions */}
           <div className="px-6 py-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-4 bg-slate-50/50 dark:bg-white/5 shrink-0">
             <button
               type="button"
@@ -485,16 +619,18 @@ export const CreateUserForm = memo(() => {
               Bekor qilish
             </button>
             <button
-              onClick={handleSubmit}
+              type="submit"
+              onClick={handleSubmit(onSubmit)}
               disabled={isPending}
-              className={`relative overflow-hidden flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-sm ${role === "admin"
-                ? "bg-linear-to-r from-purple-600 to-indigo-600"
-                : role === "manager"
-                  ? "bg-linear-to-r from-blue-500 to-cyan-500"
-                  : role === "courier"
-                    ? "bg-linear-to-r from-orange-500 to-amber-500"
-                    : "bg-linear-to-r from-emerald-500 to-teal-500"
-                }`}
+              className={`relative overflow-hidden flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-sm ${
+                role === "admin"
+                  ? "bg-linear-to-r from-purple-600 to-indigo-600"
+                  : role === "manager"
+                    ? "bg-linear-to-r from-blue-500 to-cyan-500"
+                    : role === "courier"
+                      ? "bg-linear-to-r from-orange-500 to-amber-500"
+                      : "bg-linear-to-r from-emerald-500 to-teal-500"
+              }`}
             >
               {isPending ? (
                 <>
@@ -515,29 +651,21 @@ export const CreateUserForm = memo(() => {
   );
 });
 
-// ─── Role Icon ─────────────────────────────────────────────────────────────────
-
 const ShieldIcon = ({
   role,
-  size = 24,
-  className,
+  size = 20,
 }: {
-  role: string;
+  role: UserRole;
   size?: number;
-  className?: string;
 }) => {
   switch (role) {
     case "admin":
-      return <Shield size={size} className={className} />;
+      return <Shield size={size} />;
     case "manager":
-      return <Users size={size} className={className} />;
+      return <Calendar size={size} />;
     case "courier":
-      return <Truck size={size} className={className} />;
-    case "marketing":
-      return <Store size={size} className={className} />;
+      return <Store size={size} />;
     default:
-      return <Shield size={size} className={className} />;
+      return <Building size={size} />;
   }
 };
-
-CreateUserForm.displayName = "CreateUserForm";
