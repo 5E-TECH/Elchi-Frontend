@@ -1,11 +1,12 @@
 import { memo } from 'react';
 import {
   Globe,
-  Search,
   RotateCcw,
   ChevronRight,
   Link as LinkIcon,
 } from 'lucide-react';
+import { Controller, useForm } from "react-hook-form";
+import { GlobalSearchInput } from "../../../features/search";
 
 
 // Integratsiya kartasi komponenti
@@ -30,7 +31,15 @@ const IntegrationCard = ({ name, market, count, synced }: any) => (
   </div>
 );
 
+interface ExternalOrdersSearchValues {
+  search: string;
+}
+
 const ExternalOrders = () => {
+  const { control } = useForm<ExternalOrdersSearchValues>({
+    defaultValues: { search: "" },
+  });
+
   return (
     <div className="space-y-8">
 
@@ -50,14 +59,23 @@ const ExternalOrders = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
-              <input
-                type="text"
-                placeholder="Market qidirish..."
-                className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-main w-64 transition-colors"
-              />
-            </div>
+            <Controller
+              control={control}
+              name="search"
+              render={({ field }) => (
+                <GlobalSearchInput
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  placeholder="Market qidirish..."
+                  className="w-64"
+                  inputClassName="bg-white dark:bg-primarydark border-gray-200 dark:border-white/10 text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2.5 shadow-none focus:shadow-none"
+                  iconClassName="text-gray-400 dark:text-gray-500 group-focus-within:text-main"
+                  clearButtonClassName="text-gray-400 dark:text-gray-500 hover:text-main"
+                  onValueChange={field.onChange}
+                />
+              )}
+            />
             <button className="p-2.5 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-colors">
               <RotateCcw size={18} className="text-gray-400 dark:text-gray-500" />
             </button>

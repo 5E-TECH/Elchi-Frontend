@@ -1,6 +1,6 @@
-import { memo, useState, useEffect, type ChangeEvent } from "react";
-import { Search, X } from "lucide-react";
+import { memo, useState, useEffect } from "react";
 import { useDebounce } from "../lib/useDebounce";
+import { GlobalSearchInput } from "../../features/search";
 
 interface FilterSearchProps {
     value: string;
@@ -28,55 +28,28 @@ const FilterSearch = memo(({
         onChange(val);
     }, debounceDelay);
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
+    const handleChange = (val: string) => {
         setLocalValue(val);
         debouncedOnChange(val);
     };
 
-    const handleClear = () => {
-        setLocalValue("");
-        onChange("");
-    };
-
     return (
-        <div className={`relative group ${className}`}>
-            {/* Search icon */}
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                <Search
-                    size={16}
-                    className="text-gray-400 group-focus-within:text-main dark:text-white/40 dark:group-focus-within:text-main transition-colors"
-                />
-            </div>
-
-            <input
-                type="text"
-                value={localValue}
-                onChange={handleChange}
-                placeholder={placeholder}
-                className="
-                    w-full
-                    bg-white dark:bg-primarydark
-                    border border-gray-200 dark:border-white/10
-                    rounded-xl pl-10 pr-9 py-2.5
-                    text-sm font-medium
-                    text-maindark dark:text-primary
-                    placeholder:text-gray-400 dark:placeholder:text-white/30
-                    focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
-                    transition-all duration-200
-                "
-            />
-
-            {/* Clear button */}
-            {localValue && (
-                <button
-                    onClick={handleClear}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-white/40 dark:hover:text-white/70 transition-colors"
-                >
-                    <X size={14} />
-                </button>
-            )}
-        </div>
+        <GlobalSearchInput
+            value={localValue}
+            onValueChange={handleChange}
+            placeholder={placeholder}
+            className={className}
+            inputClassName="
+                bg-white dark:bg-primarydark
+                border border-gray-200 dark:border-white/10
+                rounded-xl py-2.5
+                text-sm font-medium
+                text-maindark dark:text-primary
+                placeholder:text-gray-400 dark:placeholder:text-white/30
+            "
+            iconClassName="text-gray-400 group-focus-within:text-main dark:text-white/40 dark:group-focus-within:text-main"
+            clearButtonClassName="text-gray-400 hover:text-gray-600 dark:text-white/40 dark:hover:text-white/70"
+        />
     );
 });
 
