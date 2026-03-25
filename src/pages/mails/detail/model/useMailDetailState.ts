@@ -1,9 +1,21 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { PostOrder } from "../../../../entities/mails";
 
 // ─── Checkbox state ───────────────────────────────────────────────────────────
 export const useMailDetailState = (orders: PostOrder[]) => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        setSelectedIds((prev) => {
+            if (prev.size === 0) return prev;
+
+            const validIds = new Set(orders.map((order) => order.id));
+            const next = new Set(Array.from(prev).filter((id) => validIds.has(id)));
+
+            if (next.size === prev.size) return prev;
+            return next;
+        });
+    }, [orders]);
 
     const allSelected = orders.length > 0 && selectedIds.size === orders.length;
     const someSelected = selectedIds.size > 0 && selectedIds.size < orders.length;

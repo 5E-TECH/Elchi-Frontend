@@ -1,7 +1,13 @@
 import { memo, useMemo, useCallback, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, MapPin } from "lucide-react";
-import { useMailDetail, useReceivePost } from "../../../entities/mails";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { AlertTriangle, Ban, MapPin } from "lucide-react";
+import {
+  useMails,
+  useMailDetail,
+  type PostOrder,
+  useReceiveCanceledPost,
+  useReceivePost,
+} from "../../../entities/mails";
 import HeaderName from "../../../shared/components/headerName";
 
 // ─── UI komponentlar ──────────────────────────────────────────────────────────
@@ -55,15 +61,59 @@ ErrorState.displayName = "ErrorState";
 // ─── Asosiy Page ──────────────────────────────────────────────────────────────
 const MailDetailPage = () => {
   const { postId } = useParams<{ postId: string }>();
+  const [searchParams] = useSearchParams();
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
-  const { data: response, isLoading, isError } = useMailDetail(postId ?? "");
+  const isRefusedDetail = searchParams.get("type") === "refused";
+  const { getRefusedMailsCourierByPostId } = useMails();
+  const {
+    data: regularResponse,
+    isLoading: regularLoading,
+    isError: regularError,
+  } = useMailDetail(isRefusedDetail ? "" : postId ?? "");
+  const {
+    data: refusedResponse,
+    isLoading: refusedLoading,
+    isError: refusedError,
+  } = getRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
   const navigate = useNavigate();
   const { apiRequest } = useAppNotification();
 
-  const orders = useMemo(() => response?.data?.allOrdersByPostId ?? [], [response]);
-  const homeStats = response?.data?.homeOrders;
-  const centerStats = response?.data?.centerOrders;
+  const orders = useMemo<PostOrder[]>(
+    () =>
+      isRefusedDetail
+        ? refusedResponse?.data ?? []
+        : regularResponse?.data?.allOrdersByPostId ?? [],
+    [isRefusedDetail, refusedResponse, regularResponse],
+  );
+  const homeStats = useMemo(() => {
+    if (!isRefusedDetail) return regularResponse?.data?.homeOrders;
+
+    const homeOrders = orders.filter(
+      (order: PostOrder) => order.where_deliver === "address",
+    );
+    return {
+      homeOrders: homeOrders.length,
+      homeOrdersTotalPrice: homeOrders.reduce(
+        (sum: number, order: PostOrder) => sum + order.total_price,
+        0,
+      ),
+    };
+  }, [isRefusedDetail, regularResponse, orders]);
+  const centerStats = useMemo(() => {
+    if (!isRefusedDetail) return regularResponse?.data?.centerOrders;
+
+    const centerOrders = orders.filter(
+      (order: PostOrder) => order.where_deliver === "center",
+    );
+    return {
+      centerOrders: centerOrders.length,
+      centerOrdersTotalPrice: centerOrders.reduce(
+        (sum: number, order: PostOrder) => sum + order.total_price,
+        0,
+      ),
+    };
+  }, [isRefusedDetail, regularResponse, orders]);
 
   // ─── Checkbox state ────────────────────────────────────────────────────────
   const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, clearSelection } =
@@ -74,11 +124,15 @@ const MailDetailPage = () => {
 
   // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
   const receivePost = useReceivePost();
+  const receiveCanceledPost = useReceiveCanceledPost();
 
   // ─── Region nomi ──────────────────────────────────────────────────────────
   const regionName = useMemo(
-    () => orders[0]?.district?.region?.name ?? `Pochta #${postId}`,
-    [orders, postId],
+    () =>
+      orders[0]?.district?.region?.name ??
+      orders[0]?.region?.name ??
+      (isRefusedDetail ? `Rad etilgan pochta #${postId}` : `Pochta #${postId}`),
+    [orders, postId, isRefusedDetail],
   );
 
   // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
@@ -96,18 +150,31 @@ const MailDetailPage = () => {
 
     apiRequest({
       request: () =>
-        receivePost.mutateAsync({
+        (isRefusedDetail ? receiveCanceledPost : receivePost).mutateAsync({
           postId,
           payload: { order_ids: Array.from(selectedIds) },
         }),
-      successMessage: "Pochta muvaffaqiyatli qabul qilindi.",
-      errorMessage: "Pochtani qabul qilishda xatolik yuz berdi.",
+      successMessage: isRefusedDetail
+        ? "Rad etilgan pochta muvaffaqiyatli qabul qilindi."
+        : "Pochta muvaffaqiyatli qabul qilindi.",
+      errorMessage: isRefusedDetail
+        ? "Rad etilgan pochtani qabul qilishda xatolik yuz berdi."
+        : "Pochtani qabul qilishda xatolik yuz berdi.",
       onSuccess: () => {
         clearSelection();
         navigate("/mails");
       },
     });
-  }, [selectedIds, postId, receivePost, apiRequest, clearSelection, navigate]);
+  }, [
+    selectedIds,
+    postId,
+    isRefusedDetail,
+    receiveCanceledPost,
+    receivePost,
+    apiRequest,
+    clearSelection,
+    navigate,
+  ]);
 
   // ─── Muvaffaqiyatli yuborilgandan keyin ───────────────────────────────────
   const handleSendSuccess = useCallback(() => {
@@ -115,7 +182,7 @@ const MailDetailPage = () => {
   }, [clearSelection]);
 
   const selectedOrders = useMemo(
-    () => orders.filter((o) => selectedIds.has(o.id)),
+    () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
     [orders, selectedIds],
   );
 
@@ -127,7 +194,7 @@ const MailDetailPage = () => {
   );
 
   // ─── Loading ──────────────────────────────────────────────────────────────
-  if (isLoading)
+  if (regularLoading || refusedLoading)
     return (
       <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
         <MailDetailSkeleton />
@@ -135,7 +202,7 @@ const MailDetailPage = () => {
     );
 
   // ─── Error ────────────────────────────────────────────────────────────────
-  if (isError)
+  if (regularError || refusedError)
     return (
       <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
         <ErrorState />
@@ -150,8 +217,18 @@ const MailDetailPage = () => {
         <div className="max-w-100" onClick={() => navigate(-1)}>
           <HeaderName
             name={`${regionName} Buyurtmalari`}
-            description={`${orders.length} ta buyurtma mavjud`}
-            icon={<MapPin size={20} className="text-white" />}
+            description={
+              isRefusedDetail
+                ? `${orders.length} ta rad etilgan buyurtma mavjud`
+                : `${orders.length} ta buyurtma mavjud`
+            }
+            icon={
+              isRefusedDetail ? (
+                <Ban size={20} className="text-white" />
+              ) : (
+                <MapPin size={20} className="text-white" />
+              )
+            }
           />
         </div>
         <PrintModeSelect count={selectedIds.size} onSelect={handlePrint} />
@@ -180,13 +257,14 @@ const MailDetailPage = () => {
         <SendButton
           selectedCount={selectedIds.size}
           isCourier={isCourier}
+          mode={isRefusedDetail ? "receive" : "send"}
           onSend={handleSend}
           onReceive={handleReceive}
         />
       )}
 
       {/* Pochta jo'natish modali — faqat courier bo'lmaganlar uchun */}
-      {!isCourier && (
+      {!isCourier && !isRefusedDetail && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
