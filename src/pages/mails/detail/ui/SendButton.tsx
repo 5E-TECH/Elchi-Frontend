@@ -5,14 +5,16 @@ import { Send, Inbox } from "lucide-react";
 interface SendButtonProps {
     selectedCount: number;
     isCourier: boolean;
+    mode?: "send" | "receive";
     onSend: () => void;
     onReceive: () => void;
 }
 
-const SendButton = memo(({ selectedCount, isCourier, onSend, onReceive }: SendButtonProps) => {
+const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onReceive }: SendButtonProps) => {
     const isDisabled = selectedCount === 0;
+    const shouldReceive = isCourier || mode === "receive";
 
-    if (isCourier) {
+    if (shouldReceive) {
         return (
             <div className="pt-2">
                 <button
