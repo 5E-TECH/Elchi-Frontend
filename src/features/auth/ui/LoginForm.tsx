@@ -98,7 +98,8 @@ const LoginForm = () => {
           dispatch(loginSuccess(responseData));
           navigate("/");
         },
-        onError: (err: AxiosError<ApiErrorResponse>) => {
+        onError: (error) => {
+          const err = error as AxiosError<ApiErrorResponse>;
           let message = "Tizim hatoligi";
           if (err.response) {
             const status = err.response.status;
