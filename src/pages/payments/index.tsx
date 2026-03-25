@@ -1,4 +1,8 @@
+// Migrated to React Hook Form
 import { memo, useState, useMemo } from "react";
+import { Controller, useForm, type Resolver } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import {
   BadgeDollarSign,
   Store,
@@ -55,16 +59,29 @@ const INIT = {
   cashbox_type: "",
 };
 
+type PaymentsFilterFormValues = typeof INIT;
+
+const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> = yup.object({
+  operation_type: yup.string().defined(),
+  source_type: yup.string().defined(),
+  created_by: yup.string().defined(),
+  cashbox_type: yup.string().defined(),
+});
+
 const Payments = () => {
-  const [filters, setFilters] = useState(INIT);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [isGivenPopupOpen, setIsGivenPopupOpen] = useState(false);
   const [isReceivedPopupOpen, setIsReceivedPopupOpen] = useState(false);
-
-  const setFilter = (key: keyof typeof INIT) => (val: string) => {
-    setFilters((f) => ({ ...f, [key]: val }));
-  };
+  const {
+    control,
+    watch,
+    reset,
+  } = useForm<PaymentsFilterFormValues>({
+    defaultValues: INIT,
+    resolver: yupResolver(paymentsFilterSchema) as Resolver<PaymentsFilterFormValues>,
+  });
+  const filters = watch();
 
   const navigate = useNavigate();
   const { getFinanceHistory, getCashBoxInfo } = useCashBox();
@@ -234,23 +251,29 @@ const Payments = () => {
         <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">Filters</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {DROPDOWN_FILTERS.map(({ name, label, icon }) => (
-            <FilterSelect
+            <Controller
               key={name}
+              control={control}
               name={name}
-              label={label}
-              value={filters[name]}
-              onChange={setFilter(name)}
-              options={filterOptionsMap[name] || []}
-              placeholder="Tanlang"
-              icon={icon}
-              loading={loadingMap[name]}
+              render={({ field }) => (
+                <FilterSelect
+                  name={field.name}
+                  label={label}
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={filterOptionsMap[name] || []}
+                  placeholder="Tanlang"
+                  icon={icon}
+                  loading={loadingMap[name]}
+                />
+              )}
             />
           ))}
         </div>
         {Object.values(filters).some(Boolean) && (
           <div className="flex items-center justify-end mt-3">
             <button
-              onClick={() => { setFilters(INIT); setPage(1); }}
+              onClick={() => { reset(INIT); setPage(1); }}
               className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
             >
               ✕ Filterlarni tozalash

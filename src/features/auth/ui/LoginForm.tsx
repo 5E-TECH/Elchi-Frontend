@@ -1,9 +1,10 @@
+// Migrated to React Hook Form
 import { memo, useState } from "react";
 import logo from "../../../shared/assets/logo yozuvlik qora.png";
 import { Eye, EyeClosed, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useForm } from "react-hook-form";
+import { Controller, useForm, type Resolver, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "../../../shared/lib/validation/loginSchema";
 import {
@@ -14,6 +15,47 @@ import {
 } from "../../../entities/user/model/slice";
 import type { RootState, AppDispatch } from "../../../app/config/store";
 import { useLogin } from "../api/login";
+import type { AxiosError } from "axios";
+
+interface LoginFormValues {
+  phone_number: string;
+  password: string;
+}
+
+interface ApiErrorResponse {
+  message?: string;
+}
+
+const formatPhoneNumber = (value: string) => {
+  let normalizedValue = value;
+
+  if (!normalizedValue.startsWith("+998")) {
+    normalizedValue = "+998" + normalizedValue.replace(/\+998/g, "");
+  }
+
+  const numbers = normalizedValue.replace(/[^\d]/g, "");
+
+  let formattedValue = "+998";
+
+  if (numbers.length > 3) {
+    formattedValue += " " + numbers.slice(3, 5);
+  }
+  if (numbers.length > 5) {
+    formattedValue += " " + numbers.slice(5, 8);
+  }
+  if (numbers.length > 8) {
+    formattedValue += " " + numbers.slice(8, 10);
+  }
+  if (numbers.length > 10) {
+    formattedValue += " " + numbers.slice(10, 12);
+  }
+
+  if (formattedValue.length > 17) {
+    formattedValue = formattedValue.slice(0, 17);
+  }
+
+  return formattedValue;
+};
 
 const LoginForm = () => {
   const [show, setShow] = useState(false);
@@ -26,18 +68,19 @@ const LoginForm = () => {
 
   const {
     register,
+    control,
     handleSubmit,
-    setValue,
     formState: { errors },
-  } = useForm({
-    resolver: yupResolver(loginSchema),
+  } = useForm<LoginFormValues>({
+    resolver: yupResolver(loginSchema) as Resolver<LoginFormValues>,
     mode: "onTouched",
     defaultValues: {
       phone_number: "+998 ",
+      password: "",
     },
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
     dispatch(setLoading(true));
     dispatch(setAppInitializing(true));
     dispatch(setError(null));
@@ -47,19 +90,16 @@ const LoginForm = () => {
       password: data.password,
     };
 
-    console.log("Sending Login Payload:", payload);
-
     signinUser.mutate(
       payload,
       {
-        onSuccess: async (responseData: any) => {
+        onSuccess: (responseData) => {
           // Save token, user, and role to Redux and localStorage
           dispatch(loginSuccess(responseData));
-          console.log("successs");
-
-          navigate("/")
+          navigate("/");
         },
-        onError: (err: any) => {
+        onError: (error) => {
+          const err = error as AxiosError<ApiErrorResponse>;
           let message = "Tizim hatoligi";
           if (err.response) {
             const status = err.response.status;
@@ -79,38 +119,6 @@ const LoginForm = () => {
     );
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
-
-    if (!value.startsWith("+998")) {
-      value = "+998" + value.replace(/\+998/g, "");
-    }
-
-    const numbers = value.replace(/[^\d]/g, "");
-
-    let formattedValue = "+998";
-
-    if (numbers.length > 3) {
-      formattedValue += " " + numbers.slice(3, 5);
-    }
-    if (numbers.length > 5) {
-      formattedValue += " " + numbers.slice(5, 8);
-    }
-    if (numbers.length > 8) {
-      formattedValue += " " + numbers.slice(8, 10);
-    }
-    if (numbers.length > 10) {
-      formattedValue += " " + numbers.slice(10, 12);
-    }
-
-    if (formattedValue.length > 17) {
-      formattedValue = formattedValue.slice(0, 17);
-    }
-
-    setValue("phone_number", formattedValue, { shouldValidate: true });
-  };
-
-
   return (
     <div className="flex items-center justify-center">
       <div className="bg-primary pb-8 sm:px-10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] w-115 max-w-full mx-4">
@@ -124,15 +132,25 @@ const LoginForm = () => {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 ml-1">
                 Telefon raqam
               </label>
-              <input
-                {...register("phone_number", {
-                  onChange: handlePhoneChange,
-                })}
-                type="text"
-                disabled={loading}
-                className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phone_number ? "border-red-500" : "border-gray-200"
-                  } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-                placeholder="+998 90 123 45 67"
+              <Controller
+                control={control}
+                name="phone_number"
+                render={({ field }) => (
+                  <input
+                    ref={field.ref}
+                    name={field.name}
+                    value={field.value}
+                    onBlur={field.onBlur}
+                    onChange={(event) =>
+                      field.onChange(formatPhoneNumber(event.target.value))
+                    }
+                    type="text"
+                    disabled={loading}
+                    className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phone_number ? "border-red-500" : "border-gray-200"
+                      } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    placeholder="+998 90 123 45 67"
+                  />
+                )}
               />
               {errors.phone_number && (
                 <p className="text-red-500 text-xs mt-1 ml-1">
