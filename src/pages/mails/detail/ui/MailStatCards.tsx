@@ -35,16 +35,14 @@ const StatCard = memo(
     highlighted?: boolean;
   }) => (
     <div
-      className={`flex items-center gap-4 px-5 py-4 rounded-2xl border ${
-        highlighted
+      className={`flex items-center gap-4 px-5 py-4 rounded-2xl border ${highlighted
           ? "bg-linear-to-br from-main to-primarydark border-main/40 text-white"
           : "bg-white dark:bg-primarydark border-gray-100 dark:border-white/10"
-      }`}
+        }`}
     >
       <div
-        className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${
-          highlighted ? "bg-white/20" : "bg-main/10 dark:bg-main/20"
-        }`}
+        className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${highlighted ? "bg-white/20" : "bg-main/10 dark:bg-main/20"
+          }`}
       >
         <span className={highlighted ? "text-white" : "text-main"}>{icon}</span>
       </div>

@@ -1,348 +1,217 @@
 import { memo, useMemo, useState } from "react";
-import { Globe, QrCode, RefreshCw } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Activity, Globe } from "lucide-react";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
-import { api } from "../../../shared/api/api";
-import type { AxiosError } from "axios";
+import {
+  useGetIntegrations,
+  type Integration,
+  type IntegrationParams,
+} from "../../../entities/integrations";
 
-type ExternalOrderStatus =
-  | "new"
-  | "processing"
-  | "completed"
-  | "cancelled"
-  | string;
+// ─── Yordamchi funksiyalar ────────────────────────────────────────────────────
 
-type ExternalOrderItem = {
-  id?: string;
-  quantity?: number;
-  product?: { name?: string | null };
+const formatDate = (raw?: string | null): string => {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
-type ExternalOrder = {
-  id: string;
-  status?: ExternalOrderStatus;
-  total_price?: number;
-  createdAt?: string;
-  created_at?: string;
-  market?: { name?: string | null };
-  shop?: { name?: string | null };
-  items?: ExternalOrderItem[];
-};
+// ─── Holat badge ─────────────────────────────────────────────────────────────
 
-type Pagination = {
-  page: number;
-  limit: number;
-  total?: number;
-  totalPages: number;
-};
+const StatusBadge = ({ isActive }: { isActive: boolean }) => (
+  <span
+    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${isActive
+      ? "bg-success/10 text-success"
+      : "bg-error/10 text-error"
+      }`}
+  >
+    <span
+      className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-success" : "bg-error"
+        }`}
+    />
+    {isActive ? "Faol" : "Nofaol"}
+  </span>
+);
 
-const fmt = (n: number) => n.toLocaleString("uz-UZ");
-
-const statusLabel = (s?: string) => {
-  if (!s) return "—";
-  if (s === "new") return "Yangi";
-  if (s === "processing") return "Jarayonda";
-  if (s === "completed") return "Tayyor";
-  if (s === "cancelled") return "Bekor qilingan";
-  return s;
-};
-
-const statusClass = (s?: string) => {
-  if (s === "new") return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-  if (s === "processing") return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
-  if (s === "completed") return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-  if (s === "cancelled") return "bg-rose-500/10 text-rose-400";
-  return "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60";
-};
-
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null;
-
-const getPagination = (response: unknown): Pagination | null => {
-  if (!isRecord(response)) return null;
-
-  const data = isRecord(response.data) ? response.data : undefined;
-  const meta =
-    (data && (isRecord(data.pagination) ? data.pagination : undefined))
-    ?? (data && (isRecord(data.meta) ? data.meta : undefined))
-    ?? (isRecord(response.pagination) ? response.pagination : undefined)
-    ?? (isRecord(response.meta) ? response.meta : undefined);
-
-  if (!meta) return null;
-  const page = Number((meta.page as number | string | undefined) ?? 1);
-  const limit = Number((meta.limit as number | string | undefined) ?? 10);
-  const totalPages = Number((meta.totalPages as number | string | undefined) ?? (meta.total_pages as number | string | undefined) ?? 1);
-  const totalVal = meta.total as number | string | undefined;
-  const total = totalVal !== undefined ? Number(totalVal) : undefined;
-  return { page, limit, totalPages, total };
-};
-
-const getItems = (response: unknown): ExternalOrder[] => {
-  if (!isRecord(response)) return [];
-  const data = isRecord(response.data) ? response.data : undefined;
-
-  const items =
-    (data && Array.isArray(data.items) ? data.items : undefined)
-    ?? (data && Array.isArray(data.data) ? data.data : undefined)
-    ?? (data && Array.isArray(data) ? data : undefined)
-    ?? (Array.isArray(response.items) ? response.items : undefined)
-    ?? [];
-
-  return items as ExternalOrder[];
-};
-
-const getApiMessage = (err: unknown): string => {
-  const axiosErr = err as AxiosError<{ message?: unknown }>;
-  const msg = axiosErr?.response?.data?.message;
-  if (typeof msg === "string") return msg;
-  if (Array.isArray(msg)) return msg.map(String).join(", ");
-  return "";
-};
-
-const isNumericIdError = (err: unknown): boolean => {
-  const msg = getApiMessage(err);
-  return msg.includes("ID qiymatlari") && msg.includes("raqam");
-};
-
-const fetchExternalOrders = async (params: Record<string, string | number>): Promise<unknown> => {
-  const endpoints = [
-    "orders/external",
-    "orders/external-orders",
-    "orders/external_orders",
-  ] as const;
-
-  try {
-    const res = await api.get(endpoints[0], { params });
-    return res.data as unknown;
-  } catch (err) {
-    if (!isNumericIdError(err)) throw err;
-
-    // Backend routing `orders/:id` bilan to'qnashsa, alternativ route nomlarini sinab ko'ramiz.
-    for (const ep of endpoints.slice(1)) {
-      try {
-        const res = await api.get(ep, { params });
-        return res.data as unknown;
-      } catch {
-        // next
-      }
-    }
-    throw err;
-  }
-};
+// ─── Asosiy komponent ─────────────────────────────────────────────────────────
 
 const ExternalOrders = () => {
-  const [status, setStatus] = useState("");
+  const [isActive, setIsActive] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const handleStatusChange = (val: string) => {
-    setStatus(val);
+  // Filter o'zgarganda paginationni reset qilish
+  const handleIsActiveChange = (val: string) => {
+    setIsActive(val);
     setPage(1);
   };
-
   const handleDateFromChange = (val: string) => {
     setDateFrom(val);
     setPage(1);
   };
-
   const handleDateToChange = (val: string) => {
     setDateTo(val);
     setPage(1);
   };
 
-  const params = useMemo(() => {
-    const p: Record<string, string | number> = { page, limit };
-    if (status) p.status = status;
-    if (dateFrom) p.start_day = dateFrom;
-    if (dateTo) p.end_day = dateTo;
+  // API params
+  const params = useMemo<IntegrationParams>(() => {
+    const p: IntegrationParams = { page, limit };
+    if (isActive) p.is_active = isActive;
+    if (dateFrom) p.from_date = dateFrom;
+    if (dateTo) p.to_date = dateTo;
     return p;
-  }, [page, limit, status, dateFrom, dateTo]);
+  }, [page, limit, isActive, dateFrom, dateTo]);
 
-  const query = useQuery({
-    queryKey: ["orders", "external", params],
-    queryFn: () => fetchExternalOrders(params),
-  });
+  const { data, isLoading } = useGetIntegrations(params);
 
-  const orders = useMemo(() => getItems(query.data), [query.data]);
-  const pagination = useMemo(() => getPagination(query.data), [query.data]);
-  const activePage = pagination?.page ?? page;
-  const totalPages = pagination?.totalPages ?? 1;
-  const rowOffset = (activePage - 1) * (pagination?.limit ?? limit);
+  // API dan kelgan ma'lumotni xavfsiz qabul qilish
+  const integrations: Integration[] = useMemo(() => {
+    const raw = data as any;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw.data)) return raw.data;
+    if (Array.isArray(raw.items)) return raw.items;
+    return [];
+  }, [data]);
 
-  const columns = useMemo<ColumnConfig<ExternalOrder>[]>(
+  // Pagination: server paginatsiya yo'q bo'lsa — client side
+  const totalPages = Math.max(1, Math.ceil(integrations.length / limit));
+  const rowOffset = (page - 1) * limit;
+  const pagedData = useMemo(
+    () => integrations.slice(rowOffset, rowOffset + limit),
+    [integrations, rowOffset, limit]
+  );
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
+
+  // Jadval ustunlari
+  const columns = useMemo<ColumnConfig<Integration>[]>(
     () => [
       {
         key: "id",
-        label: "#",
-        width: "70px",
-        render: (_v, _row, rowIndex) => (
-          <span className="text-gray-400 dark:text-gray-500 font-semibold">
-            {rowOffset + rowIndex + 1}
+        label: "Raqam",
+        width: "60px",
+        render: (_v, _row, i) => (
+          <span className="text-gray-400 dark:text-white/40 font-semibold text-xs">
+            {rowOffset + i + 1}
           </span>
         ),
       },
       {
-        key: "market",
+        key: "name",
         label: "Do'kon",
         sortable: true,
         render: (_v, row) => (
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
-              <QrCode size={14} className="text-main" />
+              <Globe size={14} className="text-main" />
             </div>
-            <span className="font-semibold text-gray-900 dark:text-white truncate">
-              {row.market?.name ?? row.shop?.name ?? "—"}
-            </span>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 dark:text-white truncate">
+                {row.name}
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-white/40 truncate">
+                {row.slug}
+              </p>
+            </div>
           </div>
         ),
       },
       {
-        key: "items",
+        key: "total_synced_orders",
         label: "Mahsulotlar",
-        render: (_v, row) => {
-          const list = row.items ?? [];
-          if (list.length === 0) {
-            return <span className="text-gray-400 dark:text-white/40">—</span>;
-          }
-          const text = list
-            .slice(0, 3)
-            .map((it) => {
-              const name = it.product?.name ?? "—";
-              const qty = it.quantity ?? 0;
-              return `${name}×${qty}`;
-            })
-            .join(", ");
-          const more = list.length > 3 ? ` +${list.length - 3}` : "";
-          return (
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {text}{more}
-            </span>
-          );
-        },
-      },
-      {
-        key: "total_price",
-        label: "Summa",
         sortable: true,
         render: (v) => (
-          <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-            {fmt(Number(v ?? 0))} so'm
+          <span className="font-bold text-main tabular-nums">
+            {Number(v ?? 0).toLocaleString("uz-UZ")}
           </span>
         ),
       },
       {
-        key: "status",
-        label: "Holat",
-        render: (v) => (
-          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${statusClass(String(v ?? ""))}`}>
-            {statusLabel(String(v ?? ""))}
-          </span>
+        key: "id" as any, // Summa API da yo'q, shuning uchun dummy key
+        label: "Summa",
+        render: () => (
+          <span className="text-gray-400 dark:text-white/40">—</span>
         ),
+      },
+      {
+        key: "is_active",
+        label: "Holat",
+        render: (v) => <StatusBadge isActive={Boolean(v)} />,
       },
       {
         key: "createdAt",
         label: "Sana",
-        render: (v, row) => {
-          const raw = (v ?? row.created_at ?? "") as string;
-          const d = raw ? new Date(raw) : null;
-          const text =
-            d && !Number.isNaN(d.getTime())
-              ? d.toLocaleString("uz-UZ", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : (raw || "—");
-          return (
-            <span className="text-xs text-gray-500 dark:text-white/50 whitespace-nowrap">
-              {text}
-            </span>
-          );
-        },
+        render: (v) => (
+          <span className="text-xs text-gray-500 dark:text-white/50 whitespace-nowrap">
+            {formatDate(v as string)}
+          </span>
+        ),
       },
     ],
-    [rowOffset],
+    [rowOffset]
   );
 
-  const statusOptions = useMemo(
+  const isActiveOptions = useMemo(
     () => [
-      { value: "", label: "Barcha holat" },
-      { value: "new", label: "Yangi" },
-      { value: "processing", label: "Jarayonda" },
-      { value: "completed", label: "Tayyor" },
-      { value: "cancelled", label: "Bekor qilingan" },
+      { value: "", label: "Barchasi" },
+      { value: "true", label: "Faol" },
+      { value: "false", label: "Nofaol" },
     ],
-    [],
+    []
   );
-
-  const canPrev = activePage > 1;
-  const canNext = activePage < totalPages;
 
   return (
-    <div className="space-y-6">
-      {/* Filters */}
+    <div className="space-y-4">
+      {/* Filterlar */}
       <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500">
-              <Globe size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-800 dark:text-white m-0">Tashqi buyurtmalar</p>
-              <p className="text-xs text-gray-500 dark:text-white/50 m-0">
-                Filtrlar: holat va sana oralig'i
-              </p>
-            </div>
+        <div className="flex flex-wrap items-end gap-4">
+          {/* is_active filtri */}
+          <div className="w-full md:w-48">
+            <FilterSelect
+              name="integration_is_active"
+              label="Holat"
+              value={isActive}
+              onChange={handleIsActiveChange}
+              options={isActiveOptions}
+              icon={Activity}
+              placeholder="Barchasi"
+            />
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => query.refetch()}
-              className="p-2.5 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-colors"
-              aria-label="Yangilash"
-            >
-              <RefreshCw size={18} className={query.isFetching ? "animate-spin text-gray-400" : "text-gray-400"} />
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FilterSelect
-            name="external_status"
-            label="Holat"
-            value={status}
-            onChange={handleStatusChange}
-            options={statusOptions}
-            placeholder="Holatni tanlang"
-          />
-          <div className="md:col-span-2">
-            <div className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-              Sana
+          {/* Sana filtri */}
+          <div className="w-full md:w-auto md:ml-auto">
+            <div className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider mb-1.5">
+              Sana oralig'i
             </div>
             <FilterDateRange
               dateFrom={dateFrom}
               dateTo={dateTo}
               onChangeDateFrom={handleDateFromChange}
               onChangeDateTo={handleDateToChange}
-              className="flex-wrap"
+              className="flex-wrap md:flex-nowrap"
             />
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <Table<ExternalOrder>
-        data={orders}
+      {/* Jadval */}
+      <Table<Integration>
+        data={pagedData}
         columns={columns}
-        loading={query.isLoading}
+        loading={isLoading}
         keyExtractor={(row) => row.id}
         hoverable
         emptyMessage="Tashqi buyurtmalar yo'q"
@@ -352,30 +221,30 @@ const ExternalOrders = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500 dark:text-white/40">
-            {activePage}-sahifa / {totalPages}
+            {page}-sahifa / {totalPages}
           </span>
+
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => canPrev && setPage(activePage - 1)}
+              onClick={() => canPrev && setPage((p) => p - 1)}
               disabled={!canPrev}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
             >
               Oldingi
             </button>
 
             {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => Math.abs(p - activePage) <= 2)
+              .filter((p) => Math.abs(p - page) <= 2)
               .map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setPage(p)}
-                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${
-                    p === activePage
-                      ? "bg-main text-white shadow-sm shadow-main/30"
-                      : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
-                  }`}
+                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${p === page
+                    ? "bg-main text-white shadow-sm shadow-main/30"
+                    : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
+                    }`}
                 >
                   {p}
                 </button>
@@ -383,9 +252,9 @@ const ExternalOrders = () => {
 
             <button
               type="button"
-              onClick={() => canNext && setPage(activePage + 1)}
+              onClick={() => canNext && setPage((p) => p + 1)}
               disabled={!canNext}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
             >
               Keyingi
             </button>
