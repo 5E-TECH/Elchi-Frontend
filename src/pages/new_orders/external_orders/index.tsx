@@ -1,53 +1,13 @@
 import { memo, useMemo, useState } from "react";
-import { Activity, Globe } from "lucide-react";
-import { Globe, QrCode, RefreshCw } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { Controller, useForm } from "react-hook-form";
 import type { AxiosError } from "axios";
+import { useQuery } from "@tanstack/react-query";
+import { Globe, RefreshCw } from "lucide-react";
+import { api } from "../../../shared/api/api";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
-import {
-  useGetIntegrations,
-  type Integration,
-  type IntegrationParams,
-} from "../../../entities/integrations";
-
-
-const formatDate = (raw?: string | null): string => {
-  if (!raw) return "—";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("uz-UZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const StatusBadge = ({ isActive }: { isActive: boolean }) => (
-  <span
-    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${
-      isActive ? "bg-success/10 text-success" : "bg-error/10 text-error"
-    }`}
-  >
-    <span
-      className={`w-1.5 h-1.5 rounded-full ${
-        isActive ? "bg-success" : "bg-error"
-      }`}
-    />
-    {isActive ? "Faol" : "Nofaol"}
-  </span>
-);
-
-<<<<<<< HEAD
-=======
-// ─── Asosiy komponent ─────────────────────────────────────────────────────────
-import { api } from "../../../shared/api/api";
-import { GlobalSearchInput } from "../../../features/search";
+import { GlobalSearchInput, useDebounce } from "../../../features/search";
 
 type ExternalOrderStatus =
   | "new"
@@ -80,11 +40,7 @@ type Pagination = {
   totalPages: number;
 };
 
-interface ExternalOrdersSearchValues {
-  search: string;
-}
-
-const fmt = (n: number) => n.toLocaleString("uz-UZ");
+const fmtMoney = (n: number) => n.toLocaleString("uz-UZ");
 
 const statusLabel = (s?: string) => {
   if (!s) return "—";
@@ -96,9 +52,12 @@ const statusLabel = (s?: string) => {
 };
 
 const statusClass = (s?: string) => {
-  if (s === "new") return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-  if (s === "processing") return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
-  if (s === "completed") return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+  if (s === "new")
+    return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+  if (s === "processing")
+    return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
+  if (s === "completed")
+    return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
   if (s === "cancelled") return "bg-rose-500/10 text-rose-400";
   return "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60";
 };
@@ -138,7 +97,6 @@ const getItems = (response: unknown): ExternalOrder[] => {
   const items =
     (data && Array.isArray(data.items) ? data.items : undefined) ??
     (data && Array.isArray(data.data) ? data.data : undefined) ??
-    (data && Array.isArray(data) ? data : undefined) ??
     (Array.isArray(response.items) ? response.items : undefined) ??
     [];
 
@@ -186,71 +144,47 @@ const fetchExternalOrders = async (
   }
 };
 
->>>>>>> 0eecb64e6d0b5f9c0c5d4fc7137581d03e016f47
-const ExternalOrders = () => {
-  const [isActive, setIsActive] = useState("");
+const External_orders = () => {
+  const [status, setStatus] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
   const limit = 10;
 
-  // Filter o'zgarganda paginationni reset qilish
-  const handleIsActiveChange = (val: string) => {
-    setIsActive(val);
-  const { control, watch, setValue } = useForm<ExternalOrdersSearchValues>({
-    defaultValues: { search: "" },
-  });
+  const setSearchDebounced = useDebounce((next: string) => {
+    setSearch(next);
+  }, 500);
 
-  const search = watch("search");
-
-  const handleStatusChange = (val: string) => {
-    setStatus(val);
-    setPage(1);
-  };
-  const handleDateFromChange = (val: string) => {
-    setDateFrom(val);
-    setPage(1);
-  };
-  const handleDateToChange = (val: string) => {
-    setDateTo(val);
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    setSearchDebounced(value.trim());
     setPage(1);
   };
 
-  // API params
-  const params = useMemo<IntegrationParams>(() => {
-    const p: IntegrationParams = { page, limit };
-    if (isActive) p.is_active = isActive;
-    if (dateFrom) p.from_date = dateFrom;
-    if (dateTo) p.to_date = dateTo;
-    return p;
-  }, [page, limit, isActive, dateFrom, dateTo]);
+  const handleStatusChange = (value: string) => {
+    setStatus(value);
+    setPage(1);
+  };
 
-  const { data, isLoading } = useGetIntegrations(params);
+  const handleDateFromChange = (value: string) => {
+    setDateFrom(value);
+    setPage(1);
+  };
 
-  // API dan kelgan ma'lumotni xavfsiz qabul qilish
-  const integrations: Integration[] = useMemo(() => {
-    const raw = data as any;
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    if (Array.isArray(raw.data)) return raw.data;
-    if (Array.isArray(raw.items)) return raw.items;
-    return [];
-  }, [data]);
+  const handleDateToChange = (value: string) => {
+    setDateTo(value);
+    setPage(1);
+  };
 
-  // Pagination: server paginatsiya yo'q bo'lsa — client side
-  const totalPages = Math.max(1, Math.ceil(integrations.length / limit));
-  const rowOffset = (page - 1) * limit;
-  const pagedData = useMemo(
-    () => integrations.slice(rowOffset, rowOffset + limit),
-    [integrations, rowOffset, limit],
-  );
-  const canPrev = page > 1;
-  const canNext = page < totalPages;
   const handleResetFilters = () => {
     setStatus("");
     setDateFrom("");
     setDateTo("");
-    setValue("search", "");
+    setSearchInput("");
+    setSearch("");
     setPage(1);
   };
 
@@ -258,8 +192,17 @@ const ExternalOrders = () => {
     const nextParams: Record<string, string | number> = { page, limit };
 
     if (status) nextParams.status = status;
-    if (dateFrom) nextParams.start_day = dateFrom;
-    if (dateTo) nextParams.end_day = dateTo;
+
+    if (dateFrom) {
+      nextParams.start_day = dateFrom;
+      nextParams.from_date = dateFrom;
+    }
+
+    if (dateTo) {
+      nextParams.end_day = dateTo;
+      nextParams.to_date = dateTo;
+    }
+
     if (search.trim()) nextParams.search = search.trim();
 
     return nextParams;
@@ -272,54 +215,50 @@ const ExternalOrders = () => {
 
   const orders = useMemo(() => getItems(query.data), [query.data]);
   const pagination = useMemo(() => getPagination(query.data), [query.data]);
-  const activePage = pagination?.page ?? page;
-  const totalPages = pagination?.totalPages ?? 1;
-  const rowOffset = (activePage - 1) * (pagination?.limit ?? limit);
 
-  // Jadval ustunlari
-  const columns = useMemo<ColumnConfig<Integration>[]>(
+  const activePage = pagination?.page ?? page;
+  const pageLimit = pagination?.limit ?? limit;
+  const totalPages = pagination?.totalPages ?? 1;
+  const rowOffset = (activePage - 1) * pageLimit;
+
+  const columns = useMemo<ColumnConfig<ExternalOrder>[]>(
     () => [
       {
         key: "id",
-        label: "Raqam",
-        width: "60px",
-        render: (_v, _row, i) => (
+        label: "#",
+        width: "70px",
+        render: (_v, _row, index) => (
           <span className="text-gray-400 dark:text-white/40 font-semibold text-xs">
-            {rowOffset + i + 1}
+            {rowOffset + index + 1}
           </span>
         ),
       },
       {
-        key: "name",
-        label: "Do'kon",
-        sortable: true,
+        key: "market",
+        label: "Market / Do'kon",
         render: (_v, row) => (
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
               <Globe size={14} className="text-main" />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-gray-900 dark:text-white truncate">
-                {row.name}
+              <p className="font-semibold text-gray-900 dark:text-white truncate m-0">
+                {row.market?.name ?? row.shop?.name ?? "—"}
               </p>
-              <p className="text-[11px] text-gray-400 dark:text-white/40 truncate">
-                {row.slug}
-              </p>
-              <QrCode size={14} className="text-main" />
+              {row.shop?.name && row.market?.name && (
+                <p className="text-[11px] text-gray-400 dark:text-white/40 truncate m-0">
+                  {row.shop.name}
+                </p>
+              )}
             </div>
           </div>
         ),
       },
       {
-        key: "total_synced_orders",
+        key: "items",
         label: "Mahsulotlar",
-        sortable: true,
-        render: (v) => (
-          <span className="font-bold text-main tabular-nums">
-            {Number(v ?? 0).toLocaleString("uz-UZ")}
         render: (_v, row) => {
           const list = row.items ?? [];
-
           if (list.length === 0) {
             return <span className="text-gray-400 dark:text-white/40">—</span>;
           }
@@ -348,15 +287,11 @@ const ExternalOrders = () => {
         sortable: true,
         render: (value) => (
           <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-            {fmt(Number(value ?? 0))} so'm
+            {fmtMoney(Number(value ?? 0))} so'm
           </span>
         ),
       },
       {
-        key: "id" as any, // Summa API da yo'q, shuning uchun dummy key
-        label: "Summa",
-        render: () => (
-          <span className="text-gray-400 dark:text-white/40">—</span>
         key: "status",
         label: "Holat",
         render: (value) => (
@@ -370,18 +305,8 @@ const ExternalOrders = () => {
         ),
       },
       {
-        key: "is_active",
-        label: "Holat",
-        render: (v) => <StatusBadge isActive={Boolean(v)} />,
-      },
-      {
         key: "createdAt",
         label: "Sana",
-        render: (v) => (
-          <span className="text-xs text-gray-500 dark:text-white/50 whitespace-nowrap">
-            {formatDate(v as string)}
-          </span>
-        ),
         render: (value, row) => {
           const raw = (value ?? row.created_at ?? "") as string;
           const date = raw ? new Date(raw) : null;
@@ -407,31 +332,22 @@ const ExternalOrders = () => {
     [rowOffset],
   );
 
-  const isActiveOptions = useMemo(
+  const statusOptions = useMemo(
     () => [
       { value: "", label: "Barchasi" },
-      { value: "true", label: "Faol" },
-      { value: "false", label: "Nofaol" },
+      { value: "new", label: "Yangi" },
+      { value: "processing", label: "Jarayonda" },
+      { value: "completed", label: "Tayyor" },
+      { value: "cancelled", label: "Bekor qilingan" },
     ],
     [],
   );
 
+  const canPrev = activePage > 1;
+  const canNext = activePage < totalPages;
+  const errorMessage = query.error ? getApiMessage(query.error) : "";
+
   return (
-    <div className="space-y-4">
-      {/* Filterlar */}
-      <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-4">
-        <div className="flex flex-wrap items-end gap-4">
-          {/* is_active filtri */}
-          <div className="w-full md:w-48">
-            <FilterSelect
-              name="integration_is_active"
-              label="Holat"
-              value={isActive}
-              onChange={handleIsActiveChange}
-              options={isActiveOptions}
-              icon={Activity}
-              placeholder="Barchasi"
-            />
     <div className="space-y-6">
       <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -450,25 +366,17 @@ const ExternalOrders = () => {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <Controller
-              control={control}
-              name="search"
-              render={({ field }) => (
-                <GlobalSearchInput
-                  name={field.name}
-                  value={field.value}
-                  onBlur={field.onBlur}
-                  placeholder="Market qidirish..."
-                  className="w-64"
-                  inputClassName="bg-white dark:bg-primarydark border-gray-200 dark:border-white/10 text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2.5 shadow-none focus:shadow-none"
-                  iconClassName="text-gray-400 dark:text-gray-500 group-focus-within:text-main"
-                  clearButtonClassName="text-gray-400 dark:text-gray-500 hover:text-main"
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setPage(1);
-                  }}
-                />
-              )}
+            <GlobalSearchInput
+              value={searchInput}
+              onValueChange={handleSearchChange}
+              placeholder="Market qidirish..."
+              className="w-64"
+              inputClassName="bg-white dark:bg-primarydark border-gray-200 dark:border-white/10 text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2.5 shadow-none focus:shadow-none"
+              iconClassName="text-gray-400 dark:text-gray-500 group-focus-within:text-main"
+              clearButtonClassName="text-gray-400 dark:text-gray-500 hover:text-main"
+              syncWithRedux={false}
+              syncWithUrl={false}
+              debounceDelay={0}
             />
 
             <button
@@ -479,7 +387,9 @@ const ExternalOrders = () => {
             >
               <RefreshCw
                 size={18}
-                className={query.isFetching ? "animate-spin text-gray-400" : "text-gray-400"}
+                className={
+                  query.isFetching ? "animate-spin text-gray-400" : "text-gray-400"
+                }
               />
             </button>
 
@@ -491,11 +401,8 @@ const ExternalOrders = () => {
               Tozalash
             </button>
           </div>
+        </div>
 
-          {/* Sana filtri */}
-          <div className="w-full md:w-auto md:ml-auto">
-            <div className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider mb-1.5">
-              Sana oralig'i
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <FilterSelect
             name="external_status"
@@ -503,7 +410,7 @@ const ExternalOrders = () => {
             value={status}
             onChange={handleStatusChange}
             options={statusOptions}
-            placeholder="Holatni tanlang"
+            placeholder="Barchasi"
           />
 
           <div className="md:col-span-2">
@@ -521,61 +428,51 @@ const ExternalOrders = () => {
         </div>
       </div>
 
-      {/* Jadval */}
-      <Table<Integration>
-        data={pagedData}
+      {errorMessage && (
+        <div className="px-4 py-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 text-sm">
+          {errorMessage}
+        </div>
+      )}
+
       <Table<ExternalOrder>
         data={orders}
         columns={columns}
-        loading={isLoading}
+        loading={query.isLoading}
         keyExtractor={(row) => row.id}
         hoverable
         emptyMessage="Tashqi buyurtmalar yo'q"
       />
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <span className="text-xs text-gray-500 dark:text-white/40">
-            {page}-sahifa / {totalPages}
+            {activePage}-sahifa / {totalPages}
           </span>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => canPrev && setPage((p) => p - 1)}
+              onClick={() => canPrev && setPage((p) => Math.max(1, p - 1))}
               disabled={!canPrev}
               className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
             >
               Oldingi
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => Math.abs(p - page) <= 2)
-              .map((p) => (
             {Array.from({ length: totalPages }, (_, index) => index + 1)
-              .filter((currentPage) => Math.abs(currentPage - activePage) <= 2)
-              .map((currentPage) => (
+              .filter((p) => Math.abs(p - activePage) <= 2)
+              .map((p) => (
                 <button
-                  key={currentPage}
+                  key={p}
                   type="button"
                   onClick={() => setPage(p)}
-<<<<<<< HEAD
                   className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${
-                    p === page
-=======
-                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${p === page
-                    ? "bg-main text-white shadow-sm shadow-main/30"
-                    : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
-                    }`}
-                  onClick={() => setPage(currentPage)}
-                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${
-                    currentPage === activePage
->>>>>>> 0eecb64e6d0b5f9c0c5d4fc7137581d03e016f47
+                    p === activePage
                       ? "bg-main text-white shadow-sm shadow-main/30"
                       : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
                   }`}
                 >
-                  {currentPage}
+                  {p}
                 </button>
               ))}
 
@@ -594,4 +491,4 @@ const ExternalOrders = () => {
   );
 };
 
-export default memo(ExternalOrders);
+export default memo(External_orders);
