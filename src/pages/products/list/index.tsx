@@ -1,4 +1,8 @@
-import { memo, useState, useMemo, useCallback } from "react";
+// Migrated to React Hook Form
+import { memo, useState, useMemo, useCallback, useEffect } from "react";
+import { Controller, useForm, type Resolver } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import HeaderName from "../../../shared/components/headerName";
 import {
   BookMarked,
@@ -46,19 +50,57 @@ interface Market {
   index: number;
 }
 
+interface ProductFilterFormValues {
+  market_id: string;
+}
+
+interface EditProductFormValues {
+  name: string;
+  image: File | null;
+}
+
+const productFilterSchema: yup.ObjectSchema<ProductFilterFormValues> = yup.object({
+  market_id: yup.string().defined(),
+});
+
+const editProductSchema: yup.ObjectSchema<EditProductFormValues> = yup.object({
+  name: yup.string().defined(),
+  image: yup.mixed<File>().nullable().defined(),
+});
+
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
 const ProductTable = () => {
   const navigate = useNavigate();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
-  const [filterValue, setFilterValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
   // ─── Edit State ─────────────────────────────────────────────────────────
   const [editTarget, setEditTarget] = useState<Product | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editImageFile, setEditImageFile] = useState<File | undefined>(undefined);
   const [editPreviewUrl, setEditPreviewUrl] = useState<string | undefined>(undefined);
+  const {
+    control: filterControl,
+    watch: watchFilter,
+  } = useForm<ProductFilterFormValues>({
+    defaultValues: {
+      market_id: "",
+    },
+    resolver: yupResolver(productFilterSchema) as Resolver<ProductFilterFormValues>,
+  });
+  const {
+    register: registerEdit,
+    handleSubmit: handleEditSubmit,
+    reset: resetEditForm,
+    setValue: setEditValue,
+    formState: { errors: editErrors },
+  } = useForm<EditProductFormValues>({
+    defaultValues: {
+      name: "",
+      image: null,
+    },
+    resolver: yupResolver(editProductSchema) as Resolver<EditProductFormValues>,
+  });
+  const filterValue = watchFilter("market_id");
 
   const resolveImageUrl = useCallback((raw?: string | null): string | undefined => {
     if (!raw) return undefined;
@@ -150,28 +192,41 @@ const ProductTable = () => {
 
   const handleEditRequest = useCallback((product: Product) => {
     setEditTarget(product);
-    setEditName(product.name);
-    setEditImageFile(undefined);
     setEditPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return undefined;
     });
   }, []);
 
+  useEffect(() => {
+    if (!editTarget) {
+      resetEditForm({
+        name: "",
+        image: null,
+      });
+      return;
+    }
+
+    resetEditForm({
+      name: editTarget.name,
+      image: null,
+    });
+  }, [editTarget, resetEditForm]);
+
   const handleEditImageChange = useCallback((file: File) => {
-    setEditImageFile(file);
+    setEditValue("image", file, { shouldValidate: true });
     setEditPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return URL.createObjectURL(file);
     });
-  }, []);
+  }, [setEditValue]);
 
-  const handleEditSave = useCallback(async () => {
+  const handleEditSave = useCallback(async (values: EditProductFormValues) => {
     if (!editTarget) return;
     const buildFormData = (nameKey: "name" | "product_name") => {
       const formData = new FormData();
-      formData.append(nameKey, editName);
-      if (editImageFile) formData.append("image", editImageFile);
+      formData.append(nameKey, values.name);
+      if (values.image) formData.append("image", values.image);
       return formData;
     };
 
@@ -191,16 +246,16 @@ const ProductTable = () => {
       await updateProduct.mutateAsync({ id: editTarget.id, data: buildFormData("product_name") });
       setEditTarget(null);
     }
-  }, [editTarget, editName, editImageFile, updateProduct]);
+  }, [editTarget, updateProduct]);
 
   const handleEditCancel = useCallback(() => {
     setEditTarget(null);
-    setEditImageFile(undefined);
+    setEditValue("image", null);
     setEditPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return undefined;
     });
-  }, []);
+  }, [setEditValue]);
 
   // ─── Table Columns ─────────────────────────────────────────────────────
 
@@ -304,11 +359,17 @@ const ProductTable = () => {
         </div>
 
         <div className="w-[30%]">
-          <SelectInput
-            value={filterValue}
-            onChange={(e) => setFilterValue(e.target.value)}
-            options={marketOptions}
-            placeholder="Market tanlang..."
+          <Controller
+            control={filterControl}
+            name="market_id"
+            render={({ field }) => (
+              <SelectInput
+                value={field.value}
+                onChange={field.onChange}
+                options={marketOptions}
+                placeholder="Market tanlang..."
+              />
+            )}
           />
         </div>
 
@@ -373,7 +434,7 @@ const ProductTable = () => {
       <UpdatePopup
         isOpen={!!editTarget}
         onClose={handleEditCancel}
-        onSave={handleEditSave}
+        onSave={handleEditSubmit(handleEditSave)}
         title="Mahsulotni tahrirlash"
         icon={<Pencil size={20} />}
         isLoading={updateProduct.isPending}
@@ -391,11 +452,13 @@ const ProductTable = () => {
           </label>
           <input
             type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
+            {...registerEdit("name")}
             className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-main/40 transition-all"
             placeholder="Mahsulot nomini kiriting..."
           />
+          {editErrors.name && (
+            <p className="text-xs text-red-500">{editErrors.name.message}</p>
+          )}
         </div>
       </UpdatePopup>
     </div>

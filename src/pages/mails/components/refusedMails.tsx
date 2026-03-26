@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { MapPin, Package, ChevronRight, AlertTriangle } from "lucide-react";
+import { MapPin, Package, ChevronRight, AlertTriangle, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMails } from "../../../entities/mails";
 import { useSelector } from "react-redux";
@@ -9,6 +9,11 @@ interface Region {
   id: string;
   name: string;
   sato_code: string;
+}
+
+interface Courier {
+  id: string;
+  name: string;
 }
 
 interface MailItem {
@@ -22,6 +27,7 @@ interface MailItem {
   region_id: string;
   region: Region;
   status: string;
+  courier?: Courier | null;
 }
 
 const formatPrice = (price: number): string =>
@@ -32,13 +38,16 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
   const navigate = useNavigate();
   const { role } = useSelector((state: RootState) => state.role);
   const regionName = item.region?.name ?? `Viloyat ${item.region_id}`;
+  const courierName = item.courier?.name;
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}`)}
-      onKeyDown={(e) => e.key === "Enter" && navigate(`/mails/${item.id}`)}
+      onClick={() => navigate(`/mails/${item.id}?type=refused`)}
+      onKeyDown={(e) =>
+        e.key === "Enter" && navigate(`/mails/${item.id}?type=refused`)
+      }
       className="group relative overflow-hidden rounded-2xl cursor-pointer"
       style={{
         background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
@@ -78,6 +87,12 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
                 })
               : regionName}
           </h3>
+          {courierName && (
+            <div className="mt-1 flex items-center gap-1.5 text-sm text-white/80">
+              <User size={13} className="text-white/60" />
+              <span>{courierName}</span>
+            </div>
+          )}
         </div>
 
         {/* Divider */}

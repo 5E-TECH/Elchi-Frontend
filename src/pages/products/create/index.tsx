@@ -1,3 +1,4 @@
+// Migrated to React Hook Form
 import {
   memo,
   useState,
@@ -5,8 +6,10 @@ import {
   useMemo,
   useCallback,
   useRef,
-  type FormEvent,
 } from "react";
+import { Controller, useForm, type Resolver } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Image, X, Trash2, Edit, MoveLeft } from "lucide-react";
 import Button from "../../../shared/components/button";
@@ -20,6 +23,16 @@ interface ExistingProduct {
   name: string;
   image: string;
 }
+
+interface CreateProductFormValues {
+  name: string;
+  image: File | null;
+}
+
+const createProductSchema: yup.ObjectSchema<CreateProductFormValues> = yup.object({
+  name: yup.string().trim().required("Mahsulot nomi kiritilishi shart"),
+  image: yup.mixed<File>().nullable().defined(),
+});
 
 // ─── Cell Components ────────────────────────────────────────────────────────────
 
@@ -44,10 +57,7 @@ ProductNameCell.displayName = "ProductNameCell";
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
 const CreateProductPage = () => {
-  const [name, setName] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
-  const [img, setImage] = useState<File | null>(null);
-  const [isPending, setIsPending] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ExistingProduct | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,12 +71,32 @@ const CreateProductPage = () => {
   const marketName: string | null = marketD?.data?.[0]?.market?.name ?? null;
 
   const navigate = useNavigate();
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<CreateProductFormValues>({
+    defaultValues: {
+      name: "",
+      image: null,
+    },
+    resolver: yupResolver(createProductSchema) as Resolver<CreateProductFormValues>,
+  });
+
+  const isPending = createProduct.isPending;
 
   useEffect(() => {
     const prev = prevPreviewRef.current;
     return () => {
       if (prev) URL.revokeObjectURL(prev);
     };
+  }, [preview]);
+
+  useEffect(() => {
+    prevPreviewRef.current = preview;
   }, [preview]);
 
   // ─── Delete Handlers ────────────────────────────────────────────────────
@@ -142,27 +172,28 @@ const CreateProductPage = () => {
   // ─── Form Handlers ─────────────────────────────────────────────────────
 
   const resetForm = useCallback(() => {
-    setName("");
-    setImage(null);
+    reset({
+      name: "",
+      image: null,
+    });
     setPreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
+  }, [reset]);
 
   const handleImageChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+    (file: File | null) => {
       if (!file) return;
 
       setPreview((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return URL.createObjectURL(file);
       });
-      setImage(file);
+      setValue("image", file, { shouldValidate: true });
     },
-    [],
+    [setValue],
   );
 
   const handleRemoveImage = useCallback(() => {
@@ -170,39 +201,33 @@ const CreateProductPage = () => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
     });
-    setImage(null);
+    setValue("image", null, { shouldValidate: true });
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
+  }, [setValue]);
 
-  const handleSubmit = useCallback(
-    (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      if (!name.trim() || !id || isPending) return;
+  const onSubmit = useCallback(
+    async (values: CreateProductFormValues) => {
+      if (!id || isPending) return;
 
       const formData = new FormData();
-      formData.append("name", name.trim());
+      formData.append("name", values.name.trim());
       formData.append("market_id", id);
-      if (img) formData.append("image", img);
+      if (values.image) formData.append("image", values.image);
 
-      setIsPending(true);
-
-      createProduct.mutate(formData, {
+      await createProduct.mutateAsync(formData, {
         onSuccess: () => {
           resetForm();
         },
-        onSettled: () => {
-          setIsPending(false);
-        },
       });
     },
-    [name, id, img, isPending, createProduct, resetForm],
+    [id, isPending, createProduct, resetForm],
   );
 
   return (
     <div className="space-y-8">
       {/* Product Information Section */}
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         className="bg-sidebar dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800"
       >
         {/* Header with gradient bar */}
@@ -238,15 +263,15 @@ const CreateProductPage = () => {
               />
               <input
                 id="product-name"
-                name="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
                 disabled={isPending}
-                required
                 placeholder="Product name..."
+                {...register("name")}
                 className="w-full bg-gray-50 dark:bg-primarydark text-gray-900 dark:text-white pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-main transition-colors disabled:opacity-50"
               />
             </div>
+            {errors.name && (
+              <p className="text-xs text-red-500">{errors.name.message}</p>
+            )}
           </div>
 
           {/* Product Image Upload */}
@@ -254,41 +279,47 @@ const CreateProductPage = () => {
             <label className="text-sm mb-2 font-medium text-gray-700 dark:text-gray-300">
               Category Image
             </label>
-            <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl h-30 md:h-37.5 flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-primarydark transition overflow-hidden relative">
-              {preview ? (
-                <>
-                  <img
-                    src={preview}
-                    alt="preview"
-                    className="h-full w-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="absolute top-2 right-2 p-1 bg-white/80 dark:bg-black/50 rounded-full hover:bg-white dark:hover:bg-black/70 transition-colors"
-                  >
-                    <X size={16} className="text-red-500" />
-                  </button>
-                </>
-              ) : (
-                <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
-                  <div className="flex flex-col items-center gap-1">
-                    <Image size={24} className="text-gray-400" />
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Upload Image
-                    </span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageChange}
-                    ref={fileInputRef}
-                    disabled={isPending}
-                  />
-                </label>
+            <Controller
+              control={control}
+              name="image"
+              render={() => (
+                <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl h-30 md:h-37.5 flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-primarydark transition overflow-hidden relative">
+                  {preview ? (
+                    <>
+                      <img
+                        src={preview}
+                        alt="preview"
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 p-1 bg-white/80 dark:bg-black/50 rounded-full hover:bg-white dark:hover:bg-black/70 transition-colors"
+                      >
+                        <X size={16} className="text-red-500" />
+                      </button>
+                    </>
+                  ) : (
+                    <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
+                      <div className="flex flex-col items-center gap-1">
+                        <Image size={24} className="text-gray-400" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Upload Image
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                        ref={fileInputRef}
+                        disabled={isPending}
+                      />
+                    </label>
+                  )}
+                </div>
               )}
-            </div>
+            />
           </div>
         </div>
 
@@ -338,4 +369,3 @@ const CreateProductPage = () => {
 };
 
 export default memo(CreateProductPage);
-
