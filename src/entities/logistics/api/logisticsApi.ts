@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
 
 export const REGION_KEY = "regions";
 export const DISTRICT_KEY = "districts";
@@ -8,7 +9,7 @@ export const useLogistics = () => {
     const getRegions = () =>
         useQuery({
             queryKey: [REGION_KEY],
-            queryFn: () => api.get("region").then((res) => res.data),
+            queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => res.data),
             staleTime: 5 * 60 * 1000,
         });
 
@@ -16,7 +17,7 @@ export const useLogistics = () => {
         useQuery({
             queryKey: [DISTRICT_KEY, regionId],
             queryFn: () =>
-                api.get(`region/${regionId}`).then((res) => {
+                api.get(API_ENDPOINTS.REGIONS.BY_ID(regionId as string)).then((res) => {
                     const data = res.data;
                     // Backend javobidan districts/district arrayini topamiz
                     if (Array.isArray(data?.districts)) return data.districts;

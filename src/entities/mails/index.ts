@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 const MAILS_KEY = "mails";
@@ -174,39 +175,39 @@ export const useMails = () => {
   const getNewMails = () =>
     useQuery({
       queryKey: [MAILS_KEY, "new"],
-      queryFn: () => api.get("post/new").then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.POSTS.NEW).then((res) => res.data),
     });
 
   const getNewMailsCourier = () =>
     useQuery({
       queryKey: [MAILS_KEY, "new"],
-      queryFn: () => api.get("post/on-the-road").then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.POSTS.ON_THE_ROAD).then((res) => res.data),
     });
 
   const getTodayMailsCourier = (id: string) =>
     useQuery({
       queryKey: [MAILS_KEY, "new", id],
-      queryFn: () => api.get(`post/orders/${id}`).then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(id)).then((res) => res.data),
       enabled: !!id,
     });
 
   const getRefusedMailsCourierByPostId = (id: string) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-detail", id],
-      queryFn: () => api.get(`post/orders/rejected/${id}`).then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED_ORDERS_BY_POST_ID(id)).then((res) => res.data),
       enabled: !!id,
     });
 
   const getRefusedMails = () =>
     useQuery({
       queryKey: [MAILS_KEY, "refused"],
-      queryFn: () => api.get("post/rejected").then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
     });
 
   const getRefusedMailsCourier = () =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-courier"],
-      queryFn: () => api.get("post/courier/rejected").then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.POSTS.COURIER_REJECTED).then((res) => res.data),
     });
 
   const getOldMails = () =>
@@ -214,7 +215,7 @@ export const useMails = () => {
       queryKey: [MAILS_KEY, "old"],
       queryFn: () =>
         api
-          .get("post", {
+          .get(API_ENDPOINTS.POSTS.BASE, {
             params: { page: 1, limit: 8 },
           })
           .then((res) => res.data),
@@ -234,14 +235,14 @@ export const useMails = () => {
 export const useMailDetail = (postId: string) =>
   useQuery<MailDetailResponse>({
     queryKey: [MAILS_KEY, "detail", postId],
-    queryFn: () => api.get(`post/orders/${postId}`).then((res) => res.data),
+    queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(postId)).then((res) => res.data),
     enabled: !!postId,
   });
 
 export const useRefusedMailDetail = (postId: string) =>
   useQuery<RefusedMailDetailResponse>({
     queryKey: [MAILS_KEY, "refused-detail", postId],
-    queryFn: () => api.get(`post/orders/rejected/${postId}`).then((res) => res.data),
+    queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED_ORDERS_BY_POST_ID(postId)).then((res) => res.data),
     enabled: !!postId,
   });
 
@@ -283,7 +284,7 @@ export const useGetCouriersByRegion = (regionId: string, enabled: boolean) =>
     queryKey: [MAILS_KEY, "couriers-by-region", regionId],
     queryFn: () =>
       api
-        .get(`couriers/region/${regionId}`, {
+        .get(API_ENDPOINTS.COURIERS.BY_REGION(regionId), {
           params: { status: "active", limit: 100 },
         })
         .then((res) => res.data),
@@ -302,7 +303,7 @@ export const useSendPost = () => {
     }: {
       postId: string;
       payload: SendPostPayload;
-    }) => api.patch(`post/${postId}`, payload).then((res) => res.data),
+    }) => api.patch(API_ENDPOINTS.POSTS.BY_ID(postId), payload).then((res) => res.data),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],
@@ -327,7 +328,7 @@ export const useReceivePost = () => {
     }: {
       postId: string;
       payload: ReceivePostPayload;
-    }) => api.patch(`post/receive/${postId}`, payload).then((res) => res.data),
+    }) => api.patch(API_ENDPOINTS.POSTS.RECEIVE(postId), payload).then((res) => res.data),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],
@@ -346,7 +347,7 @@ export const useReceiveCanceledPost = () => {
     }: {
       postId: string;
       payload: ReceivePostPayload;
-    }) => api.post(`post/cancel/receive/${postId}`, payload).then((res) => res.data),
+    }) => api.post(API_ENDPOINTS.POSTS.CANCEL_RECEIVE(postId), payload).then((res) => res.data),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "refused-detail", postId],

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
 import type { CreateAdminRequest, CreateCourierRequest, CreateMarketRequest, UpdateUserRequest, UserStatus } from "../types/user";
 
 export const user = "user";
@@ -18,24 +19,24 @@ export const useUser = () => {
   const getUser = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
       queryKey: [user, params],
-      queryFn: () => api.get("users", { params }).then((res: any) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.USERS.BASE, { params }).then((res: any) => res.data),
       enabled,
     });
 
   const createAdmin = useMutation({
-    mutationFn: (data: CreateAdminRequest) => api.post("admins", data),
+    mutationFn: (data: CreateAdminRequest) => api.post(API_ENDPOINTS.ADMINS.BASE, data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
   const createMarket = useMutation({
-    mutationFn: (data: CreateMarketRequest) => api.post("markets", data),
+    mutationFn: (data: CreateMarketRequest) => api.post(API_ENDPOINTS.MARKETS.BASE, data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
   const createCourier = useMutation({
-    mutationFn: (data: CreateCourierRequest) => api.post("couriers", data),
+    mutationFn: (data: CreateCourierRequest) => api.post(API_ENDPOINTS.COURIERS.BASE, data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
@@ -43,14 +44,14 @@ export const useUser = () => {
   const getRegions = () =>
     useQuery({
       queryKey: ["regions"],
-      queryFn: () => api.get("region").then((res: any) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res: any) => res.data),
       staleTime: 5 * 60 * 1000,
     });
 
   const getUserById = (id: string) =>
     useQuery({
       queryKey: [user, "detail", id],
-      queryFn: () => api.get(`users/${id}`).then((res: any) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
       enabled: !!id,  // Faqat id mavjud bo'lsa so'rov yuborilsin
     });
 
@@ -92,14 +93,14 @@ export const useUser = () => {
 
   const updateUserStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
-      api.patch(`users/${id}/status`, { status }).then((res: any) => res.data),
+      api.patch(API_ENDPOINTS.USERS.STATUS(id), { status }).then((res: any) => res.data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
   const updateUser = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
-      api.patch(`users/${id}`, data).then((res: any) => res.data),
+      api.patch(API_ENDPOINTS.USERS.BY_ID(id), data).then((res: any) => res.data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });

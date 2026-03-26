@@ -3,6 +3,7 @@ import type { AxiosError } from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { Globe, RefreshCw } from "lucide-react";
 import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FilterSelect from "../../../shared/ui/FilterSelect";
@@ -120,9 +121,9 @@ const fetchExternalOrders = async (
   params: Record<string, string | number>,
 ): Promise<unknown> => {
   const endpoints = [
-    "orders/external",
-    "orders/external-orders",
-    "orders/external_orders",
+    API_ENDPOINTS.ORDERS.EXTERNAL,
+    API_ENDPOINTS.ORDERS.EXTERNAL_ORDERS,
+    API_ENDPOINTS.ORDERS.EXTERNAL_ORDERS_ALT,
   ] as const;
 
   try {
