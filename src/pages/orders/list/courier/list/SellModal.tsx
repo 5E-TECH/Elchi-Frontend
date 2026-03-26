@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   X, MapPin, Phone, User, Info, Plus, Minus,
   MessageSquare, CheckCircle,
@@ -45,6 +45,14 @@ type SellModalProps = {
   isLoading?: boolean;
 };
 
+const formatAmountInput = (value: string) => {
+  if (!value) return "";
+
+  return Number(value).toLocaleString("uz-UZ");
+};
+
+const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
+
 const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: SellModalProps) => {
   const [isPartial, setIsPartial] = useState(false);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
@@ -52,13 +60,42 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
   const [extraCost, setExtraCost] = useState("");
   const [note, setNote] = useState("");
 
+  useEffect(() => {
+    if (!open) return;
+
+    setIsPartial(false);
+    setItemQuantities({});
+    setTotalPrice("");
+    setExtraCost("");
+    setNote("");
+  }, [open, order?.id]);
+
   if (!open || !order) return null;
 
   const getItemQty = (item: OrderItem) =>
     itemQuantities[item.id] ?? item.quantity;
 
+  const getSelectedItemsCount = () =>
+    order.items.reduce((sum, item) => sum + getItemQty(item), 0);
+
+  const isAtMinimumSelection = isPartial && getSelectedItemsCount() === 1;
+
+  const canDecreaseItem = (item: OrderItem) => {
+    const currentQty = getItemQty(item);
+
+    if (currentQty <= 0) return false;
+
+    return getSelectedItemsCount() - 1 >= 1;
+  };
+
   const setItemQty = (item: OrderItem, val: number) => {
-    const clamped = Math.max(0, Math.min(item.quantity, val));
+    const minAllowed = order.product_quantity <= 1 ? 1 : 0;
+    const clamped = Math.max(minAllowed, Math.min(item.quantity, val));
+
+    if (clamped < getItemQty(item) && !canDecreaseItem(item)) {
+      return;
+    }
+
     setItemQuantities((prev) => ({ ...prev, [item.id]: clamped }));
   };
 
@@ -66,6 +103,10 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
     if (!order) return;
 
     if (isPartial) {
+      if (getSelectedItemsCount() < 1) {
+        return;
+      }
+
       // POST /orders/partly-sell/{id}
       onPartlySell(order.id, {
         order_item_info: order.items.map((item) => ({
@@ -182,7 +223,8 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => setItemQty(item, getItemQty(item) - 1)}
-                        className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 transition-colors"
+                        disabled={!canDecreaseItem(item)}
+                        className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         <Minus size={12} />
                       </button>
@@ -199,6 +241,13 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                   </div>
                 ))}
               </div>
+              {isAtMinimumSelection && (
+                <div className="mt-3 rounded-xl border border-error/20 bg-error/10 px-3 py-2">
+                  <p className="text-sm font-bold text-error">
+                    Bundan ortiq kamaytirib bo'lmaydi. Kamida 1 ta mahsulot qolishi kerak, aks holda bekor qilishdan foydalaning.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -210,9 +259,12 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               </p>
               <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
                 <input
-                  type="number"
-                  value={totalPrice}
-                  onChange={(e) => setTotalPrice(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatAmountInput(totalPrice)}
+                  onChange={(e) =>
+                    setTotalPrice(sanitizeAmountInput(e.target.value))
+                  }
                   placeholder="0"
                   className="flex-1 bg-transparent text-sm outline-none text-gray-800 dark:text-gray-100"
                 />
@@ -229,9 +281,12 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
             </p>
             <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
               <input
-                type="number"
-                value={extraCost}
-                onChange={(e) => setExtraCost(e.target.value)}
+                type="text"
+                inputMode="numeric"
+                value={formatAmountInput(extraCost)}
+                onChange={(e) =>
+                  setExtraCost(sanitizeAmountInput(e.target.value))
+                }
                 placeholder="0"
                 className="flex-1 bg-transparent text-sm outline-none text-gray-800 dark:text-gray-100"
               />

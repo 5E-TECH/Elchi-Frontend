@@ -7,8 +7,10 @@ import {
   Package,
   RefreshCcw,
 } from "lucide-react";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useMails } from "../../../entities/mails";
+import type { RootState } from "../../../app/config/store";
 
 interface Region {
   id: string;
@@ -67,8 +69,8 @@ const OldMailCard = memo(({ item }: { item: MailItem }) => {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}`)}
-      onKeyDown={(e) => e.key === "Enter" && navigate(`/mails/${item.id}`)}
+      onClick={() => navigate(`/mails/${item.id}?view=old&from=old`)}
+      onKeyDown={(e) => e.key === "Enter" && navigate(`/mails/${item.id}?view=old&from=old`)}
       className="group relative overflow-hidden rounded-[22px] border border-slate-500/20 cursor-pointer"
       style={{
         background:
@@ -135,8 +137,10 @@ const OldMailCardSkeleton = memo(() => (
 OldMailCardSkeleton.displayName = "OldMailCardSkeleton";
 
 const OldMails = () => {
+  const { role } = useSelector((state: RootState) => state.role);
+  const isCourier = role === "courier";
   const { getOldMails } = useMails();
-  const { data, isLoading, isError } = getOldMails();
+  const { data, isLoading, isError } = getOldMails(isCourier);
 
   const mails: MailItem[] = useMemo(() => data?.data?.data ?? [], [data]);
 

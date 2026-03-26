@@ -210,12 +210,12 @@ export const useMails = () => {
       queryFn: () => api.get(API_ENDPOINTS.POSTS.COURIER_REJECTED).then((res) => res.data),
     });
 
-  const getOldMails = () =>
+  const getOldMails = (isCourier = false) =>
     useQuery<PaginatedPostsResponse>({
-      queryKey: [MAILS_KEY, "old"],
+      queryKey: [MAILS_KEY, "old", isCourier ? "courier" : "default"],
       queryFn: () =>
         api
-          .get(API_ENDPOINTS.POSTS.BASE, {
+          .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
             params: { page: 1, limit: 8 },
           })
           .then((res) => res.data),
@@ -278,16 +278,18 @@ export interface SendPostPayload {
   courierId: string;
 }
 
+export const fetchCouriersByRegion = (regionId: string) =>
+  api
+    .get(API_ENDPOINTS.COURIERS.BY_REGION(regionId), {
+      params: { status: "active", limit: 100 },
+    })
+    .then((res) => res.data as CouriersByRegionResponse);
+
 // ─── GET: Viloyat bo'yicha courierlar ─────────────────────────────────────────
 export const useGetCouriersByRegion = (regionId: string, enabled: boolean) =>
   useQuery<CouriersByRegionResponse>({
     queryKey: [MAILS_KEY, "couriers-by-region", regionId],
-    queryFn: () =>
-      api
-        .get(API_ENDPOINTS.COURIERS.BY_REGION(regionId), {
-          params: { status: "active", limit: 100 },
-        })
-        .then((res) => res.data),
+    queryFn: () => fetchCouriersByRegion(regionId),
     enabled: !!regionId && enabled,
     staleTime: 0,
   });

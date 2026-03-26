@@ -26,17 +26,28 @@ export const Table = memo(<T extends Record<string, any>>({
   const sortedData = useMemo(() => {
     if (!sortConfig) return data;
 
+    const activeColumn = columns.find(
+      (column) => String(column.key) === sortConfig.key,
+    );
+
     const sorted = [...data].sort((a, b) => {
-      const aValue = a[sortConfig.key as keyof T];
-      const bValue = b[sortConfig.key as keyof T];
+      const aValue = activeColumn?.sortValue
+        ? activeColumn.sortValue(a)
+        : a[sortConfig.key as keyof T];
+      const bValue = activeColumn?.sortValue
+        ? activeColumn.sortValue(b)
+        : b[sortConfig.key as keyof T];
 
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;
 
       if (typeof aValue === 'string') {
+        const aString = String(aValue);
+        const bString = String(bValue);
+
         return sortConfig.direction === 'asc'
-          ? aValue.localeCompare(bValue as string)
-          : (bValue as string).localeCompare(aValue);
+          ? aString.localeCompare(bString)
+          : bString.localeCompare(aString);
       }
 
       if (typeof aValue === 'number') {
@@ -49,7 +60,7 @@ export const Table = memo(<T extends Record<string, any>>({
     });
 
     return sorted;
-  }, [data, sortConfig]);
+  }, [columns, data, sortConfig]);
 
   const handleSort = (column: ColumnConfig<T>) => {
     if (!column.sortable) return;

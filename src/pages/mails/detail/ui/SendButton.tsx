@@ -8,10 +8,11 @@ interface SendButtonProps {
     mode?: "send" | "receive";
     onSend: () => void;
     onReceive: () => void;
+    isBusy?: boolean;
 }
 
-const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onReceive }: SendButtonProps) => {
-    const isDisabled = selectedCount === 0;
+const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onReceive, isBusy = false }: SendButtonProps) => {
+    const isDisabled = selectedCount === 0 || isBusy;
     const shouldReceive = isCourier || mode === "receive";
 
     if (shouldReceive) {
@@ -27,7 +28,7 @@ const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onRe
                         }`}
                 >
                     <Inbox size={16} />
-                    Pochta qabul qilish
+                    {isBusy ? "Tekshirilmoqda..." : "Pochta qabul qilish"}
                     {!isDisabled && (
                         <span className="ml-1 px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
                             {selectedCount}
@@ -50,7 +51,7 @@ const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onRe
                     }`}
             >
                 <Send size={16} />
-                Pochtani jo'natish
+                {isBusy ? "Tekshirilmoqda..." : "Pochtani jo'natish"}
                 {!isDisabled && (
                     <span className="ml-1 px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
                         {selectedCount}
