@@ -31,7 +31,7 @@ const OrderRow = memo(({ order, checked, onToggle }: OrderRowProps) => {
 
   return (
     <div
-      className={`group grid ${TABLE_COLS} items-center gap-3 px-4 py-3.5 rounded-xl border transition-all duration-200 cursor-pointer ${
+      className={`group grid ${TABLE_COLS} items-center gap-2 lg:gap-3 px-3 lg:px-4 py-3.5 rounded-xl border transition-all duration-200 cursor-pointer ${
         checked
           ? "bg-main/10 border-main/40 shadow-sm"
           : "bg-white dark:bg-white/4 border-gray-100 dark:border-white/8 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-white/6"
@@ -90,12 +90,6 @@ const OrderRow = memo(({ order, checked, onToggle }: OrderRowProps) => {
         )}
       </div>
 
-      <div>
-        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
-          {checked ? "Tanlangan" : "Tanlanmagan"}
-        </span>
-      </div>
-
       <div className="flex items-center gap-1.5">
         <Calendar size={11} className="text-black dark:text-white/50 shrink-0" />
         <span className="text-[11px] text-black dark:text-white font-medium">
@@ -114,6 +108,7 @@ const OrderRow = memo(({ order, checked, onToggle }: OrderRowProps) => {
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-semibold ${getStatusStyle(
             order.status as OrderStatus,
           )}`}
+          style={{ whiteSpace: "nowrap" }}
         >
           <Package2 size={11} />
           {getStatusLabel(order.status as OrderStatus)}

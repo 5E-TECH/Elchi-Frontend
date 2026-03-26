@@ -170,16 +170,16 @@ const CustomDatePicker = memo(({
                     border rounded-xl px-3 py-2
                     text-sm font-medium transition-all duration-200
                     ${open
-                        ? "border-main ring-2 ring-main/20 text-maindark dark:text-primary"
-                        : "border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-main/50"
+                        ? "border-main ring-2 ring-main/20 text-maindark dark:text-white"
+                        : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/70 hover:border-main/50"
                     }
                 `}
             >
                 <Calendar
                     size={14}
-                    className={open ? "text-main" : "text-gray-400 dark:text-white/30"}
+                    className={open ? "text-main" : "text-gray-400 dark:text-white/50"}
                 />
-                <span className={`flex-1 text-left truncate ${value ? "text-maindark dark:text-primary" : ""}`}>
+                <span className={`flex-1 text-left truncate ${value ? "text-maindark dark:text-white" : ""}`}>
                     {value ? formatDisplay(value) : placeholder}
                 </span>
 

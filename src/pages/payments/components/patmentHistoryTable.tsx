@@ -1,23 +1,24 @@
-import { memo, useMemo, useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, History } from 'lucide-react';
-import { Table } from '../../../shared/components/Table/Table';
-import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
-import FinanceHistoryDetailPopup from './FinanceHistoryDetailPopup';
+import { memo, useMemo, useState } from "react";
+import { Calendar, ChevronLeft, ChevronRight, History } from "lucide-react";
+import { Table } from "../../../shared/components/Table/Table";
+import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
+import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) => n.toLocaleString('uz-UZ');
+const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-';
+  if (!dateStr) return "-";
   try {
     const date = new Date(dateStr);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${day}-${month}-${year} ${hours}:${minutes}`;
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   } catch {
     return dateStr;
   }
@@ -81,70 +82,93 @@ const PaymentHistoryTable = ({
   const columns = useMemo<ColumnConfig<PaymentRow>[]>(
     () => [
       {
-        key: 'id',
-        label: '#',
-        width: '60px',
-        render: (_, __, i) => <span className="font-bold text-main">{rowOffset + i + 1}</span>,
-      },
-      {
-        key: 'created_by',
-        label: 'Created by',
-        render: (val) => (
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {val || '-'}
+        key: "id",
+        label: "#",
+        width: "52px",
+        render: (_, __, i) => (
+          <span className="text-sm font-bold text-main">
+            {rowOffset + i + 1}
           </span>
         ),
       },
       {
-        key: 'source_type',
-        label: 'Source type',
+        key: "created_by",
+        label: "Created by",
+        width: "200px",
         render: (val) => (
-          <span className="text-gray-600 dark:text-gray-300 capitalize">{val || '-'}</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white truncate block max-w-45">
+            {val || "-"}
+          </span>
         ),
       },
       {
-        key: 'operation_type',
-        label: 'Operation type',
+        key: "source_type",
+        label: "Source type",
+        width: "140px",
+        render: (val) => (
+          <span className="text-sm text-main/80 font-medium">{val || "-"}</span>
+        ),
+      },
+      {
+        key: "cashbox_type",
+        label: "Cashbox type",
+        width: "150px",
+        render: (val, row) => {
+          const type = val || row.cashbox?.cashbox_type;
+          return (
+            <span className="text-sm text-gray-700 dark:text-white/70">
+              {type || "-"}
+            </span>
+          );
+        },
+      },
+      {
+        key: "operation_type",
+        label: "Operation type",
+        width: "160px",
         render: (val) => {
-          const isIncome = val === 'income';
+          const isIncome = val === "income";
           return (
             <span
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${isIncome
-                ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-rose-500/15 text-rose-400'
-                }`}
+              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap ${
+                isIncome
+                  ? "bg-emerald-500/15 text-emerald-400"
+                  : "bg-rose-500/15 text-rose-400"
+              }`}
             >
-              {val || '-'}
+              {val ? (isIncome ? "Income" : "Expense") : "-"}
             </span>
           );
         },
       },
       {
-        key: 'amount',
-        label: 'Amount',
+        key: "amount",
+        label: "Amount",
+        width: "180px",
         render: (val, row) => {
-          const isIncome = row.operation_type === 'income';
+          const isIncome = row.operation_type === "income";
           return (
-            <span className={`font-bold text-sm ${isIncome ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {isIncome ? '+' : '-'}{fmt(Math.abs(val))} UZS
+            <span
+              className={`text-sm font-bold whitespace-nowrap ${
+                isIncome ? "text-emerald-400" : "text-rose-400"
+              }`}
+            >
+              {isIncome ? "+" : "-"}
+              {fmt(Math.abs(val))} UZS
             </span>
           );
         },
       },
       {
-        key: 'payment_method',
-        label: 'Payment',
-        render: (val) => (
-          <span className="text-gray-500 dark:text-gray-400 capitalize text-xs">{val || '-'}</span>
-        ),
-      },
-      {
-        key: 'createdAt',
-        label: 'Date',
+        key: "payment_date",
+        label: "Payment date",
+        width: "210px",
         render: (val, row) => (
-          <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
-            <Calendar size={13} />
-            {formatDate((val || row.created_at || '') as string)}
+          <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            <Calendar size={14} className="shrink-0" />
+            {formatDate(
+              (val || row.createdAt || row.created_at || "") as string,
+            )}
           </span>
         ),
       },
@@ -159,10 +183,14 @@ const PaymentHistoryTable = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-glass-border">
           <div className="flex items-center gap-2">
             <History size={16} className="text-main" />
-            <span className="text-sm font-bold text-gray-700 dark:text-white/70">Finance History</span>
+            <span className="text-sm font-bold text-gray-700 dark:text-white/70">
+              history
+            </span>
             {pagination && (
               <span className="text-xs text-gray-400 dark:text-white/40 ml-1">
-                · <span className="font-bold text-main">{pagination.total}</span> total
+                ·{" "}
+                <span className="font-bold text-main">{pagination.total}</span>{" "}
+                total
               </span>
             )}
           </div>
@@ -173,6 +201,7 @@ const PaymentHistoryTable = ({
           data={data}
           columns={columns}
           loading={isLoading}
+          dense
           keyExtractor={(row) => row.id}
           emptyMessage="Finance tarixi topilmadi"
           onRowClick={(row) => setSelectedRow(row)}
@@ -199,10 +228,11 @@ const PaymentHistoryTable = ({
                   <button
                     key={p}
                     onClick={() => onPageChange(p)}
-                    className={`min-w-8 h-8 rounded-lg text-xs font-bold transition-colors ${p === activePage
-                        ? 'bg-main text-white shadow-sm shadow-main/30'
-                        : 'border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main'
-                      }`}
+                    className={`min-w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+                      p === activePage
+                        ? "bg-main text-white shadow-sm shadow-main/30"
+                        : "border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main"
+                    }`}
                   >
                     {p}
                   </button>
