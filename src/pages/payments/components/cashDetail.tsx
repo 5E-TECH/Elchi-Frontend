@@ -1,4 +1,8 @@
+// Migrated to React Hook Form
 import { memo, useMemo, useState } from "react";
+import { Controller, useForm, type Resolver } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Wallet2,
@@ -71,6 +75,24 @@ const HISTORY: HistoryItem[] = [
   { name: "Toshkent shahar Oybek aka", type: "Sotiv", method: "Click", amount: +840_000, time: "02:15", trend: "up" },
 ];
 
+interface CashDetailFormValues {
+  amount: string;
+  paymentType: string;
+  comment: string;
+}
+
+const cashDetailSchema: yup.ObjectSchema<CashDetailFormValues> = yup.object({
+  amount: yup
+    .string()
+    .required("Amount majburiy")
+    .test("positive-number", "Amount 0 dan katta bo'lishi kerak", (value) => {
+      if (!value) return false;
+      return Number(value) > 0;
+    }),
+  paymentType: yup.string().required("payment type majburiy"),
+  comment: yup.string().defined(),
+});
+
 // ── CashDetail sahifasi ────────────────────────────────────────────────────────
 const CashDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -85,9 +107,19 @@ const CashDetail = () => {
   const cfg = CONFIG[type];
 
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [amount, setAmount] = useState("");
-  const [paymentType, setPaymentType] = useState("");
-  const [comment, setComment] = useState("");
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CashDetailFormValues>({
+    defaultValues: {
+      amount: "",
+      paymentType: "",
+      comment: "",
+    },
+    resolver: yupResolver(cashDetailSchema) as Resolver<CashDetailFormValues>,
+  });
 
   // Income/expense bir marta hisoblanadi
   const { income, expense } = useMemo(() => ({
@@ -95,9 +127,15 @@ const CashDetail = () => {
     expense: HISTORY.filter((h) => h.amount < 0).reduce((s, h) => s + Math.abs(h.amount), 0),
   }), []);
 
-  const handleSubmit = () => {
+  const onSubmit = (values: CashDetailFormValues) => {
     // API integratsiyasi uchun joy
-    console.log({ type, entity, amount, paymentType, comment });
+    console.log({
+      type,
+      entity,
+      amount: values.amount,
+      paymentType: values.paymentType,
+      comment: values.comment,
+    });
   };
 
   if (isLoading) {
@@ -174,14 +212,16 @@ const CashDetail = () => {
               <input
                 type="number"
                 placeholder="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                {...register("amount")}
                 className="w-full px-4 py-3 pr-16 rounded-xl text-sm font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-main/40 focus:border-main transition-all placeholder-gray-400 dark:placeholder-white/20"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-white/30">
                 UZS
               </span>
             </div>
+            {errors.amount && (
+              <p className="mt-1 text-xs text-red-500">{errors.amount.message}</p>
+            )}
           </div>
 
           {/* Payment type */}
@@ -190,23 +230,32 @@ const CashDetail = () => {
               payment type <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
-              <select
-                value={paymentType}
-                onChange={(e) => setPaymentType(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-main/40 focus:border-main transition-all appearance-none cursor-pointer"
-              >
-                {PAYMENT_TYPES.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="dark:bg-[#1a1f3a]">
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="paymentType"
+                render={({ field }) => (
+                  <select
+                    value={field.value}
+                    onChange={field.onChange}
+                    className="w-full px-4 py-3 rounded-xl text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-main/40 focus:border-main transition-all appearance-none cursor-pointer"
+                  >
+                    {PAYMENT_TYPES.map((opt) => (
+                      <option key={opt.value} value={opt.value} className="dark:bg-[#1a1f3a]">
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 dark:text-white/30">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
             </div>
+            {errors.paymentType && (
+              <p className="mt-1 text-xs text-red-500">{errors.paymentType.message}</p>
+            )}
           </div>
 
           {/* Comment */}
@@ -216,16 +265,15 @@ const CashDetail = () => {
             </label>
             <textarea
               placeholder="Comment..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
               rows={3}
+              {...register("comment")}
               className="w-full px-4 py-3 rounded-xl text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-main/40 focus:border-main transition-all placeholder-gray-400 dark:placeholder-white/20 resize-none"
             />
           </div>
 
           {/* Submit */}
           <button
-            onClick={handleSubmit}
+            onClick={handleSubmit(onSubmit)}
             className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-white text-sm bg-linear-to-r ${cfg.actionGradient} shadow-lg hover:brightness-110 active:scale-[0.98] transition-all`}
           >
             <Send size={16} />

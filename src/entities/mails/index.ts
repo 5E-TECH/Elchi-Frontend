@@ -76,13 +76,19 @@ export interface Customer {
   is_deleted: boolean;
 }
 
-export type OrderStatus = "new" | "received" | "delivered" | "cancelled";
+export type OrderStatus =
+  | "new"
+  | "received"
+  | "delivered"
+  | "cancelled"
+  | "cancelled (sent)";
 export type WhereDeliver = "address" | "center";
 
 export interface PostOrder {
   id: string;
   createdAt: string;
   updatedAt: string;
+  isDeleted?: boolean;
   market_id: string;
   customer_id: string;
   product_quantity: number;
@@ -94,16 +100,19 @@ export interface PostOrder {
   comment: string | null;
   operator: string | null;
   post_id: string | null;
+  canceled_post_id?: string | null;
+  sold_at?: string | null;
   district_id: string;
   region_id: string;
   address: string | null;
   qr_code_token: string | null;
+  external_id?: string | null;
   deleted: boolean;
   items: OrderItem[];
-  market: Market;
-  customer: Customer;
-  district: District;
-  region: RegionWithDistricts;
+  market?: Market;
+  customer?: Customer;
+  district?: District;
+  region?: RegionWithDistricts;
 }
 
 export interface HomeOrders {
@@ -126,6 +135,24 @@ export interface MailDetailResponse {
   statusCode: number;
   message: string;
   data: MailDetailData;
+}
+
+export interface RefusedMailDetailResponse {
+  statusCode: number;
+  message: string;
+  data: PostOrder[];
+}
+
+export interface PaginatedPostsResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    data: MailItem[];
+    total: number;
+    page: number;
+    totalPages: number;
+    limit: number;
+  };
 }
 
 // ─── Mail list item (post/new, post/old, post/rejected) ───────────────────────
@@ -158,14 +185,16 @@ export const useMails = () => {
 
   const getTodayMailsCourier = (id: string) =>
     useQuery({
-      queryKey: [MAILS_KEY, "new"],
+      queryKey: [MAILS_KEY, "new", id],
       queryFn: () => api.get(`post/orders/${id}`).then((res) => res.data),
+      enabled: !!id,
     });
 
   const getRefusedMailsCourierByPostId = (id: string) =>
     useQuery({
-      queryKey: [MAILS_KEY, "new"],
+      queryKey: [MAILS_KEY, "refused-detail", id],
       queryFn: () => api.get(`post/orders/rejected/${id}`).then((res) => res.data),
+      enabled: !!id,
     });
 
   const getRefusedMails = () =>
@@ -181,9 +210,14 @@ export const useMails = () => {
     });
 
   const getOldMails = () =>
-    useQuery({
+    useQuery<PaginatedPostsResponse>({
       queryKey: [MAILS_KEY, "old"],
-      queryFn: () => api.get("post/old").then((res) => res.data),
+      queryFn: () =>
+        api
+          .get("post", {
+            params: { page: 1, limit: 8 },
+          })
+          .then((res) => res.data),
     });
 
   return {
@@ -201,6 +235,13 @@ export const useMailDetail = (postId: string) =>
   useQuery<MailDetailResponse>({
     queryKey: [MAILS_KEY, "detail", postId],
     queryFn: () => api.get(`post/orders/${postId}`).then((res) => res.data),
+    enabled: !!postId,
+  });
+
+export const useRefusedMailDetail = (postId: string) =>
+  useQuery<RefusedMailDetailResponse>({
+    queryKey: [MAILS_KEY, "refused-detail", postId],
+    queryFn: () => api.get(`post/orders/rejected/${postId}`).then((res) => res.data),
     enabled: !!postId,
   });
 
@@ -290,6 +331,31 @@ export const useReceivePost = () => {
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],
+      });
+    },
+  });
+};
+
+export const useReceiveCanceledPost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      postId,
+      payload,
+    }: {
+      postId: string;
+      payload: ReceivePostPayload;
+    }) => api.post(`post/cancel/receive/${postId}`, payload).then((res) => res.data),
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [MAILS_KEY, "refused-detail", postId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [MAILS_KEY, "refused"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [MAILS_KEY, "refused-courier"],
       });
     },
   });

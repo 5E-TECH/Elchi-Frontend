@@ -1,4 +1,8 @@
+// Migrated to React Hook Form
 import { memo, useEffect, useState } from "react";
+import { Controller, useForm, type Resolver } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { X, Send, User, Phone, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import Popup from "../../../../shared/ui/Popup";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
@@ -17,6 +21,14 @@ interface SendPostModalProps {
     selectedIds: Set<string>;
     onSuccess: () => void;
 }
+
+interface SendPostFormValues {
+    courierId: string;
+}
+
+const sendPostSchema: yup.ObjectSchema<SendPostFormValues> = yup.object({
+    courierId: yup.string().required("Courier tanlash majburiy"),
+});
 
 // ─── Courier karta ────────────────────────────────────────────────────────────
 const CourierCard = memo(
@@ -82,8 +94,19 @@ const SendPostModal = memo(
         // ✅ apiRequest — CreateUserForm dagi kabi
         const { apiRequest } = useAppNotification();
 
-        const [selectedCourierId, setSelectedCourierId] = useState<string>("");
         const [autoHandled, setAutoHandled] = useState(false);
+        const {
+            control,
+            handleSubmit,
+            reset,
+            setValue,
+            watch,
+        } = useForm<SendPostFormValues>({
+            defaultValues: {
+                courierId: "",
+            },
+            resolver: yupResolver(sendPostSchema) as Resolver<SendPostFormValues>,
+        });
 
         const {
             data: couriersResp,
@@ -95,10 +118,11 @@ const SendPostModal = memo(
 
         const couriers = couriersResp?.data?.items ?? [];
         const orderIds = Array.from(selectedIds);
+        const selectedCourierId = watch("courierId");
 
         // ─── Reset on close ────────────────────────────────────────────────
         const resetState = () => {
-            setSelectedCourierId("");
+            reset({ courierId: "" });
             setAutoHandled(false);
             sendPost.reset();
         };
@@ -156,16 +180,16 @@ const SendPostModal = memo(
         }, [isOpen, isLoading, isError, couriers, autoHandled]);
 
         // ─── 2+ courier: yuborish ──────────────────────────────────────────
-        const handleSend = () => {
-            if (!selectedCourierId || sendPost.isPending) return;
+        const submitForm = ({ courierId }: SendPostFormValues) => {
+            if (!courierId || sendPost.isPending) return;
 
-            const courier = couriers.find((c) => c.id === selectedCourierId);
+            const courier = couriers.find((c) => c.id === courierId);
 
             apiRequest({
                 request: () =>
                     sendPost.mutateAsync({
                         postId,
-                        payload: { orderIds, courierId: selectedCourierId },
+                        payload: { orderIds, courierId },
                     }),
                 successMessage: `Pochta ${courier?.name ?? ""} ga muvaffaqiyatli jo'natildi.`,
                 errorMessage: "Pochtani jo'natishda xatolik yuz berdi.",
@@ -240,16 +264,28 @@ const SendPostModal = memo(
                                 <p className="text-xs text-gray-400 dark:text-white/50 mb-3">
                                     Quyidagi courierlardan birini tanlang:
                                 </p>
-                                <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
-                                    {couriers.map((courier) => (
-                                        <CourierCard
-                                            key={courier.id}
-                                            courier={courier}
-                                            selected={selectedCourierId === courier.id}
-                                            onSelect={setSelectedCourierId}
-                                        />
-                                    ))}
-                                </div>
+                                <Controller
+                                    control={control}
+                                    name="courierId"
+                                    render={() => (
+                                        <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
+                                            {couriers.map((courier) => (
+                                                <CourierCard
+                                                    key={courier.id}
+                                                    courier={courier}
+                                                    selected={selectedCourierId === courier.id}
+                                                    onSelect={(id) =>
+                                                        setValue("courierId", id, {
+                                                            shouldDirty: true,
+                                                            shouldTouch: true,
+                                                            shouldValidate: true,
+                                                        })
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                />
                             </>
                         )}
                     </div>
@@ -260,7 +296,7 @@ const SendPostModal = memo(
                             <button
                                 type="button"
                                 disabled={!selectedCourierId || sendPost.isPending}
-                                onClick={handleSend}
+                                onClick={handleSubmit(submitForm)}
                                 className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed enabled:cursor-pointer enabled:bg-main enabled:text-white enabled:hover:bg-primarydark enabled:hover:shadow-lg enabled:hover:shadow-main/30 enabled:hover:scale-[1.01]"
                             >
                                 {sendPost.isPending ? (

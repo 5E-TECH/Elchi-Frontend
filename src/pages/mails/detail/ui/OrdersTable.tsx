@@ -44,9 +44,9 @@ const TableHeader = memo(() => (
         <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">Market</div>
         <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">Narx</div>
         <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">Yetkazish</div>
-        <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">Status</div>
+        <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">Tanlash</div>
         <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">Sana</div>
-        <div />
+        <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider text-right">Holati</div>
     </div>
 ));
 TableHeader.displayName = "TableHeader";

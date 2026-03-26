@@ -1,8 +1,30 @@
-import { memo, useState, type ReactNode } from "react";
+// Migrated to React Hook Form
+import { memo, useEffect, type ReactNode } from "react";
+import { Controller, useForm, type Resolver } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { X } from "lucide-react";
 import Popup from "../../../shared/ui/Popup";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
+
+interface CashboxFormValues {
+    amount: string;
+    source_type_id: string;
+    comment: string;
+}
+
+const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
+    amount: yup
+        .string()
+        .required("Amount majburiy")
+        .test("positive-number", "Amount 0 dan katta bo'lishi kerak", (value) => {
+            if (!value) return false;
+            return Number(value) > 0;
+        }),
+    source_type_id: yup.string().required("payment type majburiy"),
+    comment: yup.string().defined(),
+});
 
 interface CashboxFormPopupProps {
     isOpen: boolean;
@@ -31,23 +53,41 @@ const CashboxFormPopup = ({
     isLoading = false,
     onSubmit,
 }: CashboxFormPopupProps) => {
-    const [amount, setAmount] = useState("");
-    const [sourceTypeId, setSourceTypeId] = useState("");
-    const [comment, setComment] = useState("");
+    const {
+        register,
+        control,
+        handleSubmit,
+        reset,
+        formState: { errors },
+        watch,
+    } = useForm<CashboxFormValues>({
+        defaultValues: {
+            amount: "",
+            source_type_id: "",
+            comment: "",
+        },
+        resolver: yupResolver(cashboxFormSchema) as Resolver<CashboxFormValues>,
+    });
+
+    const amount = watch("amount");
+    const sourceTypeId = watch("source_type_id");
 
     const handleClose = () => {
-        setAmount("");
-        setSourceTypeId("");
-        setComment("");
+        reset();
         onClose();
     };
 
-    const handleSubmit = () => {
-        if (!amount || !sourceTypeId) return;
+    useEffect(() => {
+        if (!isOpen) {
+            reset();
+        }
+    }, [isOpen, reset]);
+
+    const submitForm = (values: CashboxFormValues) => {
         onSubmit({
-            amount: Number(amount),
-            source_type_id: sourceTypeId,
-            comment,
+            amount: Number(values.amount),
+            source_type_id: values.source_type_id,
+            comment: values.comment,
         });
         handleClose();
     };
@@ -79,15 +119,17 @@ const CashboxFormPopup = ({
                             <input
                                 type="number"
                                 min={0}
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
                                 placeholder="0"
+                                {...register("amount")}
                                 className="w-full h-12 rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 pr-16 text-gray-900 dark:text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all placeholder-gray-400"
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-white/40 pointer-events-none">
                                 UZS
                             </span>
                         </div>
+                        {errors.amount && (
+                            <p className="text-xs text-red-500">{errors.amount.message}</p>
+                        )}
                     </div>
 
                     {/* Payment type */}
@@ -96,24 +138,33 @@ const CashboxFormPopup = ({
                             payment type <span className="text-rose-400">*</span>
                         </label>
                         <div className="relative">
-                            <select
-                                value={sourceTypeId}
-                                onChange={(e) => setSourceTypeId(e.target.value)}
-                                className="w-full h-12 rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all appearance-none cursor-pointer"
-                            >
-                                <option value="">payment type</option>
-                                {sourceTypes.map((t) => (
-                                    <option key={t.id} value={String(t.id)}>
-                                        {t.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <Controller
+                                control={control}
+                                name="source_type_id"
+                                render={({ field }) => (
+                                    <select
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        className="w-full h-12 rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all appearance-none cursor-pointer"
+                                    >
+                                        <option value="">payment type</option>
+                                        {sourceTypes.map((t) => (
+                                            <option key={t.id} value={String(t.id)}>
+                                                {t.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                            />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                     <path d="M6 9l6 6 6-6" />
                                 </svg>
                             </span>
                         </div>
+                        {errors.source_type_id && (
+                            <p className="text-xs text-red-500">{errors.source_type_id.message}</p>
+                        )}
                     </div>
 
                     {/* Comment */}
@@ -123,9 +174,8 @@ const CashboxFormPopup = ({
                         </label>
                         <textarea
                             rows={3}
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
                             placeholder="Comment..."
+                            {...register("comment")}
                             className="w-full rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all resize-none placeholder-gray-400"
                         />
                     </div>
@@ -143,7 +193,7 @@ const CashboxFormPopup = ({
                         icon={submitIcon}
                         className={`px-7 bg-gradient-to-r ${accentColor} text-white ${!isValid || isLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90"
                             }`}
-                        onClick={handleSubmit}
+                        onClick={handleSubmit(submitForm)}
                         disabled={!isValid || isLoading}
                     />
                 </div>
