@@ -57,12 +57,14 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             onSuccess?.(data);
             return data;
         } catch (error: unknown) {
-            // Backend dan kelgan xabarni olish (Axios error structurasi)
             const backendMessage = getBackendErrorMessage(error);
 
             api.error({
                 message: "Xatolik",
-                description: errorMessage ?? backendMessage,
+                description:
+                    backendMessage ??
+                    errorMessage ??
+                    "Serverda xatolik yuz berdi",
                 placement: 'topRight',
                 duration: 5,
             });
@@ -100,17 +102,62 @@ export const useAppNotification = (): NotificationContextValue => {
  * Axios yoki fetch xatoligidan backend xabarini oladi.
  * Fallback: standart xabar.
  */
-function getBackendErrorMessage(error: unknown): string {
-    if (typeof error === 'object' && error !== null) {
-        const axiosError = error as {
-            response?: { data?: { message?: string } };
-            message?: string;
-        };
-        return (
-            axiosError.response?.data?.message ??
-            axiosError.message ??
-            "Serverda xatolik yuz berdi"
-        );
+function getBackendErrorMessage(error: unknown): string | undefined {
+    if (typeof error !== 'object' || error === null) {
+        return undefined;
     }
-    return "Kutilmagan xatolik yuz berdi";
+
+    const axiosError = error as {
+        response?: {
+            data?: {
+                message?: string | string[];
+                error?: string | string[];
+                detail?: string;
+                errors?: Record<string, string | string[]>;
+            };
+        };
+        message?: string;
+    };
+
+    const responseData = axiosError.response?.data;
+
+    const normalizedMessage =
+        normalizeErrorMessage(responseData?.message) ??
+        normalizeErrorMessage(responseData?.error) ??
+        normalizeErrorMessage(responseData?.detail) ??
+        normalizeErrorRecord(responseData?.errors) ??
+        normalizeErrorMessage(axiosError.message);
+
+    return normalizedMessage;
+}
+
+function normalizeErrorMessage(value: unknown): string | undefined {
+    if (typeof value === 'string') {
+        const message = value.trim();
+        return message || undefined;
+    }
+
+    if (Array.isArray(value)) {
+        const message = value
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .filter(Boolean)
+            .join(', ');
+
+        return message || undefined;
+    }
+
+    return undefined;
+}
+
+function normalizeErrorRecord(
+    value: Record<string, string | string[]> | undefined,
+): string | undefined {
+    if (!value) return undefined;
+
+    const message = Object.values(value)
+        .map((entry) => normalizeErrorMessage(entry))
+        .filter(Boolean)
+        .join(', ');
+
+    return message || undefined;
 }

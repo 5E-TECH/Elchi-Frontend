@@ -1,19 +1,28 @@
 import { memo, useState } from "react";
-import { Search, Bell, Moon, Sun, LogOut, User, Menu, X } from "lucide-react";
+import { Bell, Moon, Sun, LogOut, User, Menu, X, Search } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
 import { useLogout } from "../../../shared/lib/useLogout";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { useNavigate } from "react-router-dom";
+import { GlobalSearchInput } from "../../../features/search";
 
 interface HeaderProps {
   onMenuClick?: () => void;
+}
+
+interface HeaderSearchValues {
+  search: string;
 }
 
 const Header = ({ onMenuClick }: HeaderProps) => {
   const { logout } = useLogout();
   const { theme, toggleTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { control } = useForm<HeaderSearchValues>({
+    defaultValues: { search: "" },
+  });
 
   const navigate = useNavigate()
 
@@ -22,15 +31,24 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
         <div className="absolute inset-0 z-50 bg-sidebar dark:bg-maindark px-4 flex items-center animate-fade-in md:hidden">
-          <div className="flex items-center bg-white border border-primary rounded-xl px-4 py-2 w-full shadow-lg shadow-main/10">
-            <Search className="text-black w-5 h-5 shrink-0" />
-            <input
-              autoFocus
-              type="text"
-              placeholder="Qidiruv..."
-              className="bg-transparent border-none outline-none ml-3 w-full text-black placeholder-black/50"
-            />
-          </div>
+          <Controller
+            control={control}
+            name="search"
+            render={({ field }) => (
+              <GlobalSearchInput
+                name={field.name}
+                value={field.value}
+                onBlur={field.onBlur}
+                autoFocus
+                placeholder="Qidiruv..."
+                className="w-full"
+                inputClassName="bg-white border-primary text-black placeholder:text-black/50 py-2 shadow-lg shadow-main/10"
+                iconClassName="text-black group-focus-within:text-main"
+                clearButtonClassName="text-black/50 hover:text-black"
+                onValueChange={field.onChange}
+              />
+            )}
+          />
           <button
             onClick={() => setIsSearchOpen(false)}
             className="ml-3 p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"
@@ -51,14 +69,23 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       </div>
 
       {/* Search Bar - Desktop Only */}
-      <div className="hidden md:flex items-center bg-white border border-primary rounded-xl px-4 py-2 w-full max-w-96 overflow-hidden md:w-96 transition-all duration-300 group">
-        <Search className="text-black w-5 h-5 shrink-0" />
-        <input
-          type="text"
-          placeholder="Qidiruv..."
-          className="bg-transparent border-none outline-none ml-3 w-full text-black placeholder-black"
-        />
-      </div>
+      <Controller
+        control={control}
+        name="search"
+        render={({ field }) => (
+          <GlobalSearchInput
+            name={field.name}
+            value={field.value}
+            onBlur={field.onBlur}
+            placeholder="Qidiruv..."
+            className="hidden md:block w-full max-w-96 md:w-96"
+            inputClassName="bg-white border-primary text-black placeholder:text-black py-2"
+            iconClassName="text-black group-focus-within:text-main"
+            clearButtonClassName="text-black/50 hover:text-black"
+            onValueChange={field.onChange}
+          />
+        )}
+      />
 
       {/* Right Actions */}
       <div className={`flex items-center gap-3 md:gap-4 shrink-0 ${isSearchOpen ? 'hidden md:flex' : 'flex'}`}>

@@ -1,12 +1,17 @@
 import { memo } from "react";
 import AppRouter from "../lib/routes";
-import AppProvider from "../lib/provider"
+import AppProvider from "../lib/provider";
+import ErrorBoundary from "../../shared/ui/ErrorBoundary";
+import ErrorBoundaryTestButton from "../../shared/ui/ErrorBoundaryTestButton";
 
 const App = () => {
   return (
-    <AppProvider>
-      <AppRouter />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppRouter />
+        {import.meta.env.DEV && <ErrorBoundaryTestButton />}
+      </AppProvider>
+    </ErrorBoundary>
   );
 };
 

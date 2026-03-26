@@ -7,6 +7,10 @@
   --color-primarydark: #4c5798;
   --color-sidebar: #f4f5fa;
   --color-background: #322d48;
+  --color-background-soft: rgba(87, 106, 219, 0.12);
+  --color-background-deep: rgba(39, 44, 82, 0.88);
+  --color-main-soft: rgba(87, 106, 219, 0.18);
+  --color-purple-soft: rgba(124, 58, 237, 0.22);
   --color-purple: #7c3aed;
   --color-purple-light: #8b5cf6;
   --color-purple-dark: #5b21b6;
@@ -198,6 +202,18 @@
     }
   }
 
+  @keyframes drift {
+
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+      transform: translate3d(0, -14px, 0) scale(1.04);
+    }
+  }
+
   @keyframes letterExpand {
     0% {
       letter-spacing: 0.2em;
@@ -268,6 +284,10 @@
 
   .animate-dot-bounce {
     animation: dotBounce 1.4s ease-in-out infinite;
+  }
+
+  .animate-drift {
+    animation: drift 7s ease-in-out infinite;
   }
 
   /* Glass card utility */
@@ -352,5 +372,134 @@
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.02em;
+  }
+
+  .error-boundary-shell {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 12% 18%, var(--color-main-soft), transparent 24%),
+      radial-gradient(circle at 88% 16%, var(--color-purple-soft), transparent 22%),
+      radial-gradient(circle at 50% 100%, var(--color-background-soft), transparent 28%),
+      linear-gradient(135deg, var(--color-background) 0%, var(--color-maindark) 55%, var(--color-background) 100%);
+  }
+
+  .error-boundary-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(var(--color-glass-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-glass-border) 1px, transparent 1px);
+    background-size: 36px 36px;
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .error-boundary-shell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at center, transparent 0%, transparent 48%, var(--color-background-deep) 100%);
+    pointer-events: none;
+  }
+
+  .error-boundary-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(22px);
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .error-boundary-panel {
+    position: relative;
+    width: min(100%, 70rem);
+    border-radius: 2rem;
+    background:
+      linear-gradient(135deg, var(--color-surface-dark) 0%, var(--color-glass) 100%);
+    border: 1px solid var(--color-glass-border);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow:
+      0 30px 80px var(--color-background-soft),
+      inset 0 1px 0 var(--color-glass-border);
+    overflow: hidden;
+  }
+
+  .error-boundary-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, transparent 0%, var(--color-glass-border) 49.8%, transparent 50.2%);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .error-boundary-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at top left, var(--color-main-soft), transparent 20%),
+      radial-gradient(circle at bottom right, var(--color-purple-soft), transparent 22%);
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  .error-boundary-brand {
+    position: relative;
+    background:
+      radial-gradient(circle at top left, var(--color-main-soft), transparent 30%),
+      linear-gradient(180deg, transparent 0%, var(--color-glass) 100%);
+  }
+
+  .error-boundary-brand::before {
+    content: "";
+    position: absolute;
+    inset: 2rem;
+    border-radius: 1.75rem;
+    border: 1px solid var(--color-glass-border);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .error-boundary-logo-shell {
+    background:
+      linear-gradient(135deg, var(--color-main-soft) 0%, var(--color-glass) 100%);
+    border: 1px solid var(--color-glass-border);
+    box-shadow:
+      0 18px 40px var(--color-background-soft),
+      inset 0 1px 0 var(--color-glass-border);
+  }
+
+  .error-boundary-icon-shell {
+    background:
+      linear-gradient(135deg, var(--color-main) 0%, var(--color-purple-light) 100%);
+    box-shadow:
+      0 16px 32px var(--color-main-soft),
+      inset 0 1px 0 var(--color-glass-border);
+  }
+
+  .error-boundary-button {
+    background: linear-gradient(135deg, var(--color-main) 0%, var(--color-primarydark) 100%);
+    box-shadow: 0 18px 30px var(--color-background-soft);
+  }
+
+  .error-boundary-button:hover {
+    opacity: 0.94;
+  }
+
+  .error-boundary-secondary {
+    background: var(--color-glass);
+    border: 1px solid var(--color-glass-border);
+  }
+
+  .error-boundary-pill {
+    background: var(--color-main-soft);
+    border: 1px solid var(--color-glass-border);
   }
 }
