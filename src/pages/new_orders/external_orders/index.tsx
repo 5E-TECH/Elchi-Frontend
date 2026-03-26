@@ -1,4 +1,5 @@
 import { memo, useMemo, useState } from "react";
+import { Activity, Globe } from "lucide-react";
 import { Globe, QrCode, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
@@ -7,6 +8,44 @@ import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
+import {
+  useGetIntegrations,
+  type Integration,
+  type IntegrationParams,
+} from "../../../entities/integrations";
+
+
+const formatDate = (raw?: string | null): string => {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const StatusBadge = ({ isActive }: { isActive: boolean }) => (
+  <span
+    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${
+      isActive ? "bg-success/10 text-success" : "bg-error/10 text-error"
+    }`}
+  >
+    <span
+      className={`w-1.5 h-1.5 rounded-full ${
+        isActive ? "bg-success" : "bg-error"
+      }`}
+    />
+    {isActive ? "Faol" : "Nofaol"}
+  </span>
+);
+
+<<<<<<< HEAD
+=======
+// ─── Asosiy komponent ─────────────────────────────────────────────────────────
 import { api } from "../../../shared/api/api";
 import { GlobalSearchInput } from "../../../features/search";
 
@@ -147,13 +186,17 @@ const fetchExternalOrders = async (
   }
 };
 
+>>>>>>> 0eecb64e6d0b5f9c0c5d4fc7137581d03e016f47
 const ExternalOrders = () => {
-  const [status, setStatus] = useState("");
+  const [isActive, setIsActive] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
   const limit = 10;
 
+  // Filter o'zgarganda paginationni reset qilish
+  const handleIsActiveChange = (val: string) => {
+    setIsActive(val);
   const { control, watch, setValue } = useForm<ExternalOrdersSearchValues>({
     defaultValues: { search: "" },
   });
@@ -164,17 +207,45 @@ const ExternalOrders = () => {
     setStatus(val);
     setPage(1);
   };
-
   const handleDateFromChange = (val: string) => {
     setDateFrom(val);
     setPage(1);
   };
-
   const handleDateToChange = (val: string) => {
     setDateTo(val);
     setPage(1);
   };
 
+  // API params
+  const params = useMemo<IntegrationParams>(() => {
+    const p: IntegrationParams = { page, limit };
+    if (isActive) p.is_active = isActive;
+    if (dateFrom) p.from_date = dateFrom;
+    if (dateTo) p.to_date = dateTo;
+    return p;
+  }, [page, limit, isActive, dateFrom, dateTo]);
+
+  const { data, isLoading } = useGetIntegrations(params);
+
+  // API dan kelgan ma'lumotni xavfsiz qabul qilish
+  const integrations: Integration[] = useMemo(() => {
+    const raw = data as any;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw.data)) return raw.data;
+    if (Array.isArray(raw.items)) return raw.items;
+    return [];
+  }, [data]);
+
+  // Pagination: server paginatsiya yo'q bo'lsa — client side
+  const totalPages = Math.max(1, Math.ceil(integrations.length / limit));
+  const rowOffset = (page - 1) * limit;
+  const pagedData = useMemo(
+    () => integrations.slice(rowOffset, rowOffset + limit),
+    [integrations, rowOffset, limit],
+  );
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
   const handleResetFilters = () => {
     setStatus("");
     setDateFrom("");
@@ -205,36 +276,47 @@ const ExternalOrders = () => {
   const totalPages = pagination?.totalPages ?? 1;
   const rowOffset = (activePage - 1) * (pagination?.limit ?? limit);
 
-  const columns = useMemo<ColumnConfig<ExternalOrder>[]>(
+  // Jadval ustunlari
+  const columns = useMemo<ColumnConfig<Integration>[]>(
     () => [
       {
         key: "id",
-        label: "#",
-        width: "70px",
-        render: (_v, _row, rowIndex) => (
-          <span className="text-gray-400 dark:text-gray-500 font-semibold">
-            {rowOffset + rowIndex + 1}
+        label: "Raqam",
+        width: "60px",
+        render: (_v, _row, i) => (
+          <span className="text-gray-400 dark:text-white/40 font-semibold text-xs">
+            {rowOffset + i + 1}
           </span>
         ),
       },
       {
-        key: "market",
+        key: "name",
         label: "Do'kon",
         sortable: true,
         render: (_v, row) => (
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
+              <Globe size={14} className="text-main" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 dark:text-white truncate">
+                {row.name}
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-white/40 truncate">
+                {row.slug}
+              </p>
               <QrCode size={14} className="text-main" />
             </div>
-            <span className="font-semibold text-gray-900 dark:text-white truncate">
-              {row.market?.name ?? row.shop?.name ?? "—"}
-            </span>
           </div>
         ),
       },
       {
-        key: "items",
+        key: "total_synced_orders",
         label: "Mahsulotlar",
+        sortable: true,
+        render: (v) => (
+          <span className="font-bold text-main tabular-nums">
+            {Number(v ?? 0).toLocaleString("uz-UZ")}
         render: (_v, row) => {
           const list = row.items ?? [];
 
@@ -271,6 +353,10 @@ const ExternalOrders = () => {
         ),
       },
       {
+        key: "id" as any, // Summa API da yo'q, shuning uchun dummy key
+        label: "Summa",
+        render: () => (
+          <span className="text-gray-400 dark:text-white/40">—</span>
         key: "status",
         label: "Holat",
         render: (value) => (
@@ -284,8 +370,18 @@ const ExternalOrders = () => {
         ),
       },
       {
+        key: "is_active",
+        label: "Holat",
+        render: (v) => <StatusBadge isActive={Boolean(v)} />,
+      },
+      {
         key: "createdAt",
         label: "Sana",
+        render: (v) => (
+          <span className="text-xs text-gray-500 dark:text-white/50 whitespace-nowrap">
+            {formatDate(v as string)}
+          </span>
+        ),
         render: (value, row) => {
           const raw = (value ?? row.created_at ?? "") as string;
           const date = raw ? new Date(raw) : null;
@@ -311,21 +407,31 @@ const ExternalOrders = () => {
     [rowOffset],
   );
 
-  const statusOptions = useMemo(
+  const isActiveOptions = useMemo(
     () => [
-      { value: "", label: "Barcha holat" },
-      { value: "new", label: "Yangi" },
-      { value: "processing", label: "Jarayonda" },
-      { value: "completed", label: "Tayyor" },
-      { value: "cancelled", label: "Bekor qilingan" },
+      { value: "", label: "Barchasi" },
+      { value: "true", label: "Faol" },
+      { value: "false", label: "Nofaol" },
     ],
     [],
   );
 
-  const canPrev = activePage > 1;
-  const canNext = activePage < totalPages;
-
   return (
+    <div className="space-y-4">
+      {/* Filterlar */}
+      <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-4">
+        <div className="flex flex-wrap items-end gap-4">
+          {/* is_active filtri */}
+          <div className="w-full md:w-48">
+            <FilterSelect
+              name="integration_is_active"
+              label="Holat"
+              value={isActive}
+              onChange={handleIsActiveChange}
+              options={isActiveOptions}
+              icon={Activity}
+              placeholder="Barchasi"
+            />
     <div className="space-y-6">
       <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -385,8 +491,11 @@ const ExternalOrders = () => {
               Tozalash
             </button>
           </div>
-        </div>
 
+          {/* Sana filtri */}
+          <div className="w-full md:w-auto md:ml-auto">
+            <div className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider mb-1.5">
+              Sana oralig'i
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <FilterSelect
             name="external_status"
@@ -406,16 +515,19 @@ const ExternalOrders = () => {
               dateTo={dateTo}
               onChangeDateFrom={handleDateFromChange}
               onChangeDateTo={handleDateToChange}
-              className="flex-wrap"
+              className="flex-wrap md:flex-nowrap"
             />
           </div>
         </div>
       </div>
 
+      {/* Jadval */}
+      <Table<Integration>
+        data={pagedData}
       <Table<ExternalOrder>
         data={orders}
         columns={columns}
-        loading={query.isLoading}
+        loading={isLoading}
         keyExtractor={(row) => row.id}
         hoverable
         emptyMessage="Tashqi buyurtmalar yo'q"
@@ -424,28 +536,41 @@ const ExternalOrders = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500 dark:text-white/40">
-            {activePage}-sahifa / {totalPages}
+            {page}-sahifa / {totalPages}
           </span>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => canPrev && setPage(activePage - 1)}
+              onClick={() => canPrev && setPage((p) => p - 1)}
               disabled={!canPrev}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
             >
               Oldingi
             </button>
 
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => Math.abs(p - page) <= 2)
+              .map((p) => (
             {Array.from({ length: totalPages }, (_, index) => index + 1)
               .filter((currentPage) => Math.abs(currentPage - activePage) <= 2)
               .map((currentPage) => (
                 <button
                   key={currentPage}
                   type="button"
+                  onClick={() => setPage(p)}
+<<<<<<< HEAD
+                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${
+                    p === page
+=======
+                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${p === page
+                    ? "bg-main text-white shadow-sm shadow-main/30"
+                    : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
+                    }`}
                   onClick={() => setPage(currentPage)}
                   className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${
                     currentPage === activePage
+>>>>>>> 0eecb64e6d0b5f9c0c5d4fc7137581d03e016f47
                       ? "bg-main text-white shadow-sm shadow-main/30"
                       : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
                   }`}
@@ -456,9 +581,9 @@ const ExternalOrders = () => {
 
             <button
               type="button"
-              onClick={() => canNext && setPage(activePage + 1)}
+              onClick={() => canNext && setPage((p) => p + 1)}
               disabled={!canNext}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
             >
               Keyingi
             </button>
