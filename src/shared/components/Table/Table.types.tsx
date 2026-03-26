@@ -3,6 +3,7 @@ export interface ColumnConfig<T> {
   label: string;
   width?: string;
   sortable?: boolean;
+  sortValue?: (row: T) => string | number | null | undefined;
   render?: (value: any, row: T, index: number) => React.ReactNode;
   renderHeader?: (label: string) => React.ReactNode;
   className?: string;

@@ -1,5 +1,6 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Mail, Package, AlertTriangle, Clock } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import HeaderName from '../../shared/components/headerName';
 import TodaysMails from './components/todaysMails';
 import OldMails from './components/oldMails';
@@ -50,7 +51,16 @@ const tabs = [
 ];
 
 const Mails = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('today');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const activeTab: Tab =
+    tabParam === 'today' || tabParam === 'refused' || tabParam === 'old'
+      ? tabParam
+      : 'today';
+
+  const handleTabChange = (tab: Tab) => {
+    setSearchParams({ tab });
+  };
 
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
@@ -70,7 +80,7 @@ const Mails = () => {
             <button
               key={tab.key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabChange(tab.key)}
               className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl w-full border transition-all duration-200 cursor-pointer ${style.wrapper}`}
             >
               {/* Icon container */}

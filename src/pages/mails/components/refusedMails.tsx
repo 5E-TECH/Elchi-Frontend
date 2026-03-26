@@ -44,9 +44,9 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}?type=refused`)}
+      onClick={() => navigate(`/mails/${item.id}?type=refused&from=refused`)}
       onKeyDown={(e) =>
-        e.key === "Enter" && navigate(`/mails/${item.id}?type=refused`)
+        e.key === "Enter" && navigate(`/mails/${item.id}?type=refused&from=refused`)
       }
       className="group relative overflow-hidden rounded-2xl cursor-pointer"
       style={{
