@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
 import type { User } from "../../../entities/user/model/types";
 
 export const login = "login";
@@ -13,7 +14,7 @@ interface LoginResponse {
 
 
 export const fetchProfile = async () => {
-  const response = await api.get("auth/my-profile");
+  const response = await api.get(API_ENDPOINTS.AUTH.MY_PROFILE);
   return response.data;
 };
 
@@ -22,7 +23,7 @@ export const useLogin = () => {
 
   const signinUser = useMutation({
     mutationFn: async (credentials: { phone_number: string; password: string }) => {
-      const response = await api.post<LoginResponse>("auth/login", credentials);
+      const response = await api.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
       return response.data;
     },
     onSuccess: () => client.invalidateQueries({ queryKey: [login] }),

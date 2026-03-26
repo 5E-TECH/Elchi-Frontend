@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 export type Integration = {
   id: string;
@@ -38,7 +39,7 @@ export const useGetIntegrations = (params: IntegrationParams) =>
   useQuery<IntegrationResponse>({
     queryKey: integrationKeys.list(params),
     queryFn: () =>
-      api.get("integrations", { params }).then((res) => res.data),
+      api.get(API_ENDPOINTS.INTEGRATIONS.BASE, { params }).then((res) => res.data),
     placeholderData: keepPreviousData,
     staleTime: 10_000,
   });
