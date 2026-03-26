@@ -10,7 +10,6 @@ import {
   type IntegrationParams,
 } from "../../../entities/integrations";
 
-// ─── Yordamchi funksiyalar ────────────────────────────────────────────────────
 
 const formatDate = (raw?: string | null): string => {
   if (!raw) return "—";
@@ -25,24 +24,20 @@ const formatDate = (raw?: string | null): string => {
   });
 };
 
-// ─── Holat badge ─────────────────────────────────────────────────────────────
-
 const StatusBadge = ({ isActive }: { isActive: boolean }) => (
   <span
-    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${isActive
-      ? "bg-success/10 text-success"
-      : "bg-error/10 text-error"
-      }`}
+    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${
+      isActive ? "bg-success/10 text-success" : "bg-error/10 text-error"
+    }`}
   >
     <span
-      className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-success" : "bg-error"
-        }`}
+      className={`w-1.5 h-1.5 rounded-full ${
+        isActive ? "bg-success" : "bg-error"
+      }`}
     />
     {isActive ? "Faol" : "Nofaol"}
   </span>
 );
-
-// ─── Asosiy komponent ─────────────────────────────────────────────────────────
 
 const ExternalOrders = () => {
   const [isActive, setIsActive] = useState("");
@@ -91,7 +86,7 @@ const ExternalOrders = () => {
   const rowOffset = (page - 1) * limit;
   const pagedData = useMemo(
     () => integrations.slice(rowOffset, rowOffset + limit),
-    [integrations, rowOffset, limit]
+    [integrations, rowOffset, limit],
   );
   const canPrev = page > 1;
   const canNext = page < totalPages;
@@ -161,7 +156,7 @@ const ExternalOrders = () => {
         ),
       },
     ],
-    [rowOffset]
+    [rowOffset],
   );
 
   const isActiveOptions = useMemo(
@@ -170,7 +165,7 @@ const ExternalOrders = () => {
       { value: "true", label: "Faol" },
       { value: "false", label: "Nofaol" },
     ],
-    []
+    [],
   );
 
   return (
@@ -241,10 +236,11 @@ const ExternalOrders = () => {
                   key={p}
                   type="button"
                   onClick={() => setPage(p)}
-                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${p === page
-                    ? "bg-main text-white shadow-sm shadow-main/30"
-                    : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
-                    }`}
+                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${
+                    p === page
+                      ? "bg-main text-white shadow-sm shadow-main/30"
+                      : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
+                  }`}
                 >
                   {p}
                 </button>
