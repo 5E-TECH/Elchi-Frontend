@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
     BASE: "post",
     NEW: "post/new",
     ON_THE_ROAD: "post/on-the-road",
+    COURIER_OLD: "post/courier/old-posts",
     ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/${postId}`,
     REJECTED_ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/rejected/${postId}`,
     REJECTED: "post/rejected",

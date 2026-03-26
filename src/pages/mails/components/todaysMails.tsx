@@ -43,8 +43,8 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}`)}
-      onKeyDown={(e) => e.key === "Enter" && navigate(`/mails/${item.id}`)}
+      onClick={() => navigate(`/mails/${item.id}?from=today`)}
+      onKeyDown={(e) => e.key === "Enter" && navigate(`/mails/${item.id}?from=today`)}
       className="mail-card group relative overflow-hidden rounded-2xl cursor-pointer"
     >
       {/* Gradient fon */}

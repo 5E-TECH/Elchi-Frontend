@@ -5,8 +5,10 @@ import {
   useMails,
   useMailDetail,
   type PostOrder,
+  fetchCouriersByRegion,
   useReceiveCanceledPost,
   useReceivePost,
+  useSendPost,
 } from "../../../entities/mails";
 import HeaderName from "../../../shared/components/headerName";
 
@@ -65,11 +67,15 @@ const MailDetailPage = () => {
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
   const isRefusedDetail = searchParams.get("type") === "refused";
+  const isOldDetail = searchParams.get("view") === "old";
+  const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
+  const fromTab = searchParams.get("from");
   const { getRefusedMailsCourierByPostId } = useMails();
   const {
     data: regularResponse,
     isLoading: regularLoading,
     isError: regularError,
+    refetch: refetchRegularDetail,
   } = useMailDetail(isRefusedDetail ? "" : postId ?? "");
   const {
     data: refusedResponse,
@@ -121,10 +127,12 @@ const MailDetailPage = () => {
 
   // ─── Modal state (faqat courier bo'lmaganlar uchun) ────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCheckingCouriers, setIsCheckingCouriers] = useState(false);
 
   // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
   const receivePost = useReceivePost();
   const receiveCanceledPost = useReceiveCanceledPost();
+  const sendPost = useSendPost();
 
   // ─── Region nomi ──────────────────────────────────────────────────────────
   const regionName = useMemo(
@@ -138,11 +146,13 @@ const MailDetailPage = () => {
   // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
   const regionId = useMemo(() => orders[0]?.region_id ?? "", [orders]);
 
-  // ─── Modal ochish (Send — courier bo'lmaganlar uchun) ─────────────────────
-  const handleSend = useCallback(() => {
-    if (selectedIds.size === 0) return;
-    setIsModalOpen(true);
-  }, [selectedIds]);
+  const handleBack = useCallback(() => {
+    const tab =
+      fromTab === "today" || fromTab === "refused" || fromTab === "old"
+        ? fromTab
+        : "today";
+    navigate(`/mails?tab=${tab}`);
+  }, [fromTab, navigate]);
 
   // ─── Pochtani qabul qilish (faqat courier uchun) ─────────────────────────
   const handleReceive = useCallback(() => {
@@ -177,9 +187,66 @@ const MailDetailPage = () => {
   ]);
 
   // ─── Muvaffaqiyatli yuborilgandan keyin ───────────────────────────────────
-  const handleSendSuccess = useCallback(() => {
+  const handleSendSuccess = useCallback(async () => {
     clearSelection();
-  }, [clearSelection]);
+    const refreshed = await refetchRegularDetail();
+    const remainingOrders = refreshed.data?.data?.allOrdersByPostId?.length ?? 0;
+
+    if (remainingOrders === 0) {
+      navigate("/mails?tab=today");
+    }
+  }, [clearSelection, refetchRegularDetail, navigate]);
+
+  // ─── Modal ochish (Send — courier bo'lmaganlar uchun) ─────────────────────
+  const handleSend = useCallback(() => {
+    if (selectedIds.size === 0 || !postId || !regionId || isCheckingCouriers) return;
+
+    setIsCheckingCouriers(true);
+
+    fetchCouriersByRegion(regionId)
+      .then((response) => {
+        const couriers = response?.data?.items ?? [];
+
+        if (couriers.length === 0) {
+          apiRequest({
+            request: () => Promise.reject(new Error("no_courier")),
+            errorMessage: "Bu viloyatda aktiv courier mavjud emas.",
+            successMessage: "",
+          });
+          return;
+        }
+
+        if (couriers.length === 1) {
+          const courier = couriers[0];
+
+          apiRequest({
+            request: () =>
+              sendPost.mutateAsync({
+                postId,
+                payload: { orderIds: Array.from(selectedIds), courierId: courier.id },
+              }),
+            successMessage: `Pochta ${courier.name} ga muvaffaqiyatli jo'natildi.`,
+            errorMessage: "Pochtani jo'natishda xatolik yuz berdi.",
+            onSuccess: () => {
+              void handleSendSuccess();
+            },
+          });
+          return;
+        }
+
+        setIsModalOpen(true);
+      })
+      .catch(() => {
+        apiRequest({
+          request: () => Promise.reject(new Error("couriers_fetch_failed")),
+          errorMessage: "Courierlarni yuklab bo'lmadi.",
+          successMessage: "",
+        });
+      })
+      .finally(() => {
+        setIsCheckingCouriers(false);
+      });
+  }, [selectedIds, postId, regionId, isCheckingCouriers, apiRequest, sendPost, handleSendSuccess]);
 
   const selectedOrders = useMemo(
     () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
@@ -214,11 +281,13 @@ const MailDetailPage = () => {
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-5">
       {/* Sarlavha */}
       <div className="flex items-center justify-between gap-4">
-        <div className="max-w-100" onClick={() => navigate(-1)}>
+        <div className="max-w-100">
           <HeaderName
             name={`${regionName} Buyurtmalari`}
             description={
-              isRefusedDetail
+              isOldDetail
+                ? `${orders.length} ta eski buyurtma mavjud`
+                : isRefusedDetail
                 ? `${orders.length} ta rad etilgan buyurtma mavjud`
                 : `${orders.length} ta buyurtma mavjud`
             }
@@ -229,9 +298,10 @@ const MailDetailPage = () => {
                 <MapPin size={20} className="text-white" />
               )
             }
+            onIconClick={handleBack}
           />
         </div>
-        <PrintModeSelect count={selectedIds.size} onSelect={handlePrint} />
+        {!isOldDetail && <PrintModeSelect count={selectedIds.size} onSelect={handlePrint} />}
       </div>
 
       {/* Stat kartalar */}
@@ -250,21 +320,24 @@ const MailDetailPage = () => {
         someSelected={someSelected}
         onToggleAll={toggleAll}
         onToggleOne={toggleOne}
+        variant={isOldDetail ? "history" : "default"}
+        readOnly={isReadOnlyRefusedCourier}
       />
 
       {/* Rol asosida tugma */}
-      {orders.length > 0 && (
+      {orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier && (
         <SendButton
           selectedCount={selectedIds.size}
           isCourier={isCourier}
           mode={isRefusedDetail ? "receive" : "send"}
           onSend={handleSend}
           onReceive={handleReceive}
+          isBusy={!isCourier && !isRefusedDetail && isCheckingCouriers}
         />
       )}
 
       {/* Pochta jo'natish modali — faqat courier bo'lmaganlar uchun */}
-      {!isCourier && !isRefusedDetail && (
+      {!isCourier && !isRefusedDetail && !isOldDetail && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

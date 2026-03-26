@@ -36,6 +36,8 @@ const columns = [
     {
         key: "customer" as const,
         label: "Mijoz",
+        sortable: true as const,
+        sortValue: (row: OrderListItem) => row.customer?.name?.trim().toLocaleLowerCase() ?? "",
         render: (customer: OrderListItem["customer"]) => (
             <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-main/10 flex items-center justify-center shrink-0">
@@ -108,6 +110,7 @@ const columns = [
         key: "total_price" as const,
         label: "Summa",
         sortable: true as const,
+        sortValue: (row: OrderListItem) => row.total_price ?? 0,
         render: (val: number) => (
             <div className="flex items-center gap-1.5">
                 <Banknote size={13} className="text-main/60 shrink-0" />
@@ -121,6 +124,7 @@ const columns = [
         key: "createdAt" as const,
         label: "Sana",
         sortable: true as const,
+        sortValue: (row: OrderListItem) => new Date(row.createdAt).getTime(),
         render: (val: string) => (
             <div className="flex items-center gap-1.5 text-gray-400">
                 <Calendar size={12} className="shrink-0" />
