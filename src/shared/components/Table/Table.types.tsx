@@ -17,6 +17,7 @@ export interface TableProps<T> {
   emptyMessage?: string;
   onRowClick?: (row: T, index: number) => void;
   className?: string;
+  dense?: boolean;
   striped?: boolean;
   bordered?: boolean;
   hoverable?: boolean;

@@ -5,8 +5,6 @@ import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnal
 import { useDashboard } from "../../entities/dashboard";
 import FilterDateRange from "../../shared/ui/FilterDateRange";
 
-
-
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────

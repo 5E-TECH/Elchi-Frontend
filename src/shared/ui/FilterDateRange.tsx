@@ -8,6 +8,9 @@ interface FilterDateRangeProps {
     onChangeDateFrom: (value: string) => void;
     onChangeDateTo: (value: string) => void;
     className?: string;
+    fromClassName?: string;
+    toClassName?: string;
+    iconClassName?: string;
 }
 
 const FilterDateRange = memo(({
@@ -16,11 +19,17 @@ const FilterDateRange = memo(({
     onChangeDateFrom,
     onChangeDateTo,
     className = "",
+    fromClassName,
+    toClassName,
+    iconClassName,
 }: FilterDateRangeProps) => {
     return (
         <div className={`flex items-center gap-2 ${className}`}>
             {/* Ikonka */}
-            <Calendar size={14} className="text-gray-400 dark:text-white/30 shrink-0" />
+            <Calendar
+                size={14}
+                className={iconClassName ?? "text-gray-400 dark:text-white/50 shrink-0"}
+            />
 
             {/* Boshlanish sanasi */}
             <CustomDatePicker
@@ -28,7 +37,7 @@ const FilterDateRange = memo(({
                 onChange={onChangeDateFrom}
                 placeholder="Boshlanish"
                 maxDate={dateTo || undefined}
-                className="w-40"
+                className={fromClassName ?? "w-40"}
             />
 
             {/* Ajratuvchi */}
@@ -40,7 +49,7 @@ const FilterDateRange = memo(({
                 onChange={onChangeDateTo}
                 placeholder="Tugash"
                 minDate={dateFrom || undefined}
-                className="w-40"
+                className={toClassName ?? "w-40"}
             />
         </div>
     );

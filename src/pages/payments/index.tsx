@@ -24,7 +24,6 @@ import { useMarkets } from "../../entities/markets";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
-
 const DROPDOWN_FILTERS = [
   { name: "operation_type", label: "Operation type", icon: TrendingUp },
   { name: "source_type", label: "Source type", icon: BadgeDollarSign },
@@ -34,7 +33,10 @@ const DROPDOWN_FILTERS = [
 
 type DropdownKey = (typeof DROPDOWN_FILTERS)[number]["name"];
 
-const STATIC_FILTER_OPTIONS: Record<Exclude<DropdownKey, "created_by">, { value: string; label: string }[]> = {
+const STATIC_FILTER_OPTIONS: Record<
+  Exclude<DropdownKey, "created_by">,
+  { value: string; label: string }[]
+> = {
   operation_type: [
     { value: "income", label: "Income" },
     { value: "expense", label: "Expense" },
@@ -61,25 +63,24 @@ const INIT = {
 
 type PaymentsFilterFormValues = typeof INIT;
 
-const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> = yup.object({
-  operation_type: yup.string().defined(),
-  source_type: yup.string().defined(),
-  created_by: yup.string().defined(),
-  cashbox_type: yup.string().defined(),
-});
+const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
+  yup.object({
+    operation_type: yup.string().defined(),
+    source_type: yup.string().defined(),
+    created_by: yup.string().defined(),
+    cashbox_type: yup.string().defined(),
+  });
 
 const Payments = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [isGivenPopupOpen, setIsGivenPopupOpen] = useState(false);
   const [isReceivedPopupOpen, setIsReceivedPopupOpen] = useState(false);
-  const {
-    control,
-    watch,
-    reset,
-  } = useForm<PaymentsFilterFormValues>({
+  const { control, watch, reset } = useForm<PaymentsFilterFormValues>({
     defaultValues: INIT,
-    resolver: yupResolver(paymentsFilterSchema) as Resolver<PaymentsFilterFormValues>,
+    resolver: yupResolver(
+      paymentsFilterSchema,
+    ) as Resolver<PaymentsFilterFormValues>,
   });
   const filters = watch();
 
@@ -92,8 +93,14 @@ const Payments = () => {
   const { data: cashboxInfo, isLoading: cashboxLoading } = getCashBoxInfo();
 
   // Faqat popup ochiq bo'lganda yuklanadi
-  const { data: marketsData, isLoading: marketsLoading } = getMarkets({}, isGivenPopupOpen);
-  const { data: couriersData, isLoading: couriersLoading } = getUser({ role: "courier", limit: 100 }, isReceivedPopupOpen);
+  const { data: marketsData, isLoading: marketsLoading } = getMarkets(
+    {},
+    isGivenPopupOpen,
+  );
+  const { data: couriersData, isLoading: couriersLoading } = getUser(
+    { role: "courier", limit: 100 },
+    isReceivedPopupOpen,
+  );
 
   // API response: { statusCode, message, data: { mainCashboxTotal, courierCashboxTotal, marketCashboxTotal, ... } }
   const cashboxData = cashboxInfo?.data;
@@ -164,26 +171,41 @@ const Payments = () => {
   const queryParams = useMemo(() => {
     const params: Record<string, any> = { page, limit };
     (Object.entries(filters) as [keyof typeof INIT, string][]).forEach(
-      ([key, value]) => { if (value) params[key] = value; }
+      ([key, value]) => {
+        if (value) params[key] = value;
+      },
     );
     return params;
   }, [page, limit, filters]);
 
-  const { data: historyData, isLoading: historyLoading } = getFinanceHistory(queryParams);
-  const { data: creatorsData, isLoading: creatorsLoading } = getUser({ limit: 100 });
+  const { data: historyData, isLoading: historyLoading } =
+    getFinanceHistory(queryParams);
+  const { data: creatorsData, isLoading: creatorsLoading } = getUser({
+    limit: 100,
+  });
 
   const creatorOptions = useMemo(
-    () => (creatorsData?.data?.items || []).map((u: any) => ({ value: String(u.id), label: u.name })),
+    () =>
+      (creatorsData?.data?.items || []).map((u: any) => ({
+        value: String(u.id),
+        label: u.name,
+      })),
     [creatorsData],
   );
 
-  const handleCardClick = (path: string | null, showPopup: "given" | "received" | null) => {
+  const handleCardClick = (
+    path: string | null,
+    showPopup: "given" | "received" | null,
+  ) => {
     if (showPopup === "given") setIsGivenPopupOpen(true);
     else if (showPopup === "received") setIsReceivedPopupOpen(true);
     else if (path) navigate(path);
   };
 
-  const filterOptionsMap: Record<DropdownKey, { value: string; label: string }[]> = {
+  const filterOptionsMap: Record<
+    DropdownKey,
+    { value: string; label: string }[]
+  > = {
     operation_type: STATIC_FILTER_OPTIONS.operation_type,
     source_type: STATIC_FILTER_OPTIONS.source_type,
     cashbox_type: STATIC_FILTER_OPTIONS.cashbox_type,
@@ -212,43 +234,63 @@ const Payments = () => {
 
       {/* Stats */}
       <div className="flex items-stretch gap-4">
-        {CARDS.map(({ label, amount, icon, action, bg, iconBg, badge, path, showPopup }) => (
-          <div
-            key={label}
-            onClick={() => handleCardClick(path, showPopup)}
-            className={`relative flex-1 overflow-hidden rounded-2xl p-6 border border-glass-border shadow-lg hover:scale-[1.02] transition-transform duration-300 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
-          >
-            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white opacity-[0.06]" />
-            <div className="flex items-start justify-between mb-5">
-              <div className={`flex items-center justify-center w-11 h-11 rounded-xl text-white ${iconBg}`}>
-                {icon}
-              </div>
-              <div className="flex items-center gap-2">
-                {badge && (
-                  <div className="flex items-center gap-1.5 bg-glass px-2.5 py-1 rounded-lg border border-glass-border">
-                    <TrendingUp size={11} className="text-white/80" />
-                    <span className="text-white text-xs font-semibold">{badge}</span>
+        {CARDS.map(
+          ({
+            label,
+            amount,
+            icon,
+            action,
+            bg,
+            iconBg,
+            badge,
+            path,
+            showPopup,
+          }) => (
+            <div
+              key={label}
+              onClick={() => handleCardClick(path, showPopup)}
+              className={`relative flex-1 overflow-hidden rounded-2xl p-6 border border-glass-border shadow-lg hover:scale-[1.02] transition-transform duration-300 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
+            >
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white opacity-[0.06]" />
+              <div className="flex items-start justify-between mb-5">
+                <div
+                  className={`flex items-center justify-center w-11 h-11 rounded-xl text-white ${iconBg}`}
+                >
+                  {icon}
+                </div>
+                <div className="flex items-center gap-2">
+                  {badge && (
+                    <div className="flex items-center gap-1.5 bg-glass px-2.5 py-1 rounded-lg border border-glass-border">
+                      <TrendingUp size={11} className="text-white/80" />
+                      <span className="text-white text-xs font-semibold">
+                        {badge}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/70">
+                    {action}
                   </div>
-                )}
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/70">
-                  {action}
                 </div>
               </div>
+              <p className="text-sm font-medium text-white/60 mb-2">{label}</p>
+              {cashboxLoading ? (
+                <div className="h-9 w-32 rounded-lg bg-white/10 animate-pulse" />
+              ) : (
+                <p className="text-3xl font-extrabold text-white">
+                  {fmt(amount)}
+                </p>
+              )}
+              <p className="text-xs text-white/40 mt-1.5">UZS</p>
             </div>
-            <p className="text-sm font-medium text-white/60 mb-2">{label}</p>
-            {cashboxLoading ? (
-              <div className="h-9 w-32 rounded-lg bg-white/10 animate-pulse" />
-            ) : (
-              <p className="text-3xl font-extrabold text-white">{fmt(amount)}</p>
-            )}
-            <p className="text-xs text-white/40 mt-1.5">UZS</p>
-          </div>
-        ))}
+          ),
+        )}
       </div>
 
       {/* Filters */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border p-5 shadow-sm">
-        <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">Filters</p>
+        <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">
+          Filters
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {DROPDOWN_FILTERS.map(({ name, label, icon }) => (
             <Controller
@@ -273,7 +315,10 @@ const Payments = () => {
         {Object.values(filters).some(Boolean) && (
           <div className="flex items-center justify-end mt-3">
             <button
-              onClick={() => { reset(INIT); setPage(1); }}
+              onClick={() => {
+                reset(INIT);
+                setPage(1);
+              }}
               className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
             >
               ✕ Filterlarni tozalash
@@ -305,19 +350,27 @@ const Payments = () => {
         secondaryLabelKey="amount"
         onSelect={(market: any) => {
           setIsGivenPopupOpen(false);
-          navigate(`/payments/cash-detail/${market.id}`, { state: { type: "market" } });
+          navigate(`/payments/cash-detail/${market.id}`, {
+            state: { type: "market" },
+          });
         }}
         renderItem={(market: any, isSelected: boolean) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${isSelected ? "bg-white/20 text-white" : "bg-main/10 text-main"}`}>
+              <div
+                className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${isSelected ? "bg-white/20 text-white" : "bg-main/10 text-main"}`}
+              >
                 <Store size={16} />
               </div>
-              <span className={`font-medium ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}>
+              <span
+                className={`font-medium ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
+              >
                 {market.name}
               </span>
             </div>
-            <span className={`text-sm font-semibold ${isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}>
+            <span
+              className={`text-sm font-semibold ${isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}
+            >
               {fmt(market.amount)} UZS
             </span>
           </div>
@@ -337,25 +390,39 @@ const Payments = () => {
         labelKey="name"
         onSelect={(courier: any) => {
           setIsReceivedPopupOpen(false);
-          navigate(`/payments/cash-detail/${courier.id}`, { state: { type: "courier" } });
+          navigate(`/payments/cash-detail/${courier.id}`, {
+            state: { type: "courier" },
+          });
         }}
         renderItem={(courier: any, isSelected: boolean) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isSelected ? "bg-white/20" : "bg-orange-500/10"}`}>
-                <Truck size={16} className={isSelected ? "text-white" : "text-orange-400"} />
+              <div
+                className={`w-9 h-9 rounded-lg flex items-center justify-center ${isSelected ? "bg-white/20" : "bg-orange-500/10"}`}
+              >
+                <Truck
+                  size={16}
+                  className={isSelected ? "text-white" : "text-orange-400"}
+                />
               </div>
               <div>
-                <p className={`font-medium text-sm ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}>
+                <p
+                  className={`font-medium text-sm ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
+                >
                   {courier.name}
                 </p>
-                <p className={`text-xs ${isSelected ? "text-white/60" : "text-gray-400 dark:text-white/40"}`}>
+                <p
+                  className={`text-xs ${isSelected ? "text-white/60" : "text-gray-400 dark:text-white/40"}`}
+                >
                   {courier.region}
                 </p>
               </div>
             </div>
-            <span className={`text-sm font-semibold ${courier.amount < 0 ? "text-rose-400" : isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}>
-              {courier.amount < 0 ? "-" : ""}{fmt(Math.abs(courier.amount))} UZS
+            <span
+              className={`text-sm font-semibold ${courier.amount < 0 ? "text-rose-400" : isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}
+            >
+              {courier.amount < 0 ? "-" : ""}
+              {fmt(Math.abs(courier.amount))} UZS
             </span>
           </div>
         )}

@@ -119,10 +119,13 @@ export const useCashBox = () => {
       queryFn: () => api.get(API_ENDPOINTS.FINANCE.OPERATION_TYPE).then((res) => res.data),
     });
 
-  const getSourceTypes = () =>
+  const getSourceTypes = (enabled: boolean = true) =>
     useQuery({
       queryKey: [cashbox, "source-types"],
       queryFn: () => api.get(API_ENDPOINTS.FINANCE.SOURCE_TYPE).then((res) => res.data),
+      enabled,
+      staleTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
     });
 
   const getCashboxTypes = () =>

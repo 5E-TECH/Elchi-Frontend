@@ -114,35 +114,46 @@ const getApiMessage = (err: unknown): string => {
 
 const isNumericIdError = (err: unknown): boolean => {
   const msg = getApiMessage(err);
-  return msg.includes("ID qiymatlari") && msg.includes("raqam");
+  return (
+    (msg.includes("ID qiymatlari") && msg.includes("raqam")) ||
+    (msg.toLowerCase().includes("id") && msg.toLowerCase().includes("number"))
+  );
 };
 
 const fetchExternalOrders = async (
   params: Record<string, string | number>,
 ): Promise<unknown> => {
-  const endpoints = [
-    API_ENDPOINTS.ORDERS.EXTERNAL,
+  // Backend route-lari turlicha bo‘lishi mumkin; shu sabab bir nechta variantni sinaymiz.
+  // Ayrim backend’larda `orders/:id` route `orders/external-orders` ni ham `id` deb olib,
+  // "ID qiymatlari raqam ..." xatosini qaytaradi — bunday holatda keyingi endpointga o‘tamiz.
+  const candidates: string[] = [
     API_ENDPOINTS.ORDERS.EXTERNAL_ORDERS,
     API_ENDPOINTS.ORDERS.EXTERNAL_ORDERS_ALT,
-  ] as const;
+    API_ENDPOINTS.ORDERS.EXTERNAL,
+    "external-orders",
+    "external_orders",
+    "orders/externalOrders",
+    "orders/externalorders",
+    "external/orders",
+  ];
 
-  try {
-    const res = await api.get(endpoints[0], { params });
-    return res.data as unknown;
-  } catch (err) {
-    if (!isNumericIdError(err)) throw err;
+  let lastErr: unknown = null;
 
-    for (const ep of endpoints.slice(1)) {
-      try {
-        const res = await api.get(ep, { params });
-        return res.data as unknown;
-      } catch {
-        // next
-      }
+  for (const ep of candidates) {
+    try {
+      const res = await api.get(ep, { params });
+      return res.data as unknown;
+    } catch (err) {
+      lastErr = err;
+      if (isNumericIdError(err)) continue;
+
+      const status = (err as AxiosError)?.response?.status;
+      // Not found / method not allowed — keyingi kandidatda urinib ko‘ramiz.
+      if (status === 404 || status === 405) continue;
     }
-
-    throw err;
   }
+
+  throw lastErr;
 };
 
 const External_orders = () => {
