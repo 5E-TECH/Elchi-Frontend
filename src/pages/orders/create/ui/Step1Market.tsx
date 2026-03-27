@@ -1,4 +1,12 @@
-import { memo, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, Phone, Store, X } from "lucide-react";
 import { Controller, useController, useForm, useFormContext } from "react-hook-form";
 import { useMarkets } from "../../../../entities/markets";
@@ -10,11 +18,14 @@ interface Step1MarketSearchValues {
   search: string;
 }
 
-const Step1Market = () => {
+const getMarketPhone = (market?: MarketOption | null) =>
+  market?.phone_number ?? market?.phone ?? "";
+
+  const Step1Market = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const { control: searchControl, watch: watchSearch, setValue: setSearchValue } =
     useForm<Step1MarketSearchValues>({
       defaultValues: { search: "" },
@@ -31,7 +42,7 @@ const Step1Market = () => {
   });
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    const timer = setTimeout(() => setDebouncedSearch(search), 350);
     return () => clearTimeout(timer);
   }, [search]);
 
@@ -69,26 +80,47 @@ const Step1Market = () => {
 
   const markets = toArray(data);
   const selectedMarket = field.value;
-  const phone = selectedMarket?.phone_number ?? selectedMarket?.phone;
+  const selectedPhone = getMarketPhone(selectedMarket);
+
+  const visibleMarkets = useMemo(() => {
+    if (!selectedMarket) return markets;
+
+    return [
+      selectedMarket,
+      ...markets.filter((market) => market.id !== selectedMarket.id),
+    ];
+  }, [markets, selectedMarket]);
 
   useEffect(() => {
-    const handleOutsideClick = (event: globalThis.MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   const handleOpen = () => {
-    setIsOpen(true);
-    setSearchValue("search", "");
-    setTimeout(() => inputRef.current?.focus(), 50);
+    setIsOpen((current) => {
+      const next = !current;
+
+      if (next) {
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }
+
+      return next;
+    });
   };
 
   const handleSelect = (market: MarketOption) => {
@@ -97,216 +129,214 @@ const Step1Market = () => {
     setSearchValue("search", "");
   };
 
-  const handleClear = (event: ReactMouseEvent<HTMLSpanElement>) => {
+  const handleClear = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     field.onChange(null);
-    setIsOpen(false);
     setSearchValue("search", "");
   };
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-start sm:items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-main/10 flex items-center justify-center shrink-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main/10">
           <Store size={18} className="text-main" />
         </div>
         <div className="min-w-0">
-          <h3 className="font-semibold text-maindark dark:text-primary text-base">
+          <h3 className="text-base font-semibold text-maindark dark:text-primary">
             Market tanlang
           </h3>
           <p className="text-xs text-gray-400">
-            {selectedMarket
-              ? `Tanlandi: ${selectedMarket.name}`
-              : "Ro'yxatdan market tanlang yoki qidiring"}
+            Buyurtma qaysi market nomidan yaratilishini tanlang
           </p>
         </div>
       </div>
 
-      <div ref={containerRef} className="relative w-full">
+      {selectedMarket && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-main/15 bg-main/5 p-4 dark:bg-main/10 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-main/70">
+              Tanlangan market
+            </p>
+            <p className="mt-1 truncate text-base font-semibold text-maindark dark:text-primary">
+              {selectedMarket.name}
+            </p>
+            {selectedPhone && (
+              <p className="mt-1 flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                <Phone size={13} />
+                {selectedPhone}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleClear}
+            className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-gray-200 bg-primary px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:border-main/30 hover:text-main dark:border-primarydark dark:bg-primarydark dark:text-gray-300"
+          >
+            <X size={14} />
+            Tozalash
+          </button>
+        </div>
+      )}
+
+      <div ref={containerRef} className="relative">
         <button
           type="button"
           onClick={handleOpen}
           className={`
-            w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm
-            bg-primary dark:bg-primarydark
-            border-2 transition-all duration-200 text-left
-            focus:outline-none cursor-pointer
+            flex w-full items-center gap-3 rounded-2xl border bg-primary px-4 py-3.5 text-left transition-all duration-200 dark:bg-primarydark
             ${isOpen
-              ? "border-main shadow-lg shadow-main/10"
-              : selectedMarket
-                ? "border-main/40"
-                : error
-                  ? "border-[var(--color-error)]"
-                  : "border-gray-200 dark:border-primarydark hover:border-main/30"}
+              ? "border-main shadow-sm shadow-main/10"
+              : error
+                ? "border-error"
+                : "border-gray-200 hover:border-main/25 dark:border-primarydark"}
           `}
         >
-          <div
-            className={`
-              w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors
-              ${selectedMarket
-                ? "bg-main text-primary"
-                : "bg-sidebar dark:bg-background text-main/50"}
-            `}
-          >
-            <Store size={15} />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sidebar dark:bg-maindark">
+            <Store size={16} className="text-main" />
           </div>
 
-          <div className="flex-1 min-w-0">
-            {selectedMarket ? (
-              <>
-                <p className="font-semibold text-maindark dark:text-primary truncate">
-                  {selectedMarket.name}
-                </p>
-                {phone && (
-                  <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                    <Phone size={10} /> {phone}
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-gray-400">Market tanlang yoki qidiring...</p>
-            )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-maindark dark:text-primary">
+              {selectedMarket ? selectedMarket.name : "Market tanlash"}
+            </p>
+            <p className="mt-0.5 text-xs text-gray-400">
+              {selectedMarket
+                ? "Boshqa market tanlash uchun ro'yxatni oching"
+                : "Qidiruv orqali kerakli marketni toping"}
+            </p>
           </div>
 
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {selectedMarket && (
-              <span
-                onClick={handleClear}
-                className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-gray-300 hover:text-red-400 transition-colors cursor-pointer"
-              >
-                <X size={14} />
-              </span>
-            )}
-            <ChevronDown
-              size={16}
-              className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-            />
-          </div>
+          <ChevronDown
+            size={18}
+            className={`shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          />
         </button>
 
         <div className="mt-2">
           <FormFieldError message={error?.message} />
         </div>
 
-        {isOpen && (
-          <div
-            className="
-              absolute z-50 top-full left-0 right-0 mt-2
-              bg-primary dark:bg-maindark
-              border border-gray-200 dark:border-primarydark
-              rounded-xl shadow-2xl shadow-black/10
-              overflow-hidden
-            "
-          >
-            <div className="p-3 border-b border-gray-100 dark:border-primarydark">
-              <Controller
-                control={searchControl}
-                name="search"
-                render={({ field: searchField }) => (
-                  <GlobalSearchInput
-                    ref={inputRef}
-                    name={searchField.name}
-                    value={searchField.value}
-                    onBlur={searchField.onBlur}
-                    onValueChange={searchField.onChange}
-                    placeholder="Market qidirish..."
-                    className="w-full"
-                    inputClassName="bg-sidebar dark:bg-primarydark border-gray-200 dark:border-primarydark/60 text-maindark dark:text-primary placeholder:text-gray-400 rounded-lg py-2 pr-3 shadow-none focus:shadow-none"
-                    iconClassName="text-gray-400 group-focus-within:text-main"
-                    clearButtonClassName="text-gray-400 hover:text-main"
+        {isOpen &&
+          createPortal(
+            <div
+              className="fixed inset-0 z-100 flex items-start justify-center bg-[color-mix(in_srgb,var(--color-maindark)_32%,transparent)] px-4 py-8 backdrop-blur-[2px] sm:py-12"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) {
+                  setIsOpen(false);
+                }
+              }}
+            >
+              <div
+                className="flex w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-gray-200 bg-primary shadow-2xl shadow-[color-mix(in_srgb,var(--color-maindark)_12%,transparent)] dark:border-primarydark dark:bg-maindark"
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-4 py-4 dark:border-primarydark sm:px-5">
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold text-maindark dark:text-primary">
+                      Market tanlash
+                    </p>
+                    <p className="mt-1 text-sm text-gray-400">
+                      Marketlar soni ko'p bo'lsa ham ro'yxat shu panel ichida qoladi
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition-colors hover:border-main/30 hover:text-main dark:border-primarydark"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="border-b border-gray-100 p-3 dark:border-primarydark sm:p-4">
+                  <Controller
+                    control={searchControl}
+                    name="search"
+                    render={({ field: searchField }) => (
+                      <GlobalSearchInput
+                        ref={inputRef}
+                        name={searchField.name}
+                        value={searchField.value}
+                        onBlur={searchField.onBlur}
+                        onValueChange={searchField.onChange}
+                        placeholder="Market qidirish..."
+                        className="w-full"
+                        inputClassName="bg-sidebar dark:bg-primarydark border-gray-200 dark:border-primarydark/60 text-maindark dark:text-primary placeholder:text-gray-400 rounded-xl py-2.5 pr-3 shadow-none focus:shadow-none"
+                        iconClassName="text-gray-400 group-focus-within:text-main"
+                        clearButtonClassName="text-gray-400 hover:text-main"
+                      />
+                    )}
                   />
-                )}
-              />
-            </div>
-
-            <div className="max-h-64 overflow-y-auto custom-scrollbar py-1.5">
-              {isLoading ? (
-                <div className="flex flex-col gap-1.5 px-3 py-2">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="h-11 rounded-lg bg-gray-100 dark:bg-primarydark animate-pulse"
-                    />
-                  ))}
                 </div>
-              ) : markets.length === 0 ? (
-                <div className="py-8 flex flex-col items-center gap-2 text-gray-400">
-                  <Store size={28} strokeWidth={1} />
-                  <p className="text-xs">Market topilmadi</p>
+
+                <div className="max-h-[min(26rem,calc(100vh-14rem))] overflow-y-auto custom-scrollbar p-2 sm:p-3">
+                  {isLoading ? (
+                    <div className="flex flex-col gap-2">
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="h-14 rounded-xl bg-sidebar animate-pulse dark:bg-primarydark"
+                        />
+                      ))}
+                    </div>
+                  ) : visibleMarkets.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-10 text-gray-400">
+                      <Store size={28} strokeWidth={1.5} />
+                      <p className="text-sm">Market topilmadi</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {visibleMarkets.map((market) => {
+                        const isSelected = selectedMarket?.id === market.id;
+                        const marketPhone = getMarketPhone(market);
+
+                        return (
+                          <button
+                            key={market.id}
+                            type="button"
+                            onClick={() => handleSelect(market)}
+                            className={`
+                              flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors cursor-pointer
+                              ${isSelected
+                                ? "bg-main/8 dark:bg-main/14"
+                                : "hover:bg-sidebar dark:hover:bg-primarydark"}
+                            `}
+                          >
+                            <div
+                              className={`
+                                mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border
+                                ${isSelected
+                                  ? "border-main bg-main text-primary"
+                                  : "border-gray-300 dark:border-gray-500"}
+                              `}
+                            >
+                              {isSelected && <Check size={12} strokeWidth={3} />}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-maindark dark:text-primary">
+                                {market.name}
+                              </p>
+                              {marketPhone && (
+                                <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
+                                  <Phone size={11} />
+                                  {marketPhone}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                markets.map((market) => {
-                  const isSelected = selectedMarket?.id === market.id;
-                  const marketPhone = market.phone_number ?? market.phone;
-
-                  return (
-                    <button
-                      key={market.id}
-                      type="button"
-                      onClick={() => handleSelect(market)}
-                      className={`
-                        w-full flex items-center gap-3 px-3 py-2.5 mx-1.5 rounded-lg
-                        text-left transition-all duration-150 cursor-pointer
-                        ${isSelected
-                          ? "bg-main/10 dark:bg-main/20"
-                          : "hover:bg-sidebar dark:hover:bg-primarydark"}
-                      `}
-                      style={{ width: "calc(100% - 12px)" }}
-                    >
-                      <div
-                        className={`
-                          w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                          ${isSelected
-                            ? "bg-main text-primary"
-                            : "bg-sidebar dark:bg-background text-main/60"}
-                        `}
-                      >
-                        <Store size={14} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-sm font-semibold truncate ${isSelected ? "text-main" : "text-maindark dark:text-primary"}`}
-                        >
-                          {market.name}
-                        </p>
-                        {marketPhone && (
-                          <p className="text-xs text-gray-400 flex items-center gap-1">
-                            <Phone size={9} /> {marketPhone}
-                          </p>
-                        )}
-                      </div>
-
-                      {isSelected && (
-                        <Check size={15} className="text-main flex-shrink-0" />
-                      )}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
+              </div>
+            </div>,
+            document.body,
+          )}
       </div>
-
-      {selectedMarket && (
-        <div className="flex flex-col items-start gap-3 p-4 rounded-xl bg-main/5 dark:bg-main/10 border border-main/20 sm:flex-row sm:items-center sm:gap-4">
-          <div className="w-10 h-10 rounded-xl bg-main text-primary flex items-center justify-center flex-shrink-0">
-            <Store size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-main text-sm">{selectedMarket.name}</p>
-            {phone && (
-              <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                <Phone size={10} /> {phone}
-              </p>
-            )}
-          </div>
-          <div className="w-6 h-6 rounded-full bg-main flex items-center justify-center self-end sm:self-auto">
-            <Check size={13} className="text-primary" strokeWidth={2.5} />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

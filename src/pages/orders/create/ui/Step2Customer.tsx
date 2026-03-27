@@ -37,8 +37,8 @@ const Field = ({ label, required, icon, children, error }: FieldProps) => (
   <div className="flex flex-col gap-1.5">
     <label className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide leading-4">
       <span className="shrink-0">{icon}</span>
-      <span className="break-words">{label}</span>
-      {required && <span className="text-[var(--color-error)] ml-0.5">*</span>}
+      <span className="wrap-break-word">{label}</span>
+      {required && <span className="text-error ml-0.5">*</span>}
     </label>
     {children}
     <FormFieldError message={error} />
@@ -271,7 +271,6 @@ const Step2Customer = () => {
             render={({ field }) => (
               <Field
                 label="Manzil"
-                required
                 icon={<Home size={12} />}
                 error={errors.customer?.address?.message}
               >

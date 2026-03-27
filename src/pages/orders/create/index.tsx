@@ -3,16 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ListPlus, SendHorizontal } from "lucide-react";
 import { FormProvider, useForm, useWatch, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useSelector } from "react-redux";
 import HeaderName from "../../../shared/components/headerName";
 import OrderStepper from "./ui/OrderStepper";
 import Step1Market from "./ui/Step1Market";
 import Step2Combined from "./ui/Step2Combined";
 import { FormStateNote, getActionButtonClassName } from "./ui/formFieldStyles";
 import { useOrders } from "../../../entities/order/api/orderApi";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import type { RootState } from "../../../app/config/store";
 import {
   buildCreateOrderPayload,
+  createOrderSchema,
   ORDER_CREATE_DEFAULT_VALUES,
-  orderCreateSchema,
   type OrderCreateFormValues,
 } from "./model/orderCreateForm";
 
@@ -27,12 +30,14 @@ const StepActions = ({
   isSubmitting,
   onBack,
   onNext,
+  isMarketRole,
 }: {
   step: number;
   canNext: boolean;
   isSubmitting: boolean;
   onBack: () => void;
   onNext: () => void;
+  isMarketRole: boolean;
 }) => (
   <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <button
@@ -41,7 +46,7 @@ const StepActions = ({
       className={`${getActionButtonClassName({ variant: "secondary" })} w-full sm:w-auto`}
     >
       <ChevronLeft size={16} />
-      {step === 1 ? "Orqaga" : "Oldingi"}
+      {step === 1 || isMarketRole ? "Orqaga" : "Oldingi"}
     </button>
 
     <div className="flex w-full flex-col items-center gap-2 px-0 text-center sm:w-auto sm:px-4">
@@ -115,15 +120,20 @@ const StepActions = ({
 const OrderCreateFormContent = () => {
   const navigate = useNavigate();
   const { createOrder } = useOrders();
-  const [step, setStep] = useState(1);
+  const { api } = useAppNotification();
+  const role = useSelector((state: RootState) => state.role.role);
+  const isMarketRole = role === "market";
+  const [step, setStep] = useState(isMarketRole ? 2 : 1);
 
   const methods = useForm<OrderCreateFormValues>({
-    resolver: yupResolver(orderCreateSchema) as Resolver<OrderCreateFormValues>,
+    resolver: yupResolver(
+      createOrderSchema(!isMarketRole),
+    ) as Resolver<OrderCreateFormValues>,
     mode: "onTouched",
     defaultValues: ORDER_CREATE_DEFAULT_VALUES,
   });
 
-  const { control, handleSubmit, trigger } = methods;
+  const { control, handleSubmit, trigger, reset } = methods;
 
   const market = useWatch({ control, name: "market" });
   const customer = useWatch({ control, name: "customer" });
@@ -131,11 +141,11 @@ const OrderCreateFormContent = () => {
 
   const canNext = useMemo(() => {
     if (step === 1) {
-      return !!market;
+      return isMarketRole || !!market;
     }
 
     return Boolean(
-      market &&
+      (isMarketRole || market) &&
         customer?.phone?.trim() &&
         customer?.name?.trim() &&
         customer?.region_id &&
@@ -143,10 +153,10 @@ const OrderCreateFormContent = () => {
         details?.items?.length &&
         details?.total_price?.trim(),
     );
-  }, [customer, details, market, step]);
+  }, [customer, details, isMarketRole, market, step]);
 
   const handleBack = () => {
-    if (step === 1) {
+    if (step === 1 || isMarketRole) {
       navigate("/orders");
       return;
     }
@@ -155,6 +165,11 @@ const OrderCreateFormContent = () => {
   };
 
   const handleNext = async () => {
+    if (isMarketRole) {
+      setStep(2);
+      return;
+    }
+
     const isValid = await trigger("market");
     if (isValid) {
       setStep(2);
@@ -162,8 +177,22 @@ const OrderCreateFormContent = () => {
   };
 
   const onSubmit = (values: OrderCreateFormValues) => {
-    createOrder.mutate(buildCreateOrderPayload(values), {
-      onSuccess: () => navigate("/orders"),
+    createOrder.mutate(buildCreateOrderPayload(values, { includeMarketId: !isMarketRole }), {
+      onSuccess: () => {
+        reset({
+          ...ORDER_CREATE_DEFAULT_VALUES,
+          market: isMarketRole ? null : values.market,
+        });
+        setStep(2);
+        api.success({
+          message: "Muvaffaqiyatli",
+          description: isMarketRole
+            ? "Buyurtma yaratildi. Mahsulotlaringiz uchun yangi buyurtma kiritishda davom etishingiz mumkin."
+            : "Buyurtma yaratildi. Shu market uchun yangi buyurtma kiritishingiz mumkin.",
+          placement: "topRight",
+          duration: 4,
+        });
+      },
     });
   };
 
@@ -173,7 +202,6 @@ const OrderCreateFormContent = () => {
       "customer.name",
       "customer.region_id",
       "customer.district_id",
-      "customer.address",
       "details.items",
       "details.total_price",
       "details.where_deliver",
@@ -202,11 +230,16 @@ const OrderCreateFormContent = () => {
         </div>
 
         <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 py-3 sm:px-6 sm:py-5">
-          <OrderStepper steps={STEPS} currentStep={step} />
+          <OrderStepper
+            steps={STEPS}
+            currentStep={step}
+            stepNotes={!isMarketRole && market?.name ? { 1: market.name } : undefined}
+            hiddenDescriptions={step > 1 ? [1] : undefined}
+          />
         </div>
 
         <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-6 flex-1">
-          {step === 1 && <Step1Market />}
+          {!isMarketRole && step === 1 && <Step1Market />}
           {step === 2 && <Step2Combined />}
         </div>
 
@@ -214,6 +247,7 @@ const OrderCreateFormContent = () => {
           step={step}
           canNext={canNext}
           isSubmitting={createOrder.isPending}
+          isMarketRole={isMarketRole}
           onBack={handleBack}
           onNext={() => {
             void handleNext();

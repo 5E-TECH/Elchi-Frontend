@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
     Filter,
     X,
@@ -11,6 +11,7 @@ import {
     RefreshCw,
 } from "lucide-react";
 import { useUser } from "../../../entities/user/api/userApi";
+import { useMarkets } from "../../../entities/markets";
 import type { OrderStatus } from "../../../entities/order/types/order";
 import { setFilterValue, resetFilters } from "../../../features/Select/model/FilterSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
@@ -18,6 +19,7 @@ import Select from "../../../shared/ui/Select";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
 import { setSearchValue, clearAllSearch } from "../../../features/search/model/searchSlice";
+import type { RootState } from "../../../app/config/store";
 
 // ── Holat variantlari ─────────────────────────────────────────────────────
 const ALL_STATUSES: { value: OrderStatus | ""; label: string }[] = [
@@ -54,6 +56,8 @@ interface Props {
 const OrderFilters = memo(({ onExport }: Props) => {
     const dispatch = useDispatch();
     const { setParam, removeParam, clearAllParams, getParam } = useQueryParams();
+    const role = useSelector((state: RootState) => state.role.role);
+    const isMarketRole = role === "market";
 
     // ─── URL dan joriy qiymatlarni olish ───────────────────────────────────
     const marketId = getParam(ORDER_FILTER_KEYS.marketId) ?? "";
@@ -64,20 +68,52 @@ const OrderFilters = memo(({ onExport }: Props) => {
     const dateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? "";
     const search = getParam(ORDER_FILTER_KEYS.search) ?? "";
 
-    const hasFilter = !!(marketId || regionId || courierId || status || dateFrom || dateTo || search);
+    const hasFilter = !!(
+        (!isMarketRole && marketId) ||
+        regionId ||
+        (!isMarketRole && courierId) ||
+        status ||
+        dateFrom ||
+        dateTo ||
+        search
+    );
 
     // ─── API lar ───────────────────────────────────────────────────────────
-    const { getUser, getRegions } = useUser();
+    const { getRegions, getCouriers } = useUser();
+    const { getMarkets } = useMarkets();
 
-    const { data: marketsData, isLoading: marketsLoading } = getUser({ role: "market", limit: 100 });
-    const markets = ((marketsData?.data?.items ?? []) as { id: string | number; name: string }[]).map(
-        (m) => ({ value: String(m.id), label: m.name })
-    );
+    const toItems = (value: unknown): { id: string | number; name: string }[] => {
+        if (Array.isArray(value)) return value as { id: string | number; name: string }[];
+        if (
+            typeof value === "object" &&
+            value !== null &&
+            "data" in value &&
+            Array.isArray((value as { data?: { items?: { id: string | number; name: string }[] } }).data?.items)
+        ) {
+            return (value as { data: { items: { id: string | number; name: string }[] } }).data.items;
+        }
+        if (
+            typeof value === "object" &&
+            value !== null &&
+            "items" in value &&
+            Array.isArray((value as { items?: { id: string | number; name: string }[] }).items)
+        ) {
+            return (value as { items: { id: string | number; name: string }[] }).items;
+        }
+        return [];
+    };
 
-    const { data: couriersData, isLoading: couriersLoading } = getUser({ role: "courier", limit: 100 });
-    const couriers = ((couriersData?.data?.items ?? []) as { id: string | number; name: string }[]).map(
-        (c) => ({ value: String(c.id), label: c.name })
+    const { data: marketsData, isLoading: marketsLoading } = getMarkets(
+        { status: "active", limit: 100 },
+        !isMarketRole,
     );
+    const markets = toItems(marketsData).map((m) => ({ value: String(m.id), label: m.name }));
+
+    const { data: couriersData, isLoading: couriersLoading } = getCouriers({
+        status: "active",
+        limit: 100,
+    });
+    const couriers = toItems(couriersData).map((c) => ({ value: String(c.id), label: c.name }));
 
     const { data: regionsData, isLoading: regionsLoading } = getRegions();
     const regions = ((regionsData?.data ?? regionsData ?? []) as { id: string | number; name: string }[]).map(
@@ -153,18 +189,20 @@ const OrderFilters = memo(({ onExport }: Props) => {
             {/* ── 2-qator: selectlar ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* MARKET */}
-                <Select
-                    label="Market"
-                    name={ORDER_FILTER_KEYS.marketId}
-                    value={marketId}
-                    onChange={(e) =>
-                        update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, e.target.value)
-                    }
-                    options={markets}
-                    placeholder="Marketni tanlang"
-                    icon={Store}
-                    loading={marketsLoading}
-                />
+                {!isMarketRole && (
+                    <Select
+                        label="Market"
+                        name={ORDER_FILTER_KEYS.marketId}
+                        value={marketId}
+                        onChange={(e) =>
+                            update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, e.target.value)
+                        }
+                        options={markets}
+                        placeholder="Marketni tanlang"
+                        icon={Store}
+                        loading={marketsLoading}
+                    />
+                )}
 
                 {/* VILOYAT */}
                 <Select
@@ -181,18 +219,20 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 />
 
                 {/* KURYER */}
-                <Select
-                    label="Kuryer"
-                    name={ORDER_FILTER_KEYS.courierId}
-                    value={courierId}
-                    onChange={(e) =>
-                        update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, e.target.value)
-                    }
-                    options={couriers}
-                    placeholder="Kuryerni tanlang"
-                    icon={Truck}
-                    loading={couriersLoading}
-                />
+                {!isMarketRole && (
+                    <Select
+                        label="Kuryer"
+                        name={ORDER_FILTER_KEYS.courierId}
+                        value={courierId}
+                        onChange={(e) =>
+                            update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, e.target.value)
+                        }
+                        options={couriers}
+                        placeholder="Kuryerni tanlang"
+                        icon={Truck}
+                        loading={couriersLoading}
+                    />
+                )}
 
                 {/* HOLAT */}
                 <Select
@@ -224,7 +264,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 {/* Aktiv filter chip-lar */}
                 {hasFilter && (
                     <div className="flex flex-wrap gap-1.5 flex-1">
-                        {marketId && (
+                        {!isMarketRole && marketId && (
                             <FilterChip
                                 label={`Market: ${markets.find((m) => m.value === marketId)?.label ?? `#${marketId}`}`}
                                 onRemove={() =>
@@ -240,7 +280,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                                 }
                             />
                         )}
-                        {courierId && (
+                        {!isMarketRole && courierId && (
                             <FilterChip
                                 label={`Kuryer: ${couriers.find((c) => c.value === courierId)?.label ?? `#${courierId}`}`}
                                 onRemove={() =>

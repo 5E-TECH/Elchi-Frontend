@@ -10,9 +10,11 @@ interface Step {
 interface OrderStepperProps {
     steps: Step[];
     currentStep: number;
+    stepNotes?: Partial<Record<number, string>>;
+    hiddenDescriptions?: number[];
 }
 
-const OrderStepper = ({ steps, currentStep }: OrderStepperProps) => {
+const OrderStepper = ({ steps, currentStep, stepNotes, hiddenDescriptions }: OrderStepperProps) => {
     return (
         <div className="w-full overflow-x-auto custom-scrollbar">
             <div className="flex min-w-[320px] items-start sm:min-w-0">
@@ -20,9 +22,11 @@ const OrderStepper = ({ steps, currentStep }: OrderStepperProps) => {
                     const isDone = currentStep > step.id;
                     const isActive = currentStep === step.id;
                     const isLast = index === steps.length - 1;
+                    const stepNote = stepNotes?.[step.id];
+                    const shouldHideDescription = hiddenDescriptions?.includes(step.id);
 
                     return (
-                        <div key={step.id} className="flex items-start flex-1 min-w-[140px] sm:min-w-0">
+                        <div key={step.id} className="flex items-start flex-1 min-w-35 sm:min-w-0">
                             {/* Step circle + label */}
                             <div className="flex flex-col items-center">
                                 {/* Circle */}
@@ -53,9 +57,22 @@ const OrderStepper = ({ steps, currentStep }: OrderStepperProps) => {
                                     >
                                         {step.label}
                                     </p>
-                                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 hidden sm:block">
-                                        {step.description}
-                                    </p>
+                                    {!shouldHideDescription && (
+                                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 hidden sm:block">
+                                            {step.description}
+                                        </p>
+                                    )}
+                                    {stepNote && (
+                                        <p
+                                            className={`mt-1 max-w-40 truncate rounded-full border px-2 py-1 text-[11px] font-semibold ${isActive || isDone
+                                                    ? "border-main/20 bg-main/10 text-main dark:border-main/25 dark:bg-main/12 dark:text-main"
+                                                    : "border-gray-200 bg-sidebar text-main/80 dark:border-primarydark dark:bg-primarydark dark:text-main/80"
+                                                }`}
+                                            title={stepNote}
+                                        >
+                                            {stepNote}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 

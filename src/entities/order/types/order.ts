@@ -101,7 +101,7 @@ export interface CustomerPayload {
 }
 
 export interface CreateOrderRequest {
-    market_id: string;
+    market_id?: string;
     customer: CustomerPayload;
     items: OrderItem[];
     address?: string;       // ixtiyoriy

@@ -42,16 +42,20 @@ const Orders = () => {
     };
 
     // Market
-    const marketId = urlParams[ORDER_FILTER_KEYS.marketId] || filters[ORDER_FILTER_KEYS.marketId];
-    if (marketId) params.market_id = String(marketId);
+    if (role !== "market") {
+      const marketId = urlParams[ORDER_FILTER_KEYS.marketId] || filters[ORDER_FILTER_KEYS.marketId];
+      if (marketId) params.market_id = String(marketId);
+    }
 
     // Viloyat / Region
     const regionId = urlParams[ORDER_FILTER_KEYS.regionId] || filters[ORDER_FILTER_KEYS.regionId];
     if (regionId) params.region_id = String(regionId);
 
     // Kuryer
-    const courierId = urlParams[ORDER_FILTER_KEYS.courierId] || filters[ORDER_FILTER_KEYS.courierId];
-    if (courierId) params.courier_id = String(courierId);
+    if (role !== "market") {
+      const courierId = urlParams[ORDER_FILTER_KEYS.courierId] || filters[ORDER_FILTER_KEYS.courierId];
+      if (courierId) params.courier_id = String(courierId);
+    }
 
     // Holat
     const status = urlParams[ORDER_FILTER_KEYS.status] || filters[ORDER_FILTER_KEYS.status];
@@ -76,9 +80,9 @@ const Orders = () => {
   useEffect(() => {
     setPage(1);
   }, [
-    filters[ORDER_FILTER_KEYS.marketId],
+    role !== "market" ? filters[ORDER_FILTER_KEYS.marketId] : null,
     filters[ORDER_FILTER_KEYS.regionId],
-    filters[ORDER_FILTER_KEYS.courierId],
+    role !== "market" ? filters[ORDER_FILTER_KEYS.courierId] : null,
     filters[ORDER_FILTER_KEYS.status],
     filters[ORDER_FILTER_KEYS.dateFrom],
     filters[ORDER_FILTER_KEYS.dateTo],

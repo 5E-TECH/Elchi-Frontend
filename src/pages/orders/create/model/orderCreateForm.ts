@@ -46,62 +46,69 @@ export const ORDER_CREATE_DEFAULT_VALUES: OrderCreateFormValues = {
   },
 };
 
-export const orderCreateSchema = yup
+const marketSchema = yup
   .object({
-    market: yup
-      .object({
-        id: yup.number().required(),
-        name: yup.string().required(),
-        phone_number: yup.string().default(""),
-        phone: yup.string().default(""),
-      })
-      .nullable()
-      .required("Davom etish uchun avval market tanlang"),
-    customer: yup.object({
-      phone: yup
-        .string()
-        .required("Mijozning telefon raqamini kiriting")
-        .matches(/^\d{9}$/, "Telefon raqam 9 ta raqamdan iborat bo'lishi kerak"),
-      extra_phone: yup
-        .string()
-        .default("")
-        .test(
-          "extra-phone-length",
-          "Qo'shimcha raqam kiritilsa, u 9 ta raqamdan iborat bo'lishi kerak",
-          (value) => !value || /^\d{9}$/.test(value),
-        ),
-      name: yup.string().trim().required("Mijoz ismini kiriting"),
-      region_id: yup.string().required("Viloyatni tanlang"),
-      district_id: yup.string().required("Tumanni tanlang"),
-      address: yup.string().trim().required("Yetkazib berish manzilini kiriting"),
-    }),
-    details: yup.object({
-      items: yup
-        .array()
-        .of(
-          yup.object({
-            product_id: yup.string().required(),
-            quantity: yup.number().required().min(1),
-          }),
-        )
-        .min(1, "Kamida bitta mahsulot tanlang")
-        .required(),
-      total_price: yup
-        .string()
-        .required("Buyurtmaning umumiy summasini kiriting")
-        .test("positive-price", "Umumiy summa 0 dan katta bo'lishi kerak", (value) => {
-          const amount = Number((value ?? "").replace(/\D/g, ""));
-          return amount > 0;
-        }),
-      where_deliver: yup
-        .mixed<DeliveryType>()
-        .oneOf(["center", "address"])
-        .required(),
-      operator: yup.string().optional(),
-      comment: yup.string().optional(),
-    }),
+    id: yup.number().required(),
+    name: yup.string().required(),
+    phone_number: yup.string().default(""),
+    phone: yup.string().default(""),
   })
-  .required();
+  .nullable()
+  .default(null);
+
+export const createOrderSchema = (requireMarket: boolean = true) =>
+  yup
+    .object({
+      market: requireMarket
+        ? marketSchema.required("Davom etish uchun avval market tanlang")
+        : marketSchema,
+      customer: yup.object({
+        phone: yup
+          .string()
+          .required("Mijozning telefon raqamini kiriting")
+          .matches(/^\d{9}$/, "Telefon raqam 9 ta raqamdan iborat bo'lishi kerak"),
+        extra_phone: yup
+          .string()
+          .default("")
+          .test(
+            "extra-phone-length",
+            "Qo'shimcha raqam kiritilsa, u 9 ta raqamdan iborat bo'lishi kerak",
+            (value) => !value || /^\d{9}$/.test(value),
+          ),
+        name: yup.string().trim().required("Mijoz ismini kiriting"),
+        region_id: yup.string().required("Viloyatni tanlang"),
+        district_id: yup.string().required("Tumanni tanlang"),
+        address: yup.string().trim().default(""),
+      }),
+      details: yup.object({
+        items: yup
+          .array()
+          .of(
+            yup.object({
+              product_id: yup.string().required(),
+              quantity: yup.number().required().min(1),
+            }),
+          )
+          .min(1, "Kamida bitta mahsulot tanlang")
+          .required(),
+        total_price: yup
+          .string()
+          .required("Buyurtmaning umumiy summasini kiriting")
+          .test("positive-price", "Umumiy summa 0 dan katta bo'lishi kerak", (value) => {
+            const amount = Number((value ?? "").replace(/\D/g, ""));
+            return amount > 0;
+          }),
+        where_deliver: yup
+          .mixed<DeliveryType>()
+          .oneOf(["center", "address"])
+          .required(),
+        operator: yup.string().optional(),
+        comment: yup.string().optional(),
+      }),
+    })
+    .required();
+
+export const orderCreateSchema = createOrderSchema();
 
 export const stripPhone = (value: string): string =>
   value.replace(/\D/g, "").slice(0, 9);
@@ -134,14 +141,18 @@ export const formatExtraNumber = (raw: string): string => {
 
 export const buildCreateOrderPayload = (
   values: OrderCreateFormValues,
+  options?: {
+    includeMarketId?: boolean;
+  },
 ): CreateOrderRequest => {
-  const market = values.market!;
+  const includeMarketId = options?.includeMarketId ?? true;
+  const market = values.market;
   const address = values.customer.address.trim();
   const comment = values.details.comment.trim();
   const operator = values.details.operator.trim();
 
   return {
-    market_id: String(market.id),
+    ...(includeMarketId && market ? { market_id: String(market.id) } : {}),
     customer: {
       name: values.customer.name.trim(),
       phone_number: `+998${values.customer.phone}`,

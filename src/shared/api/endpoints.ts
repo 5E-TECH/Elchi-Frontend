@@ -83,6 +83,7 @@ export const API_ENDPOINTS = {
   },
   PRODUCTS: {
     BASE: "product",
+    MY_PRODUCTS: "product/my-products",
     BY_ID: (id: string | number) => `product/${id}`,
     BY_MARKET_ID: (id: string | number) => `product/market/${id}`,
   },
