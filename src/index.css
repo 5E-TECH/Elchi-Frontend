@@ -25,6 +25,68 @@
   --color-warning: #f59e0b;
 }
 
+/* ───────────────────────────── Print (MailDetail) ─────────────────────────── */
+.print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-root,
+  .print-root * {
+    visibility: visible !important;
+  }
+
+  .print-root {
+    display: block;
+    position: fixed;
+    inset: 0;
+    padding: 0;
+    color: #111827;
+    font-family: Arial, sans-serif;
+  }
+
+  .print-title {
+    font-size: 14pt;
+    margin: 0 0 8px;
+  }
+
+  .print-meta {
+    font-size: 9.5pt;
+    opacity: 0.75;
+    margin-bottom: 10px;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1px solid #111827;
+    padding: 6px 8px;
+    vertical-align: top;
+  }
+
+  .print-table tr {
+    page-break-inside: avoid;
+  }
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer utilities {

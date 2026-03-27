@@ -41,7 +41,7 @@ EmptyState.displayName = "EmptyState";
 
 // ─── Ustun sarlavhalar ────────────────────────────────────────────────────────
 const TableHeader = memo(() => (
-    <div className={`hidden lg:grid ${TABLE_COLS} items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2`}>
+    <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 xl:gap-3 px-3 xl:px-4 py-2`}>
         <div />
         <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">Ism</div>
         <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">Telefon</div>
@@ -106,12 +106,25 @@ const OrdersTable = memo(({
                 </div>
             )}
 
-            <div className="overflow-x-auto">
-                <div
-                    className={`${isHistory ? "min-w-[1120px]" : "min-w-[980px] lg:min-w-[1120px]"} flex flex-col gap-1.5`}
-                >
-                    {isHistory ? <HistoryTableHeader /> : <TableHeader />}
-
+            {isHistory ? (
+                <div className="overflow-x-auto">
+                    <div className="min-w-[1120px] flex flex-col gap-1.5">
+                        <HistoryTableHeader />
+                        {orders.map((order) => (
+                            <OrderRow
+                                key={order.id}
+                                order={order}
+                                checked={selectedIds.has(order.id)}
+                                onToggle={onToggleOne}
+                                variant={variant}
+                                readOnly={readOnly}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-1.5">
+                    <TableHeader />
                     {orders.map((order) => (
                         <OrderRow
                             key={order.id}
@@ -123,7 +136,7 @@ const OrdersTable = memo(({
                         />
                     ))}
                 </div>
-            </div>
+            )}
         </div>
     );
 });

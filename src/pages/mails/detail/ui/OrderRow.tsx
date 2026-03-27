@@ -5,17 +5,15 @@ import {
   User,
   MapPin,
   Building2,
-	  Calendar,
-	  Package2,
-	  Warehouse,
-	  House,
-	} from "lucide-react";
+  Calendar,
+  Package2,
+  Warehouse,
+  House,
+} from "lucide-react";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import { formatDate, formatPrice, getStatusLabel, getStatusStyle } from "../lib/helpers";
-import { printOrders } from "../lib/printMode";
 import Checkbox from "./Checkbox";
 import { HISTORY_TABLE_COLS, TABLE_COLS } from "./OrdersTable";
-import PrintModeSelect from "./PrintModeSelect";
 
 interface OrderRowProps {
   order: PostOrder;
@@ -89,7 +87,7 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
 
   return (
     <div
-      className={`group grid ${TABLE_COLS} items-center gap-2 lg:gap-3 px-3 lg:px-4 py-3.5 rounded-xl border transition-all duration-200 cursor-pointer ${
+      className={`group rounded-xl border transition-all duration-200 cursor-pointer ${
         checked
           ? "bg-main/10 border-main/40 shadow-sm"
           : "bg-white dark:bg-white/4 border-gray-100 dark:border-white/8 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-white/6"
@@ -98,93 +96,146 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
         if (!readOnly) onToggle(order.id);
       }}
     >
-      {readOnly ? <div /> : <Checkbox checked={checked} onChange={() => onToggle(order.id)} />}
+      {/* XL table layout */}
+      <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 xl:gap-3 px-3 xl:px-4 py-3.5`}>
+        {readOnly ? <div /> : <Checkbox checked={checked} onChange={() => onToggle(order.id)} />}
 
-      <div className="flex items-center gap-2 min-w-0">
-        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 shrink-0">
-          <User size={13} className="text-slate-500 dark:text-white/70" />
-        </div>
-        <span className="text-sm font-semibold text-gray-800 dark:text-white truncate">
-          {customerName}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-1.5 min-w-0">
-        <Phone size={12} className="text-black dark:text-white/50 shrink-0" />
-        <span className="text-xs text-gray-500 dark:text-white font-medium truncate">
-          {customerPhone}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-1.5 min-w-0">
-        <MapPin size={12} className="text-black dark:text-white/50 shrink-0" />
-        <span className="text-xs text-gray-500 dark:text-white font-medium truncate">
-          {districtName}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-1.5 min-w-0">
-        <Store size={12} className="text-black dark:text-white/50 shrink-0" />
-        <span className="text-xs text-gray-600 dark:text-white font-semibold truncate">
-          {marketName}
-        </span>
-      </div>
-
-      <div>
-        <span className="text-sm font-bold text-red-500">
-          {formatPrice(order.total_price)}
-        </span>
-      </div>
-
-      <div>
-        {isAddressDelivery ? (
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500/15 border border-orange-500/30">
-            <House size={11} className="text-orange-400" />
-            <span className="text-[11px] text-orange-400 font-semibold">Uygacha</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 shrink-0">
+            <User size={13} className="text-slate-500 dark:text-white/70" />
           </div>
-        ) : (
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-500/15 border border-slate-500/20">
-            <Building2 size={11} className="text-slate-500 dark:text-white/70" />
-            <span className="text-[11px] text-slate-600 dark:text-white/80 font-semibold">Markazgacha</span>
-          </div>
-        )}
-      </div>
-
-      <div>
-        {readOnly ? (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
-            Ko'rish
+          <span className="text-sm font-semibold text-gray-800 dark:text-white truncate">
+            {customerName}
           </span>
-        ) : (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
-            {checked ? "Tanlangan" : "Tanlanmagan"}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <Calendar size={11} className="text-black dark:text-white/50 shrink-0" />
-        <span className="text-[11px] text-black dark:text-white font-medium">
-          {formatDate(order.updatedAt ?? order.createdAt)}
-        </span>
-      </div>
-
-      <div
-        className="flex justify-end"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="hidden">
-          <PrintModeSelect variant="icon" onSelect={(mode) => printOrders(mode, [order])} />
         </div>
-        <span
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-semibold ${getStatusStyle(
-            order.status as OrderStatus,
-          )}`}
-          style={{ whiteSpace: "nowrap" }}
-        >
-          <Package2 size={11} />
-          {getStatusLabel(order.status as OrderStatus)}
-        </span>
+
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Phone size={12} className="text-black dark:text-white/50 shrink-0" />
+          <span className="text-xs text-gray-500 dark:text-white font-medium truncate">
+            {customerPhone}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 min-w-0">
+          <MapPin size={12} className="text-black dark:text-white/50 shrink-0" />
+          <span className="text-xs text-gray-500 dark:text-white font-medium truncate">
+            {districtName}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Store size={12} className="text-black dark:text-white/50 shrink-0" />
+          <span className="text-xs text-gray-600 dark:text-white font-semibold truncate">
+            {marketName}
+          </span>
+        </div>
+
+        <div>
+          <span className="text-sm font-bold text-red-500">
+            {formatPrice(order.total_price)}
+          </span>
+        </div>
+
+        <div>
+          {isAddressDelivery ? (
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500/15 border border-orange-500/30">
+              <House size={11} className="text-orange-400" />
+              <span className="text-[11px] text-orange-400 font-semibold">Uygacha</span>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-500/15 border border-slate-500/20">
+              <Building2 size={11} className="text-slate-500 dark:text-white/70" />
+              <span className="text-[11px] text-slate-600 dark:text-white/80 font-semibold">Markazgacha</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <Calendar size={11} className="text-black dark:text-white/50 shrink-0" />
+          <span className="text-[11px] text-black dark:text-white font-medium">
+            {formatDate(order.updatedAt ?? order.createdAt)}
+          </span>
+        </div>
+
+        <div className="flex justify-end">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-semibold ${getStatusStyle(
+              order.status as OrderStatus,
+            )}`}
+            style={{ whiteSpace: "nowrap" }}
+          >
+            <Package2 size={11} />
+            {getStatusLabel(order.status as OrderStatus)}
+          </span>
+        </div>
+      </div>
+
+      {/* Compact layout (no horizontal scroll) */}
+      <div className="xl:hidden px-3 py-3.5">
+        <div className="flex items-start gap-3">
+          {readOnly ? null : (
+            <div className="pt-0.5">
+              <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
+            </div>
+          )}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="m-0 text-sm font-extrabold text-gray-900 dark:text-white truncate">
+                  {customerName}
+                </p>
+                <p className="m-0 mt-1 text-[12px] text-gray-500 dark:text-white/70 truncate flex items-center gap-1.5">
+                  <Phone size={12} className="shrink-0 text-gray-400 dark:text-white/40" />
+                  {customerPhone}
+                </p>
+              </div>
+
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-semibold ${getStatusStyle(
+                  order.status as OrderStatus,
+                )}`}
+                style={{ whiteSpace: "nowrap" }}
+              >
+                <Package2 size={11} />
+                {getStatusLabel(order.status as OrderStatus)}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 mt-3 flex-wrap">
+              <span className="text-sm font-bold text-red-500">
+                {formatPrice(order.total_price)}
+              </span>
+
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-white/70">
+                <Calendar size={12} className="shrink-0 text-gray-400 dark:text-white/40" />
+                {formatDate(order.updatedAt ?? order.createdAt)}
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
+                <Store size={11} className="shrink-0" />
+                {marketName}
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
+                <MapPin size={11} className="shrink-0" />
+                {districtName}
+              </span>
+
+              {isAddressDelivery ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500/15 border border-orange-500/30 text-[11px] font-semibold text-orange-500">
+                  <House size={11} />
+                  Uygacha
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-500/15 border border-slate-500/20 text-[11px] font-semibold text-slate-700 dark:text-white/80">
+                  <Warehouse size={11} />
+                  Markazgacha
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

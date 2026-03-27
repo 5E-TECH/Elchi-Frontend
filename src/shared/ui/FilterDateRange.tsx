@@ -11,6 +11,7 @@ interface FilterDateRangeProps {
     fromClassName?: string;
     toClassName?: string;
     iconClassName?: string;
+    size?: "sm" | "md";
 }
 
 const FilterDateRange = memo(({
@@ -22,12 +23,13 @@ const FilterDateRange = memo(({
     fromClassName,
     toClassName,
     iconClassName,
+    size = "md",
 }: FilterDateRangeProps) => {
     return (
         <div className={`flex items-center gap-2 ${className}`}>
             {/* Ikonka */}
             <Calendar
-                size={14}
+                size={size === "sm" ? 13 : 14}
                 className={iconClassName ?? "text-gray-400 dark:text-white/50 shrink-0"}
             />
 
@@ -38,6 +40,7 @@ const FilterDateRange = memo(({
                 placeholder="Boshlanish"
                 maxDate={dateTo || undefined}
                 className={fromClassName ?? "w-40"}
+                size={size}
             />
 
             {/* Ajratuvchi */}
@@ -50,6 +53,7 @@ const FilterDateRange = memo(({
                 placeholder="Tugash"
                 minDate={dateFrom || undefined}
                 className={toClassName ?? "w-40"}
+                size={size}
             />
         </div>
     );

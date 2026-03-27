@@ -96,8 +96,9 @@ export const Table = memo(<T extends Record<string, any>>({
                 key={String(column.key)}
                 style={column.width ? { width: column.width } : undefined}
                 onClick={() => handleSort(column)}
-                className={`${headerCellClass} text-left text-xs font-semibold uppercase tracking-wider text-white ${column.sortable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
-                  }`}
+                className={`${headerCellClass} text-left text-xs font-semibold uppercase tracking-wider text-white ${
+                  column.sortable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
+                } ${column.className || ""}`}
               >
                 <div className="flex items-center gap-2">
                   <span>{column.label}</span>
