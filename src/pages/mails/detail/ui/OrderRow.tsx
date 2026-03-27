@@ -5,11 +5,11 @@ import {
   User,
   MapPin,
   Building2,
-  Calendar,
-  Package2,
-  Warehouse,
-  House,
-} from "lucide-react";
+	  Calendar,
+	  Package2,
+	  Warehouse,
+	  House,
+	} from "lucide-react";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import { formatDate, formatPrice, getStatusLabel, getStatusStyle } from "../lib/helpers";
 import { printOrders } from "../lib/printMode";
