@@ -11,10 +11,12 @@ import {
   User,
 } from "lucide-react";
 import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
+import { useSelector } from "react-redux";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import { useProducts } from "../../../../entities/product";
 import type { DeliveryType } from "../../../../entities/order/types/order";
 import { GlobalSearchInput } from "../../../../features/search";
+import type { RootState } from "../../../../app/config/store";
 import {
   formatPhone,
   formatPrice,
@@ -52,8 +54,8 @@ const Field = ({ label, required, icon, children, error, wide }: FieldProps) => 
   <div className={`flex flex-col gap-1.5${wide ? " col-span-2" : ""}`}>
     <label className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide leading-4">
       <span className="shrink-0">{icon}</span>
-      <span className="break-words">{label}</span>
-      {required && <span className="text-[var(--color-error)] ml-0.5">*</span>}
+      <span className="wrap-break-word">{label}</span>
+      {required && <span className="text-error ml-0.5">*</span>}
     </label>
     {children}
     <FormFieldError message={error} />
@@ -96,18 +98,22 @@ const Step2Combined = () => {
   } = useFormContext<OrderCreateFormValues>();
 
   const market = useWatch({ control, name: "market" });
+  const role = useSelector((state: RootState) => state.role.role);
   const customer = useWatch({ control, name: "customer" });
   const details = useWatch({ control, name: "details" });
   const selectedRegionId = customer?.region_id ?? "";
+  const isMarketRole = role === "market";
+  const productSourceMarketId = market ? String(market.id) : "";
 
   const { getRegions, getDistricts } = useLogistics();
   const { data: regions, isLoading: regLoading } = getRegions();
   const { data: districts, isLoading: distLoading } = getDistricts(selectedRegionId);
 
-  const { getByMarketId } = useProducts();
-  const { data: productsData, isLoading: prodLoading } = getByMarketId(
-    market ? String(market.id) : "",
-  );
+  const { getByMarketId, getMyProducts } = useProducts();
+  const marketProductsQuery = getByMarketId(productSourceMarketId, !isMarketRole);
+  const myProductsQuery = getMyProducts(isMarketRole);
+  const productsData = isMarketRole ? myProductsQuery.data : marketProductsQuery.data;
+  const prodLoading = isMarketRole ? myProductsQuery.isLoading : marketProductsQuery.isLoading;
 
   const toArray = (value: unknown): any[] => {
     if (Array.isArray(value)) return value;
@@ -365,7 +371,6 @@ const Step2Combined = () => {
             render={({ field }) => (
               <Field
                 label="Manzil"
-                required
                 icon={<Home size={12} />}
                 error={errors.customer?.address?.message}
                 wide
@@ -414,7 +419,7 @@ const Step2Combined = () => {
                 />
               )}
             />
-            <div className="flex flex-col gap-1.5 max-h-[220px] sm:max-h-[200px] overflow-y-auto custom-scrollbar pr-0.5">
+            <div className="flex flex-col gap-1.5 max-h-55 sm:max-h-50 overflow-y-auto custom-scrollbar pr-0.5">
               {prodLoading ? (
                 Array.from({ length: 3 }).map((_, index) => (
                   <div
@@ -488,7 +493,7 @@ const Step2Combined = () => {
                 <p className="text-xs text-center">Mahsulot tanlang</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-1.5 max-h-[240px] sm:max-h-[200px] overflow-y-auto custom-scrollbar pr-0.5">
+              <div className="flex flex-col gap-1.5 max-h-60 sm:max-h-50 overflow-y-auto custom-scrollbar pr-0.5">
                 {details.items.map((item) => {
                   const product = getProduct(item.product_id);
                   return (
@@ -530,7 +535,7 @@ const Step2Combined = () => {
                         <button
                           type="button"
                           onClick={() => removeItem(item.product_id)}
-                          className="text-gray-300 hover:text-[var(--color-error)] transition-colors ml-0.5 cursor-pointer"
+                          className="text-gray-300 hover:text-error transition-colors ml-0.5 cursor-pointer"
                         >
                           <Trash2 size={13} />
                         </button>

@@ -15,7 +15,7 @@ export const FormFieldError = ({ message }: { message?: string }) => {
   if (!message) return null;
 
   return (
-    <div className="flex items-start gap-1.5 rounded-lg border border-[color:color-mix(in_srgb,var(--color-error)_18%,transparent)] bg-[color:color-mix(in_srgb,var(--color-error)_8%,transparent)] px-2.5 py-2 text-[11px] leading-4 text-[var(--color-error)]">
+    <div className="flex items-start gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--color-error)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-error)_8%,transparent)] px-2.5 py-2 text-[11px] leading-4 text-error">
       <AlertCircle size={14} className="mt-0.5 shrink-0" />
       <span>{message}</span>
     </div>
@@ -108,7 +108,7 @@ export const SelectFieldShell = ({
         disabled
           ? "text-gray-300 dark:text-gray-500"
           : hasError
-            ? "text-[var(--color-error)]"
+            ? "text-error"
             : "text-gray-400 dark:text-gray-300"
       }`}
     >

@@ -49,6 +49,13 @@ export const useProducts = () => {
     });
   };
 
+  const getMyProducts = (enabled: boolean = true) =>
+    useQuery({
+      queryKey: [products, "my-products"],
+      queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.MY_PRODUCTS).then((res) => res.data),
+      enabled,
+    });
+
   const deleteProduct = useMutation({
     mutationFn: (id: number) => api.delete(API_ENDPOINTS.PRODUCTS.BY_ID(id)),
     onSuccess: () => {
@@ -62,5 +69,6 @@ export const useProducts = () => {
     updateProduct,
     deleteProduct,
     getByMarketId,
+    getMyProducts,
   };
 };

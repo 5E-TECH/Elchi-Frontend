@@ -1,8 +1,10 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Package, MapPin, Store, Calendar, Banknote } from "lucide-react";
+import { useSelector } from "react-redux";
 import { Table } from "../../../shared/components/Table/Table";
 import OrderStatusBadge from "./OrderStatusBadge";
 import type { OrderListItem } from "../../../entities/order/types/order";
+import type { RootState } from "../../../app/config/store";
 
 interface Props {
     data: OrderListItem[];
@@ -135,6 +137,15 @@ const columns = [
 ];
 
 const OrdersTable = ({ data, isLoading, onRowClick }: Props) => {
+    const role = useSelector((state: RootState) => state.role.role);
+    const tableColumns = useMemo(() => {
+        if (role === "market") {
+            return columns.filter((column) => column.key !== "market");
+        }
+
+        return columns;
+    }, [role]);
+
     if (isLoading) {
         return (
             <div className="flex flex-col gap-2">
@@ -166,7 +177,7 @@ const OrdersTable = ({ data, isLoading, onRowClick }: Props) => {
     return (
         <Table
             data={data}
-            columns={columns as any}
+            columns={tableColumns as any}
             keyExtractor={(row) => row.id}
             loading={false}
             onRowClick={onRowClick}

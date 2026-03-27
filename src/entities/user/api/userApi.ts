@@ -9,6 +9,7 @@ export interface IUserFilter {
   search?: string;
   status?: string;
   role?: string;
+  region_id?: string;
   page?: number;
   limit?: number;
 }
@@ -20,6 +21,13 @@ export const useUser = () => {
     useQuery({
       queryKey: [user, params],
       queryFn: () => api.get(API_ENDPOINTS.USERS.BASE, { params }).then((res: any) => res.data),
+      enabled,
+    });
+
+  const getCouriers = (params?: IUserFilter, enabled: boolean = true) =>
+    useQuery({
+      queryKey: ["couriers", params],
+      queryFn: () => api.get(API_ENDPOINTS.COURIERS.BASE, { params }).then((res: any) => res.data),
       enabled,
     });
 
@@ -111,6 +119,7 @@ export const useUser = () => {
     createCourier,
     getRegions,
     getUser,
+    getCouriers,
     getUserById,
     updateUserStatus,
     updateUser,

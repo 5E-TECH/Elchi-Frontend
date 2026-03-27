@@ -152,7 +152,7 @@ const Step3Details = () => {
             )}
           />
 
-          <div className="max-h-[280px] overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-1">
+          <div className="max-h-70 overflow-y-auto custom-scrollbar flex flex-col gap-2 pr-1">
             {isLoading ? (
               Array.from({ length: 4 }).map((_, index) => (
                 <div
@@ -184,7 +184,7 @@ const Step3Details = () => {
                         : "border-gray-200 dark:border-primarydark bg-primary dark:bg-primarydark hover:border-main/30 hover:shadow-sm"}
                     `}
                   >
-                    <div className="w-10 h-10 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0 overflow-hidden">
                       {product.image ? (
                         <img
                           src={product.image}
@@ -232,7 +232,7 @@ const Step3Details = () => {
               <p className="text-xs text-center">Chap tomondagi mahsulotlardan tanlang</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
+            <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
               {details.items.map((item) => {
                 const product = getProduct(item.product_id);
 
@@ -241,7 +241,7 @@ const Step3Details = () => {
                     key={item.product_id}
                     className="flex items-center gap-3 p-3 rounded-xl bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark/60"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0">
                       <ShoppingBag size={14} className="text-main/50" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -274,7 +274,7 @@ const Step3Details = () => {
                     <button
                       type="button"
                       onClick={() => removeItem(item.product_id)}
-                      className="ml-1 text-gray-300 hover:text-[var(--color-error)] transition-colors cursor-pointer"
+                      className="ml-1 text-gray-300 hover:text-error transition-colors cursor-pointer"
                     >
                       <Trash2 size={14} />
                     </button>
