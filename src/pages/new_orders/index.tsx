@@ -1,13 +1,17 @@
-import { memo, useState } from "react";
-import Markets from "./markets";
-import External_orders from "./external_orders";
+import { memo, useMemo } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderName from "../../shared/components/headerName";
 import { ClipboardList, QrCode, Store } from "lucide-react";
 
 type Tab = "markets" | "external";
 
 const NewOrders = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("markets");
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const activeTab = useMemo<Tab>(() => {
+    return location.pathname.startsWith("/new-orders/external") ? "external" : "markets";
+  }, [location.pathname]);
 
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
@@ -20,7 +24,7 @@ const NewOrders = () => {
       <div className="flex items-center gap-4 mt-4 mb-6">
         {/* Markets tab */}
         <div
-          onClick={() => setActiveTab("markets")}
+          onClick={() => navigate("/new-orders")}
           className={`flex items-center gap-3 p-4 rounded-2xl w-full cursor-pointer transition-all duration-200 border
             ${activeTab === "markets"
               ? "bg-main text-white border-main shadow-lg shadow-main/25"
@@ -41,7 +45,7 @@ const NewOrders = () => {
 
         {/* Tashqi Buyurtmalar tab */}
         <div
-          onClick={() => setActiveTab("external")}
+          onClick={() => navigate("/new-orders/external")}
           className={`flex items-center gap-3 p-4 rounded-2xl w-full cursor-pointer transition-all duration-200 border
             ${activeTab === "external"
               ? "bg-main text-white border-main shadow-lg shadow-main/25"
@@ -53,8 +57,7 @@ const NewOrders = () => {
         </div>
       </div>
 
-      {/* Tab content */}
-      {activeTab === "markets" ? <Markets /> : <External_orders />}
+      <Outlet />
     </div>
   );
 };

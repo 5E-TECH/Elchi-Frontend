@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   AreaChart,
   BarChart,
@@ -25,7 +25,7 @@ import { useDashboard } from "../../../entities/dashboard";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ChartType = "Area" | "Bar" | "Combo";
-type Period = "Daily" | "Weekly" | "Monthly" | "Yearly";
+export type RevenuePeriod = "daily" | "weekly" | "monthly" | "yearly";
 type ColorVariant = "success" | "info" | "warning" | "error";
 
 
@@ -53,7 +53,14 @@ interface PeriodStatItem {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CHART_TYPES: ChartType[] = ["Area", "Bar", "Combo"];
-const PERIODS: Period[] = ["Daily", "Weekly", "Monthly", "Yearly"];
+const PERIODS: RevenuePeriod[] = ["daily", "weekly", "monthly", "yearly"];
+
+const PERIOD_LABEL: Record<RevenuePeriod, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  monthly: "Monthly",
+  yearly: "Yearly",
+};
 
 const VARIANT_COLOR: Record<ColorVariant, string> = {
   info: "var(--color-info)",
@@ -303,15 +310,16 @@ FinanceCard.displayName = "FinanceCard";
 
 // ─── PeriodStatsCard ──────────────────────────────────────────────────────────
 
-const PeriodStatsCard = memo(({ totalOrders, sold, profit }: {
+const PeriodStatsCard = memo(({ totalOrders, sold, profit, period }: {
   totalOrders: number;
   sold: number;
-  profit: any;
+  profit: number;
+  period: RevenuePeriod;
 }) => {
   const periodStats: PeriodStatItem[] = [
     {
       label: "Total Revenue:",
-      value: `${profit?.toLocaleString()} UZS`,
+      value: `${profit.toLocaleString()} UZS`,
       color: "var(--color-success)",
     },
     {
@@ -349,7 +357,7 @@ const PeriodStatsCard = memo(({ totalOrders, sold, profit }: {
               Chart Period
             </p>
             <p className="text-[11px] leading-tight mt-px text-maindark/45 dark:text-sidebar/45">
-              Daily statistics
+              {PERIOD_LABEL[period]} statistics
             </p>
           </div>
         </div>
@@ -430,15 +438,25 @@ export interface FinancialAnalysisProps {
   endDate?: string;
 }
 
-const FinancialAnalysis = memo(({ sold, profit, startDate, endDate }: FinancialAnalysisProps) => {
-  const [period, setPeriod] = useState<Period>("Daily");
-
+const FinancialAnalysis = memo(
+  ({ sold, profit, startDate, endDate }: FinancialAnalysisProps) => {
   const { getRevenue } = useDashboard();
-  const { data } = getRevenue({
-    start_day: startDate,
-    end_day: endDate,
-    period,
-  });
+  const [period, setPeriod] = useState<RevenuePeriod>("daily");
+
+  const revenueParams = useMemo(() => {
+    const params: Record<string, string> = { period };
+    if (startDate) {
+      params.startDate = startDate;
+      params.start_day = startDate;
+    }
+    if (endDate) {
+      params.endDate = endDate;
+      params.end_day = endDate;
+    }
+    return params;
+  }, [endDate, period, startDate]);
+
+  const { data } = getRevenue(revenueParams);
   const revenueData = data?.data?.data;
 
 
@@ -482,10 +500,11 @@ const FinancialAnalysis = memo(({ sold, profit, startDate, endDate }: FinancialA
               className="px-3.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150"
               style={{
                 background: period === p ? "var(--color-main)" : "transparent",
-                color: period === p ? "var(--color-primary)" : "rgba(244,245,250,0.4)",
+                color:
+                  period === p ? "var(--color-primary)" : "rgba(244,245,250,0.4)",
               }}
             >
-              {p}
+              {PERIOD_LABEL[p]}
             </button>
           ))}
         </div>
@@ -526,9 +545,10 @@ const FinancialAnalysis = memo(({ sold, profit, startDate, endDate }: FinancialA
         />
         {/* orders.acceptedCount, soldAndPaid, profit */}
         <PeriodStatsCard
-          totalOrders={revenueData?.[0]?.ordersCount}
+          totalOrders={Number(revenueData?.[0]?.ordersCount ?? 0)}
           sold={sold}
-          profit={revenueData?.[0]?.revenue}
+          profit={Number(revenueData?.[0]?.revenue ?? 0)}
+          period={period}
         />
       </div>
 

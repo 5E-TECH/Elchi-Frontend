@@ -88,5 +88,7 @@ export const API_ENDPOINTS = {
   },
   INTEGRATIONS: {
     BASE: "integrations",
+    EXTERNAL_ORDERS: "integrations/external-orders",
+    BY_ID: (id: string | number) => `integrations/${id}`,
   },
 } as const;

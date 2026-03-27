@@ -1,4 +1,5 @@
-import { memo, useState, useRef, useEffect, useCallback } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 // ── Ko'makchi funksiyalar ──────────────────────────────────────────────────
@@ -53,6 +54,7 @@ interface CustomDatePickerProps {
     minDate?: string;        // "YYYY-MM-DD"
     maxDate?: string;        // "YYYY-MM-DD"
     className?: string;
+    size?: "sm" | "md";
 }
 
 // ── Komponent ──────────────────────────────────────────────────────────────
@@ -63,6 +65,7 @@ const CustomDatePicker = memo(({
     minDate,
     maxDate,
     className = "",
+    size = "md",
 }: CustomDatePickerProps) => {
 
     const today = new Date();
@@ -73,11 +76,16 @@ const CustomDatePicker = memo(({
     const [viewMonth, setViewMonth] = useState(selectedDate?.getMonth() ?? today.getMonth());
 
     const containerRef = useRef<HTMLDivElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
+    const [popoverPos, setPopoverPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
     // Tashqariga bosilsa — yopish
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+            const target = e.target as Node;
+            const inTrigger = containerRef.current?.contains(target);
+            const inPopover = popoverRef.current?.contains(target);
+            if (!inTrigger && !inPopover) {
                 setOpen(false);
             }
         };
@@ -157,6 +165,48 @@ const CustomDatePicker = memo(({
 
     const calendarDays = buildCalendarDays(viewYear, viewMonth);
 
+    const popupWidth = size === "sm" ? 260 : 288;
+    const popupHeight = 340;
+    const popupGap = 8;
+
+    useLayoutEffect(() => {
+        if (!open) {
+            setPopoverPos(null);
+            return;
+        }
+
+        const update = () => {
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+
+            const viewportW = window.innerWidth;
+            const viewportH = window.innerHeight;
+
+            const openUp =
+                rect.bottom + popupGap + popupHeight > viewportH &&
+                rect.top - popupGap - popupHeight > popupGap;
+            const preferredTop = openUp ? rect.top - popupGap - popupHeight : rect.bottom + popupGap;
+            const top = Math.min(
+                Math.max(popupGap, preferredTop),
+                Math.max(popupGap, viewportH - popupHeight - popupGap),
+            );
+
+            const maxLeft = Math.max(popupGap, viewportW - popupWidth - popupGap);
+            const left = Math.min(Math.max(popupGap, rect.left), maxLeft);
+
+            setPopoverPos({ top, left, width: popupWidth });
+        };
+
+        update();
+        window.addEventListener("resize", update);
+        // capture scroll from any scrollable parents
+        window.addEventListener("scroll", update, true);
+        return () => {
+            window.removeEventListener("resize", update);
+            window.removeEventListener("scroll", update, true);
+        };
+    }, [open, popupWidth]);
+
     return (
         <div ref={containerRef} className={`relative ${className}`}>
 
@@ -167,19 +217,19 @@ const CustomDatePicker = memo(({
                 className={`
                     flex items-center gap-2 w-full
                     bg-white dark:bg-primarydark
-                    border rounded-xl px-3 py-2
-                    text-sm font-medium transition-all duration-200
+                    border ${size === "sm" ? "rounded-lg px-3 py-2 text-[13px]" : "rounded-xl px-3 py-2 text-sm"}
+                    font-medium transition-all duration-200
                     ${open
-                        ? "border-main ring-2 ring-main/20 text-maindark dark:text-primary"
-                        : "border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:border-main/50"
+                        ? "border-main ring-2 ring-main/20 text-maindark dark:text-white"
+                        : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/70 hover:border-main/50"
                     }
                 `}
             >
                 <Calendar
-                    size={14}
-                    className={open ? "text-main" : "text-gray-400 dark:text-white/30"}
+                    size={size === "sm" ? 13 : 14}
+                    className={open ? "text-main" : "text-gray-400 dark:text-white/50"}
                 />
-                <span className={`flex-1 text-left truncate ${value ? "text-maindark dark:text-primary" : ""}`}>
+                <span className={`flex-1 text-left truncate ${value ? "text-maindark dark:text-white" : ""}`}>
                     {value ? formatDisplay(value) : placeholder}
                 </span>
 
@@ -198,11 +248,13 @@ const CustomDatePicker = memo(({
             </button>
 
             {/* ── Popup Kalendar ── */}
-            {open && (
+            {open && popoverPos && createPortal((
                 <div
+                    ref={popoverRef}
+                    style={{ position: "fixed", top: popoverPos.top, left: popoverPos.left, width: popoverPos.width }}
                     className="
-                        absolute top-full left-0 mt-2 z-50
-                        w-72 rounded-2xl
+                        z-[9999]
+                        rounded-2xl
                         bg-white dark:bg-maindark
                         border border-gray-200 dark:border-white/10
                         shadow-xl shadow-black/10 dark:shadow-black/30
@@ -313,7 +365,7 @@ const CustomDatePicker = memo(({
                         </button>
                     </div>
                 </div>
-            )}
+            ), document.body)}
         </div>
     );
 });

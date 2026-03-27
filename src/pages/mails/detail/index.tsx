@@ -1,5 +1,5 @@
-import { memo, useMemo, useCallback, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { memo, useEffect, useMemo, useCallback, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, Ban, MapPin } from "lucide-react";
 import {
   useMails,
@@ -19,6 +19,7 @@ import SendButton from "./ui/SendButton";
 import SendPostModal from "./ui/SendPostModal";
 import PrintModeSelect from "./ui/PrintModeSelect";
 import { printOrders, type PrintMode } from "./lib/printMode";
+import PrintOnlyOrders from "./ui/PrintOnlyOrders";
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
@@ -62,14 +63,23 @@ ErrorState.displayName = "ErrorState";
 
 // ─── Asosiy Page ──────────────────────────────────────────────────────────────
 const MailDetailPage = () => {
-  const { postId } = useParams<{ postId: string }>();
-  const [searchParams] = useSearchParams();
+  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const postId = id;
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
-  const isRefusedDetail = searchParams.get("type") === "refused";
-  const isOldDetail = searchParams.get("view") === "old";
+  const navState = location.state as { fromTab?: string; type?: string; view?: string } | null;
+
+  const search = location.search ? new URLSearchParams(location.search) : null;
+  const fromTabRaw = navState?.fromTab ?? search?.get("from") ?? undefined;
+  const typeRaw = navState?.type ?? search?.get("type") ?? undefined;
+  const viewRaw = navState?.view ?? search?.get("view") ?? undefined;
+
+  const isRefusedDetail = typeRaw === "refused";
+  const isOldDetail = viewRaw === "old";
   const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
-  const fromTab = searchParams.get("from");
+  const fromTab = fromTabRaw;
   const { getRefusedMailsCourierByPostId } = useMails();
   const {
     data: regularResponse,
@@ -82,8 +92,17 @@ const MailDetailPage = () => {
     isLoading: refusedLoading,
     isError: refusedError,
   } = getRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
-  const navigate = useNavigate();
   const { apiRequest } = useAppNotification();
+
+  // URL ni tozalash: /mails/:id?from=... -> /mails/:id (state orqali saqlab qolamiz)
+  useEffect(() => {
+    if (!location.search) return;
+    navigate(location.pathname, {
+      replace: true,
+      state: { fromTab: fromTabRaw, type: typeRaw, view: viewRaw },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const orders = useMemo<PostOrder[]>(
     () =>
@@ -253,8 +272,24 @@ const MailDetailPage = () => {
     [orders, selectedIds],
   );
 
+  const [browserPrintOrders, setBrowserPrintOrders] = useState<PostOrder[]>([]);
+
+  useEffect(() => {
+    const onAfter = () => setBrowserPrintOrders([]);
+    window.addEventListener("afterprint", onAfter);
+    return () => window.removeEventListener("afterprint", onAfter);
+  }, []);
+
   const handlePrint = useCallback(
     (mode: PrintMode) => {
+      if (mode === "browser") {
+        if (selectedOrders.length === 0) return;
+        setBrowserPrintOrders(selectedOrders);
+        // next tick: allow PrintOnlyOrders to render
+        setTimeout(() => window.print(), 50);
+        return;
+      }
+
       printOrders(mode, selectedOrders);
     },
     [selectedOrders],
@@ -347,6 +382,8 @@ const MailDetailPage = () => {
           onSuccess={handleSendSuccess}
         />
       )}
+
+      {browserPrintOrders.length > 0 && <PrintOnlyOrders orders={browserPrintOrders} />}
     </div>
   );
 };

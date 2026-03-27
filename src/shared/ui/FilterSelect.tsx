@@ -16,6 +16,7 @@ interface FilterSelectProps {
     icon?: LucideIcon;
     loading?: boolean;
     disabled?: boolean;
+    size?: "sm" | "md";
 }
 
 const FilterSelect = memo(({
@@ -28,10 +29,16 @@ const FilterSelect = memo(({
     icon: Icon,
     loading = false,
     disabled = false,
+    size = "md",
 }: FilterSelectProps) => {
     const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
         onChange(e.target.value);
     };
+
+    const selectSizeClass =
+        size === "sm"
+            ? "rounded-lg px-3 py-2 pr-8 text-[13px]"
+            : "rounded-xl px-3.5 py-2.5 pr-9 text-sm";
 
     return (
         <div className="flex flex-col gap-1.5">
@@ -50,18 +57,18 @@ const FilterSelect = memo(({
                     value={value}
                     onChange={handleChange}
                     disabled={disabled || loading}
-                    className="
+                    className={`
                         w-full appearance-none cursor-pointer
                         bg-white dark:bg-primarydark
                         border border-gray-200 dark:border-white/10
-                        rounded-xl px-3.5 py-2.5 pr-9
-                        text-sm font-medium
+                        ${selectSizeClass}
+                        font-medium
                         text-maindark dark:text-primary
                         placeholder:text-gray-400 dark:placeholder:text-white/30
                         focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
                         transition-all duration-200
                         disabled:opacity-50 disabled:cursor-not-allowed
-                    "
+                    `}
                 >
                     <option value="">
                         {loading ? "Yuklanmoqda..." : placeholder}

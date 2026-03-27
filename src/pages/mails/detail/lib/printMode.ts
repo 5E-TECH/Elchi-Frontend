@@ -11,8 +11,52 @@ const escapeHtml = (value: string): string => {
     .replaceAll("'", "&#39;");
 };
 
+const getQrUrl = (token: string) => {
+  const data = encodeURIComponent(token);
+  // External QR generator (loads as <img> in about:blank print window).
+  return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${data}`;
+};
+
+const printScript = `
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const raf = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+  const waitImages = () => {
+    const imgs = Array.from(document.images || []);
+    if (imgs.length === 0) return Promise.resolve();
+    return Promise.all(imgs.map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      });
+    }));
+  };
+
+  const triggerPrint = async () => {
+    try {
+      // Wait a bit, but don't hang forever.
+      await Promise.race([
+        (async () => {
+          if (document.fonts && document.fonts.ready) await document.fonts.ready;
+          await waitImages();
+          await raf();
+          await raf();
+        })(),
+        sleep(1200),
+      ]);
+    } catch {}
+
+    try { window.focus(); } catch {}
+    try { window.print(); } catch {}
+  };
+
+  window.addEventListener('load', () => { void triggerPrint(); });
+  document.getElementById('printBtn')?.addEventListener('click', () => { void triggerPrint(); });
+  window.onafterprint = () => window.close();
+`;
+
 const openOrdersTablePrintWindow = (orders: PostOrder[]) => {
-  const win = window.open("", "_blank", "noopener,noreferrer,width=1100,height=720");
+  const win = window.open("", "_blank", "noopener,width=1100,height=720");
   if (!win) return;
 
   const rows = orders.map((o, i) => {
@@ -61,6 +105,8 @@ const openOrdersTablePrintWindow = (orders: PostOrder[]) => {
       @page { size: A4; margin: 12mm; }
       html, body { margin: 0; padding: 0; }
       body { font-family: Arial, sans-serif; }
+      #printBtn { position: fixed; top: 10px; right: 10px; z-index: 9999; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #111827; color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; }
+      @media print { #printBtn { display: none; } }
       h1 { font-size: 14pt; margin: 0 0 10px; }
       .meta { font-size: 9pt; opacity: .75; margin-bottom: 10px; }
       table { width: 100%; border-collapse: collapse; }
@@ -70,6 +116,7 @@ const openOrdersTablePrintWindow = (orders: PostOrder[]) => {
     </style>
   </head>
   <body>
+    <button id="printBtn" type="button">Print / Save PDF</button>
     <h1>Tanlangan buyurtmalar</h1>
     <div class="meta">Soni: ${orders.length}</div>
     <table>
@@ -90,13 +137,7 @@ const openOrdersTablePrintWindow = (orders: PostOrder[]) => {
       </tbody>
     </table>
     <script>
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          window.focus();
-          window.print();
-        }, 50);
-      });
-      window.onafterprint = () => window.close();
+      ${printScript}
     </script>
   </body>
 </html>`;
@@ -107,7 +148,7 @@ const openOrdersTablePrintWindow = (orders: PostOrder[]) => {
 };
 
 const openLabelsPrintWindow = (orders: PostOrder[]) => {
-  const win = window.open("", "_blank", "noopener,noreferrer,width=900,height=720");
+  const win = window.open("", "_blank", "noopener,width=900,height=720");
   if (!win) return;
 
   const sheets = orders.map((o) => {
@@ -124,36 +165,25 @@ const openLabelsPrintWindow = (orders: PostOrder[]) => {
 
     const fullAddress = [region, district ? `${district} tumani` : "", address].filter(Boolean).join(", ");
 
+    const qrToken = o.qr_code_token ?? o.id;
+    const qr = qrToken ? `<img class="qr" src="${getQrUrl(qrToken)}" alt="QR" />` : "";
+
     return `
       <div class="sheet">
-        <div class="top">
-          <div class="id">Buyurtma #${escapeHtml(o.id)}</div>
-          <div class="meta">
-            <div class="small">${escapeHtml(whereDeliver)}</div>
-            <div class="small">${totalText}</div>
+        <div class="grid">
+          <div class="qrWrap">
+            ${qr}
           </div>
-        </div>
-        <div class="divider"></div>
-        <div class="row">
-          <div class="col">
-            <div class="lbl">Mijoz</div>
-            <div class="val">${customerName}</div>
-          </div>
-          <div class="col">
-            <div class="lbl">Telefon</div>
-            <div class="val">${phone}</div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <div class="lbl">Manzil</div>
-            <div class="val">${escapeHtml(fullAddress || "—")}</div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <div class="lbl">Market</div>
-            <div class="val">${market}</div>
+          <div class="content">
+            <div class="title">${escapeHtml(market)}</div>
+            <table class="t">
+              <tr><td class="k">Buyurtma</td><td class="v">#${escapeHtml(o.id)}</td></tr>
+              <tr><td class="k">Mijoz</td><td class="v">${customerName}</td></tr>
+              <tr><td class="k">Telefon</td><td class="v">${phone}</td></tr>
+              <tr><td class="k">Manzil</td><td class="v">${escapeHtml(fullAddress || "—")}</td></tr>
+              <tr><td class="k">Yetkazish</td><td class="v">${escapeHtml(whereDeliver)}</td></tr>
+              <tr><td class="k">Narx</td><td class="v">${totalText}</td></tr>
+            </table>
           </div>
         </div>
       </div>
@@ -170,28 +200,26 @@ const openLabelsPrintWindow = (orders: PostOrder[]) => {
       @page { size: 100mm 60mm; margin: 0; }
       html, body { margin: 0; padding: 0; }
       body { font-family: Arial, sans-serif; }
-      .sheet { width: 100mm; height: 60mm; box-sizing: border-box; padding: 4mm; page-break-after: always; }
-      .top { display: flex; justify-content: space-between; gap: 6mm; }
-      .id { font-size: 12pt; font-weight: 700; }
-      .meta { font-size: 9pt; line-height: 1.25; }
-      .row { display: flex; gap: 6mm; margin-top: 3mm; }
-      .col { flex: 1; min-width: 0; }
-      .lbl { font-size: 7.5pt; letter-spacing: .02em; text-transform: uppercase; opacity: .7; }
-      .val { font-size: 10pt; font-weight: 600; word-break: break-word; }
-      .small { font-size: 9pt; font-weight: 600; }
-      .divider { height: 1px; opacity: .18; background: currentColor; margin: 3mm 0; }
+      #printBtn { position: fixed; top: 8px; right: 8px; z-index: 9999; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #111827; color: #fff; font-weight: 800; font-size: 12px; cursor: pointer; }
+      @media print { #printBtn { display: none; } }
+      .sheet { width: 100mm; height: 60mm; box-sizing: border-box; padding: 3.5mm; page-break-after: always; }
+      .grid { display: grid; grid-template-columns: 22mm 1fr; gap: 3.5mm; align-items: start; }
+      .qrWrap { width: 22mm; height: 22mm; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,.18); border-radius: 2mm; }
+      .qr { width: 20.5mm; height: 20.5mm; image-rendering: pixelated; }
+      .content { min-width: 0; }
+      .title { font-size: 10pt; font-weight: 800; margin: 0 0 1.5mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .t { width: 100%; border-collapse: collapse; font-size: 7.7pt; }
+      .t td { padding: 0.8mm 0; vertical-align: top; }
+      .k { width: 18mm; opacity: .7; text-transform: uppercase; letter-spacing: .02em; font-weight: 700; font-size: 7pt; }
+      .v { font-weight: 700; word-break: break-word; }
+      .t tr + tr td { border-top: 1px solid rgba(0,0,0,.08); }
     </style>
   </head>
   <body>
+    <button id="printBtn" type="button">Print / Save PDF</button>
     ${sheets}
     <script>
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          window.focus();
-          window.print();
-        }, 50);
-      });
-      window.onafterprint = () => window.close();
+      ${printScript}
     </script>
   </body>
 </html>`;
@@ -202,7 +230,7 @@ const openLabelsPrintWindow = (orders: PostOrder[]) => {
 };
 
 const openThermalPrintWindow = (orders: PostOrder[]) => {
-  const win = window.open("", "_blank", "noopener,noreferrer,width=520,height=720");
+  const win = window.open("", "_blank", "noopener,width=520,height=720");
   if (!win) return;
 
   const sheets = orders.map((o) => {
@@ -243,6 +271,8 @@ const openThermalPrintWindow = (orders: PostOrder[]) => {
       @page { size: 80mm auto; margin: 4mm; }
       html, body { margin: 0; padding: 0; }
       body { font-family: Arial, sans-serif; }
+      #printBtn { position: fixed; top: 8px; right: 8px; z-index: 9999; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #111827; color: #fff; font-weight: 800; font-size: 12px; cursor: pointer; }
+      @media print { #printBtn { display: none; } }
       .ticket { width: 72mm; margin: 0 auto; page-break-after: always; }
       .title { text-align: center; font-weight: 800; font-size: 14pt; margin-bottom: 3mm; }
       .row { display: flex; justify-content: space-between; gap: 4mm; font-size: 9.5pt; line-height: 1.25; margin: 1mm 0; }
@@ -253,15 +283,10 @@ const openThermalPrintWindow = (orders: PostOrder[]) => {
     </style>
   </head>
   <body>
+    <button id="printBtn" type="button">Print / Save PDF</button>
     ${sheets}
     <script>
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          window.focus();
-          window.print();
-        }, 50);
-      });
-      window.onafterprint = () => window.close();
+      ${printScript}
     </script>
   </body>
 </html>`;

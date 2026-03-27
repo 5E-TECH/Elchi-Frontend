@@ -1,489 +1,472 @@
 import { memo, useMemo, useState } from "react";
-import type { AxiosError } from "axios";
-import { useQuery } from "@tanstack/react-query";
-import { Globe, RefreshCw } from "lucide-react";
-import { api } from "../../../shared/api/api";
-import { API_ENDPOINTS } from "../../../shared/api";
+import { useNavigate } from "react-router-dom";
+import { AlertCircle, ChevronLeft, ChevronRight, Globe, RefreshCw, X } from "lucide-react";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import FilterSelect from "../../../shared/ui/FilterSelect";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
-import { GlobalSearchInput, useDebounce } from "../../../features/search";
+import FilterSearch from "../../../shared/ui/FilterSearch";
+import FilterSelect from "../../../shared/ui/FilterSelect";
+import {
+  getIntegrationErrorMessage,
+  useGetIntegrations,
+  type Integration,
+  type IntegrationParams,
+} from "../../../entities/integrations";
 
-type ExternalOrderStatus =
-  | "new"
-  | "processing"
-  | "completed"
-  | "cancelled"
-  | string;
-
-type ExternalOrderItem = {
-  id?: string;
-  quantity?: number;
-  product?: { name?: string | null };
-};
-
-type ExternalOrder = {
-  id: string;
-  status?: ExternalOrderStatus;
-  total_price?: number;
-  createdAt?: string;
-  created_at?: string;
-  market?: { name?: string | null };
-  shop?: { name?: string | null };
-  items?: ExternalOrderItem[];
-};
-
-type Pagination = {
-  page: number;
-  limit: number;
-  total?: number;
-  totalPages: number;
-};
-
-const fmtMoney = (n: number) => n.toLocaleString("uz-UZ");
-
-const statusLabel = (s?: string) => {
-  if (!s) return "—";
-  if (s === "new") return "Yangi";
-  if (s === "processing") return "Jarayonda";
-  if (s === "completed") return "Tayyor";
-  if (s === "cancelled") return "Bekor qilingan";
-  return s;
-};
-
-const statusClass = (s?: string) => {
-  if (s === "new")
-    return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-  if (s === "processing")
-    return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
-  if (s === "completed")
-    return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-  if (s === "cancelled") return "bg-rose-500/10 text-rose-400";
-  return "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60";
-};
-
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null;
-
-const getPagination = (response: unknown): Pagination | null => {
-  if (!isRecord(response)) return null;
-
-  const data = isRecord(response.data) ? response.data : undefined;
-  const meta =
-    (data && (isRecord(data.pagination) ? data.pagination : undefined)) ??
-    (data && (isRecord(data.meta) ? data.meta : undefined)) ??
-    (isRecord(response.pagination) ? response.pagination : undefined) ??
-    (isRecord(response.meta) ? response.meta : undefined);
-
-  if (!meta) return null;
-
-  const page = Number((meta.page as number | string | undefined) ?? 1);
-  const limit = Number((meta.limit as number | string | undefined) ?? 10);
-  const totalPages = Number(
-    (meta.totalPages as number | string | undefined) ??
-      (meta.total_pages as number | string | undefined) ??
-      1,
-  );
-  const totalVal = meta.total as number | string | undefined;
-  const total = totalVal !== undefined ? Number(totalVal) : undefined;
-
-  return { page, limit, totalPages, total };
-};
-
-const getItems = (response: unknown): ExternalOrder[] => {
-  if (!isRecord(response)) return [];
-  const data = isRecord(response.data) ? response.data : undefined;
-
-  const items =
-    (data && Array.isArray(data.items) ? data.items : undefined) ??
-    (data && Array.isArray(data.data) ? data.data : undefined) ??
-    (Array.isArray(response.items) ? response.items : undefined) ??
-    [];
-
-  return items as ExternalOrder[];
-};
-
-const getApiMessage = (err: unknown): string => {
-  const axiosErr = err as AxiosError<{ message?: unknown }>;
-  const msg = axiosErr?.response?.data?.message;
-  if (typeof msg === "string") return msg;
-  if (Array.isArray(msg)) return msg.map(String).join(", ");
-  return "";
-};
-
-const isNumericIdError = (err: unknown): boolean => {
-  const msg = getApiMessage(err);
-  return msg.includes("ID qiymatlari") && msg.includes("raqam");
-};
-
-const fetchExternalOrders = async (
-  params: Record<string, string | number>,
-): Promise<unknown> => {
-  const endpoints = [
-    API_ENDPOINTS.ORDERS.EXTERNAL,
-    API_ENDPOINTS.ORDERS.EXTERNAL_ORDERS,
-    API_ENDPOINTS.ORDERS.EXTERNAL_ORDERS_ALT,
-  ] as const;
-
-  try {
-    const res = await api.get(endpoints[0], { params });
-    return res.data as unknown;
-  } catch (err) {
-    if (!isNumericIdError(err)) throw err;
-
-    for (const ep of endpoints.slice(1)) {
-      try {
-        const res = await api.get(ep, { params });
-        return res.data as unknown;
-      } catch {
-        // next
-      }
-    }
-
-    throw err;
-  }
+const fmtDateTime = (raw?: string | null) => {
+  if (!raw) return "—";
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  return `${date.toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })} ${date.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}`;
 };
 
 const External_orders = () => {
-  const [status, setStatus] = useState("");
+  const navigate = useNavigate();
+
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
+  const [limit] = useState(10);
+
+  const [isActive, setIsActive] = useState("");
+  const [status, setStatus] = useState("");
+  const [marketId, setMarketId] = useState("");
   const [search, setSearch] = useState("");
 
-  const limit = 10;
+  const hasFilters = !!(isActive || status || marketId || dateFrom || dateTo || search);
 
-  const setSearchDebounced = useDebounce((next: string) => {
-    setSearch(next);
-  }, 500);
+  const params = useMemo((): IntegrationParams => {
+    const p: IntegrationParams = { page, limit };
+    if (isActive) p.is_active = isActive;
+    if (status) p.status = status;
+    if (marketId.trim()) p.market_id = marketId.trim();
+    if (dateFrom) p.from_date = dateFrom;
+    if (dateTo) p.to_date = dateTo;
+    return p;
+  }, [dateFrom, dateTo, isActive, limit, marketId, page, status]);
 
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
-    setSearchDebounced(value.trim());
-    setPage(1);
-  };
+  const query = useGetIntegrations(params);
+  const items = query.data?.data?.items ?? [];
+  const meta = query.data?.data?.meta ?? null;
 
-  const handleStatusChange = (value: string) => {
-    setStatus(value);
-    setPage(1);
-  };
-
-  const handleDateFromChange = (value: string) => {
-    setDateFrom(value);
-    setPage(1);
-  };
-
-  const handleDateToChange = (value: string) => {
-    setDateTo(value);
-    setPage(1);
-  };
-
-  const handleResetFilters = () => {
-    setStatus("");
-    setDateFrom("");
-    setDateTo("");
-    setSearchInput("");
-    setSearch("");
-    setPage(1);
-  };
-
-  const params = useMemo(() => {
-    const nextParams: Record<string, string | number> = { page, limit };
-
-    if (status) nextParams.status = status;
-
-    if (dateFrom) {
-      nextParams.start_day = dateFrom;
-      nextParams.from_date = dateFrom;
-    }
-
-    if (dateTo) {
-      nextParams.end_day = dateTo;
-      nextParams.to_date = dateTo;
-    }
-
-    if (search.trim()) nextParams.search = search.trim();
-
-    return nextParams;
-  }, [dateFrom, dateTo, limit, page, search, status]);
-
-  const query = useQuery({
-    queryKey: ["orders", "external", params],
-    queryFn: () => fetchExternalOrders(params),
-  });
-
-  const orders = useMemo(() => getItems(query.data), [query.data]);
-  const pagination = useMemo(() => getPagination(query.data), [query.data]);
-
-  const activePage = pagination?.page ?? page;
-  const pageLimit = pagination?.limit ?? limit;
-  const totalPages = pagination?.totalPages ?? 1;
+  const activePage = meta?.page ?? page;
+  const pageLimit = meta?.limit ?? limit;
+  const totalPages = meta?.totalPages ?? 1;
   const rowOffset = (activePage - 1) * pageLimit;
 
-  const columns = useMemo<ColumnConfig<ExternalOrder>[]>(
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((it) => {
+      const hay = `${it.name ?? ""} ${it.slug ?? ""} ${it.api_url ?? ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [items, search]);
+
+  const columns = useMemo<ColumnConfig<Integration>[]>(
     () => [
       {
         key: "id",
         label: "#",
-        width: "70px",
+        width: "56px",
         render: (_v, _row, index) => (
-          <span className="text-gray-400 dark:text-white/40 font-semibold text-xs">
-            {rowOffset + index + 1}
+          <span className="text-xs font-mono text-gray-400 dark:text-white/30 select-none">
+            {String(rowOffset + index + 1).padStart(2, "0")}
           </span>
         ),
       },
       {
-        key: "market",
-        label: "Market / Do'kon",
+        key: "name",
+        label: "Integratsiya",
         render: (_v, row) => (
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
-              <Globe size={14} className="text-main" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-main/8 dark:bg-main/15 flex items-center justify-center shrink-0 ring-1 ring-main/10">
+              <Globe size={13} className="text-main" />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-gray-900 dark:text-white truncate m-0">
-                {row.market?.name ?? row.shop?.name ?? "—"}
+              <p className="font-semibold text-sm text-gray-900 dark:text-white truncate m-0 leading-tight">
+                {row.name || "—"}
               </p>
-              {row.shop?.name && row.market?.name && (
-                <p className="text-[11px] text-gray-400 dark:text-white/40 truncate m-0">
-                  {row.shop.name}
-                </p>
-              )}
+              <p className="text-[11px] text-gray-400 dark:text-white/35 truncate m-0 mt-0.5">
+                {row.slug ? `/${row.slug}` : "—"}{" "}
+                {row.market_id ? `· market_id: ${row.market_id}` : ""}
+              </p>
             </div>
           </div>
         ),
       },
       {
-        key: "items",
-        label: "Mahsulotlar",
-        render: (_v, row) => {
-          const list = row.items ?? [];
-          if (list.length === 0) {
-            return <span className="text-gray-400 dark:text-white/40">—</span>;
-          }
-
-          const text = list
-            .slice(0, 3)
-            .map((item) => {
-              const name = item.product?.name ?? "—";
-              const qty = item.quantity ?? 0;
-              return `${name}×${qty}`;
-            })
-            .join(", ");
-          const more = list.length > 3 ? ` +${list.length - 3}` : "";
-
+        key: "api_url",
+        label: "API URL",
+        className: "hidden lg:table-cell",
+        render: (value) => (
+          <span className="text-xs font-mono text-gray-600 dark:text-white/55 truncate block max-w-105">
+            {String(value ?? "—")}
+          </span>
+        ),
+      },
+      {
+        key: "auth_type",
+        label: "Auth",
+        width: "140px",
+        className: "hidden md:table-cell",
+        render: (value) => (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-main-soft text-main">
+            {String(value ?? "—")}
+          </span>
+        ),
+      },
+      {
+        key: "is_active",
+        label: "Faol",
+        width: "120px",
+        render: (value) => {
+          const active = Boolean(value);
           return (
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              {text}
-              {more}
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
+                active
+                  ? "bg-success/10 text-success border border-success/20"
+                  : "bg-error/10 text-error border border-error/20"
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-success" : "bg-error"}`} />
+              {active ? "Faol" : "Nofaol"}
             </span>
           );
         },
       },
       {
-        key: "total_price",
-        label: "Summa",
+        key: "total_synced_orders",
+        label: "Synced",
+        width: "120px",
         sortable: true,
         render: (value) => (
-          <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-            {fmtMoney(Number(value ?? 0))} so'm
+          <span className="text-sm font-bold tabular-nums text-gray-800 dark:text-white/80">
+            {Number(value ?? 0).toLocaleString("uz-UZ")}
           </span>
         ),
       },
       {
-        key: "status",
-        label: "Holat",
+        key: "last_sync_at",
+        label: "Oxirgi sync",
+        width: "170px",
+        className: "hidden xl:table-cell",
         render: (value) => (
-          <span
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${statusClass(
-              String(value ?? ""),
-            )}`}
-          >
-            {statusLabel(String(value ?? ""))}
+          <span className="text-xs text-gray-500 dark:text-white/50 tabular-nums">
+            {fmtDateTime(String(value ?? ""))}
           </span>
         ),
-      },
-      {
-        key: "createdAt",
-        label: "Sana",
-        render: (value, row) => {
-          const raw = (value ?? row.created_at ?? "") as string;
-          const date = raw ? new Date(raw) : null;
-          const text =
-            date && !Number.isNaN(date.getTime())
-              ? date.toLocaleString("uz-UZ", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : raw || "—";
-
-          return (
-            <span className="text-xs text-gray-500 dark:text-white/50 whitespace-nowrap">
-              {text}
-            </span>
-          );
-        },
       },
     ],
     [rowOffset],
   );
 
+  const isActiveOptions = useMemo(
+    () => [
+      { value: "", label: "Barchasi" },
+      { value: "true", label: "Faol" },
+      { value: "false", label: "Nofaol" },
+    ],
+    [],
+  );
+
   const statusOptions = useMemo(
     () => [
       { value: "", label: "Barchasi" },
-      { value: "new", label: "Yangi" },
-      { value: "processing", label: "Jarayonda" },
-      { value: "completed", label: "Tayyor" },
-      { value: "cancelled", label: "Bekor qilingan" },
+      { value: "active", label: "active" },
+      { value: "inactive", label: "inactive" },
     ],
     [],
   );
 
   const canPrev = activePage > 1;
   const canNext = activePage < totalPages;
-  const errorMessage = query.error ? getApiMessage(query.error) : "";
+
+  const errorMessage = query.isError
+    ? getIntegrationErrorMessage(query.error) || "Integratsiyalarni yuklashda xatolik yuz berdi"
+    : "";
+
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
+    (p) => p === 1 || p === totalPages || Math.abs(p - activePage) <= 1,
+  );
+
+  const handleResetFilters = () => {
+    setIsActive("");
+    setStatus("");
+    setMarketId("");
+    setDateFrom("");
+    setDateTo("");
+    setSearch("");
+    setPage(1);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 rounded-2xl p-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500">
-              <Globe size={18} />
+    <div className="space-y-5">
+      <div className="bg-white dark:bg-primarydark border border-glass-border rounded-2xl shadow-sm shadow-main-soft dark:shadow-none">
+        <div className="flex items-center justify-between gap-3 flex-wrap px-4 pt-4 pb-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-main/10 dark:bg-main/20 ring-1 ring-main/15">
+              <Globe size={17} className="text-main" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-800 dark:text-white m-0">
-                Tashqi buyurtmalar
-              </p>
-              <p className="text-xs text-gray-500 dark:text-white/50 m-0">
-                Filtrlar: qidiruv, holat va sana oralig'i
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm font-bold text-gray-900 dark:text-white m-0">
+                  Integratsiyalar
+                </h2>
+                {query.isFetching && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-main/10 dark:bg-main/20 text-main font-bold animate-pulse tracking-wide">
+                    yangilanmoqda
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-gray-400 dark:text-white/40 m-0 mt-0.5">
+                QR kod orqali tashqi buyurtmalarni qidirish uchun integratsiyani tanlang
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <GlobalSearchInput
-              value={searchInput}
-              onValueChange={handleSearchChange}
-              placeholder="Market qidirish..."
-              className="w-64"
-              inputClassName="bg-white dark:bg-primarydark border-gray-200 dark:border-white/10 text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2.5 shadow-none focus:shadow-none"
-              iconClassName="text-gray-400 dark:text-gray-500 group-focus-within:text-main"
-              clearButtonClassName="text-gray-400 dark:text-gray-500 hover:text-main"
-              syncWithRedux={false}
-              syncWithUrl={false}
-              debounceDelay={0}
+          <div className="flex items-center gap-2">
+            <FilterSearch
+              value={search}
+              onChange={(v) => setSearch(v)}
+              placeholder="Integratsiya qidirish..."
+              debounceDelay={350}
+              className="w-56"
             />
 
             <button
               type="button"
               onClick={() => query.refetch()}
-              className="p-2.5 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-colors"
-              aria-label="Yangilash"
+              title="Yangilash"
+              className="h-9 w-9 rounded-xl flex items-center justify-center bg-main-soft/30 dark:bg-white/5 border border-glass-border hover:border-main/40 hover:text-main dark:hover:border-main/40 text-gray-500 dark:text-white/40 transition-all"
             >
-              <RefreshCw
-                size={18}
-                className={
-                  query.isFetching ? "animate-spin text-gray-400" : "text-gray-400"
-                }
-              />
+              <RefreshCw size={14} className={query.isFetching ? "animate-spin" : ""} />
             </button>
 
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="px-3 py-2.5 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-primarydark/80 transition-colors text-sm font-medium text-gray-600 dark:text-white/70"
-            >
-              Tozalash
-            </button>
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-semibold bg-main-soft/30 dark:bg-white/5 border border-glass-border text-gray-500 dark:text-white/50 hover:border-error/40 hover:text-error dark:hover:border-error/40 transition-all"
+              >
+                <X size={12} />
+                Tozalash
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="h-px bg-gray-100 dark:bg-white/6 mx-4" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 px-4 py-3">
           <FilterSelect
-            name="external_status"
-            label="Holat"
-            value={status}
-            onChange={handleStatusChange}
-            options={statusOptions}
+            name="is_active"
+            label="Faollik"
+            value={isActive}
+            onChange={(v) => { setIsActive(v); setPage(1); }}
+            options={isActiveOptions}
             placeholder="Barchasi"
+            size="sm"
           />
 
-          <div className="md:col-span-2">
-            <div className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-              Sana
+          <FilterSelect
+            name="status"
+            label="Status"
+            value={status}
+            onChange={(v) => { setStatus(v); setPage(1); }}
+            options={statusOptions}
+            placeholder="Barchasi"
+            size="sm"
+          />
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="market_id"
+              className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider"
+            >
+              Market ID
+            </label>
+            <input
+              id="market_id"
+              value={marketId}
+              onChange={(e) => { setMarketId(e.target.value); setPage(1); }}
+              placeholder="masalan: 1"
+              className="h-9 rounded-lg px-3 bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 text-[13px] font-medium text-maindark dark:text-primary placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all"
+            />
+          </div>
+
+          <div>
+            <div className="text-[10px] font-bold text-slate-400 dark:text-white/35 uppercase tracking-widest mb-1.5">
+              Sana oralig'i
             </div>
             <FilterDateRange
               dateFrom={dateFrom}
               dateTo={dateTo}
-              onChangeDateFrom={handleDateFromChange}
-              onChangeDateTo={handleDateToChange}
-              className="flex-wrap md:flex-nowrap"
+              onChangeDateFrom={(v) => { setDateFrom(v); setPage(1); }}
+              onChangeDateTo={(v) => { setDateTo(v); setPage(1); }}
+              size="sm"
+              className="flex-wrap sm:flex-nowrap"
+              fromClassName="w-full sm:w-36"
+              toClassName="w-full sm:w-36"
             />
           </div>
         </div>
       </div>
 
       {errorMessage && (
-        <div className="px-4 py-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 text-sm">
-          {errorMessage}
+        <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 rounded-xl border border-error/20 bg-error/6 dark:bg-error/10 text-error text-sm">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={15} className="shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => query.refetch()}
+            className="px-3 py-1.5 rounded-lg bg-white/70 dark:bg-white/5 border border-error/20 hover:bg-error/10 transition-colors text-xs font-bold"
+          >
+            Qayta urinish
+          </button>
         </div>
       )}
 
-      <Table<ExternalOrder>
-        data={orders}
-        columns={columns}
-        loading={query.isLoading}
-        keyExtractor={(row) => row.id}
-        hoverable
-        emptyMessage="Tashqi buyurtmalar yo'q"
-      />
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {query.isFetching && filteredItems.length === 0 ? (
+          Array.from({ length: 6 }, (_, i) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <div key={i} className="rounded-2xl border border-glass-border bg-white dark:bg-primarydark p-4">
+              <div className="h-4 w-44 bg-main-soft rounded-md animate-pulse" />
+              <div className="h-3 w-64 bg-main-soft rounded-md animate-pulse mt-2" />
+              <div className="flex items-center gap-2 mt-3">
+                <div className="h-6 w-16 bg-main-soft rounded-lg animate-pulse" />
+                <div className="h-6 w-20 bg-main-soft rounded-lg animate-pulse" />
+              </div>
+            </div>
+          ))
+        ) : filteredItems.length === 0 ? (
+          <div className="rounded-2xl border border-glass-border bg-white dark:bg-primarydark p-6 text-center text-sm text-gray-500 dark:text-white/50">
+            Integratsiyalar topilmadi
+          </div>
+        ) : (
+          filteredItems.map((row) => (
+            <button
+              key={row.id}
+              type="button"
+              onClick={() => navigate(`/new-orders/external/${row.id}`)}
+              className="w-full text-left rounded-2xl border border-glass-border bg-white dark:bg-primarydark p-4 hover:border-main/40 transition-all"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-main/10 dark:bg-main/20 ring-1 ring-main/15 flex items-center justify-center shrink-0">
+                  <Globe size={16} className="text-main" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="m-0 text-sm font-extrabold text-gray-900 dark:text-white truncate">
+                    {row.name || "—"}
+                  </p>
+                  <p className="m-0 mt-1 text-[11px] text-gray-400 dark:text-white/40 truncate">
+                    {row.api_url || "—"}
+                  </p>
+
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
+                        row.is_active
+                          ? "bg-success/10 text-success border border-success/20"
+                          : "bg-error/10 text-error border border-error/20"
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${row.is_active ? "bg-success" : "bg-error"}`} />
+                      {row.is_active ? "Ulangan" : "Ulanmagan"}
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-main-soft text-main">
+                      Synced: {Number(row.total_synced_orders ?? 0).toLocaleString("uz-UZ")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block">
+        <Table<Integration>
+          data={filteredItems}
+          columns={columns}
+          loading={query.isFetching && filteredItems.length === 0}
+          keyExtractor={(row) => row.id}
+          onRowClick={(row) => navigate(`/new-orders/external/${row.id}`)}
+          hoverable
+          emptyMessage="Integratsiyalar topilmadi"
+        />
+      </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <span className="text-xs text-gray-500 dark:text-white/40">
+        <div className="flex items-center justify-between flex-wrap gap-3 px-1">
+          <span className="text-xs text-gray-400 dark:text-white/30 tabular-nums">
             {activePage}-sahifa / {totalPages}
+            {meta?.total !== undefined && (
+              <span className="ml-1 text-gray-300 dark:text-white/20">
+                ({meta.total} ta)
+              </span>
+            )}
           </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => canPrev && setPage((p) => Math.max(1, p - 1))}
+              onClick={() => canPrev && setPage((p) => p - 1)}
               disabled={!canPrev}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
+              className="h-8 w-8 rounded-lg flex items-center justify-center border border-glass-border text-gray-500 dark:text-white/40 hover:border-main/40 hover:text-main disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
-              Oldingi
+              <ChevronLeft size={14} />
             </button>
 
-            {Array.from({ length: totalPages }, (_, index) => index + 1)
-              .filter((p) => Math.abs(p - activePage) <= 2)
-              .map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPage(p)}
-                  className={`min-w-10 h-10 px-3 rounded-xl text-xs font-bold transition-colors ${
-                    p === activePage
-                      ? "bg-main text-white shadow-sm shadow-main/30"
-                      : "border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+            {pageNumbers
+              .reduce<(number | "…")[]>((acc, p, idx) => {
+                const prev = pageNumbers[idx - 1];
+                if (prev !== undefined && p - prev > 1) acc.push("…");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, idx) =>
+                p === "…" ? (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="w-8 h-8 flex items-center justify-center text-xs text-gray-400 dark:text-white/25"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPage(p as number)}
+                    className={`h-8 min-w-8 px-2.5 rounded-lg text-xs font-bold transition-all ${
+                      p === activePage
+                        ? "bg-main text-white shadow-sm shadow-main/25"
+                        : "border border-glass-border text-gray-500 dark:text-white/40 hover:border-main/40 hover:text-main"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
 
             <button
               type="button"
               onClick={() => canNext && setPage((p) => p + 1)}
               disabled={!canNext}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
+              className="h-8 w-8 rounded-lg flex items-center justify-center border border-glass-border text-gray-500 dark:text-white/40 hover:border-main/40 hover:text-main disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
-              Keyingi
+              <ChevronRight size={14} />
             </button>
           </div>
         </div>

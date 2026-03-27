@@ -8,7 +8,6 @@ export const api = axios.create({
     } as any // Cast to any to avoid TS error if types don't match perfectly without qs
 })
 
-
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem("accessToken")
 

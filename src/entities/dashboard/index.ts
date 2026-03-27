@@ -7,17 +7,20 @@ const dashboard = "dashboard"
 
 export const useDashboard = () => {
     const getDashboard = (params?: any, enabled: boolean = true) =>
-        useQuery({
+        useQuery<any>({
             queryKey: [dashboard, params],
             queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.DASHBOARD, { params }).then((res) => res.data),
             enabled,
         });
 
     const getRevenue = (params?: any, enabled: boolean = true) =>
-        useQuery({
+        useQuery<any>({
             queryKey: ["revenue", params],
             queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.REVENUE, { params }).then((res) => res.data),
             enabled,
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+            placeholderData: (prev: any) => prev,
         });
 
     return { getDashboard, getRevenue }

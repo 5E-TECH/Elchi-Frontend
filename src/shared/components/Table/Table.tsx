@@ -9,11 +9,15 @@ export const Table = memo(<T extends Record<string, any>>({
   emptyMessage = "Ma'lumot topilmadi",
   onRowClick,
   className = '',
+  dense = false,
   striped = true,
   bordered = true,
   hoverable = true,
 }: TableProps<T>) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+
+  const headerCellClass = dense ? 'px-3 py-3' : 'px-6 py-4';
+  const bodyCellClass = dense ? 'px-3 py-3 text-[13px]' : 'px-6 py-4 text-sm';
 
 
 
@@ -90,10 +94,11 @@ export const Table = memo(<T extends Record<string, any>>({
             {columns.map((column) => (
               <th
                 key={String(column.key)}
-                style={{ width: column.width }}
+                style={column.width ? { width: column.width } : undefined}
                 onClick={() => handleSort(column)}
-                className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-white ${column.sortable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
-                  }`}
+                className={`${headerCellClass} text-left text-xs font-semibold uppercase tracking-wider text-white ${
+                  column.sortable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
+                } ${column.className || ""}`}
               >
                 <div className="flex items-center gap-2">
                   <span>{column.label}</span>
@@ -112,7 +117,7 @@ export const Table = memo(<T extends Record<string, any>>({
         <tbody>
           {data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-6 py-12 text-center dark:bg-primary text-gray-600 dark:text-slate-400">
+              <td colSpan={columns.length} className={`${dense ? 'px-3 py-10' : 'px-6 py-12'} text-center dark:bg-primary text-gray-600 dark:text-slate-400`}>
                 <p>{emptyMessage}</p>
               </td>
             </tr>
@@ -135,7 +140,8 @@ export const Table = memo(<T extends Record<string, any>>({
                 {columns.map((column) => (
                   <td
                     key={String(column.key)}
-                    className={`px-6 py-4 text-sm text-gray-900 dark:text-slate-100 ${column.className || ''}`}
+                    style={column.width ? { width: column.width } : undefined}
+                    className={`${bodyCellClass} text-gray-900 dark:text-slate-100 ${column.className || ''}`}
                   >
                     {column.render
                       ? column.render(row[column.key], row, rowIndex)

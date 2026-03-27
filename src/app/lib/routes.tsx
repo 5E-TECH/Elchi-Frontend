@@ -26,6 +26,11 @@ const ProductTable = lazy(() => import("../../pages/products/list"));
 const ProductCreate = lazy(() => import("../../pages/products/create"));
 
 const NewOrders = lazy(() => import("../../pages/new_orders"));
+const NewOrdersMarkets = lazy(() => import("../../pages/new_orders/markets"));
+const NewOrdersExternalList = lazy(() => import("../../pages/new_orders/external_orders"));
+const ExternalIntegrationDetail = lazy(
+  () => import("../../pages/new_orders/external_orders/detail"),
+);
 const NewOrderDetail = lazy(
   () => import("../../pages/new_orders/components/new_orderDetail"),
 );
@@ -86,13 +91,13 @@ const AppRouter = () => {
             },
             {
               path: "new-orders",
+              element: <NewOrders />,
               children: [
-                { index: true, element: <NewOrders /> },
+                { index: true, element: <NewOrdersMarkets /> },
+                { path: "external", element: <NewOrdersExternalList /> },
+                { path: "external/:id", element: <ExternalIntegrationDetail /> },
                 { path: ":marketId", element: <NewOrderDetail /> },
-                {
-                  path: ":marketId/edit/:orderId",
-                  element: <NewOrderUpdate />,
-                },
+                { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
                 { path: "userDetail/:id", element: <UserDetailPage /> },
               ],
             },
@@ -100,7 +105,7 @@ const AppRouter = () => {
               path: "mails",
               children: [
                 { index: true, element: <Mails /> },
-                { path: ":postId", element: <MailDetail /> },
+                { path: ":id", element: <MailDetail /> },
               ],
             },
             {

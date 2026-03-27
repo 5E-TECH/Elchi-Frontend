@@ -69,8 +69,11 @@ const OldMailCard = memo(({ item }: { item: MailItem }) => {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}?view=old&from=old`)}
-      onKeyDown={(e) => e.key === "Enter" && navigate(`/mails/${item.id}?view=old&from=old`)}
+      onClick={() => navigate(`/mails/${item.id}`, { state: { fromTab: "old", view: "old" } })}
+      onKeyDown={(e) =>
+        e.key === "Enter" &&
+        navigate(`/mails/${item.id}`, { state: { fromTab: "old", view: "old" } })
+      }
       className="group relative overflow-hidden rounded-[22px] border border-slate-500/20 cursor-pointer"
       style={{
         background:
