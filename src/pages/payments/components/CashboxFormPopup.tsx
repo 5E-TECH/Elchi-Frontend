@@ -22,7 +22,7 @@ const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
             if (!value) return false;
             return Number(value) > 0;
         }),
-    source_type_id: yup.string().required("payment type majburiy"),
+    source_type_id: yup.string().defined(),
     comment: yup.string().defined(),
 });
 
@@ -37,7 +37,7 @@ interface CashboxFormPopupProps {
     submitIcon?: ReactNode;
     sourceTypes?: { id: string | number; name: string }[];
     isLoading?: boolean;
-    onSubmit: (data: { amount: number; source_type_id: string; comment: string }) => void;
+    onSubmit: (data: { amount: number; source_type_id?: string; comment: string }) => void;
 }
 
 const CashboxFormPopup = ({
@@ -71,6 +71,7 @@ const CashboxFormPopup = ({
 
     const amount = watch("amount");
     const sourceTypeId = watch("source_type_id");
+    const hasSourceTypes = sourceTypes.length > 0;
 
     const handleClose = () => {
         reset();
@@ -86,13 +87,16 @@ const CashboxFormPopup = ({
     const submitForm = (values: CashboxFormValues) => {
         onSubmit({
             amount: Number(values.amount),
-            source_type_id: values.source_type_id,
+            ...(values.source_type_id ? { source_type_id: values.source_type_id } : {}),
             comment: values.comment,
         });
         handleClose();
     };
 
-    const isValid = amount !== "" && Number(amount) > 0 && sourceTypeId !== "";
+    const isValid =
+        amount !== "" &&
+        Number(amount) > 0 &&
+        (!hasSourceTypes || sourceTypeId !== "");
 
     return (
         <Popup isShow={isOpen} onClose={handleClose}>
@@ -133,6 +137,7 @@ const CashboxFormPopup = ({
                     </div>
 
                     {/* Payment type */}
+                    {hasSourceTypes && (
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-semibold text-gray-700 dark:text-white/70">
                             payment type <span className="text-rose-400">*</span>
@@ -166,6 +171,7 @@ const CashboxFormPopup = ({
                             <p className="text-xs text-red-500">{errors.source_type_id.message}</p>
                         )}
                     </div>
+                    )}
 
                     {/* Comment */}
                     <div className="flex flex-col gap-1.5">

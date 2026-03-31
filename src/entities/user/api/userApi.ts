@@ -10,6 +10,8 @@ export interface IUserFilter {
   status?: string;
   role?: string;
   region_id?: string;
+  fromDate?: string;
+  toDate?: string;
   page?: number;
   limit?: number;
 }
@@ -56,11 +58,12 @@ export const useUser = () => {
       staleTime: 5 * 60 * 1000,
     });
 
-  const getUserById = (id: string) =>
+  const getUserById = (id: string, params?: Pick<IUserFilter, "fromDate" | "toDate">) =>
     useQuery({
-      queryKey: [user, "detail", id],
-      queryFn: () => api.get(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
-      enabled: !!id,  // Faqat id mavjud bo'lsa so'rov yuborilsin
+      queryKey: [user, "detail", id, params],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res: any) => res.data),
+      enabled: !!id,
     });
 
   //   const getUserById = (id: string | undefined, params?: IUserFilter) =>
