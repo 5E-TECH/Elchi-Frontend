@@ -29,19 +29,19 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
   admin: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/new-orders", icon: Calendar1, label: "new_orders" },
+    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/all-users", icon: UserRound, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
-    { to: "/regions", icon: MapPinned, label: "region" },
+    { to: "/regions", icon: MapPinned, label: "regions" },
     { to: "/logs", icon: FileText, label: "logs" },
   ],
   market: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/order/markets/new-orders", icon: Calendar1, label: "new_orders" },
+    { to: "/order/markets/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/m-balance", icon: Scale, label: "balance" },
@@ -49,7 +49,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/mails", icon: MailOpen, label: "Mails" },
+    { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/m-balance", icon: Scale, label: "balance" },
   ],
 };

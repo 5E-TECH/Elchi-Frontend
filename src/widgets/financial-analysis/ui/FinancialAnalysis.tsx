@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AreaChart,
   BarChart,
@@ -50,17 +51,8 @@ interface PeriodStatItem {
   color: string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const CHART_TYPES: ChartType[] = ["Area", "Bar", "Combo"];
 const PERIODS: RevenuePeriod[] = ["daily", "weekly", "monthly", "yearly"];
-
-const PERIOD_LABEL: Record<RevenuePeriod, string> = {
-  daily: "Daily",
-  weekly: "Weekly",
-  monthly: "Monthly",
-  yearly: "Yearly",
-};
 
 const VARIANT_COLOR: Record<ColorVariant, string> = {
   info: "var(--color-info)",
@@ -125,6 +117,8 @@ const formatY = (v: number) => (v === 0 ? "0" : `${v.toFixed(0)}M`);
 // ─── CustomTooltip ────────────────────────────────────────────────────────────
 
 const CustomTooltip = ({ active, payload, label }: any) => {
+  const { t } = useTranslation("dashboard");
+
   if (!active || !payload?.length) return null;
   return (
     <div
@@ -137,7 +131,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       </p>
       {payload.map((entry: any, i: number) => (
         <p key={i} className="font-bold" style={{ color: entry.color }}>
-          {entry.value.toFixed(1)}M UZS
+          {t("chart.tooltip_value", { value: entry.value.toFixed(1) })}
         </p>
       ))}
     </div>
@@ -316,19 +310,21 @@ const PeriodStatsCard = memo(({ totalOrders, sold, profit, period }: {
   profit: number;
   period: RevenuePeriod;
 }) => {
+  const { t } = useTranslation("dashboard");
+
   const periodStats: PeriodStatItem[] = [
     {
-      label: "Total Revenue:",
-      value: `${profit.toLocaleString()} UZS`,
+      label: t("period_stats.total_revenue"),
+      value: t("currency_value", { value: profit.toLocaleString() }),
       color: "var(--color-success)",
     },
     {
-      label: "Orders:",
+      label: t("period_stats.orders"),
       value: String(totalOrders),
       color: "var(--color-info)",
     },
     {
-      label: "Sold:",
+      label: t("period_stats.sold"),
       value: String(sold),
       color: "var(--color-main)",
     },
@@ -354,10 +350,10 @@ const PeriodStatsCard = memo(({ totalOrders, sold, profit, period }: {
           </div>
           <div>
             <p className="text-[13px] font-semibold leading-tight text-maindark dark:text-primary">
-              Chart Period
+              {t("period_stats.title")}
             </p>
             <p className="text-[11px] leading-tight mt-px text-maindark/45 dark:text-sidebar/45">
-              {PERIOD_LABEL[period]} statistics
+              {t(`periods.${period}`)} {t("period_stats.subtitle")}
             </p>
           </div>
         </div>
@@ -379,6 +375,7 @@ PeriodStatsCard.displayName = "PeriodStatsCard";
 // ─── RevenueChart ─────────────────────────────────────────────────────────────
 
 const RevenueChart = memo(() => {
+  const { t } = useTranslation("dashboard");
   const [activeType, setActiveType] = useState<ChartType>("Area");
   const chart = useCallback(() => CHART_MAP[activeType], [activeType]);
 
@@ -390,7 +387,7 @@ const RevenueChart = memo(() => {
     >
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[14px] font-semibold tracking-[-0.1px] text-maindark dark:text-primary">
-          Daily revenue trend
+          {t("chart.title")}
         </h3>
         <div
           className="flex p-0.75 rounded-lg gap-0.5"
@@ -409,7 +406,7 @@ const RevenueChart = memo(() => {
                 color: activeType === type ? "var(--color-primary)" : "rgba(244,245,250,0.4)",
               }}
             >
-              {type}
+              {t(`chart.types.${type.toLowerCase()}`)}
             </button>
           ))}
         </div>
@@ -420,7 +417,7 @@ const RevenueChart = memo(() => {
       </ResponsiveContainer>
 
       <p className="text-center text-[11px] mt-2.5 tracking-[0.2px] text-maindark/30 dark:text-sidebar/30">
-        Revenue = Market tariff − Courier tariff (only sold orders are counted)
+        {t("chart.description")}
       </p>
     </div>
   );
@@ -440,6 +437,7 @@ export interface FinancialAnalysisProps {
 
 const FinancialAnalysis = memo(
   ({ sold, profit, startDate, endDate }: FinancialAnalysisProps) => {
+  const { t } = useTranslation("dashboard");
   const { getRevenue } = useDashboard();
   const [period, setPeriod] = useState<RevenuePeriod>("daily");
 
@@ -475,13 +473,13 @@ const FinancialAnalysis = memo(
               className="text-[15px] font-semibold leading-tight"
               style={{ color: "var(--color-primary)" }}
             >
-              Financial Analysis
+              {t("financial_analysis.title")}
             </h2>
             <p
               className="text-[11px]"
               style={{ color: "var(--color-sidebar)", opacity: 0.45 }}
             >
-              Period Analysis
+              {t("financial_analysis.subtitle")}
             </p>
           </div>
         </div>
@@ -504,7 +502,7 @@ const FinancialAnalysis = memo(
                   period === p ? "var(--color-primary)" : "rgba(244,245,250,0.4)",
               }}
             >
-              {PERIOD_LABEL[p]}
+              {t(`periods.${p}`)}
             </button>
           ))}
         </div>
@@ -513,32 +511,32 @@ const FinancialAnalysis = memo(
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* orders.profit */}
         <FinanceCard
-          title="Today's Revenue"
-          subtitle="Compared with yesterday"
+          title={t("financial_cards.today_revenue.title")}
+          subtitle={t("financial_cards.today_revenue.subtitle")}
           value={profitFormatted}
           currency="UZS"
-          valueLabel="Today"
+          valueLabel={t("financial_cards.today_revenue.value_label")}
           trendUp={!profitIsNegative}
           icon={<DollarSign size={15} />}
           variant="success"
         />
         {/* orders.soldAndPaid */}
         <FinanceCard
-          title="Today's Orders"
-          subtitle="Compared with yesterday"
+          title={t("financial_cards.today_orders.title")}
+          subtitle={t("financial_cards.today_orders.subtitle")}
           value={String(sold)}
           currency=""
-          valueLabel="Today"
+          valueLabel={t("financial_cards.today_orders.value_label")}
           icon={<ShoppingCart size={15} />}
           variant="info"
         />
         {/* orders.profit (weekly placeholder — same data for now) */}
         <FinanceCard
-          title="This Week's Revenue"
-          subtitle="Compared with last week"
+          title={t("financial_cards.week_revenue.title")}
+          subtitle={t("financial_cards.week_revenue.subtitle")}
           value={profitFormatted}
           currency="UZS"
-          valueLabel="This Week"
+          valueLabel={t("financial_cards.week_revenue.value_label")}
           trendUp={!profitIsNegative}
           icon={<DollarSign size={15} />}
           variant="warning"

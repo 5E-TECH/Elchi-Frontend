@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ShoppingCart,
   CheckCircle2,
@@ -17,6 +18,7 @@ interface StatCardProps {
   icon: React.ReactNode;
   variant: ColorVariant;
   badge?: string;
+  showCurrency?: boolean;
 }
 
 export interface DashboardStatisticsProps {
@@ -38,9 +40,8 @@ const VARIANT_COLOR: Record<ColorVariant, string> = {
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 
 const StatCard = memo(
-  ({ title, value, icon, variant, badge }: StatCardProps) => {
+  ({ title, value, icon, variant, badge, showCurrency = false }: StatCardProps) => {
     const color = VARIANT_COLOR[variant];
-    const isProfit = title === "Profit";
 
     return (
       <div
@@ -85,7 +86,7 @@ const StatCard = memo(
             <span className="text-[28px] font-bold leading-none tracking-tight text-maindark dark:text-primary">
               {value}
             </span>
-            {isProfit && (
+            {showCurrency && (
               <span className="text-[11px] font-semibold text-maindark/50 dark:text-sidebar/50">
                 UZS
               </span>
@@ -103,30 +104,33 @@ StatCard.displayName = "StatCard";
 
 const DashboardStatistics = memo(
   ({ totalOrders, sold, cancelled, profit }: DashboardStatisticsProps) => {
+    const { t } = useTranslation("dashboard");
+
     const stats: StatCardProps[] = [
       {
-        title: "Total Orders",
+        title: t("cards.total_orders"),
         value: totalOrders,
         icon: <ShoppingCart size={20} />,
         variant: "info",
       },
       {
-        title: "Sold",
+        title: t("cards.sold"),
         value: sold,
         icon: <CheckCircle2 size={20} />,
         variant: "success",
       },
       {
-        title: "Cancelled",
+        title: t("cards.cancelled"),
         value: cancelled,
         icon: <XCircle size={20} />,
         variant: "error",
       },
       {
-        title: "Profit",
+        title: t("cards.profit"),
         value: profit,
         icon: <DollarSign size={20} />,
         variant: "warning",
+        showCurrency: true,
       },
     ];
 
