@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { LayoutDashboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import { useDashboard } from "../../entities/dashboard";
@@ -10,6 +11,7 @@ import { useQueryParams } from "../../shared/lib/useQueryParams";
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
 const DashboardPage = () => {
+  const { t } = useTranslation("dashboard");
   const { getParam, setParam } = useQueryParams();
 
   const startDate = getParam("startDate") ?? "";
@@ -37,10 +39,10 @@ const DashboardPage = () => {
           </div>
           <div>
             <h1 className="text-[16px] font-bold leading-tight text-maindark dark:text-primary">
-              {hasDateFilter ? "Tanlangan davr statistikasi" : "Bugungi statistika"}
+              {hasDateFilter ? t("page_title_filtered") : t("page_title_today")}
             </h1>
             <p className="text-[11px] text-maindark/50 dark:text-sidebar/50">
-              {hasDateFilter ? "Sana oralig'i bo'yicha" : "Bugungi ko'rsatkichlar"}
+              {hasDateFilter ? t("page_subtitle_filtered") : t("page_subtitle_today")}
             </p>
           </div>
         </div>
