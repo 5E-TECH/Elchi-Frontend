@@ -71,7 +71,9 @@ export const API_ENDPOINTS = {
   },
   FINANCE: {
     CASHBOX_ALL_INFO: "finance/cashbox/all-info",
+    CASHBOX_MAIN: "finance/cashbox/main",
     HISTORY: "finance/history",
+    HISTORY_BY_ID: (id: string | number) => `finance/history/${id}`,
     OPERATION_TYPE: "finance/operation-type",
     SOURCE_TYPE: "finance/source-type",
     CASHBOX_TYPE: "finance/cashbox-type",
