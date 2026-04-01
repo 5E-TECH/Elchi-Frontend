@@ -1,5 +1,4 @@
 import { memo, useState, useEffect } from "react";
-import HeaderName from "../../../../shared/components/headerName";
 import { ListOrdered, Send } from "lucide-react";
 import Tabs from "./list/tabs";
 import SellModal from "./list/SellModal";
@@ -140,18 +139,26 @@ const CourierOrders = () => {
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="relative">
-      <div className="bg-sidebar dark:bg-maindark p-3 rounded-2xl">
-        <div className="flex items-center justify-between">
-          <HeaderName
-            name="Buyurtmalar ro'yxati"
-            description={`Jami ${orders.length} ta buyurtma`}
-            icon={<ListOrdered />}
-          />
+      <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4">
+        <div className="rounded-2xl border border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20 sm:h-13 sm:w-13">
+              <ListOrdered size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="m-0 text-lg font-bold leading-tight text-main dark:text-primary sm:text-[1.7rem]">
+                Buyurtmalar ro'yxati
+              </h2>
+              <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+                Jami {orders.length} ta buyurtma
+              </p>
+            </div>
+          </div>
+
+          <Tabs onChange={handleTabChange} defaultTab={activeTab} />
         </div>
 
-        <Tabs onChange={handleTabChange} defaultTab={activeTab} />
-
-        <div className="mt-3">
+        <div className="mt-3 sm:mt-4">
           {activeTab === "pending" && (
             <PendingOrdersTable
               orders={orders}
@@ -185,11 +192,11 @@ const CourierOrders = () => {
 
       {/* Floating button */}
       {activeTab === "cancelled" && selectedIds.size > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-22 left-3 right-3 z-50 sm:bottom-6 sm:left-auto sm:right-6">
           <button
             onClick={handleSendToPost}
             disabled={isSendingToPost}
-            className="flex items-center gap-2 px-5 py-3 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-semibold text-sm rounded-2xl shadow-2xl transition-all"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500 px-5 py-3 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-red-600 disabled:opacity-60 sm:w-auto"
           >
             {isSendingToPost ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -3,10 +3,11 @@ export interface User {
     username: string;
     name: string;
     phone_number: string;
-    role: "superadmin" | "admin" | "manager" | "courier" | "client";
-    status: "active" | "inactive";
+    role: "superadmin" | "admin" | "manager" | "courier" | "client" | "market" | "marketing" | "operator" | "customer";
+    status: "active" | "inactive" | "blocked";
     createdAt: string;
     updatedAt: string;
+    add_order?: boolean;
 }
 
 export interface UserState {

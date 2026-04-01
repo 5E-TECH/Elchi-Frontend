@@ -1,11 +1,11 @@
 export interface ColumnConfig<T> {
   key: keyof T;
-  label: string;
+  label: React.ReactNode;
   width?: string;
   sortable?: boolean;
   sortValue?: (row: T) => string | number | null | undefined;
   render?: (value: any, row: T, index: number) => React.ReactNode;
-  renderHeader?: (label: string) => React.ReactNode;
+  renderHeader?: (label: React.ReactNode) => React.ReactNode;
   className?: string;
 }
 

@@ -22,21 +22,24 @@ const CancelledOrdersTable = ({
   const allChecked = orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
   const someChecked = orders.some((o) => selectedIds.has(o.id));
 
+  const renderSelectAllCheckbox = () => (
+    <input
+      type="checkbox"
+      checked={allChecked}
+      ref={(el) => {
+        if (el) el.indeterminate = someChecked && !allChecked;
+      }}
+      onChange={(e) => onSelectAll(e.target.checked)}
+      className="h-4 w-4 cursor-pointer accent-red-500"
+    />
+  );
+
   const columns: ColumnConfig<Order>[] = useMemo(
     () => [
       {
         key: "id",
-        label: (
-          <input
-            type="checkbox"
-            checked={allChecked}
-            ref={(el) => {
-              if (el) el.indeterminate = someChecked && !allChecked;
-            }}
-            onChange={(e) => onSelectAll(e.target.checked)}
-            className="w-4 h-4 accent-red-500 cursor-pointer"
-          />
-        ) as any,
+        label: "Tanlash",
+        renderHeader: () => renderSelectAllCheckbox(),
         width: "40px",
         render: (_, row) => (
           <input
@@ -146,13 +149,22 @@ const CancelledOrdersTable = ({
   );
 
   return (
-    <Table
-      data={orders}
-      columns={columns}
-      keyExtractor={(row) => row.id}
-      loading={loading}
-      emptyMessage="Bekor qilingan buyurtmalar mavjud emas"
-    />
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between rounded-2xl border border-[color:var(--color-border-soft)] bg-primary px-4 py-3 dark:border-primarydark/60 dark:bg-maindark xl:hidden">
+        <span className="text-sm font-semibold text-maindark dark:text-primary">
+          Hammasini belgilash
+        </span>
+        {renderSelectAllCheckbox()}
+      </div>
+
+      <Table
+        data={orders}
+        columns={columns}
+        keyExtractor={(row) => row.id}
+        loading={loading}
+        emptyMessage="Bekor qilingan buyurtmalar mavjud emas"
+      />
+    </div>
   );
 };
 

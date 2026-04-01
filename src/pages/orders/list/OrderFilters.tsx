@@ -58,6 +58,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
     const { setParam, removeParam, clearAllParams, getParam } = useQueryParams();
     const role = useSelector((state: RootState) => state.role.role);
     const isMarketRole = role === "market";
+    const canLoadRoleDependentOptions = role !== null && !isMarketRole;
 
     // ─── URL dan joriy qiymatlarni olish ───────────────────────────────────
     const marketId = getParam(ORDER_FILTER_KEYS.marketId) ?? "";
@@ -105,14 +106,17 @@ const OrderFilters = memo(({ onExport }: Props) => {
 
     const { data: marketsData, isLoading: marketsLoading } = getMarkets(
         { status: "active", limit: 100 },
-        !isMarketRole,
+        canLoadRoleDependentOptions,
     );
     const markets = toItems(marketsData).map((m) => ({ value: String(m.id), label: m.name }));
 
-    const { data: couriersData, isLoading: couriersLoading } = getCouriers({
-        status: "active",
-        limit: 100,
-    });
+    const { data: couriersData, isLoading: couriersLoading } = getCouriers(
+        {
+            status: "active",
+            limit: 100,
+        },
+        canLoadRoleDependentOptions,
+    );
     const couriers = toItems(couriersData).map((c) => ({ value: String(c.id), label: c.name }));
 
     const { data: regionsData, isLoading: regionsLoading } = getRegions();
@@ -182,7 +186,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                     value={search}
                     onChange={updateSearch}
                     placeholder="Buyurtmani qidiring..."
-                    className="w-56"
+                    className="w-full sm:w-56"
                 />
             </div>
 
@@ -249,12 +253,12 @@ const OrderFilters = memo(({ onExport }: Props) => {
             </div>
 
             {/* ── 3-qator: tozalash | chiplar | export ── */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 {/* Tozalash tugmasi */}
                 {hasFilter && (
                     <button
                         onClick={handleReset}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-500 transition-colors"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs font-semibold text-red-400 transition-colors hover:text-red-500 sm:w-auto sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:py-0"
                     >
                         <RefreshCw size={13} />
                         Tozalash
@@ -263,7 +267,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
 
                 {/* Aktiv filter chip-lar */}
                 {hasFilter && (
-                    <div className="flex flex-wrap gap-1.5 flex-1">
+                    <div className="flex w-full flex-wrap gap-1.5 sm:flex-1">
                         {!isMarketRole && marketId && (
                             <FilterChip
                                 label={`Market: ${markets.find((m) => m.value === marketId)?.label ?? `#${marketId}`}`}
@@ -321,14 +325,14 @@ const OrderFilters = memo(({ onExport }: Props) => {
                     </div>
                 )}
 
-                <div className="flex-1" />
+                <div className="hidden flex-1 sm:block" />
 
                 {/* Export Excel */}
                 {onExport && (
                     <button
                         onClick={onExport}
                         className="
-                            flex items-center gap-2 px-4 py-2 rounded-xl
+                            flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 sm:ml-auto sm:w-auto
                             bg-emerald-500 hover:bg-emerald-600
                             text-white text-xs font-semibold
                             transition-all duration-200
@@ -346,11 +350,11 @@ const OrderFilters = memo(({ onExport }: Props) => {
 
 // ── Filter chip ───────────────────────────────────────────────────────────
 const FilterChip = ({ label, onRemove }: { label?: string; onRemove: () => void }) => (
-    <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-[11px] font-semibold bg-main/10 text-main border border-main/20">
-        {label}
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-main/20 bg-main/10 py-1 pl-2.5 pr-1.5 text-[11px] font-semibold text-main">
+        <span className="break-words">{label}</span>
         <button
             onClick={onRemove}
-            className="w-4 h-4 rounded-full hover:bg-main/20 flex items-center justify-center transition-colors"
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-main/20"
         >
             <X size={10} />
         </button>

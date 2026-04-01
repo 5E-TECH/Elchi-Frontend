@@ -1,31 +1,30 @@
 import { memo } from "react";
-import { ArrowLeft, Compass, House, SearchX } from "lucide-react";
+import { ArrowLeft, House, LockKeyhole, ShieldAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ErrorActions from "./error-page/ErrorActions";
 import ErrorCode from "./error-page/ErrorCode";
 import ErrorInfoCard from "./error-page/ErrorInfoCard";
 import ErrorPageLayout from "./error-page/ErrorPageLayout";
 
-const NotFoundPage = () => {
+const ForbiddenPage = () => {
   const navigate = useNavigate();
 
   return (
     <ErrorPageLayout>
-      <ErrorCode leftDigit="4" rightDigit="4" subtitle="ROUTE LOST IN SPACE" />
+      <ErrorCode leftDigit="4" rightDigit="3" subtitle="ACCESS DENIED" />
 
       <div className="mt-10 text-center">
         <h1 className="text-4xl font-black text-primary sm:text-5xl">
-          Bu sahifa topilmadi
+          Kirish taqiqlangan
         </h1>
         <p className="error-page-muted mx-auto mt-5 max-w-3xl text-sm leading-7 sm:text-base">
-          Siz kirmoqchi bo'lgan manzil mavjud emas, o'chirilgan yoki noto'g'ri
-          yozilgan bo'lishi mumkin.
+          Sizda bu sahifaga kirish huquqi yo'q. Administrator bilan bog'laning.
         </p>
       </div>
 
       <div className="mt-10 grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
-        <ErrorInfoCard icon={<Compass size={22} />} label="HOLAT" value="URL topilmadi" />
-        <ErrorInfoCard icon={<SearchX size={22} />} label="KOD" value="404 Not Found" />
+        <ErrorInfoCard icon={<LockKeyhole size={22} />} label="HOLAT" value="Ruxsat yo'q" />
+        <ErrorInfoCard icon={<ShieldAlert size={22} />} label="KOD" value="403 Forbidden" />
         <ErrorInfoCard icon={<House size={22} />} label="TAVSIYA" value="Dashboardga qayting" />
       </div>
 
@@ -36,7 +35,7 @@ const NotFoundPage = () => {
           onClick: () => navigate("/"),
         }}
         secondary={{
-          label: "Oldingi sahifaga qaytish",
+          label: "Orqaga qaytish",
           icon: <ArrowLeft size={17} />,
           onClick: () => navigate(-1),
         }}
@@ -45,4 +44,4 @@ const NotFoundPage = () => {
   );
 };
 
-export default memo(NotFoundPage);
+export default memo(ForbiddenPage);

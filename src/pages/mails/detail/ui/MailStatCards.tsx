@@ -17,6 +17,7 @@ interface MailStatCardsProps {
   selectedCount: number;
   homeStats?: HomeOrderStats;
   centerStats?: CenterOrderStats;
+  showSelectionCard?: boolean;
 }
 
 // ─── Yagona stat kard ─────────────────────────────────────────────────────────
@@ -77,27 +78,30 @@ const MailStatCards = memo(
     selectedCount,
     homeStats,
     centerStats,
+    showSelectionCard = true,
   }: MailStatCardsProps) => (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className={`grid grid-cols-1 gap-4 ${showSelectionCard ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
       {/* Tanlangan */}
-      <StatCard
-        highlighted
-        icon={<Package size={18} />}
-        label="Tanlangan"
-        main={
-          <span>
-            {selectedCount}{" "}
-            <span className="text-white/60 font-normal text-base">
-              / {totalOrders}
+      {showSelectionCard && (
+        <StatCard
+          highlighted
+          icon={<Package size={18} />}
+          label="Tanlangan"
+          main={
+            <span>
+              {selectedCount}{" "}
+              <span className="text-white/60 font-normal text-base">
+                / {totalOrders}
+              </span>
             </span>
-          </span>
-        }
-        sub={
-          selectedCount > 0
-            ? `${selectedCount} ta tanlandi`
-            : "Hech biri tanlanmagan"
-        }
-      />
+          }
+          sub={
+            selectedCount > 0
+              ? `${selectedCount} ta tanlandi`
+              : "Hech biri tanlanmagan"
+          }
+        />
+      )}
 
       {/* Uyga yetkazish */}
       <StatCard

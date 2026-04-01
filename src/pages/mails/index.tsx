@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { Mail, Package, AlertTriangle, Clock } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import HeaderName from '../../shared/components/headerName';
 import TodaysMails from './components/todaysMails';
 import OldMails from './components/oldMails';
 import RefusedMails from './components/refusedMails';
@@ -63,15 +62,25 @@ const Mails = () => {
   };
 
   return (
-    <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
-      <HeaderName
-        name="Pochta"
-        description="Buyurtmalar uchun pochta xabarlarini ko'rish"
-        icon={<Mail />}
-      />
+    <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4 lg:p-6">
+      <div className="rounded-2xl border border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-4">
+        <div className="flex items-center gap-3 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20 sm:h-13 sm:w-13">
+            <Mail size={20} />
+          </div>
+          <div className="min-w-0">
+            <h2 className="m-0 text-lg font-bold leading-tight text-main dark:text-primary sm:text-[1.7rem]">
+              Pochta
+            </h2>
+            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+              Buyurtmalar uchun pochta xabarlarini ko'rish
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-3 mt-5 mb-6">
+      <div className="mt-5 mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           const style = isActive ? tab.active : tab.inactive;
@@ -81,13 +90,13 @@ const Mails = () => {
               key={tab.key}
               type="button"
               onClick={() => handleTabChange(tab.key)}
-              className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl w-full border transition-all duration-200 cursor-pointer ${style.wrapper}`}
+              className={`flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 cursor-pointer ${style.wrapper}`}
             >
               {/* Icon container */}
               <span className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0 ${style.icon}`}>
                 {tab.icon}
               </span>
-              <span className="font-semibold text-sm">{tab.label}</span>
+              <span className="font-semibold text-sm leading-snug text-left">{tab.label}</span>
             </button>
           );
         })}

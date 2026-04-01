@@ -26,14 +26,9 @@ api.interceptors.response.use(
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
             window.location.href = "/login";
+        } else if (status === 500 && window.location.pathname !== "/500") {
+            window.location.replace("/500");
         }
-        //  else if (status === 403) {
-        //     window.location.href = "/403";
-        // } else if (status === 404) {
-        //     window.location.href = "/404";
-        // } else if (status === 500) {
-        //     window.location.href = "/500";
-        // }
 
         return Promise.reject(error);
     }

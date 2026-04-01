@@ -345,6 +345,7 @@ const MailDetailPage = () => {
         selectedCount={selectedIds.size}
         homeStats={homeStats}
         centerStats={centerStats}
+        showSelectionCard={!isOldDetail}
       />
 
       {/* Jadval */}
