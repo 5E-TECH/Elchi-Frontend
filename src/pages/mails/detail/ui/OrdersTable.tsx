@@ -87,19 +87,21 @@ const OrdersTable = memo(({
         <div className="flex flex-col gap-2.5">
             {!isHistory && !readOnly && (
                 <div
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-primarydark border border-gray-100 dark:border-white/10 cursor-pointer"
+                    className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 dark:border-white/10 dark:bg-primarydark sm:flex-row sm:items-center cursor-pointer"
                     onClick={onToggleAll}
                 >
-                    <Checkbox
-                        checked={allSelected}
-                        indeterminate={someSelected}
-                        onChange={onToggleAll}
-                    />
-                    <span className="text-sm font-semibold text-gray-700 dark:text-white select-none">
-                        Barchasini tanlash
-                    </span>
+                    <div className="flex items-center gap-3">
+                        <Checkbox
+                            checked={allSelected}
+                            indeterminate={someSelected}
+                            onChange={onToggleAll}
+                        />
+                        <span className="select-none text-sm font-semibold text-gray-700 dark:text-white">
+                            Barchasini tanlash
+                        </span>
+                    </div>
                     {selectedIds.size > 0 && (
-                        <span className="ml-auto text-xs text-main dark:text-white font-semibold">
+                        <span className="text-xs font-semibold text-main dark:text-white sm:ml-auto">
                             {selectedIds.size} ta tanlandi
                         </span>
                     )}
@@ -107,8 +109,8 @@ const OrdersTable = memo(({
             )}
 
             {isHistory ? (
-                <div className="overflow-x-auto">
-                    <div className="min-w-[1120px] flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5">
+                    <div className="xl:min-w-[1120px] flex flex-col gap-1.5">
                         <HistoryTableHeader />
                         {orders.map((order) => (
                             <OrderRow

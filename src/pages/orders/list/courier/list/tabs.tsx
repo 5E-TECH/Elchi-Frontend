@@ -43,7 +43,7 @@ const Tabs = ({ onChange, defaultTab = "pending" }: TabsProps) => {
   };
 
   return (
-    <div className="flex gap-2 p-2">
+    <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
@@ -56,9 +56,8 @@ const Tabs = ({ onChange, defaultTab = "pending" }: TabsProps) => {
                 : { background: "transparent" }
             }
             className={`
-              flex flex-1 items-center justify-center gap-2 
-              px-5 py-3 rounded-lg cursor-pointer 
-              font-semibold text-sm transition-all duration-250
+              flex min-h-14 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-center
+              cursor-pointer font-semibold text-sm transition-all duration-250
               ${
                 isActive
                   ? "text-white border-none shadow-lg [&_svg]:text-white"

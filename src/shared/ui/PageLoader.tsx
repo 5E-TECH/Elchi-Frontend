@@ -16,26 +16,21 @@ const PageLoader = () => {
     return (
         <div
             className={`
-                fixed inset-0 z-[9999]
+                page-loader-shell fixed inset-0 z-[9999]
                 flex flex-col items-center justify-center
                 transition-all duration-700
                 ${isVisible ? 'animate-loader-in' : 'opacity-0'}
             `}
-            style={{
-                background: `linear-gradient(135deg, #0f172a 0%, var(--color-maindark) 50%, #1e1b4b 100%)`,
-            }}
             role="status"
             aria-label="Yuklanmoqda"
         >
             {/* ── Background Aurora Effects ── */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none animate-aurora">
                 <div
-                    className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full opacity-20 blur-[100px]"
-                    style={{ background: 'var(--color-main)' }}
+                    className="page-loader-aurora-orb-main absolute top-[-10%] left-[-10%] h-[50%] w-[50%] rounded-full opacity-20 blur-[100px]"
                 />
                 <div
-                    className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-15 blur-[100px]"
-                    style={{ background: 'var(--color-purple)' }}
+                    className="page-loader-aurora-orb-secondary absolute right-[-10%] bottom-[-10%] h-[50%] w-[50%] rounded-full opacity-15 blur-[100px]"
                 />
 
                 {/* Particles */}

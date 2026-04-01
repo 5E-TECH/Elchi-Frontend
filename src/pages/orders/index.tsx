@@ -2,7 +2,6 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { ListOrdered, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import HeaderName from "../../shared/components/headerName";
 import Button from "../../shared/components/button";
 import { useOrders } from "../../entities/order/api/orderApi";
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
@@ -104,26 +103,35 @@ const Orders = () => {
   }
 
   return (
-    <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-5 min-h-full">
+    <div className="rounded-2xl bg-sidebar p-3 sm:p-4 lg:p-6 dark:bg-maindark flex flex-col gap-4 sm:gap-5 min-h-full">
 
       {/* ── Header ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4">
-        <div className="flex items-center justify-between">
-          <HeaderName
-            name="Buyurtmalar ro'yxati"
-            description={`Jami ${total} ta buyurtma`}
-            icon={<ListOrdered />}
-          />
+      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20 sm:h-13 sm:w-13">
+              <ListOrdered size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="m-0 text-lg font-bold leading-tight text-main dark:text-primary sm:text-[1.7rem]">
+                Buyurtmalar ro'yxati
+              </h2>
+              <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+                Jami {total} ta buyurtma
+              </p>
+            </div>
+          </div>
           <Button
             label="Yangi buyurtma"
             icon={<Plus size={16} />}
             onClick={() => navigate("add")}
+            className="w-full rounded-2xl py-3 text-sm shadow-lg shadow-main/20 sm:w-auto sm:rounded-xl sm:py-2.5"
           />
         </div>
       </div>
 
       {/* ── Filters + Table ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm flex flex-col gap-4 p-5">
+      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm flex flex-col gap-4 p-3 sm:p-4 lg:p-5">
 
         {/* Filters */}
         <OrderFilters

@@ -36,6 +36,9 @@ export const userSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    setProfile: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+    },
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
@@ -49,5 +52,5 @@ export const userSlice = createSlice({
   },
 });
 
-export const { loginSuccess, setLoading, setAppInitializing, setError, logout } = userSlice.actions;
+export const { loginSuccess, setLoading, setAppInitializing, setError, setProfile, logout } = userSlice.actions;
 export default userSlice.reducer;

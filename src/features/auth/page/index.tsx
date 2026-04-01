@@ -8,7 +8,7 @@ import {
   setRole,
 } from "../model/loginSlice";
 import { api } from "../../../shared/api/api";
-import { logout, setAppInitializing } from "../../../entities/user/model/slice";
+import { logout, setAppInitializing, setProfile } from "../../../entities/user/model/slice";
 // import Suspensee from "../../shared/ui/Suspensee";
 // Test for deployment
 const Auth = () => {
@@ -34,6 +34,7 @@ const Auth = () => {
         const userData = res.data?.data;
         
         if (userData) {
+          dispatch(setProfile(userData));
           dispatch(setRole(userData.role));
           dispatch(setId(userData.id));
           if (userData.region?.name) {

@@ -1,5 +1,6 @@
 import { lazy, memo } from "react";
-import { useRoutes } from "react-router-dom";
+import { Navigate, useRoutes } from "react-router-dom";
+import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -52,7 +53,10 @@ const CashDetail = lazy(
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
 
 const Region = lazy(() => import("../../pages/region"));
+const ForbiddenPage = lazy(() => import("../../shared/ui/Forbidden"));
 const NotFound = lazy(() => import("../../shared/ui/NotFound"));
+const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
+const ErrorBoundaryPage = lazy(() => import("../../shared/ui/ErrorBoundaryPage"));
 
 const AppRouter = () => {
   return useRoutes([
@@ -79,14 +83,36 @@ const AppRouter = () => {
               path: "orders",
               children: [
                 { index: true, element: <Orders /> },
-                { path: "add", element: <OrderCreate /> },
+                {
+                  path: "add",
+                  element: (
+                    <ProtectedRoute
+                      canActivate={(state) =>
+                        state.role.role !== "market" || Boolean(state.user.user?.add_order)
+                      }
+                    >
+                      <OrderCreate />
+                    </ProtectedRoute>
+                  ),
+                },
               ],
             },
             {
               path: "products",
               children: [
                 { index: true, element: <ProductTable /> },
-                { path: "create-product/:id", element: <ProductCreate /> },
+                {
+                  path: "create-product/:id",
+                  element: (
+                    <ProtectedRoute
+                      canActivate={(state) =>
+                        state.role.role !== "market" || Boolean(state.user.user?.add_order)
+                      }
+                    >
+                      <ProductCreate />
+                    </ProtectedRoute>
+                  ),
+                },
               ],
             },
             {
@@ -125,6 +151,22 @@ const AppRouter = () => {
               element: <Region />,
             },
             {
+              path: "403",
+              element: <ForbiddenPage />,
+            },
+            {
+              path: "404",
+              element: <NotFound />,
+            },
+            {
+              path: "500",
+              element: <ServerErrorPage />,
+            },
+            {
+              path: "runtime-error",
+              element: <ErrorBoundaryPage />,
+            },
+            {
               path: "*",
               element: <NotFound />,
             },
@@ -134,7 +176,7 @@ const AppRouter = () => {
     },
     {
       path: "*",
-      element: <NotFound />,
+      element: <Navigate replace to="/404" />,
     },
   ]);
 };

@@ -16,13 +16,13 @@ const OrderPagination = ({ page, totalPages, total, limit, onChange }: Props) =>
     const to = Math.min(page * limit, total);
 
     return (
-        <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
-            <p className="text-xs text-gray-400">
+        <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-center text-xs text-gray-400 sm:text-left">
                 <span className="font-semibold text-maindark dark:text-primary">{from}–{to}</span>
                 {" "}/ {total} ta buyurtma
             </p>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-end">
                 {/* Prev */}
                 <button
                     onClick={() => onChange(page - 1)}

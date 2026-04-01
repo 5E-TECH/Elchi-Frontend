@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, type ReactElement } from 'react';
+import { useState, useMemo, useEffect, useRef, memo, type ReactElement } from 'react';
 import type { TableProps, ColumnConfig, SortConfig } from './Table.types';
 
 export const Table = memo(<T extends Record<string, any>>({
@@ -15,12 +15,51 @@ export const Table = memo(<T extends Record<string, any>>({
   hoverable = true,
 }: TableProps<T>) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
 
-  const headerCellClass = dense ? 'px-3 py-3' : 'px-6 py-4';
-  const bodyCellClass = dense ? 'px-3 py-3 text-[13px]' : 'px-6 py-4 text-sm';
+  useEffect(() => {
+    const element = wrapperRef.current;
+    if (!element) return;
 
+    const updateWidth = () => {
+      setContainerWidth(element.clientWidth);
+    };
 
+    updateWidth();
 
+    const observer = new ResizeObserver(() => {
+      updateWidth();
+    });
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  const responsiveMode = useMemo(() => {
+    if (containerWidth > 0 && containerWidth < 860) {
+      return 'cards' as const;
+    }
+
+    if (containerWidth > 0 && containerWidth < 1220) {
+      return 'compact' as const;
+    }
+
+    return 'table' as const;
+  }, [containerWidth]);
+
+  const isCardMode = responsiveMode === 'cards';
+  const isCompactMode = responsiveMode === 'compact';
+
+  const headerCellClass = dense || isCompactMode
+    ? 'px-3 py-3 text-[11px]'
+    : 'px-6 py-4';
+  const bodyCellClass = dense || isCompactMode
+    ? 'px-3 py-3 text-[13px]'
+    : 'px-6 py-4 text-sm';
 
   // Sorting logikasi
   const sortedData = useMemo(() => {
@@ -78,18 +117,27 @@ export const Table = memo(<T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12 bg-primary dark:bg-maindark rounded-lg border border-gray-200 dark:border-primarydark">
-        <p className="text-gray-600 dark:text-slate-400">Yuklanmoqda...</p>
+      <div
+        className="flex items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-12 dark:border-primarydark/60 dark:bg-maindark"
+      >
+        <p className="text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+          Yuklanmoqda...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className={`overflow-x-auto rounded-lg shadow-sm bg-primary dark:bg-primarydark ${bordered ? 'border border-gray-200 dark:border-primarydark' : ''}`}>
-      <table className={`w-full border-collapse ${className}`}>
-        <thead>
+    <div
+      ref={wrapperRef}
+      className={`overflow-hidden rounded-2xl bg-primary shadow-sm dark:bg-maindark ${bordered ? 'border border-[color:var(--color-border-soft)] dark:border-primarydark/60' : ''}`}
+    >
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className={`w-full min-w-full border-collapse ${isCompactMode ? 'table-fixed' : ''} ${className}`}>
+          <thead className={isCardMode ? 'hidden' : 'table-header-group'}>
           <tr style={{
-            background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)'
+            background:
+              'linear-gradient(90deg, var(--color-table-header-start) 0%, var(--color-table-header-end) 100%)'
           }}>
             {columns.map((column) => (
               <th
@@ -101,7 +149,7 @@ export const Table = memo(<T extends Record<string, any>>({
                 } ${column.className || ""}`}
               >
                 <div className="flex items-center gap-2">
-                  <span>{column.label}</span>
+                  <span>{column.renderHeader ? column.renderHeader(column.label) : column.label}</span>
                   {column.sortable && (
                     <span className="text-white text-xs opacity-80">
                       {sortConfig?.key === String(column.key) && (
@@ -113,11 +161,15 @@ export const Table = memo(<T extends Record<string, any>>({
               </th>
             ))}
           </tr>
-        </thead>
-        <tbody>
+          </thead>
+          <tbody className={isCardMode ? 'block' : 'table-row-group'}>
           {data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className={`${dense ? 'px-3 py-10' : 'px-6 py-12'} text-center dark:bg-primary text-gray-600 dark:text-slate-400`}>
+            <tr className={isCardMode ? 'block' : 'table-row'}>
+              <td
+                colSpan={columns.length}
+                className={`${dense ? 'px-3 py-10' : 'px-6 py-12'} ${isCardMode ? 'block' : 'table-cell'} text-center`}
+                style={{ color: 'var(--color-text-muted)' }}
+              >
                 <p>{emptyMessage}</p>
               </td>
             </tr>
@@ -126,33 +178,54 @@ export const Table = memo(<T extends Record<string, any>>({
               <tr
                 key={keyExtractor(row, rowIndex)}
                 onClick={() => onRowClick?.(row, rowIndex)}
-                className={`border-b ${hoverable ? 'hover:opacity-80 transition-opacity' : ''
-                  } ${onRowClick ? 'cursor-pointer' : ''} ${striped && rowIndex % 2 === 0
-                    ? 'bg-primary dark:bg-maindark border-gray-200 dark:border-primarydark'
-                    : 'bg-gray-50 dark:bg-maindark border-gray-200 dark:border-primarydark'
-                  }`}
-                style={
-                  !striped || rowIndex % 2 !== 0 ? {} : {
-                    backgroundImage: 'linear-gradient(to right, rgba(76, 87, 152, 0.05), rgba(87, 106, 219, 0.05))'
-                  }
+                className={
+                  isCardMode
+                    ? `mb-3 block rounded-2xl border border-[color:var(--color-border-soft)] last:mb-0 dark:border-primarydark/60 ${
+                        hoverable ? 'transition-colors duration-200' : ''
+                      } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-maindark ${
+                        hoverable
+                          ? 'hover:bg-[color:var(--color-table-card-hover)] dark:hover:bg-[color:var(--color-table-card-hover-dark)]'
+                          : ''
+                      }`
+                    : `table-row border-b border-[color:var(--color-border-soft)] dark:border-primarydark/60 ${
+                        hoverable ? 'transition-colors duration-200' : ''
+                      } ${onRowClick ? 'cursor-pointer' : ''} ${
+                        striped && rowIndex % 2 !== 0
+                          ? 'bg-[color:var(--color-table-row-alt)] dark:bg-primarydark/80'
+                          : 'bg-primary dark:bg-maindark'
+                      } ${
+                        hoverable
+                          ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-primarydark/90'
+                          : ''
+                      }`
                 }
               >
                 {columns.map((column) => (
                   <td
                     key={String(column.key)}
-                    style={column.width ? { width: column.width } : undefined}
-                    className={`${bodyCellClass} text-gray-900 dark:text-slate-100 ${column.className || ''}`}
+                    className={`${bodyCellClass} ${isCardMode ? 'block border-b last:border-b-0' : 'table-cell'} ${!isCardMode ? 'align-middle' : ''} ${column.className || ''}`}
+                    aria-label={typeof column.label === "string" ? column.label : undefined}
                   >
-                    {column.render
-                      ? column.render(row[column.key], row, rowIndex)
-                      : String(row[column.key] ?? '—')}
+                    <div className={isCardMode ? 'flex min-w-0 flex-col items-start gap-2' : 'block min-w-0'}>
+                      <span
+                        className={`${isCardMode ? 'block' : 'hidden'} text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-table-label)] dark:text-[color:var(--color-table-label-dark)]`}
+                      >
+                        {column.label}
+                      </span>
+                      <div className={`min-w-0 break-words text-left ${isCardMode ? 'w-full' : 'w-auto'} ${isCompactMode ? 'text-[13px] leading-5' : ''}`}>
+                        {column.render
+                          ? column.render(row[column.key], row, rowIndex)
+                          : String(row[column.key] ?? '—')}
+                      </div>
+                    </div>
                   </td>
                 ))}
               </tr>
             ))
           )}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }) as <T extends Record<string, any>>(props: TableProps<T>) => ReactElement;
