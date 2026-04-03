@@ -1,6 +1,7 @@
 import { memo, useState, useEffect } from 'react';
 import { Wallet, Clock, TrendingUp, CheckCircle2 } from 'lucide-react';
 import type { User } from '../types/user';
+import { useTranslation } from 'react-i18next';
 
 interface UserStatsCardProps {
     user: User;
@@ -81,6 +82,7 @@ const ProgressRing = ({ progress, size = 80, stroke = 6, color = '#576adb' }: {
 // ─── Admin Stats ──────────────────────────────────────────────────────────────
 
 const AdminStats = ({ user }: { user: User }) => {
+    const { t } = useTranslation("users");
     const paymentDay = Number(user.payment_day ?? 1);
     // useMemo: bir marta hisoblanadi, re-render loop bo'lmaydi
     const { progress, passedDays, totalDays, remainDays, nextPayDate } = calcCycleProgress(paymentDay);
@@ -101,7 +103,7 @@ const AdminStats = ({ user }: { user: User }) => {
                             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                                 <Wallet size={16} className="text-white" />
                             </div>
-                            <span className="text-xs font-bold uppercase tracking-widest text-white">Oylik Maosh</span>
+                            <span className="text-xs font-bold uppercase tracking-widest text-white">{t("salary")}</span>
                         </div>
 
                         {/* Maosh: earned / total */}
@@ -112,7 +114,7 @@ const AdminStats = ({ user }: { user: User }) => {
                                 <span className="text-white/70">{formatNum(user.salary)}</span>
                                 <span className="text-xs sm:text-sm font-semibold text-white/60 ml-1">so'm</span>
                             </p>
-                            <p className="text-white text-[10px] sm:text-xs mt-1">{passedDays}/{totalDays} kun — {progress.toFixed(0)}% to'plandi</p>
+                            <p className="text-white text-[10px] sm:text-xs mt-1">{t("accumulatedProgress", { passed: passedDays, total: totalDays, percent: progress.toFixed(0) })}</p>
                         </div>
 
                         {/* Progress bar */}
@@ -136,13 +138,13 @@ const AdminStats = ({ user }: { user: User }) => {
                                 }
                                 <span className="text-white text-[10px] sm:text-[11px] font-medium">
                                     {remainDays <= 1
-                                        ? "🎉 To'lov bugun!"
+                                        ? t("statsSalaryToday")
                                         : remainDays <= 3
-                                            ? `⚡ ${remainDays} kun qoldi!`
-                                            : `${remainDays} kun qoldi`}
+                                            ? t("daysLeftShort", { count: remainDays })
+                                            : t("daysLeft", { count: remainDays })}
                                 </span>
                             </div>
-                            <span className="text-white text-[10px] sm:text-[11px]">Keyingisi: {nextPayDate}</span>
+                            <span className="text-white text-[10px] sm:text-[11px]">{t("nextPayment", { date: nextPayDate })}</span>
                         </div>
                     </div>
 
@@ -154,7 +156,7 @@ const AdminStats = ({ user }: { user: User }) => {
                                 <span className="text-xs font-black text-white">{progress.toFixed(0)}%</span>
                             </div>
                         </div>
-                        <span className="text-[10px] text-white font-bold">Tsikl</span>
+                        <span className="text-[10px] text-white font-bold">{t("cycle")}</span>
                     </div>
                 </div>
             </div>
@@ -166,6 +168,7 @@ const AdminStats = ({ user }: { user: User }) => {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export const UserStatsCard = memo(({ user }: UserStatsCardProps) => {
+    const { t } = useTranslation("users");
     const isAdmin = user.role === 'admin' || user.role === 'manager' || user.role === 'superadmin';
 
     if (!isAdmin) return null;
@@ -175,7 +178,7 @@ export const UserStatsCard = memo(({ user }: UserStatsCardProps) => {
             <div className="flex items-center gap-2.5 px-6 py-4 border-b border-slate-100 dark:border-white/5">
                 <div className="w-1 h-5 bg-main rounded-full" />
                 <h3 className="text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white">
-                    Moliyaviy Ko'rsatkichlar
+                    {t("financialStats")}
                 </h3>
             </div>
             <div className="p-5">

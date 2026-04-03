@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { ArrowDownRight, ArrowUpRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Pagination, PaymentRow } from "./patmentHistoryTable";
+import { useTranslation } from "react-i18next";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -134,6 +135,7 @@ const PaymentHistoryList = ({
   currentPage,
   withContainer = true,
 }: PaymentHistoryListProps) => {
+  const { t } = useTranslation("payments");
   const activePage = pagination?.page ?? currentPage ?? 1;
   const hasPagination = pagination && pagination.totalPages > 1;
 
@@ -172,7 +174,7 @@ const PaymentHistoryList = ({
       <div className="divide-y divide-gray-100 dark:divide-white/10">
         {rows.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-500 dark:text-white/50">
-            Payment history topilmadi
+            {t("paymentHistoryNotFound")}
           </div>
         ) : (
           rows.map((row) => <HistoryRow key={row.id} row={row} />)
@@ -182,14 +184,14 @@ const PaymentHistoryList = ({
       {hasPagination && onPageChange && (
         <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 dark:border-glass-border">
           <span className="text-xs text-gray-500 dark:text-white/40">
-            {activePage}-sahifa / {pagination.totalPages}
+            {t("pageLabel", { page: activePage, totalPages: pagination.totalPages })}
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => onPageChange(activePage - 1)}
               disabled={activePage <= 1}
               className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="Oldingi sahifa"
+              aria-label={t("previousPage")}
             >
               <ChevronLeft size={16} />
             </button>
@@ -198,7 +200,7 @@ const PaymentHistoryList = ({
               onClick={() => onPageChange(activePage + 1)}
               disabled={activePage >= pagination.totalPages}
               className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="Keyingi sahifa"
+              aria-label={t("nextPage")}
             >
               <ChevronRight size={16} />
             </button>

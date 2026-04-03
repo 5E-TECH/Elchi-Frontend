@@ -1,8 +1,9 @@
 import type { OrderStatus } from "../../../../entities/mails";
+import i18n from "../../../../i18n";
 
 // ─── Narx formati ─────────────────────────────────────────────────────────────
 export const formatPrice = (price: number): string =>
-    price.toLocaleString("uz-UZ") + " so'm";
+    `${price.toLocaleString(i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ")} ${i18n.t("orders:currency")}`;
 
 // ─── Sana formati ─────────────────────────────────────────────────────────────
 export const formatDate = (dateStr: string): string => {
@@ -29,12 +30,12 @@ export const getStatusStyle = (status: OrderStatus): string =>
 
 // ─── Status nomi ──────────────────────────────────────────────────────────────
 const STATUS_LABEL_MAP: Record<string, string> = {
-    new: "Yangi",
-    received: "Qabul qilindi",
-    delivered: "Yetkazildi",
-    cancelled: "Bekor qilindi",
-    "cancelled (sent)": "Rad etilgan",
+    new: "orders:statusNew",
+    received: "orders:statusReceived",
+    delivered: "mails:statusReceived",
+    cancelled: "orders:statusCancelled",
+    "cancelled (sent)": "mails:statusRejected",
 };
 
 export const getStatusLabel = (status: OrderStatus): string =>
-    STATUS_LABEL_MAP[status] ?? status;
+    i18n.t(STATUS_LABEL_MAP[status] ?? status);

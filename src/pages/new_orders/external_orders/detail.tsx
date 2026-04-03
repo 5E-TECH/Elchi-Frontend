@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -15,18 +16,19 @@ import {
 } from "../../../entities/integrations";
 
 const ExternalIntegrationDetail = () => {
+  const { t } = useTranslation("newOrders");
   const navigate = useNavigate();
   const { id } = useParams();
 
   const query = useGetIntegrationById(id);
   const integration = query.data?.data;
 
-  const title = integration?.name ?? "Integratsiya";
+  const title = integration?.name ?? t("integration");
   const isActive = Boolean(integration?.is_active);
   const synced = integration?.total_synced_orders ?? 0;
 
   const errorMessage = query.isError
-    ? getIntegrationErrorMessage(query.error) || "Integratsiya ma'lumotini yuklashda xatolik yuz berdi"
+    ? getIntegrationErrorMessage(query.error) || t("integrationLoadError")
     : "";
 
   return (
@@ -40,7 +42,7 @@ const ExternalIntegrationDetail = () => {
             className="h-9 px-3 rounded-xl flex items-center gap-2 text-xs font-bold bg-main-soft/30 dark:bg-white/5 border border-glass-border text-gray-600 dark:text-white/60 hover:border-main/40 hover:text-main transition-all"
           >
             <ArrowLeft size={14} />
-            Orqaga
+            {t("back")}
           </button>
 
           <div className="flex items-center gap-3 min-w-0">
@@ -54,12 +56,12 @@ const ExternalIntegrationDetail = () => {
                 </h2>
                 {query.isFetching && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-main/10 dark:bg-main/20 text-main font-bold animate-pulse tracking-wide">
-                    yangilanmoqda
+                    {t("refreshing")}
                   </span>
                 )}
               </div>
               <p className="text-[11px] text-gray-400 dark:text-white/40 m-0 mt-0.5 truncate">
-                {integration?.slug ? `Market: ${integration.slug}` : `ID: ${id ?? "—"}`}
+                {integration?.slug ? t("marketSlug", { slug: integration.slug }) : t("idLabel", { id: id ?? "—" })}
               </p>
             </div>
           </div>
@@ -69,7 +71,7 @@ const ExternalIntegrationDetail = () => {
           <button
             type="button"
             onClick={() => query.refetch()}
-            title="Yangilash"
+            title={t("refresh")}
             className="h-9 w-9 rounded-xl flex items-center justify-center bg-main-soft/30 dark:bg-white/5 border border-glass-border hover:border-main/40 hover:text-main dark:hover:border-main/40 text-gray-500 dark:text-white/40 transition-all"
           >
             <RefreshCw size={14} className={query.isFetching ? "animate-spin" : ""} />
@@ -81,10 +83,10 @@ const ExternalIntegrationDetail = () => {
                 ? "bg-success/10 text-success border-success/20"
                 : "bg-error/10 text-error border-error/20"
             }`}
-            title={isActive ? "Ulangan" : "Ulanmagan"}
+            title={isActive ? t("connected") : t("disconnected")}
           >
             {isActive ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-            {isActive ? "Ulangan" : "Ulanmagan"}
+            {isActive ? t("connected") : t("disconnected")}
             <span className="ml-1 text-[11px] opacity-80 tabular-nums">{synced}</span>
           </div>
         </div>
@@ -103,9 +105,9 @@ const ExternalIntegrationDetail = () => {
           <div className="w-12 h-12 rounded-2xl bg-success/10 border border-success/20 flex items-center justify-center">
             <QrCode size={22} className="text-success" />
           </div>
-          <p className="m-0 text-sm font-extrabold text-success">Scanner tayyor!</p>
+          <p className="m-0 text-sm font-extrabold text-success">{t("scannerReady")}</p>
           <p className="m-0 text-[11px] text-gray-500 dark:text-white/50">
-            QR kodini skanerlang — avtomatik qidiriladi
+            {t("scanQrAutoSearch")}
           </p>
         </div>
       </div>
@@ -118,10 +120,10 @@ const ExternalIntegrationDetail = () => {
               <Package size={22} className="text-gray-500 dark:text-white/50" />
             </div>
             <p className="m-0 text-sm font-extrabold text-gray-900 dark:text-white">
-              Skanerlangan buyurtmalar yo'q
+              {t("scannedOrdersEmpty")}
             </p>
             <p className="m-0 text-[11px] text-gray-400 dark:text-white/40">
-              QR kodni skanerlang — buyurtmalar avtomatik qo'shiladi
+              {t("scannedOrdersHint")}
             </p>
           </div>
         </div>

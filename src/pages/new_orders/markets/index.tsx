@@ -1,5 +1,6 @@
 import { memo, useMemo, useState, useEffect } from "react";
 import { ShoppingCart, Store, TrendingUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useOrders } from "../../../entities/orders";
@@ -112,6 +113,7 @@ const StatCard = ({ icon, label, value, iconCls }: {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const Markets = () => {
+  const { t } = useTranslation("newOrders");
   const { getTodayOrders } = useOrders();
   const navigate = useNavigate();
 
@@ -151,24 +153,24 @@ const Markets = () => {
     <div className="space-y-6">
       {/* Search */}
       <div>
-        <GlobalSearchInput searchKey="market_search" placeholder="Market nomi yoki telefon qidirish..." />
+        <GlobalSearchInput searchKey="market_search" placeholder={t("marketNameOrPhoneSearch")} />
       </div>
       <div className="flex items-center justify-between gap-4">
         <StatCard
           icon={<Store size={20} />}
-          label="Marketlar"
-          value={`${rows.length} ta`}
+          label={t("marketsCount")}
+          value={t("totalCount", { count: rows.length })}
           iconCls="bg-main/10 dark:bg-main/20 text-main"
         />
         <StatCard
           icon={<ShoppingCart size={20} />}
-          label="Jami buyurtmalar"
-          value={`${totalOrders} ta`}
+          label={t("totalOrders")}
+          value={t("totalCount", { count: totalOrders })}
           iconCls="bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500"
         />
         <StatCard
           icon={<TrendingUp size={20} />}
-          label="Umumiy summa"
+          label={t("totalAmount")}
           value={fmt(totalSum)}
           iconCls="bg-amber-500/10 dark:bg-amber-500/20 text-amber-500"
         />
@@ -178,11 +180,30 @@ const Markets = () => {
       <Table<TableRow>
         data={rows}
         loading={isLoading}
-        columns={columns}
+        columns={columns.map((column) => {
+          if (column.key === "name") return { ...column, label: t("marketName") };
+          if (column.key === "phone_number") return { ...column, label: t("phone") };
+          if (column.key === "orders_count") {
+            return {
+              ...column,
+              label: t("orders"),
+              render: (v: number) => (
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-md bg-main/10 dark:bg-main/20 flex items-center justify-center">
+                    <ShoppingCart size={12} className="text-main" />
+                  </span>
+                  <span className="font-bold text-gray-900 dark:text-white">{t("totalCount", { count: v })}</span>
+                </div>
+              ),
+            };
+          }
+          if (column.key === "total_price_sum") return { ...column, label: t("totalAmount") };
+          return column;
+        })}
         keyExtractor={(item) => item.market_id}
         onRowClick={(row) => navigate(`/new-orders/${row.market_id}`)}
         hoverable
-        emptyMessage="Bugun buyurtma yo'q"
+        emptyMessage={t("noOrdersToday")}
       />
     </div>
   );

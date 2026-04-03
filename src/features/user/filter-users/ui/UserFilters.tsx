@@ -7,8 +7,10 @@ import { resetFilters } from '../../../Select/model/FilterSlice';
 import { clearAllSearch } from '../../../search/model/searchSlice';
 import { useQueryParams } from '../../../../shared/lib/useQueryParams';
 import type { RootState } from '../../../../app/config/store';
+import { useTranslation } from 'react-i18next';
 
 export const UserFilters = memo(() => {
+    const { t } = useTranslation("users");
     const dispatch = useDispatch();
     const { clearAllParams } = useQueryParams();
 
@@ -17,18 +19,18 @@ export const UserFilters = memo(() => {
 
     // Role options - Backend API ga mos value lar
     const roleOptions = [
-        { value: 'admin', label: 'Admin' },
-        { value: 'manager', label: 'Ro\'yxatchi' },
-        { value: 'courier', label: 'Kuryer' },
-        { value: 'market', label: 'Market' },  // marketing emas, market
-        { value: 'operator', label: 'Operator' },
-        { value: 'superadmin', label: 'Super Admin' },
+        { value: 'admin', label: t('roleAdmin') },
+        { value: 'manager', label: t('roleManager') },
+        { value: 'courier', label: t('roleCourier') },
+        { value: 'market', label: t('roleMarket') },
+        { value: 'operator', label: t('roleOperator') },
+        { value: 'superadmin', label: t('roleSuperAdmin') },
     ];
 
     // Status options
     const statusOptions = [
-        { value: 'active', label: 'Faol' },
-        { value: 'inactive', label: 'Faol emas' },
+        { value: 'active', label: t('statusActive') },
+        { value: 'inactive', label: t('statusInactive') },
     ];
 
     // Filter qiymatlari o'zgarganda consolega chiqarish
@@ -62,7 +64,7 @@ export const UserFilters = memo(() => {
                 <div className="p-2 rounded-lg dark:text-primary">
                     <Filter size={20} />
                 </div>
-                Filtrlar
+                {t("title")}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
@@ -70,7 +72,7 @@ export const UserFilters = memo(() => {
                 <Select
                     name="role"
                     options={roleOptions}
-                    placeholder="Rolni tanlang"
+                    placeholder={t("rolePlaceholder")}
                     className="bg-primary dark:bg-maindark border-2 border-primary dark:border-primarydark"
                     useRedux={true}
                     reduxKey="userRole"
@@ -80,7 +82,7 @@ export const UserFilters = memo(() => {
                 <Select
                     name="status"
                     options={statusOptions}
-                    placeholder="Holatni tanlang"
+                    placeholder={t("statusSelect")}
                     className="bg-primary dark:bg-maindark border-2 border-primary dark:border-primarydark"
                     useRedux={true}
                     reduxKey="userStatus"
@@ -89,7 +91,7 @@ export const UserFilters = memo(() => {
                 {/* Global Search Input - Redux va URL params bilan */}
                 <GlobalSearchInput
                     searchKey="userSearch"
-                    placeholder="Foydalanuvchini qidirish..."
+                    placeholder={t("searchPlaceholder")}
                     className="xl:col-span-2"
                 />
             </div>
@@ -99,7 +101,7 @@ export const UserFilters = memo(() => {
                 className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-main dark:text-main dark:bg-primary hover:text-maindark dark:hover:text-maindark bg-transparent border-2 border-main dark:border-primary transition-all whitespace-nowrap active:scale-95 w-full xl:w-auto font-medium hover:shadow-md"
             >
                 <RefreshCw size={18} />
-                Tozalash
+                {t("clear")}
             </button>
         </div>
     );

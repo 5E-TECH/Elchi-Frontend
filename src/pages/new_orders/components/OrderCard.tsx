@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Phone, MapPin, SquarePen, Trash2, Package, CheckSquare, Square } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -29,21 +30,22 @@ export interface ApiOrder {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const statusConfig: Record<string, { label: string; cls: string; dot: string }> = {
-    new: { label: "Yangi", cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
-    processing: { label: "Jarayonda", cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
-    completed: { label: "Tayyor", cls: "bg-blue-500/10 text-blue-600 dark:text-blue-400", dot: "bg-blue-500" },
+const statusConfig: Record<string, { labelKey: string; cls: string; dot: string }> = {
+    new: { labelKey: "statusNew", cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
+    processing: { labelKey: "statusProcessing", cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
+    completed: { labelKey: "statusCompleted", cls: "bg-blue-500/10 text-blue-600 dark:text-blue-400", dot: "bg-blue-500" },
 };
 
-const deliverLabel: Record<string, string> = { center: "📦 Markazga", home: "🏠 Uyga", address: "📍 Manzilga" };
+const deliverLabel: Record<string, string> = { center: "deliverCenter", home: "deliverHome", address: "deliverAddress" };
 
 // ─── StatusBadge ──────────────────────────────────────────────────────────────
 const StatusBadge = memo(({ status }: { status: string }) => {
+    const { t } = useTranslation("newOrders");
     const c = statusConfig[status] ?? statusConfig.new;
     return (
         <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1.5 ${c.cls}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${c.dot} animate-pulse`} />
-            {c.label}
+            {t(c.labelKey)}
         </span>
     );
 });
@@ -53,6 +55,7 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
     order: ApiOrder; isSelected: boolean;
     onToggle: () => void; onEdit: (id: string) => void; onDelete: (id: string) => void;
 }) => {
+    const { t } = useTranslation("newOrders");
     const location = order.customer?.district?.name
         ? `${order.customer?.region?.name ?? ""} • ${order.customer.district.name}`
         : order.address ?? "—";
@@ -84,7 +87,7 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
                     <div className="flex items-center gap-2 flex-wrap">
                         <StatusBadge status={order.status} />
                         <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10">
-                            {deliverLabel[order.where_deliver] ?? order.where_deliver}
+                            {t(deliverLabel[order.where_deliver] ?? "deliverAddress")}
                         </span>
                         <span className="ml-auto text-[10px] text-gray-400 tabular-nums">{date}</span>
                     </div>
@@ -125,11 +128,11 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
                 {/* O'ng: narx + actions */}
                 <div className="flex flex-col items-end justify-between gap-3 pl-4 border-l border-gray-100 dark:border-white/6 shrink-0">
                     <div className="text-right">
-                        <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1">Jami</p>
+                        <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1">{t("total")}</p>
                         <p className="text-lg font-black text-gray-900 dark:text-white tabular-nums leading-tight">{fmt(order.total_price)}</p>
                         <p className="text-[10px] text-main font-bold">UZS</p>
                         {order.paid_amount > 0 && (
-                            <p className="text-[10px] text-emerald-500 font-semibold mt-1">✓ {fmt(order.paid_amount)} to'langan</p>
+                            <p className="text-[10px] text-emerald-500 font-semibold mt-1">✓ {fmt(order.paid_amount)} {t("paid").toLowerCase()}</p>
                         )}
                     </div>
                     <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-xl">

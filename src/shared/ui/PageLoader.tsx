@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import logo from '../assets/logoo.png';
 
 /**
@@ -6,6 +7,7 @@ import logo from '../assets/logoo.png';
  * Premium, 3D-effect, high-fidelity loading animation.
  */
 const PageLoader = () => {
+    const { t } = useTranslation(["common", "mails"]);
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -22,7 +24,7 @@ const PageLoader = () => {
                 ${isVisible ? 'animate-loader-in' : 'opacity-0'}
             `}
             role="status"
-            aria-label="Yuklanmoqda"
+            aria-label={t("common:loading")}
         >
             {/* ── Background Aurora Effects ── */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none animate-aurora">
@@ -133,7 +135,7 @@ const PageLoader = () => {
                         className="text-xs font-medium tracking-[0.3em] uppercase opacity-40"
                         style={{ color: 'var(--color-primary)' }}
                     >
-                        Pochta Xizmati
+                        {t("mails:title")}
                     </p>
                     <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-white/20" />
                 </div>

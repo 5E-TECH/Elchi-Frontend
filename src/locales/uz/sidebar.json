@@ -1,0 +1,23 @@
+{
+  "dashboard": "Dashboard",
+  "orders": "Buyurtmalar",
+  "newOrders": "Yangi buyurtmalar",
+  "mails": "Pochta",
+  "products": "Mahsulotlar",
+  "users": "Foydalanuvchilar",
+  "payments": "To'lovlar",
+  "balance": "Balans",
+  "regions": "Hududlar",
+  "logs": "Loglar",
+  "menu": "Menu",
+  "mainMenus": "Asosiy Menyular",
+  "settings": "Sozlamalar",
+  "notifications": "Bildirishnomalar",
+  "logout": "Chiqish",
+  "collapse": "Yashirish",
+  "expand": "Ko'rsatish",
+  "darkMode": "Tungi rejim",
+  "lightMode": "Kunduzgi rejim",
+  "profile": "Profil",
+  "search": "Qidiruv..."
+}

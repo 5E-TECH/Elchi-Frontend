@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle, Ban, MapPin } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   useMails,
   useMailDetail,
@@ -44,25 +45,30 @@ const MailDetailSkeleton = memo(() => (
 MailDetailSkeleton.displayName = "MailDetailSkeleton";
 
 // ─── Xatolik holati ───────────────────────────────────────────────────────────
-const ErrorState = memo(() => (
-  <div className="flex flex-col items-center justify-center py-20 gap-4">
-    <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center">
-      <AlertTriangle size={32} className="text-red-400" />
+const ErrorState = memo(() => {
+  const { t } = useTranslation("mails");
+
+  return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center">
+        <AlertTriangle size={32} className="text-red-400" />
+      </div>
+      <div className="text-center">
+        <p className="text-gray-700 dark:text-white font-semibold">
+          {t("loadError")}
+        </p>
+        <p className="text-gray-400 dark:text-white/60 text-sm mt-1">
+          {t("refreshHint")}
+        </p>
+      </div>
     </div>
-    <div className="text-center">
-      <p className="text-gray-700 dark:text-white font-semibold">
-        Ma'lumotlarni yuklab bo'lmadi
-      </p>
-      <p className="text-gray-400 dark:text-white/60 text-sm mt-1">
-        Iltimos, sahifani yangilang
-      </p>
-    </div>
-  </div>
-));
+  );
+});
 ErrorState.displayName = "ErrorState";
 
 // ─── Asosiy Page ──────────────────────────────────────────────────────────────
 const MailDetailPage = () => {
+  const { t } = useTranslation("mails");
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -158,8 +164,10 @@ const MailDetailPage = () => {
     () =>
       orders[0]?.district?.region?.name ??
       orders[0]?.region?.name ??
-      (isRefusedDetail ? `Rad etilgan pochta #${postId}` : `Pochta #${postId}`),
-    [orders, postId, isRefusedDetail],
+      (isRefusedDetail
+        ? t("refusedMailNumber", { id: postId })
+        : t("mailNumberWithId", { id: postId })),
+    [orders, postId, isRefusedDetail, t],
   );
 
   // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
@@ -184,11 +192,11 @@ const MailDetailPage = () => {
           payload: { order_ids: Array.from(selectedIds) },
         }),
       successMessage: isRefusedDetail
-        ? "Rad etilgan pochta muvaffaqiyatli qabul qilindi."
-        : "Pochta muvaffaqiyatli qabul qilindi.",
+        ? t("receiveRefusedSuccess")
+        : t("receiveSuccess"),
       errorMessage: isRefusedDetail
-        ? "Rad etilgan pochtani qabul qilishda xatolik yuz berdi."
-        : "Pochtani qabul qilishda xatolik yuz berdi.",
+        ? t("receiveRefusedError")
+        : t("receiveError"),
       onSuccess: () => {
         clearSelection();
         navigate("/mails");
@@ -229,7 +237,7 @@ const MailDetailPage = () => {
         if (couriers.length === 0) {
           apiRequest({
             request: () => Promise.reject(new Error("no_courier")),
-            errorMessage: "Bu viloyatda aktiv courier mavjud emas.",
+            errorMessage: t("noActiveCourierInRegion"),
             successMessage: "",
           });
           return;
@@ -244,8 +252,8 @@ const MailDetailPage = () => {
                 postId,
                 payload: { orderIds: Array.from(selectedIds), courierId: courier.id },
               }),
-            successMessage: `Pochta ${courier.name} ga muvaffaqiyatli jo'natildi.`,
-            errorMessage: "Pochtani jo'natishda xatolik yuz berdi.",
+            successMessage: t("sendCourierSuccess", { name: courier.name }),
+            errorMessage: t("sendError"),
             onSuccess: () => {
               void handleSendSuccess();
             },
@@ -258,7 +266,7 @@ const MailDetailPage = () => {
       .catch(() => {
         apiRequest({
           request: () => Promise.reject(new Error("couriers_fetch_failed")),
-          errorMessage: "Courierlarni yuklab bo'lmadi.",
+          errorMessage: t("couriersLoadError"),
           successMessage: "",
         });
       })
@@ -318,13 +326,13 @@ const MailDetailPage = () => {
       <div className="flex items-center justify-between gap-4">
         <div className="max-w-100">
           <HeaderName
-            name={`${regionName} Buyurtmalari`}
+            name={t("regionOrdersTitle", { region: regionName })}
             description={
               isOldDetail
-                ? `${orders.length} ta eski buyurtma mavjud`
+                ? t("oldOrdersCount", { count: orders.length })
                 : isRefusedDetail
-                ? `${orders.length} ta rad etilgan buyurtma mavjud`
-                : `${orders.length} ta buyurtma mavjud`
+                ? t("refusedOrdersCount", { count: orders.length })
+                : t("ordersCount", { count: orders.length })
             }
             icon={
               isRefusedDetail ? (

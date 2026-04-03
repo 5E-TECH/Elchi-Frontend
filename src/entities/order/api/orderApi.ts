@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
-import type { CreateOrderRequest, OrderListParams, OrderListResponse } from "../types/order";
+import type {
+    CreateOrderRequest,
+    ExternalOrdersParams,
+    ExternalOrdersResponse,
+    OrderListParams,
+    OrderListResponse,
+} from "../types/order";
 
 export const ORDER_KEY = "orders";
 
@@ -21,5 +27,13 @@ export const useOrders = () => {
             queryFn: () => api.get(API_ENDPOINTS.ORDERS.BASE, { params }).then((res) => res.data),
         });
 
-    return { createOrder, getOrders };
+    const getExternalOrders = (params?: ExternalOrdersParams) =>
+        useQuery<ExternalOrdersResponse>({
+            queryKey: [ORDER_KEY, "external", params],
+            queryFn: () =>
+                api.get(API_ENDPOINTS.ORDERS.EXTERNAL, { params }).then((res) => res.data),
+            placeholderData: (prev) => prev,
+        });
+
+    return { createOrder, getOrders, getExternalOrders };
 };

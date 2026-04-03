@@ -1,0 +1,23 @@
+{
+  "dashboard": "Дашборд",
+  "orders": "Заказы",
+  "newOrders": "Новые заказы",
+  "mails": "Почта",
+  "products": "Товары",
+  "users": "Пользователи",
+  "payments": "Платежи",
+  "balance": "Баланс",
+  "regions": "Регионы",
+  "logs": "Логи",
+  "menu": "Меню",
+  "mainMenus": "Основные меню",
+  "settings": "Настройки",
+  "notifications": "Уведомления",
+  "logout": "Выйти",
+  "collapse": "Скрыть",
+  "expand": "Показать",
+  "darkMode": "Ночной режим",
+  "lightMode": "Дневной режим",
+  "profile": "Профиль",
+  "search": "Поиск..."
+}

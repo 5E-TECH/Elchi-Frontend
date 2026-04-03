@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import { useProducts } from "../../../../entities/product";
 import type { DeliveryType } from "../../../../entities/order/types/order";
@@ -85,6 +86,7 @@ const SectionHeader = ({
 );
 
 const Step2Combined = () => {
+  const { t } = useTranslation(["orders", "common"]);
   const { control: searchControl, watch: watchSearch } = useForm({
     defaultValues: { productSearch: "" },
   });
@@ -205,8 +207,8 @@ const Step2Combined = () => {
       <div className="flex flex-col gap-4 sm:gap-5 bg-primary dark:bg-primarydark/30 rounded-2xl border border-gray-200 dark:border-primarydark p-3 sm:p-5">
         <SectionHeader
           icon={<User size={18} className="text-main" />}
-          title="Mijoz ma'lumotlari"
-          sub="Yetkazib berish uchun kerakli ma'lumotlarni kiriting"
+          title={t("customerInfo")}
+          sub={t("customerInfoSubtitle")}
         />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
@@ -215,7 +217,7 @@ const Step2Combined = () => {
             name="customer.phone"
             render={({ field }) => (
               <Field
-                label="Telefon"
+                label={t("phone")}
                 required
                 icon={<Phone size={12} />}
                 error={errors.customer?.phone?.message}
@@ -245,7 +247,7 @@ const Step2Combined = () => {
             name="customer.extra_phone"
             render={({ field }) => (
               <Field
-                label="Qo'shimcha raqam"
+                label={t("additionalPhone")}
                 icon={<Phone size={12} />}
                 error={errors.customer?.extra_phone?.message}
               >
@@ -274,7 +276,7 @@ const Step2Combined = () => {
             name="customer.name"
             render={({ field }) => (
               <Field
-                label="Ism"
+                label={t("customerName")}
                 required
                 icon={<User size={12} />}
                 error={errors.customer?.name?.message}
@@ -282,7 +284,7 @@ const Step2Combined = () => {
                 <input
                   {...field}
                   type="text"
-                  placeholder="Ism kiriting"
+                  placeholder={t("enterName")}
                   className={getFieldClassName(inputCls, !!errors.customer?.name?.message)}
                 />
               </Field>
@@ -294,7 +296,7 @@ const Step2Combined = () => {
             name="customer.region_id"
             render={({ field }) => (
               <Field
-                label="Viloyat"
+                label={t("filterRegion")}
                 required
                 icon={<MapPin size={12} />}
                 error={errors.customer?.region_id?.message}
@@ -312,7 +314,7 @@ const Step2Combined = () => {
                     )}
                   >
                     <option value="">
-                      {regLoading ? "Yuklanmoqda..." : "Viloyat tanlang"}
+                      {regLoading ? t("loading", { ns: "common" }) : t("selectRegion")}
                     </option>
                     {regionList.map((region: any) => (
                       <option key={region.id} value={region.id}>
@@ -330,7 +332,7 @@ const Step2Combined = () => {
             name="customer.district_id"
             render={({ field }) => (
               <Field
-                label="Tuman"
+                label={t("district")}
                 required
                 icon={<MapPin size={12} />}
                 error={errors.customer?.district_id?.message}
@@ -349,10 +351,10 @@ const Step2Combined = () => {
                   >
                     <option value="">
                       {!selectedRegionId
-                        ? "Avval viloyat tanlang"
+                        ? t("selectRegionFirst")
                         : distLoading
-                          ? "Yuklanmoqda..."
-                          : "Tuman tanlang"}
+                          ? t("loading", { ns: "common" })
+                          : t("selectDistrict")}
                     </option>
                     {districtList.map((district: any) => (
                       <option key={district.id} value={district.id}>
@@ -370,7 +372,7 @@ const Step2Combined = () => {
             name="customer.address"
             render={({ field }) => (
               <Field
-                label="Manzil"
+                label={t("address")}
                 icon={<Home size={12} />}
                 error={errors.customer?.address?.message}
                 wide
@@ -378,7 +380,7 @@ const Step2Combined = () => {
                 <textarea
                   {...field}
                   rows={2}
-                  placeholder="To'liq manzil kiriting..."
+                  placeholder={t("enterFullAddress")}
                   className={getFieldClassName(
                     `${inputCls} resize-none`,
                     !!errors.customer?.address?.message,
@@ -393,14 +395,14 @@ const Step2Combined = () => {
       <div className="flex flex-col gap-4 sm:gap-5 bg-primary dark:bg-primarydark/30 rounded-2xl border border-gray-200 dark:border-primarydark p-3 sm:p-5">
         <SectionHeader
           icon={<ShoppingBag size={18} className="text-main" />}
-          title="Buyurtma tafsilotlari"
-          sub={`${details.items.length} ta mahsulot tanlangan`}
+          title={t("details")}
+          sub={t("selectedProductsSummary", { count: details.items.length })}
         />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Mahsulot qo'shish
+              {t("addProduct")}
             </p>
             <Controller
               control={searchControl}
@@ -411,7 +413,7 @@ const Step2Combined = () => {
                   value={field.value}
                   onBlur={field.onBlur}
                   onValueChange={field.onChange}
-                  placeholder="Qidiring..."
+                  placeholder={t("searchProduct")}
                   className="w-full"
                   inputClassName={`${inputCls} py-2 pl-11 shadow-none focus:shadow-none`}
                   iconClassName="text-gray-400 group-focus-within:text-main"
@@ -430,7 +432,7 @@ const Step2Combined = () => {
               ) : filteredProducts.length === 0 ? (
                 <div className="py-6 flex flex-col items-center gap-1.5 text-gray-400">
                   <ShoppingBag size={26} strokeWidth={1} />
-                  <p className="text-xs">Topilmadi</p>
+                  <p className="text-xs">{t("notFound", { ns: "common" })}</p>
                 </div>
               ) : (
                 filteredProducts.map((product: any) => {
@@ -484,13 +486,11 @@ const Step2Combined = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Tanlangan
-            </p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t("selectedCount")}</p>
             {details.items.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center py-8 gap-2 text-gray-400 border-2 border-dashed border-gray-200 dark:border-primarydark rounded-xl">
                 <ShoppingBag size={26} strokeWidth={1} />
-                <p className="text-xs text-center">Mahsulot tanlang</p>
+                <p className="text-xs text-center">{t("selectProductShort")}</p>
               </div>
             ) : (
               <div className="flex flex-col gap-1.5 max-h-60 sm:max-h-50 overflow-y-auto custom-scrollbar pr-0.5">
@@ -555,13 +555,13 @@ const Step2Combined = () => {
             render={({ field }) => (
               <div className="sm:col-span-2 flex flex-col gap-2">
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Yetkazib berish
+                  {t("deliveryType")}
                 </p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
                   {(
                     [
-                      { value: "center" as DeliveryType, label: "Markaz", icon: Building2 },
-                      { value: "address" as DeliveryType, label: "Uy", icon: Home },
+                      { value: "center" as DeliveryType, label: t("deliveryCenter"), icon: Building2 },
+                      { value: "address" as DeliveryType, label: t("deliveryHome"), icon: Home },
                     ] as const
                   ).map(({ value, label, icon: Icon }) => (
                     <button
@@ -589,7 +589,7 @@ const Step2Combined = () => {
             control={control}
             name="details.total_price"
             render={({ field }) => (
-              <Field label="Umumiy summa" required error={errors.details?.total_price?.message}>
+              <Field label={t("totalPrice")} required error={errors.details?.total_price?.message}>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -612,11 +612,11 @@ const Step2Combined = () => {
             control={control}
             name="details.operator"
             render={({ field }) => (
-              <Field label="Operator" icon={<User size={12} />}>
+              <Field label={t("operator")} icon={<User size={12} />}>
                 <input
                   {...field}
                   type="text"
-                  placeholder="Operator ismi"
+                  placeholder={t("operatorPlaceholder")}
                   className={getFieldClassName(inputCls, !!errors.details?.operator?.message)}
                 />
               </Field>
@@ -627,11 +627,11 @@ const Step2Combined = () => {
             control={control}
             name="details.comment"
             render={({ field }) => (
-              <Field label="Izoh" wide>
+              <Field label={t("note")} wide>
                 <textarea
                   {...field}
                   rows={2}
-                  placeholder="Izoh..."
+                  placeholder={t("notePlaceholder")}
                   className={getFieldClassName(
                     `${inputCls} resize-none`,
                     !!errors.details?.comment?.message,

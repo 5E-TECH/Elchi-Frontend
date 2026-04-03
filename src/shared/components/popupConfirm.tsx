@@ -1,4 +1,5 @@
 import { memo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import Popup from '../ui/Popup';
 
@@ -18,13 +19,14 @@ const PopupConfirm = ({
   isOpen,
   onClose,
   onConfirm,
-  title = "Tasdiqlang",
+  title,
   message,
-  confirmLabel = "Ha, o'chirish",
-  cancelLabel = "Bekor qilish",
+  confirmLabel,
+  cancelLabel,
   isLoading = false,
   variant = 'danger',
 }: PopupConfirmProps) => {
+  const { t } = useTranslation("common");
   const iconBg = variant === 'danger'
     ? 'bg-red-100 dark:bg-red-500/10'
     : 'bg-amber-100 dark:bg-amber-500/10';
@@ -35,6 +37,10 @@ const PopupConfirm = ({
     ? 'bg-red-500 hover:bg-red-600'
     : 'bg-amber-500 hover:bg-amber-600';
 
+  const resolvedTitle = title ?? t("confirm");
+  const resolvedConfirmLabel = confirmLabel ?? t("delete");
+  const resolvedCancelLabel = cancelLabel ?? t("cancel");
+
   return (
     <Popup isShow={isOpen} onClose={onClose}>
       <div className="bg-white dark:bg-maindark w-[92vw] max-w-md rounded-2xl p-8 shadow-2xl text-center">
@@ -43,7 +49,7 @@ const PopupConfirm = ({
         </div>
 
         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-          {title}
+          {resolvedTitle}
         </h3>
 
         {message && (
@@ -59,7 +65,7 @@ const PopupConfirm = ({
             disabled={isLoading}
             className="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             type="button"
@@ -70,12 +76,12 @@ const PopupConfirm = ({
             {isLoading ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                O'chirilmoqda...
+                {t("submitting")}
               </>
             ) : (
               <>
                 <Trash2 size={16} />
-                {confirmLabel}
+                {resolvedConfirmLabel}
               </>
             )}
           </button>

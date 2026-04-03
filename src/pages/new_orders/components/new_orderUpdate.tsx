@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   MoveLeft,
   Package,
@@ -88,26 +89,26 @@ interface OrderForm {
 const fmt = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
 
 const DELIVER_LABELS: Record<string, string> = {
-  center: "Markazga",
-  address: "Manzilga",
+  center: "deliverCenter",
+  address: "deliverAddress",
 };
 
 const DELIVER_OPTIONS = [
-  { value: "center", label: "Markazga" },
-  { value: "address", label: "Manzilga" },
+  { value: "center", labelKey: "deliverCenter" },
+  { value: "address", labelKey: "deliverAddress" },
 ] as const;
 
-const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
+const STATUS_CONFIG: Record<string, { labelKey: string; cls: string }> = {
   new: {
-    label: "New",
+    labelKey: "statusNew",
     cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
   },
   processing: {
-    label: "Jarayonda",
+    labelKey: "statusProcessing",
     cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
   },
   completed: {
-    label: "Tayyor",
+    labelKey: "statusCompleted",
     cls: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
   },
 };
@@ -118,9 +119,9 @@ const ICON_CLS =
   "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 pointer-events-none";
 
 const PAYMENT_ROWS = (order: OrderDetail) => [
-  { label: "Total", value: fmt(order.total_price), cls: "text-gray-900 dark:text-white font-bold" },
-  { label: "To be paid", value: fmt(order.to_be_paid), cls: "text-amber-500 font-bold" },
-  { label: "Paid", value: fmt(order.paid_amount), cls: "text-emerald-500 font-bold" },
+  { labelKey: "total", value: fmt(order.total_price), cls: "text-gray-900 dark:text-white font-bold" },
+  { labelKey: "toBePaid", value: fmt(order.to_be_paid), cls: "text-amber-500 font-bold" },
+  { labelKey: "paid", value: fmt(order.paid_amount), cls: "text-emerald-500 font-bold" },
 ];
 
 // ─── Pure UI Subcomponents (memo ile — props o'zgarmasa re-render bo'lmaydi) ──
@@ -172,14 +173,18 @@ const InfoRow = memo(({
   </div>
 ));
 
-const EditBtn = memo(({ onClick }: { onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 text-xs font-semibold transition-colors"
-  >
-    <Edit2 size={12} /> Edit
-  </button>
-));
+const EditBtn = memo(({ onClick }: { onClick: () => void }) => {
+  const { t } = useTranslation("common");
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 text-xs font-semibold transition-colors"
+    >
+      <Edit2 size={12} /> {t("edit")}
+    </button>
+  );
+});
 
 const Skeleton = memo(() => (
   <div className="animate-pulse space-y-4">
@@ -251,6 +256,7 @@ const InputField = memo(({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderUpdate = () => {
+  const { t } = useTranslation("newOrders");
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const queryClient = useQueryClient();
@@ -433,13 +439,13 @@ const NewOrderUpdate = () => {
         <div onClick={handleNavigateBack} className="cursor-pointer">
           <HeaderName
             icon={<MoveLeft />}
-            name={order?.customer?.name ?? "Buyurtma"}
-            description="Order details"
+            name={order?.customer?.name ?? t("orders")}
+            description={t("viewOrderDetails")}
           />
         </div>
         {statusCfg && (
           <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg.cls}`}>
-            {statusCfg.label}
+            {t(statusCfg.labelKey)}
           </span>
         )}
       </div>
@@ -451,7 +457,7 @@ const NewOrderUpdate = () => {
         </div>
       ) : !order ? (
         <div className="h-64 flex items-center justify-center text-gray-400 dark:text-white/30">
-          <p className="font-bold uppercase tracking-widest text-sm">Ma'lumot topilmadi</p>
+          <p className="font-bold uppercase tracking-widest text-sm">{t("notFound")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -462,13 +468,13 @@ const NewOrderUpdate = () => {
               <div className="p-5 space-y-4">
                 <SectionHead
                   icon={<ShoppingBag size={16} />}
-                  title="Order products"
-                  sub={`${order.items.length} ta mahsulot`}
+                  title={t("orderProducts")}
+                  sub={t("productsCount", { count: order.items.length })}
                   action={<EditBtn onClick={handleOpenOrderPopup} />}
                 />
                 <div className="grid grid-cols-[1fr_auto] text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/30 border-b border-gray-100 dark:border-white/6 pb-2">
-                  <span>PRODUCT</span>
-                  <span>QUANTITY</span>
+                  <span>{t("product")}</span>
+                  <span>{t("quantity")}</span>
                 </div>
                 <div className="space-y-2">
                   {order.items.map((item) => (
@@ -491,7 +497,7 @@ const NewOrderUpdate = () => {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {item.product?.name ?? `Mahsulot #${item.id}`}
+                            {item.product?.name ?? t("productFallback", { id: item.id })}
                           </p>
                           <p className="text-xs text-gray-400 dark:text-white/40">ID: {item.id}</p>
                         </div>
@@ -503,9 +509,9 @@ const NewOrderUpdate = () => {
                   ))}
                 </div>
                 <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/6">
-                  <span className="text-xs text-gray-400 dark:text-white/40 font-medium">Yetkazish:</span>
+                  <span className="text-xs text-gray-400 dark:text-white/40 font-medium">{t("deliveryType")}:</span>
                   <span className="text-xs font-bold text-main">
-                    {DELIVER_LABELS[order.where_deliver] ?? order.where_deliver}
+                    {t(DELIVER_LABELS[order.where_deliver] ?? "deliverAddress")}
                   </span>
                 </div>
               </div>
@@ -517,19 +523,19 @@ const NewOrderUpdate = () => {
                 <div className="mb-4">
                   <SectionHead
                     icon={<CreditCard size={16} />}
-                    title="To'lov"
-                    sub="Summa tafsilotlari"
+                    title={t("payment")}
+                    sub={t("paymentSubtitle")}
                     iconCls="bg-emerald-500/15 text-emerald-500"
                   />
                 </div>
-                {PAYMENT_ROWS(order).map(({ label, value, cls }) => (
+                {PAYMENT_ROWS(order).map(({ labelKey, value, cls }) => (
                   <div
-                    key={label}
+                    key={labelKey}
                     className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/6 last:border-0"
                   >
                     <div className="flex items-center gap-2">
                       <Banknote size={14} className="text-gray-400 dark:text-white/30" />
-                      <span className="text-sm text-gray-500 dark:text-white/60">{label}</span>
+                      <span className="text-sm text-gray-500 dark:text-white/60">{t(labelKey)}</span>
                     </div>
                     <span className={`text-sm tabular-nums ${cls}`}>{value}</span>
                   </div>
@@ -545,8 +551,8 @@ const NewOrderUpdate = () => {
               <div className="p-5 space-y-4">
                 <SectionHead
                   icon={<User size={16} />}
-                  title="Customer details"
-                  sub="Mijoz haqida ma'lumot"
+                  title={t("customerDetails")}
+                  sub={t("customerSubtitle")}
                   iconCls="bg-blue-500/15 text-blue-500"
                   action={
                     <button
@@ -569,17 +575,17 @@ const NewOrderUpdate = () => {
                       {order.customer.name}
                     </p>
                     <p className="text-xs text-gray-400 dark:text-white/40">
-                      Profilni ko'rish uchun bosing
+                      {t("customerProfileHint")}
                     </p>
                   </div>
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1">
-                    CONTACT INFORMATION
+                    {t("contactInformation")}
                   </p>
                   <InfoRow
                     icon={<Phone size={15} />}
-                    label="PHONE"
+                    label={t("phone")}
                     value={order.customer.phone_number}
                     iconCls="bg-emerald-500/15 text-emerald-500"
                   />
@@ -592,27 +598,27 @@ const NewOrderUpdate = () => {
               <div className="p-5 space-y-3">
                 <SectionHead
                   icon={<MapPin size={16} />}
-                  title="Address"
-                  sub="Yetkazib berish manzili"
+                  title={t("addressTitle")}
+                  sub={t("addressSubtitle")}
                   iconCls="bg-amber-500/15 text-amber-500"
                   action={<EditBtn onClick={handleOpenAddressPopup} />}
                 />
                 <div>
                   <InfoRow
                     icon={<Map size={15} />}
-                    label="Region"
+                    label={t("region")}
                     value={regionName}
                     iconCls="bg-blue-500/15 text-blue-500"
                   />
                   <InfoRow
                     icon={<Building size={15} />}
-                    label="District"
+                    label={t("district")}
                     value={districtName}
                     iconCls="bg-purple-500/15 text-purple-500"
                   />
                   <InfoRow
                     icon={<Home size={15} />}
-                    label="Address"
+                    label={t("address")}
                     value={addressText}
                     iconCls="bg-emerald-500/15 text-emerald-500"
                   />
@@ -629,31 +635,31 @@ const NewOrderUpdate = () => {
         onClose={handleCloseAddressPopup}
         onSave={handleSaveAddress}
         isLoading={updateNewOrder.isPending}
-        title="Manzilni tahrirlash"
+        title={t("editAddress")}
         icon={<MapPin size={20} />}
       >
         <SelectField
-          label="Viloyat"
+          label={t("region")}
           icon={Map}
           value={addressForm.region_id}
           onChange={handleRegionChange}
-          placeholder="Viloyatni tanlang"
+          placeholder={t("selectRegion")}
           options={regions}
         />
         <SelectField
-          label="Tuman"
+          label={t("district")}
           icon={Building}
           value={addressForm.district_id}
           onChange={handleDistrictChange}
-          placeholder={addressForm.region_id ? "Tumanni tanlang" : "Avval viloyat tanlang"}
+          placeholder={addressForm.region_id ? t("selectDistrict") : t("selectRegionFirst")}
           options={districts}
         />
         <InputField
-          label="To'liq manzil"
+          label={t("fullAddress")}
           icon={Home}
           value={addressForm.address}
           onChange={handleAddressChange}
-          placeholder="Manzilni kiriting"
+          placeholder={t("enterAddress")}
         />
       </UpdatePopup>
 
@@ -663,22 +669,22 @@ const NewOrderUpdate = () => {
         onClose={handleCloseCustomerPopup}
         onSave={handleSaveCustomer}
         isLoading={updateUser.isPending}
-        title="Edit customer information"
+        title={t("editCustomer")}
         icon={<User size={20} />}
       >
         <InputField
-          label="Ism"
+          label={t("name")}
           icon={User}
           value={customerForm.name}
           onChange={handleCustomerNameChange}
-          placeholder="Mijoz ismi"
+          placeholder={t("customerNamePlaceholder")}
         />
         <InputField
-          label="Telefon raqam"
+          label={t("phone")}
           icon={Phone}
           value={customerForm.phone}
           onChange={handleCustomerPhoneChange}
-          placeholder="+998 XX XXX XX XX"
+          placeholder={t("phonePlaceholder")}
         />
       </UpdatePopup>
 
@@ -688,7 +694,7 @@ const NewOrderUpdate = () => {
         onClose={handleCloseOrderPopup}
         onSave={handleSaveOrder}
         isLoading={updateNewOrder.isPending}
-        title="Edit order"
+        title={t("editOrder")}
         icon={<ShoppingBag size={20} />}
       >
         {/* Mahsulotlar */}
@@ -705,26 +711,26 @@ const NewOrderUpdate = () => {
 
         {/* Yetkazish turi */}
         <SelectField
-          label="Yetkazish turi"
+          label={t("deliveryType")}
           icon={Truck}
           value={orderForm.where_deliver}
           onChange={handleOrderDeliverChange}
-          placeholder="Turni tanlang"
-          options={DELIVER_OPTIONS}
+          placeholder={t("selectType")}
+          options={DELIVER_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
         />
 
         {/* Total amount */}
         <InputField
-          label="Total amount"
+          label={t("totalAmount")}
           icon={Banknote}
           value={orderForm.total_price}
           onChange={handleOrderPriceChange}
-          placeholder="Narxni kiriting"
+          placeholder={t("enterPrice")}
         />
 
         {/* Izoh */}
         <div className="space-y-1.5">
-          <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">Izoh</label>
+          <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">{t("note")}</label>
           <div className="relative">
             <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white/40 pointer-events-none">
               <MessageSquare size={16} />
@@ -732,7 +738,7 @@ const NewOrderUpdate = () => {
             <textarea
               value={orderForm.comment}
               onChange={handleOrderCommentChange}
-              placeholder="Izoh kiriting..."
+              placeholder={t("enterNote")}
               rows={4}
               className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all resize-none placeholder:text-gray-400 dark:placeholder:text-white/25"
             />

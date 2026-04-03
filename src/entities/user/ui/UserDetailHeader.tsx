@@ -5,6 +5,7 @@ import {
     CheckCircle2, XCircle, MinusCircle,
 } from 'lucide-react';
 import type { User } from '../types/user';
+import { useTranslation } from 'react-i18next';
 
 interface UserDetailHeaderProps {
     user: User;
@@ -50,6 +51,7 @@ const formatDate = (d: string) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
+    const { t } = useTranslation("users");
     const rc = roleConfig[user.role] ?? roleConfig.admin;
     const sc = statusConfig[user.status];
     const Icon = rc.icon;
@@ -74,7 +76,16 @@ export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
                 {/* Rol pill */}
                 <div className="absolute top-3 left-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1">
                     <Icon size={12} className="text-white" />
-                    <span className="text-white text-[11px] font-semibold">{rc.label}</span>
+                    <span className="text-white text-[11px] font-semibold">
+                      {user.role === "admin" ? t("roleAdmin")
+                        : user.role === "manager" ? t("roleManager")
+                        : user.role === "courier" ? t("roleCourier")
+                        : user.role === "market" ? t("roleMarket")
+                        : user.role === "marketing" ? t("roleMarket")
+                        : user.role === "operator" ? t("roleOperator")
+                        : user.role === "superadmin" ? t("roleSuperAdmin")
+                        : t("roleCustomer")}
+                    </span>
                 </div>
             </div>
 
@@ -104,7 +115,9 @@ export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
                         <span className={`relative inline-flex rounded-full h-2 w-2 ${sc.dot}`} />
                     </span>
                     <StatusIcon size={13} className={sc.text} />
-                    <span className={`text-xs font-bold ${sc.text}`}>{sc.label}</span>
+                    <span className={`text-xs font-bold ${sc.text}`}>
+                      {user.status === "active" ? t("statusActive") : user.status === "inactive" ? t("statusInactive") : t("statusBlocked")}
+                    </span>
                 </div>
             </div>
 
@@ -116,7 +129,7 @@ export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
                         <Phone size={13} className="text-blue-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 leading-none mb-0.5">Telefon</p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 leading-none mb-0.5">{t("phoneNumberLabel")}</p>
                         <p className="text-xs font-semibold text-slate-700 dark:text-white truncate">{user.phone_number}</p>
                     </div>
                 </div>
@@ -127,7 +140,7 @@ export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
                         <Calendar size={13} className="text-violet-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 leading-none mb-0.5">Qo'shilgan</p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 leading-none mb-0.5">{t("registeredAt")}</p>
                         <p className="text-xs font-semibold text-slate-700 dark:text-white">{formatDate(user.createdAt)}</p>
                     </div>
                 </div>
@@ -138,7 +151,7 @@ export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
                         <Clock size={13} className="text-slate-500 dark:text-white/40" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 leading-none mb-0.5">Yangilangan</p>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 leading-none mb-0.5">{t("updatedAt")}</p>
                         <p className="text-xs font-semibold text-slate-700 dark:text-white">{formatDate(user.updatedAt)}</p>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { ShoppingBag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { PostOrder } from "../../../../entities/mails";
 import Checkbox from "./Checkbox";
 import OrderRow from "./OrderRow";
@@ -22,50 +23,62 @@ export const HISTORY_TABLE_COLS =
     "grid-cols-[minmax(170px,1.2fr)_minmax(170px,1.1fr)_minmax(190px,1.2fr)_minmax(130px,0.9fr)_minmax(140px,0.95fr)_minmax(150px,1fr)_minmax(135px,0.9fr)]";
 
 // ─── Bo'sh holat ─────────────────────────────────────────────────────────────
-const EmptyState = memo(() => (
-    <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-main/10 flex items-center justify-center">
-            <ShoppingBag size={32} className="text-main" />
+const EmptyState = memo(() => {
+    const { t } = useTranslation("mails");
+
+    return (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-main/10 flex items-center justify-center">
+                <ShoppingBag size={32} className="text-main" />
+            </div>
+            <div className="text-center">
+                <p className="text-gray-700 dark:text-white font-semibold">
+                    {t("emptyOrders")}
+                </p>
+                <p className="text-gray-400 dark:text-white/60 text-sm mt-1">
+                    {t("emptyOrdersHint")}
+                </p>
+            </div>
         </div>
-        <div className="text-center">
-            <p className="text-gray-700 dark:text-white font-semibold">
-                Buyurtmalar topilmadi
-            </p>
-            <p className="text-gray-400 dark:text-white/60 text-sm mt-1">
-                Bu pochta uchun hech qanday buyurtma yo'q
-            </p>
-        </div>
-    </div>
-));
+    );
+});
 EmptyState.displayName = "EmptyState";
 
 // ─── Ustun sarlavhalar ────────────────────────────────────────────────────────
-const TableHeader = memo(() => (
-    <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 xl:gap-3 px-3 xl:px-4 py-2`}>
-        <div />
-        <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">Ism</div>
-        <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">Telefon</div>
-        <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">Tuman</div>
-        <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">Market</div>
-        <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">Narx</div>
-        <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">Yetkazish</div>
-        <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">Sana</div>
-        <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider text-right">Holati</div>
-    </div>
-));
+const TableHeader = memo(() => {
+    const { t } = useTranslation(["orders", "common"]);
+
+    return (
+        <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 xl:gap-3 px-3 xl:px-4 py-2`}>
+            <div />
+            <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">{t("orders:customerName")}</div>
+            <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">{t("common:phone")}</div>
+            <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">{t("common:district")}</div>
+            <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">{t("orders:market")}</div>
+            <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">{t("common:price")}</div>
+            <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider">{t("orders:deliveryType")}</div>
+            <div className="text-[11px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">{t("common:date")}</div>
+            <div className="text-[11px] text-black dark:text-white font-semibold uppercase tracking-wider text-right">{t("orders:orderStatus")}</div>
+        </div>
+    );
+});
 TableHeader.displayName = "TableHeader";
 
-const HistoryTableHeader = memo(() => (
-    <div className={`hidden xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-1`}>
-        <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">Mijoz</div>
-        <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">Telefon</div>
-        <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">Manzil</div>
-        <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">Market</div>
-        <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">Narx</div>
-        <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">Yetkazish</div>
-        <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">Sana</div>
-    </div>
-));
+const HistoryTableHeader = memo(() => {
+    const { t } = useTranslation(["orders", "common"]);
+
+    return (
+        <div className={`hidden xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-1`}>
+            <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("orders:customer")}</div>
+            <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("common:phone")}</div>
+            <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("common:address")}</div>
+            <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("orders:market")}</div>
+            <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("common:price")}</div>
+            <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("orders:deliveryType")}</div>
+            <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("common:date")}</div>
+        </div>
+    );
+});
 HistoryTableHeader.displayName = "HistoryTableHeader";
 
 // ─── Asosiy komponent ─────────────────────────────────────────────────────────
@@ -79,6 +92,8 @@ const OrdersTable = memo(({
     variant = "default",
     readOnly = false,
 }: OrdersTableProps) => {
+    const { t } = useTranslation("mails");
+
     if (orders.length === 0) return <EmptyState />;
 
     const isHistory = variant === "history";
@@ -97,12 +112,12 @@ const OrdersTable = memo(({
                             onChange={onToggleAll}
                         />
                         <span className="select-none text-sm font-semibold text-gray-700 dark:text-white">
-                            Barchasini tanlash
+                            {t("checkboxSelectAll")}
                         </span>
                     </div>
                     {selectedIds.size > 0 && (
                         <span className="text-xs font-semibold text-main dark:text-white sm:ml-auto">
-                            {selectedIds.size} ta tanlandi
+                            {t("selectedCountLabel", { count: selectedIds.size })}
                         </span>
                     )}
                 </div>

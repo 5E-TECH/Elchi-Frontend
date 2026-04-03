@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { MapPin, Package, ChevronRight, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -31,11 +32,12 @@ const formatPrice = (price: number): string =>
 
 // ─── Yagona Karta Komponenti ──────────────────────────────────────────────────
 const MailCard = memo(({ item }: { item: MailItem }) => {
+  const { t } = useTranslation("mails");
   const navigate = useNavigate();
   // console.log(item);
 
   // API dan to'g'ridan-to'g'ri region.name olamiz
-  const regionName = item.region?.name ?? `Viloyat ${item.region_id}`;
+  const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const { role } = useSelector((state: RootState) => state.role);
   // console.log(role, region);
 
@@ -66,7 +68,7 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
           <div className="flex items-center gap-2">
             <span className="mail-status-badge">
               <TrendingUp size={11} />
-              Yangi
+              {t("statusNew")}
             </span>
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/15 border border-white/25 group-hover:bg-white/25 transition-colors">
               <ChevronRight size={16} className="text-white" />
@@ -102,7 +104,7 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
           <div className="flex items-center justify-between">
             <span className="text-white/70 text-sm flex items-center gap-1.5">
               <Package size={13} className="text-white/50" />
-              Buyurtmalar:
+              {t("ordersLabel")}:
             </span>
             <span className="text-white font-bold text-sm">
               {item.order_quantity}{" "}
@@ -111,7 +113,7 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-white/70 text-sm">Summa:</span>
+            <span className="text-white/70 text-sm">{t("amountLabel")}:</span>
             <span className="text-white font-bold text-sm">
               {formatPrice(item.post_total_price)}
             </span>
@@ -133,6 +135,7 @@ MailCardSkeleton.displayName = "MailCardSkeleton";
 
 // ─── Asosiy Komponent ─────────────────────────────────────────────────────────
 const TodaysMails = () => {
+  const { t } = useTranslation("mails");
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
 
@@ -175,7 +178,7 @@ const TodaysMails = () => {
           <Package size={28} className="text-red-400" />
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Ma'lumotlarni yuklab bo'lmadi
+          {t("loadError")}
         </p>
       </div>
     );
@@ -189,7 +192,7 @@ const TodaysMails = () => {
           <Package size={28} className="text-emerald-400" />
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Bugun yangi pochta yo'q
+          {t("emptyToday")}
         </p>
       </div>
     );
@@ -204,7 +207,7 @@ const TodaysMails = () => {
             {stats.totalRegions}
           </span>
           <span className="text-gray-500 dark:text-gray-400 text-sm">
-            {role === "courier" ? "pochta" : "viloyat"}
+            {role === "courier" ? t("mailCountLabel") : t("regionCountLabel")}
           </span>
         </div>
         <div className="hidden h-5 w-px bg-gray-200 dark:bg-white/10 sm:block" />
@@ -213,7 +216,7 @@ const TodaysMails = () => {
             {stats.totalOrders}
           </span>
           <span className="text-gray-500 dark:text-gray-400 text-sm">
-            buyurtma
+            {t("orderCountLabel")}
           </span>
         </div>
         <div className="hidden h-5 w-px bg-gray-200 dark:bg-white/10 sm:block" />

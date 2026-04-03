@@ -1,5 +1,6 @@
 import * as yup from "yup";
 import type { CreateOrderRequest, DeliveryType, OrderItem } from "../../../../entities/order/types/order";
+import i18n from "../../../../i18n";
 
 export interface MarketOption {
   id: number;
@@ -60,24 +61,24 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
   yup
     .object({
       market: requireMarket
-        ? marketSchema.required("Davom etish uchun avval market tanlang")
+        ? marketSchema.required(i18n.t("orders:validationSelectMarket"))
         : marketSchema,
       customer: yup.object({
         phone: yup
           .string()
-          .required("Mijozning telefon raqamini kiriting")
-          .matches(/^\d{9}$/, "Telefon raqam 9 ta raqamdan iborat bo'lishi kerak"),
+          .required(i18n.t("orders:validationPhoneRequired"))
+          .matches(/^\d{9}$/, i18n.t("orders:validationPhoneFormat")),
         extra_phone: yup
           .string()
           .default("")
           .test(
             "extra-phone-length",
-            "Qo'shimcha raqam kiritilsa, u 9 ta raqamdan iborat bo'lishi kerak",
+            i18n.t("orders:validationExtraPhoneFormat"),
             (value) => !value || /^\d{9}$/.test(value),
           ),
-        name: yup.string().trim().required("Mijoz ismini kiriting"),
-        region_id: yup.string().required("Viloyatni tanlang"),
-        district_id: yup.string().required("Tumanni tanlang"),
+        name: yup.string().trim().required(i18n.t("orders:validationCustomerName")),
+        region_id: yup.string().required(i18n.t("orders:validationRegion")),
+        district_id: yup.string().required(i18n.t("orders:validationDistrict")),
         address: yup.string().trim().default(""),
       }),
       details: yup.object({
@@ -89,12 +90,12 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
               quantity: yup.number().required().min(1),
             }),
           )
-          .min(1, "Kamida bitta mahsulot tanlang")
+          .min(1, i18n.t("orders:validationSelectProduct"))
           .required(),
         total_price: yup
           .string()
-          .required("Buyurtmaning umumiy summasini kiriting")
-          .test("positive-price", "Umumiy summa 0 dan katta bo'lishi kerak", (value) => {
+          .required(i18n.t("orders:validationTotalPriceRequired"))
+          .test("positive-price", i18n.t("orders:validationTotalPrice"), (value) => {
             const amount = Number((value ?? "").replace(/\D/g, ""));
             return amount > 0;
           }),

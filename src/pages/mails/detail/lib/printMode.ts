@@ -1,4 +1,5 @@
 import type { PostOrder } from "../../../../entities/mails";
+import i18n from "../../../../i18n";
 
 export type PrintMode = "browser" | "pdf_100x60" | "thermal_80mm";
 
@@ -60,12 +61,12 @@ const openOrdersTablePrintWindow = (orders: PostOrder[]) => {
   if (!win) return;
 
   const rows = orders.map((o, i) => {
-    const customer = escapeHtml(o.customer?.name ?? "—");
+    const customer = escapeHtml(o.customer?.name ?? i18n.t("mails:customerNumber", { id: o.customer_id }));
     const phone = escapeHtml(o.customer?.phone_number ?? "—");
     const district = escapeHtml(o.district?.name ?? "—");
     const market = escapeHtml(o.market?.name ?? "—");
-    const deliver = o.where_deliver === "address" ? "Manzilga" : "Markazga";
-    const total = new Intl.NumberFormat("uz-UZ").format(Number(o.total_price ?? 0));
+    const deliver = o.where_deliver === "address" ? i18n.t("orders:deliveryToHome") : i18n.t("orders:deliveryToCenter");
+    const total = new Intl.NumberFormat(i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ").format(Number(o.total_price ?? 0));
     const createdAt = (() => {
       const raw = String(o.createdAt ?? "");
       const d = raw ? new Date(raw) : null;
@@ -100,7 +101,7 @@ const openOrdersTablePrintWindow = (orders: PostOrder[]) => {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Buyurtmalar</title>
+    <title>${escapeHtml(i18n.t("orders:title"))}</title>
     <style>
       @page { size: A4; margin: 12mm; }
       html, body { margin: 0; padding: 0; }
@@ -116,20 +117,20 @@ const openOrdersTablePrintWindow = (orders: PostOrder[]) => {
     </style>
   </head>
   <body>
-    <button id="printBtn" type="button">Print / Save PDF</button>
-    <h1>Tanlangan buyurtmalar</h1>
-    <div class="meta">Soni: ${orders.length}</div>
+    <button id="printBtn" type="button">${escapeHtml(i18n.t("mails:printAction"))}</button>
+    <h1>${escapeHtml(i18n.t("mails:selectedOrdersPrintTitle"))}</h1>
+    <div class="meta">${escapeHtml(i18n.t("mails:countLabel", { count: orders.length }))}</div>
     <table>
       <thead>
         <tr>
           <th>#</th>
-          <th>Mijoz</th>
-          <th>Telefon</th>
-          <th>Tuman</th>
-          <th>Market</th>
-          <th>Yetkazish</th>
-          <th>Narx</th>
-          <th>Sana</th>
+          <th>${escapeHtml(i18n.t("orders:customer"))}</th>
+          <th>${escapeHtml(i18n.t("common:phone"))}</th>
+          <th>${escapeHtml(i18n.t("common:district"))}</th>
+          <th>${escapeHtml(i18n.t("orders:market"))}</th>
+          <th>${escapeHtml(i18n.t("orders:deliveryType"))}</th>
+          <th>${escapeHtml(i18n.t("common:price"))}</th>
+          <th>${escapeHtml(i18n.t("common:date"))}</th>
         </tr>
       </thead>
       <tbody>
@@ -152,16 +153,16 @@ const openLabelsPrintWindow = (orders: PostOrder[]) => {
   if (!win) return;
 
   const sheets = orders.map((o) => {
-    const customerName = escapeHtml(o.customer?.name ?? "—");
+    const customerName = escapeHtml(o.customer?.name ?? i18n.t("mails:customerNumber", { id: o.customer_id }));
     const phone = escapeHtml(o.customer?.phone_number ?? "—");
     const district = escapeHtml(o.district?.name ?? "—");
     const region = escapeHtml(o.district?.region?.name ?? o.region?.name ?? "");
     const market = escapeHtml(o.market?.name ?? "—");
     const address = escapeHtml(o.address ?? "");
-    const whereDeliver = o.where_deliver === "address" ? "Manzilga" : "Markazga";
+    const whereDeliver = o.where_deliver === "address" ? i18n.t("orders:deliveryToHome") : i18n.t("orders:deliveryToCenter");
 
-    const total = new Intl.NumberFormat("uz-UZ").format(Number(o.total_price ?? 0));
-    const totalText = escapeHtml(`${total} so'm`);
+    const total = new Intl.NumberFormat(i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ").format(Number(o.total_price ?? 0));
+    const totalText = escapeHtml(`${total} ${i18n.t("orders:currency")}`);
 
     const fullAddress = [region, district ? `${district} tumani` : "", address].filter(Boolean).join(", ");
 
@@ -195,7 +196,7 @@ const openLabelsPrintWindow = (orders: PostOrder[]) => {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Labels</title>
+    <title>${escapeHtml(i18n.t("mails:printOptions.labelPdf.label"))}</title>
     <style>
       @page { size: 100mm 60mm; margin: 0; }
       html, body { margin: 0; padding: 0; }
@@ -216,7 +217,7 @@ const openLabelsPrintWindow = (orders: PostOrder[]) => {
     </style>
   </head>
   <body>
-    <button id="printBtn" type="button">Print / Save PDF</button>
+    <button id="printBtn" type="button">${escapeHtml(i18n.t("mails:printAction"))}</button>
     ${sheets}
     <script>
       ${printScript}
@@ -234,29 +235,29 @@ const openThermalPrintWindow = (orders: PostOrder[]) => {
   if (!win) return;
 
   const sheets = orders.map((o) => {
-    const customerName = escapeHtml(o.customer?.name ?? "—");
+    const customerName = escapeHtml(o.customer?.name ?? i18n.t("mails:customerNumber", { id: o.customer_id }));
     const phone = escapeHtml(o.customer?.phone_number ?? "—");
     const district = escapeHtml(o.district?.name ?? "—");
     const region = escapeHtml(o.district?.region?.name ?? o.region?.name ?? "");
     const address = escapeHtml(o.address ?? "");
     const market = escapeHtml(o.market?.name ?? "—");
-    const deliver = o.where_deliver === "address" ? "Manzilga" : "Markazga";
+    const deliver = o.where_deliver === "address" ? i18n.t("orders:deliveryToHome") : i18n.t("orders:deliveryToCenter");
 
-    const total = new Intl.NumberFormat("uz-UZ").format(Number(o.total_price ?? 0));
+    const total = new Intl.NumberFormat(i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ").format(Number(o.total_price ?? 0));
     const fullAddress = [region, district ? `${district} tumani` : "", address].filter(Boolean).join(", ");
 
     return `
       <section class="ticket">
         <div class="title">Elchi</div>
-        <div class="row"><span>Buyurtma</span><strong>#${escapeHtml(o.id)}</strong></div>
-        <div class="row"><span>Yetkazish</span><strong>${escapeHtml(deliver)}</strong></div>
+        <div class="row"><span>${escapeHtml(i18n.t("orders:create"))}</span><strong>#${escapeHtml(o.id)}</strong></div>
+        <div class="row"><span>${escapeHtml(i18n.t("orders:deliveryType"))}</span><strong>${escapeHtml(deliver)}</strong></div>
         <div class="hr"></div>
-        <div class="row"><span>Mijoz</span><strong>${customerName}</strong></div>
-        <div class="row"><span>Telefon</span><strong>${phone}</strong></div>
-        <div class="row"><span>Manzil</span><strong>${escapeHtml(fullAddress || "—")}</strong></div>
-        <div class="row"><span>Market</span><strong>${market}</strong></div>
+        <div class="row"><span>${escapeHtml(i18n.t("orders:customer"))}</span><strong>${customerName}</strong></div>
+        <div class="row"><span>${escapeHtml(i18n.t("common:phone"))}</span><strong>${phone}</strong></div>
+        <div class="row"><span>${escapeHtml(i18n.t("common:address"))}</span><strong>${escapeHtml(fullAddress || "—")}</strong></div>
+        <div class="row"><span>${escapeHtml(i18n.t("orders:market"))}</span><strong>${market}</strong></div>
         <div class="hr"></div>
-        <div class="row total"><span>Jami</span><strong>${escapeHtml(total)} so'm</strong></div>
+        <div class="row total"><span>${escapeHtml(i18n.t("common:total"))}</span><strong>${escapeHtml(total)} ${escapeHtml(i18n.t("orders:currency"))}</strong></div>
       </section>
     `;
   }).join("");

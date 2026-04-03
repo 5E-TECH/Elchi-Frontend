@@ -3,6 +3,7 @@ import {
   X, MapPin, Phone, User, Info, Plus, Minus,
   MessageSquare, CheckCircle,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type OrderItem = {
   id: string;
@@ -54,6 +55,7 @@ const formatAmountInput = (value: string) => {
 const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
 
 const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: SellModalProps) => {
+  const { t } = useTranslation(["orders", "common"]);
   const [isPartial, setIsPartial] = useState(false);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [totalPrice, setTotalPrice] = useState("");
@@ -133,7 +135,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
         <div className="bg-green-500 px-5 pt-5 pb-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white font-bold text-lg">
-              {isPartial ? "Qisman sotish" : "Sotish"}
+              {isPartial ? t("partialSell") : t("sell")}
             </h2>
             <button
               onClick={onClose}
@@ -156,7 +158,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               </p>
             </div>
             <div className="text-right">
-              <p className="text-white/70 text-xs">Jami summa</p>
+              <p className="text-white/70 text-xs">{t("sumLabel")}</p>
               <p className="text-white font-bold text-base">
                 {Number(order.total_price).toLocaleString("uz-UZ")} so'm
               </p>
@@ -185,10 +187,10 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                Qisman sotish
+                {t("partialSell")}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Mahsulotlarni alohida tanlash
+                {t("sellSeparately")}
               </p>
             </div>
             <div
@@ -206,7 +208,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
           {isPartial && order.items?.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
-                Mahsulotlar
+                {t("products")}
               </p>
               <div className="space-y-2">
                 {order.items.map((item) => (
@@ -218,7 +220,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                       <p className="text-sm font-medium truncate text-gray-800 dark:text-gray-100">
                         {item.product?.name}
                       </p>
-                      <p className="text-xs text-gray-400">Max: {item.quantity} ta</p>
+                      <p className="text-xs text-gray-400">{t("maxQuantity", { count: item.quantity })}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
@@ -244,7 +246,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               {isAtMinimumSelection && (
                 <div className="mt-3 rounded-xl border border-error/20 bg-error/10 px-3 py-2">
                   <p className="text-sm font-bold text-error">
-                    Bundan ortiq kamaytirib bo'lmaydi. Kamida 1 ta mahsulot qolishi kerak, aks holda bekor qilishdan foydalaning.
+                    {t("minimumSelectionError")}
                   </p>
                 </div>
               )}
@@ -255,7 +257,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
           {isPartial && (
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                To'lov summasi <span className="text-red-400">*</span>
+                {t("paymentAmount")} <span className="text-red-400">*</span>
               </p>
               <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
                 <input
@@ -268,7 +270,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                   placeholder="0"
                   className="flex-1 bg-transparent text-sm outline-none text-gray-800 dark:text-gray-100"
                 />
-                <span className="text-sm text-gray-400">so'm</span>
+                <span className="text-sm text-gray-400">{t("currency")}</span>
               </div>
             </div>
           )}
@@ -277,7 +279,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
           <div>
             <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
               <Plus size={12} className="text-green-500" />
-              Qo'shimcha to'lov
+              {t("extraPayment")}
             </p>
             <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
               <input
@@ -290,7 +292,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                 placeholder="0"
                 className="flex-1 bg-transparent text-sm outline-none text-gray-800 dark:text-gray-100"
               />
-              <span className="text-sm text-gray-400">so'm</span>
+              <span className="text-sm text-gray-400">{t("currency")}</span>
             </div>
           </div>
 
@@ -298,13 +300,13 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
           <div>
             <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
               <MessageSquare size={12} className="text-purple-400" />
-              Izoh{" "}
-              <span className="normal-case font-normal text-gray-400">(ixtiyoriy)</span>
+              {t("note")}{" "}
+              <span className="normal-case font-normal text-gray-400">({t("optional", { ns: "common" })})</span>
             </p>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Izoh yozing..."
+              placeholder={t("writeNote")}
               rows={3}
               className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm bg-transparent outline-none resize-none text-gray-800 dark:text-gray-100 placeholder:text-gray-300"
             />
@@ -319,7 +321,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
             className="w-full bg-green-500 hover:bg-green-600 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
           >
             <CheckCircle size={18} />
-            {isLoading ? "Yuklanmoqda..." : "Sotish"}
+            {isLoading ? t("loading", { ns: "common" }) : t("sell")}
           </button>
         </div>
       </div>

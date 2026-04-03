@@ -22,17 +22,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: "Admin",
-  manager: "Ro'yxatchi",
-  courier: "Kuryer",
-  marketing: "Market",
-  operator: "Operator",
-  market: "Market",
-  superadmin: "Super Admin",
-  customer: "Mijoz",
-};
+import { useTranslation } from "react-i18next";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -143,8 +133,28 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
 };
 
 export const CreateUserForm = memo(() => {
+  const { t } = useTranslation("users");
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const getRoleLabel = (userRole: UserRole) => {
+    switch (userRole) {
+      case "admin":
+        return t("roleAdmin");
+      case "manager":
+        return t("roleManager");
+      case "courier":
+        return t("roleCourier");
+      case "marketing":
+      case "market":
+        return t("roleMarket");
+      case "operator":
+        return t("roleOperator");
+      case "superadmin":
+        return t("roleSuperAdmin");
+      default:
+        return t("roleCustomer");
+    }
+  };
 
   const methods = useForm<CreateUserFormValues>({
     defaultValues: INITIAL_FORM,
@@ -187,36 +197,36 @@ export const CreateUserForm = memo(() => {
     const rawPhone = parsePhone(values.phone);
 
     if (!values.fullName.trim()) {
-      setError("fullName", { message: "Ism talab qilinadi" });
+      setError("fullName", { message: t("firstNameRequired") });
       valid = false;
     }
 
     if (!rawPhone || rawPhone.length !== 9) {
-      setError("phone", { message: "9 ta raqam kiriting" });
+      setError("phone", { message: t("phoneValidation") });
       valid = false;
     }
 
     if (!values.password.trim()) {
-      setError("password", { message: "Parol talab qilinadi" });
+      setError("password", { message: t("passwordRequired") });
       valid = false;
     } else if (values.password.length < 4) {
-      setError("password", { message: "Min 4 ta belgi" });
+      setError("password", { message: t("passwordMin") });
       valid = false;
     }
 
     if (role === "admin" || role === "manager") {
       if (!values.salary) {
-        setError("salary", { message: "Maosh kiritilmadi" });
+        setError("salary", { message: t("salaryRequired") });
         valid = false;
       }
 
       if (!values.paymentDay) {
-        setError("paymentDay", { message: "Sana kiritilmadi" });
+        setError("paymentDay", { message: t("dateRequired") });
         valid = false;
       } else {
         const day = Number(values.paymentDay);
         if (day < 1 || day > 30) {
-          setError("paymentDay", { message: "1-30 oralig'ida" });
+          setError("paymentDay", { message: t("paymentDayValidation") });
           valid = false;
         }
       }
@@ -224,34 +234,34 @@ export const CreateUserForm = memo(() => {
 
     if (role === "courier") {
       if (!values.region) {
-        setError("region", { message: "Viloyat tanlang" });
+        setError("region", { message: t("regionRequired") });
         valid = false;
       }
       if (!values.homeRate) {
-        setError("homeRate", { message: "Uy tarifi yo'q" });
+        setError("homeRate", { message: t("homeTariffRequired") });
         valid = false;
       }
       if (!values.centerRate) {
-        setError("centerRate", { message: "Markaz tarifi yo'q" });
+        setError("centerRate", { message: t("centerTariffRequired") });
         valid = false;
       }
     }
 
     if (role === "marketing") {
       if (!values.username.trim()) {
-        setError("username", { message: "Username kiritilmadi" });
+        setError("username", { message: t("usernameRequired") });
         valid = false;
       }
       if (!values.homeRate) {
-        setError("homeRate", { message: "Uy tarifi yo'q" });
+        setError("homeRate", { message: t("homeTariffRequired") });
         valid = false;
       }
       if (!values.centerRate) {
-        setError("centerRate", { message: "Markaz tarifi yo'q" });
+        setError("centerRate", { message: t("centerTariffRequired") });
         valid = false;
       }
       if (!values.deliveryType) {
-        setError("deliveryType", { message: "Tur tanlang" });
+        setError("deliveryType", { message: t("deliveryTypeRequired") });
         valid = false;
       }
     }
@@ -276,8 +286,8 @@ export const CreateUserForm = memo(() => {
 
       await apiRequest({
         request: () => createAdmin.mutateAsync(payload),
-        successMessage: `Admin "${values.fullName}" muvaffaqiyatli yaratildi!`,
-        errorMessage: "Admin yaratishda xatolik yuz berdi",
+        successMessage: t("createAdmin"),
+        errorMessage: t("loadError"),
         onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
       });
@@ -296,8 +306,8 @@ export const CreateUserForm = memo(() => {
 
       await apiRequest({
         request: () => createCourier.mutateAsync(payload),
-        successMessage: `Kuryer "${values.fullName}" muvaffaqiyatli yaratildi!`,
-        errorMessage: "Kuryer yaratishda xatolik yuz berdi",
+        successMessage: t("createCourier"),
+        errorMessage: t("loadError"),
         onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
       });
@@ -317,8 +327,8 @@ export const CreateUserForm = memo(() => {
 
       await apiRequest({
         request: () => createMarket.mutateAsync(payload),
-        successMessage: `Market "${values.fullName}" muvaffaqiyatli yaratildi!`,
-        errorMessage: "Market yaratishda xatolik yuz berdi",
+        successMessage: t("createMarket"),
+        errorMessage: t("loadError"),
         onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
       });
@@ -408,7 +418,7 @@ export const CreateUserForm = memo(() => {
       render={({ field, fieldState }) => (
         <div className="space-y-0 relative">
           <label className={labelClasses}>
-            Parol <span className="text-red-500">*</span>
+            {t("passwordPlaceholder")} <span className="text-red-500">*</span>
           </label>
           <div className="relative group">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 group-focus-within:text-main transition-colors">
@@ -442,10 +452,8 @@ export const CreateUserForm = memo(() => {
       <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-slate-100 dark:border-white/5">
         <div className="text-right">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">
-            Yangi{" "}
-            {role === "manager"
-              ? "Ro'yxatchi"
-              : role.charAt(0).toUpperCase() + role.slice(1)}
+            {t("createNewUser")}{" "}
+            {getRoleLabel(role)}
           </h2>
         </div>
       </div>
@@ -454,7 +462,7 @@ export const CreateUserForm = memo(() => {
         <div className="w-72 flex flex-col gap-4 shrink-0">
           <div className="bg-white dark:bg-maindark p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-primarydark/20">
             <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
-              Rol Tanlash
+              {t("roleSelect")}
             </h3>
             <RoleSelector
               selectedRole={role}
@@ -463,10 +471,9 @@ export const CreateUserForm = memo(() => {
           </div>
 
           <div className="bg-linear-to-br from-main to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-main/20">
-            <h3 className="text-base font-bold mb-2">{ROLE_LABELS[role]}</h3>
+            <h3 className="text-base font-bold mb-2">{getRoleLabel(role)}</h3>
             <p className="text-white/80 text-xs leading-relaxed">
-              Yangi foydalanuvchi tizimga kiritilgach, unga SMS orqali login va
-              parol yuboriladi.
+              {t("roleMarketCardHint")}
             </p>
           </div>
         </div>
@@ -487,7 +494,7 @@ export const CreateUserForm = memo(() => {
               <ShieldIcon role={role} size={20} />
             </div>
             <h1 className="text-xl font-bold text-slate-800 dark:text-white">
-              Foydalanuvchi Qo'shish
+              {t("addUserTitle")}
             </h1>
           </div>
 
@@ -496,13 +503,13 @@ export const CreateUserForm = memo(() => {
               <div className="space-y-8">
                 <div className="grid grid-cols-3 gap-6">
                   {renderInput({
-                    label: "Ism Familya",
+                    label: t("fullNameShort"),
                     name: "fullName",
-                    placeholder: "F.I.O",
+                    placeholder: t("fullNamePlaceholder"),
                     icon: <User size={18} />,
                   })}
                   {renderInput({
-                    label: "Telefon",
+                    label: t("phone"),
                     name: "phone",
                     type: "tel",
                     placeholder: "90 123 45 67",
@@ -515,15 +522,15 @@ export const CreateUserForm = memo(() => {
                 {(role === "admin" || role === "manager") && (
                   <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     {renderInput({
-                      label: "Maosh (so'm)",
+                      label: t("salaryWithCurrency"),
                       name: "salary",
                       placeholder: "Masalan: 5 000 000",
                     })}
                     {renderInput({
-                      label: "To'lov Kuni",
+                      label: t("paymentDay"),
                       name: "paymentDay",
                       type: "number",
-                      placeholder: "1–30",
+                      placeholder: "1-30",
                       icon: <Calendar size={18} />,
                     })}
                   </div>
@@ -536,7 +543,7 @@ export const CreateUserForm = memo(() => {
                       name="region"
                       render={({ field, fieldState }) => (
                         <Select
-                          label="Viloyat"
+                          label={t("regionLabel")}
                           name={field.name}
                           value={field.value}
                           onChange={(event) => field.onChange(event.target.value)}
@@ -544,20 +551,20 @@ export const CreateUserForm = memo(() => {
                             value: String(region.id),
                             label: region.name,
                           }))}
-                          placeholder={regionList.length ? "Tanlang" : "Yuklanmoqda..."}
+                          placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
                           error={fieldState.error?.message}
                           required
                         />
                       )}
                     />
                     {renderInput({
-                      label: "Uyga (so'm)",
+                      label: t("homeTariffWithCurrency"),
                       name: "homeRate",
                       placeholder: "Masalan: 10 000",
                       icon: <Building size={18} />,
                     })}
                     {renderInput({
-                      label: "Markazga (so'm)",
+                      label: t("centerTariffWithCurrency"),
                       name: "centerRate",
                       placeholder: "Masalan: 8 000",
                       icon: <Store size={18} />,
@@ -578,28 +585,28 @@ export const CreateUserForm = memo(() => {
                       name="deliveryType"
                       render={({ field, fieldState }) => (
                         <Select
-                          label="Asosiy Tarif"
+                          label={t("mainTariff")}
                           name={field.name}
                           value={field.value}
                           onChange={(event) => field.onChange(event.target.value)}
                           options={[
-                            { value: "center", label: "Markazgacha" },
-                            { value: "address", label: "Eshikkacha" },
+                            { value: "center", label: t("centerOnlyTariff") },
+                            { value: "address", label: t("doorTariff") },
                           ]}
-                          placeholder="Tanlang"
+                          placeholder={t("defaultTariffPlaceholder")}
                           error={fieldState.error?.message}
                           required
                         />
                       )}
                     />
                     {renderInput({
-                      label: "Uyga Tarif (so'm)",
+                      label: t("homeTariffWithCurrency"),
                       name: "homeRate",
                       placeholder: "Masalan: 10 000",
                       icon: <Building size={18} />,
                     })}
                     {renderInput({
-                      label: "Markazga Tarif (so'm)",
+                      label: t("centerTariffWithCurrency"),
                       name: "centerRate",
                       placeholder: "Masalan: 8 000",
                       icon: <Store size={18} />,
@@ -616,7 +623,7 @@ export const CreateUserForm = memo(() => {
               onClick={() => navigate(-1)}
               className="px-6 py-2.5 rounded-xl font-semibold text-slate-500 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-sm"
             >
-              Bekor qilish
+              {t("cancel")}
             </button>
             <button
               type="submit"
@@ -635,11 +642,11 @@ export const CreateUserForm = memo(() => {
               {isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Saqlanmoqda...</span>
+                  <span>{t("saving")}</span>
                 </>
               ) : (
                 <>
-                  <span>Saqlash</span>
+                  <span>{t("save")}</span>
                   <Send size={16} strokeWidth={2.5} />
                 </>
               )}

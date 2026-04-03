@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
     Filter,
     X,
@@ -23,17 +24,17 @@ import type { RootState } from "../../../app/config/store";
 
 // ── Holat variantlari ─────────────────────────────────────────────────────
 const ALL_STATUSES: { value: OrderStatus | ""; label: string }[] = [
-    { value: "", label: "Barcha holat" },
-    { value: "new", label: "Yangi" },
-    { value: "created", label: "Qabul qilingan" },
-    { value: "received", label: "Qabul qilindi" },
-    { value: "on the road", label: "Yo'lda" },
-    { value: "waiting", label: "Kutilmoqda" },
-    { value: "sold", label: "Sotilgan" },
-    { value: "paid", label: "To'langan" },
-    { value: "partly_paid", label: "Qisman to'landi" },
-    { value: "cancelled", label: "Bekor qilingan" },
-    { value: "closed", label: "Yopildi" },
+    { value: "", label: "statusAll" },
+    { value: "new", label: "statusNew" },
+    { value: "created", label: "statusCreated" },
+    { value: "received", label: "statusReceived" },
+    { value: "on the road", label: "statusOnTheRoad" },
+    { value: "waiting", label: "statusWaiting" },
+    { value: "sold", label: "statusSold" },
+    { value: "paid", label: "statusPaid" },
+    { value: "partly_paid", label: "statusPartlyPaid" },
+    { value: "cancelled", label: "statusCancelled" },
+    { value: "closed", label: "statusClosed" },
 ];
 
 // ── Redux key-lari (UserListPage patterndek) ──────────────────────────────
@@ -54,6 +55,7 @@ interface Props {
 
 // ── Komponent ─────────────────────────────────────────────────────────────
 const OrderFilters = memo(({ onExport }: Props) => {
+    const { t } = useTranslation(["orders", "common"]);
     const dispatch = useDispatch();
     const { setParam, removeParam, clearAllParams, getParam } = useQueryParams();
     const role = useSelector((state: RootState) => state.role.role);
@@ -123,6 +125,10 @@ const OrderFilters = memo(({ onExport }: Props) => {
     const regions = ((regionsData?.data ?? regionsData ?? []) as { id: string | number; name: string }[]).map(
         (r) => ({ value: String(r.id), label: r.name })
     );
+    const statuses = ALL_STATUSES.map((statusOption) => ({
+        ...statusOption,
+        label: t(statusOption.label, { ns: "orders" }),
+    }));
 
     // ─── Update: Redux + URL ───────────────────────────────────────────────
     const update = (reduxKey: string, urlKey: string, value: string) => {
@@ -164,7 +170,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 {/* Sarlavha */}
                 <div className="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-white/50 uppercase tracking-wider shrink-0">
                     <Filter size={13} className="text-main" />
-                    Saralash
+                    {t("filters", { ns: "common" })}
                 </div>
 
                 <div className="flex-1" />
@@ -185,7 +191,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 <FilterSearch
                     value={search}
                     onChange={updateSearch}
-                    placeholder="Buyurtmani qidiring..."
+                    placeholder={t("filterSearchPlaceholder")}
                     className="w-full sm:w-56"
                 />
             </div>
@@ -195,14 +201,14 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 {/* MARKET */}
                 {!isMarketRole && (
                     <Select
-                        label="Market"
+                        label={t("filterMarket")}
                         name={ORDER_FILTER_KEYS.marketId}
                         value={marketId}
                         onChange={(e) =>
                             update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, e.target.value)
                         }
                         options={markets}
-                        placeholder="Marketni tanlang"
+                        placeholder={t("filterMarketPlaceholder")}
                         icon={Store}
                         loading={marketsLoading}
                     />
@@ -210,14 +216,14 @@ const OrderFilters = memo(({ onExport }: Props) => {
 
                 {/* VILOYAT */}
                 <Select
-                    label="Viloyat"
+                    label={t("filterRegion")}
                     name={ORDER_FILTER_KEYS.regionId}
                     value={regionId}
                     onChange={(e) =>
                         update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, e.target.value)
                     }
                     options={regions}
-                    placeholder="Hududni tanlang"
+                    placeholder={t("filterRegionPlaceholder")}
                     icon={MapPin}
                     loading={regionsLoading}
                 />
@@ -225,14 +231,14 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 {/* KURYER */}
                 {!isMarketRole && (
                     <Select
-                        label="Kuryer"
+                        label={t("filterCourier")}
                         name={ORDER_FILTER_KEYS.courierId}
                         value={courierId}
                         onChange={(e) =>
                             update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, e.target.value)
                         }
                         options={couriers}
-                        placeholder="Kuryerni tanlang"
+                        placeholder={t("filterCourierPlaceholder")}
                         icon={Truck}
                         loading={couriersLoading}
                     />
@@ -240,14 +246,14 @@ const OrderFilters = memo(({ onExport }: Props) => {
 
                 {/* HOLAT */}
                 <Select
-                    label="Holat"
+                    label={t("filterStatus")}
                     name={ORDER_FILTER_KEYS.status}
                     value={status}
                     onChange={(e) =>
                         update(ORDER_FILTER_KEYS.status, ORDER_FILTER_KEYS.status, e.target.value)
                     }
-                    options={ALL_STATUSES}
-                    placeholder="Holatni tanlang"
+                    options={statuses}
+                    placeholder={t("filterStatusPlaceholder")}
                     icon={Tag}
                 />
             </div>
@@ -270,7 +276,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                     <div className="flex w-full flex-wrap gap-1.5 sm:flex-1">
                         {!isMarketRole && marketId && (
                             <FilterChip
-                                label={`Market: ${markets.find((m) => m.value === marketId)?.label ?? `#${marketId}`}`}
+                                label={`${t("chipMarket")}: ${markets.find((m) => m.value === marketId)?.label ?? `#${marketId}`}`}
                                 onRemove={() =>
                                     update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, "")
                                 }
@@ -278,7 +284,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                         )}
                         {regionId && (
                             <FilterChip
-                                label={`Viloyat: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
+                                label={`${t("chipRegion")}: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
                                 onRemove={() =>
                                     update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, "")
                                 }
@@ -286,7 +292,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                         )}
                         {!isMarketRole && courierId && (
                             <FilterChip
-                                label={`Kuryer: ${couriers.find((c) => c.value === courierId)?.label ?? `#${courierId}`}`}
+                                label={`${t("chipCourier")}: ${couriers.find((c) => c.value === courierId)?.label ?? `#${courierId}`}`}
                                 onRemove={() =>
                                     update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "")
                                 }
@@ -294,7 +300,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                         )}
                         {status && (
                             <FilterChip
-                                label={`Holat: ${ALL_STATUSES.find((s) => s.value === status)?.label}`}
+                                label={`${t("chipStatus")}: ${statuses.find((s) => s.value === status)?.label}`}
                                 onRemove={() =>
                                     update(ORDER_FILTER_KEYS.status, ORDER_FILTER_KEYS.status, "")
                                 }
@@ -351,7 +357,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
 // ── Filter chip ───────────────────────────────────────────────────────────
 const FilterChip = ({ label, onRemove }: { label?: string; onRemove: () => void }) => (
     <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-main/20 bg-main/10 py-1 pl-2.5 pr-1.5 text-[11px] font-semibold text-main">
-        <span className="break-words">{label}</span>
+        <span className="wrap-break-word">{label}</span>
         <button
             onClick={onRemove}
             className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-main/20"

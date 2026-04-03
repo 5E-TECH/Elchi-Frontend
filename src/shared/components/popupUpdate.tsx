@@ -1,4 +1,5 @@
 import { memo, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { X, ImagePlus } from "lucide-react";
 import Button from "./button";
 import Popup from "../ui/Popup";
@@ -34,6 +35,10 @@ const UpdatePopup = ({
   isLoading = false,
   imageProps,
 }: UpdatePopupProps) => {
+  const { t } = useTranslation("common");
+  const resolvedSaveLabel = saveLabel ?? t("save");
+  const resolvedCancelLabel = cancelLabel ?? t("cancel");
+
   return (
     <Popup isShow={isOpen} onClose={onClose}>
       <div className="bg-sidebar dark:bg-maindark w-[92vw] max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200 dark:border-white/5">
@@ -78,11 +83,11 @@ const UpdatePopup = ({
                 ) : (
                   <div className="text-center space-y-2">
                     <ImagePlus className="mx-auto text-gray-400 dark:text-gray-500" size={32} />
-                    <span className="text-xs text-gray-400 dark:text-gray-500">Rasm yuklash</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{t("uploadImage")}</span>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-sm">
-                  O'zgartirish
+                  {t("edit")}
                 </div>
               </label>
             </div>
@@ -95,12 +100,12 @@ const UpdatePopup = ({
         {/* Footer */}
         <div className="p-6 flex gap-4 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/2">
           <Button
-            label={cancelLabel}
+            label={resolvedCancelLabel}
             onClick={onClose}
             className="flex-1 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 bg-transparent py-3"
           />
           <Button
-            label={isLoading ? "Saqlanmoqda..." : saveLabel}
+            label={isLoading ? t("submitting") : resolvedSaveLabel}
             onClick={onSave}
             disabled={isLoading}
             className={`flex-1 py-3 shadow-lg shadow-main/20 ${!isLoading ? "bg-main hover:bg-primarydark" : "opacity-50"}`}

@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { ListOrdered, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import Button from "../../shared/components/button";
 import { useOrders } from "../../entities/order/api/orderApi";
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
@@ -17,6 +18,7 @@ const LIMIT = 15;
 
 // ── Main component ─────────────────────────────────────────────────────────
 const Orders = () => {
+  const { t } = useTranslation("orders");
   const navigate = useNavigate();
   const { getOrders } = useOrders();
   const { getAllParams } = useQueryParams();
@@ -108,21 +110,21 @@ const Orders = () => {
       {/* ── Header ── */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20 sm:h-13 sm:w-13">
-              <ListOrdered size={20} />
+          <div className="flex items-center gap-2.5 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main text-primary shadow-lg shadow-main/20">
+              <ListOrdered size={18} />
             </div>
             <div className="min-w-0">
-              <h2 className="m-0 text-lg font-bold leading-tight text-main dark:text-primary sm:text-[1.7rem]">
-                Buyurtmalar ro'yxati
+              <h2 className="m-0 text-[16px] font-bold leading-tight text-main dark:text-primary">
+                {t("list")}
               </h2>
-              <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-                Jami {total} ta buyurtma
+              <p className="mt-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                {t("totalOrdersSummary", { count: total })}
               </p>
             </div>
           </div>
           <Button
-            label="Yangi buyurtma"
+            label={t("newOrders")}
             icon={<Plus size={16} />}
             onClick={() => navigate("add")}
             className="w-full rounded-2xl py-3 text-sm shadow-lg shadow-main/20 sm:w-auto sm:rounded-xl sm:py-2.5"

@@ -91,6 +91,56 @@ export interface OrderListParams {
     end_day?: string;
 }
 
+export interface ExternalOrderItem {
+    id: string;
+    external_id?: string | null;
+    order_number?: string | null;
+    status?: string | null;
+    total_price?: number | null;
+    amount?: number | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    created_at?: string | null;
+    store_name?: string | null;
+    shop_name?: string | null;
+    integration_name?: string | null;
+    marketplace_name?: string | null;
+    products_count?: number | null;
+    items_count?: number | null;
+    items?: Array<{
+        id?: string;
+        name?: string | null;
+        product_name?: string | null;
+        quantity?: number | null;
+    }>;
+}
+
+export interface PaginatedMeta {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
+export interface ExternalOrdersResponse {
+    statusCode?: number;
+    message?: string;
+    data?: {
+        items?: ExternalOrderItem[];
+        meta?: PaginatedMeta;
+        pagination?: PaginatedMeta;
+    };
+}
+
+export interface ExternalOrdersParams {
+    page?: number;
+    limit?: number;
+    status?: string;
+    from_date?: string;
+    to_date?: string;
+    search?: string;
+}
+
 // Mijoz ma'lumotlari (nested object)
 export interface CustomerPayload {
     name: string;
