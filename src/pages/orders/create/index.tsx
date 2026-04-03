@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, ListPlus, SendHorizontal } from "lucide-reac
 import { FormProvider, useForm, useWatch, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
 import OrderStepper from "./ui/OrderStepper";
 import Step1Market from "./ui/Step1Market";
@@ -19,11 +20,6 @@ import {
   type OrderCreateFormValues,
 } from "./model/orderCreateForm";
 
-const STEPS = [
-  { id: 1, label: "1-qadam", description: "Market tanlang" },
-  { id: 2, label: "2-qadam", description: "Mijoz va buyurtma ma'lumotlari" },
-];
-
 const StepActions = ({
   step,
   canNext,
@@ -38,92 +34,97 @@ const StepActions = ({
   onBack: () => void;
   onNext: () => void;
   isMarketRole: boolean;
-}) => (
-  <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <button
-      type="button"
-      onClick={onBack}
-      className={`${getActionButtonClassName({ variant: "secondary" })} w-full sm:w-auto`}
-    >
-      <ChevronLeft size={16} />
-      {step === 1 || isMarketRole ? "Orqaga" : "Oldingi"}
-    </button>
+}) => {
+  const { t } = useTranslation(["orders", "common"]);
+  const stepsLength = 2;
 
-    <div className="flex w-full flex-col items-center gap-2 px-0 text-center sm:w-auto sm:px-4">
-      <span className="text-xs text-gray-400 font-medium">
-        {step} / {STEPS.length}
-      </span>
-      {isSubmitting ? (
-        <FormStateNote
-          state="loading"
-          message="Buyurtma saqlanmoqda, iltimos kuting"
-        />
-      ) : canNext ? (
-        <FormStateNote
-          state="success"
-          message={
-            step < 2
-              ? "Keyingi bosqichga o'tish uchun ma'lumotlar tayyor"
-              : "Buyurtma yuborishga tayyor"
-          }
-        />
-      ) : (
-        <FormStateNote
-          state="info"
-          message={
-            step < 2
-              ? "Avval market tanlang"
-              : "Majburiy maydonlarni to'ldirib, mahsulot tanlang"
-          }
-        />
-      )}
-    </div>
-
-    {step < 2 ? (
+  return (
+    <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <button
         type="button"
-        onClick={onNext}
-        disabled={!canNext}
-        className={getActionButtonClassName({
-          variant: "primary",
-          disabled: !canNext,
-        }) + " w-full sm:w-auto"}
+        onClick={onBack}
+        className={`${getActionButtonClassName({ variant: "secondary" })} w-full sm:w-auto`}
       >
-        Keyingi
-        <ChevronRight size={16} />
+        <ChevronLeft size={16} />
+        {step === 1 || isMarketRole ? t("back", { ns: "common" }) : t("previous", { ns: "common" })}
       </button>
-    ) : (
-      <button
-        type="submit"
-        disabled={!canNext || isSubmitting}
-        className={getActionButtonClassName({
-          variant: "primary",
-          disabled: !canNext || isSubmitting,
-        }) + " w-full sm:w-auto"}
-      >
+
+      <div className="flex w-full flex-col items-center gap-2 px-0 text-center sm:w-auto sm:px-4">
+        <span className="text-xs text-gray-400 font-medium">
+          {step} / {stepsLength}
+        </span>
         {isSubmitting ? (
-          <>
-            <span className="w-4 h-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-            Saqlanmoqda...
-          </>
+          <FormStateNote
+            state="loading"
+            message={t("createSubmitting")}
+          />
+        ) : canNext ? (
+          <FormStateNote
+            state="success"
+            message={step < 2 ? t("stepReadyMessage") : t("orderReadyMessage")}
+          />
         ) : (
-          <>
-            <SendHorizontal size={16} />
-            Buyurtma yaratish
-          </>
+          <FormStateNote
+            state="info"
+            message={step < 2 ? t("selectMarketFirst") : t("fillRequiredFields")}
+          />
         )}
-      </button>
-    )}
-  </div>
-);
+      </div>
+
+      {step < 2 ? (
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={!canNext}
+          className={getActionButtonClassName({
+            variant: "primary",
+            disabled: !canNext,
+          }) + " w-full sm:w-auto"}
+        >
+          {t("next", { ns: "common" })}
+          <ChevronRight size={16} />
+        </button>
+      ) : (
+        <button
+          type="submit"
+          disabled={!canNext || isSubmitting}
+          className={getActionButtonClassName({
+            variant: "primary",
+            disabled: !canNext || isSubmitting,
+          }) + " w-full sm:w-auto"}
+        >
+          {isSubmitting ? (
+            <>
+              <span className="w-4 h-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+              {t("submitting", { ns: "common" })}
+            </>
+          ) : (
+            <>
+              <SendHorizontal size={16} />
+              {t("create")}
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+};
 
 const OrderCreateFormContent = () => {
+  const { t } = useTranslation(["orders", "common"]);
   const navigate = useNavigate();
   const { createOrder } = useOrders();
   const { api } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const isMarketRole = role === "market";
   const [step, setStep] = useState(isMarketRole ? 2 : 1);
+  const steps = useMemo(
+    () => [
+      { id: 1, label: t("stepOneLabel"), description: t("stepOneDescription") },
+      { id: 2, label: t("stepTwoLabel"), description: t("stepTwoDescription") },
+    ],
+    [t],
+  );
 
   const methods = useForm<OrderCreateFormValues>({
     resolver: yupResolver(
@@ -185,10 +186,10 @@ const OrderCreateFormContent = () => {
         });
         setStep(2);
         api.success({
-          message: "Muvaffaqiyatli",
+          message: t("success", { ns: "common" }),
           description: isMarketRole
-            ? "Buyurtma yaratildi. Mahsulotlaringiz uchun yangi buyurtma kiritishda davom etishingiz mumkin."
-            : "Buyurtma yaratildi. Shu market uchun yangi buyurtma kiritishingiz mumkin.",
+            ? t("orderCreatedMarketRole")
+            : t("orderCreatedForMarket"),
           placement: "topRight",
           duration: 4,
         });
@@ -223,15 +224,15 @@ const OrderCreateFormContent = () => {
       >
         <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 sm:px-4">
           <HeaderName
-            name="Yangi buyurtma"
-            description="Buyurtma yaratish uchun qadamlarni bajaring"
+            name={t("newOrders")}
+            description={t("createPageDescription")}
             icon={<ListPlus />}
           />
         </div>
 
         <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 py-3 sm:px-6 sm:py-5">
           <OrderStepper
-            steps={STEPS}
+            steps={steps}
             currentStep={step}
             stepNotes={!isMarketRole && market?.name ? { 1: market.name } : undefined}
             hiddenDescriptions={step > 1 ? [1] : undefined}

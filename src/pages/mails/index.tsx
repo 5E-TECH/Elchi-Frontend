@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Mail, Package, AlertTriangle, Clock } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import TodaysMails from './components/todaysMails';
 import OldMails from './components/oldMails';
 import RefusedMails from './components/refusedMails';
@@ -50,6 +51,7 @@ const tabs = [
 ];
 
 const Mails = () => {
+  const { t } = useTranslation("mails");
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const activeTab: Tab =
@@ -64,16 +66,16 @@ const Mails = () => {
   return (
     <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4 lg:p-6">
       <div className="rounded-2xl border border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-4">
-        <div className="flex items-center gap-3 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20 sm:h-13 sm:w-13">
-            <Mail size={20} />
+        <div className="flex items-center gap-2.5 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main text-primary shadow-lg shadow-main/20">
+            <Mail size={18} />
           </div>
           <div className="min-w-0">
-            <h2 className="m-0 text-lg font-bold leading-tight text-main dark:text-primary sm:text-[1.7rem]">
-              Pochta
+            <h2 className="m-0 text-[16px] font-bold leading-tight text-main dark:text-primary">
+              {t("title")}
             </h2>
-            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-              Buyurtmalar uchun pochta xabarlarini ko'rish
+            <p className="mt-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
+              {t("pageDescription")}
             </p>
           </div>
         </div>
@@ -96,7 +98,9 @@ const Mails = () => {
               <span className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0 ${style.icon}`}>
                 {tab.icon}
               </span>
-              <span className="font-semibold text-sm leading-snug text-left">{tab.label}</span>
+              <span className="font-semibold text-sm leading-snug text-left">
+                {tab.key === "today" ? t("todayTab") : tab.key === "refused" ? t("refusedTab") : t("oldTab")}
+              </span>
             </button>
           );
         })}

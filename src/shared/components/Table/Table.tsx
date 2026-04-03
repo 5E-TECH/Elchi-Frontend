@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, memo, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TableProps, ColumnConfig, SortConfig } from './Table.types';
 
 export const Table = memo(<T extends Record<string, any>>({
@@ -14,6 +15,7 @@ export const Table = memo(<T extends Record<string, any>>({
   bordered = true,
   hoverable = true,
 }: TableProps<T>) => {
+  const { t } = useTranslation("common");
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -121,7 +123,7 @@ export const Table = memo(<T extends Record<string, any>>({
         className="flex items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-12 dark:border-primarydark/60 dark:bg-maindark"
       >
         <p className="text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-          Yuklanmoqda...
+          {t("loading")}
         </p>
       </div>
     );

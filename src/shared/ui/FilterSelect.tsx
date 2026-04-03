@@ -1,4 +1,5 @@
 import { memo, type ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 
 export interface FilterSelectOption {
@@ -31,6 +32,7 @@ const FilterSelect = memo(({
     disabled = false,
     size = "md",
 }: FilterSelectProps) => {
+    const { t } = useTranslation("common");
     const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
         onChange(e.target.value);
     };
@@ -71,7 +73,7 @@ const FilterSelect = memo(({
                     `}
                 >
                     <option value="">
-                        {loading ? "Yuklanmoqda..." : placeholder}
+                        {loading ? t("loading") : placeholder}
                     </option>
                     {options.map((opt) => (
                         <option

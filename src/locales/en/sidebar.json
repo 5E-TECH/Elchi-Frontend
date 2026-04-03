@@ -1,0 +1,23 @@
+{
+  "dashboard": "Dashboard",
+  "orders": "Orders",
+  "newOrders": "New orders",
+  "mails": "Mail",
+  "products": "Products",
+  "users": "Users",
+  "payments": "Payments",
+  "balance": "Balance",
+  "regions": "Regions",
+  "logs": "Logs",
+  "menu": "Menu",
+  "mainMenus": "Main menus",
+  "settings": "Settings",
+  "notifications": "Notifications",
+  "logout": "Log out",
+  "collapse": "Collapse",
+  "expand": "Expand",
+  "darkMode": "Dark mode",
+  "lightMode": "Light mode",
+  "profile": "Profile",
+  "search": "Search..."
+}

@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import { formatDate, formatPrice, getStatusLabel } from "../lib/helpers";
 
@@ -7,13 +8,14 @@ type Props = {
 };
 
 const PrintOnlyOrders = ({ orders }: Props) => {
+  const { t } = useTranslation(["mails", "orders", "common"]);
   const rows = useMemo(() => {
     return orders.map((o, idx) => {
-      const customer = o.customer?.name ?? `Mijoz #${o.customer_id}`;
+      const customer = o.customer?.name ?? t("mails:customerNumber", { id: o.customer_id });
       const phone = o.customer?.phone_number ?? "—";
       const district = o.district?.name ?? "—";
       const market = o.market?.name ?? "—";
-      const deliver = o.where_deliver === "address" ? "Manzilga" : "Markazga";
+      const deliver = o.where_deliver === "address" ? t("orders:deliveryToHome") : t("orders:deliveryToCenter");
       const date = formatDate(o.updatedAt ?? o.createdAt);
       const status = getStatusLabel(o.status as OrderStatus);
 
@@ -30,25 +32,25 @@ const PrintOnlyOrders = ({ orders }: Props) => {
         status,
       };
     });
-  }, [orders]);
+  }, [orders, t]);
 
   return (
     <div className="print-root" aria-hidden>
-      <h1 className="print-title">Tanlangan buyurtmalar</h1>
-      <div className="print-meta">Soni: {orders.length}</div>
+      <h1 className="print-title">{t("selectedOrdersPrintTitle")}</h1>
+      <div className="print-meta">{t("countLabel", { count: orders.length })}</div>
 
       <table className="print-table">
         <thead>
           <tr>
             <th>#</th>
-            <th>Mijoz</th>
-            <th>Telefon</th>
-            <th>Tuman</th>
-            <th>Market</th>
-            <th>Yetkazish</th>
-            <th>Narx</th>
-            <th>Sana</th>
-            <th>Holati</th>
+            <th>{t("orders:customer")}</th>
+            <th>{t("common:phone")}</th>
+            <th>{t("common:district")}</th>
+            <th>{t("orders:market")}</th>
+            <th>{t("orders:deliveryType")}</th>
+            <th>{t("common:price")}</th>
+            <th>{t("common:date")}</th>
+            <th>{t("orders:orderStatus")}</th>
           </tr>
         </thead>
         <tbody>
@@ -72,4 +74,3 @@ const PrintOnlyOrders = ({ orders }: Props) => {
 };
 
 export default memo(PrintOnlyOrders);
-

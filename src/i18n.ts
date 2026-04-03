@@ -1,13 +1,40 @@
-import i18n from "i18next";
+import i18n, { type Resource } from "i18next";
 import { initReactI18next } from "react-i18next";
-import enTranslations from "./locales/en/en.json";
-import ruTranslations from "./locales/ru/ru.json";
-import uzTranslations from "./locales/uz/uz.json";
 
 const LANGUAGE_STORAGE_KEY = "app-language";
 const DEFAULT_LANGUAGE = "uz";
 const FALLBACK_LANGUAGE = "en";
 const SUPPORTED_LANGUAGES = ["uz", "en", "ru"] as const;
+
+const localeModules = import.meta.glob<{ default: Record<string, string | object> }>(
+  "./locales/*/*.json",
+  { eager: true },
+);
+
+const resources = Object.entries(localeModules).reduce<Resource>(
+  (accumulator, [modulePath, moduleValue]) => {
+    const match = modulePath.match(/\.\/locales\/([^/]+)\/([^/]+)\.json$/);
+
+    if (!match) {
+      return accumulator;
+    }
+
+    const [, language, namespace] = match;
+
+    if (namespace === language) {
+      return accumulator;
+    }
+
+    if (!accumulator[language]) {
+      accumulator[language] = {};
+    }
+
+    accumulator[language][namespace] = moduleValue.default;
+
+    return accumulator;
+  },
+  {},
+);
 
 const getInitialLanguage = () => {
   if (typeof window === "undefined") {
@@ -30,15 +57,11 @@ const getInitialLanguage = () => {
 };
 
 void i18n.use(initReactI18next).init({
-  resources: {
-    uz: uzTranslations,
-    en: enTranslations,
-    ru: ruTranslations,
-  },
+  resources,
   lng: getInitialLanguage(),
   fallbackLng: FALLBACK_LANGUAGE,
   defaultNS: "common",
-  ns: Object.keys(uzTranslations),
+  ns: Object.keys(resources[DEFAULT_LANGUAGE] ?? {}),
   interpolation: {
     escapeValue: false,
   },

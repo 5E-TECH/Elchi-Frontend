@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { UserRole } from '../types/user';
+import { useTranslation } from 'react-i18next';
 
 interface UserRoleBadgeProps {
     role: UserRole;
@@ -41,6 +42,7 @@ const roleConfig: Record<UserRole, { label: string; className: string }> = {
 };
 
 export const UserRoleBadge = memo(({ role }: UserRoleBadgeProps) => {
+    const { t } = useTranslation("users");
     const config = roleConfig[role] ?? {
         label: role ?? "Noma'lum",
         className: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
@@ -50,7 +52,23 @@ export const UserRoleBadge = memo(({ role }: UserRoleBadgeProps) => {
         <span
             className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.className}`}
         >
-            {config.label}
+            {role === "admin"
+              ? t("roleAdmin")
+              : role === "manager"
+                ? t("roleManager")
+                : role === "marketing"
+                  ? t("roleMarketing")
+                  : role === "operator"
+                    ? t("roleOperator")
+                    : role === "courier"
+                      ? t("roleCourier")
+                      : role === "market"
+                        ? t("roleMarket")
+                        : role === "superadmin"
+                          ? t("roleSuperAdmin")
+                          : role === "customer"
+                            ? t("roleCustomer")
+                            : t("roleUnknown")}
         </span>
     );
 });

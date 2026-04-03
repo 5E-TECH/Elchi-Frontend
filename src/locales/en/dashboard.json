@@ -1,0 +1,88 @@
+{
+  "title": "Dashboard",
+  "overview": "Overview",
+  "todayRevenue": "Today's revenue",
+  "todayOrders": "Today's orders",
+  "weekRevenue": "This week's revenue",
+  "compareYesterday": "Compared with yesterday",
+  "compareLastWeek": "Compared with last week",
+  "totalRevenue": "Total revenue",
+  "orders": "Orders",
+  "sold": "Sold",
+  "statistics": "Statistics",
+  "financialAnalysis": "Financial analysis",
+  "period": "Period",
+  "daily": "Daily",
+  "weekly": "Weekly",
+  "monthly": "Monthly",
+  "growth": "Growth",
+  "decline": "Decline",
+  "analytics": "Analytics",
+  "serviceName": "Mail service",
+  "testMessage": "Translation system is working",
+  "page_title_today": "Today's statistics",
+  "page_title_filtered": "Statistics for the selected period",
+  "page_subtitle_today": "Today's metrics",
+  "page_subtitle_filtered": "Based on the selected date range",
+  "quickRanges": {
+    "today": "Today",
+    "week": "This week",
+    "month": "This month",
+    "clear": "Clear"
+  },
+  "datePicker": {
+    "from": "Start",
+    "to": "End"
+  },
+  "currency_value": "{{value}} UZS",
+  "cards": {
+    "total_orders": "Total orders",
+    "sold": "Sold",
+    "cancelled": "Cancelled",
+    "profit": "Profit"
+  },
+  "periods": {
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "period_stats": {
+    "title": "Chart period",
+    "subtitle": "statistics",
+    "total_revenue": "Total revenue:",
+    "orders": "Orders:",
+    "sold": "Sold:"
+  },
+  "chart": {
+    "title": "Daily revenue trend",
+    "description": "Revenue = Market tariff − Courier tariff (only sold orders are counted)",
+    "tooltip_value": "{{value}}M UZS",
+    "types": {
+      "area": "Area",
+      "bar": "Bar",
+      "combo": "Combo"
+    }
+  },
+  "financial_analysis": {
+    "title": "Financial analysis",
+    "subtitle": "Period analysis"
+  },
+  "financial_cards": {
+    "today_revenue": {
+      "title": "Today's revenue",
+      "subtitle": "Compared with yesterday",
+      "value_label": "Today"
+    },
+    "today_orders": {
+      "title": "Today's orders",
+      "subtitle": "Compared with yesterday",
+      "value_label": "Today"
+    },
+    "week_revenue": {
+      "title": "This week's revenue",
+      "subtitle": "Compared with last week",
+      "value_label": "This week"
+    }
+  }
+}

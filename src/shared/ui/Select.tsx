@@ -1,4 +1,5 @@
 import { memo, type ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import type { SelectProps } from "./Select.types";
 import { setFilterValue } from "../../features/Select/model/FilterSlice";
@@ -22,6 +23,7 @@ const Select = memo(
         useRedux = false,
         reduxKey,
     }: SelectProps) => {
+        const { t } = useTranslation("common");
         const dispatch = useDispatch();
         const { setParam } = useQueryParams();
 
@@ -100,7 +102,7 @@ const Select = memo(
                         aria-describedby={error ? `${name}-error` : undefined}
                     >
                         <option value="" className="dark:text-white/50">
-                            {loading ? "Yuklanmoqda..." : placeholder}
+                            {loading ? t("loading") : placeholder}
                         </option>
                         {options.map((opt) => (
                             <option

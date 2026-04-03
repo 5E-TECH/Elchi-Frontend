@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, FileText, Globe, Printer, ReceiptText } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { PrintMode } from "../lib/printMode";
 
 type MenuPosition = { top: number; left: number };
@@ -18,6 +19,7 @@ const PrintModeSelect = ({
   disabled = false,
   onSelect,
 }: Props) => {
+  const { t } = useTranslation("mails");
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -27,24 +29,24 @@ const PrintModeSelect = ({
     () => [
       {
         id: "browser" as const,
-        label: "Brauzer print",
-        hint: "Faqat jadvalni chop etadi",
+        label: t("printOptions.browser.label"),
+        hint: t("printOptions.browser.hint"),
         icon: <Globe size={14} className="text-[var(--color-info)]" />,
       },
       {
         id: "pdf_100x60" as const,
-        label: "PDF (100x60mm)",
-        hint: "Label format",
+        label: t("printOptions.labelPdf.label"),
+        hint: t("printOptions.labelPdf.hint"),
         icon: <FileText size={14} className="text-[var(--color-error)]" />,
       },
       {
         id: "thermal_80mm" as const,
-        label: "Termal printer (80mm)",
-        hint: "Receipt format",
+        label: t("printOptions.thermal.label"),
+        hint: t("printOptions.thermal.hint"),
         icon: <ReceiptText size={14} className="text-[var(--color-success)]" />,
       },
     ],
-    [],
+    [t],
   );
 
   useEffect(() => {
@@ -106,11 +108,11 @@ const PrintModeSelect = ({
             transition-opacity
             ${triggerDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           `}
-          aria-label="Chop etish"
+          aria-label={t("print")}
         >
           <Printer size={16} className="text-[var(--color-purple-light)]" />
           <span className="text-sm font-semibold">
-            Chop etish ({count})
+            {t("print")} ({count})
           </span>
           <ChevronDown
             size={16}
@@ -132,7 +134,7 @@ const PrintModeSelect = ({
             transition-all duration-200 shrink-0
             ${triggerDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           `}
-          aria-label="Chop etish"
+          aria-label={t("print")}
         >
           <Printer size={13} />
         </button>
@@ -150,7 +152,7 @@ const PrintModeSelect = ({
             shadow-2xl shadow-black/30
           "
           role="dialog"
-          aria-label="Chop etish menyusi"
+          aria-label={t("printMenu")}
         >
           {options.map((opt) => (
             <button

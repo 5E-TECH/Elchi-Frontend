@@ -3,9 +3,11 @@ import { User } from 'lucide-react';
 import { useUser } from '../../../entities/user/api/userApi';
 import { UserDetailWidget } from '../../../widgets/user-detail/ui/UserDetailWidget';
 import HeaderName from '../../../shared/components/headerName';
+import { useTranslation } from 'react-i18next';
 
 export const UserDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const { t } = useTranslation("users");
   const navigate = useNavigate()
   const { getUserById } = useUser();
   const { data, isLoading, isError, error } = getUserById(id || '');
@@ -15,8 +17,8 @@ export const UserDetailPage = () => {
       {/* Page Header */}
       <div className="mb-6" onClick={() => navigate(-1)}>
         <HeaderName
-          name="Foydalanuvchi Ma'lumotlari"
-          description="Batafsil profil va statistika"
+          name={t("userDetailsTitle")}
+          description={t("userDetailsDescription")}
           icon={<User />}
         />
       </div>

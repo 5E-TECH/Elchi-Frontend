@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Send, Inbox } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface SendButtonProps {
@@ -12,6 +13,7 @@ interface SendButtonProps {
 }
 
 const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onReceive, isBusy = false }: SendButtonProps) => {
+    const { t } = useTranslation("mails");
     const isDisabled = selectedCount === 0 || isBusy;
     const shouldReceive = isCourier || mode === "receive";
 
@@ -28,7 +30,7 @@ const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onRe
                         }`}
                 >
                     <Inbox size={16} />
-                    {isBusy ? "Tekshirilmoqda..." : "Pochta qabul qilish"}
+                    {isBusy ? t("checking") : t("receiveMail")}
                     {!isDisabled && (
                         <span className="ml-1 px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
                             {selectedCount}
@@ -51,7 +53,7 @@ const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onRe
                     }`}
             >
                 <Send size={16} />
-                {isBusy ? "Tekshirilmoqda..." : "Pochtani jo'natish"}
+                {isBusy ? t("checking") : t("sendMail")}
                 {!isDisabled && (
                     <span className="ml-1 px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
                         {selectedCount}

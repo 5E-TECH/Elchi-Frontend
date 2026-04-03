@@ -1,0 +1,88 @@
+{
+  "title": "Дашборд",
+  "overview": "Общий обзор",
+  "todayRevenue": "Сегодняшняя выручка",
+  "todayOrders": "Сегодняшние заказы",
+  "weekRevenue": "Выручка за эту неделю",
+  "compareYesterday": "По сравнению со вчерашним днем",
+  "compareLastWeek": "По сравнению с прошлой неделей",
+  "totalRevenue": "Общая выручка",
+  "orders": "Заказы",
+  "sold": "Продано",
+  "statistics": "Статистика",
+  "financialAnalysis": "Финансовый анализ",
+  "period": "Период",
+  "daily": "Ежедневно",
+  "weekly": "Еженедельно",
+  "monthly": "Ежемесячно",
+  "growth": "Рост",
+  "decline": "Снижение",
+  "analytics": "Аналитика",
+  "serviceName": "Почтовая служба",
+  "testMessage": "Система переводов работает",
+  "page_title_today": "Статистика за сегодня",
+  "page_title_filtered": "Статистика за выбранный период",
+  "page_subtitle_today": "Показатели за сегодня",
+  "page_subtitle_filtered": "По диапазону дат",
+  "quickRanges": {
+    "today": "Сегодня",
+    "week": "Эта неделя",
+    "month": "Этот месяц",
+    "clear": "Очистить"
+  },
+  "datePicker": {
+    "from": "Начало",
+    "to": "Конец"
+  },
+  "currency_value": "{{value}} UZS",
+  "cards": {
+    "total_orders": "Всего заказов",
+    "sold": "Продано",
+    "cancelled": "Отменено",
+    "profit": "Прибыль"
+  },
+  "periods": {
+    "daily": "Ежедневно",
+    "weekly": "Еженедельно",
+    "monthly": "Ежемесячно",
+    "yearly": "Ежегодно"
+  },
+  "period_stats": {
+    "title": "Период графика",
+    "subtitle": "статистика",
+    "total_revenue": "Общая выручка:",
+    "orders": "Заказы:",
+    "sold": "Продано:"
+  },
+  "chart": {
+    "title": "Тренд ежедневной выручки",
+    "description": "Выручка = тариф маркета − тариф курьера (учитываются только проданные заказы)",
+    "tooltip_value": "{{value}}M UZS",
+    "types": {
+      "area": "Area",
+      "bar": "Bar",
+      "combo": "Combo"
+    }
+  },
+  "financial_analysis": {
+    "title": "Финансовый анализ",
+    "subtitle": "Анализ периода"
+  },
+  "financial_cards": {
+    "today_revenue": {
+      "title": "Сегодняшняя выручка",
+      "subtitle": "По сравнению со вчерашним днем",
+      "value_label": "Сегодня"
+    },
+    "today_orders": {
+      "title": "Сегодняшние заказы",
+      "subtitle": "По сравнению со вчерашним днем",
+      "value_label": "Сегодня"
+    },
+    "week_revenue": {
+      "title": "Выручка за эту неделю",
+      "subtitle": "По сравнению с прошлой неделей",
+      "value_label": "На этой неделе"
+    }
+  }
+}

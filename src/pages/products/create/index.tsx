@@ -12,11 +12,13 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Image, X, Trash2, Edit, MoveLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useProducts } from "../../../entities/product";
 import PopupConfirm from "../../../shared/components/popupConfirm";
+import i18n from "../../../i18n";
 
 interface ExistingProduct {
   id: number;
@@ -30,7 +32,7 @@ interface CreateProductFormValues {
 }
 
 const createProductSchema: yup.ObjectSchema<CreateProductFormValues> = yup.object({
-  name: yup.string().trim().required("Mahsulot nomi kiritilishi shart"),
+  name: yup.string().trim().required(i18n.t("products:validationNameRequired")),
   image: yup.mixed<File>().nullable().defined(),
 });
 
@@ -57,6 +59,7 @@ ProductNameCell.displayName = "ProductNameCell";
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
 const CreateProductPage = () => {
+  const { t } = useTranslation("products");
   const [preview, setPreview] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ExistingProduct | null>(null);
 
@@ -132,7 +135,7 @@ const CreateProductPage = () => {
       },
       {
         key: "name",
-        label: "Product name",
+        label: t("name"),
         width: "45%",
         render: (_: string, item: ExistingProduct) => (
           <ProductNameCell item={item} />
@@ -140,7 +143,7 @@ const CreateProductPage = () => {
       },
       {
         key: "actions" as keyof ExistingProduct,
-        label: "Action",
+        label: t("action"),
         width: "20%",
         render: (_: unknown, item: ExistingProduct) => (
           <div className="flex items-center gap-2">
@@ -148,7 +151,7 @@ const CreateProductPage = () => {
               type="button"
               onClick={() => handleEdit(item.id)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors"
-              aria-label="Edit product"
+              aria-label={t("editProductAria")}
             >
               <Edit size={18} />
             </button>
@@ -156,7 +159,7 @@ const CreateProductPage = () => {
               type="button"
               onClick={() => handleDeleteRequest(item)}
               className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-red-500 transition-colors"
-              aria-label="Delete product"
+              aria-label={t("deleteProductAria")}
             >
               <Trash2 size={18} />
             </button>
@@ -164,7 +167,7 @@ const CreateProductPage = () => {
         ),
       },
     ],
-    [handleEdit, handleDeleteRequest],
+    [handleEdit, handleDeleteRequest, t],
   );
 
   const keyExtractor = useCallback((item: ExistingProduct) => item.id, []);
@@ -242,9 +245,9 @@ const CreateProductPage = () => {
             <MoveLeft size={20} className="text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white m-0">Create Product</h2>
+            <h2 className="text-lg font-bold text-white m-0">{t("createTitle")}</h2>
             <p className="text-white/60 text-sm m-0">
-              {marketName ?? "Market"}
+              {marketName ?? t("createSubtitleFallback")}
             </p>
           </div>
         </div>
@@ -254,7 +257,7 @@ const CreateProductPage = () => {
           {/* Product Name Input */}
           <div className="space-y-2">
             <label className="text-gray-700 dark:text-gray-300 font-medium text-sm">
-              Product name <span className="text-red-500">*</span>
+              {t("name")} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Box
@@ -264,7 +267,7 @@ const CreateProductPage = () => {
               <input
                 id="product-name"
                 disabled={isPending}
-                placeholder="Product name..."
+                placeholder={t("namePlaceholder")}
                 {...register("name")}
                 className="w-full bg-gray-50 dark:bg-primarydark text-gray-900 dark:text-white pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-main transition-colors disabled:opacity-50"
               />
@@ -277,7 +280,7 @@ const CreateProductPage = () => {
           {/* Product Image Upload */}
           <div className="flex flex-col">
             <label className="text-sm mb-2 font-medium text-gray-700 dark:text-gray-300">
-              Category Image
+              {t("categoryImage")}
             </label>
             <Controller
               control={control}
@@ -304,7 +307,7 @@ const CreateProductPage = () => {
                       <div className="flex flex-col items-center gap-1">
                         <Image size={24} className="text-gray-400" />
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Upload Image
+                          {t("uploadImage")}
                         </span>
                       </div>
                       <input
@@ -326,14 +329,14 @@ const CreateProductPage = () => {
         {/* Footer buttons */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-maindark">
           <Button
-            label="Clear"
+            label={t("clear")}
             type="button"
             className="border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
             icon={<X size={18} />}
             onClick={resetForm}
           />
           <Button
-            label={isPending ? "Saving..." : "Save"}
+            label={isPending ? t("saving") : t("save")}
             icon={<Box size={18} />}
             type="submit"
             disabled={isPending}
@@ -355,11 +358,10 @@ const CreateProductPage = () => {
         isOpen={!!deleteTarget}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="O'chirishni tasdiqlang"
+        title={t("deleteConfirmTitle")}
         message={
           <>
-            <strong className="text-gray-700 dark:text-gray-200">"{deleteTarget?.name}"</strong> ni
-            rostdan o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.
+            {t("deleteConfirmMessage", { name: deleteTarget?.name ?? "" })}
           </>
         }
         isLoading={deleteProduct.isPending}

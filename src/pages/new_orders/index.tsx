@@ -1,11 +1,13 @@
 import { memo, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import HeaderName from "../../shared/components/headerName";
 import { ClipboardList, QrCode, Store } from "lucide-react";
 
 type Tab = "markets" | "external";
 
 const NewOrders = () => {
+  const { t } = useTranslation("newOrders");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -16,8 +18,8 @@ const NewOrders = () => {
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
       <HeaderName
-        name="Today's Orders"
-        description="Yangi buyurtmalar mavjud marketlar ro'yxati"
+        name={t("pageTitle")}
+        description={t("pageDescription")}
         icon={<ClipboardList />}
       />
 
@@ -32,7 +34,7 @@ const NewOrders = () => {
             }`}
         >
           <Store size={20} />
-          <h4 className="font-semibold">Markets</h4>
+          <h4 className="font-semibold">{t("marketsTab")}</h4>
           <strong
             className={`ml-auto text-sm px-2.5 py-0.5 rounded-lg ${activeTab === "markets"
               ? "bg-white/20 text-white"
@@ -53,7 +55,7 @@ const NewOrders = () => {
             }`}
         >
           <QrCode size={20} />
-          <h4 className="font-semibold">Tashqi Buyurtmalar</h4>
+          <h4 className="font-semibold">{t("externalTab")}</h4>
         </div>
       </div>
 

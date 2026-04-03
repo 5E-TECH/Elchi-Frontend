@@ -3,6 +3,7 @@ import { Calendar, ChevronLeft, ChevronRight, History } from "lucide-react";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { useTranslation } from "react-i18next";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ const PaymentHistoryTable = ({
   onPageChange,
   currentPage,
 }: PaymentHistoryTableProps) => {
+  const { t } = useTranslation("payments");
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
 
   const activePage = pagination?.page ?? currentPage ?? 1;
@@ -93,7 +95,7 @@ const PaymentHistoryTable = ({
       },
       {
         key: "created_by",
-        label: "Created by",
+        label: t("createdBy"),
         width: "200px",
         render: (val) => (
           <span className="text-sm font-semibold text-gray-900 dark:text-white truncate block max-w-45">
@@ -103,7 +105,7 @@ const PaymentHistoryTable = ({
       },
       {
         key: "source_type",
-        label: "Source type",
+        label: t("sourceType"),
         width: "140px",
         render: (val) => (
           <span className="text-sm text-main/80 font-medium">{val || "-"}</span>
@@ -111,7 +113,7 @@ const PaymentHistoryTable = ({
       },
       {
         key: "cashbox_type",
-        label: "Cashbox type",
+        label: t("cashboxType"),
         width: "150px",
         render: (val, row) => {
           const type = val || row.cashbox?.cashbox_type;
@@ -124,7 +126,7 @@ const PaymentHistoryTable = ({
       },
       {
         key: "operation_type",
-        label: "Operation type",
+        label: t("operationType"),
         width: "160px",
         render: (val) => {
           const isIncome = val === "income";
@@ -136,14 +138,14 @@ const PaymentHistoryTable = ({
                   : "bg-rose-500/15 text-rose-400"
               }`}
             >
-              {val ? (isIncome ? "Income" : "Expense") : "-"}
+              {val ? (isIncome ? t("income") : t("expense")) : "-"}
             </span>
           );
         },
       },
       {
         key: "amount",
-        label: "Amount",
+        label: t("amount"),
         width: "180px",
         render: (val, row) => {
           const isIncome = row.operation_type === "income";
@@ -161,7 +163,7 @@ const PaymentHistoryTable = ({
       },
       {
         key: "payment_date",
-        label: "Payment date",
+        label: t("paymentDate"),
         width: "210px",
         render: (val, row) => (
           <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -173,7 +175,7 @@ const PaymentHistoryTable = ({
         ),
       },
     ],
-    [rowOffset],
+    [rowOffset, t],
   );
 
   return (
@@ -184,13 +186,13 @@ const PaymentHistoryTable = ({
           <div className="flex items-center gap-2">
             <History size={16} className="text-main" />
             <span className="text-sm font-bold text-gray-700 dark:text-white/70">
-              history
+              {t("historyLower")}
             </span>
             {pagination && (
               <span className="text-xs text-gray-400 dark:text-white/40 ml-1">
                 ·{" "}
                 <span className="font-bold text-main">{pagination.total}</span>{" "}
-                total
+                {t("total")}
               </span>
             )}
           </div>
@@ -203,7 +205,7 @@ const PaymentHistoryTable = ({
           loading={isLoading}
           dense
           keyExtractor={(row) => row.id}
-          emptyMessage="Finance tarixi topilmadi"
+          emptyMessage={t("financeHistoryNotFound")}
           onRowClick={(row) => setSelectedRow(row)}
         />
 

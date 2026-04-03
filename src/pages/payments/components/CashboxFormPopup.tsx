@@ -7,6 +7,8 @@ import { X } from "lucide-react";
 import Popup from "../../../shared/ui/Popup";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 
 interface CashboxFormValues {
     amount: string;
@@ -17,8 +19,8 @@ interface CashboxFormValues {
 const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
     amount: yup
         .string()
-        .required("Amount majburiy")
-        .test("positive-number", "Amount 0 dan katta bo'lishi kerak", (value) => {
+        .required(i18n.t("payments:amountRequired"))
+        .test("positive-number", i18n.t("payments:amountPositiveValidation"), (value) => {
             if (!value) return false;
             return Number(value) > 0;
         }),
@@ -53,6 +55,7 @@ const CashboxFormPopup = ({
     isLoading = false,
     onSubmit,
 }: CashboxFormPopupProps) => {
+    const { t } = useTranslation("payments");
     const {
         register,
         control,
@@ -117,7 +120,7 @@ const CashboxFormPopup = ({
                     {/* Amount */}
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-semibold text-gray-700 dark:text-white/70">
-                            Amount <span className="text-rose-400">*</span>
+                            {t("amountLabel")} <span className="text-rose-400">*</span>
                         </label>
                         <div className="relative">
                             <input
@@ -140,7 +143,7 @@ const CashboxFormPopup = ({
                     {hasSourceTypes && (
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-semibold text-gray-700 dark:text-white/70">
-                            payment type <span className="text-rose-400">*</span>
+                            {t("paymentType")} <span className="text-rose-400">*</span>
                         </label>
                         <div className="relative">
                             <Controller
@@ -152,7 +155,7 @@ const CashboxFormPopup = ({
                                         onChange={field.onChange}
                                         className="w-full h-12 rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all appearance-none cursor-pointer"
                                     >
-                                        <option value="">payment type</option>
+                                        <option value="">{t("paymentTypePlaceholder")}</option>
                                         {sourceTypes.map((t) => (
                                             <option key={t.id} value={String(t.id)}>
                                                 {t.name}
@@ -176,11 +179,11 @@ const CashboxFormPopup = ({
                     {/* Comment */}
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-semibold text-gray-700 dark:text-white/70">
-                            Comment
+                            {t("comment")}
                         </label>
                         <textarea
                             rows={3}
-                            placeholder="Comment..."
+                            placeholder={t("commentPlaceholder")}
                             {...register("comment")}
                             className="w-full rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all resize-none placeholder-gray-400"
                         />
@@ -190,12 +193,12 @@ const CashboxFormPopup = ({
                 {/* Footer buttons */}
                 <div className="flex justify-end gap-3 px-6 pb-6">
                     <Button
-                        label="Cancel"
+                        label={t("cancelLabel")}
                         className="border border-gray-200 dark:border-glass-border text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5"
                         onClick={handleClose}
                     />
                     <Button
-                        label={isLoading ? "Loading..." : submitLabel}
+                        label={isLoading ? t("loadingLabel") : submitLabel}
                         icon={submitIcon}
                         className={`px-7 bg-gradient-to-r ${accentColor} text-white ${!isValid || isLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90"
                             }`}

@@ -1,5 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import { X, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Order } from "./ordertable/pendingOrderTable";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
 };
 
 const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
+  const { t } = useTranslation(["orders", "common"]);
   const [comment, setComment]       = useState("");
   const [extraCost, setExtraCost]   = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
@@ -47,7 +49,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
           <div className="flex items-center gap-2">
             <XCircle size={20} className="text-white" />
             <h2 className="text-white font-bold text-base">
-              Buyurtmani bekor qilish
+              {t("cancelOrder")}
             </h2>
           </div>
           <button
@@ -62,7 +64,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
         <div className="p-5 flex flex-col gap-4">
           {/* Order info */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Mijoz:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t("customer")}:</span>
             <span className="text-sm font-semibold text-gray-800 dark:text-white">
               {order.customer?.name}
             </span>
@@ -71,7 +73,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
           {/* extraCost */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Qo'shimcha xarajat
+              {t("extraCost")}
             </label>
             <input
               type="number"
@@ -86,7 +88,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
           {/* paidAmount */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              To'langan summa
+              {t("paidAmount")}
             </label>
             <input
               type="number"
@@ -101,14 +103,14 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
           {/* comment */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Izoh
+              {t("note")}
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={3}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-white text-sm outline-none focus:border-red-400 dark:focus:border-red-500 transition-colors resize-none"
-              placeholder="Bekor qilish sababi..."
+              placeholder={t("cancelReason")}
             />
           </div>
         </div>
@@ -119,7 +121,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
           >
-            Orqaga
+            {t("back", { ns: "common" })}
           </button>
           <button
             onClick={handleSubmit}
@@ -131,7 +133,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
             ) : (
               <XCircle size={15} />
             )}
-            Bekor qilish
+            {t("cancelOrderAction")}
           </button>
         </div>
       </div>

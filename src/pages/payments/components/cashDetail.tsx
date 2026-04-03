@@ -31,7 +31,9 @@ import HeaderName from "../../../shared/components/headerName";
 import PaymentHistoryList from "./PaymentHistoryList";
 import type { Pagination, PaymentRow } from "./patmentHistoryTable";
 import CustomDatePicker from "../../../shared/ui/CustomDatePicker";
-import { useUser } from "../../../entities/user/api/userApi";
+import { useCashBox } from "../../../entities/payments";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -190,14 +192,6 @@ const CONFIG = {
   },
 } as const;
 
-const PAYMENT_TYPES = [
-  { value: "", label: "payment type" },
-  { value: "cash", label: "Naqd" },
-  { value: "click", label: "Click" },
-  { value: "payme", label: "Payme" },
-  { value: "transfer", label: "Transfer" },
-];
-
 interface CashDetailFormValues {
   amount: string;
   paymentType: string;
@@ -207,20 +201,21 @@ interface CashDetailFormValues {
 const cashDetailSchema: yup.ObjectSchema<CashDetailFormValues> = yup.object({
   amount: yup
     .string()
-    .required("Amount majburiy")
-    .test("positive-number", "Amount 0 dan katta bo'lishi kerak", (value) => {
+    .required(i18n.t("payments:amountRequired"))
+    .test("positive-number", i18n.t("payments:amountPositiveValidation"), (value) => {
       if (!value) return false;
       return Number(value) > 0;
     }),
-  paymentType: yup.string().required("payment type majburiy"),
+  paymentType: yup.string().required(i18n.t("payments:paymentTypeRequired")),
   comment: yup.string().defined(),
 });
 
 const CashDetail = () => {
+  const { t } = useTranslation("payments");
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
   const navigate = useNavigate();
-  const { getUserById } = useUser();
+  const { getCashBoxById } = useCashBox();
 
   const [draftDateFrom, setDraftDateFrom] = useState("");
   const [draftDateTo, setDraftDateTo] = useState("");
@@ -254,7 +249,7 @@ const CashDetail = () => {
     data: cashboxResponse,
     isLoading,
     isFetching,
-  } = getUserById(id || "", detailParams);
+  } = getCashBoxById(id || "", Boolean(id), detailParams);
 
   const detailData = cashboxResponse?.data;
   const cashbox = detailData?.cashbox;
@@ -263,6 +258,13 @@ const CashDetail = () => {
   const type =
     state?.type ?? normalizeType(cashbox?.cashbox_type, user?.role);
   const cfg = CONFIG[type];
+  const paymentTypeOptions = [
+    { value: "", label: t("paymentTypePlaceholder") },
+    { value: "cash", label: t("cash") },
+    { value: "click", label: "Click" },
+    { value: "payme", label: "Payme" },
+    { value: "transfer", label: "Transfer" },
+  ];
 
   const entityName = user?.name?.trim() || "Foydalanuvchi";
   const totalBalance = toNumber(cashbox?.balance);
@@ -413,7 +415,7 @@ const CashDetail = () => {
 
             <div className="relative z-10">
               <p className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-white/50">
-                <Wallet2 size={11} /> umumiyBalans
+                <Wallet2 size={11} /> {t("totalBalanceLabel")}
               </p>
               <p className="text-3xl font-black tracking-tight text-white">
                 {balanceVisible ? `${fmt(totalBalance)} UZS` : "••••••• UZS"}
@@ -422,13 +424,13 @@ const CashDetail = () => {
 
             <div className="relative z-10 mt-5 grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-white/10 bg-white/10 px-4 py-3">
-                <p className="mb-1 text-[11px] text-white/50">Naqd balans</p>
+                <p className="mb-1 text-[11px] text-white/50">{t("cashBalance")}</p>
                 <p className="text-sm font-bold text-white">
                   {balanceVisible ? `${fmt(cashBalance)} UZS` : "•••••••"}
                 </p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/10 px-4 py-3">
-                <p className="mb-1 text-[11px] text-white/50">Karta balans</p>
+                <p className="mb-1 text-[11px] text-white/50">{t("cardBalance")}</p>
                 <p className="text-sm font-bold text-white">
                   {balanceVisible ? `${fmt(cardBalance)} UZS` : "•••••••"}
                 </p>
@@ -439,7 +441,7 @@ const CashDetail = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-2xl bg-linear-to-br from-success to-main p-5 shadow-lg">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-white/80">Income</span>
+                <span className="text-sm font-semibold text-white/80">{t("income")}</span>
                 <TrendingUp size={18} className="text-white/70" />
               </div>
               <p className="text-2xl font-black text-white">+{fmt(income)}</p>
@@ -448,7 +450,7 @@ const CashDetail = () => {
 
             <div className="rounded-2xl bg-linear-to-br from-error to-warning p-5 shadow-lg">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-white/80">Expense</span>
+                <span className="text-sm font-semibold text-white/80">{t("expense")}</span>
                 <TrendingDown size={18} className="text-white/70" />
               </div>
               <p className="text-2xl font-black text-white">-{fmt(expense)}</p>
@@ -461,15 +463,15 @@ const CashDetail = () => {
             className={`w-full rounded-2xl bg-linear-to-r py-4 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 ${cfg.actionGradient} flex items-center justify-center gap-2.5`}
           >
             {type === "market" ? <CreditCard size={18} /> : <PackageCheck size={18} />}
-            <span>{cfg.actionLabel}</span>
+          <span>{cfg.actionLabel}</span>
             <span className="text-xs font-normal text-white/60">
-              — {cfg.actionSub}
+              — {type === "market" ? t("payToMarket") : t("receiveFromCourier")}
             </span>
           </button>
 
           <div>
             <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-white/50">
-              Amount <span className="text-rose-400">*</span>
+              {t("amountLabel")} <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
               <input
@@ -489,7 +491,7 @@ const CashDetail = () => {
 
           <div>
             <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-white/50">
-              payment type <span className="text-rose-400">*</span>
+              {t("paymentType")} <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
               <Controller
@@ -501,7 +503,7 @@ const CashDetail = () => {
                     onChange={field.onChange}
                     className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-900 transition-all focus:border-main focus:outline-none focus:ring-2 focus:ring-main/40 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   >
-                    {PAYMENT_TYPES.map((option) => (
+                    {paymentTypeOptions.map((option) => (
                       <option
                         key={option.value}
                         value={option.value}
@@ -534,10 +536,10 @@ const CashDetail = () => {
 
           <div>
             <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-white/50">
-              Comment
+              {t("comment")}
             </label>
             <textarea
-              placeholder="Comment..."
+              placeholder={t("commentPlaceholder")}
               rows={3}
               {...register("comment")}
               className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-all placeholder-gray-400 focus:border-main focus:outline-none focus:ring-2 focus:ring-main/40 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder-white/20"
@@ -558,26 +560,26 @@ const CashDetail = () => {
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-primary dark:border-glass-border dark:bg-primarydark">
             <div className="border-b border-gray-100 px-5 py-3 dark:border-glass-border">
               <p className="text-sm font-bold text-gray-900 dark:text-white">
-                Kassa egasi ma&apos;lumotlari
+                {t("ownerInfoTitle")}
               </p>
               <p className="text-[11px] text-gray-400 dark:text-white/40">
-                Ism, telefon va rol
+                {t("ownerInfoDescription")}
               </p>
             </div>
             <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
               <OwnerInfoItem
                 icon={<UserRound size={12} />}
-                label="Ism"
+                label={t("name")}
                 value={entityName}
               />
               <OwnerInfoItem
                 icon={<Phone size={12} />}
-                label="Telefon"
+                label={t("phone")}
                 value={user?.phone_number || "-"}
               />
               <OwnerInfoItem
                 icon={cfg.headerIcon}
-                label="Rol"
+                label={t("role")}
                 value={formatDisplayName(user?.role) || type}
               />
             </div>
@@ -587,10 +589,10 @@ const CashDetail = () => {
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-glass-border">
               <div>
                 <p className="text-sm font-bold text-gray-900 dark:text-white">
-                  Tranzaksiyalar
+                  {t("transactions")}
                 </p>
                 <p className="text-[11px] text-gray-400 dark:text-white/40">
-                  Sana bo&apos;yicha filtrlash
+                  {t("filterByDate")}
                 </p>
               </div>
               {(draftDateFrom || draftDateTo) && (
@@ -602,7 +604,7 @@ const CashDetail = () => {
                   }}
                   className="text-xs font-semibold text-main transition-opacity hover:opacity-80"
                 >
-                  Tozalash
+                  {t("clear")}
                 </button>
               )}
             </div>
@@ -611,7 +613,7 @@ const CashDetail = () => {
                 <CustomDatePicker
                   value={draftDateFrom}
                   onChange={setDraftDateFrom}
-                  placeholder="Boshlanish"
+                  placeholder={t("startDate")}
                   maxDate={draftDateTo || undefined}
                   className="w-full"
                 />
@@ -623,7 +625,7 @@ const CashDetail = () => {
                 <CustomDatePicker
                   value={draftDateTo}
                   onChange={setDraftDateTo}
-                  placeholder="Tugash"
+                  placeholder={t("endDate")}
                   minDate={draftDateFrom || undefined}
                   className="w-full"
                 />
@@ -632,7 +634,7 @@ const CashDetail = () => {
             {((draftDateFrom && !draftDateTo) ||
               (!draftDateFrom && draftDateTo)) && (
               <p className="px-4 pb-4 text-xs text-gray-500 dark:text-white/45">
-                Filtr qo&apos;llanishi uchun ikkala sana ham tanlanishi kerak.
+                {t("dateRangeRequired")}
               </p>
             )}
           </div>
@@ -640,10 +642,10 @@ const CashDetail = () => {
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-primary dark:border-glass-border dark:bg-primarydark">
             <div className="border-b border-gray-100 px-5 py-3 dark:border-glass-border">
               <p className="text-sm font-bold text-gray-900 dark:text-white">
-                Oxirgi 30 kunlik kirim/chiqim grafigi
+                {t("last30DaysChart")}
               </p>
               <p className="text-[11px] text-gray-400 dark:text-white/40">
-                Recharts asosida kunlik dinamika
+                {t("dailyDynamics")}
               </p>
             </div>
             <div className="h-72 p-4">
@@ -681,7 +683,7 @@ const CashDetail = () => {
                   <Area
                     type="monotone"
                     dataKey="income"
-                    name="Kirim"
+                    name={t("income")}
                     stroke="var(--color-success)"
                     fill="url(#cash-detail-income)"
                     strokeWidth={2}
@@ -689,7 +691,7 @@ const CashDetail = () => {
                   <Area
                     type="monotone"
                     dataKey="expense"
-                    name="Chiqim"
+                    name={t("expense")}
                     stroke="var(--color-error)"
                     fill="url(#cash-detail-expense)"
                     strokeWidth={2}
@@ -702,7 +704,7 @@ const CashDetail = () => {
           {isFetching && !isLoading && (
             <div className="flex items-center gap-2 px-1 text-xs text-gray-500 dark:text-white/50">
               <Loader2 size={14} className="animate-spin text-main" />
-              Filtr bo&apos;yicha ma&apos;lumot yangilanmoqda...
+              {t("transactionsUpdating")}
             </div>
           )}
 

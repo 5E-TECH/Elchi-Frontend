@@ -1,6 +1,7 @@
 import { memo, useEffect, type ReactNode } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { Home, MapPin, Phone, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import {
   formatPhone,
@@ -46,6 +47,7 @@ const Field = ({ label, required, icon, children, error }: FieldProps) => (
 );
 
 const Step2Customer = () => {
+  const { t } = useTranslation("orders");
   const {
     control,
     formState: { errors },
@@ -102,10 +104,10 @@ const Step2Customer = () => {
         </div>
         <div>
           <h3 className="font-semibold text-maindark dark:text-primary text-base">
-            Mijoz ma'lumotlari
+            {t("customerInfo")}
           </h3>
           <p className="text-xs text-gray-400">
-            Yetkazib berish uchun ma'lumotlar kiriting
+            {t("customerInfoSubtitle")}
           </p>
         </div>
       </div>
@@ -116,7 +118,7 @@ const Step2Customer = () => {
           name="customer.phone"
           render={({ field }) => (
             <Field
-              label="Telefon raqam"
+              label={t("customerPhone")}
               required
               icon={<Phone size={12} />}
               error={errors.customer?.phone?.message}
@@ -145,7 +147,7 @@ const Step2Customer = () => {
           name="customer.extra_phone"
           render={({ field }) => (
             <Field
-              label="Qo'shimcha raqam"
+              label={t("additionalPhone")}
               icon={<Phone size={12} />}
               error={errors.customer?.extra_phone?.message}
             >
@@ -173,7 +175,7 @@ const Step2Customer = () => {
           name="customer.name"
           render={({ field }) => (
             <Field
-              label="Ism"
+              label={t("customerName")}
               required
               icon={<User size={12} />}
               error={errors.customer?.name?.message}
@@ -181,7 +183,7 @@ const Step2Customer = () => {
               <input
                 {...field}
                 type="text"
-                placeholder="Ism kiriting"
+                placeholder={t("enterName")}
                 className={getFieldClassName(inputClass, !!errors.customer?.name?.message)}
               />
             </Field>
@@ -193,7 +195,7 @@ const Step2Customer = () => {
           name="customer.region_id"
           render={({ field }) => (
             <Field
-              label="Viloyat"
+              label={t("filterRegion")}
               required
               icon={<MapPin size={12} />}
               error={errors.customer?.region_id?.message}
@@ -211,7 +213,7 @@ const Step2Customer = () => {
                   )}
                 >
                   <option value="">
-                    {regLoading ? "Yuklanmoqda..." : "Viloyat tanlang"}
+                    {regLoading ? t("createSubmitting") : t("selectRegion")}
                   </option>
                   {regionList.map((region: any) => (
                     <option key={region.id} value={region.id}>
@@ -229,7 +231,7 @@ const Step2Customer = () => {
           name="customer.district_id"
           render={({ field }) => (
             <Field
-              label="Tuman"
+              label={t("district")}
               required
               icon={<MapPin size={12} />}
               error={errors.customer?.district_id?.message}
@@ -248,10 +250,10 @@ const Step2Customer = () => {
                 >
                   <option value="">
                     {!regionId
-                      ? "Avval viloyat tanlang"
+                      ? t("selectRegionFirst")
                       : distLoading
-                        ? "Yuklanmoqda..."
-                        : "Tuman tanlang"}
+                        ? t("createSubmitting")
+                        : t("selectDistrict")}
                   </option>
                   {districtList.map((district: any) => (
                     <option key={district.id} value={district.id}>
@@ -270,13 +272,13 @@ const Step2Customer = () => {
             name="customer.address"
             render={({ field }) => (
               <Field
-                label="Manzil"
+                label={t("address")}
                 icon={<Home size={12} />}
                 error={errors.customer?.address?.message}
               >
                 <textarea
                   {...field}
-                  placeholder="To'liq manzil kiriting..."
+                  placeholder={t("enterFullAddress")}
                   rows={2}
                   className={getFieldClassName(
                     `${inputClass} resize-none`,

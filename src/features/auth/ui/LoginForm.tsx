@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Controller, useForm, type Resolver, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { loginSchema } from "../../../shared/lib/validation/loginSchema";
+import { useTranslation } from "react-i18next";
+import { createLoginSchema } from "../../../shared/lib/validation/loginSchema";
 import {
   loginSuccess,
   setLoading,
@@ -61,6 +62,7 @@ const LoginForm = () => {
   const [show, setShow] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation("auth");
   const loading = useSelector((state: RootState) => state.user.loading);
   const error = useSelector((state: RootState) => state.user.error);
 
@@ -72,7 +74,7 @@ const LoginForm = () => {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormValues>({
-    resolver: yupResolver(loginSchema) as Resolver<LoginFormValues>,
+    resolver: yupResolver(createLoginSchema(t)) as Resolver<LoginFormValues>,
     mode: "onTouched",
     defaultValues: {
       phone_number: "+998 ",
@@ -100,16 +102,15 @@ const LoginForm = () => {
         },
         onError: (error) => {
           const err = error as AxiosError<ApiErrorResponse>;
-          let message = "Tizim hatoligi";
+          let message = t("systemError");
           if (err.response) {
             const status = err.response.status;
-            if (status === 400) message = "Noto'g'ri ma'lumot kiritildi";
-            if (status === 401)
-              message = "Parol noto'g'ri yoki foydalanuvchi topilmadi";
-            if (status === 404) message = "Bunday foydalanuvchi mavjud emas";
-            if (status === 500) message = "Serverda xatolik yuz berdi";
+            if (status === 400) message = t("invalidInput");
+            if (status === 401) message = t("invalidCredentials");
+            if (status === 404) message = t("userNotFound");
+            if (status === 500) message = t("serverError");
           } else {
-            message = err.message || "Tarmoq xatoligi";
+            message = err.message || t("networkError");
           }
 
           dispatch(setError(message));
@@ -130,7 +131,7 @@ const LoginForm = () => {
           <div>
             <div className="mb-4">
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 ml-1">
-                Telefon raqam
+                {t("phoneLabel")}
               </label>
               <Controller
                 control={control}
@@ -148,7 +149,7 @@ const LoginForm = () => {
                     disabled={loading}
                     className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phone_number ? "border-red-500" : "border-gray-200"
                       } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-                    placeholder="+998 90 123 45 67"
+                    placeholder={t("phonePlaceholder")}
                   />
                 )}
               />
@@ -163,7 +164,7 @@ const LoginForm = () => {
             <div className="mb-8">
               <div className="flex justify-between items-center mb-1 ml-1">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Parol
+                  {t("passwordLabel")}
                 </label>
               </div>
               <div
@@ -174,7 +175,7 @@ const LoginForm = () => {
                   {...register("password")}
                   type={show ? "text" : "password"}
                   disabled={loading}
-                  placeholder="••••••••"
+                  placeholder={t("passwordPlaceholder")}
                   className="w-full outline-none bg-transparent"
                 />
                 <button
@@ -212,10 +213,10 @@ const LoginForm = () => {
               {loading ? (
                 <>
                   <Loader2 className="animate-spin" size={20} />
-                  Yuklanmoqda...
+                  {t("signingIn")}
                 </>
               ) : (
-                "Tizimga kirish"
+                t("signInButton")
               )}
             </button>
           </div>
