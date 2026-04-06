@@ -31,7 +31,7 @@ const Auth = () => {
         setValid(true);
 
         // ✅ Safe access:
-        const userData = res.data?.data;
+        const userData = res.data?.data; 
         
         if (userData) {
           dispatch(setProfile(userData));

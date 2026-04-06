@@ -58,6 +58,13 @@
   --color-error-page-digit: rgba(255, 255, 255, 0.95);
   --color-error-page-ring-soft: rgba(168, 85, 247, 0.22);
   --color-error-page-ring-border: rgba(255, 255, 255, 0.12);
+  --color-region-map-low: #d7f5de;
+  --color-region-map-medium: #76d88f;
+  --color-region-map-high: #10b84f;
+  --color-region-map-xhigh: #087a2f;
+  --color-region-map-stroke: #4d6bff;
+  --color-region-map-label: #38507d;
+  --color-region-map-tooltip-shadow: rgba(39, 44, 82, 0.18);
 }
 
 /* ───────────────────────────── Print (MailDetail) ─────────────────────────── */
