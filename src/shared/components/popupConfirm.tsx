@@ -52,12 +52,12 @@ const PopupConfirm = ({
           <AlertTriangle size={28} className={iconColor} />
         </div>
 
-        <h3 className="mb-2 text-xl font-bold text-[var(--color-maindark)] dark:text-white">
+        <h3 className="mb-2 text-xl font-bold text-maindark dark:text-white">
           {resolvedTitle}
         </h3>
 
         {message && (
-          <div className="mb-6 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
+          <div className="mb-6 text-sm text-text-muted dark:text-text-muted-dark">
             {message}
           </div>
         )}
@@ -67,7 +67,7 @@ const PopupConfirm = ({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="rounded-xl border border-[color:var(--color-border-soft)] px-6 py-2.5 text-sm font-medium text-[var(--color-maindark)] transition-colors hover:bg-[var(--color-main-soft)] disabled:opacity-50 dark:text-white/85 dark:hover:bg-white/10"
+            className="rounded-xl border border-border-soft px-6 py-2.5 text-sm font-medium text-maindark transition-colors hover:bg-main-soft disabled:opacity-50 dark:text-white/85 dark:hover:bg-white/10"
           >
             {resolvedCancelLabel}
           </button>
