@@ -8,6 +8,10 @@ const sidebarRu = {
   payments: "Платежи",
   balance: "Баланс",
   region: "Регионы",
+  regions: "Регионы",
+  notifications: "Уведомления",
+  branches: "Филиалы",
+  newOrders: "Новые заказы",
   logs: "Логи",
 };
 

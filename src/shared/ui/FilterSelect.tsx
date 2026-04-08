@@ -42,7 +42,7 @@ const FilterSelect = memo(({
     const selectSizeClass =
         size === "sm"
             ? "rounded-lg px-3 py-2 pr-8 text-[13px]"
-            : "rounded-xl px-3.5 py-2.5 pr-9 text-sm";
+            : "h-12 rounded-xl px-3.5 pr-9 text-sm";
 
     return (
         <div className="flex flex-col gap-1.5">
@@ -66,12 +66,13 @@ const FilterSelect = memo(({
                     className={`
                         w-full appearance-none cursor-pointer
                         bg-white dark:bg-primarydark
-                        border border-gray-200 dark:border-white/10
+                        border-2 border-gray-200 dark:border-primarydark/30
                         ${selectSizeClass}
                         font-medium
                         text-maindark dark:text-primary
                         placeholder:text-gray-400 dark:placeholder:text-white/30
-                        focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
+                        focus:outline-none focus:ring-2 focus:ring-main/20 focus:border-main
+                        hover:border-main/50 dark:hover:border-main/50 hover:shadow-sm focus:shadow-md shadow-sm
                         transition-all duration-200
                         disabled:opacity-50 disabled:cursor-not-allowed
                     `}
