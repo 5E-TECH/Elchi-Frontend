@@ -1,4 +1,4 @@
-import { memo, useMemo, useEffect, useState } from "react";
+import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
@@ -10,37 +10,18 @@ import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoIcon from "../../../shared/assets/logo qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import LogoIcondark from "../../../shared/assets/logo oq.png";
+import { useTheme } from "../../../app/providers/theme/ThemeContext";
 
 const Sidebar = () => {
   const { t } = useTranslation(["sidebar"]);
   const dispatch = useDispatch();
   const sidebarRedux = useSelector((state: RootState) => state.sidebar);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
 
   // ─── User role'ni Redux dan oling ────────────────────────────────────────
   const { role } = useSelector((state: RootState) => state.role);
   const userRole = (role as UserRole) || "admin";
-
-  // ─── Dark mode holatini kuzatish ─────────────────────────────────────────
-  useEffect(() => {
-    const checkDarkMode = () => {
-      const theme = localStorage.getItem("theme");
-      const isDark =
-        theme === "dark" ||
-        (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      setIsDarkMode(isDark);
-    };
-
-    checkDarkMode();
-
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
   const links = useMemo(() => {
@@ -94,7 +75,7 @@ const Sidebar = () => {
           {sidebarRedux.isOpen ? (
             <>
               <ChevronLeft size={20} />
-              <span className="ml-2 text-sm font-medium">Yashirish</span>
+              <span className="ml-2 text-sm font-medium">{t("collapse")}</span>
             </>
           ) : (
             <ChevronRight size={20} />

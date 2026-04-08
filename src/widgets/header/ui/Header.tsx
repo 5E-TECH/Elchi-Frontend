@@ -21,7 +21,7 @@ import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { useNavigate } from "react-router-dom";
 import { GlobalSearchInput } from "../../../features/search";
-import { LANGUAGE_STORAGE_KEY } from "../../../i18n";
+import { LANGUAGE_STORAGE_KEY, normalizeLanguage } from "../../../i18n";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -109,7 +109,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
   const activeLanguage =
     LANGUAGE_OPTIONS.find(
-      (language) => language.key === i18n.resolvedLanguage,
+      (language) =>
+        language.key === normalizeLanguage(i18n.resolvedLanguage ?? i18n.language),
     ) ?? LANGUAGE_OPTIONS[0];
 
   useEffect(() => {
@@ -123,12 +124,13 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   }, []);
 
   const handleLanguageChange = async (nextLanguage: string) => {
-    if (nextLanguage === i18n.language) {
+    const normalizedLanguage = normalizeLanguage(nextLanguage);
+    if (normalizedLanguage === normalizeLanguage(i18n.language)) {
       setIsLanguageOpen(false);
       return;
     }
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
-    await i18n.changeLanguage(nextLanguage);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, normalizedLanguage);
+    await i18n.changeLanguage(normalizedLanguage);
     setIsLanguageOpen(false);
   };
 
@@ -231,11 +233,10 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                     key={language.key}
                     type="button"
                     onClick={() => void handleLanguageChange(language.key)}
-                    className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-all duration-200 ${
-                      isSelected
+                    className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-all duration-200 ${isSelected
                         ? "bg-main text-primary"
                         : "text-maindark hover:bg-main/10 dark:text-primary dark:hover:bg-primary/10"
-                    }`}
+                      }`}
                   >
                     <span
                       className={`flex h-6 w-8 overflow-hidden rounded-lg shrink-0 ${isSelected ? "ring-1 ring-primary/50" : ""}`}

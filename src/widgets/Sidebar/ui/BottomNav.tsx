@@ -52,7 +52,7 @@ const BottomNav = ({ onMenuClick }: BottomNavProps) => {
                 >
                     <Menu size={20} strokeWidth={2} />
                     <span className="text-[10px] font-bold uppercase tracking-wider">
-                        Menu
+                        {t("menu")}
                     </span>
                 </button>
             </div>
