@@ -1,14 +1,8 @@
-<<<<<<< HEAD
 import { memo, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import Popup from "../ui/Popup";
 import popupStyles from "../ui/FormPopup/FormPopup.module.css";
-=======
-import { memo, type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Trash2 } from 'lucide-react';
-import Popup from '../ui/Popup';
->>>>>>> 2e15eed15d5bfa89b3de5b62449dd84cf655071a
 
 interface PopupConfirmProps {
   isOpen: boolean;
@@ -33,18 +27,15 @@ const PopupConfirm = ({
   isLoading = false,
   variant = "danger",
 }: PopupConfirmProps) => {
-<<<<<<< HEAD
+  const { t } = useTranslation("common");
+
   const iconBg = variant === "danger"
     ? "bg-rose-100 dark:bg-rose-500/12"
     : "bg-amber-100 dark:bg-amber-500/12";
-=======
-  const { t } = useTranslation("common");
-  const iconBg = variant === 'danger'
-    ? 'bg-red-100 dark:bg-red-500/10'
-    : 'bg-amber-100 dark:bg-amber-500/10';
->>>>>>> 2e15eed15d5bfa89b3de5b62449dd84cf655071a
 
-  const iconColor = variant === "danger" ? "text-rose-500 dark:text-rose-300" : "text-amber-500 dark:text-amber-300";
+  const iconColor = variant === "danger"
+    ? "text-rose-500 dark:text-rose-300"
+    : "text-amber-500 dark:text-amber-300";
 
   const confirmButtonClassName = variant === "danger"
     ? "border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/12 dark:text-rose-200 dark:hover:border-rose-400/60 dark:hover:bg-rose-500/18"
@@ -61,13 +52,8 @@ const PopupConfirm = ({
           <AlertTriangle size={28} className={iconColor} />
         </div>
 
-<<<<<<< HEAD
         <h3 className="mb-2 text-xl font-bold text-[var(--color-maindark)] dark:text-white">
-          {title}
-=======
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
           {resolvedTitle}
->>>>>>> 2e15eed15d5bfa89b3de5b62449dd84cf655071a
         </h3>
 
         {message && (
@@ -93,13 +79,8 @@ const PopupConfirm = ({
           >
             {isLoading ? (
               <>
-<<<<<<< HEAD
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
-                O'chirilmoqda...
-=======
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 {t("submitting")}
->>>>>>> 2e15eed15d5bfa89b3de5b62449dd84cf655071a
               </>
             ) : (
               <>
