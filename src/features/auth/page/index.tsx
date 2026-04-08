@@ -8,9 +8,9 @@ import {
   setRole,
 } from "../model/loginSlice";
 import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
 import { logout, setAppInitializing, setProfile } from "../../../entities/user/model/slice";
-// import Suspensee from "../../shared/ui/Suspensee";
-// Test for deployment
+
 const Auth = () => {
   const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.user.accessToken);
@@ -25,24 +25,19 @@ const Auth = () => {
     }
 
     api
-      .get("auth/my-profile")
+      .get(API_ENDPOINTS.AUTH.MY_PROFILE)
       .then((res) => {
-
         setValid(true);
+        const userData = res.data?.data;
 
-        // ✅ Safe access:
-        const userData = res.data?.data; 
-        
         if (userData) {
           dispatch(setProfile(userData));
           dispatch(setRole(userData.role));
           dispatch(setId(userData.id));
           if (userData.region?.name) {
-            
             dispatch(setRegion(userData.region.name));
           }
         }
-
       })
       .catch(() => {
         dispatch(logout());

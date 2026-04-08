@@ -336,8 +336,8 @@ const ProductTable = () => {
   // ─── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
-      <div className="flex justify-between items-center mb-6">
+    <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4 lg:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderName
           name={t("title")}
           description={t("pageDescription")}
@@ -351,8 +351,8 @@ const ProductTable = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className={`flex items-center gap-4 mb-6 p-4 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-primarydark`}>
-        <div className="w-full">
+      <div className="mb-6 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-primarydark dark:bg-primarydark lg:flex-row lg:items-center">
+        <div className="w-full lg:flex-1">
           <GlobalSearchInput
             searchKey="product_search"
             placeholder={t("searchInputPlaceholder")}
@@ -360,7 +360,7 @@ const ProductTable = () => {
           />
         </div>
 
-        <div className="w-[30%]">
+        <div className="w-full lg:w-72">
           <Controller
             control={filterControl}
             name="market_id"
@@ -375,7 +375,7 @@ const ProductTable = () => {
           />
         </div>
 
-        <div className="flex items-center gap-3 px-6 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-maindark min-w-fit">
+        <div className="flex min-w-0 items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-white/10 dark:bg-maindark lg:ml-auto lg:min-w-fit">
           <div className="p-2.5 rounded-lg bg-main/10 dark:bg-maindark text-main dark:text-purple-400">
             <Package size={20} />
           </div>

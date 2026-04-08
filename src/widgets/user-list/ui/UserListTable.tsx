@@ -249,12 +249,12 @@ export const UserListTable = memo(({
 
             {/* Pagination */}
             <div
-                className="px-6 py-4 border-t border-gray-200 dark:border-primarydark/20 flex items-center justify-between"
+                className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 dark:border-primarydark/20 sm:flex-row sm:items-center sm:justify-between sm:px-6"
                 style={{
                     background: 'linear-gradient(90deg, var(--color-main) 0%, var(--color-primarydark) 100%)'
                 }}
             >
-                <span className="text-sm text-white">
+                <span className="text-center text-sm text-white sm:text-left">
                     {pagination ? (
                         t("paginationSummary", {
                           from: (pagination.page - 1) * pagination.limit + 1,
@@ -265,7 +265,7 @@ export const UserListTable = memo(({
                         t("totalUsersCount", { count: users.length })
                     )}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                     <button
                         onClick={() => onPageChange(currentPage - 1)}
                         className="px-4 py-2 rounded-lg border border-white/30 text-white text-sm font-medium transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
