@@ -1,0 +1,173 @@
+.panel {
+  background:
+    radial-gradient(circle at top right, var(--color-main-soft), transparent 28%),
+    linear-gradient(145deg, color-mix(in srgb, var(--color-surface-elevated) 88%, transparent) 0%, rgba(87, 106, 219, 0.1) 52%, rgba(76, 87, 152, 0.2) 100%);
+  border: 1px solid var(--color-border-soft);
+  box-shadow:
+    0 28px 60px rgba(39, 44, 82, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+:global(.dark) .panel {
+  background:
+    radial-gradient(circle at top right, rgba(87, 106, 219, 0.24), transparent 28%),
+    linear-gradient(145deg, rgba(39, 44, 82, 0.96) 0%, rgba(59, 49, 109, 0.94) 55%, rgba(76, 87, 152, 0.4) 100%);
+  box-shadow:
+    0 28px 64px rgba(5, 7, 22, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.header {
+  background: linear-gradient(180deg, rgba(87, 106, 219, 0.14) 0%, rgba(87, 106, 219, 0.04) 100%);
+}
+
+:global(.dark) .header {
+  background: linear-gradient(180deg, rgba(87, 106, 219, 0.18) 0%, rgba(87, 106, 219, 0.05) 100%);
+}
+
+.body {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+:global(.dark) .body {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+}
+
+.footer {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 100%);
+}
+
+:global(.dark) .footer {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+:global(.dark) .label {
+  color: var(--color-text-muted-dark);
+}
+
+.form :global(.ant-form-item) {
+  margin-bottom: 18px;
+}
+
+.form :global(.ant-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+.form :global(.ant-input),
+.form :global(.ant-input-affix-wrapper),
+.form :global(.ant-input-number),
+.form :global(.ant-select-selector),
+.form :global(.ant-input-outlined),
+.form :global(.ant-input-textarea textarea) {
+  min-height: 50px;
+  border-radius: 18px !important;
+  border: 1px solid color-mix(in srgb, var(--color-border-soft) 88%, rgba(255, 255, 255, 0.15)) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.72) 100%) !important;
+  color: var(--color-maindark) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    0 10px 24px rgba(39, 44, 82, 0.08) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.form :global(.ant-input),
+.form :global(.ant-input-affix-wrapper),
+.form :global(.ant-input-number),
+.form :global(.ant-select-selector) {
+  padding-inline: 15px !important;
+}
+
+.form :global(.ant-input-textarea textarea) {
+  min-height: 116px;
+  padding: 15px !important;
+  line-height: 1.55;
+}
+
+.form :global(.ant-select-single) {
+  height: 50px;
+}
+
+.form :global(.ant-select-selector) {
+  display: flex;
+  align-items: center;
+}
+
+.form :global(.ant-select-selection-item),
+.form :global(.ant-select-selection-placeholder),
+.form :global(.ant-input::placeholder),
+.form :global(.ant-input-textarea textarea::placeholder) {
+  color: var(--color-text-muted) !important;
+}
+
+.form :global(.ant-select-selection-item),
+.form :global(.ant-select-selection-placeholder) {
+  line-height: 48px !important;
+}
+
+.form :global(.ant-input:hover),
+.form :global(.ant-input-affix-wrapper:hover),
+.form :global(.ant-select:hover .ant-select-selector),
+.form :global(.ant-input-textarea textarea:hover) {
+  border-color: color-mix(in srgb, var(--color-main) 40%, var(--color-border-soft)) !important;
+}
+
+.form :global(.ant-input:focus),
+.form :global(.ant-input-affix-wrapper-focused),
+.form :global(.ant-select-focused .ant-select-selector),
+.form :global(.ant-input-textarea textarea:focus) {
+  border-color: var(--color-main) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.66),
+    0 0 0 4px rgba(87, 106, 219, 0.14),
+    0 12px 26px rgba(39, 44, 82, 0.12) !important;
+}
+
+.form :global(.ant-form-item-explain-error) {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+:global(.dark) .form :global(.ant-input),
+:global(.dark) .form :global(.ant-input-affix-wrapper),
+:global(.dark) .form :global(.ant-input-number),
+:global(.dark) .form :global(.ant-select-selector),
+:global(.dark) .form :global(.ant-input-outlined),
+:global(.dark) .form :global(.ant-input-textarea textarea) {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.045) 100%) !important;
+  color: #fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 28px rgba(8, 10, 28, 0.24) !important;
+}
+
+:global(.dark) .form :global(.ant-select-selection-item),
+:global(.dark) .form :global(.ant-select-selection-placeholder),
+:global(.dark) .form :global(.ant-input::placeholder),
+:global(.dark) .form :global(.ant-input-textarea textarea::placeholder) {
+  color: rgba(255, 255, 255, 0.56) !important;
+}
+
+:global(.dark) .form :global(.ant-input:focus),
+:global(.dark) .form :global(.ant-input-affix-wrapper-focused),
+:global(.dark) .form :global(.ant-select-focused .ant-select-selector),
+:global(.dark) .form :global(.ant-input-textarea textarea:focus) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 4px rgba(87, 106, 219, 0.18),
+    0 14px 30px rgba(4, 6, 18, 0.34) !important;
+}

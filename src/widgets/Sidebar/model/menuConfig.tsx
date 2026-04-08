@@ -9,6 +9,8 @@ import {
   CreditCard,
   Scale,
   FileText,
+  Bell,
+  Building2,
 //   LucideIcon,
 } from "lucide-react";
 
@@ -36,6 +38,8 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
     { to: "/regions", icon: MapPinned, label: "regions" },
+    { to: "/notifications", icon: Bell, label: "notifications" },
+    { to: "/branches", icon: Building2, label: "branches" },
     { to: "/logs", icon: FileText, label: "logs" },
   ],
   market: [

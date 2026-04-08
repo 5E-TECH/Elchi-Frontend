@@ -1,17 +1,18 @@
-import { memo, type ReactNode } from 'react';
-import { AlertTriangle, Trash2 } from 'lucide-react';
-import Popup from '../ui/Popup';
+import { memo, type ReactNode } from "react";
+import { AlertTriangle, Trash2 } from "lucide-react";
+import Popup from "../ui/Popup";
+import popupStyles from "../ui/FormPopup/FormPopup.module.css";
 
 interface PopupConfirmProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  title?: string;
+  title?: ReactNode;
   message?: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   isLoading?: boolean;
-  variant?: 'danger' | 'warning';
+  variant?: "danger" | "warning";
 }
 
 const PopupConfirm = ({
@@ -23,31 +24,31 @@ const PopupConfirm = ({
   confirmLabel = "Ha, o'chirish",
   cancelLabel = "Bekor qilish",
   isLoading = false,
-  variant = 'danger',
+  variant = "danger",
 }: PopupConfirmProps) => {
-  const iconBg = variant === 'danger'
-    ? 'bg-red-100 dark:bg-red-500/10'
-    : 'bg-amber-100 dark:bg-amber-500/10';
+  const iconBg = variant === "danger"
+    ? "bg-rose-100 dark:bg-rose-500/12"
+    : "bg-amber-100 dark:bg-amber-500/12";
 
-  const iconColor = variant === 'danger' ? 'text-red-500' : 'text-amber-500';
+  const iconColor = variant === "danger" ? "text-rose-500 dark:text-rose-300" : "text-amber-500 dark:text-amber-300";
 
-  const confirmBg = variant === 'danger'
-    ? 'bg-red-500 hover:bg-red-600'
-    : 'bg-amber-500 hover:bg-amber-600';
+  const confirmButtonClassName = variant === "danger"
+    ? "border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/12 dark:text-rose-200 dark:hover:border-rose-400/60 dark:hover:bg-rose-500/18"
+    : "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/12 dark:text-amber-200 dark:hover:border-amber-400/60 dark:hover:bg-amber-500/18";
 
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className="bg-white dark:bg-maindark w-[92vw] max-w-md rounded-2xl p-8 shadow-2xl text-center">
-        <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${iconBg} flex items-center justify-center`}>
+      <div className={`${popupStyles.panel} w-[92vw] max-w-md rounded-[1.75rem] px-8 py-7 text-center shadow-2xl`}>
+        <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${iconBg}`}>
           <AlertTriangle size={28} className={iconColor} />
         </div>
 
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+        <h3 className="mb-2 text-xl font-bold text-[var(--color-maindark)] dark:text-white">
           {title}
         </h3>
 
         {message && (
-          <div className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+          <div className="mb-6 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
             {message}
           </div>
         )}
@@ -57,7 +58,7 @@ const PopupConfirm = ({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+            className="rounded-xl border border-[color:var(--color-border-soft)] px-6 py-2.5 text-sm font-medium text-[var(--color-maindark)] transition-colors hover:bg-[var(--color-main-soft)] disabled:opacity-50 dark:text-white/85 dark:hover:bg-white/10"
           >
             {cancelLabel}
           </button>
@@ -65,11 +66,11 @@ const PopupConfirm = ({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-6 py-2.5 rounded-xl ${confirmBg} text-white font-medium text-sm transition-colors disabled:opacity-50 flex items-center gap-2`}
+            className={`flex items-center gap-2 rounded-xl border px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${confirmButtonClassName}`}
           >
             {isLoading ? (
               <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
                 O'chirilmoqda...
               </>
             ) : (

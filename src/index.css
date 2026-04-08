@@ -840,6 +840,8 @@
 
   .error-page-logo-glow {
     filter: drop-shadow(0 0 28px var(--color-purple-soft));
+  }
+
   .language-dropdown-overlay .ant-dropdown-menu {
     min-width: 13rem;
     padding: 0.5rem;
@@ -1015,5 +1017,4 @@
     height: 55%;
     background: var(--color-flag-en-blue);
   }
-}
 }

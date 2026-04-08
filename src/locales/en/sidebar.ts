@@ -8,6 +8,10 @@ const sidebarEn = {
   payments: "Payments",
   balance: "Balance",
   region: "Regions",
+  regions: "Regions",
+  notifications: "Notifications",
+  branches: "Branches",
+  newOrders: "New orders",
   logs: "Logs",
 };
 

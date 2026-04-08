@@ -40,9 +40,10 @@ const FilterSearch = memo(({
             placeholder={placeholder}
             className={className}
             inputClassName="
+                h-12
                 bg-white dark:bg-primarydark
-                border border-gray-200 dark:border-white/10
-                rounded-xl py-2.5
+                border-2 border-gray-200 dark:border-primarydark/30
+                rounded-xl py-0
                 text-sm font-medium
                 text-maindark dark:text-primary
                 placeholder:text-gray-400 dark:placeholder:text-white/30

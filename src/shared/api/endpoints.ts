@@ -94,4 +94,22 @@ export const API_ENDPOINTS = {
     EXTERNAL_ORDERS: "integrations/external-orders",
     BY_ID: (id: string | number) => `integrations/${id}`,
   },
+  NOTIFICATIONS: {
+    BASE: "notifications",
+    BY_ID: (id: string | number) => `notifications/${id}`,
+  },
+  BRANCHES: {
+    BASE: "branches",
+    BY_ID: (id: string | number) => `branches/${id}`,
+    USERS: (id: string | number) => `branches/${id}/users`,
+    EMPLOYEES: (id: string | number) => `branches/${id}/employees`,
+    EMPLOYEE_BY_ID: (branchId: string | number, employeeId: string | number) =>
+      `branches/${branchId}/employees/${employeeId}`,
+    SETTINGS: (id: string | number) => `branches/${id}/settings`,
+    SETTING_BY_ID: (branchId: string | number, settingId: string | number) =>
+      `branches/${branchId}/settings/${settingId}`,
+  },
+  IDENTITY: {
+    USERS: "identity/users",
+  },
 } as const;

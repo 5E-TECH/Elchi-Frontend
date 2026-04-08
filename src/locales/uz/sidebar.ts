@@ -8,6 +8,10 @@ const sidebarUz = {
   payments: "To'lovlar",
   balance: "Balans",
   region: "Hududlar",
+  regions: "Hududlar",
+  notifications: "Bildirishnomalar",
+  branches: "Filiallar",
+  newOrders: "Yangi buyurtmalar",
   logs: "Loglar",
 };
 

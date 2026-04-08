@@ -19,3 +19,12 @@ export interface UserState {
     isAppInitializing: boolean;
     error: string | null;
 }
+
+export interface IdentityUser {
+    id: string;
+    fullName: string;
+    username: string;
+    phone?: string;
+    role?: User["role"];
+    status?: User["status"];
+}

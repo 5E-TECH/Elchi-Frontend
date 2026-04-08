@@ -52,7 +52,10 @@ const CashDetail = lazy(
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
 
-const Region = lazy(() => import("../../pages/region"));
+const Region = lazy(() => import("../../pages/region/index"));
+const NotificationsPage = lazy(() => import("../../pages/notifications"));
+const BranchesPage = lazy(() => import("../../pages/branches"));
+const BranchDetailPage = lazy(() => import("../../pages/branches/ui/BranchDetailPage"));
 const ForbiddenPage = lazy(() => import("../../shared/ui/Forbidden"));
 const NotFound = lazy(() => import("../../shared/ui/NotFound"));
 const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
@@ -149,6 +152,17 @@ const AppRouter = () => {
             {
               path: "regions",
               element: <Region />,
+            },
+            {
+              path: "notifications",
+              element: <NotificationsPage />,
+            },
+            {
+              path: "branches",
+              children: [
+                { index: true, element: <BranchesPage /> },
+                { path: ":id", element: <BranchDetailPage /> },
+              ],
             },
             {
               path: "403",
