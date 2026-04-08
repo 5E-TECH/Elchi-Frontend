@@ -45,7 +45,7 @@ const GlobalLoader = ({ children }: { children: ReactNode }) => {
 
 const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
-    <I18nextProvider i18n={i18n}>
+    <I18nextProvider i18n={i18n} defaultNS="common">
       <ThemeProvider>
         <Provider store={store}>
           <BrowserRouter>

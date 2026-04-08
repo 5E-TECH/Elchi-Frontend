@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { LayoutDashboard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,6 +11,29 @@ import {
   removeFilterValue,
   setMultipleFilters,
 } from "../../features/Select/model/FilterSlice";
+
+// ─── Sana yordamchilari ───────────────────────────────────────────────────────
+
+const toISO = (d: Date) => d.toISOString().slice(0, 10);
+
+const getToday = () => {
+  const now = new Date();
+  return { from: toISO(now), to: toISO(now) };
+};
+
+const getThisWeek = () => {
+  const now = new Date();
+  const day = now.getDay() === 0 ? 6 : now.getDay() - 1; // Dushanba = 0
+  const from = new Date(now);
+  from.setDate(now.getDate() - day);
+  return { from: toISO(from), to: toISO(now) };
+};
+
+const getThisMonth = () => {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { from: toISO(from), to: toISO(now) };
+};
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
@@ -36,27 +59,24 @@ const DashboardPage = () => {
     );
   }, [dispatch, fromDate, toDate]);
 
-  const quickRanges = useMemo(() => {
-    const today = new Date();
-    const formatDate = (date: Date) => date.toISOString().slice(0, 10);
-
-    const weekStart = new Date(today);
-    const day = weekStart.getDay();
-    const diff = day === 0 ? 6 : day - 1;
-    weekStart.setDate(weekStart.getDate() - diff);
-
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    const todayIso = formatDate(today);
-
-    return [
-      { key: "today", label: t("quickRanges.today"), from: todayIso, to: todayIso },
-      { key: "week", label: t("quickRanges.week"), from: formatDate(weekStart), to: todayIso },
-      { key: "month", label: t("quickRanges.month"), from: formatDate(monthStart), to: todayIso },
-    ];
-  }, [t]);
-
   const hasDateFilter = Boolean(fromDate || toDate);
+
+  // ─── Tezkor tugmalar ────────────────────────────────────────────────────────
+  const applyRange = useCallback((range: { from: string; to: string }) => {
+    setFromDate(range.from);
+    setToDate(range.to);
+  }, []);
+
+  const todayRange = useMemo(() => getToday(), []);
+  const weekRange = useMemo(() => getThisWeek(), []);
+  const monthRange = useMemo(() => getThisMonth(), []);
+
+  const activeQuick = useMemo(() => {
+    if (fromDate === todayRange.from && toDate === todayRange.to) return "today";
+    if (fromDate === weekRange.from && toDate === weekRange.to) return "week";
+    if (fromDate === monthRange.from && toDate === monthRange.to) return "month";
+    return null;
+  }, [fromDate, toDate, todayRange, weekRange, monthRange]);
 
   const { getDashboard } = useDashboard();
   const { data } = getDashboard({
@@ -69,7 +89,7 @@ const DashboardPage = () => {
   return (
     <div className="min-h-full rounded-2xl p-5 bg-primary dark:bg-maindark">
       {/* Page header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-center gap-2.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -86,47 +106,44 @@ const DashboardPage = () => {
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {quickRanges.map((range) => {
-              const isActive = fromDate === range.from && toDate === range.to;
-
+        <div className="flex w-full flex-col gap-2 lg:w-auto lg:items-end">
+          {/* Tezkor tugmalar */}
+          <div className="flex gap-1.5">
+            {(
+              [
+                { key: "today", range: todayRange },
+                { key: "week", range: weekRange },
+                { key: "month", range: monthRange },
+              ] as const
+            ).map(({ key, range }) => {
+              const isActive = activeQuick === key;
               return (
                 <button
-                  key={range.key}
+                  key={key}
                   type="button"
-                  onClick={() => {
-                    setFromDate(range.from);
-                    setToDate(range.to);
-                  }}
-                  className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                  onClick={() => applyRange(range)}
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all"
+                  style={
                     isActive
-                      ? "bg-main text-primary shadow-sm shadow-main/20"
-                      : "border border-gray-200 bg-white text-maindark hover:border-main/30 hover:text-main dark:border-white/10 dark:bg-primarydark dark:text-primary"
-                  }`}
+                      ? {
+                        background: "var(--color-main)",
+                        color: "var(--color-primary)",
+                      }
+                      : {
+                        background: "var(--color-glass)",
+                        color: "var(--color-maindark)",
+                        opacity: 0.75,
+                      }
+                  }
                 >
-                  {range.label}
+                  {t(`quickRanges.${key}`)}
                 </button>
               );
             })}
-
-            {hasDateFilter && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFromDate("");
-                  setToDate("");
-                  dispatch(removeFilterValue("dashboardFromDate"));
-                  dispatch(removeFilterValue("dashboardToDate"));
-                }}
-                className="rounded-xl border border-error/20 bg-error/8 px-3 py-2 text-xs font-semibold text-error transition-opacity hover:opacity-85"
-              >
-                {t("quickRanges.clear")}
-              </button>
-            )}
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          {/* Sanalar va tozalash */}
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
             <CustomDatePicker
               value={fromDate}
               onChange={setFromDate}
@@ -142,6 +159,20 @@ const DashboardPage = () => {
               minDate={fromDate || undefined}
               className="w-full sm:w-44"
             />
+            {hasDateFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFromDate("");
+                  setToDate("");
+                  dispatch(removeFilterValue("dashboardFromDate"));
+                  dispatch(removeFilterValue("dashboardToDate"));
+                }}
+                className="rounded-xl border border-error/20 bg-error/8 px-3 py-2 text-xs font-semibold text-error transition-opacity hover:opacity-85 sm:w-auto"
+              >
+                {t("quickRanges.clear")}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -157,14 +188,14 @@ const DashboardPage = () => {
       </div>
 
       {/* Financial analysis */}
-        <FinancialAnalysis
-          totalOrders={orders?.acceptedCount ?? 0}
-          sold={orders?.soldAndPaid ?? 0}
-          profit={orders?.profit ?? 0}
-          startDate={fromDate}
-          endDate={toDate}
-        />
-      </div>
+      <FinancialAnalysis
+        totalOrders={orders?.acceptedCount ?? 0}
+        sold={orders?.soldAndPaid ?? 0}
+        profit={orders?.profit ?? 0}
+        startDate={fromDate}
+        endDate={toDate}
+      />
+    </div>
   );
 };
 

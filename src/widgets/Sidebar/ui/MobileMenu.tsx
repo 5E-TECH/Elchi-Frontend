@@ -73,7 +73,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                                 name={field.name}
                                 value={field.value}
                                 onBlur={field.onBlur}
-                                placeholder="Qidiruv..."
+                                placeholder={t("search")}
                                 className="w-full"
                                 inputClassName="bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-2xl py-3.5 focus:bg-white/10"
                                 iconClassName="text-white/40 group-focus-within:text-main"
@@ -86,7 +86,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 
                 {/* Navigation Links */}
                 <div className="flex-1 overflow-y-auto py-4 px-4 space-y-1 custom-scrollbar">
-                    <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30">Asosiy Menyular</p>
+                    <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30">{t("mainMenus")}</p>
                     {links.map((link: any) => (
                         <NavLink
                             key={link.to}
@@ -109,7 +109,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                     ))}
 
                     <div className="h-4" />
-                    <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30">Sozlamalar</p>
+                    <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/30">{t("settings")}</p>
 
                     {/* Theme Toggle in Menu */}
                     <button
@@ -121,7 +121,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                                 {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
                             </span>
                             <span className="font-bold text-sm tracking-wide uppercase">
-                                {theme === "light" ? "Tungi rejim" : "Kunduzgi rejim"}
+                                {theme === "light" ? t("darkMode") : t("lightMode")}
                             </span>
                         </div>
                         <div className={`w-8 h-4 rounded-full relative transition-colors ${theme === "dark" ? "bg-main" : "bg-white/10"}`}>
@@ -136,7 +136,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                                 <Bell size={20} />
                                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-darkmain" />
                             </span>
-                            <span className="font-bold text-sm tracking-wide uppercase">Bildirishnomalar</span>
+                            <span className="font-bold text-sm tracking-wide uppercase">{t("notifications")}</span>
                         </div>
                         <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
                     </button>
@@ -159,7 +159,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                         className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest text-xs hover:bg-red-600 active:scale-95 transition-all duration-300 shadow-lg shadow-red-500/20"
                     >
                         <LogOut size={18} />
-                        <span>Chiqish</span>
+                        <span>{t("logout")}</span>
                     </button>
                 </div>
             </div>

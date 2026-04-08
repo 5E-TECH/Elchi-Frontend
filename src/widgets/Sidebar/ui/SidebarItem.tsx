@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { NavLink } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { useSelector } from "react-redux";
@@ -10,7 +11,6 @@ interface SidebarLinkProps {
 }
 
 const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, end }) => {
-
   const sidebarRedux = useSelector((state: RootState) => state.sidebar);
 
   return (
@@ -22,14 +22,12 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, end }) => {
           ? "bg-main text-primary shadow-lg shadow-main/30"
           : "text-maindark dark:text-primary hover:bg-main/10 dark:hover:bg-main/20"
         }`
-      }>
-      <span className="text-xl">{icon}</span>
-      {
-        sidebarRedux.isOpen &&
-        <span className="truncate">{label}</span>
       }
+    >
+      <span className="text-xl">{icon}</span>
+      {sidebarRedux.isOpen && <span className="truncate">{label}</span>}
     </NavLink>
   );
 };
 
-export default SidebarLink;
+export default memo(SidebarLink);

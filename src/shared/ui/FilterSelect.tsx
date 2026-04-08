@@ -18,6 +18,7 @@ interface FilterSelectProps {
     loading?: boolean;
     disabled?: boolean;
     size?: "sm" | "md";
+    hideLabel?: boolean;
 }
 
 const FilterSelect = memo(({
@@ -31,6 +32,7 @@ const FilterSelect = memo(({
     loading = false,
     disabled = false,
     size = "md",
+    hideLabel = false,
 }: FilterSelectProps) => {
     const { t } = useTranslation("common");
     const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -44,13 +46,15 @@ const FilterSelect = memo(({
 
     return (
         <div className="flex flex-col gap-1.5">
-            <label
-                htmlFor={name}
-                className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider flex items-center gap-1.5"
-            >
-                {Icon && <Icon size={11} className="text-main/70" />}
-                {label}
-            </label>
+            {!hideLabel && (
+                <label
+                    htmlFor={name}
+                    className="text-[11px] font-bold text-slate-500 dark:text-white/50 uppercase tracking-wider flex items-center gap-1.5"
+                >
+                    {Icon && <Icon size={11} className="text-main/70" />}
+                    {label}
+                </label>
+            )}
 
             <div className="relative group">
                 <select
