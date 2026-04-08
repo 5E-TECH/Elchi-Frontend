@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     page: number;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const OrderPagination = ({ page, totalPages, total, limit, onChange }: Props) => {
+    const { t } = useTranslation("orders");
     if (totalPages <= 1) return null;
 
     const from = (page - 1) * limit + 1;
@@ -18,8 +20,19 @@ const OrderPagination = ({ page, totalPages, total, limit, onChange }: Props) =>
     return (
         <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-center text-xs text-gray-400 sm:text-left">
-                <span className="font-semibold text-maindark dark:text-primary">{from}–{to}</span>
-                {" "}/ {total} ta buyurtma
+                {t("paginationSummary", {
+                    from,
+                    to,
+                    total,
+                    highlight: `${from}–${to}`,
+                }).split(String(from) + "–" + String(to)).map((part, index, array) => (
+                    <span key={`${part}-${index}`}>
+                        {part}
+                        {index < array.length - 1 && (
+                            <span className="font-semibold text-maindark dark:text-primary">{from}–{to}</span>
+                        )}
+                    </span>
+                ))}
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-end">

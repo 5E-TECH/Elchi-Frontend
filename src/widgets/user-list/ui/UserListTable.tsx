@@ -7,6 +7,7 @@ import { UserRoleBadge } from '../../../entities/user/ui/UserRoleBadge';
 import { Table } from '../../../shared/components/Table/Table';
 import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
 import { useUser } from '../../../entities/user/api/userApi';
+import { useTranslation } from 'react-i18next';
 
 interface UserListTableProps {
     users: User[];
@@ -32,6 +33,7 @@ export const UserListTable = memo(({
     currentPage,
     onPageChange
 }: UserListTableProps) => {
+    const { t } = useTranslation("users");
     const navigate = useNavigate();
     const { updateUserStatus } = useUser();
 
@@ -71,7 +73,7 @@ export const UserListTable = memo(({
     const columns: ColumnConfig<User>[] = [
         {
             key: 'name',
-            label: 'Ismi',
+            label: t('firstName'),
             width: '30%',
             sortable: true,
             render: (value) => (
@@ -85,27 +87,27 @@ export const UserListTable = memo(({
         },
         {
             key: 'phone_number',
-            label: 'Telefon',
+            label: t('phone'),
             width: '25%',
             sortable: true,
             className: 'text-gray-600 dark:text-gray-400 text-sm font-mono',
         },
         {
             key: 'role',
-            label: 'Roli',
+            label: t('role'),
             width: '15%',
             sortable: true,
             render: (value) => <UserRoleBadge role={value as any} />,
         },
         {
             key: 'status',
-            label: 'Holati',
+            label: t('status'),
             width: '15%',
             render: (value) => <UserStatusBadge status={value as any} />,
         },
         {
             key: 'id',
-            label: 'Harakat',
+            label: t('action'),
             width: '15%',
             render: (_, user) => {
                 const isActive = user.status === 'active';
@@ -118,7 +120,7 @@ export const UserListTable = memo(({
                         <button
                             onClick={(e) => handleStatusToggle(user, e)}
                             disabled={isPending}
-                            title={isActive ? "Faolsizlashtirish" : "Faollashtirish"}
+                            title={isActive ? t("deactivate") : t("activate")}
                             role="switch"
                             aria-checked={isActive}
                             className={`
@@ -188,7 +190,7 @@ export const UserListTable = memo(({
                                 <span className="w-5 h-5 rounded-full bg-main animate-pulse" />
                             </span>
                         </span>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Yuklanmoqda...</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">{t("loading")}</p>
                     </div>
                 </div>
             </div>
@@ -204,9 +206,9 @@ export const UserListTable = memo(({
                         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
                             <span className="text-3xl">⚠️</span>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Xatolik yuz berdi</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("loadError")}</h3>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            Ma'lumotlarni yuklashda xatolik
+                            {t("loadDataError")}
                         </p>
                     </div>
                 </div>
@@ -225,9 +227,9 @@ export const UserListTable = memo(({
                         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                             <span className="text-3xl">📭</span>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Foydalanuvchilar topilmadi</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("usersNotFound")}</h3>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            Hech qanday foydalanuvchi mavjud emas
+                            {t("noUsersAvailable")}
                         </p>
                     </div>
                 </div>
@@ -254,9 +256,13 @@ export const UserListTable = memo(({
             >
                 <span className="text-sm text-white">
                     {pagination ? (
-                        `${(pagination.page - 1) * pagination.limit + 1}-${Math.min(pagination.page * pagination.limit, pagination.total)} dan ${pagination.total} tasi ko'rsatilmoqda`
+                        t("paginationSummary", {
+                          from: (pagination.page - 1) * pagination.limit + 1,
+                          to: Math.min(pagination.page * pagination.limit, pagination.total),
+                          total: pagination.total,
+                        })
                     ) : (
-                        `${users.length} ta foydalanuvchi`
+                        t("totalUsersCount", { count: users.length })
                     )}
                 </span>
                 <div className="flex gap-2">
@@ -265,7 +271,7 @@ export const UserListTable = memo(({
                         className="px-4 py-2 rounded-lg border border-white/30 text-white text-sm font-medium transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={!pagination || pagination.page === 1}
                     >
-                        Oldingi
+                        {t("previous")}
                     </button>
                     <span className="px-4 py-2 text-white text-sm font-medium flex items-center">
                         {pagination?.page || 1} / {pagination?.totalPages || 1}
@@ -275,7 +281,7 @@ export const UserListTable = memo(({
                         className="px-4 py-2 rounded-lg border border-white/30 text-white text-sm font-medium transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={!pagination || pagination.page >= pagination.totalPages}
                     >
-                        Keyingi
+                        {t("next")}
                     </button>
                 </div>
             </div>

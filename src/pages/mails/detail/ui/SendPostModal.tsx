@@ -4,6 +4,7 @@ import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { X, Send, User, Phone, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import Popup from "../../../../shared/ui/Popup";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import {
@@ -26,9 +27,10 @@ interface SendPostFormValues {
     courierId: string;
 }
 
-const sendPostSchema: yup.ObjectSchema<SendPostFormValues> = yup.object({
-    courierId: yup.string().required("Courier tanlash majburiy"),
-});
+const createSendPostSchema = (requiredMessage: string): yup.ObjectSchema<SendPostFormValues> =>
+    yup.object({
+        courierId: yup.string().required(requiredMessage),
+    });
 
 // ─── Courier karta ────────────────────────────────────────────────────────────
 const CourierCard = memo(
@@ -91,6 +93,7 @@ const SendPostModal = memo(
         selectedIds,
         onSuccess,
     }: SendPostModalProps) => {
+        const { t } = useTranslation("mails");
         // ✅ apiRequest — CreateUserForm dagi kabi
         const { apiRequest } = useAppNotification();
 
@@ -105,7 +108,7 @@ const SendPostModal = memo(
             defaultValues: {
                 courierId: "",
             },
-            resolver: yupResolver(sendPostSchema) as Resolver<SendPostFormValues>,
+            resolver: yupResolver(createSendPostSchema(t("courierRequired"))) as Resolver<SendPostFormValues>,
         });
 
         const {
@@ -143,7 +146,7 @@ const SendPostModal = memo(
                 // apiRequest error sifatida ko'rsatish
                 apiRequest({
                     request: () => Promise.reject(new Error("no_courier")),
-                    errorMessage: "Bu viloyatda aktiv courier mavjud emas.",
+                    errorMessage: t("noActiveCourierInRegion"),
                     successMessage: "",
                 });
                 onClose();
@@ -161,8 +164,8 @@ const SendPostModal = memo(
                             postId,
                             payload: { orderIds, courierId: courier.id },
                         }),
-                    successMessage: `Pochta ${courier.name} ga muvaffaqiyatli jo'natildi.`,
-                    errorMessage: "Pochtani jo'natishda xatolik yuz berdi.",
+                    successMessage: t("sendCourierSuccess", { name: courier.name }),
+                    errorMessage: t("sendError"),
                     onSuccess: () => {
                         resetState();
                         onSuccess();
@@ -191,8 +194,8 @@ const SendPostModal = memo(
                         postId,
                         payload: { orderIds, courierId },
                     }),
-                successMessage: `Pochta ${courier?.name ?? ""} ga muvaffaqiyatli jo'natildi.`,
-                errorMessage: "Pochtani jo'natishda xatolik yuz berdi.",
+                successMessage: t("sendCourierSuccess", { name: courier?.name ?? "" }),
+                errorMessage: t("sendError"),
                 onSuccess: () => {
                     resetState();
                     onSuccess();
@@ -215,10 +218,10 @@ const SendPostModal = memo(
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-gray-800 dark:text-white">
-                                    Courier tanlang
+                                    {t("selectCourier")}
                                 </p>
                                 <p className="text-xs text-gray-400 dark:text-white/50">
-                                    {orderIds.length} ta buyurtma jo'natiladi
+                                    {t("selectedOrdersWillBeSent", { count: orderIds.length })}
                                 </p>
                             </div>
                         </div>
@@ -240,7 +243,7 @@ const SendPostModal = memo(
                                     <Loader2 size={28} className="text-main animate-spin" />
                                 </div>
                                 <p className="text-sm font-medium text-gray-600 dark:text-white/70">
-                                    Courierlar yuklanmoqda...
+                                    {t("couriersLoading")}
                                 </p>
                             </div>
                         )}
@@ -251,10 +254,10 @@ const SendPostModal = memo(
                                     <AlertTriangle size={28} className="text-red-400" />
                                 </div>
                                 <p className="text-sm font-semibold text-gray-700 dark:text-white text-center">
-                                    Courierlarni yuklab bo'lmadi
+                                    {t("couriersLoadError")}
                                 </p>
                                 <p className="text-xs text-gray-400 dark:text-white/50 text-center">
-                                    Iltimos, qayta urinib ko'ring
+                                    {t("retryHint")}
                                 </p>
                             </div>
                         )}
@@ -262,7 +265,7 @@ const SendPostModal = memo(
                         {!isLoading && !isError && couriers.length >= 2 && (
                             <>
                                 <p className="text-xs text-gray-400 dark:text-white/50 mb-3">
-                                    Quyidagi courierlardan birini tanlang:
+                                    {t("chooseOneCourier")}
                                 </p>
                                 <Controller
                                     control={control}
@@ -302,12 +305,12 @@ const SendPostModal = memo(
                                 {sendPost.isPending ? (
                                     <>
                                         <Loader2 size={16} className="animate-spin" />
-                                        Jo'natilmoqda...
+                                        {t("sending")}
                                     </>
                                 ) : (
                                     <>
                                         <Send size={16} />
-                                        Jo'natish
+                                        {t("send")}
                                         {selectedCourierId && (
                                             <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
                                                 {orderIds.length}

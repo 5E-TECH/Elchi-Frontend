@@ -21,38 +21,18 @@ import { useNavigate } from "react-router-dom";
 import { useCashBox } from "../../entities/payments";
 import { useUser } from "../../entities/user/api/userApi";
 import { useMarkets } from "../../entities/markets";
+import { useTranslation } from "react-i18next";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
 const DROPDOWN_FILTERS = [
-  { name: "operation_type", label: "Operation type", icon: TrendingUp },
-  { name: "source_type", label: "Source type", icon: BadgeDollarSign },
-  { name: "created_by", label: "Created by", icon: User },
-  { name: "cashbox_type", label: "Cashbox type", icon: Landmark },
+  { name: "operation_type", labelKey: "operationType", icon: TrendingUp },
+  { name: "source_type", labelKey: "sourceType", icon: BadgeDollarSign },
+  { name: "created_by", labelKey: "createdBy", icon: User },
+  { name: "cashbox_type", labelKey: "cashboxType", icon: Landmark },
 ] as const;
 
 type DropdownKey = (typeof DROPDOWN_FILTERS)[number]["name"];
-
-const STATIC_FILTER_OPTIONS: Record<
-  Exclude<DropdownKey, "created_by">,
-  { value: string; label: string }[]
-> = {
-  operation_type: [
-    { value: "income", label: "Income" },
-    { value: "expense", label: "Expense" },
-  ],
-  source_type: [
-    { value: "market_payment", label: "Market payment" },
-    { value: "manual_expense", label: "Manual expense" },
-    { value: "manual_income", label: "Manual income" },
-    { value: "correction", label: "Correction" },
-    { value: "salary", label: "Salary" },
-  ],
-  cashbox_type: [
-    { value: "markets", label: "Markets" },
-    { value: "couriers", label: "Couriers" },
-  ],
-};
 
 const INIT = {
   operation_type: "",
@@ -72,6 +52,7 @@ const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
   });
 
 const Payments = () => {
+  const { t } = useTranslation("payments");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [isGivenPopupOpen, setIsGivenPopupOpen] = useState(false);
@@ -134,7 +115,7 @@ const Payments = () => {
   // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
   const CARDS = [
     {
-      label: "To be given",
+      label: t("toBeGiven"),
       amount: marketCashboxTotal,
       icon: <Store size={20} />,
       action: <ArrowUpRight size={16} />,
@@ -145,18 +126,18 @@ const Payments = () => {
       showPopup: "given" as const,
     },
     {
-      label: "Amount in cashbox",
+      label: t("amountInCashbox"),
       amount: mainCashboxTotal,
       icon: <Landmark size={20} />,
       action: <TrendingUp size={16} />,
       bg: "bg-gradient-to-br from-main to-main/80 shadow-main/30",
       iconBg: "bg-white/20",
-      badge: "Asosiy kassa",
+      badge: t("mainCashboxBadge"),
       path: "main-cashbox",
       showPopup: null as null,
     },
     {
-      label: "To be received",
+      label: t("toBeReceived"),
       amount: courierCashboxTotal,
       icon: <Truck size={20} />,
       action: <ArrowDownLeft size={16} />,
@@ -167,6 +148,26 @@ const Payments = () => {
       showPopup: "received" as const,
     },
   ] as const;
+  const staticFilterOptions: Record<
+    Exclude<DropdownKey, "created_by">,
+    { value: string; label: string }[]
+  > = {
+    operation_type: [
+      { value: "income", label: t("income") },
+      { value: "expense", label: t("expense") },
+    ],
+    source_type: [
+      { value: "market_payment", label: t("paymentMarket") },
+      { value: "manual_expense", label: t("expense") },
+      { value: "manual_income", label: t("income") },
+      { value: "correction", label: "Correction" },
+      { value: "salary", label: "Salary" },
+    ],
+    cashbox_type: [
+      { value: "markets", label: "Markets" },
+      { value: "couriers", label: "Couriers" },
+    ],
+  };
 
   const queryParams = useMemo(() => {
     const params: Record<string, any> = { page, limit };
@@ -206,9 +207,9 @@ const Payments = () => {
     DropdownKey,
     { value: string; label: string }[]
   > = {
-    operation_type: STATIC_FILTER_OPTIONS.operation_type,
-    source_type: STATIC_FILTER_OPTIONS.source_type,
-    cashbox_type: STATIC_FILTER_OPTIONS.cashbox_type,
+    operation_type: staticFilterOptions.operation_type,
+    source_type: staticFilterOptions.source_type,
+    cashbox_type: staticFilterOptions.cashbox_type,
     created_by: creatorOptions,
   };
 
@@ -226,8 +227,8 @@ const Payments = () => {
       {/* Header */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border px-4 shadow-sm">
         <HeaderName
-          name="Payments"
-          description="Kassa va to'lovlarni boshqarish"
+          name={t("title")}
+          description={t("pageDescription")}
           icon={<BadgeDollarSign />}
         />
       </div>
@@ -289,10 +290,10 @@ const Payments = () => {
       {/* Filters */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border p-5 shadow-sm">
         <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">
-          Filters
+          {t("filters")}
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {DROPDOWN_FILTERS.map(({ name, label, icon }) => (
+          {DROPDOWN_FILTERS.map(({ name, labelKey, icon }) => (
             <Controller
               key={name}
               control={control}
@@ -300,11 +301,11 @@ const Payments = () => {
               render={({ field }) => (
                 <FilterSelect
                   name={field.name}
-                  label={label}
+                  label={t(labelKey)}
                   value={field.value}
                   onChange={field.onChange}
                   options={filterOptionsMap[name] || []}
-                  placeholder="Tanlang"
+                  placeholder={t("selectPlaceholder")}
                   icon={icon}
                   loading={loadingMap[name]}
                 />
@@ -321,7 +322,7 @@ const Payments = () => {
               }}
               className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
             >
-              ✕ Filterlarni tozalash
+              ✕ {t("clearFilters")}
             </button>
           </div>
         )}
@@ -341,8 +342,8 @@ const Payments = () => {
         isOpen={isGivenPopupOpen}
         onClose={() => setIsGivenPopupOpen(false)}
         data={marketsList}
-        title="To be given"
-        description={marketsLoading ? "Yuklanmoqda..." : "Marketni tanlang"}
+        title={t("toBeGiven")}
+        description={marketsLoading ? t("loadingLabel") : t("selectMarketDescription")}
         icon={<Store size={20} />}
         keyExtractor={(m: any) => m.id}
         searchKeys={["name"]}
@@ -382,8 +383,8 @@ const Payments = () => {
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
         data={couriersList}
-        title="To be received"
-        description={couriersLoading ? "Yuklanmoqda..." : "Kuryerni tanlang"}
+        title={t("toBeReceived")}
+        description={couriersLoading ? t("loadingLabel") : t("selectCourierDescription")}
         icon={<Truck size={20} />}
         keyExtractor={(c: any) => c.id}
         searchKeys={["name", "region"]}

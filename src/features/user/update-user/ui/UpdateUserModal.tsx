@@ -21,6 +21,7 @@ import { useAppNotification } from "../../../../app/providers/notification/Notif
 import { UserRoleBadge } from "../../../../entities/user/ui/UserRoleBadge";
 import type { UpdateUserRequest, User as UserType } from "../../../../entities/user/types/user";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
+import { useTranslation } from "react-i18next";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -101,6 +102,7 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<UpdateUserFormValues>> = {
 };
 
 export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) => {
+  const { t } = useTranslation("users");
   const { getUserById, updateUser, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
 
@@ -172,20 +174,20 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
     clearErrors();
 
     if (!values.name.trim()) {
-      setError("name", { message: "Ism Familya talab qilinadi" });
+      setError("name", { message: t("nameRequired") });
       valid = false;
     }
 
     const rawPhone = parsePhone(values.phone);
     if (!rawPhone || rawPhone.length !== 9) {
-      setError("phone", { message: "9 ta raqam kiriting" });
+      setError("phone", { message: t("phoneValidation") });
       valid = false;
     }
 
     if (isAdmin && values.payment_day) {
       const day = Number(values.payment_day);
       if (day < 1 || day > 30) {
-        setError("payment_day", { message: "1-30 oralig'ida bo'lishi kerak" });
+        setError("payment_day", { message: t("paymentDayValidation") });
         valid = false;
       }
     }
@@ -278,8 +280,8 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
 
     await apiRequest({
       request: () => updateUser.mutateAsync({ id: userId, data: payload }),
-      successMessage: `"${userData.name}" muvaffaqiyatli yangilandi!`,
-      errorMessage: "Foydalanuvchini yangilashda xatolik yuz berdi",
+      successMessage: t("userUpdatedSuccess", { name: userData.name }),
+      errorMessage: t("editUserError"),
       onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
       onSuccess: onClose,
     });
@@ -389,7 +391,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800 dark:text-white leading-tight">
-                {isLoading ? "Yuklanmoqda..." : `${userData?.name ?? ""} ni tahrirlash`}
+                {isLoading ? t("loading") : t("editUserTitle", { name: userData?.name ?? "" })}
               </h2>
               {userData && (
                 <div className="mt-1">
@@ -421,7 +423,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                 {!isCustomer && (
                   <div className="col-span-full">
-                    <SectionDivider title="Asosiy ma'lumotlar" />
+                    <SectionDivider title={t("mainData")} />
                   </div>
                 )}
 
@@ -430,10 +432,10 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                   label: (
                     <>
                       <User size={11} className="inline mr-1 mb-px" />
-                      Ism Familya
+                      {t("fullNameShort")}
                     </>
                   ),
-                  placeholder: "F.I.O",
+                  placeholder: t("fullNamePlaceholder"),
                 })}
 
                 {renderTextInput({
@@ -441,7 +443,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                   label: (
                     <>
                       <Phone size={11} className="inline mr-1 mb-px" />
-                      Telefon
+                      {t("phone")}
                     </>
                   ),
                   placeholder: "90 123 45 67",
@@ -456,7 +458,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       label: (
                         <>
                           <Lock size={11} className="inline mr-1 mb-px" />
-                          Yangi parol (ixtiyoriy)
+                          {t("newPasswordOptional")}
                         </>
                       ),
                       placeholder: "••••••",
@@ -467,16 +469,16 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       name="status"
                       render={({ field }) => (
                         <Select
-                          label="Holati"
+                          label={t("status")}
                           name={field.name}
                           value={field.value}
                           onChange={(event) => field.onChange(event.target.value)}
                           options={[
-                            { value: "active", label: "Faol" },
-                            { value: "inactive", label: "Faol emas" },
-                            { value: "blocked", label: "Bloklangan" },
+                            { value: "active", label: t("statusActive") },
+                            { value: "inactive", label: t("statusInactive") },
+                            { value: "blocked", label: t("statusBlocked") },
                           ]}
-                          placeholder="Tanlang"
+                          placeholder={t("statusPlaceholder")}
                         />
                       )}
                     />
@@ -486,7 +488,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                 {isAdmin && (
                   <>
                     <div className="col-span-full">
-                      <SectionDivider title="Moliyaviy ma'lumotlar" />
+                      <SectionDivider title={t("financialInfo")} />
                     </div>
 
                     {renderTextInput({
@@ -494,7 +496,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       label: (
                         <>
                           <DollarSign size={11} className="inline mr-1 mb-px" />
-                          Maosh (so'm)
+                          {t("salaryWithCurrency")}
                         </>
                       ),
                       placeholder: "5 000 000",
@@ -506,7 +508,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       label: (
                         <>
                           <Calendar size={11} className="inline mr-1 mb-px" />
-                          To'lov kuni (1–30)
+                          {t("paymentDayRange")}
                         </>
                       ),
                       placeholder: "1 – 30",
@@ -517,7 +519,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                 {isCourier && (
                   <>
                     <div className="col-span-full">
-                      <SectionDivider title="Kuryer tarifi" />
+                      <SectionDivider title={t("courierTariff")} />
                     </div>
 
                     {renderTextInput({
@@ -525,7 +527,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       label: (
                         <>
                           <Home size={11} className="inline mr-1 mb-px" />
-                          Uyga tarif (so'm)
+                          {t("homeTariffWithCurrency")}
                         </>
                       ),
                       placeholder: "10 000",
@@ -536,7 +538,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       label: (
                         <>
                           <Building2 size={11} className="inline mr-1 mb-px" />
-                          Markazga tarif (so'm)
+                          {t("centerTariffWithCurrency")}
                         </>
                       ),
                       placeholder: "8 000",
@@ -548,7 +550,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                         name="region_id"
                         render={({ field }) => (
                           <Select
-                            label="Viloyat"
+                            label={t("regionLabel")}
                             name={field.name}
                             value={field.value}
                             onChange={(event) => field.onChange(event.target.value)}
@@ -556,7 +558,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                               value: String(region.id),
                               label: region.name,
                             }))}
-                            placeholder={regionList.length ? "Tanlang" : "Yuklanmoqda..."}
+                            placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
                           />
                         )}
                       />
@@ -567,7 +569,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                 {isMarket && (
                   <>
                     <div className="col-span-full">
-                      <SectionDivider title="Market ma'lumotlari" />
+                      <SectionDivider title={t("marketInfo")} />
                     </div>
 
                     {renderTextInput({
@@ -586,15 +588,15 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       name="default_tariff"
                       render={({ field }) => (
                         <Select
-                          label="Asosiy tarif"
+                          label={t("mainTariff")}
                           name={field.name}
                           value={field.value}
                           onChange={(event) => field.onChange(event.target.value)}
                           options={[
-                            { value: "center", label: "Markazgacha" },
-                            { value: "address", label: "Eshikkacha" },
+                            { value: "center", label: t("centerOnlyTariff") },
+                            { value: "address", label: t("doorTariff") },
                           ]}
-                          placeholder="Tanlang"
+                          placeholder={t("defaultTariffPlaceholder")}
                         />
                       )}
                     />
@@ -604,7 +606,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       label: (
                         <>
                           <Building size={11} className="inline mr-1 mb-px" />
-                          Uyga tarif (so'm)
+                          {t("homeTariffWithCurrency")}
                         </>
                       ),
                       placeholder: "10 000",
@@ -615,7 +617,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       label: (
                         <>
                           <Store size={11} className="inline mr-1 mb-px" />
-                          Markazga tarif (so'm)
+                          {t("centerTariffWithCurrency")}
                         </>
                       ),
                       placeholder: "8 000",
@@ -633,7 +635,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl font-semibold text-sm text-slate-500 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
           >
-            Bekor qilish
+            {t("cancel")}
           </button>
           <button
             type="button"
@@ -644,12 +646,12 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
             {isPending ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Saqlanmoqda...</span>
+                <span>{t("saving")}</span>
               </>
             ) : (
               <>
                 <Save size={15} strokeWidth={2.5} />
-                <span>O'zgarishlarni saqlash</span>
+                <span>{t("saveChanges")}</span>
               </>
             )}
           </button>

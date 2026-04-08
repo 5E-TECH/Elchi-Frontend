@@ -1,4 +1,5 @@
 import { memo, useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
 import { MoveLeft, Printer, Globe, FileText, ChevronDown, CheckCircle2, Loader2 } from "lucide-react";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
@@ -12,13 +13,14 @@ import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 
 const printOptions = [
-  { key: "thermal", icon: <Printer size={18} />, bg: "bg-blue-500/10 text-blue-500", title: "Termal printer", sub: "MQTT orqali" },
-  { key: "browser", icon: <Globe size={18} />, bg: "bg-emerald-500/10 text-emerald-500", title: "Brauzer orqali", sub: "Istalgan printer" },
-  { key: "pdf", icon: <FileText size={18} />, bg: "bg-amber-500/10 text-amber-500", title: "PDF (60x100mm)", sub: "Gainscha printer uchun" },
+  { key: "thermal", icon: <Printer size={18} />, bg: "bg-blue-500/10 text-blue-500", titleKey: "thermalPrinter", subKey: "viaMqtt" },
+  { key: "browser", icon: <Globe size={18} />, bg: "bg-emerald-500/10 text-emerald-500", titleKey: "browserPrint", subKey: "anyPrinter" },
+  { key: "pdf", icon: <FileText size={18} />, bg: "bg-amber-500/10 text-amber-500", titleKey: "pdfPrint", subKey: "gainschaPrinter" },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
+  const { t } = useTranslation("newOrders");
   const navigate = useNavigate();
   const { marketId } = useParams();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -97,11 +99,11 @@ const NewOrderDetail = () => {
         }
       },
       onError: (err: any) => {
-        const msg = err?.response?.data?.message ?? err?.message ?? "Qabul qilishda xatolik";
-        notifApi.error({ message: "Xatolik", description: msg, placement: "topRight", duration: 5 });
+        const msg = err?.response?.data?.message ?? err?.message ?? t("receiveError");
+        notifApi.error({ message: t("receiveError"), description: msg, placement: "topRight", duration: 5 });
       },
     });
-  }, [selectedIds, orders.length, createReceiveOrder, navigate, refetch, notifApi]);
+  }, [selectedIds, orders.length, createReceiveOrder, navigate, refetch, notifApi, t]);
 
   return (
     <div className="flex flex-col h-full rounded-2xl bg-sidebar dark:bg-maindark overflow-hidden">
@@ -110,16 +112,16 @@ const NewOrderDetail = () => {
       <div className="p-6 pb-4">
         <div className="flex justify-between items-center">
           <div onClick={() => navigate(-1)} className="cursor-pointer">
-            <HeaderName name="Buyurtmalar" description={`${orders.length} ta • ${fmt(totalSum)} so'm`} icon={<MoveLeft />} />
+            <HeaderName name={t("ordersHeader")} description={`${t("totalCount", { count: orders.length })} • ${fmt(totalSum)} so'm`} icon={<MoveLeft />} />
           </div>
 
           <div className="flex items-center gap-3">
-            <GlobalSearchInput searchKey="new_order_detail_search" placeholder="Buyurtma izlash..." />
+            <GlobalSearchInput searchKey="new_order_detail_search" placeholder={t("searchOrder")} />
 
             <div className="relative" ref={dropdownRef}>
               <button onClick={() => setIsOpen((p) => !p)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-main hover:bg-main/90 text-white font-semibold text-sm transition-all shadow-md shadow-main/20 cursor-pointer">
-                <Printer size={16} /> Chop etish
+                <Printer size={16} /> {t("print")}
                 <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
               </button>
 
@@ -130,8 +132,8 @@ const NewOrderDetail = () => {
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
                       <div className={`p-2 rounded-lg ${o.bg} shrink-0`}>{o.icon}</div>
                       <div className="text-left">
-                        <div className="text-sm font-semibold text-gray-800 dark:text-white">{o.title}</div>
-                        <div className="text-xs text-gray-400">{o.sub}</div>
+                        <div className="text-sm font-semibold text-gray-800 dark:text-white">{t(o.titleKey)}</div>
+                        <div className="text-xs text-gray-400">{t(o.subKey)}</div>
                       </div>
                     </button>
                   ))}
@@ -146,11 +148,11 @@ const NewOrderDetail = () => {
           <div onClick={toggleSelectAll} className="flex items-center gap-3 cursor-pointer">
             <Checkbox checked={allSelected} onChange={toggleSelectAll} />
             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {allSelected ? "Barchasini bekor qilish" : "Barchasini tanlash"}
+              {allSelected ? t("deselectAll") : t("selectAll")}
             </span>
           </div>
           {selectedIds.size > 0 && (
-            <span className="text-xs font-bold text-white bg-main px-2.5 py-1 rounded-lg">{selectedIds.size} ta tanlangan</span>
+            <span className="text-xs font-bold text-white bg-main px-2.5 py-1 rounded-lg">{t("selectedCount", { count: selectedIds.size })}</span>
           )}
         </div>
       </div>
@@ -169,7 +171,7 @@ const NewOrderDetail = () => {
         )) : (
           <div className="h-64 flex flex-col items-center justify-center text-gray-300 dark:text-gray-700">
             <FileText size={48} className="mb-4 opacity-20" />
-            <p className="font-bold uppercase tracking-widest text-sm opacity-50">Ma'lumot topilmadi</p>
+            <p className="font-bold uppercase tracking-widest text-sm opacity-50">{t("notFound")}</p>
           </div>
         )}
       </div>
@@ -189,10 +191,10 @@ const NewOrderDetail = () => {
             ? <Loader2 size={20} className="animate-spin" />
             : <CheckCircle2 size={20} />}
           {createReceiveOrder.isPending
-            ? "Qabul qilinmoqda..."
+            ? t("receiving")
             : selectedIds.size > 0
-              ? `Qabul qilish — ${selectedIds.size} ta buyurtma`
-              : "Buyurtmalarni tanlang"}
+              ? t("receiveOrders", { count: selectedIds.size })
+              : t("selectOrders")}
         </button>
       </div>
 
@@ -202,8 +204,8 @@ const NewOrderDetail = () => {
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleConfirmDelete}
         isLoading={deleteOrder.isPending}
-        title="Buyurtmani o'chirish"
-        message="Bu buyurtma butunlay o'chiriladi. Davom etasizmi?"
+        title={t("deleteOrderTitle")}
+        message={t("deleteOrderMessage")}
       />
     </div>
   );

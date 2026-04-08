@@ -1,9 +1,10 @@
 import { memo, useState } from "react";
 import { Clock, ClipboardList, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type Tab = {
   id: string;
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
   activeBackground: string;
 };
@@ -16,25 +17,26 @@ type TabsProps = {
 const tabs: Tab[] = [
   {
     id: "pending",
-    label: "Kutilayotgan Buyurtmalar",
+    labelKey: "pendingOrders",
     icon: <Clock size={16} />,
     activeBackground: "linear-gradient(135deg, #ff8c00, #ff5500)",
   },
   {
     id: "all",
-    label: "Hamma buyurtmalar",
+    labelKey: "allOrders",
     icon: <ClipboardList size={16} />,
     activeBackground: "#576adb",
   },
   {
     id: "cancelled",
-    label: "Bekor qilingan Buyurtmalar",
+    labelKey: "cancelledOrders",
     icon: <XCircle size={16} />,
     activeBackground: "linear-gradient(135deg, #ef4444, #b91c1c)",
   },
 ];
 
 const Tabs = ({ onChange, defaultTab = "pending" }: TabsProps) => {
+  const { t } = useTranslation("orders");
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   const handleTabClick = (tabId: string) => {
@@ -73,7 +75,7 @@ const Tabs = ({ onChange, defaultTab = "pending" }: TabsProps) => {
             `}
           >
             {tab.icon}
-            {tab.label}
+            {t(tab.labelKey)}
           </button>
         );
       })}

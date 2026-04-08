@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { UserStatus } from '../types/user';
+import { useTranslation } from 'react-i18next';
 
 interface UserStatusBadgeProps {
     status: UserStatus;
@@ -21,13 +22,14 @@ const statusConfig: Record<UserStatus, { label: string; className: string }> = {
 };
 
 export const UserStatusBadge = memo(({ status }: UserStatusBadgeProps) => {
+    const { t } = useTranslation("users");
     const config = statusConfig[status];
 
     return (
         <span
             className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.className}`}
         >
-            {config.label}
+            {status === "active" ? t("statusActive") : status === "inactive" ? t("statusInactive") : t("statusBlocked")}
         </span>
     );
 });

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import type { RootState } from "../../../app/config/store";
 
@@ -46,7 +47,7 @@ const formatDate = (dateStr: string): string =>
 const getStatusMeta = (status: string) => {
   if (status === "canceled_received") {
     return {
-      label: "Qaytarilgan",
+      labelKey: "statusReturned",
       badge:
         "bg-orange-500/20 text-orange-100 border border-orange-300/20",
       icon: <RefreshCcw size={12} className="text-orange-100" />,
@@ -54,7 +55,7 @@ const getStatusMeta = (status: string) => {
   }
 
   return {
-    label: "Qabul qilingan",
+    labelKey: "statusReceived",
     badge:
       "bg-emerald-500/20 text-emerald-100 border border-emerald-300/20",
     icon: <CheckCircle2 size={12} className="text-emerald-100" />,
@@ -62,6 +63,7 @@ const getStatusMeta = (status: string) => {
 };
 
 const OldMailCard = memo(({ item }: { item: MailItem }) => {
+  const { t } = useTranslation("mails");
   const navigate = useNavigate();
   const status = getStatusMeta(item.status);
 
@@ -94,7 +96,7 @@ const OldMailCard = memo(({ item }: { item: MailItem }) => {
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold ${status.badge}`}
             >
               {status.icon}
-              {status.label}
+              {t(status.labelKey)}
             </span>
             <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-white/6 border border-white/10 group-hover:bg-white/12 transition-colors">
               <ChevronRight size={16} className="text-white/80" />
@@ -109,7 +111,7 @@ const OldMailCard = memo(({ item }: { item: MailItem }) => {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-white/65 text-sm">Buyurtmalar:</span>
+            <span className="text-white/65 text-sm">{t("ordersLabel")}:</span>
             <span className="text-white font-bold text-[28px] leading-none">
               {item.order_quantity}
               <span className="ml-1 text-base font-semibold text-white/80">ta</span>
@@ -117,7 +119,7 @@ const OldMailCard = memo(({ item }: { item: MailItem }) => {
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <span className="text-white/65 text-sm">Summa:</span>
+            <span className="text-white/65 text-sm">{t("amountLabel")}:</span>
             <span className="text-white font-bold text-xl text-right">
               {formatPrice(item.post_total_price)}
             </span>
@@ -126,7 +128,7 @@ const OldMailCard = memo(({ item }: { item: MailItem }) => {
 
         <div className="pt-1 flex items-center gap-2 text-xs text-white/60">
           <Package size={13} />
-          <span>{item.region?.name ?? `Viloyat #${item.region_id}`}</span>
+          <span>{item.region?.name ?? t("regionHashFallback", { id: item.region_id })}</span>
         </div>
       </div>
     </div>
@@ -140,6 +142,7 @@ const OldMailCardSkeleton = memo(() => (
 OldMailCardSkeleton.displayName = "OldMailCardSkeleton";
 
 const OldMails = () => {
+  const { t } = useTranslation("mails");
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
   const { getOldMails } = useMails();
@@ -164,7 +167,7 @@ const OldMails = () => {
           <Inbox size={28} className="text-main" />
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Old mails ma'lumotlarini yuklab bo'lmadi
+          {t("oldLoadError")}
         </p>
       </div>
     );
@@ -177,7 +180,7 @@ const OldMails = () => {
           <Inbox size={28} className="text-main" />
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Eski pochtalar topilmadi
+          {t("emptyOld")}
         </p>
       </div>
     );

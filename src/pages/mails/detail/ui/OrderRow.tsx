@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Phone,
   Store,
@@ -24,10 +25,11 @@ interface OrderRowProps {
 }
 
 const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly = false }: OrderRowProps) => {
-  const customerName = order.customer?.name ?? `Mijoz #${order.customer_id}`;
-  const customerPhone = order.customer?.phone_number ?? "Telefon yo'q";
-  const districtName = order.district?.name ?? `Tuman #${order.district_id}`;
-  const marketName = order.market?.name ?? `Market #${order.market_id}`;
+  const { t } = useTranslation(["mails", "orders", "common"]);
+  const customerName = order.customer?.name ?? t("mails:customerNumber", { id: order.customer_id });
+  const customerPhone = order.customer?.phone_number ?? t("mails:phoneUnavailable");
+  const districtName = order.district?.name ?? t("mails:districtNumber", { id: order.district_id });
+  const marketName = order.market?.name ?? t("mails:marketNumber", { id: order.market_id });
   const isAddressDelivery = order.where_deliver === "address";
   const locationLabel = order.address?.trim() || districtName;
   const isHistory = variant === "history";
@@ -68,12 +70,12 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
             {isAddressDelivery ? (
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-400/20">
                 <House size={12} />
-                <span className="text-xs font-semibold">Uygacha</span>
+                <span className="text-xs font-semibold">{t("orders:deliveryToHome")}</span>
               </div>
             ) : (
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100 dark:bg-fuchsia-500/15 dark:text-fuchsia-300 dark:border-fuchsia-400/20">
                 <Warehouse size={12} />
-                <span className="text-xs font-semibold">Markazgacha</span>
+                <span className="text-xs font-semibold">{t("orders:deliveryToCenter")}</span>
               </div>
             )}
           </div>
@@ -126,12 +128,12 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
             {isAddressDelivery ? (
               <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600 dark:border-orange-400/20 dark:bg-orange-500/15 dark:text-orange-300">
                 <House size={12} />
-                Uygacha
+                {t("orders:deliveryToHome")}
               </span>
             ) : (
               <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-fuchsia-100 bg-fuchsia-50 px-3 py-1 text-xs font-semibold text-fuchsia-600 dark:border-fuchsia-400/20 dark:bg-fuchsia-500/15 dark:text-fuchsia-300">
                 <Warehouse size={12} />
-                Markazgacha
+                {t("orders:deliveryToCenter")}
               </span>
             )}
           </div>
@@ -195,12 +197,12 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
           {isAddressDelivery ? (
             <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500/15 border border-orange-500/30">
               <House size={11} className="text-orange-400" />
-              <span className="text-[11px] text-orange-400 font-semibold">Uygacha</span>
+              <span className="text-[11px] text-orange-400 font-semibold">{t("orders:deliveryToHome")}</span>
             </div>
           ) : (
             <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-500/15 border border-slate-500/20">
               <Building2 size={11} className="text-slate-500 dark:text-white/70" />
-              <span className="text-[11px] text-slate-600 dark:text-white/80 font-semibold">Markazgacha</span>
+              <span className="text-[11px] text-slate-600 dark:text-white/80 font-semibold">{t("orders:deliveryToCenter")}</span>
             </div>
           )}
         </div>

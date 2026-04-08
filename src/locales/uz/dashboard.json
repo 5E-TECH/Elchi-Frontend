@@ -1,0 +1,88 @@
+{
+  "title": "Dashboard",
+  "overview": "Umumiy ko'rinish",
+  "todayRevenue": "Bugungi daromad",
+  "todayOrders": "Bugungi buyurtmalar",
+  "weekRevenue": "Shu haftalik daromad",
+  "compareYesterday": "Kecha bilan solishtirganda",
+  "compareLastWeek": "O'tgan hafta bilan solishtirganda",
+  "totalRevenue": "Umumiy daromad",
+  "orders": "Buyurtmalar",
+  "sold": "Sotilgan",
+  "statistics": "Statistika",
+  "financialAnalysis": "Moliyaviy tahlil",
+  "period": "Davr",
+  "daily": "Kunlik",
+  "weekly": "Haftalik",
+  "monthly": "Oylik",
+  "growth": "O'sish",
+  "decline": "Pasayish",
+  "analytics": "Analitika",
+  "serviceName": "Pochta Xizmati",
+  "testMessage": "Tarjima tizimi ishlayapti",
+  "page_title_today": "Bugungi statistika",
+  "page_title_filtered": "Tanlangan davr statistikasi",
+  "page_subtitle_today": "Bugungi ko'rsatkichlar",
+  "page_subtitle_filtered": "Sana oralig'i bo'yicha",
+  "quickRanges": {
+    "today": "Bugun",
+    "week": "Bu hafta",
+    "month": "Bu oy",
+    "clear": "Tozalash"
+  },
+  "datePicker": {
+    "from": "Boshlanish",
+    "to": "Tugash"
+  },
+  "currency_value": "{{value}} UZS",
+  "cards": {
+    "total_orders": "Jami buyurtmalar",
+    "sold": "Sotilgan",
+    "cancelled": "Bekor qilingan",
+    "profit": "Foyda"
+  },
+  "periods": {
+    "daily": "Kunlik",
+    "weekly": "Haftalik",
+    "monthly": "Oylik",
+    "yearly": "Yillik"
+  },
+  "period_stats": {
+    "title": "Grafik davri",
+    "subtitle": "statistikasi",
+    "total_revenue": "Jami daromad:",
+    "orders": "Buyurtmalar:",
+    "sold": "Sotilgan:"
+  },
+  "chart": {
+    "title": "Kunlik daromad trendi",
+    "description": "Daromad = Market tarifi − Kuryer tarifi (faqat sotilgan buyurtmalar hisoblanadi)",
+    "tooltip_value": "{{value}}M UZS",
+    "types": {
+      "area": "Area",
+      "bar": "Bar",
+      "combo": "Combo"
+    }
+  },
+  "financial_analysis": {
+    "title": "Moliyaviy tahlil",
+    "subtitle": "Davr tahlili"
+  },
+  "financial_cards": {
+    "today_revenue": {
+      "title": "Bugungi daromad",
+      "subtitle": "Kecha bilan solishtirganda",
+      "value_label": "Bugun"
+    },
+    "today_orders": {
+      "title": "Bugungi buyurtmalar",
+      "subtitle": "Kecha bilan solishtirganda",
+      "value_label": "Bugun"
+    },
+    "week_revenue": {
+      "title": "Shu haftalik daromad",
+      "subtitle": "O'tgan hafta bilan solishtirganda",
+      "value_label": "Shu hafta"
+    }
+  }
+}

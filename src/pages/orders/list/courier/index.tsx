@@ -1,5 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import { ListOrdered, Send } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import Tabs from "./list/tabs";
 import SellModal from "./list/SellModal";
 import CancelModal from "./list/CancelModal";
@@ -23,6 +24,7 @@ const STATUS_TAB_MAP: Record<string, string> = {
 };
 
 const CourierOrders = () => {
+  const { t } = useTranslation("orders");
   const { getParam, setParam, removeParam } = useQueryParams();
 
   const initialStatus = getParam("status");
@@ -147,10 +149,10 @@ const CourierOrders = () => {
             </div>
             <div className="min-w-0">
               <h2 className="m-0 text-lg font-bold leading-tight text-main dark:text-primary sm:text-[1.7rem]">
-                Buyurtmalar ro'yxati
+                {t("list")}
               </h2>
               <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-                Jami {orders.length} ta buyurtma
+                {t("totalOrdersSummary", { count: orders.length })}
               </p>
             </div>
           </div>
@@ -203,7 +205,7 @@ const CourierOrders = () => {
             ) : (
               <Send size={16} />
             )}
-            {selectedIds.size} ta buyurtmani pochtaga yuborish
+            {t("sendSelectedToPost", { count: selectedIds.size })}
           </button>
         </div>
       )}
@@ -232,17 +234,17 @@ const CourierOrders = () => {
         isOpen={!!rollbackOrder}
         onClose={() => setRollbackOrder(null)}
         onConfirm={handleRollbackConfirm}
-        title="Buyurtmani qaytarish"
+        title={t("rollbackOrder")}
         message={
           <>
             <span className="font-medium text-gray-700 dark:text-gray-200">
               #{rollbackOrder?.id}
             </span>{" "}
-            buyurtmani kutilayotgan holatga qaytarmoqchimisiz?
+            {t("rollbackConfirmMessage", { id: rollbackOrder?.id })}
           </>
         }
-        confirmLabel="Ha, qaytarish"
-        cancelLabel="Bekor qilish"
+        confirmLabel={t("rollbackConfirmLabel")}
+        cancelLabel={t("cancelOrderAction")}
         isLoading={isRollbacking}
         variant="warning"
       />

@@ -30,6 +30,7 @@ import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import type { RootState } from "../../../app/config/store";
 import { BASE_URL } from "../../../shared/const";
 import type { AxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 
 interface Product {
   id: number;
@@ -71,6 +72,7 @@ const editProductSchema: yup.ObjectSchema<EditProductFormValues> = yup.object({
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
 const ProductTable = () => {
+  const { t } = useTranslation("products");
   const navigate = useNavigate();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -271,7 +273,7 @@ const ProductTable = () => {
       },
       {
         key: "name",
-        label: "Product name",
+        label: t("name"),
         width: "35%",
         sortable: true,
         render: (v: string) => (
@@ -285,7 +287,7 @@ const ProductTable = () => {
       },
       {
         key: "market",
-        label: "Market name",
+        label: t("marketName"),
         width: "40%",
         render: (value: Product["market"]) => (
           <div className="flex items-center gap-2.5">
@@ -298,7 +300,7 @@ const ProductTable = () => {
       },
       {
         key: "actions",
-        label: "Action",
+        label: t("action"),
         width: "20%",
         render: (_: unknown, row: Product) => (
           <div className="flex items-center gap-2">
@@ -309,7 +311,7 @@ const ProductTable = () => {
                 handleEditRequest(row);
               }}
               className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors cursor-pointer"
-              aria-label="Edit product"
+              aria-label={t("editProductAria")}
             >
               <SquarePen size={18} />
             </button>
@@ -320,7 +322,7 @@ const ProductTable = () => {
                 handleDeleteRequest(row);
               }}
               className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-red-500 transition-colors cursor-pointer"
-              aria-label="Delete product"
+              aria-label={t("deleteProductAria")}
             >
               <Trash2 size={18} />
             </button>
@@ -328,7 +330,7 @@ const ProductTable = () => {
         ),
       },
     ],
-    [handleDeleteRequest, handleEditRequest],
+    [handleDeleteRequest, handleEditRequest, t],
   );
 
   // ─── Render ─────────────────────────────────────────────────────────────
@@ -337,12 +339,12 @@ const ProductTable = () => {
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
       <div className="flex justify-between items-center mb-6">
         <HeaderName
-          name="Products"
-          description="Mahsulotlar ro'yxati"
+          name={t("title")}
+          description={t("pageDescription")}
           icon={<ScanLine />}
         />
         <Button
-          label="Create Product"
+          label={t("create")}
           icon={<Plus />}
           onClick={() => setShowMarketSelect(true)}
         />
@@ -353,7 +355,7 @@ const ProductTable = () => {
         <div className="w-full">
           <GlobalSearchInput
             searchKey="product_search"
-            placeholder="Search..."
+            placeholder={t("searchInputPlaceholder")}
             className="w-full"
           />
         </div>
@@ -367,7 +369,7 @@ const ProductTable = () => {
                 value={field.value}
                 onChange={field.onChange}
                 options={marketOptions}
-                placeholder="Market tanlang..."
+                placeholder={t("selectMarket")}
               />
             )}
           />
@@ -379,10 +381,10 @@ const ProductTable = () => {
           </div>
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              Jami
+              {t("productCountLabel")}
             </span>
             <span className="text-lg font-bold text-gray-800 dark:text-white leading-tight">
-              {products?.total || 0} ta
+              {t("totalCount", { count: products?.total || 0 })}
             </span>
           </div>
         </div>
@@ -401,14 +403,14 @@ const ProductTable = () => {
       <PopupSelect<Market>
         isOpen={showMarketSelect}
         onClose={() => setShowMarketSelect(false)}
-        title="Select Market"
+        title={t("selectMarket")}
         data={markets}
         onSelect={handleSelectMarket}
         keyExtractor={(item) => item.index}
         searchKeys={["name"]}
         icon={<BookMarked />}
-        selectLabel="Select"
-        cancelLabel="Bekor qilish"
+        selectLabel={t("select")}
+        cancelLabel={t("cancel")}
         labelKey="name"
         secondaryLabelKey="phone"
       />
@@ -418,15 +420,8 @@ const ProductTable = () => {
         isOpen={!!deleteTarget}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="O'chirishni tasdiqlang"
-        message={
-          <>
-            <strong className="text-gray-700 dark:text-gray-200">
-              "{deleteTarget?.name}"
-            </strong>{" "}
-            ni rostdan o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.
-          </>
-        }
+        title={t("deleteConfirmTitle")}
+        message={t("deleteConfirmMessage", { name: deleteTarget?.name ?? "" })}
         isLoading={deleteProduct.isPending}
       />
 
@@ -435,11 +430,11 @@ const ProductTable = () => {
         isOpen={!!editTarget}
         onClose={handleEditCancel}
         onSave={handleEditSubmit(handleEditSave)}
-        title="Mahsulotni tahrirlash"
+        title={t("edit")}
         icon={<Pencil size={20} />}
         isLoading={updateProduct.isPending}
         imageProps={{
-          label: "Rasm",
+          label: t("image"),
           value: resolveImageUrl(editTarget?.image_url ?? editTarget?.image),
           onChange: handleEditImageChange,
           previewUrl: editPreviewUrl,
@@ -448,13 +443,13 @@ const ProductTable = () => {
         {/* Mahsulot nomi */}
         <div className="space-y-2">
           <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">
-            Mahsulot nomi
+            {t("name")}
           </label>
           <input
             type="text"
             {...registerEdit("name")}
             className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-main/40 transition-all"
-            placeholder="Mahsulot nomini kiriting..."
+            placeholder={t("namePlaceholder")}
           />
           {editErrors.name && (
             <p className="text-xs text-red-500">{editErrors.name.message}</p>

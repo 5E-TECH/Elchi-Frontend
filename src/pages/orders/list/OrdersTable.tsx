@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { Package, MapPin, Store, Calendar, Banknote } from "lucide-react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { Table } from "../../../shared/components/Table/Table";
 import OrderStatusBadge from "./OrderStatusBadge";
 import type { OrderListItem } from "../../../entities/order/types/order";
@@ -137,14 +138,38 @@ const columns = [
 ];
 
 const OrdersTable = ({ data, isLoading, onRowClick }: Props) => {
+    const { t } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
     const tableColumns = useMemo(() => {
+        const translatedColumns = columns.map((column) => {
+            if (column.key === "customer") return { ...column, label: t("customer") };
+            if (column.key === "district") return { ...column, label: t("filterRegion") + " / " + t("district") };
+            if (column.key === "market") return { ...column, label: t("market") };
+            if (column.key === "status") return { ...column, label: t("orderStatus") };
+            if (column.key === "where_deliver") {
+                return {
+                    ...column,
+                    label: t("deliveryType"),
+                    render: (val: OrderListItem["where_deliver"]) => (
+                        <span className={`text-xs font-medium px-2 py-1 rounded-lg ${val === "center"
+                                ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                                : "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                            }`}>
+                            {val === "center" ? t("deliveryCenter") : t("deliveryHome")}
+                        </span>
+                    ),
+                };
+            }
+            if (column.key === "total_price") return { ...column, label: t("sumLabel") };
+            if (column.key === "createdAt") return { ...column, label: t("date") };
+            return column;
+        });
         if (role === "market") {
-            return columns.filter((column) => column.key !== "market");
+            return translatedColumns.filter((column) => column.key !== "market");
         }
 
-        return columns;
-    }, [role]);
+        return translatedColumns;
+    }, [role, t]);
 
     if (isLoading) {
         return (
@@ -167,8 +192,8 @@ const OrdersTable = ({ data, isLoading, onRowClick }: Props) => {
                     <Package size={28} className="text-main/50" />
                 </div>
                 <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-500">Buyurtmalar topilmadi</p>
-                    <p className="text-xs mt-0.5">Filtrlarni o'zgartiring yoki yangi buyurtma qo'shing</p>
+                    <p className="text-sm font-semibold text-gray-500">{t("ordersNotFound")}</p>
+                    <p className="text-xs mt-0.5">{t("ordersEmptyHint")}</p>
                 </div>
             </div>
         );

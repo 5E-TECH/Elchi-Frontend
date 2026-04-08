@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Order } from '../types/user';
 import { Table } from '../../../shared/components/Table/Table';
 import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
+import { useTranslation } from 'react-i18next';
 
 interface CustomerOrdersTableProps {
     orders: Order[];
@@ -32,12 +33,13 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 };
 
 export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) => {
+    const { t } = useTranslation("users");
     const navigate = useNavigate();
 
     const columns: ColumnConfig<Order>[] = [
         {
             key: 'id',
-            label: 'ID / Sana',
+            label: t('idDate'),
             width: '25%',
             render: (_, order) => (
                 <div className="flex flex-col">
@@ -54,7 +56,7 @@ export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) =
         },
         {
             key: 'product_quantity',
-            label: 'Mahsulotlar',
+            label: t('products'),
             width: '20%',
             render: (val) => (
                 <div className="flex items-center gap-2">
@@ -62,27 +64,27 @@ export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) =
                         <Package size={14} className="text-slate-500 dark:text-white/40" />
                     </div>
                     <span className="text-sm font-semibold text-slate-700 dark:text-white">
-                        {val} ta mahsulot
+                        {t("productCount", { count: val })}
                     </span>
                 </div>
             )
         },
         {
             key: 'where_deliver',
-            label: 'Manzil',
+            label: t('address'),
             width: '20%',
             render: (val) => (
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 w-fit">
                     <Truck size={13} className="text-slate-500 dark:text-white/40" />
                     <span className="text-[11px] font-bold text-slate-600 dark:text-white/60">
-                        {val === 'center' ? 'Markazga' : 'Eshikkacha'}
+                        {val === 'center' ? t('centerOnlyTariff') : t('doorTariff')}
                     </span>
                 </div>
             )
         },
         {
             key: 'total_price',
-            label: 'Umumiy Summa',
+            label: t('totalAmount'),
             width: '20%',
             render: (val) => (
                 <span className="text-sm font-black text-main tabular-nums">
@@ -92,7 +94,7 @@ export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) =
         },
         {
             key: 'status',
-            label: 'Holat',
+            label: t('status'),
             width: '15%',
             render: (val) => {
                 const config = STATUS_MAP[String(val)] ?? STATUS_MAP.new;
@@ -112,13 +114,13 @@ export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) =
                 <div className="flex items-center gap-2.5">
                     <div className="w-1 h-5 bg-main rounded-full" />
                     <h3 className="text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white">
-                        Buyurtmalar Tarixi
+                        {t("userHistory")}
                     </h3>
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-main/5 border border-main/10">
                     <Info size={12} className="text-main" />
                     <span className="text-[10px] font-bold text-main uppercase tracking-widest">
-                        Jami: {orders.length}
+                        {t("totalLabel")}: {orders.length}
                     </span>
                 </div>
             </div>
@@ -138,7 +140,7 @@ export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) =
                         <Package size={32} className="text-slate-300 dark:text-white/10" />
                     </div>
                     <p className="text-sm font-bold text-slate-400 dark:text-white/20 uppercase tracking-widest">
-                        Buyurtmalar topilmadi
+                        {t("ordersNotFound")}
                     </p>
                 </div>
             )}

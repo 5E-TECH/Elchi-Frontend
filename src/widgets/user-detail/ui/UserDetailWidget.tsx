@@ -6,6 +6,7 @@ import { UserInfoCards } from '../../../entities/user/ui/UserInfoCards';
 import { UserStatsCard } from '../../../entities/user/ui/UserStatsCard';
 import { CustomerOrdersTable } from '../../../entities/user/ui/CustomerOrdersTable';
 import { UpdateUserModal } from '../../../features/user/update-user/ui/UpdateUserModal';
+import { useTranslation } from 'react-i18next';
 
 interface UserDetailWidgetProps {
   user?: User;
@@ -15,6 +16,7 @@ interface UserDetailWidgetProps {
 }
 
 export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserDetailWidgetProps) => {
+  const { t } = useTranslation("users");
   const [showEdit, setShowEdit] = useState(false);
 
   // ── Loading ──
@@ -25,7 +27,7 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
           <div className="w-14 h-14 bg-main/10 dark:bg-main/20 rounded-2xl flex items-center justify-center mx-auto">
             <Loader2 className="w-7 h-7 text-main animate-spin" />
           </div>
-          <p className="text-sm font-medium text-slate-500 dark:text-white/50">Yuklanmoqda...</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-white/50">{t("loading")}</p>
         </div>
       </div>
     );
@@ -40,9 +42,9 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
             <AlertCircle className="w-7 h-7 text-red-500" />
           </div>
           <div>
-            <p className="font-bold text-slate-800 dark:text-white">Xatolik yuz berdi</p>
+            <p className="font-bold text-slate-800 dark:text-white">{t("loadError")}</p>
             <p className="text-sm text-slate-500 dark:text-white/40 mt-1">
-              {error?.response?.data?.message ?? "Ma'lumotlarni yuklashda xatolik"}
+              {error?.response?.data?.message ?? t("loadDataError")}
             </p>
           </div>
         </div>
@@ -59,8 +61,8 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
             <UserX className="w-7 h-7 text-slate-400" />
           </div>
           <div>
-            <p className="font-bold text-slate-800 dark:text-white">Topilmadi</p>
-            <p className="text-sm text-slate-500 dark:text-white/40 mt-1">Bu foydalanuvchi mavjud emas</p>
+            <p className="font-bold text-slate-800 dark:text-white">{t("notFound")}</p>
+            <p className="text-sm text-slate-500 dark:text-white/40 mt-1">{t("userNotFound")}</p>
           </div>
         </div>
       </div>
@@ -90,7 +92,7 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
               "
             >
               <Pencil size={15} strokeWidth={2.5} />
-              <span>Tahrirlash</span>
+              <span>{t("edit")}</span>
             </button>
           </div>
 

@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { MapPin, Package, ChevronRight, AlertTriangle, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -35,9 +36,10 @@ const formatPrice = (price: number): string =>
 
 // ─── Karta ────────────────────────────────────────────────────────────────────
 const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
+  const { t } = useTranslation("mails");
   const navigate = useNavigate();
   const { role } = useSelector((state: RootState) => state.role);
-  const regionName = item.region?.name ?? `Viloyat ${item.region_id}`;
+  const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const courierName = item.courier?.name;
 
   return (
@@ -67,7 +69,7 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white/20 text-white border border-white/30">
               <AlertTriangle size={11} />
-              Rad etilgan
+              {t("statusRejected")}
             </span>
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/15 border border-white/25 group-hover:bg-white/25 transition-colors">
               <ChevronRight size={16} className="text-white" />
@@ -104,7 +106,7 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
           <div className="flex items-center justify-between">
             <span className="text-white/70 text-sm flex items-center gap-1.5">
               <Package size={13} className="text-white/50" />
-              Buyurtmalar:
+              {t("ordersLabel")}:
             </span>
             <span className="text-white font-bold text-sm">
               {item.order_quantity}{" "}
@@ -112,7 +114,7 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-white/70 text-sm">Summa:</span>
+            <span className="text-white/70 text-sm">{t("amountLabel")}:</span>
             <span className="text-white font-bold text-sm">
               {formatPrice(item.post_total_price)}
             </span>
@@ -134,6 +136,7 @@ RefusedMailCardSkeleton.displayName = "RefusedMailCardSkeleton";
 
 // ─── Asosiy komponent ─────────────────────────────────────────────────────────
 const RefusedMails = () => {
+  const { t } = useTranslation("mails");
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
 
@@ -167,7 +170,7 @@ const RefusedMails = () => {
           <Package size={28} className="text-red-400" />
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Ma'lumotlarni yuklab bo'lmadi
+          {t("loadError")}
         </p>
       </div>
     );
@@ -180,7 +183,7 @@ const RefusedMails = () => {
           <AlertTriangle size={28} className="text-red-400" />
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Rad etilgan pochta yo'q
+          {t("emptyRefused")}
         </p>
       </div>
     );
@@ -195,7 +198,7 @@ const RefusedMails = () => {
             {stats.totalRegions}
           </span>
           <span className="text-gray-500 dark:text-gray-400 text-sm">
-            {role === "courier" ? "pochta" : "viloyat"}
+            {role === "courier" ? t("mailCountLabel") : t("regionCountLabel")}
           </span>
         </div>
         <div className="hidden h-5 w-px bg-gray-200 dark:bg-white/10 sm:block" />
@@ -204,7 +207,7 @@ const RefusedMails = () => {
             {stats.totalOrders}
           </span>
           <span className="text-gray-500 dark:text-gray-400 text-sm">
-            buyurtma
+            {t("orderCountLabel")}
           </span>
         </div>
         <div className="hidden h-5 w-px bg-gray-200 dark:bg-white/10 sm:block" />

@@ -1,10 +1,12 @@
 import { memo } from 'react';
 import { Users, Store, UserCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const UserStats = memo(() => {
+    const { t } = useTranslation("users");
     const stats = [
         {
-            label: 'Barcha Foydalanuvchilar',
+            label: t('allUsers'),
             value: '150',
             icon: Users,
             colorFrom: '#3b82f6',
@@ -14,7 +16,7 @@ export const UserStats = memo(() => {
             progress: 70
         },
         {
-            label: 'Marketlar',
+            label: t('markets'),
             value: '92',
             icon: Store,
             colorFrom: '#10b981',
@@ -24,7 +26,7 @@ export const UserStats = memo(() => {
             progress: 45
         },
         {
-            label: 'Xodimlar',
+            label: t('employees'),
             value: '58',
             icon: UserCheck,
             colorFrom: '#8b5cf6',

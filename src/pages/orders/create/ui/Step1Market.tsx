@@ -9,6 +9,7 @@ import {
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, Phone, Store, X } from "lucide-react";
 import { Controller, useController, useForm, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useMarkets } from "../../../../entities/markets";
 import type { MarketOption, OrderCreateFormValues } from "../model/orderCreateForm";
 import { FormFieldError } from "./formFieldStyles";
@@ -23,6 +24,7 @@ const getMarketPhone = (market?: MarketOption | null) =>
 
   const Step1Market = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation(["orders", "common"]);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -143,10 +145,10 @@ const getMarketPhone = (market?: MarketOption | null) =>
         </div>
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-maindark dark:text-primary">
-            Market tanlang
+            {t("selectMarketTitle")}
           </h3>
           <p className="text-xs text-gray-400">
-            Buyurtma qaysi market nomidan yaratilishini tanlang
+            {t("selectMarket")}
           </p>
         </div>
       </div>
@@ -155,7 +157,7 @@ const getMarketPhone = (market?: MarketOption | null) =>
         <div className="flex flex-col gap-3 rounded-2xl border border-main/15 bg-main/5 p-4 dark:bg-main/10 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-main/70">
-              Tanlangan market
+              {t("selectedMarket")}
             </p>
             <p className="mt-1 truncate text-base font-semibold text-maindark dark:text-primary">
               {selectedMarket.name}
@@ -174,7 +176,7 @@ const getMarketPhone = (market?: MarketOption | null) =>
             className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-gray-200 bg-primary px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:border-main/30 hover:text-main dark:border-primarydark dark:bg-primarydark dark:text-gray-300"
           >
             <X size={14} />
-            Tozalash
+            {t("clear", { ns: "common" })}
           </button>
         </div>
       )}
@@ -198,12 +200,12 @@ const getMarketPhone = (market?: MarketOption | null) =>
 
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-maindark dark:text-primary">
-              {selectedMarket ? selectedMarket.name : "Market tanlash"}
+              {selectedMarket ? selectedMarket.name : t("selectMarketButton")}
             </p>
             <p className="mt-0.5 text-xs text-gray-400">
               {selectedMarket
-                ? "Boshqa market tanlash uchun ro'yxatni oching"
-                : "Qidiruv orqali kerakli marketni toping"}
+                ? t("selectAnotherMarket")
+                : t("searchInstruction")}
             </p>
           </div>
 
@@ -234,10 +236,10 @@ const getMarketPhone = (market?: MarketOption | null) =>
                 <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-4 py-4 dark:border-primarydark sm:px-5">
                   <div className="min-w-0">
                     <p className="text-base font-semibold text-maindark dark:text-primary">
-                      Market tanlash
+                      {t("selectMarketButton")}
                     </p>
                     <p className="mt-1 text-sm text-gray-400">
-                      Marketlar soni ko'p bo'lsa ham ro'yxat shu panel ichida qoladi
+                      {t("marketModalSubtitle")}
                     </p>
                   </div>
 
@@ -261,7 +263,7 @@ const getMarketPhone = (market?: MarketOption | null) =>
                         value={searchField.value}
                         onBlur={searchField.onBlur}
                         onValueChange={searchField.onChange}
-                        placeholder="Market qidirish..."
+                        placeholder={t("searchMarket")}
                         className="w-full"
                         inputClassName="bg-sidebar dark:bg-primarydark border-gray-200 dark:border-primarydark/60 text-maindark dark:text-primary placeholder:text-gray-400 rounded-xl py-2.5 pr-3 shadow-none focus:shadow-none"
                         iconClassName="text-gray-400 group-focus-within:text-main"
@@ -284,7 +286,7 @@ const getMarketPhone = (market?: MarketOption | null) =>
                   ) : visibleMarkets.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 py-10 text-gray-400">
                       <Store size={28} strokeWidth={1.5} />
-                      <p className="text-sm">Market topilmadi</p>
+                      <p className="text-sm">{t("marketNotFound")}</p>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-1">

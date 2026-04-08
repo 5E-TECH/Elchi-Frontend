@@ -28,6 +28,7 @@ import { useCashBox } from "../../../entities/payments";
 import type { PaymentRow } from "./patmentHistoryTable";
 import PaymentHistoryList from "./PaymentHistoryList";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
+import { useTranslation } from "react-i18next";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,36 @@ const toNumber = (v: unknown, fallback = 0): number => {
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : fallback;
 };
+
+const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
+
+const buildRangeStart = (type: "today" | "week" | "month") => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (type === "today") return toIsoDate(today);
+
+  if (type === "week") {
+    const weekStart = new Date(today);
+    const weekday = weekStart.getDay();
+    const diff = weekday === 0 ? 6 : weekday - 1;
+    weekStart.setDate(weekStart.getDate() - diff);
+    return toIsoDate(weekStart);
+  }
+
+  return toIsoDate(new Date(today.getFullYear(), today.getMonth(), 1));
+};
+
+const summarizeHistory = (items: PaymentRow[] = []) =>
+  items.reduce(
+    (accumulator, item) => {
+      const amount = Math.abs(toNumber(item.amount));
+      if (item.operation_type === "income") accumulator.income += amount;
+      else if (item.operation_type === "expense") accumulator.expense += amount;
+      return accumulator;
+    },
+    { income: 0, expense: 0 },
+  );
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,6 +134,7 @@ const Skeleton = ({ className }: { className?: string }) => (
 // ─── MainCashbox ──────────────────────────────────────────────────────────────
 
 const MainCashbox = () => {
+  const { t } = useTranslation("payments");
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [isSalaryPopupOpen, setIsSalaryPopupOpen] = useState(false);
   const [isCourierPopupOpen, setIsCourierPopupOpen] = useState(false);
@@ -112,6 +144,7 @@ const MainCashbox = () => {
   const [isCloseShiftPopupOpen, setIsCloseShiftPopupOpen] = useState(false);
   const [draftHistoryFrom, setDraftHistoryFrom] = useState("");
   const [draftHistoryTo, setDraftHistoryTo] = useState("");
+  const [historyPage, setHistoryPage] = useState(1);
   const navigate = useNavigate();
 
   const { getUser } = useUser();
@@ -119,6 +152,8 @@ const MainCashbox = () => {
     cashboxSpand,
     cashboxFill,
     closeShift,
+    getCashBoxInfo,
+    getFinanceHistory,
     getCashBoxMain,
   } = useCashBox();
 
@@ -142,7 +177,38 @@ const MainCashbox = () => {
     [draftHistoryFrom, draftHistoryTo],
   );
 
+  const { data: cashboxInfoRes, isLoading: cashboxInfoLoading } = getCashBoxInfo();
   const { data: mainCashboxRes, isLoading: mainCashboxLoading } = getCashBoxMain(mainCashboxParams);
+  const historyParams = useMemo(
+    () => ({
+      page: historyPage,
+      limit: 10,
+      ...(draftHistoryFrom && draftHistoryTo && { fromDate: draftHistoryFrom, toDate: draftHistoryTo }),
+    }),
+    [draftHistoryFrom, draftHistoryTo, historyPage],
+  );
+  const {
+    data: historyRes,
+    isLoading: historyLoading,
+    isFetching: historyFetching,
+  } = getFinanceHistory(historyParams);
+
+  const todayRangeParams = useMemo(
+    () => ({ page: 1, limit: 200, fromDate: buildRangeStart("today"), toDate: toIsoDate(new Date()) }),
+    [],
+  );
+  const weekRangeParams = useMemo(
+    () => ({ page: 1, limit: 500, fromDate: buildRangeStart("week"), toDate: toIsoDate(new Date()) }),
+    [],
+  );
+  const monthRangeParams = useMemo(
+    () => ({ page: 1, limit: 1000, fromDate: buildRangeStart("month"), toDate: toIsoDate(new Date()) }),
+    [],
+  );
+
+  const { data: todayHistoryRes } = getFinanceHistory(todayRangeParams);
+  const { data: weekHistoryRes } = getFinanceHistory(weekRangeParams);
+  const { data: monthHistoryRes } = getFinanceHistory(monthRangeParams);
 
   const employees = useMemo(
     () =>
@@ -156,11 +222,13 @@ const MainCashbox = () => {
   const markets = marketsData?.data?.items ?? [];
 
   // ── Cashbox balances ───────────────────────────────────────────────────────
+  const cashboxInfoData = cashboxInfoRes?.data ?? {};
   const mainCashboxData = mainCashboxRes?.data ?? {};
   const mainCashbox = mainCashboxData?.cashbox ?? {};
   const totalBalance = toNumber(
     (mainCashbox as any)?.balance ??
       (mainCashboxData as any)?.balance ??
+      cashboxInfoData?.mainCashboxTotal ??
       (mainCashboxData as any)?.total,
   );
   const cashBalance = toNumber(
@@ -178,11 +246,14 @@ const MainCashbox = () => {
 
   // ── History ────────────────────────────────────────────────────────────────
   const historyRows: PaymentRow[] = useMemo(
-    () => ((mainCashboxData?.cashboxHistory ?? []) as PaymentRow[]),
-    [mainCashboxData?.cashboxHistory],
+    () => ((historyRes?.data?.items ?? []) as PaymentRow[]),
+    [historyRes?.data?.items],
   );
-  const filteredIncome = toNumber(mainCashboxData?.income);
-  const filteredExpense = toNumber(mainCashboxData?.outcome);
+  const historyPagination = historyRes?.data?.pagination ?? historyRes?.data?.meta;
+  const filteredIncome = summarizeHistory(todayHistoryRes?.data?.items).income;
+  const filteredExpense = summarizeHistory(todayHistoryRes?.data?.items).expense;
+  const weeklyStats = summarizeHistory(weekHistoryRes?.data?.items);
+  const monthlyStats = summarizeHistory(monthHistoryRes?.data?.items);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleActionClick = useCallback((label: ActionLabel) => {
@@ -199,7 +270,7 @@ const MainCashbox = () => {
   const handleCourierSelect = useCallback(
     (courier: any) => {
       setIsCourierPopupOpen(false);
-      navigate("/payments/cash-detail", { state: { type: "courier", entity: courier } });
+      navigate(`/payments/cash-detail/${courier.id}`, { state: { type: "courier", entity: courier } });
     },
     [navigate],
   );
@@ -207,7 +278,7 @@ const MainCashbox = () => {
   const handleMarketSelect = useCallback(
     (market: any) => {
       setIsMarketPopupOpen(false);
-      navigate("/payments/cash-detail", { state: { type: "market", entity: market } });
+      navigate(`/payments/cash-detail/${market.id}`, { state: { type: "market", entity: market } });
     },
     [navigate],
   );
@@ -236,8 +307,8 @@ const MainCashbox = () => {
       {/* ── Header ── */}
       <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border px-4 shadow-sm">
         <HeaderName
-          name="Main Cashbox"
-          description="Asosiy kassa boshqaruvi"
+          name={t("mainCashboxTitle")}
+          description={t("mainCashboxDescription")}
           icon={<Wallet />}
           onIconClick={() => navigate(-1)}
         />
@@ -265,7 +336,7 @@ const MainCashbox = () => {
               <button
                 onClick={() => setBalanceVisible((v) => !v)}
                 className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white/60 hover:bg-white/20 transition-colors"
-                aria-label={balanceVisible ? "Yashirish" : "Ko'rsatish"}
+                aria-label={balanceVisible ? t("hide") : t("show")}
               >
                 {balanceVisible ? <Eye size={15} /> : <EyeOff size={15} />}
               </button>
@@ -274,9 +345,9 @@ const MainCashbox = () => {
             {/* Total balance */}
             <div className="relative z-10 mb-5">
               <p className="text-white/50 text-[11px] font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <Wallet size={11} /> Umumiy balans
+                <Wallet size={11} /> {t("totalBalanceLabel")}
               </p>
-              {mainCashboxLoading ? (
+              {mainCashboxLoading || cashboxInfoLoading ? (
                 <Skeleton className="h-9 w-52" />
               ) : (
                 <p className="text-[32px] font-black text-white tracking-tight leading-none">
@@ -289,8 +360,8 @@ const MainCashbox = () => {
             {/* Cash / Transfer */}
             <div className="relative z-10 grid grid-cols-2 gap-2.5">
               {[
-                { icon: <Banknote size={14} />, label: "NAQD", amount: cashBalance },
-                { icon: <ArrowLeftRight size={14} />, label: "O'TKAZMA", amount: transferBalance },
+                { icon: <Banknote size={14} />, label: t("cash"), amount: cashBalance },
+                { icon: <ArrowLeftRight size={14} />, label: t("card"), amount: transferBalance },
               ].map(({ icon, label, amount }) => (
                 <div
                   key={label}
@@ -314,7 +385,7 @@ const MainCashbox = () => {
           {/* ── Quick actions ── */}
           <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border p-4">
             <p className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-3">
-              Tezkor amallar
+              {t("quickActions")}
             </p>
             <div className="grid grid-cols-5 gap-1.5">
               {ACTIONS.map(({ icon, label, shortLabel, color, bg }) => (
@@ -347,7 +418,7 @@ const MainCashbox = () => {
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-500/60 text-orange-400 text-sm font-semibold hover:bg-orange-500/10 transition-colors"
             >
               <LogOut size={15} />
-              Smenani yopish
+              {t("closeShiftTitle")}
             </button>
           </div>
         </div>
@@ -356,30 +427,49 @@ const MainCashbox = () => {
         <div className="flex flex-col gap-4 lg:col-span-7 xl:col-span-8">
 
           {/* ── Income / Expense summary cards ── */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-2xl p-4 bg-linear-to-br from-emerald-500 to-emerald-700 shadow-lg border border-white/10 flex flex-col justify-between min-h-25">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Kirim</span>
+                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">{t("today")}</span>
                 <TrendingUp size={16} className="text-white/50" />
               </div>
               <div>
-                <p className="text-2xl font-black text-white tabular-nums leading-none">
+                <p className="text-lg font-black text-white tabular-nums leading-none">
                   +{fmt(filteredIncome)}
                 </p>
-                <p className="text-[11px] text-white/60 mt-1">UZS</p>
+                <p className="mt-1 text-[11px] text-white/70">
+                  -{fmt(filteredExpense)} UZS
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-4 bg-linear-to-br from-main to-primarydark shadow-lg border border-white/10 flex flex-col justify-between min-h-25">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">{t("thisWeek")}</span>
+                <TrendingUp size={16} className="text-white/50" />
+              </div>
+              <div>
+                <p className="text-lg font-black text-white tabular-nums leading-none">
+                  +{fmt(weeklyStats.income)}
+                </p>
+                <p className="mt-1 text-[11px] text-white/70">
+                  -{fmt(weeklyStats.expense)} UZS
+                </p>
               </div>
             </div>
 
             <div className="rounded-2xl p-4 bg-linear-to-br from-rose-500 to-fuchsia-600 shadow-lg border border-white/10 flex flex-col justify-between min-h-25">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Chiqim</span>
+                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">{t("thisMonth")}</span>
                 <TrendingDown size={16} className="text-white/50" />
               </div>
               <div>
-                <p className="text-2xl font-black text-white tabular-nums leading-none">
-                  -{fmt(filteredExpense)}
+                <p className="text-lg font-black text-white tabular-nums leading-none">
+                  +{fmt(monthlyStats.income)}
                 </p>
-                <p className="text-[11px] text-white/60 mt-1">UZS</p>
+                <p className="mt-1 text-[11px] text-white/70">
+                  -{fmt(monthlyStats.expense)} UZS
+                </p>
               </div>
             </div>
           </div>
@@ -389,10 +479,10 @@ const MainCashbox = () => {
             <div className="px-5 py-3 border-b border-gray-100 dark:border-glass-border flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-gray-900 dark:text-white">
-                  Tranzaksiyalar
+                  {t("transactions")}
                 </p>
                 <p className="text-[11px] text-gray-400 dark:text-white/40">
-                  Sana bo'yicha filtrlash
+                  {t("filterByDate")}
                 </p>
               </div>
               {(draftHistoryFrom || draftHistoryTo) && (
@@ -403,7 +493,7 @@ const MainCashbox = () => {
                   }}
                   className="text-xs text-rose-400 hover:text-rose-300 font-medium transition-colors"
                 >
-                  Tozalash
+                  {t("clear")}
                 </button>
               )}
             </div>
@@ -412,7 +502,7 @@ const MainCashbox = () => {
                 <CustomDatePicker
                   value={draftHistoryFrom}
                   onChange={setDraftHistoryFrom}
-                  placeholder="Boshlanish"
+                  placeholder={t("startDate")}
                   maxDate={draftHistoryTo || undefined}
                   className="w-full"
                 />
@@ -422,7 +512,7 @@ const MainCashbox = () => {
                 <CustomDatePicker
                   value={draftHistoryTo}
                   onChange={setDraftHistoryTo}
-                  placeholder="Tugash"
+                  placeholder={t("endDate")}
                   minDate={draftHistoryFrom || undefined}
                   className="w-full"
                 />
@@ -430,7 +520,7 @@ const MainCashbox = () => {
             </div>
             {((draftHistoryFrom && !draftHistoryTo) || (!draftHistoryFrom && draftHistoryTo)) && (
               <p className="px-4 pb-4 text-xs text-gray-500 dark:text-white/45">
-                Filtr qo&apos;llanishi uchun ikkala sana ham tanlanishi kerak.
+                {t("dateRangeRequired")}
               </p>
             )}
           </div>
@@ -439,19 +529,28 @@ const MainCashbox = () => {
           <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-glass-border">
               <p className="text-sm font-bold text-gray-900 dark:text-white">
-                To'lov tarixi
+                {t("paymentHistoryTitle")}
               </p>
               {historyRows.length > 0 && (
                 <span className="text-xs bg-main/15 text-main font-bold px-2.5 py-1 rounded-full">
-                  {historyRows.length} ta
+                  {t("countLabel", { count: historyRows.length })}
                 </span>
               )}
             </div>
             <PaymentHistoryList
               data={historyRows}
-              isLoading={mainCashboxLoading}
+              isLoading={historyLoading}
+              pagination={historyPagination}
+              currentPage={historyPage}
+              onPageChange={setHistoryPage}
               withContainer={false}
             />
+
+            {historyFetching && historyRows.length > 0 && (
+              <div className="px-5 pb-4 text-xs text-gray-500 dark:text-white/40">
+                {t("transactionsUpdating")}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -463,8 +562,8 @@ const MainCashbox = () => {
         isOpen={isSalaryPopupOpen}
         onClose={() => setIsSalaryPopupOpen(false)}
         data={usersLoading ? [] : employees}
-        title="Xodimni tanlang"
-        description="Maosh to'lash uchun"
+        title={t("selectEmployee")}
+        description={t("forSalaryPayment")}
         icon={<User size={20} />}
         keyExtractor={(emp: any) => emp.id}
         searchKeys={["name"]}
@@ -474,9 +573,9 @@ const MainCashbox = () => {
           setIsSalaryPopupOpen(false);
           console.log("Salary employee:", emp);
         }}
-        placeholder="Qidirish..."
-        selectLabel="Tanlash"
-        cancelLabel="Bekor"
+        placeholder={t("searchPlaceholder")}
+        selectLabel={t("selectLabel")}
+        cancelLabel={t("cancelShort")}
         renderItem={(emp: any, isSelected: boolean) => (
           <div className="flex items-center gap-3 w-full">
             <div
@@ -505,15 +604,15 @@ const MainCashbox = () => {
         isOpen={isCourierPopupOpen}
         onClose={() => setIsCourierPopupOpen(false)}
         data={couriersLoading ? [] : couriers}
-        title="Kuryer tanlang"
-        description="Kuryerdan qabul qilish"
+        title={t("selectCourier")}
+        description={t("receiveFromCourierDescription")}
         icon={<Truck size={20} />}
         keyExtractor={(c: any) => c.id}
         searchKeys={["name"]}
         onSelect={handleCourierSelect}
-        placeholder="Qidirish..."
-        selectLabel="Tanlash"
-        cancelLabel="Bekor"
+        placeholder={t("searchPlaceholder")}
+        selectLabel={t("selectLabel")}
+        cancelLabel={t("cancelShort")}
         renderItem={(c: any, isSelected: boolean) => (
           <div className="flex items-center gap-3 w-full">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-emerald-500/15 text-emerald-500"}`}>
@@ -538,15 +637,15 @@ const MainCashbox = () => {
         isOpen={isMarketPopupOpen}
         onClose={() => setIsMarketPopupOpen(false)}
         data={marketsLoading ? [] : markets}
-        title="Market tanlang"
-        description="Marketga to'lov qilish"
+        title={t("selectMarket")}
+        description={t("payToMarketDescription")}
         icon={<Store size={20} />}
         keyExtractor={(m: any) => m.id}
         searchKeys={["name"]}
         onSelect={handleMarketSelect}
-        placeholder="Qidirish..."
-        selectLabel="Tanlash"
-        cancelLabel="Bekor"
+        placeholder={t("searchPlaceholder")}
+        selectLabel={t("selectLabel")}
+        cancelLabel={t("cancelShort")}
         renderItem={(m: any, isSelected: boolean) => (
           <div className="flex items-center gap-3 w-full">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-blue-500/15 text-blue-500"}`}>
@@ -570,11 +669,11 @@ const MainCashbox = () => {
       <CashboxFormPopup
         isOpen={isSpendPopupOpen}
         onClose={() => setIsSpendPopupOpen(false)}
-        title="Kassadan chiqim"
-        description="Chiqim operatsiyasi"
+        title={t("spendFromCashbox")}
+        description={t("spendOperation")}
         icon={<Minus size={20} />}
         accentColor="from-rose-500 to-rose-600"
-        submitLabel="Chiqim"
+        submitLabel={t("spendLabel")}
         submitIcon={<Minus size={16} />}
         isLoading={cashboxSpand.isPending}
         onSubmit={({ amount, source_type_id, comment }) => {
@@ -589,11 +688,11 @@ const MainCashbox = () => {
       <CashboxFormPopup
         isOpen={isRefillPopupOpen}
         onClose={() => setIsRefillPopupOpen(false)}
-        title="Kassani to'ldirish"
-        description="Kirim operatsiyasi"
+        title={t("fillCashbox")}
+        description={t("incomeOperation")}
         icon={<Plus size={20} />}
         accentColor="from-emerald-500 to-teal-500"
-        submitLabel="Kirim"
+        submitLabel={t("incomeLabel")}
         submitIcon={<Plus size={16} />}
         isLoading={cashboxFill.isPending}
         onSubmit={({ amount, source_type_id, comment }) => {

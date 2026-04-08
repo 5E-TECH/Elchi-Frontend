@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { UserRole } from '../../../../entities/user/types/user';
 import { Shield, Users, Truck, Store, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface RoleSelectorProps {
     selectedRole: UserRole;
@@ -39,6 +40,7 @@ const roles: { id: UserRole; label: string; icon: any; gradient: string; shadow:
 ];
 
 export const RoleSelector = memo(({ selectedRole, onSelect }: RoleSelectorProps) => {
+    const { t } = useTranslation("users");
     return (
         <div className="flex flex-col gap-3">
             {roles.map((role) => {
@@ -79,13 +81,19 @@ export const RoleSelector = memo(({ selectedRole, onSelect }: RoleSelectorProps)
                                     block font-bold text-sm transition-colors duration-300
                                     ${isSelected ? 'text-white' : 'text-slate-600 dark:text-white/70 group-hover:text-slate-900 dark:group-hover:text-white'}
                                 `}>
-                                    {role.label}
+                                    {role.id === "admin"
+                                      ? t("roleAdmin")
+                                      : role.id === "manager"
+                                        ? t("roleManager")
+                                        : role.id === "courier"
+                                          ? t("roleCourier")
+                                          : t("roleMarket")}
                                 </span>
                                 <span className={`
                                     block text-xs transition-colors duration-300 mt-0.5
                                     ${isSelected ? 'text-white/70' : 'text-slate-400 dark:text-white/40'}
                                 `}>
-                                    {isSelected ? 'Tanlangan' : 'Tanlash uchun bosing'}
+                                    {isSelected ? t("selected") : t("clickToSelect")}
                                 </span>
                             </div>
 

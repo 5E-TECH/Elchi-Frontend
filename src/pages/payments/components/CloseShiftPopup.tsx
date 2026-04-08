@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from "react";
 import { LoaderCircle, Square, X } from "lucide-react";
 import Popup from "../../../shared/ui/Popup";
+import { useTranslation } from "react-i18next";
 
 interface CloseShiftPopupProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ const CloseShiftPopup = ({
   onConfirm,
   isLoading = false,
 }: CloseShiftPopupProps) => {
+  const { t } = useTranslation("payments");
   const [comment, setComment] = useState("");
 
   useEffect(() => {
@@ -43,10 +45,10 @@ const CloseShiftPopup = ({
             </div>
             <div>
               <h3 className="text-xl font-bold tracking-tight text-white">
-                Smenani yopish
+                {t("closeShiftTitle")}
               </h3>
               <p className="mt-1 text-sm font-medium text-white/75">
-                Smena yakunlash
+                {t("closeShiftDescription")}
               </p>
             </div>
           </div>
@@ -64,8 +66,7 @@ const CloseShiftPopup = ({
         <div className="space-y-5 px-6 py-6">
           <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-4">
             <p className="text-base font-medium leading-7 text-amber-300">
-              Smenani yopganingizda avtomatik ravishda Excel hisobot yuklab
-              olinadi.
+              {t("closeShiftWarning")}
             </p>
           </div>
 
@@ -74,14 +75,14 @@ const CloseShiftPopup = ({
               htmlFor="close-shift-comment"
               className="block text-sm font-semibold text-gray-700 dark:text-white/70"
             >
-              Izoh (ixtiyoriy)
+              {t("optionalComment")}
             </label>
             <textarea
               id="close-shift-comment"
               rows={3}
               value={comment}
               onChange={(event) => setComment(event.target.value)}
-              placeholder="Smena haqida izoh..."
+              placeholder={t("closeShiftPlaceholder")}
               className="min-h-28 w-full resize-none rounded-xl border border-glass-border bg-sidebar px-4 py-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-main focus:ring-2 focus:ring-main/20 dark:bg-primarydark dark:text-white dark:placeholder:text-white/30"
             />
           </div>
@@ -94,7 +95,7 @@ const CloseShiftPopup = ({
             disabled={isLoading}
             className="inline-flex h-11 min-w-30 items-center justify-center rounded-xl border border-glass-border px-5 text-sm font-semibold text-gray-600 transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/70"
           >
-            Bekor qilish
+            {t("cancelLabel")}
           </button>
           <button
             type="button"
@@ -105,12 +106,12 @@ const CloseShiftPopup = ({
             {isLoading ? (
               <>
                 <LoaderCircle size={16} className="animate-spin" />
-                Yuklanmoqda...
+                {t("loadingLabel")}
               </>
             ) : (
               <>
                 <Square size={16} />
-                Smenani yopish
+                {t("closeShiftTitle")}
               </>
             )}
           </button>

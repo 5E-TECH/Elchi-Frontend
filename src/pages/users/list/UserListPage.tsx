@@ -10,8 +10,10 @@ import Button from "../../../shared/components/button";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import type { RootState } from "../../../app/config/store";
 import { useUser } from "../../../entities/user/api/userApi";
+import { useTranslation } from "react-i18next";
 
 const UserListPage = memo(() => {
+  const { t } = useTranslation("users");
   const navigate = useNavigate();
   const { getAllParams } = useQueryParams();
 
@@ -58,13 +60,13 @@ const UserListPage = memo(() => {
       {/* Header — mobilda ustma-ust, desktopda yonma-yon */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
         <HeaderName
-          name="Foydalanuvchilar"
-          description="Foydalanuvchilarni boshqarish"
+          name={t("title")}
+          description={t("pageDescription")}
           icon={<Users />}
         />
         {/* Button — mobilda to'liq kenglikda */}
         <Button
-          label="+ Qo'shish"
+          label={t("addButton")}
           icon={<UserPlus size={18} />}
           onClick={() => navigate("create-user")}
           className="w-full sm:w-auto dark:bg-main"
