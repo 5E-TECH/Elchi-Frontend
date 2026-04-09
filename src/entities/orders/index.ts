@@ -45,7 +45,7 @@ export const useOrders = () => {
       enabled,
     });
 
-  const getOrderCourier = (params?: { status?: string }) =>
+  const getOrderCourier = (params?: { status?: string; page?: number; limit?: number }) =>
     useQuery({
       queryKey: [orders, "courier", params],
       queryFn: () =>

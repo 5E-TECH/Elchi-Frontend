@@ -8,6 +8,7 @@ import { Table } from '../../../shared/components/Table/Table';
 import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
 import { useUser } from '../../../entities/user/api/userApi';
 import { useTranslation } from 'react-i18next';
+import Pagination from '../../../shared/components/pagination';
 
 interface UserListTableProps {
     users: User[];
@@ -265,25 +266,14 @@ export const UserListTable = memo(({
                         t("totalUsersCount", { count: users.length })
                     )}
                 </span>
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-                    <button
-                        onClick={() => onPageChange(currentPage - 1)}
-                        className="px-4 py-2 rounded-lg border border-white/30 text-white text-sm font-medium transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!pagination || pagination.page === 1}
-                    >
-                        {t("previous")}
-                    </button>
-                    <span className="px-4 py-2 text-white text-sm font-medium flex items-center">
-                        {pagination?.page || 1} / {pagination?.totalPages || 1}
-                    </span>
-                    <button
-                        onClick={() => onPageChange(currentPage + 1)}
-                        className="px-4 py-2 rounded-lg border border-white/30 text-white text-sm font-medium transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!pagination || pagination.page >= pagination.totalPages}
-                    >
-                        {t("next")}
-                    </button>
-                </div>
+                <Pagination
+                    totalItems={pagination?.total || users.length}
+                    itemsPerPage={pagination?.limit || users.length || 1}
+                    currentPage={pagination?.page || currentPage}
+                    onPageChange={onPageChange}
+                    className="w-full pt-0 sm:w-auto"
+                    summary={null}
+                />
             </div>
         </div>
     );

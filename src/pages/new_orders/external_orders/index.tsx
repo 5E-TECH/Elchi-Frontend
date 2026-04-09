@@ -1,16 +1,21 @@
 import { memo, useMemo, useState } from "react";
-import { AlertCircle, CalendarRange, Package, RefreshCw, Search, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, CalendarRange, Cable, RefreshCw, Search, SlidersHorizontal } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterSelect from "../../../shared/ui/FilterSelect";
-import { useOrders } from "../../../entities/order/api/orderApi";
-import type {
-  ExternalOrderItem,
-  ExternalOrdersParams,
-} from "../../../entities/order/types/order";
+import Pagination from "../../../shared/components/pagination";
+import {
+  getIntegrationErrorMessage,
+  type Integration,
+  type IntegrationParams,
+  useGetIntegrations,
+} from "../../../entities/integrations";
+
+const DEFAULT_LIMIT = 10;
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return "-";
@@ -27,60 +32,42 @@ const formatDateTime = (value?: string | null) => {
   })}`;
 };
 
-const formatAmount = (value?: number | null) =>
-  Number(value ?? 0).toLocaleString("uz-UZ");
-
-const getOrderNumber = (order: ExternalOrderItem) =>
-  order.order_number || order.external_id || order.id;
-
-const getStoreName = (order: ExternalOrderItem) =>
-  order.store_name ||
-  order.shop_name ||
-  order.integration_name ||
-  order.marketplace_name ||
-  "-";
-
-const getProductsLabel = (order: ExternalOrderItem) => {
-  const itemNames = (order.items ?? [])
-    .map((item) => item.name || item.product_name)
-    .filter(Boolean);
-
-  if (itemNames.length > 0) {
-    return itemNames.slice(0, 2).join(", ");
-  }
-
-  return "-";
-};
-
-const getProductsCount = (order: ExternalOrderItem) =>
-  order.products_count ?? order.items_count ?? order.items?.length ?? 0;
-
 const ExternalOrdersPage = () => {
   const { t } = useTranslation(["newOrders", "common"]);
-  const { getExternalOrders } = useOrders();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const page = Math.max(1, Number(searchParams.get("page") || 1));
+  const limit = Math.max(1, Number(searchParams.get("limit") || DEFAULT_LIMIT));
 
-  const params = useMemo<ExternalOrdersParams>(() => {
-    const nextParams: ExternalOrdersParams = { page, limit };
+  const params = useMemo<IntegrationParams>(() => {
+    const nextParams: IntegrationParams = { page, limit };
     if (status) nextParams.status = status;
-    if (search.trim()) nextParams.search = search.trim();
+    if (search.trim()) nextParams.market_id = search.trim();
     if (dateFrom) nextParams.from_date = dateFrom;
     if (dateTo) nextParams.to_date = dateTo;
-
     return nextParams;
   }, [dateFrom, dateTo, limit, page, search, status]);
 
-  const query = getExternalOrders(params);
+  const query = useGetIntegrations(params);
   const items = query.data?.data?.items ?? [];
-  const meta = query.data?.data?.meta ?? query.data?.data?.pagination;
+  const meta = query.data?.data?.meta;
+  const currentPage = meta?.page ?? page;
+  const currentLimit = meta?.limit ?? limit;
+  const total = meta?.total ?? items.length;
 
-  const columns = useMemo<ColumnConfig<ExternalOrderItem>[]>(
+  const updatePage = (nextPage: number) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("page", String(Math.max(1, nextPage)));
+    nextParams.set("limit", String(currentLimit));
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const columns = useMemo<ColumnConfig<Integration>[]>(
     () => [
       {
         key: "id",
@@ -88,80 +75,73 @@ const ExternalOrdersPage = () => {
         width: "64px",
         render: (_value, _row, index) => (
           <span className="text-xs font-semibold text-maindark/50 dark:text-primary/50">
-            {(meta?.page ? (meta.page - 1) * (meta.limit ?? limit) : (page - 1) * limit) + index + 1}
+            {(currentPage - 1) * currentLimit + index + 1}
           </span>
         ),
       },
       {
-        key: "order_number",
-        label: t("externalColumns.number"),
-        render: (_value, row) => (
+        key: "name",
+        label: t("integration"),
+        render: (value, row) => (
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-maindark dark:text-primary">
-              {getOrderNumber(row)}
+              {value}
             </p>
             <p className="mt-0.5 truncate text-xs text-maindark/45 dark:text-primary/45">
-              {formatDateTime(row.createdAt || row.created_at || row.updatedAt)}
+              {t("idLabel", { id: row.id })}
             </p>
           </div>
         ),
       },
       {
-        key: "store_name",
-        label: t("externalColumns.store"),
-        render: (_value, row) => (
-          <span className="text-sm font-medium text-maindark dark:text-primary">
-            {getStoreName(row)}
-          </span>
-        ),
+        key: "api_url",
+        label: t("apiUrl"),
+        render: (value) => <span className="text-sm text-maindark dark:text-primary">{value || "-"}</span>,
       },
       {
-        key: "items",
-        label: t("externalColumns.products"),
-        render: (_value, row) => (
+        key: "auth_type",
+        label: t("auth"),
+        render: (value, row) => (
           <div className="min-w-0">
-            <p className="truncate text-sm text-maindark dark:text-primary">
-              {getProductsLabel(row)}
-            </p>
-            <p className="mt-0.5 text-xs text-maindark/45 dark:text-primary/45">
-              {t("productsCount", { count: getProductsCount(row) })}
+            <p className="text-sm font-medium text-maindark dark:text-primary">{value || "-"}</p>
+            <p className="mt-0.5 truncate text-xs text-maindark/45 dark:text-primary/45">
+              {row.username || row.slug || "-"}
             </p>
           </div>
         ),
       },
       {
-        key: "total_price",
-        label: t("externalColumns.amount"),
-        render: (_value, row) => (
-          <span className="whitespace-nowrap text-sm font-bold text-main">
-            {formatAmount(row.total_price ?? row.amount)} {t("total")}
-          </span>
-        ),
+        key: "last_sync_at",
+        label: t("lastSync"),
+        render: (value) => <span className="text-sm text-maindark dark:text-primary">{formatDateTime(value)}</span>,
       },
       {
         key: "status",
-        label: t("externalColumns.status"),
-        render: (value) => (
-          <span className="inline-flex rounded-lg bg-main/10 px-2.5 py-1 text-xs font-semibold text-main">
-            {value || "-"}
+        label: t("status"),
+        render: (_value, row) => (
+          <span
+            className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold ${
+              row.is_active
+                ? "bg-success/10 text-success"
+                : "bg-error/10 text-error"
+            }`}
+          >
+            {row.is_active ? t("active") : t("inactive")}
           </span>
         ),
       },
     ],
-    [limit, meta?.limit, meta?.page, page, t],
+    [currentLimit, currentPage, t],
   );
 
   const statusOptions = useMemo(
     () => [
       { value: "", label: t("all") },
-      { value: "new", label: t("statusNew") },
-      { value: "processing", label: t("statusProcessing") },
-      { value: "completed", label: t("statusCompleted") },
+      { value: "active", label: t("active") },
+      { value: "inactive", label: t("inactive") },
     ],
     [t],
   );
-
-  const totalPages = meta?.totalPages ?? 1;
 
   return (
     <div className="space-y-4">
@@ -169,10 +149,10 @@ const ExternalOrdersPage = () => {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-base font-bold text-maindark dark:text-primary">
-              {t("externalOrdersTitle")}
+              {t("integrationsTitle")}
             </h2>
             <p className="mt-1 text-sm text-maindark/45 dark:text-primary/45">
-              {t("externalOrdersSubtitle")}
+              {t("integrationsSubtitle")}
             </p>
           </div>
 
@@ -186,8 +166,8 @@ const ExternalOrdersPage = () => {
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.25fr)_minmax(14rem,0.7fr)]">
-          <div className="rounded-2xl border border-gray-200 bg-maindark/12 p-3 dark:border-white/10 dark:bg-maindark/70">
+        <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-end">
+          <div className="rounded-2xl border border-gray-200 bg-maindark/12 p-3 dark:border-white/10 dark:bg-maindark/70 xl:flex-[1.35]">
             <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-maindark/50 dark:text-primary/45">
               <Search size={12} className="text-main/70" />
               {t("search", { ns: "common" })}
@@ -196,13 +176,13 @@ const ExternalOrdersPage = () => {
               value={search}
               onChange={(value) => {
                 setSearch(value);
-                setPage(1);
+                updatePage(1);
               }}
-              placeholder={t("searchOrder")}
+              placeholder={t("searchIntegration")}
             />
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-maindark/12 p-3 dark:border-white/10 dark:bg-maindark/70">
+          <div className="rounded-2xl border border-gray-200 bg-maindark/12 p-3 dark:border-white/10 dark:bg-maindark/70 xl:w-72">
             <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-maindark/50 dark:text-primary/45">
               <SlidersHorizontal size={12} className="text-main/70" />
               {t("status")}
@@ -213,7 +193,7 @@ const ExternalOrdersPage = () => {
               value={status}
               onChange={(value) => {
                 setStatus(value);
-                setPage(1);
+                updatePage(1);
               }}
               options={statusOptions}
               placeholder={t("all")}
@@ -221,46 +201,46 @@ const ExternalOrdersPage = () => {
               hideLabel
             />
           </div>
-        </div>
 
-        <div className="mt-3 rounded-2xl border border-gray-200 bg-maindark/12 p-3 dark:border-white/10 dark:bg-maindark/70">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-maindark/50 dark:text-primary/45">
-            <CalendarRange size={12} className="text-main/70" />
-            {t("dateRange")}
+          <div className="rounded-2xl border border-gray-200 bg-maindark/12 p-3 dark:border-white/10 dark:bg-maindark/70 xl:flex-1">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-maindark/50 dark:text-primary/45">
+              <CalendarRange size={12} className="text-main/70" />
+              {t("dateRange")}
+            </div>
+            <FilterDateRange
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              onChangeDateFrom={(value) => {
+                setDateFrom(value);
+                updatePage(1);
+              }}
+              onChangeDateTo={(value) => {
+                setDateTo(value);
+                updatePage(1);
+              }}
+              className="w-full"
+              fromClassName="w-full sm:w-full lg:w-48"
+              toClassName="w-full sm:w-full lg:w-48"
+              size="sm"
+            />
           </div>
-          <FilterDateRange
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            onChangeDateFrom={(value) => {
-              setDateFrom(value);
-              setPage(1);
-            }}
-            onChangeDateTo={(value) => {
-              setDateTo(value);
-              setPage(1);
-            }}
-            className="w-full"
-            fromClassName="w-full sm:w-full lg:w-48"
-            toClassName="w-full sm:w-full lg:w-48"
-            size="sm"
-          />
         </div>
       </div>
 
       {query.isError && (
         <div className="flex items-center gap-2 rounded-xl border border-error/20 bg-error/8 px-4 py-3 text-sm text-error">
           <AlertCircle size={16} />
-          <span>{t("externalOrdersLoadError")}</span>
+          <span>{getIntegrationErrorMessage(query.error) || t("integrationsLoadError")}</span>
         </div>
       )}
 
       {items.length === 0 && !query.isLoading ? (
         <div className="rounded-2xl border border-glass-border bg-white p-10 text-center dark:bg-primarydark">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-main/10 text-main">
-            <Package size={24} />
+            <Cable size={24} />
           </div>
           <p className="mt-4 text-sm font-semibold text-maindark dark:text-primary">
-            {t("externalOrdersEmpty")}
+            {t("integrationsNotFound")}
           </p>
         </div>
       ) : (
@@ -269,34 +249,20 @@ const ExternalOrdersPage = () => {
           columns={columns}
           loading={query.isLoading}
           keyExtractor={(row) => row.id}
-          emptyMessage={t("externalOrdersEmpty")}
+          emptyMessage={t("integrationsNotFound")}
+          onRowClick={(row) => navigate(`/new-orders/integrations/${row.id}`)}
         />
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-maindark/45 dark:text-primary/45">
-            {t("pageOf", { page: meta?.page ?? page, totalPages })}
-          </p>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={(meta?.page ?? page) <= 1}
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              className="rounded-lg border border-glass-border px-3 py-1.5 text-xs font-semibold text-maindark transition-colors hover:border-main/30 hover:text-main disabled:opacity-40 dark:text-primary"
-            >
-              {t("common:previous")}
-            </button>
-            <button
-              type="button"
-              disabled={(meta?.page ?? page) >= totalPages}
-              onClick={() => setPage((prev) => prev + 1)}
-              className="rounded-lg border border-glass-border px-3 py-1.5 text-xs font-semibold text-maindark transition-colors hover:border-main/30 hover:text-main disabled:opacity-40 dark:text-primary"
-            >
-              {t("common:next")}
-            </button>
-          </div>
+      {!query.isLoading && (
+        <div className="rounded-2xl border border-glass-border bg-white px-4 py-4 dark:bg-primarydark">
+          <Pagination
+            totalItems={total}
+            itemsPerPage={currentLimit}
+            currentPage={currentPage}
+            onPageChange={updatePage}
+            className="pt-0"
+          />
         </div>
       )}
     </div>

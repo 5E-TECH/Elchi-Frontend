@@ -84,7 +84,7 @@ const DashboardPage = () => {
     end_day: toDate,
   });
 
-  const orders = data?.orders;
+  const orders = data?.data?.orders;
 
   return (
     <div className="min-h-full rounded-2xl p-5 bg-primary dark:bg-maindark">

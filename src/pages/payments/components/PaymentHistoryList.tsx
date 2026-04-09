@@ -1,7 +1,8 @@
 import { memo, useMemo } from "react";
-import { ArrowDownRight, ArrowUpRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Calendar } from "lucide-react";
 import type { Pagination, PaymentRow } from "./patmentHistoryTable";
 import { useTranslation } from "react-i18next";
+import PaginationComponent from "../../../shared/components/pagination";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -78,11 +79,10 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
     <div className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-gray-50/60 dark:hover:bg-white/[0.03] transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <div
-          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
-            isIncome
+          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${isIncome
               ? "bg-linear-to-br from-emerald-500/20 to-emerald-500/10 text-emerald-300"
               : "bg-linear-to-br from-rose-500/20 to-rose-500/10 text-rose-300"
-          }`}
+            }`}
         >
           {isIncome ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
         </div>
@@ -186,25 +186,14 @@ const PaymentHistoryList = ({
           <span className="text-xs text-gray-500 dark:text-white/40">
             {t("pageLabel", { page: activePage, totalPages: pagination.totalPages })}
           </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onPageChange(activePage - 1)}
-              disabled={activePage <= 1}
-              className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label={t("previousPage")}
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            <button
-              onClick={() => onPageChange(activePage + 1)}
-              disabled={activePage >= pagination.totalPages}
-              className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label={t("nextPage")}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
+          <PaginationComponent
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            currentPage={activePage}
+            onPageChange={onPageChange}
+            className="w-full pt-0 sm:w-auto"
+            summary={null}
+          />
         </div>
       )}
     </>

@@ -25,6 +25,7 @@ export const useProducts = () => {
       queryKey: [products, params],
       queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.BASE, { params }).then((res) => res.data),
       enabled,
+      placeholderData: (prev: any) => prev,
     });
 
   const updateProduct = useMutation({

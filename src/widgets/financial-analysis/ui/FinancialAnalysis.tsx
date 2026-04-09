@@ -21,7 +21,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { useDashboard } from "../../../entities/dashboard";
+import { useDashboard, type RevenuePoint } from "../../../entities/dashboard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,40 +61,6 @@ const VARIANT_COLOR: Record<ColorVariant, string> = {
   warning: "var(--color-warning)",
 };
 
-const CHART_DATA = [
-  { date: "11.02", revenue: 4.2 },
-  { date: "12.02", revenue: 7.8 },
-  { date: "13.02", revenue: 6.5 },
-  { date: "14.02", revenue: 9.1 },
-  { date: "15.02", revenue: 10.2 },
-  { date: "16.02", revenue: 9.8 },
-  { date: "17.02", revenue: 7.2 },
-  { date: "18.02", revenue: 7.0 },
-  { date: "19.02", revenue: 6.8 },
-  { date: "20.02", revenue: 7.1 },
-  { date: "21.02", revenue: 10.5 },
-  { date: "22.02", revenue: 14.8 },
-  { date: "23.02", revenue: 7.2 },
-  { date: "24.02", revenue: 6.4 },
-  { date: "25.02", revenue: 7.9 },
-  { date: "26.02", revenue: 8.1 },
-  { date: "27.02", revenue: 7.3 },
-  { date: "28.02", revenue: 6.5 },
-  { date: "01.03", revenue: 6.2 },
-  { date: "02.03", revenue: 6.8 },
-  { date: "03.03", revenue: 7.0 },
-  { date: "04.03", revenue: 11.5 },
-  { date: "05.03", revenue: 12.8 },
-  { date: "06.03", revenue: 5.2 },
-  { date: "07.03", revenue: 14.1 },
-  { date: "08.03", revenue: 8.9 },
-  { date: "09.03", revenue: 7.6 },
-  { date: "10.03", revenue: 9.1 },
-  { date: "11.03", revenue: 27.4 },
-  { date: "12.03", revenue: 4.2 },
-  { date: "13.03", revenue: 0.8 },
-];
-
 // ─── Chart constants ──────────────────────────────────────────────────────────
 
 const MAIN_COLOR = "#576adb";
@@ -112,13 +78,11 @@ const GRID_PROPS = {
   vertical: false,
 };
 
-const formatY = (v: number) => (v === 0 ? "0" : `${v.toFixed(0)}M`);
+const formatCurrency = (value: number) => value.toLocaleString("uz-UZ");
 
 // ─── CustomTooltip ────────────────────────────────────────────────────────────
 
 const CustomTooltip = ({ active, payload, label }: any) => {
-  const { t } = useTranslation("dashboard");
-
   if (!active || !payload?.length) return null;
   return (
     <div
@@ -131,7 +95,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       </p>
       {payload.map((entry: any, i: number) => (
         <p key={i} className="font-bold" style={{ color: entry.color }}>
-          {t("chart.tooltip_value", { value: entry.value.toFixed(1) })}
+          {formatCurrency(Number(entry.value ?? 0))} UZS
         </p>
       ))}
     </div>
@@ -140,8 +104,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // ─── Chart Variants ───────────────────────────────────────────────────────────
 
-const AreaVariant = () => (
-  <AreaChart data={CHART_DATA}>
+const AreaVariant = ({ data }: { data: Array<{ date: string; revenue: number }> }) => (
+  <AreaChart data={data}>
     <defs>
       <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor={MAIN_COLOR} stopOpacity={0.3} />
@@ -150,7 +114,7 @@ const AreaVariant = () => (
     </defs>
     <CartesianGrid {...GRID_PROPS} />
     <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatY} {...AXIS_PROPS} />
+    <YAxis tickFormatter={formatCurrency} {...AXIS_PROPS} />
     <Tooltip content={<CustomTooltip />} />
     <Area
       type="monotone"
@@ -164,21 +128,21 @@ const AreaVariant = () => (
   </AreaChart>
 );
 
-const BarVariant = () => (
-  <BarChart data={CHART_DATA} barSize={10}>
+const BarVariant = ({ data }: { data: Array<{ date: string; revenue: number }> }) => (
+  <BarChart data={data} barSize={10}>
     <CartesianGrid {...GRID_PROPS} />
     <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatY} {...AXIS_PROPS} />
+    <YAxis tickFormatter={formatCurrency} {...AXIS_PROPS} />
     <Tooltip content={<CustomTooltip />} />
     <Bar dataKey="revenue" fill={MAIN_COLOR} fillOpacity={0.7} radius={[3, 3, 0, 0]} />
   </BarChart>
 );
 
-const ComboVariant = () => (
-  <ComposedChart data={CHART_DATA} barSize={10}>
+const ComboVariant = ({ data }: { data: Array<{ date: string; revenue: number }> }) => (
+  <ComposedChart data={data} barSize={10}>
     <CartesianGrid {...GRID_PROPS} />
     <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatY} {...AXIS_PROPS} />
+    <YAxis tickFormatter={formatCurrency} {...AXIS_PROPS} />
     <Tooltip content={<CustomTooltip />} />
     <Bar dataKey="revenue" fill={MAIN_COLOR} fillOpacity={0.35} radius={[3, 3, 0, 0]} />
     <Line
@@ -191,12 +155,6 @@ const ComboVariant = () => (
     />
   </ComposedChart>
 );
-
-const CHART_MAP: Record<ChartType, React.ReactElement> = {
-  Area: <AreaVariant />,
-  Bar: <BarVariant />,
-  Combo: <ComboVariant />,
-};
 
 // ─── FinanceCard ──────────────────────────────────────────────────────────────
 
@@ -374,10 +332,15 @@ PeriodStatsCard.displayName = "PeriodStatsCard";
 
 // ─── RevenueChart ─────────────────────────────────────────────────────────────
 
-const RevenueChart = memo(() => {
+const RevenueChart = memo(({ data }: { data: Array<{ date: string; revenue: number }> }) => {
   const { t } = useTranslation("dashboard");
   const [activeType, setActiveType] = useState<ChartType>("Area");
-  const chart = useCallback(() => CHART_MAP[activeType], [activeType]);
+
+  const chart = useCallback(() => {
+    if (activeType === "Bar") return <BarVariant data={data} />;
+    if (activeType === "Combo") return <ComboVariant data={data} />;
+    return <AreaVariant data={data} />;
+  }, [activeType, data]);
 
   return (
     <div
@@ -455,12 +418,35 @@ const FinancialAnalysis = memo(
   }, [endDate, period, startDate]);
 
   const { data } = getRevenue(revenueParams);
-  const revenueData = data?.data?.data;
+  const revenuePayload = data?.data;
+  const rawRevenuePoints = Object.values(revenuePayload ?? {}).filter(
+    (item): item is RevenuePoint =>
+      typeof item === "object"
+      && item !== null
+      && "label" in item
+      && "revenue" in item
+      && "ordersCount" in item,
+  );
+  const chartData = (
+    revenuePayload?.chart?.labels?.length && revenuePayload?.chart?.values?.length
+      ? revenuePayload.chart.labels.map((label, index) => ({
+        date: label,
+        revenue: Number(revenuePayload.chart?.values?.[index] ?? 0),
+      }))
+      : rawRevenuePoints.map((item) => ({
+        date: item.label,
+        revenue: Number(item.revenue ?? 0),
+      }))
+  );
+  const currentPoint = rawRevenuePoints[0];
+  const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
+  const totalOrdersFromRevenue = rawRevenuePoints.reduce(
+    (sum, item) => sum + Number(item.ordersCount ?? 0),
+    0,
+  );
+  const finance = revenuePayload?.finance;
+  const currentSituation = Number(finance?.currentSituation ?? 0);
 
-
-
-  // profit UZS da keladi (masalan: 60000), mingga bo'lib ko'rsatamiz
-  const profitFormatted = profit.toLocaleString();
   const profitIsNegative = profit < 0;
 
   return (
@@ -513,7 +499,7 @@ const FinancialAnalysis = memo(
         <FinanceCard
           title={t("financial_cards.today_revenue.title")}
           subtitle={t("financial_cards.today_revenue.subtitle")}
-          value={profitFormatted}
+          value={formatCurrency(Number(currentPoint?.revenue ?? profit))}
           currency="UZS"
           valueLabel={t("financial_cards.today_revenue.value_label")}
           trendUp={!profitIsNegative}
@@ -524,7 +510,7 @@ const FinancialAnalysis = memo(
         <FinanceCard
           title={t("financial_cards.today_orders.title")}
           subtitle={t("financial_cards.today_orders.subtitle")}
-          value={String(sold)}
+          value={String(Number(currentPoint?.ordersCount ?? sold))}
           currency=""
           valueLabel={t("financial_cards.today_orders.value_label")}
           icon={<ShoppingCart size={15} />}
@@ -534,23 +520,23 @@ const FinancialAnalysis = memo(
         <FinanceCard
           title={t("financial_cards.week_revenue.title")}
           subtitle={t("financial_cards.week_revenue.subtitle")}
-          value={profitFormatted}
+          value={formatCurrency(currentSituation || totalRevenue)}
           currency="UZS"
           valueLabel={t("financial_cards.week_revenue.value_label")}
-          trendUp={!profitIsNegative}
+          trendUp={(currentSituation || totalRevenue) >= 0}
           icon={<DollarSign size={15} />}
           variant="warning"
         />
         {/* orders.acceptedCount, soldAndPaid, profit */}
         <PeriodStatsCard
-          totalOrders={Number(revenueData?.[0]?.ordersCount ?? 0)}
+          totalOrders={totalOrdersFromRevenue}
           sold={sold}
-          profit={Number(revenueData?.[0]?.revenue ?? 0)}
+          profit={totalRevenue}
           period={period}
         />
       </div>
 
-      <RevenueChart />
+      <RevenueChart data={chartData} />
     </section>
   );
 });

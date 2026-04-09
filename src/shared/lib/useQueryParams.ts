@@ -37,15 +37,20 @@ export const useQueryParams = () => {
      */
     const setParam = useCallback(
         (key: string, value: string) => {
-            const newParams = new URLSearchParams(searchParams);
-            if (value) {
-                newParams.set(key, value);
-            } else {
-                newParams.delete(key);
-            }
-            setSearchParams(newParams, { replace: true });
+            setSearchParams(
+                (prev) => {
+                    const newParams = new URLSearchParams(prev);
+                    if (value) {
+                        newParams.set(key, value);
+                    } else {
+                        newParams.delete(key);
+                    }
+                    return newParams;
+                },
+                { replace: true }
+            );
         },
-        [searchParams, setSearchParams]
+        [setSearchParams]
     );
 
     /**
@@ -53,17 +58,22 @@ export const useQueryParams = () => {
      */
     const setMultipleParams = useCallback(
         (params: Record<string, string>) => {
-            const newParams = new URLSearchParams(searchParams);
-            Object.entries(params).forEach(([key, value]) => {
-                if (value) {
-                    newParams.set(key, value);
-                } else {
-                    newParams.delete(key);
-                }
-            });
-            setSearchParams(newParams, { replace: true });
+            setSearchParams(
+                (prev) => {
+                    const newParams = new URLSearchParams(prev);
+                    Object.entries(params).forEach(([key, value]) => {
+                        if (value) {
+                            newParams.set(key, value);
+                        } else {
+                            newParams.delete(key);
+                        }
+                    });
+                    return newParams;
+                },
+                { replace: true }
+            );
         },
-        [searchParams, setSearchParams]
+        [setSearchParams]
     );
 
     /**
@@ -71,11 +81,16 @@ export const useQueryParams = () => {
      */
     const removeParam = useCallback(
         (key: string) => {
-            const newParams = new URLSearchParams(searchParams);
-            newParams.delete(key);
-            setSearchParams(newParams, { replace: true });
+            setSearchParams(
+                (prev) => {
+                    const newParams = new URLSearchParams(prev);
+                    newParams.delete(key);
+                    return newParams;
+                },
+                { replace: true }
+            );
         },
-        [searchParams, setSearchParams]
+        [setSearchParams]
     );
 
     /**

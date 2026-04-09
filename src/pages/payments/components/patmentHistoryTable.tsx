@@ -1,9 +1,10 @@
 import { memo, useMemo, useState } from "react";
-import { Calendar, ChevronLeft, ChevronRight, History } from "lucide-react";
+import { Calendar, History } from "lucide-react";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import { useTranslation } from "react-i18next";
+import PaginationComponent from "../../../shared/components/pagination";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -132,11 +133,10 @@ const PaymentHistoryTable = ({
           const isIncome = val === "income";
           return (
             <span
-              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap ${
-                isIncome
+              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap ${isIncome
                   ? "bg-emerald-500/15 text-emerald-400"
                   : "bg-rose-500/15 text-rose-400"
-              }`}
+                }`}
             >
               {val ? (isIncome ? t("income") : t("expense")) : "-"}
             </span>
@@ -151,9 +151,8 @@ const PaymentHistoryTable = ({
           const isIncome = row.operation_type === "income";
           return (
             <span
-              className={`text-sm font-bold whitespace-nowrap ${
-                isIncome ? "text-emerald-400" : "text-rose-400"
-              }`}
+              className={`text-sm font-bold whitespace-nowrap ${isIncome ? "text-emerald-400" : "text-rose-400"
+                }`}
             >
               {isIncome ? "+" : "-"}
               {fmt(Math.abs(val))} UZS
@@ -215,39 +214,14 @@ const PaymentHistoryTable = ({
             <span className="text-xs text-gray-500 dark:text-white/40">
               {activePage}-sahifa / {pagination.totalPages}
             </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onPageChange(activePage - 1)}
-                disabled={activePage <= 1}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-
-              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                .filter((p) => Math.abs(p - activePage) <= 2)
-                .map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => onPageChange(p)}
-                    className={`min-w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                      p === activePage
-                        ? "bg-main text-white shadow-sm shadow-main/30"
-                        : "border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-
-              <button
-                onClick={() => onPageChange(activePage + 1)}
-                disabled={activePage >= pagination.totalPages}
-                className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-main/10 hover:text-main disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            <PaginationComponent
+              totalItems={pagination.total}
+              itemsPerPage={pagination.limit}
+              currentPage={activePage}
+              onPageChange={onPageChange}
+              className="w-full pt-0 sm:w-auto"
+              summary={null}
+            />
           </div>
         )}
       </div>

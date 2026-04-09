@@ -13,13 +13,13 @@ import { useQueryParams } from "../../../../shared/lib/useQueryParams";
 import type { Order } from "./list/ordertable/pendingOrderTable";
 
 const TAB_STATUS_MAP: Record<string, string | undefined> = {
-  pending:   "waiting",
+  pending: "waiting",
   cancelled: "cancelled",
-  all:       undefined,
+  all: undefined,
 };
 
 const STATUS_TAB_MAP: Record<string, string> = {
-  waiting:   "pending",
+  waiting: "pending",
   cancelled: "cancelled",
 };
 
@@ -32,11 +32,11 @@ const CourierOrders = () => {
     ? (STATUS_TAB_MAP[initialStatus] ?? "pending")
     : "pending";
 
-  const [activeTab, setActiveTab]           = useState(initialTab);
-  const [sellOrder, setSellOrder]           = useState<Order | null>(null);
-  const [cancelOrder, setCancelOrder]       = useState<Order | null>(null);
-  const [rollbackOrder, setRollbackOrder]   = useState<Order | null>(null);
-  const [selectedIds, setSelectedIds]       = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [sellOrder, setSellOrder] = useState<Order | null>(null);
+  const [cancelOrder, setCancelOrder] = useState<Order | null>(null);
+  const [rollbackOrder, setRollbackOrder] = useState<Order | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!getParam("status")) setParam("status", "waiting");
@@ -64,17 +64,17 @@ const CourierOrders = () => {
 
   const { data, isLoading } = getOrderCourier(params);
 
-  const { mutate: sellMutate,       isPending: isSelling }       = SellOrder;
+  const { mutate: sellMutate, isPending: isSelling } = SellOrder;
   const { mutate: partlySellMutate, isPending: isPartlySelling } = PartlySellOrder;
-  const { mutate: rollbackMutate,   isPending: isRollbacking }   = RollbackOrder;
-  const { mutate: cancelMutate,     isPending: isCancelling }    = CancelOrder;
+  const { mutate: rollbackMutate, isPending: isRollbacking } = RollbackOrder;
+  const { mutate: cancelMutate, isPending: isCancelling } = CancelOrder;
   const { mutate: sendToPostMutate, isPending: isSendingToPost } = SendToPost;
 
   const orders: Order[] = Array.isArray(data?.data?.data)
     ? data.data.data
     : Array.isArray(data?.data)
-    ? data.data
-    : [];
+      ? data.data
+      : [];
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleSell = (

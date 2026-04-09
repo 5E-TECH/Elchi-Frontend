@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { UserPlus, Users } from "lucide-react";
@@ -7,52 +7,60 @@ import { UserListTable } from "../../../widgets/user-list/ui/UserListTable";
 import { UserFilters } from "../../../features/user/filter-users/ui/UserFilters";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
-import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import type { RootState } from "../../../app/config/store";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useTranslation } from "react-i18next";
+import { usePagination } from "../../../shared/lib/usePagination";
 
 const UserListPage = memo(() => {
   const { t } = useTranslation("users");
   const navigate = useNavigate();
-  const { getAllParams } = useQueryParams();
 
   const filters = useSelector((state: RootState) => state.filter);
   const searchFilters = useSelector((state: RootState) => state.search);
 
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-
-  const urlParams = getAllParams();
+  const { page, limit, setPage, resetPagination } = usePagination({
+    key: "users",
+    defaultLimit: 10,
+  });
+  const previousFiltersKeyRef = useRef("");
 
   const apiParams = useMemo(() => {
     const params: any = { page, limit };
 
-    const role = urlParams.userRole || filters.userRole;
-    if (role) params.role = role;
-
-    const status = urlParams.userStatus || filters.userStatus;
-    if (status) params.status = status;
-
-    const search = urlParams.userSearch || searchFilters.userSearch;
-    if (search) params.search = search;
+    // Role va status uchun Redux state-dan foydalanamiz (standard pattern)
+    if (filters.userRole) params.role = filters.userRole;
+    if (filters.userStatus) params.status = filters.userStatus;
+    if (searchFilters.userSearch) params.search = searchFilters.userSearch;
 
     return params;
-  }, [page, limit, urlParams, filters, searchFilters]);
+  }, [page, limit, filters.userRole, filters.userStatus, searchFilters.userSearch]);
+
+  const filtersKey = useMemo(
+    () => JSON.stringify({
+      role: filters.userRole ?? "",
+      status: filters.userStatus ?? "",
+      search: searchFilters.userSearch ?? "",
+    }),
+    [filters.userRole, filters.userStatus, searchFilters.userSearch],
+  );
 
   const { getUser } = useUser();
   const { data, isLoading, isError, error } = getUser(apiParams);
 
   useEffect(() => {
-    setPage(1);
-  }, [filters.userRole, filters.userStatus, searchFilters.userSearch]);
+    if (!previousFiltersKeyRef.current) {
+      previousFiltersKeyRef.current = filtersKey;
+      return;
+    }
 
-  useEffect(() => {
-    console.log("=== USER LIST PAGE - API PARAMS ===");
-    console.log("API Params:", apiParams);
-    console.log("URL Params:", urlParams);
-    console.log("===================================");
-  }, [apiParams, urlParams]);
+    if (previousFiltersKeyRef.current === filtersKey) {
+      return;
+    }
+
+    previousFiltersKeyRef.current = filtersKey;
+    resetPagination(10);
+  }, [filtersKey, resetPagination]);
 
   return (
     <div className="p-4 md:p-6 rounded-2xl bg-sidebar dark:bg-maindark min-h-full">

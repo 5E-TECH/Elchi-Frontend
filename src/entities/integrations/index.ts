@@ -7,6 +7,7 @@ export type Integration = {
   id: string;
   name: string;
   slug: string;
+  status: string;
   api_url: string;
   auth_type: string;
   auth_url?: string | null;
