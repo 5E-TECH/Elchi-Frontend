@@ -1,5 +1,5 @@
 // Migrated to React Hook Form
-import { memo, useState, useMemo, useCallback, useEffect } from "react";
+import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -26,11 +26,12 @@ import { useMarkets } from "../../../entities/markets";
 import SelectInput from "../../../features/Select/selectInput";
 import { GlobalSearchInput } from "../../../features/search";
 import { useSelector } from "react-redux";
-import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import type { RootState } from "../../../app/config/store";
 import { BASE_URL } from "../../../shared/const";
 import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
+import { usePagination } from "../../../shared/lib/usePagination";
+import Pagination from "../../../shared/components/pagination";
 
 interface Product {
   id: number;
@@ -59,6 +60,12 @@ interface EditProductFormValues {
   name: string;
   image: File | null;
 }
+
+const toPositiveNumber = (value: unknown): number | null => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  return Math.floor(parsed);
+};
 
 const productFilterSchema: yup.ObjectSchema<ProductFilterFormValues> = yup.object({
   market_id: yup.string().defined(),
@@ -155,23 +162,50 @@ const ProductTable = () => {
     [navigate],
   );
 
-  const { getAllParams } = useQueryParams();
   const searchFilters = useSelector((state: RootState) => state.search);
-  const urlParams = getAllParams();
+  const { page, limit, setPage, resetPagination } = usePagination({
+    key: "products",
+    defaultLimit: 10,
+  });
+  const hasPaginationFilterSyncStarted = useRef(false);
+  const searchValue = searchFilters.product_search;
 
   const apiParams = useMemo(() => {
-    const params: Record<string, string> = {};
+    const params: Record<string, string | number> = { page, limit };
 
-    const search = urlParams.product_search || searchFilters.product_search;
-    if (search) params.search = search;
+    if (searchValue) params.search = searchValue;
     if (filterValue) params.market_id = filterValue;
 
     return params;
-  }, [urlParams, searchFilters, filterValue]);
+  }, [filterValue, limit, page, searchValue]);
 
   const { getProducts, deleteProduct, updateProduct } = useProducts();
-  const { data: products, isLoading, isFetching } = getProducts(apiParams);
-  const productData = products?.data || [];
+  const { data: products, isLoading } = getProducts(apiParams);
+  const productData = products?.data?.items ?? products?.data ?? [];
+  const rawPagination = products?.data?.meta
+    ?? products?.data?.pagination
+    ?? products?.meta
+    ?? products?.pagination
+    ?? {};
+
+  const responsePage = toPositiveNumber(
+    products?.page ?? rawPagination?.page,
+  ) ?? page;
+  const responseLimit = toPositiveNumber(
+    products?.limit ?? rawPagination?.limit,
+  ) ?? limit;
+  const productTotal = toPositiveNumber(
+    products?.total ?? rawPagination?.total,
+  ) ?? productData.length;
+
+  useEffect(() => {
+    if (!hasPaginationFilterSyncStarted.current) {
+      hasPaginationFilterSyncStarted.current = true;
+      return;
+    }
+
+    resetPagination(limit);
+  }, [filterValue, resetPagination, searchValue, limit]);
 
   // ─── Delete Handlers ────────────────────────────────────────────────────
 
@@ -268,7 +302,9 @@ const ProductTable = () => {
         label: "#",
         width: "5%",
         render: (_: number, _row: Product, index: number) => (
-          <span className="font-semibold text-gray-400 dark:text-gray-500">{index + 1}</span>
+          <span className="font-semibold text-gray-400 dark:text-gray-500">
+            {(responsePage - 1) * responseLimit + index + 1}
+          </span>
         ),
       },
       {
@@ -330,7 +366,7 @@ const ProductTable = () => {
         ),
       },
     ],
-    [handleDeleteRequest, handleEditRequest, t],
+    [handleDeleteRequest, handleEditRequest, responseLimit, responsePage, t],
   );
 
   // ─── Render ─────────────────────────────────────────────────────────────
@@ -384,20 +420,29 @@ const ProductTable = () => {
               {t("productCountLabel")}
             </span>
             <span className="text-lg font-bold text-gray-800 dark:text-white leading-tight">
-              {t("totalCount", { count: products?.total || 0 })}
+              {t("totalCount", { count: productTotal })}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Products Table */}
       <Table<Product>
         data={productData}
         columns={columns}
         keyExtractor={(item) => item.id}
         hoverable
-        loading={isLoading || isFetching}
+        loading={isLoading}
       />
+
+      <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-primarydark/60 sm:px-5">
+        <Pagination
+          totalItems={productTotal}
+          itemsPerPage={responseLimit}
+          currentPage={responsePage}
+          onPageChange={setPage}
+          className="pt-0"
+        />
+      </div>
 
       {/* Market Selection Popup */}
       <PopupSelect<Market>

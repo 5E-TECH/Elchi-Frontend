@@ -24,6 +24,7 @@ export const useUser = () => {
       queryKey: [user, params],
       queryFn: () => api.get(API_ENDPOINTS.USERS.BASE, { params }).then((res: any) => res.data),
       enabled,
+      placeholderData: (prev: any) => prev,
     });
 
   const getCouriers = (params?: IUserFilter, enabled: boolean = true) =>

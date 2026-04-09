@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import HeaderName from "../../shared/components/headerName";
 import { ClipboardList, QrCode, Store } from "lucide-react";
 
-type Tab = "markets" | "external";
+type Tab = "markets" | "integrations";
 
 const NewOrders = () => {
   const { t } = useTranslation("newOrders");
@@ -12,7 +12,7 @@ const NewOrders = () => {
   const location = useLocation();
 
   const activeTab = useMemo<Tab>(() => {
-    return location.pathname.startsWith("/new-orders/external") ? "external" : "markets";
+    return location.pathname.startsWith("/new-orders/integrations") ? "integrations" : "markets";
   }, [location.pathname]);
 
   return (
@@ -47,15 +47,15 @@ const NewOrders = () => {
 
         {/* Tashqi Buyurtmalar tab */}
         <div
-          onClick={() => navigate("/new-orders/external")}
+          onClick={() => navigate("/new-orders/integrations")}
           className={`flex items-center gap-3 p-4 rounded-2xl w-full cursor-pointer transition-all duration-200 border
-            ${activeTab === "external"
+            ${activeTab === "integrations"
               ? "bg-main text-white border-main shadow-lg shadow-main/25"
               : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
             }`}
         >
           <QrCode size={20} />
-          <h4 className="font-semibold">{t("externalTab")}</h4>
+          <h4 className="font-semibold">{t("integrationsTitle")}</h4>
         </div>
       </div>
 

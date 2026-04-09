@@ -123,8 +123,10 @@ const AppRouter = () => {
               element: <NewOrders />,
               children: [
                 { index: true, element: <NewOrdersMarkets /> },
-                { path: "external", element: <NewOrdersExternalList /> },
-                { path: "external/:id", element: <ExternalIntegrationDetail /> },
+                { path: "external", element: <Navigate replace to="/new-orders/integrations" /> },
+                { path: "external/:id", element: <Navigate replace to="/new-orders/integrations" /> },
+                { path: "integrations", element: <NewOrdersExternalList /> },
+                { path: "integrations/:id", element: <ExternalIntegrationDetail /> },
                 { path: ":marketId", element: <NewOrderDetail /> },
                 { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
                 { path: "userDetail/:id", element: <UserDetailPage /> },

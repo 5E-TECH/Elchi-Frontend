@@ -1,5 +1,5 @@
 // Migrated to React Hook Form
-import { memo, useState, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -22,6 +22,7 @@ import { useCashBox } from "../../entities/payments";
 import { useUser } from "../../entities/user/api/userApi";
 import { useMarkets } from "../../entities/markets";
 import { useTranslation } from "react-i18next";
+import { usePagination } from "../../shared/lib/usePagination";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -53,8 +54,11 @@ const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
 
 const Payments = () => {
   const { t } = useTranslation("payments");
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const { page, limit, setPage, resetPagination } = usePagination({
+    key: "payments",
+    defaultLimit: 10,
+  });
+  const hasPaginationFilterSyncStarted = useRef(false);
   const [isGivenPopupOpen, setIsGivenPopupOpen] = useState(false);
   const [isReceivedPopupOpen, setIsReceivedPopupOpen] = useState(false);
   const { control, watch, reset } = useForm<PaymentsFilterFormValues>({
@@ -63,7 +67,20 @@ const Payments = () => {
       paymentsFilterSchema,
     ) as Resolver<PaymentsFilterFormValues>,
   });
-  const filters = watch();
+  const operationType = watch("operation_type");
+  const sourceType = watch("source_type");
+  const createdBy = watch("created_by");
+  const cashboxType = watch("cashbox_type");
+
+  const filters = useMemo(
+    () => ({
+      operation_type: operationType,
+      source_type: sourceType,
+      created_by: createdBy,
+      cashbox_type: cashboxType,
+    }),
+    [cashboxType, createdBy, operationType, sourceType],
+  );
 
   const navigate = useNavigate();
   const { getFinanceHistory, getCashBoxInfo } = useCashBox();
@@ -178,6 +195,21 @@ const Payments = () => {
     );
     return params;
   }, [page, limit, filters]);
+
+  useEffect(() => {
+    if (!hasPaginationFilterSyncStarted.current) {
+      hasPaginationFilterSyncStarted.current = true;
+      return;
+    }
+
+    resetPagination(10);
+  }, [
+    filters.cashbox_type,
+    filters.created_by,
+    filters.operation_type,
+    filters.source_type,
+    resetPagination,
+  ]);
 
   const { data: historyData, isLoading: historyLoading } =
     getFinanceHistory(queryParams);
@@ -318,7 +350,7 @@ const Payments = () => {
             <button
               onClick={() => {
                 reset(INIT);
-                setPage(1);
+                resetPagination(10);
               }}
               className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
             >

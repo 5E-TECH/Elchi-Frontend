@@ -25,6 +25,7 @@ export const useOrders = () => {
         useQuery<OrderListResponse>({
             queryKey: [ORDER_KEY, params],
             queryFn: () => api.get(API_ENDPOINTS.ORDERS.BASE, { params }).then((res) => res.data),
+            placeholderData: (prev) => prev,
         });
 
     const getExternalOrders = (params?: ExternalOrdersParams) =>

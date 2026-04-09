@@ -81,5 +81,6 @@
   "privacyPolicy": "Maxfiylik siyosati",
   "systemWorking": "Tarjima tizimi ishlayapti",
   "optional": "ixtiyoriy",
-  "uploadImage": "Rasm yuklash"
+  "uploadImage": "Rasm yuklash",
+  "paginationSummary": "{{from}}-{{to}} dan {{total}} tasi ko'rsatilmoqda"
 }

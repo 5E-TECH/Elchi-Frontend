@@ -5,6 +5,7 @@ import logout from "../../entities/user/model/slice";
 import filterslice from "../../features/Select/model/FilterSlice";
 import searchSlice from "../../features/search/model/searchSlice";
 import roleReducer from "../../features/auth/model/loginSlice";
+import paginationReducer from "../../features/pagination/model/paginationSlice";
 
 export const store = configureStore({
   reducer: {
@@ -13,7 +14,8 @@ export const store = configureStore({
     filter: filterslice,
     search: searchSlice,
     role: roleReducer,
-    logout
+    logout,
+    pagination: paginationReducer,
   },
 });
 

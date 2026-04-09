@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { ListOrdered, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -8,12 +8,18 @@ import { useOrders } from "../../entities/order/api/orderApi";
 import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
 import OrderFilters, { ORDER_FILTER_KEYS } from "./list/OrderFilters";
 import OrdersTable from "./list/OrdersTable";
-import OrderPagination from "./list/OrderPagination";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
-import CourierOrders from "./list/courier/index"
+import CourierOrders from "./list/courier/index";
+import { usePagination } from "../../shared/lib/usePagination";
+import Pagination from "../../shared/components/pagination";
 
-const LIMIT = 15;
+const LIMIT = 10;
+const toPositiveNumber = (value: unknown): number | null => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  return Math.floor(parsed);
+};
 
 
 // ── Main component ─────────────────────────────────────────────────────────
@@ -29,8 +35,11 @@ const Orders = () => {
   const role = useSelector((state: RootState) => state.role.role);
 
 
-  // Pagination
-  const [page, setPage] = useState(1);
+  const { page, limit, setPage, resetPagination } = usePagination({
+    key: "orders",
+    defaultLimit: LIMIT,
+  });
+  const previousFiltersKeyRef = useRef("");
 
   // URL params
   const urlParams = getAllParams();
@@ -39,7 +48,7 @@ const Orders = () => {
   const apiParams = useMemo((): OrderListParams => {
     const params: OrderListParams = {
       page,
-      limit: LIMIT,
+      limit,
     };
 
     // Market
@@ -75,31 +84,55 @@ const Orders = () => {
     if (search) params.search = search;
 
     return params;
-  }, [page, urlParams, filters, searchFilters]);
+  }, [page, limit, urlParams, filters, searchFilters, role]);
+
+  const filtersKey = useMemo(
+    () => JSON.stringify({
+      role,
+      marketId: role !== "market" ? filters[ORDER_FILTER_KEYS.marketId] ?? "" : "",
+      regionId: filters[ORDER_FILTER_KEYS.regionId] ?? "",
+      courierId: role !== "market" ? filters[ORDER_FILTER_KEYS.courierId] ?? "" : "",
+      status: filters[ORDER_FILTER_KEYS.status] ?? "",
+      dateFrom: filters[ORDER_FILTER_KEYS.dateFrom] ?? "",
+      dateTo: filters[ORDER_FILTER_KEYS.dateTo] ?? "",
+      search: searchFilters[ORDER_FILTER_KEYS.search] ?? "",
+    }),
+    [
+      role,
+      filters,
+      searchFilters,
+    ],
+  );
 
   // Filter o'zgarganda sahifani 1 ga qaytarish
   useEffect(() => {
-    setPage(1);
-  }, [
-    role !== "market" ? filters[ORDER_FILTER_KEYS.marketId] : null,
-    filters[ORDER_FILTER_KEYS.regionId],
-    role !== "market" ? filters[ORDER_FILTER_KEYS.courierId] : null,
-    filters[ORDER_FILTER_KEYS.status],
-    filters[ORDER_FILTER_KEYS.dateFrom],
-    filters[ORDER_FILTER_KEYS.dateTo],
-    searchFilters[ORDER_FILTER_KEYS.search],
-  ]);
+    if (!previousFiltersKeyRef.current) {
+      previousFiltersKeyRef.current = filtersKey;
+      return;
+    }
+
+    if (previousFiltersKeyRef.current === filtersKey) {
+      return;
+    }
+
+    previousFiltersKeyRef.current = filtersKey;
+    resetPagination(LIMIT);
+  }, [filtersKey, resetPagination]);
 
   const { data, isLoading } = getOrders(apiParams);
 
+  const rawPagination = (data as { meta?: Record<string, unknown>; pagination?: Record<string, unknown> } | undefined)?.meta
+    ?? (data as { pagination?: Record<string, unknown> } | undefined)?.pagination
+    ?? {};
   const items: OrderListItem[] = data?.data ?? [];
-  const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / LIMIT) || 1;
+  const currentPage = toPositiveNumber(data?.page ?? rawPagination.page) ?? page;
+  const itemsPerPage = toPositiveNumber(data?.limit ?? rawPagination.limit) ?? limit;
+  const total = toPositiveNumber(data?.total ?? rawPagination.total) ?? items.length;
 
   if (role === "courier") {
     return (
       <div>
-        <CourierOrders/>
+        <CourierOrders />
       </div>
     );
   }
@@ -151,13 +184,15 @@ const Orders = () => {
 
         {/* Pagination */}
         {!isLoading && (
-          <OrderPagination
-            page={page}
-            totalPages={totalPages}
-            total={total}
-            limit={LIMIT}
-            onChange={(p) => setPage(p)}
-          />
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-primarydark/60 sm:px-5">
+            <Pagination
+              totalItems={total}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setPage}
+              className="pt-0"
+            />
+          </div>
         )}
       </div>
     </div>

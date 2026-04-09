@@ -10,6 +10,7 @@ import user from "../entities/user/model/slice";
 import filter from "../features/Select/model/FilterSlice";
 import search from "../features/search/model/searchSlice";
 import role from "../features/auth/model/loginSlice";
+import pagination from "../features/pagination/model/paginationSlice";
 import i18n from "../i18n";
 
 export const createTestStore = (preloadedState?: Record<string, unknown>) =>
@@ -20,6 +21,7 @@ export const createTestStore = (preloadedState?: Record<string, unknown>) =>
       filter,
       search,
       role,
+      pagination,
     },
     preloadedState: preloadedState as never,
   });
