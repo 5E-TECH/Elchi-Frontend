@@ -62,6 +62,7 @@ const SettingFormModal = ({
       submitLabel={initialData ? "Yangilash" : "Saqlash"}
       isLoading={addSetting.isPending || updateSetting.isPending}
       widthClassName="max-w-xl"
+      theme="branch"
     >
       <Form layout="vertical" component={false}>
         <Form.Item label={<span className={popupLabelClassName}>Kalit</span>} validateStatus={errors.key ? "error" : ""} help={errors.key?.message}>

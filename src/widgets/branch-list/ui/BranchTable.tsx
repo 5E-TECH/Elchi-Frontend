@@ -16,7 +16,7 @@ interface BranchTableProps {
 const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
   const navigate = useNavigate();
   const actionButtonClassName =
-    "!h-8 !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !px-3 !font-medium !text-[var(--color-maindark)] transition-colors hover:!border-[var(--color-main)] hover:!bg-[color:color-mix(in_srgb,var(--color-main)_22%,white)] hover:!text-[var(--color-main)] dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-[var(--color-main)] dark:hover:!bg-primarydark/70 dark:hover:!text-white";
+    "!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !p-0 !font-medium !text-[var(--color-maindark)] transition-colors hover:!border-[var(--color-main)] hover:!bg-[color:color-mix(in_srgb,var(--color-main)_22%,white)] hover:!text-[var(--color-main)] dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-[var(--color-main)] dark:hover:!bg-primarydark/70 dark:hover:!text-white";
   const deleteButtonClassName =
     `${actionButtonClassName} !border-rose-200/80 !bg-rose-50 !text-rose-600 hover:!border-rose-400 hover:!bg-rose-100 hover:!text-rose-700 dark:!border-rose-500/30 dark:!bg-rose-500/12 dark:!text-rose-300 dark:hover:!border-rose-400/60 dark:hover:!bg-rose-500/18 dark:hover:!text-rose-200`;
 
@@ -79,9 +79,9 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
             icon={<EditOutlined />}
             className={actionButtonClassName}
             onClick={() => onEdit(record)}
-          >
-            Tahrirlash
-          </Button>
+            aria-label="Tahrirlash"
+            title="Tahrirlash"
+          />
           <DeleteBranchButton id={record.id} className={deleteButtonClassName} />
         </div>
       ),

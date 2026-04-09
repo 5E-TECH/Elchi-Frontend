@@ -1,6 +1,6 @@
 import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
-import { Empty, Segmented, Spin } from "antd";
-import { useState } from "react";
+import { Empty, Spin } from "antd";
+import { useState, type ReactNode } from "react";
 import { useBranches, type Branch, type BranchParams } from "../../../entities/branch";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterSelect from "../../../shared/ui/FilterSelect";
@@ -18,6 +18,11 @@ interface BranchListWidgetProps {
 const statusOptions = [
   { value: "active", label: "Faol" },
   { value: "inactive", label: "Nofaol" },
+];
+
+const viewModeOptions: { value: ViewMode; icon: ReactNode; label: string }[] = [
+  { value: "table", icon: <BarsOutlined />, label: "Jadval" },
+  { value: "card", icon: <AppstoreOutlined />, label: "Kartalar" },
 ];
 
 const BranchListWidget = ({
@@ -57,14 +62,28 @@ const BranchListWidget = ({
             />
           </div>
           <div className="flex xl:pb-[1px]">
-            <Segmented
-              value={viewMode}
-              options={[
-                { value: "table", icon: <BarsOutlined /> },
-                { value: "card", icon: <AppstoreOutlined /> },
-              ]}
-              onChange={(value) => onViewModeChange(value as ViewMode)}
-            />
+            <div className="inline-flex h-12 items-center rounded-xl border-2 border-gray-200 bg-white p-1 shadow-sm dark:border-primarydark/30 dark:bg-primarydark">
+              {viewModeOptions.map((option) => {
+                const isActive = viewMode === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onViewModeChange(option.value)}
+                    aria-label={option.label}
+                    title={option.label}
+                    className={`flex h-10 w-10 items-center justify-center self-center rounded-lg text-base transition-all duration-200 ${
+                      isActive
+                        ? "bg-[linear-gradient(135deg,var(--color-main)_0%,var(--color-primarydark)_100%)] text-white shadow-[0_10px_25px_rgba(109,72,217,0.28)]"
+                        : "text-[color:var(--color-text-muted)] hover:bg-[color:var(--color-main-soft)] hover:text-[var(--color-main)] dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
+                    }`}
+                  >
+                    {option.icon}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

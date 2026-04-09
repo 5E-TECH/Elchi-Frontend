@@ -7,7 +7,8 @@ export const useRemoveEmployee = (branchId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (employeeId: string) => api.delete(API_ENDPOINTS.BRANCHES.EMPLOYEE_BY_ID(branchId, employeeId)),
+    mutationFn: (userId: string) =>
+      api.delete(API_ENDPOINTS.BRANCHES.USER_BY_ID(branchId, userId)),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.branches.employees(branchId) }),
