@@ -103,8 +103,8 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `branches/${id}`,
     USERS: (id: string | number) => `branches/${id}/users`,
     EMPLOYEES: (id: string | number) => `branches/${id}/employees`,
-    EMPLOYEE_BY_ID: (branchId: string | number, employeeId: string | number) =>
-      `branches/${branchId}/employees/${employeeId}`,
+    USER_BY_ID: (branchId: string | number, userId: string | number) =>
+      `branches/${branchId}/users/${userId}`,
     SETTINGS: (id: string | number) => `branches/${id}/settings`,
     SETTING_BY_ID: (branchId: string | number, settingId: string | number) =>
       `branches/${branchId}/settings/${settingId}`,

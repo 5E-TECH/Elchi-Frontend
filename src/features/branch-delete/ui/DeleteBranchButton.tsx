@@ -11,15 +11,16 @@ const DeleteBranchButton = ({ id, className }: { id: string; className?: string 
       size="small"
       icon={<DeleteOutlined />}
       className={className}
+      aria-label="O'chirish"
+      title="O'chirish"
       confirmTitle="Filialni o'chirmoqchimisiz?"
+      popupTheme="branch"
       onConfirm={async () => {
         await deleteBranch.mutateAsync(id);
         message.success("Filial o'chirildi");
       }}
       loading={deleteBranch.isPending}
-    >
-      O'chirish
-    </ConfirmButton>
+    />
   );
 };
 

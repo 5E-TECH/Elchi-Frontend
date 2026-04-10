@@ -2,10 +2,12 @@ import { Badge } from "antd";
 import { memo } from "react";
 
 const BranchStatusBadge = ({ status }: { status: "active" | "inactive" }) => {
+  const isActive = status === "active";
+
   return (
     <Badge
-      status={status === "active" ? "success" : "default"}
-      text={<span className="text-[var(--color-maindark)] dark:text-white">{status === "active" ? "Faol" : "Nofaol"}</span>}
+      color={isActive ? "#22c55e" : "#ef4444"}
+      text={<span className="text-[var(--color-maindark)] dark:text-white">{isActive ? "Faol" : "Nofaol"}</span>}
     />
   );
 };

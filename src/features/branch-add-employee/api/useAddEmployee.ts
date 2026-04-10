@@ -5,14 +5,14 @@ import { queryKeys } from "../../../shared/config/queryKeys";
 
 export interface AddEmployeeDto {
   user_id: string;
-  position: string;
 }
 
 export const useAddEmployee = (branchId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: AddEmployeeDto) => api.post(API_ENDPOINTS.BRANCHES.EMPLOYEES(branchId), payload),
+    mutationFn: (payload: AddEmployeeDto) =>
+      api.post(API_ENDPOINTS.BRANCHES.USERS(branchId), payload),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.branches.employees(branchId) }),
