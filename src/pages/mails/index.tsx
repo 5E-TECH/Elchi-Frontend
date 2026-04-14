@@ -1,63 +1,69 @@
-import { memo } from 'react';
-import { Mail, Package, AlertTriangle, Clock } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import TodaysMails from './components/todaysMails';
-import OldMails from './components/oldMails';
-import RefusedMails from './components/refusedMails';
+import { memo, type ReactNode } from "react";
+import { Mail, Package, AlertTriangle, Clock, RotateCcw } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import TodaysMails from "./components/todaysMails";
+import OldMails from "./components/oldMails";
+import RefusedMails from "./components/refusedMails";
+import ReturnMails from "./components/returnMails";
 
-type Tab = 'today' | 'refused' | 'old';
+type Tab = "today" | "return" | "refused" | "old";
 
-const tabs = [
+interface TabItem {
+  key: Tab;
+  icon: ReactNode;
+  labelKey: "todayTab" | "returnTab" | "refusedTab" | "oldTab";
+  activeWrapperClassName: string;
+  activeWrapperStyle?: React.CSSProperties;
+  inactiveIconClassName: string;
+}
+
+const tabs: TabItem[] = [
   {
-    key: 'today' as Tab,
-    label: "Today's mails",
+    key: "today",
     icon: <Package size={18} />,
-    active: {
-      wrapper: 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/30 text-white',
-      icon: 'bg-white/20 text-white',
-    },
-    inactive: {
-      wrapper: 'bg-white dark:bg-primarydark border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-emerald-400/40 hover:shadow-sm',
-      icon: 'bg-emerald-500/10 text-emerald-500',
-    },
+    labelKey: "todayTab",
+    activeWrapperClassName:
+      "border-success bg-success text-primary shadow-lg shadow-success/25",
+    inactiveIconClassName: "bg-success/10 text-success",
   },
   {
-    key: 'refused' as Tab,
-    label: 'Refused mails',
+    key: "return",
+    icon: <RotateCcw size={18} />,
+    labelKey: "returnTab",
+    activeWrapperClassName: "border-transparent text-primary shadow-lg",
+    activeWrapperStyle: {
+      background:
+        "linear-gradient(135deg, var(--color-warning-start) 0%, var(--color-warning-end) 100%)",
+      boxShadow: "0 18px 34px var(--color-warning-border)",
+    },
+    inactiveIconClassName:
+      "bg-[color:var(--color-warning-soft)] text-[color:var(--color-warning-end)]",
+  },
+  {
+    key: "refused",
     icon: <AlertTriangle size={18} />,
-    active: {
-      wrapper: 'bg-red-500 border-red-500 shadow-lg shadow-red-500/30 text-white',
-      icon: 'bg-white/20 text-white',
-    },
-    inactive: {
-      wrapper: 'bg-white dark:bg-primarydark border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-red-400/40 hover:shadow-sm',
-      icon: 'bg-red-500/10 text-red-500',
-    },
+    labelKey: "refusedTab",
+    activeWrapperClassName: "border-error bg-error text-primary shadow-lg shadow-error/25",
+    inactiveIconClassName: "bg-error/10 text-error",
   },
   {
-    key: 'old' as Tab,
-    label: 'Old mails',
+    key: "old",
     icon: <Clock size={18} />,
-    active: {
-      wrapper: 'bg-main border-main shadow-lg shadow-main/30 text-white',
-      icon: 'bg-white/20 text-white',
-    },
-    inactive: {
-      wrapper: 'bg-white dark:bg-primarydark border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-main/40 hover:shadow-sm',
-      icon: 'bg-main/10 text-main',
-    },
+    labelKey: "oldTab",
+    activeWrapperClassName: "border-main bg-main text-primary shadow-lg shadow-main/25",
+    inactiveIconClassName: "bg-main/10 text-main",
   },
 ];
 
 const Mails = () => {
   const { t } = useTranslation("mails");
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab');
+  const tabParam = searchParams.get("tab");
   const activeTab: Tab =
-    tabParam === 'today' || tabParam === 'refused' || tabParam === 'old'
+    tabParam === "today" || tabParam === "return" || tabParam === "refused" || tabParam === "old"
       ? tabParam
-      : 'today';
+      : "today";
 
   const handleTabChange = (tab: Tab) => {
     setSearchParams({ tab });
@@ -82,24 +88,31 @@ const Mails = () => {
       </div>
 
       {/* Tabs */}
-      <div className="mt-5 mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-5 mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
-          const style = isActive ? tab.active : tab.inactive;
 
           return (
             <button
               key={tab.key}
               type="button"
               onClick={() => handleTabChange(tab.key)}
-              className={`flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 cursor-pointer ${style.wrapper}`}
+              style={isActive ? tab.activeWrapperStyle : undefined}
+              className={`flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 cursor-pointer ${
+                isActive
+                  ? tab.activeWrapperClassName
+                  : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-primarydark dark:text-gray-300"
+              }`}
             >
-              {/* Icon container */}
-              <span className={`flex items-center justify-center w-7 h-7 rounded-lg shrink-0 ${style.icon}`}>
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                  isActive ? "bg-primary/15 text-primary" : tab.inactiveIconClassName
+                }`}
+              >
                 {tab.icon}
               </span>
               <span className="font-semibold text-sm leading-snug text-left">
-                {tab.key === "today" ? t("todayTab") : tab.key === "refused" ? t("refusedTab") : t("oldTab")}
+                {t(tab.labelKey)}
               </span>
             </button>
           );
@@ -107,9 +120,10 @@ const Mails = () => {
       </div>
 
       {/* Content */}
-      {activeTab === 'today' && <TodaysMails />}
-      {activeTab === 'refused' && <RefusedMails />}
-      {activeTab === 'old' && <OldMails />}
+      {activeTab === "today" && <TodaysMails />}
+      {activeTab === "return" && <ReturnMails />}
+      {activeTab === "refused" && <RefusedMails />}
+      {activeTab === "old" && <OldMails />}
     </div>
   );
 };

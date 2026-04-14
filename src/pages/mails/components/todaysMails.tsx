@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
+import MailSummaryStats from "./MailSummaryStats";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Region {
@@ -200,32 +201,13 @@ const TodaysMails = () => {
 
   return (
     <div className="space-y-5">
-      {/* Umumiy statistika */}
-      <div className="grid grid-cols-2 gap-3 px-1 sm:flex sm:flex-wrap sm:items-center sm:gap-6">
-        <div className="flex items-center gap-2 rounded-2xl bg-primary/70 px-3 py-2 dark:bg-primarydark/30 sm:bg-transparent sm:px-0 sm:py-0">
-          <span className="text-xl font-bold text-gray-800 dark:text-white sm:text-2xl">
-            {stats.totalRegions}
-          </span>
-          <span className="text-gray-500 dark:text-gray-400 text-sm">
-            {role === "courier" ? t("mailCountLabel") : t("regionCountLabel")}
-          </span>
-        </div>
-        <div className="hidden h-5 w-px bg-gray-200 dark:bg-white/10 sm:block" />
-        <div className="flex items-center gap-2 rounded-2xl bg-primary/70 px-3 py-2 dark:bg-primarydark/30 sm:bg-transparent sm:px-0 sm:py-0">
-          <span className="text-xl font-bold text-gray-800 dark:text-white sm:text-2xl">
-            {stats.totalOrders}
-          </span>
-          <span className="text-gray-500 dark:text-gray-400 text-sm">
-            {t("orderCountLabel")}
-          </span>
-        </div>
-        <div className="hidden h-5 w-px bg-gray-200 dark:bg-white/10 sm:block" />
-        <div className="col-span-2 flex items-center rounded-2xl bg-primary/70 px-3 py-3 dark:bg-primarydark/30 sm:col-span-1 sm:bg-transparent sm:px-0 sm:py-0">
-          <span className="text-2xl font-bold break-all text-emerald-500 sm:text-2xl">
-            {formatPrice(stats.totalPrice)}
-          </span>
-        </div>
-      </div>
+      <MailSummaryStats
+        totalRegions={stats.totalRegions}
+        totalOrders={stats.totalOrders}
+        totalPrice={formatPrice(stats.totalPrice)}
+        isCourier={role === "courier"}
+        accent="success"
+      />
 
       {/* 4-ustunli grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

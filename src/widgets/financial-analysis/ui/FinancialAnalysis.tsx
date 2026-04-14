@@ -67,7 +67,7 @@ const MAIN_COLOR = "#576adb";
 const GREEN_COLOR = "#22c55e";
 
 const AXIS_PROPS = {
-  tick: { fill: "rgba(244,245,250,0.35)", fontSize: 10 },
+  tick: { fill: "rgba(100,107,155,0.65)", fontSize: 10 },
   axisLine: false as const,
   tickLine: false as const,
 };
@@ -355,19 +355,18 @@ const RevenueChart = memo(({ data }: { data: Array<{ date: string; revenue: numb
         <div
           className="flex p-0.75 rounded-lg gap-0.5"
           style={{
-            background: "rgba(76,87,152,0.2)",
-            border: "1px solid rgba(76,87,152,0.35)",
+            background: "var(--color-glass)",
+            border: "1px solid rgba(76,87,152,0.3)",
           }}
         >
           {CHART_TYPES.map((type) => (
             <button
               key={type}
               onClick={() => setActiveType(type)}
-              className="px-3.5 py-1 rounded-md text-[11px] font-semibold transition-all duration-150"
-              style={{
-                background: activeType === type ? "var(--color-main)" : "transparent",
-                color: activeType === type ? "var(--color-primary)" : "rgba(244,245,250,0.4)",
-              }}
+              className={`px-3.5 py-1 rounded-md text-[11px] font-semibold transition-all duration-150 ${activeType === type
+                ? "bg-[var(--color-main)] text-white"
+                : "text-maindark/60 dark:text-sidebar/75"
+                }`}
             >
               {t(`chart.types.${type.toLowerCase()}`)}
             </button>
@@ -400,146 +399,138 @@ export interface FinancialAnalysisProps {
 
 const FinancialAnalysis = memo(
   ({ sold, profit, startDate, endDate }: FinancialAnalysisProps) => {
-  const { t } = useTranslation("dashboard");
-  const { getRevenue } = useDashboard();
-  const [period, setPeriod] = useState<RevenuePeriod>("daily");
+    const { t } = useTranslation("dashboard");
+    const { getRevenue } = useDashboard();
+    const [period, setPeriod] = useState<RevenuePeriod>("daily");
 
-  const revenueParams = useMemo(() => {
-    const params: Record<string, string> = { period };
-    if (startDate) {
-      params.startDate = startDate;
-      params.start_day = startDate;
-    }
-    if (endDate) {
-      params.endDate = endDate;
-      params.end_day = endDate;
-    }
-    return params;
-  }, [endDate, period, startDate]);
+    const revenueParams = useMemo(() => {
+      const params: Record<string, string> = { period };
+      if (startDate) {
+        params.startDate = startDate;
+        params.start_day = startDate;
+      }
+      if (endDate) {
+        params.endDate = endDate;
+        params.end_day = endDate;
+      }
+      return params;
+    }, [endDate, period, startDate]);
 
-  const { data } = getRevenue(revenueParams);
-  const revenuePayload = data?.data;
-  const rawRevenuePoints = Object.values(revenuePayload ?? {}).filter(
-    (item): item is RevenuePoint =>
-      typeof item === "object"
-      && item !== null
-      && "label" in item
-      && "revenue" in item
-      && "ordersCount" in item,
-  );
-  const chartData = (
-    revenuePayload?.chart?.labels?.length && revenuePayload?.chart?.values?.length
-      ? revenuePayload.chart.labels.map((label, index) => ({
-        date: label,
-        revenue: Number(revenuePayload.chart?.values?.[index] ?? 0),
-      }))
-      : rawRevenuePoints.map((item) => ({
-        date: item.label,
-        revenue: Number(item.revenue ?? 0),
-      }))
-  );
-  const currentPoint = rawRevenuePoints[0];
-  const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
-  const totalOrdersFromRevenue = rawRevenuePoints.reduce(
-    (sum, item) => sum + Number(item.ordersCount ?? 0),
-    0,
-  );
-  const finance = revenuePayload?.finance;
-  const currentSituation = Number(finance?.currentSituation ?? 0);
+    const { data } = getRevenue(revenueParams);
+    const revenuePayload = data?.data;
+    const rawRevenuePoints = Object.values(revenuePayload ?? {}).filter(
+      (item): item is RevenuePoint =>
+        typeof item === "object"
+        && item !== null
+        && "label" in item
+        && "revenue" in item
+        && "ordersCount" in item,
+    );
+    const chartData = (
+      revenuePayload?.chart?.labels?.length && revenuePayload?.chart?.values?.length
+        ? revenuePayload.chart.labels.map((label, index) => ({
+          date: label,
+          revenue: Number(revenuePayload.chart?.values?.[index] ?? 0),
+        }))
+        : rawRevenuePoints.map((item) => ({
+          date: item.label,
+          revenue: Number(item.revenue ?? 0),
+        }))
+    );
+    const currentPoint = rawRevenuePoints[0];
+    const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
+    const totalOrdersFromRevenue = rawRevenuePoints.reduce(
+      (sum, item) => sum + Number(item.ordersCount ?? 0),
+      0,
+    );
+    const finance = revenuePayload?.finance;
+    const currentSituation = Number(finance?.currentSituation ?? 0);
 
-  const profitIsNegative = profit < 0;
+    const profitIsNegative = profit < 0;
 
-  return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <BarChart2 size={18} style={{ color: "var(--color-main)" }} />
-          <div>
-            <h2
-              className="text-[15px] font-semibold leading-tight"
-              style={{ color: "var(--color-primary)" }}
-            >
-              {t("financial_analysis.title")}
-            </h2>
-            <p
-              className="text-[11px]"
-              style={{ color: "var(--color-sidebar)", opacity: 0.45 }}
-            >
-              {t("financial_analysis.subtitle")}
-            </p>
+    return (
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <BarChart2 size={18} style={{ color: "var(--color-main)" }} />
+            <div>
+              <h2 className="text-[15px] font-semibold leading-tight text-maindark dark:text-primary">
+                {t("financial_analysis.title")}
+              </h2>
+              <p className="text-[11px] text-maindark/45 dark:text-sidebar/45">
+                {t("financial_analysis.subtitle")}
+              </p>
+            </div>
+          </div>
+
+          <div
+            className="flex p-0.75 rounded-lg gap-0.5"
+            style={{
+              background: "var(--color-glass)",
+              border: "1px solid rgba(76,87,152,0.3)",
+            }}
+          >
+            {PERIODS.map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 ${period === p
+                  ? "bg-[var(--color-main)] text-white"
+                  : "text-maindark/60 dark:text-sidebar/75"
+                  }`}
+              >
+                {t(`periods.${p}`)}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div
-          className="flex p-0.75 rounded-lg gap-0.5"
-          style={{
-            background: "rgba(76,87,152,0.15)",
-            border: "1px solid rgba(76,87,152,0.3)",
-          }}
-        >
-          {PERIODS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className="px-3.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150"
-              style={{
-                background: period === p ? "var(--color-main)" : "transparent",
-                color:
-                  period === p ? "var(--color-primary)" : "rgba(244,245,250,0.4)",
-              }}
-            >
-              {t(`periods.${p}`)}
-            </button>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* orders.profit */}
+          <FinanceCard
+            title={t("financial_cards.today_revenue.title")}
+            subtitle={t("financial_cards.today_revenue.subtitle")}
+            value={formatCurrency(Number(currentPoint?.revenue ?? profit))}
+            currency="UZS"
+            valueLabel={t("financial_cards.today_revenue.value_label")}
+            trendUp={!profitIsNegative}
+            icon={<DollarSign size={15} />}
+            variant="success"
+          />
+          {/* orders.soldAndPaid */}
+          <FinanceCard
+            title={t("financial_cards.today_orders.title")}
+            subtitle={t("financial_cards.today_orders.subtitle")}
+            value={String(Number(currentPoint?.ordersCount ?? sold))}
+            currency=""
+            valueLabel={t("financial_cards.today_orders.value_label")}
+            icon={<ShoppingCart size={15} />}
+            variant="info"
+          />
+          {/* orders.profit (weekly placeholder — same data for now) */}
+          <FinanceCard
+            title={t("financial_cards.week_revenue.title")}
+            subtitle={t("financial_cards.week_revenue.subtitle")}
+            value={formatCurrency(currentSituation || totalRevenue)}
+            currency="UZS"
+            valueLabel={t("financial_cards.week_revenue.value_label")}
+            trendUp={(currentSituation || totalRevenue) >= 0}
+            icon={<DollarSign size={15} />}
+            variant="warning"
+          />
+          {/* orders.acceptedCount, soldAndPaid, profit */}
+          <PeriodStatsCard
+            totalOrders={totalOrdersFromRevenue}
+            sold={sold}
+            profit={totalRevenue}
+            period={period}
+          />
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* orders.profit */}
-        <FinanceCard
-          title={t("financial_cards.today_revenue.title")}
-          subtitle={t("financial_cards.today_revenue.subtitle")}
-          value={formatCurrency(Number(currentPoint?.revenue ?? profit))}
-          currency="UZS"
-          valueLabel={t("financial_cards.today_revenue.value_label")}
-          trendUp={!profitIsNegative}
-          icon={<DollarSign size={15} />}
-          variant="success"
-        />
-        {/* orders.soldAndPaid */}
-        <FinanceCard
-          title={t("financial_cards.today_orders.title")}
-          subtitle={t("financial_cards.today_orders.subtitle")}
-          value={String(Number(currentPoint?.ordersCount ?? sold))}
-          currency=""
-          valueLabel={t("financial_cards.today_orders.value_label")}
-          icon={<ShoppingCart size={15} />}
-          variant="info"
-        />
-        {/* orders.profit (weekly placeholder — same data for now) */}
-        <FinanceCard
-          title={t("financial_cards.week_revenue.title")}
-          subtitle={t("financial_cards.week_revenue.subtitle")}
-          value={formatCurrency(currentSituation || totalRevenue)}
-          currency="UZS"
-          valueLabel={t("financial_cards.week_revenue.value_label")}
-          trendUp={(currentSituation || totalRevenue) >= 0}
-          icon={<DollarSign size={15} />}
-          variant="warning"
-        />
-        {/* orders.acceptedCount, soldAndPaid, profit */}
-        <PeriodStatsCard
-          totalOrders={totalOrdersFromRevenue}
-          sold={sold}
-          profit={totalRevenue}
-          period={period}
-        />
-      </div>
-
-      <RevenueChart data={chartData} />
-    </section>
-  );
-});
+        <RevenueChart data={chartData} />
+      </section>
+    );
+  });
 
 FinancialAnalysis.displayName = "FinancialAnalysis";
 

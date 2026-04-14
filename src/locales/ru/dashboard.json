@@ -59,9 +59,9 @@
     "description": "Выручка = тариф маркета − тариф курьера (учитываются только проданные заказы)",
     "tooltip_value": "{{value}}M UZS",
     "types": {
-      "area": "Area",
-      "bar": "Bar",
-      "combo": "Combo"
+      "area": "Площадь",
+      "bar": "Столбец",
+      "combo": "Смешанный"
     }
   },
   "financial_analysis": {

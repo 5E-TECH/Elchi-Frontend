@@ -4,7 +4,7 @@ import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import { useTranslation } from "react-i18next";
-import PaginationComponent from "../../../shared/components/pagination";
+import Pagination from "../../../shared/components/pagination";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -79,8 +79,12 @@ const PaymentHistoryTable = ({
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
 
   const activePage = pagination?.page ?? currentPage ?? 1;
-  const hasPagination = pagination && pagination.totalPages > 1;
-  const rowOffset = (activePage - 1) * (pagination?.limit ?? 10);
+  const safeLimit = pagination?.limit ?? 20;
+  const safeTotal = pagination?.total ?? data.length;
+  const totalPages =
+    pagination?.totalPages ?? Math.max(1, Math.ceil(safeTotal / safeLimit));
+  const hasPagination = Boolean(pagination && onPageChange);
+  const rowOffset = (activePage - 1) * safeLimit;
 
   const columns = useMemo<ColumnConfig<PaymentRow>[]>(
     () => [
@@ -134,8 +138,8 @@ const PaymentHistoryTable = ({
           return (
             <span
               className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap ${isIncome
-                  ? "bg-emerald-500/15 text-emerald-400"
-                  : "bg-rose-500/15 text-rose-400"
+                ? "bg-emerald-500/15 text-emerald-400"
+                : "bg-rose-500/15 text-rose-400"
                 }`}
             >
               {val ? (isIncome ? t("income") : t("expense")) : "-"}
@@ -179,7 +183,7 @@ const PaymentHistoryTable = ({
 
   return (
     <>
-      <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border shadow-sm overflow-hidden">
+      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border shadow-sm overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-glass-border">
           <div className="flex items-center gap-2">
@@ -212,11 +216,11 @@ const PaymentHistoryTable = ({
         {hasPagination && onPageChange && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 dark:border-glass-border">
             <span className="text-xs text-gray-500 dark:text-white/40">
-              {activePage}-sahifa / {pagination.totalPages}
+              {activePage}-sahifa / {totalPages}
             </span>
-            <PaginationComponent
-              totalItems={pagination.total}
-              itemsPerPage={pagination.limit}
+            <Pagination
+              totalItems={safeTotal}
+              itemsPerPage={safeLimit}
               currentPage={activePage}
               onPageChange={onPageChange}
               className="w-full pt-0 sm:w-auto"
