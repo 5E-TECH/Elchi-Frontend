@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Form, Input, Select, message } from "antd";
+import { Form, Select, message } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect } from "react";
 import { UserPlus } from "lucide-react";
@@ -27,11 +27,11 @@ const AddEmployeeModal = ({
   const addEmployee = useAddEmployee(branchId);
   const { control, handleSubmit, reset, formState: { errors } } = useForm<AddEmployeeDto>({
     resolver: yupResolver(addEmployeeSchema),
-    defaultValues: { user_id: "", position: "" },
+    defaultValues: { user_id: "" },
   });
 
   useEffect(() => {
-    if (!open) reset({ user_id: "", position: "" });
+    if (!open) reset({ user_id: "" });
   }, [open, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -50,10 +50,11 @@ const AddEmployeeModal = ({
         void onSubmit();
       }}
       title="Xodim qo'shish"
-      description="Filialga foydalanuvchini biriktirib, lavozimini belgilang."
+      description="Filialga foydalanuvchini biriktiring."
       icon={<UserPlus size={22} />}
       submitLabel="Qo'shish"
       isLoading={addEmployee.isPending}
+      theme="branch"
     >
       <Form layout="vertical" component={false}>
         <Form.Item label={<span className={popupLabelClassName}>Foydalanuvchi</span>} validateStatus={errors.user_id ? "error" : ""} help={errors.user_id?.message}>
@@ -69,12 +70,10 @@ const AddEmployeeModal = ({
                   value: user.id,
                   label: `${user.fullName} (${user.username})`,
                 }))}
+                placeholder="Foydalanuvchini tanlang"
               />
             )}
           />
-        </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>Lavozim</span>} validateStatus={errors.position ? "error" : ""} help={errors.position?.message}>
-          <Controller control={control} name="position" render={({ field }) => <Input {...field} />} />
         </Form.Item>
       </Form>
     </FormPopup>

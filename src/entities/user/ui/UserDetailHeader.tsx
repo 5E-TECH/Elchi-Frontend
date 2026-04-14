@@ -53,15 +53,15 @@ const formatDate = (d: string) => {
 export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
     const { t } = useTranslation("users");
     const rc = roleConfig[user.role] ?? roleConfig.admin;
-    const sc = statusConfig[user.status];
+    const sc = statusConfig[user.status] ?? statusConfig.inactive;
     const Icon = rc.icon;
     const StatusIcon = sc.icon;
 
-    const initials = user.name
+    const initials = (user.name ?? "")
         .split(' ')
         .slice(0, 2)
         .map(w => w[0]?.toUpperCase() ?? '')
-        .join('');
+        .join('') || "U";
 
     return (
         <div className="bg-white dark:bg-maindark rounded-2xl border border-slate-100 dark:border-primarydark/20 shadow-sm overflow-hidden">

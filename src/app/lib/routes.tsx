@@ -86,6 +86,7 @@ const AppRouter = () => {
               path: "orders",
               children: [
                 { index: true, element: <Orders /> },
+                { path: "edit/:orderId", element: <NewOrderUpdate /> },
                 {
                   path: "add",
                   element: (

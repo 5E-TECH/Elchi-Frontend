@@ -1,4 +1,3 @@
-export { default as SettingsTable } from "./ui/SettingsTable";
 export { default as SettingFormModal } from "./ui/SettingFormModal";
 export { useAddSetting } from "./api/useAddSetting";
 export { useUpdateSetting } from "./api/useUpdateSetting";

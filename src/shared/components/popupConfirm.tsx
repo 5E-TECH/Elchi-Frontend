@@ -14,6 +14,7 @@ interface PopupConfirmProps {
   cancelLabel?: string;
   isLoading?: boolean;
   variant?: "danger" | "warning";
+  theme?: "default" | "branch";
 }
 
 const PopupConfirm = ({
@@ -26,6 +27,7 @@ const PopupConfirm = ({
   cancelLabel,
   isLoading = false,
   variant = "danger",
+  theme = "default",
 }: PopupConfirmProps) => {
   const { t } = useTranslation("common");
 
@@ -47,7 +49,7 @@ const PopupConfirm = ({
 
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className={`${popupStyles.panel} w-[92vw] max-w-md rounded-[1.75rem] px-8 py-7 text-center shadow-2xl`}>
+      <div data-theme={theme} className={`${popupStyles.panel} w-[92vw] max-w-md rounded-[1.75rem] px-8 py-7 text-center shadow-2xl`}>
         <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${iconBg}`}>
           <AlertTriangle size={28} className={iconColor} />
         </div>

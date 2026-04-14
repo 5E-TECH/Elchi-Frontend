@@ -16,6 +16,7 @@ interface FormPopupProps {
   isLoading?: boolean;
   children: ReactNode;
   widthClassName?: string;
+  theme?: "default" | "branch";
 }
 
 export const popupLabelClassName = styles.label;
@@ -33,11 +34,13 @@ const FormPopup = ({
   isLoading = false,
   children,
   widthClassName = "max-w-2xl",
+  theme = "default",
 }: FormPopupProps) => {
   return (
     <Popup isShow={isOpen} onClose={onClose}>
       <form
         onSubmit={onSubmit}
+        data-theme={theme}
         className={`${styles.panel} flex max-h-[90vh] w-[92vw] ${widthClassName} flex-col overflow-hidden rounded-[1.75rem]`}
       >
         <div className={`${styles.header} flex items-start justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-6 py-5`}>

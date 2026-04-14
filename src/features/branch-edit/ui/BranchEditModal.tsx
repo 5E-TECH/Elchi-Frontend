@@ -1,9 +1,9 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Form, Input, Select, message } from "antd";
+import { Form, Input, message } from "antd";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { SquarePen } from "lucide-react";
+import { Building2, SquarePen } from "lucide-react";
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { queryKeys } from "../../../shared/config/queryKeys";
@@ -12,6 +12,8 @@ import FormPopup, { popupLabelClassName } from "../../../shared/ui/FormPopup";
 import { branchEditSchema } from "../model/schema";
 import type { UpdateBranchDto } from "../model/types";
 import { useUpdateBranch } from "../api/useUpdateBranch";
+import Select from "../../../shared/ui/Select";
+import { GlobalSearchInput } from "../../search";
 
 type RegionOption = {
   id: string;
@@ -62,13 +64,48 @@ const BranchEditModal = ({
     () => regions.find((region) => String(region.id) === selectedRegionId)?.districts ?? [],
     [regions, selectedRegionId],
   );
+  const regionOptions = useMemo(
+    () => regions.map((region) => ({ value: String(region.id), label: region.name })),
+    [regions],
+  );
+  const districtOptions = useMemo(
+    () => {
+      const options = districts.map((district) => ({
+        value: String(district.id),
+        label: district.name,
+      }));
+
+      if (!initialData || String(initialData.region.id) !== selectedRegionId) {
+        return options;
+      }
+
+      const currentDistrictOption = {
+        value: String(initialData.district.id),
+        label: initialData.district.name,
+      };
+
+      const hasCurrentDistrict = options.some(
+        (option) => option.value === currentDistrictOption.value,
+      );
+
+      return hasCurrentDistrict ? options : [currentDistrictOption, ...options];
+    },
+    [districts, initialData, selectedRegionId],
+  );
+  const statusOptions = useMemo(
+    () => [
+      { value: "active", label: "Faol" },
+      { value: "inactive", label: "Nofaol" },
+    ],
+    [],
+  );
 
   useEffect(() => {
     if (open && initialData) {
       reset({
         name: initialData.name,
-        region_id: initialData.region.id,
-        district_id: initialData.district.id,
+        region_id: String(initialData.region.id),
+        district_id: String(initialData.district.id),
         address: initialData.address,
         status: initialData.status,
       });
@@ -95,10 +132,27 @@ const BranchEditModal = ({
       icon={<SquarePen size={22} />}
       submitLabel="Yangilash"
       isLoading={updateBranch.isPending}
+      theme="branch"
     >
       <Form layout="vertical" component={false}>
         <Form.Item label={<span className={popupLabelClassName}>Filial nomi</span>} validateStatus={errors.name ? "error" : ""} help={errors.name?.message}>
-          <Controller control={control} name="name" render={({ field }) => <Input {...field} />} />
+          <Controller
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <GlobalSearchInput
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Filial nomini kiriting"
+                icon={Building2}
+                error={Boolean(errors.name)}
+                syncWithRedux={false}
+                syncWithUrl={false}
+              />
+            )}
+          />
         </Form.Item>
         <Form.Item label={<span className={popupLabelClassName}>Viloyat</span>} validateStatus={errors.region_id ? "error" : ""} help={errors.region_id?.message}>
           <Controller
@@ -106,10 +160,12 @@ const BranchEditModal = ({
             name="region_id"
             render={({ field }) => (
               <Select
-                {...field}
-                options={regions.map((region) => ({ value: String(region.id), label: region.name }))}
-                onChange={(value) => {
-                  field.onChange(value);
+                name={field.name}
+                value={field.value}
+                options={regionOptions}
+                placeholder="Viloyatni tanlang"
+                onChange={(event) => {
+                  field.onChange(event.target.value);
                   setValue("district_id", "");
                 }}
               />
@@ -122,15 +178,28 @@ const BranchEditModal = ({
             name="district_id"
             render={({ field }) => (
               <Select
-                {...field}
+                name={field.name}
+                value={field.value}
                 disabled={!selectedRegionId}
-                options={districts.map((district) => ({ value: String(district.id), label: district.name }))}
+                options={districtOptions}
+                placeholder="Tumanni tanlang"
+                onChange={(event) => field.onChange(event.target.value)}
               />
             )}
           />
         </Form.Item>
         <Form.Item label={<span className={popupLabelClassName}>Manzil</span>} validateStatus={errors.address ? "error" : ""} help={errors.address?.message}>
-          <Controller control={control} name="address" render={({ field }) => <Input.TextArea {...field} rows={3} />} />
+          <Controller
+            control={control}
+            name="address"
+            render={({ field }) => (
+              <Input.TextArea
+                {...field}
+                rows={3}
+                placeholder="Filial manzilini kiriting"
+              />
+            )}
+          />
         </Form.Item>
         <Form.Item label={<span className={popupLabelClassName}>Holat</span>} validateStatus={errors.status ? "error" : ""} help={errors.status?.message}>
           <Controller
@@ -138,11 +207,11 @@ const BranchEditModal = ({
             name="status"
             render={({ field }) => (
               <Select
-                {...field}
-                options={[
-                  { value: "active", label: "Faol" },
-                  { value: "inactive", label: "Nofaol" },
-                ]}
+                name={field.name}
+                value={field.value}
+                options={statusOptions}
+                placeholder="Holatni tanlang"
+                onChange={(event) => field.onChange(event.target.value)}
               />
             )}
           />

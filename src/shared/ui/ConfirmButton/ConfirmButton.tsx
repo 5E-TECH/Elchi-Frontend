@@ -7,12 +7,14 @@ interface ConfirmButtonProps extends ButtonProps {
   confirmTitle: ReactNode;
   confirmDescription?: ReactNode;
   onConfirm: () => void | Promise<void>;
+  popupTheme?: "default" | "branch";
 }
 
 const ConfirmButton = ({
   confirmTitle,
   confirmDescription,
   onConfirm,
+  popupTheme = "default",
   children,
   ...buttonProps
 }: ConfirmButtonProps) => {
@@ -38,6 +40,7 @@ const ConfirmButton = ({
         message={confirmDescription}
         isLoading={Boolean(buttonProps.loading)}
         variant={buttonProps.danger ? "danger" : "warning"}
+        theme={popupTheme}
       />
     </>
   );

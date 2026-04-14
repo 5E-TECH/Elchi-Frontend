@@ -5,11 +5,11 @@ import { useRemoveEmployee } from "../api/useRemoveEmployee";
 
 const RemoveEmployeeButton = ({
   branchId,
-  employeeId,
+  userId,
   className,
 }: {
   branchId: string;
-  employeeId: string;
+  userId: string;
   className?: string;
 }) => {
   const removeEmployee = useRemoveEmployee(branchId);
@@ -20,8 +20,9 @@ const RemoveEmployeeButton = ({
       icon={<DeleteOutlined />}
       className={className}
       confirmTitle="Xodimni filialdan olib tashlamoqchimisiz?"
+      popupTheme="branch"
       onConfirm={async () => {
-        await removeEmployee.mutateAsync(employeeId);
+        await removeEmployee.mutateAsync(userId);
         message.success("Xodim olib tashlandi");
       }}
       loading={removeEmployee.isPending}
