@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,17 +14,17 @@ import {
 import { useUser } from "../../../entities/user/api/userApi";
 import { useMarkets } from "../../../entities/markets";
 import type { OrderStatus } from "../../../entities/order/types/order";
-import { setFilterValue, resetFilters } from "../../../features/Select/model/FilterSlice";
+import { resetFilters, setFilterValue } from "../../../features/Select/model/FilterSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import Select from "../../../shared/ui/Select";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
-import { setSearchValue, clearAllSearch } from "../../../features/search/model/searchSlice";
+import { clearAllSearch, setSearchValue } from "../../../features/search/model/searchSlice";
 import type { RootState } from "../../../app/config/store";
+import FilterMultiSelect from "../../../shared/ui/FilterMultiSelect";
 
 // ── Holat variantlari ─────────────────────────────────────────────────────
 const ALL_STATUSES: { value: OrderStatus | ""; label: string }[] = [
-    { value: "", label: "statusAll" },
     { value: "new", label: "statusNew" },
     { value: "created", label: "statusCreated" },
     { value: "received", label: "statusReceived" },
@@ -53,29 +53,61 @@ interface Props {
     onExport?: () => void;
 }
 
+const parseStatusValues = (value: unknown): OrderStatus[] => {
+    if (Array.isArray(value)) {
+        return value.filter((item): item is OrderStatus => typeof item === "string" && item.length > 0);
+    }
+
+    if (typeof value !== "string" || !value.trim()) {
+        return [];
+    }
+
+    return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item): item is OrderStatus => item.length > 0);
+};
+
+const serializeStatusValues = (value: OrderStatus[]) => value.join(",");
+const getStringFilterValue = (value: unknown, fallback = "") =>
+    typeof value === "string" ? value : fallback;
+
 // ── Komponent ─────────────────────────────────────────────────────────────
 const OrderFilters = memo(({ onExport }: Props) => {
     const { t } = useTranslation(["orders", "common"]);
     const dispatch = useDispatch();
-    const { setParam, removeParam, clearAllParams, getParam } = useQueryParams();
+    const { setParam, removeParam, getParam } = useQueryParams();
     const role = useSelector((state: RootState) => state.role.role);
+    const filters = useSelector((state: RootState) => state.filter);
+    const searchFilters = useSelector((state: RootState) => state.search);
     const isMarketRole = role === "market";
     const canLoadRoleDependentOptions = role !== null && !isMarketRole;
 
     // ─── URL dan joriy qiymatlarni olish ───────────────────────────────────
-    const marketId = getParam(ORDER_FILTER_KEYS.marketId) ?? "";
-    const regionId = getParam(ORDER_FILTER_KEYS.regionId) ?? "";
-    const courierId = getParam(ORDER_FILTER_KEYS.courierId) ?? "";
-    const status = getParam(ORDER_FILTER_KEYS.status) ?? "";
-    const dateFrom = getParam(ORDER_FILTER_KEYS.dateFrom) ?? "";
-    const dateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? "";
-    const search = getParam(ORDER_FILTER_KEYS.search) ?? "";
+    const urlMarketId = getParam(ORDER_FILTER_KEYS.marketId) ?? "";
+    const urlRegionId = getParam(ORDER_FILTER_KEYS.regionId) ?? "";
+    const urlCourierId = getParam(ORDER_FILTER_KEYS.courierId) ?? "";
+    const urlStatus = getParam(ORDER_FILTER_KEYS.status) ?? "";
+    const urlDateFrom = getParam(ORDER_FILTER_KEYS.dateFrom) ?? "";
+    const urlDateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? "";
+    const urlSearch = getParam(ORDER_FILTER_KEYS.search) ?? "";
+
+    const marketId = getStringFilterValue(filters[ORDER_FILTER_KEYS.marketId], urlMarketId);
+    const regionId = getStringFilterValue(filters[ORDER_FILTER_KEYS.regionId], urlRegionId);
+    const courierId = getStringFilterValue(filters[ORDER_FILTER_KEYS.courierId], urlCourierId);
+    const dateFrom = getStringFilterValue(filters[ORDER_FILTER_KEYS.dateFrom], urlDateFrom);
+    const dateTo = getStringFilterValue(filters[ORDER_FILTER_KEYS.dateTo], urlDateTo);
+    const search = getStringFilterValue(searchFilters[ORDER_FILTER_KEYS.search], urlSearch);
+    const statusValues = useMemo(
+        () => parseStatusValues(filters[ORDER_FILTER_KEYS.status] ?? urlStatus),
+        [filters, urlStatus],
+    );
 
     const hasFilter = !!(
         (!isMarketRole && marketId) ||
         regionId ||
         (!isMarketRole && courierId) ||
-        status ||
+        statusValues.length > 0 ||
         dateFrom ||
         dateTo ||
         search
@@ -142,6 +174,18 @@ const OrderFilters = memo(({ onExport }: Props) => {
         }
     };
 
+    const updateStatus = (value: string[]) => {
+        const normalizedValue = value.filter((item): item is OrderStatus => Boolean(item));
+        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: normalizedValue }));
+
+        const serializedValue = serializeStatusValues(normalizedValue);
+        if (serializedValue) {
+            setParam(ORDER_FILTER_KEYS.status, serializedValue);
+        } else {
+            removeParam(ORDER_FILTER_KEYS.status);
+        }
+    };
+
     // Search uchun alohida (searchSlice)
     const updateSearch = (value: string) => {
         dispatch(setSearchValue({ key: ORDER_FILTER_KEYS.search, value }));
@@ -158,8 +202,6 @@ const OrderFilters = memo(({ onExport }: Props) => {
         dispatch(clearAllSearch());
         // Faqat order filter key-larini tozalash
         Object.values(ORDER_FILTER_KEYS).forEach((key) => removeParam(key));
-        // URLni butunlay tozalash uchun
-        clearAllParams();
     };
 
     return (
@@ -168,7 +210,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
             {/* ── 1-qator: sarlavha | date range | search ── */}
             <div className="flex flex-wrap items-center gap-3">
                 {/* Sarlavha */}
-                <div className="flex items-center gap-2 text-xs font-bold text-gray-400 dark:text-white/50 uppercase tracking-wider shrink-0">
+                <div className="flex shrink-0 items-center gap-2 text-xs font-bold uppercase tracking-wider text-maindark/60 dark:text-primary/60">
                     <Filter size={13} className="text-main" />
                     {t("filters", { ns: "common" })}
                 </div>
@@ -245,13 +287,11 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 )}
 
                 {/* HOLAT */}
-                <Select
+                <FilterMultiSelect
                     label={t("filterStatus")}
                     name={ORDER_FILTER_KEYS.status}
-                    value={status}
-                    onChange={(e) =>
-                        update(ORDER_FILTER_KEYS.status, ORDER_FILTER_KEYS.status, e.target.value)
-                    }
+                    value={statusValues}
+                    onChange={updateStatus}
                     options={statuses}
                     placeholder={t("filterStatusPlaceholder")}
                     icon={Tag}
@@ -298,14 +338,15 @@ const OrderFilters = memo(({ onExport }: Props) => {
                                 }
                             />
                         )}
-                        {status && (
+                        {statusValues.map((status) => (
                             <FilterChip
-                                label={`${t("chipStatus")}: ${statuses.find((s) => s.value === status)?.label}`}
+                                key={status}
+                                label={`${t("chipStatus")}: ${statuses.find((item) => item.value === status)?.label ?? status}`}
                                 onRemove={() =>
-                                    update(ORDER_FILTER_KEYS.status, ORDER_FILTER_KEYS.status, "")
+                                    updateStatus(statusValues.filter((item) => item !== status))
                                 }
                             />
-                        )}
+                        ))}
                         {dateFrom && (
                             <FilterChip
                                 label={`Dan: ${dateFrom}`}

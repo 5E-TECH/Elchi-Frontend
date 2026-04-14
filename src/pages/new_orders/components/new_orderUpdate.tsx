@@ -281,7 +281,13 @@ const NewOrderUpdate = () => {
   const { getRegions, getDistricts } = useLogistics();
 
   const { data: res, isLoading } = getOrderById(orderId ?? "", !!orderId);
-  const order = useMemo<OrderDetail | null>(() => res?.data ?? null, [res]);
+  const order = useMemo<OrderDetail | null>(() => {
+    if (!res) return null;
+    if ("data" in (res as Record<string, unknown>) && (res as { data?: OrderDetail }).data) {
+      return (res as { data: OrderDetail }).data;
+    }
+    return res as OrderDetail;
+  }, [res]);
   const userId = order?.customer?.id;
 
   const { data: regionsData } = getRegions();

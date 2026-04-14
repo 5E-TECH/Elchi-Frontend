@@ -3,26 +3,22 @@ import { useState } from "react";
 import {
   Building2,
   MapPin,
-  Settings2,
   Sparkles,
   UserPlus,
   Users,
 } from "lucide-react";
-import type { Branch, BranchSetting, Employee } from "../../../entities/branch";
+import type { Branch, Employee } from "../../../entities/branch";
 import { BranchStatusBadge } from "../../../entities/branch";
 import { AddEmployeeModal } from "../../../features/branch-add-employee";
 import { BranchEditModal } from "../../../features/branch-edit";
 import { formatDate } from "../../../shared/lib/formatDate";
 import BranchEmployeesSection from "./BranchEmployeesSection";
-import BranchSettingsSection from "./BranchSettingsSection";
 
 interface BranchDetailWidgetProps {
   branchId: string;
   branch: Branch | null;
   employees: Employee[];
   employeesLoading?: boolean;
-  settings: BranchSetting[];
-  settingsLoading?: boolean;
 }
 
 const BranchDetailWidget = ({
@@ -30,14 +26,13 @@ const BranchDetailWidget = ({
   branch,
   employees,
   employeesLoading,
-  settings,
-  settingsLoading,
 }: BranchDetailWidgetProps) => {
-  const [activeTab, setActiveTab] = useState<"employees" | "settings">("employees");
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const actionButtonClassName =
-    "!h-8 !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !px-3 !font-medium !text-[var(--color-maindark)] transition-colors hover:!border-[var(--color-main)] hover:!bg-[color:color-mix(in_srgb,var(--color-main)_22%,white)] hover:!text-[var(--color-main)] dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-[var(--color-main)] dark:hover:!bg-primarydark/70 dark:hover:!text-white";
+    "!h-10 !rounded-xl !px-4 !font-medium transition-colors";
+  const secondaryActionButtonClassName = `${actionButtonClassName} !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !text-[var(--color-maindark)] hover:!border-[var(--color-main)] hover:!bg-[color:color-mix(in_srgb,var(--color-main)_22%,white)] hover:!text-[var(--color-main)] dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-[var(--color-main)] dark:hover:!bg-primarydark/70 dark:hover:!text-white`;
+  const primaryActionButtonClassName = `${actionButtonClassName} !border-none !bg-[linear-gradient(90deg,var(--color-main)_0%,var(--color-primarydark)_100%)] !shadow-[0_14px_28px_rgba(87,106,219,0.24)] hover:!opacity-95`;
 
   if (!branch) {
     return <Empty description="Filial topilmadi" />;
@@ -117,62 +112,38 @@ const BranchDetailWidget = ({
               </div>
 
               <div className="relative flex shrink-0 flex-wrap gap-3">
-                <Button className={actionButtonClassName} onClick={() => setIsEditOpen(true)}>
+                <Button
+                  className={secondaryActionButtonClassName}
+                  onClick={() => setIsEditOpen(true)}
+                >
                   Tahrirlash
                 </Button>
-                {activeTab === "employees" ? (
-                  <Button
-                    type="primary"
-                    icon={<UserPlus size={16} />}
-                    className="!h-10 !rounded-xl !border-none !bg-[linear-gradient(90deg,var(--color-main)_0%,var(--color-primarydark)_100%)] !px-4 !font-medium !shadow-[0_14px_28px_rgba(87,106,219,0.24)] hover:!opacity-95"
-                    onClick={() => setIsAddEmployeeOpen(true)}
-                  >
-                    Xodim qo'shish
-                  </Button>
-                ) : null}
+                <Button
+                  type="primary"
+                  icon={<UserPlus size={16} />}
+                  className={primaryActionButtonClassName}
+                  onClick={() => setIsAddEmployeeOpen(true)}
+                >
+                  Xodim qo'shish
+                </Button>
               </div>
             </div>
           </div>
 
           <div className="mt-6 rounded-[1.5rem] border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(87,106,219,0.06)_0%,rgba(255,255,255,0.92)_100%)] p-3 dark:bg-[linear-gradient(180deg,rgba(87,106,219,0.12)_0%,rgba(39,44,82,0.92)_100%)] sm:p-4">
             <div className="flex flex-wrap gap-2">
-              {[
-                { key: "employees" as const, label: "Filial va xodimlar", icon: <Users size={16} /> },
-                { key: "settings" as const, label: "Sozlamalar", icon: <Settings2 size={16} /> },
-              ].map((tab) => {
-                const isActive = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition-all ${
-                      isActive
-                        ? "bg-[linear-gradient(90deg,var(--color-main)_0%,var(--color-primarydark)_100%)] text-white shadow-[0_14px_28px_rgba(87,106,219,0.22)]"
-                        : "bg-white/75 text-[var(--color-maindark)] hover:bg-[var(--color-main-soft)] dark:bg-white/5 dark:text-white/85 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    {tab.icon}
-                    {tab.label}
-                  </button>
-                );
-              })}
+              <div className="inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(90deg,var(--color-main)_0%,var(--color-primarydark)_100%)] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(87,106,219,0.22)]">
+                <Users size={16} />
+                Filial va xodimlar
+              </div>
             </div>
 
             <div className="mt-4 rounded-[1.4rem] border border-[color:var(--color-border-soft)] bg-primary/90 p-4 dark:bg-maindark/85 sm:p-5">
-              {activeTab === "employees" ? (
-                <BranchEmployeesSection
-                  branchId={branchId}
-                  data={employees}
-                  loading={employeesLoading}
-                />
-              ) : (
-                <BranchSettingsSection
-                  branchId={branchId}
-                  data={settings}
-                  loading={settingsLoading}
-                />
-              )}
+              <BranchEmployeesSection
+                branchId={branchId}
+                data={employees}
+                loading={employeesLoading}
+              />
             </div>
           </div>
         </div>
