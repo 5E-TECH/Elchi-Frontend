@@ -81,7 +81,7 @@ export interface OrderListResponse {
 export interface OrderListParams {
     page?: number;
     limit?: number;
-    status?: OrderStatus | "";
+    status?: OrderStatus | OrderStatus[] | "";
     market_id?: string;
     customer_id?: string;
     region_id?: string;

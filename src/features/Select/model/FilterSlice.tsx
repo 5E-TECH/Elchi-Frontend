@@ -3,7 +3,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 // Dynamic filter state - istalgan maydon qo'shish mumkin
 interface FilterState {
-  [key: string]: string | number | boolean | null;
+  [key: string]: string | string[] | number | boolean | null;
 }
 
 const initialState: FilterState = {};
@@ -13,7 +13,10 @@ const filterSlice = createSlice({
   initialState,
   reducers: {
     // Bitta maydonni o'zgartirish
-    setFilterValue: (state, action: PayloadAction<{ key: string; value: any }>) => {
+    setFilterValue: (
+      state,
+      action: PayloadAction<{ key: string; value: string | string[] | number | boolean | null }>,
+    ) => {
       state[action.payload.key] = action.payload.value;
     },
 

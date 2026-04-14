@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import Button from "../../shared/components/button";
 import { useOrders } from "../../entities/order/api/orderApi";
-import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
+import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
 import OrderFilters, { ORDER_FILTER_KEYS } from "./list/OrderFilters";
 import OrdersTable from "./list/OrdersTable";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
@@ -15,6 +15,45 @@ import { usePagination } from "../../shared/lib/usePagination";
 import Pagination from "../../shared/components/pagination";
 
 const LIMIT = 10;
+const isOrderStatus = (value: string): value is OrderStatus =>
+  [
+    "created",
+    "new",
+    "received",
+    "on the road",
+    "waiting",
+    "sold",
+    "cancelled",
+    "paid",
+    "partly_paid",
+    "closed",
+  ].includes(value);
+
+const parseStatusFilterValue = (value: unknown): OrderListParams["status"] => {
+  if (Array.isArray(value)) {
+    const normalizedValue = value.filter(
+      (item): item is OrderStatus => typeof item === "string" && isOrderStatus(item),
+    );
+
+    return normalizedValue.length > 0 ? normalizedValue : "";
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    return "";
+  }
+
+  const statusList = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item): item is OrderStatus => isOrderStatus(item));
+
+  if (statusList.length === 0) {
+    return "";
+  }
+
+  return statusList;
+};
+
 const toPositiveNumber = (value: unknown): number | null => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 1) return null;
@@ -53,50 +92,58 @@ const Orders = () => {
 
     // Market
     if (role !== "market") {
-      const marketId = urlParams[ORDER_FILTER_KEYS.marketId] || filters[ORDER_FILTER_KEYS.marketId];
+      const marketId = filters[ORDER_FILTER_KEYS.marketId] ?? urlParams[ORDER_FILTER_KEYS.marketId];
       if (marketId) params.market_id = String(marketId);
     }
 
     // Viloyat / Region
-    const regionId = urlParams[ORDER_FILTER_KEYS.regionId] || filters[ORDER_FILTER_KEYS.regionId];
+    const regionId = filters[ORDER_FILTER_KEYS.regionId] ?? urlParams[ORDER_FILTER_KEYS.regionId];
     if (regionId) params.region_id = String(regionId);
 
     // Kuryer
     if (role !== "market") {
-      const courierId = urlParams[ORDER_FILTER_KEYS.courierId] || filters[ORDER_FILTER_KEYS.courierId];
+      const courierId = filters[ORDER_FILTER_KEYS.courierId] ?? urlParams[ORDER_FILTER_KEYS.courierId];
       if (courierId) params.courier_id = String(courierId);
     }
 
     // Holat
-    const status = urlParams[ORDER_FILTER_KEYS.status] || filters[ORDER_FILTER_KEYS.status];
-    if (status) params.status = String(status) as OrderListParams["status"];
+    const status = parseStatusFilterValue(
+      filters[ORDER_FILTER_KEYS.status] ?? urlParams[ORDER_FILTER_KEYS.status],
+    );
+    if (Array.isArray(status) ? status.length > 0 : Boolean(status)) {
+      params.status = status;
+    }
 
     // Sana oralig'i
-    const dateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] || filters[ORDER_FILTER_KEYS.dateFrom];
+    const dateFrom = filters[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[ORDER_FILTER_KEYS.dateFrom];
     if (dateFrom) params.start_day = String(dateFrom);
 
-    const dateTo = urlParams[ORDER_FILTER_KEYS.dateTo] || filters[ORDER_FILTER_KEYS.dateTo];
+    const dateTo = filters[ORDER_FILTER_KEYS.dateTo] ?? urlParams[ORDER_FILTER_KEYS.dateTo];
     if (dateTo) params.end_day = String(dateTo);
 
     // Qidiruv (searchSlice)
     const search =
-      urlParams[ORDER_FILTER_KEYS.search] || searchFilters[ORDER_FILTER_KEYS.search];
+      searchFilters[ORDER_FILTER_KEYS.search] ?? urlParams[ORDER_FILTER_KEYS.search];
     if (search) params.search = search;
 
     return params;
   }, [page, limit, urlParams, filters, searchFilters, role]);
 
   const filtersKey = useMemo(
-    () => JSON.stringify({
-      role,
-      marketId: role !== "market" ? filters[ORDER_FILTER_KEYS.marketId] ?? "" : "",
-      regionId: filters[ORDER_FILTER_KEYS.regionId] ?? "",
-      courierId: role !== "market" ? filters[ORDER_FILTER_KEYS.courierId] ?? "" : "",
-      status: filters[ORDER_FILTER_KEYS.status] ?? "",
-      dateFrom: filters[ORDER_FILTER_KEYS.dateFrom] ?? "",
-      dateTo: filters[ORDER_FILTER_KEYS.dateTo] ?? "",
-      search: searchFilters[ORDER_FILTER_KEYS.search] ?? "",
-    }),
+    () => {
+      const status = parseStatusFilterValue(filters[ORDER_FILTER_KEYS.status]);
+
+      return JSON.stringify({
+        role,
+        marketId: role !== "market" ? filters[ORDER_FILTER_KEYS.marketId] ?? "" : "",
+        regionId: filters[ORDER_FILTER_KEYS.regionId] ?? "",
+        courierId: role !== "market" ? filters[ORDER_FILTER_KEYS.courierId] ?? "" : "",
+        status: Array.isArray(status) ? status.join(",") : status,
+        dateFrom: filters[ORDER_FILTER_KEYS.dateFrom] ?? "",
+        dateTo: filters[ORDER_FILTER_KEYS.dateTo] ?? "",
+        search: searchFilters[ORDER_FILTER_KEYS.search] ?? "",
+      });
+    },
     [
       role,
       filters,
@@ -180,6 +227,7 @@ const Orders = () => {
         <OrdersTable
           data={items}
           isLoading={isLoading}
+          onRowClick={(order) => navigate(`edit/${order.id}`)}
         />
 
         {/* Pagination */}

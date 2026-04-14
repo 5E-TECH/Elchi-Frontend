@@ -10,9 +10,6 @@ import {
     Home,
     Building2,
     MapPin,
-    CheckCircle2,
-    XCircle,
-    MinusCircle,
     Package,
 } from 'lucide-react';
 import type { User } from '../types/user';
@@ -26,15 +23,6 @@ interface UserInfoCardsProps {
 
 const formatMoney = (n: number) =>
     n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm";
-
-const STATUS_MAP: Record<User['status'], {
-    label: string; icon: React.ElementType;
-    text: string; bg: string; dot: string; pulse: boolean;
-}> = {
-    active: { label: 'Faol', icon: CheckCircle2, text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', dot: 'bg-emerald-500', pulse: true },
-    inactive: { label: 'Faol emas', icon: MinusCircle, text: 'text-slate-500', bg: 'bg-slate-50 dark:bg-white/5', dot: 'bg-slate-400', pulse: false },
-    blocked: { label: 'Bloklangan', icon: XCircle, text: 'text-red-500 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-500/10', dot: 'bg-red-500', pulse: false },
-};
 
 // ─── Info Chip ─────────────────────────────────────────────────────────────────
 
@@ -83,8 +71,6 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
     const isCourier = user.role === 'courier';
     const isMarket = user.role === 'market' || user.role === 'marketing';
     const isCustomer = user.role === 'customer';
-    const sc = STATUS_MAP[user.status];
-    console.log(sc);
 
     // const StatusIcon = sc.icon;
 

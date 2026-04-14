@@ -26,8 +26,6 @@ api.interceptors.response.use(
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
             window.location.href = "/login";
-        } else if (status === 500 && window.location.pathname !== "/500") {
-            window.location.replace("/500");
         }
 
         return Promise.reject(error);
