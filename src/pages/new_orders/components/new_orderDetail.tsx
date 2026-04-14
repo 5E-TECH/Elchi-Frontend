@@ -11,7 +11,6 @@ import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
-import { openOrdersLabelPdf } from "./lib/printLabelPdf";
 
 const printOptions = [
   { key: "thermal", icon: <Printer size={18} />, bg: "bg-blue-500/10 text-blue-500", titleKey: "thermalPrinter", subKey: "viaMqtt" },
@@ -109,7 +108,7 @@ const NewOrderDetail = () => {
     });
   }, [selectedIds, orders.length, createReceiveOrder, navigate, refetch, notifApi, t]);
 
-  const handlePrint = useCallback((mode: string) => {
+  const handlePrint = useCallback(async (mode: string) => {
     const printableOrders = selectedIds.size > 0
       ? orders.filter((order) => selectedIds.has(order.id))
       : orders;
@@ -125,6 +124,7 @@ const NewOrderDetail = () => {
     }
 
     if (mode === "pdf") {
+      const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
       openOrdersLabelPdf(printableOrders);
       setIsOpen(false);
       return;
@@ -162,7 +162,7 @@ const NewOrderDetail = () => {
               {isOpen && (
                 <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-primarydark shadow-2xl z-50 p-2">
                   {printOptions.map((o) => (
-                    <button key={o.key} onClick={() => handlePrint(o.key)}
+                    <button key={o.key} onClick={() => { void handlePrint(o.key); }}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
                       <div className={`p-2 rounded-lg ${o.bg} shrink-0`}>{o.icon}</div>
                       <div className="text-left">
