@@ -122,19 +122,10 @@ const DashboardPage = () => {
                   key={key}
                   type="button"
                   onClick={() => applyRange(range)}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all"
-                  style={
-                    isActive
-                      ? {
-                        background: "var(--color-main)",
-                        color: "var(--color-primary)",
-                      }
-                      : {
-                        background: "var(--color-glass)",
-                        color: "var(--color-maindark)",
-                        opacity: 0.75,
-                      }
-                  }
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${isActive
+                      ? "bg-[var(--color-main)] text-white"
+                      : "bg-[var(--color-glass)] text-maindark/70 dark:text-sidebar/80"
+                    }`}
                 >
                   {t(`quickRanges.${key}`)}
                 </button>

@@ -9,6 +9,4 @@ export interface Notification {
 export interface NotificationParams {
   page?: number;
   limit?: number;
-  search?: string;
-  status?: "active" | "inactive" | "";
 }

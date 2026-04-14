@@ -28,6 +28,7 @@ const NewOrderDetail = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
 
   const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder } = useOrders();
   const { api: notifApi } = useAppNotification();
@@ -85,13 +86,14 @@ const NewOrderDetail = () => {
   const totalSum = orders.reduce((s, o) => s + o.total_price, 0);
 
 
-  const handleAccapted = useCallback(() => {
+  const handleAccepted = useCallback(() => {
     // snapshot: setSelectedIds(new Set()) dan KEYIN selectedIds.size o'zgaradi,
     // lekin closure eski qiymatni ko'radi — shuning uchun oldindan saqlaymiz
     const ids = [...selectedIds];
     const isAll = ids.length === orders.length;
     createReceiveOrder.mutate({ order_ids: ids }, {
       onSuccess: () => {
+        setIsReceiveConfirmOpen(false);
         setSelectedIds(new Set());
         if (isAll) {
           navigate(-1);
@@ -100,6 +102,7 @@ const NewOrderDetail = () => {
         }
       },
       onError: (err: any) => {
+        setIsReceiveConfirmOpen(false);
         const msg = err?.response?.data?.message ?? err?.message ?? t("receiveError");
         notifApi.error({ message: t("receiveError"), description: msg, placement: "topRight", duration: 5 });
       },
@@ -210,7 +213,7 @@ const NewOrderDetail = () => {
       {/* Sticky Footer — doim pastda qotib turadi */}
       <div className="shrink-0 bg-sidebar dark:bg-maindark border-t border-gray-100 dark:border-white/5 px-6 py-4">
         <button
-          onClick={handleAccapted}
+          onClick={() => setIsReceiveConfirmOpen(true)}
           disabled={createReceiveOrder.isPending || selectedIds.size === 0}
           className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base text-white
             bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
@@ -237,6 +240,17 @@ const NewOrderDetail = () => {
         isLoading={deleteOrder.isPending}
         title={t("deleteOrderTitle")}
         message={t("deleteOrderMessage")}
+      />
+
+      <PopupConfirm
+        isOpen={isReceiveConfirmOpen}
+        onClose={() => setIsReceiveConfirmOpen(false)}
+        onConfirm={handleAccepted}
+        isLoading={createReceiveOrder.isPending}
+        title={t("receiveOrderTitle")}
+        message={t("receiveOrderMessage")}
+        confirmLabel={t("receiveConfirm")}
+        variant="warning"
       />
     </div>
   );

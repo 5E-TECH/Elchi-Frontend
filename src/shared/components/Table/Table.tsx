@@ -137,94 +137,87 @@ export const Table = memo(<T extends Record<string, any>>({
       <div className="overflow-x-auto custom-scrollbar">
         <table className={`w-full min-w-full border-collapse ${isCompactMode ? 'table-fixed' : ''} ${className}`}>
           <thead className={isCardMode ? 'hidden' : 'table-header-group'}>
-          <tr style={{
-            background:
-              'linear-gradient(90deg, var(--color-table-header-start) 0%, var(--color-table-header-end) 100%)'
-          }}>
-            {columns.map((column) => (
-              <th
-                key={String(column.key)}
-                style={column.width ? { width: column.width } : undefined}
-                onClick={() => handleSort(column)}
-                className={`${headerCellClass} text-left text-xs font-semibold uppercase tracking-wider text-white ${
-                  column.sortable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
-                } ${column.className || ""}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span>{column.renderHeader ? column.renderHeader(column.label) : column.label}</span>
-                  {column.sortable && (
-                    <span className="text-white text-xs opacity-80">
-                      {sortConfig?.key === String(column.key) && (
-                        sortConfig.direction === 'asc' ? '↑' : '↓'
-                      )}
-                    </span>
-                  )}
-                </div>
-              </th>
-            ))}
-          </tr>
+            <tr style={{
+              background:
+                'linear-gradient(90deg, var(--color-table-header-start) 0%, var(--color-table-header-end) 100%)'
+            }}>
+              {columns.map((column) => (
+                <th
+                  key={String(column.key)}
+                  style={column.width ? { width: column.width } : undefined}
+                  onClick={() => handleSort(column)}
+                  className={`${headerCellClass} text-left text-xs font-semibold uppercase tracking-wider text-white ${column.sortable ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
+                    } ${column.className || ""}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>{column.renderHeader ? column.renderHeader(column.label) : column.label}</span>
+                    {column.sortable && (
+                      <span className="text-white text-xs opacity-80">
+                        {sortConfig?.key === String(column.key) && (
+                          sortConfig.direction === 'asc' ? '↑' : '↓'
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
           </thead>
           <tbody className={isCardMode ? 'block' : 'table-row-group'}>
-          {data.length === 0 ? (
-            <tr className={isCardMode ? 'block' : 'table-row'}>
-              <td
-                colSpan={columns.length}
-                className={`${dense ? 'px-3 py-10' : 'px-6 py-12'} ${isCardMode ? 'block' : 'table-cell'} text-center`}
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                <p>{emptyMessage}</p>
-              </td>
-            </tr>
-          ) : (
-            sortedData?.map((row, rowIndex) => (
-              <tr
-                key={keyExtractor(row, rowIndex)}
-                onClick={() => onRowClick?.(row, rowIndex)}
-                className={
-                  isCardMode
-                    ? `mb-3 block rounded-2xl border border-[color:var(--color-border-soft)] last:mb-0 dark:border-primarydark/60 ${
-                        hoverable ? 'transition-colors duration-200' : ''
-                      } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-maindark ${
-                        hoverable
-                          ? 'hover:bg-[color:var(--color-table-card-hover)] dark:hover:bg-[color:var(--color-table-card-hover-dark)]'
-                          : ''
-                      }`
-                    : `table-row border-b border-[color:var(--color-border-soft)] dark:border-primarydark/60 ${
-                        hoverable ? 'transition-colors duration-200' : ''
-                      } ${onRowClick ? 'cursor-pointer' : ''} ${
-                        striped && rowIndex % 2 !== 0
-                          ? 'bg-[color:var(--color-table-row-alt)] dark:bg-primarydark/80'
-                          : 'bg-primary dark:bg-maindark'
-                      } ${
-                        hoverable
-                          ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-primarydark/90'
-                          : ''
-                      }`
-                }
-              >
-                {columns.map((column) => (
-                  <td
-                    key={String(column.key)}
-                    className={`${bodyCellClass} ${isCardMode ? 'block border-b last:border-b-0' : 'table-cell'} ${!isCardMode ? 'align-middle' : ''} ${column.className || ''}`}
-                    aria-label={typeof column.label === "string" ? column.label : undefined}
-                  >
-                    <div className={isCardMode ? 'flex min-w-0 flex-col items-start gap-2' : 'block min-w-0'}>
-                      <span
-                        className={`${isCardMode ? 'block' : 'hidden'} text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-table-label)] dark:text-[color:var(--color-table-label-dark)]`}
-                      >
-                        {column.label}
-                      </span>
-                      <div className={`min-w-0 break-words text-left ${isCardMode ? 'w-full' : 'w-auto'} ${isCompactMode ? 'text-[13px] leading-5' : ''}`}>
-                        {column.render
-                          ? column.render(row[column.key], row, rowIndex)
-                          : String(row[column.key] ?? '—')}
-                      </div>
-                    </div>
-                  </td>
-                ))}
+            {data.length === 0 ? (
+              <tr className={isCardMode ? 'block' : 'table-row'}>
+                <td
+                  colSpan={columns.length}
+                  className={`${dense ? 'px-3 py-10' : 'px-6 py-12'} ${isCardMode ? 'block' : 'table-cell'} text-center text-maindark/50 dark:text-sidebar/50`}
+                >
+                  <p>{emptyMessage}</p>
+                </td>
               </tr>
-            ))
-          )}
+            ) : (
+              sortedData?.map((row, rowIndex) => (
+                <tr
+                  key={keyExtractor(row, rowIndex)}
+                  onClick={() => onRowClick?.(row, rowIndex)}
+                  className={
+                    isCardMode
+                      ? `mb-3 block rounded-2xl border border-[color:var(--color-border-soft)] last:mb-0 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
+                      } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-maindark ${hoverable
+                        ? 'hover:bg-[color:var(--color-table-card-hover)] dark:hover:bg-white/[0.05]'
+                        : ''
+                      }`
+                      : `table-row border-b border-[color:var(--color-border-soft)] dark:border-primarydark/30 ${hoverable ? 'transition-colors duration-200' : ''
+                      } ${onRowClick ? 'cursor-pointer' : ''} ${striped && rowIndex % 2 !== 0
+                        ? 'bg-[color:var(--color-table-row-alt)] dark:bg-white/[0.025]'
+                        : 'bg-primary dark:bg-maindark'
+                      } ${hoverable
+                        ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.05]'
+                        : ''
+                      }`
+                  }
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={String(column.key)}
+                      className={`${bodyCellClass} ${isCardMode ? 'block border-b last:border-b-0' : 'table-cell'} ${!isCardMode ? 'align-middle' : ''} ${column.className || ''}`}
+                      aria-label={typeof column.label === "string" ? column.label : undefined}
+                    >
+                      <div className={isCardMode ? 'flex min-w-0 flex-col items-start gap-2' : 'block min-w-0'}>
+                        <span
+                          className={`${isCardMode ? 'block' : 'hidden'} text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-table-label)] dark:text-[color:var(--color-table-label-dark)]`}
+                        >
+                          {column.label}
+                        </span>
+                        <div className={`min-w-0 break-words text-left ${isCardMode ? 'w-full' : 'w-auto'} ${isCompactMode ? 'text-[13px] leading-5' : ''}`}>
+                          {column.render
+                            ? column.render(row[column.key], row, rowIndex)
+                            : String(row[column.key] ?? '—')}
+                        </div>
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

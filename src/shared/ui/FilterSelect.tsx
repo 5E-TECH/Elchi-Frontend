@@ -69,7 +69,7 @@ const FilterSelect = memo(({
                         border-2 border-gray-200 dark:border-primarydark/30
                         ${selectSizeClass}
                         font-medium
-                        text-maindark dark:text-primary
+                        text-maindark dark:text-white
                         placeholder:text-gray-400 dark:placeholder:text-white/30
                         focus:outline-none focus:ring-2 focus:ring-main/20 focus:border-main
                         hover:border-main/50 dark:hover:border-main/50 hover:shadow-sm focus:shadow-md shadow-sm
@@ -84,7 +84,7 @@ const FilterSelect = memo(({
                         <option
                             key={opt.value}
                             value={opt.value}
-                            className="dark:bg-primarydark text-maindark dark:text-primary"
+                            className="dark:bg-primarydark text-maindark dark:text-white"
                         >
                             {opt.label}
                         </option>

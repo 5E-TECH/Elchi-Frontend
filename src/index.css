@@ -46,6 +46,12 @@
   --color-success: #22c55e;
   --color-error: #ef4444;
   --color-warning: #f59e0b;
+  --color-warning-soft: rgba(245, 158, 11, 0.12);
+  --color-warning-surface: rgba(245, 158, 11, 0.16);
+  --color-warning-border: rgba(245, 158, 11, 0.26);
+  --color-warning-start: #f59e0b;
+  --color-warning-end: #f97316;
+  --color-warning-text: #fff7ed;
   --color-loader-start: #0f172a;
   --color-loader-end: #1e1b4b;
   --color-error-page-start: #1a0533;
@@ -130,6 +136,26 @@
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Global Dark Mode overrides ──────────────────────────────────────────── */
+/* input / select / textarea – Tailwind bg class YO'Q bo'lsa dark fonda matn ko'rinadigan bo'lsin */
+.dark input:not([class*="bg-"]),
+.dark select:not([class*="bg-"]),
+.dark textarea:not([class*="bg-"]) {
+  background-color: var(--color-primarydark);
+  color: #fff;
+  border-color: rgba(76, 87, 152, 0.35);
+}
+
+.dark input:not([class*="bg-"])::placeholder,
+.dark textarea:not([class*="bg-"])::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Jadval qator matnlari – dark modeda */
+.dark td {
+  color: rgba(244, 245, 250, 0.85);
+}
 
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {

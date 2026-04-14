@@ -26,11 +26,52 @@ import { usePagination } from "../../shared/lib/usePagination";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
+const toPositiveNumber = (value: unknown) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) return null;
+  return Math.floor(parsed);
+};
+
+const normalizePagination = (
+  raw: Record<string, unknown> | undefined,
+  fallbackPage: number,
+  fallbackLimit: number,
+) => {
+  const total = toPositiveNumber(
+    raw?.total ??
+      raw?.totalItems ??
+      raw?.itemCount ??
+      raw?.count,
+  ) ?? 0;
+
+  const page = toPositiveNumber(
+    raw?.page ??
+      raw?.currentPage,
+  ) ?? fallbackPage;
+
+  const limit = toPositiveNumber(
+    raw?.limit ??
+      raw?.perPage ??
+      raw?.pageSize,
+  ) ?? fallbackLimit;
+
+  const totalPages = toPositiveNumber(
+    raw?.totalPages ??
+      raw?.lastPage,
+  ) ?? Math.max(1, Math.ceil(total / Math.max(1, limit)));
+
+  return {
+    total,
+    page,
+    limit,
+    totalPages,
+  };
+};
+
 const DROPDOWN_FILTERS = [
   { name: "operation_type", labelKey: "operationType", icon: TrendingUp },
   { name: "source_type", labelKey: "sourceType", icon: BadgeDollarSign },
   { name: "created_by", labelKey: "createdBy", icon: User },
-  { name: "cashbox_type", labelKey: "cashboxType", icon: Landmark },
 ] as const;
 
 type DropdownKey = (typeof DROPDOWN_FILTERS)[number]["name"];
@@ -39,7 +80,6 @@ const INIT = {
   operation_type: "",
   source_type: "",
   created_by: "",
-  cashbox_type: "",
 };
 
 type PaymentsFilterFormValues = typeof INIT;
@@ -49,14 +89,15 @@ const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
     operation_type: yup.string().defined(),
     source_type: yup.string().defined(),
     created_by: yup.string().defined(),
-    cashbox_type: yup.string().defined(),
   });
 
 const Payments = () => {
   const { t } = useTranslation("payments");
   const { page, limit, setPage, resetPagination } = usePagination({
     key: "payments",
-    defaultLimit: 10,
+    defaultLimit: 20,
+    pageParam: "paymentsPage",
+    limitParam: "paymentsLimit",
   });
   const hasPaginationFilterSyncStarted = useRef(false);
   const [isGivenPopupOpen, setIsGivenPopupOpen] = useState(false);
@@ -70,16 +111,14 @@ const Payments = () => {
   const operationType = watch("operation_type");
   const sourceType = watch("source_type");
   const createdBy = watch("created_by");
-  const cashboxType = watch("cashbox_type");
 
   const filters = useMemo(
     () => ({
       operation_type: operationType,
       source_type: sourceType,
       created_by: createdBy,
-      cashbox_type: cashboxType,
     }),
-    [cashboxType, createdBy, operationType, sourceType],
+    [createdBy, operationType, sourceType],
   );
 
   const navigate = useNavigate();
@@ -112,6 +151,8 @@ const Payments = () => {
       (marketsData?.data?.items ?? []).map((m: any) => ({
         id: m.id,
         name: m.name,
+        phone_number: m.phone_number ?? m.phone ?? "",
+        role: m.role ?? "market",
         amount: m.amount ?? 0,
       })),
     [marketsData],
@@ -123,6 +164,8 @@ const Payments = () => {
       (couriersData?.data?.items ?? []).map((c: any) => ({
         id: c.id,
         name: c.name,
+        phone_number: c.phone_number ?? c.phone ?? "",
+        role: c.role ?? "courier",
         region: c.region?.name || "Noma'lum",
         amount: c.amount ?? 0,
       })),
@@ -174,15 +217,16 @@ const Payments = () => {
       { value: "expense", label: t("expense") },
     ],
     source_type: [
+      { value: "courier_payment", label: "courier_payment" },
       { value: "market_payment", label: t("paymentMarket") },
-      { value: "manual_expense", label: t("expense") },
-      { value: "manual_income", label: t("income") },
+      { value: "manual_expense", label: "manual_expense" },
+      { value: "manual_income", label: "manual_income" },
       { value: "correction", label: "Correction" },
       { value: "salary", label: "Salary" },
-    ],
-    cashbox_type: [
-      { value: "markets", label: "Markets" },
-      { value: "couriers", label: "Couriers" },
+      { value: "sell", label: "sell" },
+      { value: "cancel", label: "cancel" },
+      { value: "extra_cost", label: "extra_cost" },
+      { value: "bills", label: "bills" },
     ],
   };
 
@@ -202,9 +246,8 @@ const Payments = () => {
       return;
     }
 
-    resetPagination(10);
+    resetPagination(20);
   }, [
-    filters.cashbox_type,
     filters.created_by,
     filters.operation_type,
     filters.source_type,
@@ -216,13 +259,12 @@ const Payments = () => {
   const { data: creatorsData, isLoading: creatorsLoading } = getUser({
     limit: 100,
   });
-
   const creatorOptions = useMemo(
     () =>
       (creatorsData?.data?.items || []).map((u: any) => ({
         value: String(u.id),
         label: u.name,
-      })),
+      })).filter((u: { value: string; label: string }) => u.value),
     [creatorsData],
   );
 
@@ -241,7 +283,6 @@ const Payments = () => {
   > = {
     operation_type: staticFilterOptions.operation_type,
     source_type: staticFilterOptions.source_type,
-    cashbox_type: staticFilterOptions.cashbox_type,
     created_by: creatorOptions,
   };
 
@@ -249,10 +290,17 @@ const Payments = () => {
     operation_type: false,
     source_type: false,
     created_by: creatorsLoading,
-    cashbox_type: false,
   };
 
-  const pagination = historyData?.data?.pagination ?? historyData?.data?.meta;
+  const pagination = useMemo(
+    () =>
+      normalizePagination(
+        (historyData?.data?.pagination ?? historyData?.data?.meta) as Record<string, unknown> | undefined,
+        page,
+        limit,
+      ),
+    [historyData?.data?.meta, historyData?.data?.pagination, limit, page],
+  );
 
   return (
     <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-6 min-h-full">
@@ -350,7 +398,7 @@ const Payments = () => {
             <button
               onClick={() => {
                 reset(INIT);
-                resetPagination(10);
+                resetPagination(20);
               }}
               className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
             >
@@ -384,7 +432,7 @@ const Payments = () => {
         onSelect={(market: any) => {
           setIsGivenPopupOpen(false);
           navigate(`/payments/cash-detail/${market.id}`, {
-            state: { type: "market" },
+            state: { type: "market", entity: market },
           });
         }}
         renderItem={(market: any, isSelected: boolean) => (
@@ -424,7 +472,7 @@ const Payments = () => {
         onSelect={(courier: any) => {
           setIsReceivedPopupOpen(false);
           navigate(`/payments/cash-detail/${courier.id}`, {
-            state: { type: "courier" },
+            state: { type: "courier", entity: courier },
           });
         }}
         renderItem={(courier: any, isSelected: boolean) => (

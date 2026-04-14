@@ -221,15 +221,15 @@ const CustomDatePicker = memo(({
                     font-medium transition-all duration-200
                     ${open
                         ? "border-main ring-2 ring-main/20 text-maindark dark:text-white"
-                        : "border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/70 hover:border-main/50"
+                        : "border-gray-200 dark:border-white/15 text-maindark/60 dark:text-sidebar/80 hover:border-main/50"
                     }
                 `}
             >
                 <Calendar
                     size={size === "sm" ? 13 : 14}
-                    className={open ? "text-main" : "text-gray-400 dark:text-white/50"}
+                    className={open ? "text-main" : "text-maindark/40 dark:text-sidebar/50"}
                 />
-                <span className={`flex-1 text-left truncate ${value ? "text-maindark dark:text-white" : ""}`}>
+                <span className={`flex-1 text-left truncate ${value ? "text-maindark dark:text-white" : "text-maindark/50 dark:text-sidebar/60"}`}>
                     {value ? formatDisplay(value) : placeholder}
                 </span>
 
@@ -240,7 +240,7 @@ const CustomDatePicker = memo(({
                         onClick={handleClear}
                         onKeyDown={handleClearKeyDown}
                         aria-label="Sanani tozalash"
-                        className="ml-1 text-gray-400 hover:text-red-400 dark:text-white/30 dark:hover:text-red-400 transition-colors cursor-pointer"
+                        className="ml-1 text-maindark/30 hover:text-red-400 dark:text-sidebar/40 dark:hover:text-red-400 transition-colors cursor-pointer"
                     >
                         <X size={12} />
                     </span>

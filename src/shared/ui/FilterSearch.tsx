@@ -45,7 +45,7 @@ const FilterSearch = memo(({
                 border-2 border-gray-200 dark:border-primarydark/30
                 rounded-xl py-0
                 text-sm font-medium
-                text-maindark dark:text-primary
+                text-maindark dark:text-white
                 placeholder:text-gray-400 dark:placeholder:text-white/30
             "
             iconClassName="text-gray-400 group-focus-within:text-main dark:text-white/40 dark:group-focus-within:text-main"
