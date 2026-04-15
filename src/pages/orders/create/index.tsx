@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, ListPlus, SendHorizontal } from "lucide-react";
 import { FormProvider, useForm, useWatch, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -17,6 +17,7 @@ import {
   buildCreateOrderPayload,
   createOrderSchema,
   ORDER_CREATE_DEFAULT_VALUES,
+  type MarketOption,
   type OrderCreateFormValues,
 } from "./model/orderCreateForm";
 
@@ -113,11 +114,16 @@ const StepActions = ({
 const OrderCreateFormContent = () => {
   const { t } = useTranslation(["orders", "common"]);
   const navigate = useNavigate();
+  const location = useLocation();
   const { createOrder } = useOrders();
   const { api } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const isMarketRole = role === "market";
-  const [step, setStep] = useState(isMarketRole ? 2 : 1);
+  const navigationState = location.state as { selectedMarket?: MarketOption } | null;
+  const selectedMarketFromState = navigationState?.selectedMarket ?? null;
+  const [step, setStep] = useState(
+    isMarketRole || selectedMarketFromState ? 2 : 1,
+  );
   const steps = useMemo(
     () => [
       { id: 1, label: t("stepOneLabel"), description: t("stepOneDescription") },
@@ -131,7 +137,10 @@ const OrderCreateFormContent = () => {
       createOrderSchema(!isMarketRole),
     ) as Resolver<OrderCreateFormValues>,
     mode: "onTouched",
-    defaultValues: ORDER_CREATE_DEFAULT_VALUES,
+    defaultValues: {
+      ...ORDER_CREATE_DEFAULT_VALUES,
+      market: selectedMarketFromState,
+    },
   });
 
   const { control, handleSubmit, trigger, reset } = methods;
