@@ -49,6 +49,10 @@ const Auth = () => {
       });
   }, [token, dispatch]);
 
+  if (!token) {
+    return <Navigate replace to="/login" />;
+  }
+
   if (loading) return null;
 
   return valid ? <Outlet /> : <Navigate replace to="/login" />;
