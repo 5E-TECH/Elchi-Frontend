@@ -133,8 +133,8 @@ const DashboardPage = () => {
                   type="button"
                   onClick={() => applyRange(range)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${isActive
-                      ? "bg-[var(--color-main)] text-white"
-                      : "bg-[var(--color-glass)] text-maindark/70 dark:text-sidebar/80"
+                      ? "bg-(--color-main) text-white"
+                      : "bg-glass text-maindark/70 dark:text-sidebar/80"
                     }`}
                 >
                   {t(`quickRanges.${key}`)}
