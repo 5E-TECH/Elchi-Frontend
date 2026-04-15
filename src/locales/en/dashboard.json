@@ -61,7 +61,7 @@
     "types": {
       "area": "Area",
       "bar": "Bar",
-      "combo": "Combo"
+      "combo": "Mixed"
     }
   },
   "financial_analysis": {

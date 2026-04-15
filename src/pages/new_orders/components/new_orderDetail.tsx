@@ -11,7 +11,6 @@ import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
-import { openOrdersLabelPdf } from "./lib/printLabelPdf";
 
 const printOptions = [
   { key: "thermal", icon: <Printer size={18} />, bg: "bg-blue-500/10 text-blue-500", titleKey: "thermalPrinter", subKey: "viaMqtt" },
@@ -28,6 +27,7 @@ const NewOrderDetail = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
 
   const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder } = useOrders();
   const { api: notifApi } = useAppNotification();
@@ -85,13 +85,14 @@ const NewOrderDetail = () => {
   const totalSum = orders.reduce((s, o) => s + o.total_price, 0);
 
 
-  const handleAccapted = useCallback(() => {
+  const handleAccepted = useCallback(() => {
     // snapshot: setSelectedIds(new Set()) dan KEYIN selectedIds.size o'zgaradi,
     // lekin closure eski qiymatni ko'radi — shuning uchun oldindan saqlaymiz
     const ids = [...selectedIds];
     const isAll = ids.length === orders.length;
     createReceiveOrder.mutate({ order_ids: ids }, {
       onSuccess: () => {
+        setIsReceiveConfirmOpen(false);
         setSelectedIds(new Set());
         if (isAll) {
           navigate(-1);
@@ -100,13 +101,14 @@ const NewOrderDetail = () => {
         }
       },
       onError: (err: any) => {
+        setIsReceiveConfirmOpen(false);
         const msg = err?.response?.data?.message ?? err?.message ?? t("receiveError");
         notifApi.error({ message: t("receiveError"), description: msg, placement: "topRight", duration: 5 });
       },
     });
   }, [selectedIds, orders.length, createReceiveOrder, navigate, refetch, notifApi, t]);
 
-  const handlePrint = useCallback((mode: string) => {
+  const handlePrint = useCallback(async (mode: string) => {
     const printableOrders = selectedIds.size > 0
       ? orders.filter((order) => selectedIds.has(order.id))
       : orders;
@@ -122,6 +124,7 @@ const NewOrderDetail = () => {
     }
 
     if (mode === "pdf") {
+      const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
       openOrdersLabelPdf(printableOrders);
       setIsOpen(false);
       return;
@@ -159,7 +162,7 @@ const NewOrderDetail = () => {
               {isOpen && (
                 <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-primarydark shadow-2xl z-50 p-2">
                   {printOptions.map((o) => (
-                    <button key={o.key} onClick={() => handlePrint(o.key)}
+                    <button key={o.key} onClick={() => { void handlePrint(o.key); }}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
                       <div className={`p-2 rounded-lg ${o.bg} shrink-0`}>{o.icon}</div>
                       <div className="text-left">
@@ -210,7 +213,7 @@ const NewOrderDetail = () => {
       {/* Sticky Footer — doim pastda qotib turadi */}
       <div className="shrink-0 bg-sidebar dark:bg-maindark border-t border-gray-100 dark:border-white/5 px-6 py-4">
         <button
-          onClick={handleAccapted}
+          onClick={() => setIsReceiveConfirmOpen(true)}
           disabled={createReceiveOrder.isPending || selectedIds.size === 0}
           className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base text-white
             bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
@@ -237,6 +240,17 @@ const NewOrderDetail = () => {
         isLoading={deleteOrder.isPending}
         title={t("deleteOrderTitle")}
         message={t("deleteOrderMessage")}
+      />
+
+      <PopupConfirm
+        isOpen={isReceiveConfirmOpen}
+        onClose={() => setIsReceiveConfirmOpen(false)}
+        onConfirm={handleAccepted}
+        isLoading={createReceiveOrder.isPending}
+        title={t("receiveOrderTitle")}
+        message={t("receiveOrderMessage")}
+        confirmLabel={t("receiveConfirm")}
+        variant="warning"
       />
     </div>
   );

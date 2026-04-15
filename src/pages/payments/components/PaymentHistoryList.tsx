@@ -80,8 +80,8 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${isIncome
-              ? "bg-linear-to-br from-emerald-500/20 to-emerald-500/10 text-emerald-300"
-              : "bg-linear-to-br from-rose-500/20 to-rose-500/10 text-rose-300"
+            ? "bg-linear-to-br from-emerald-500/20 to-emerald-500/10 text-emerald-300"
+            : "bg-linear-to-br from-rose-500/20 to-rose-500/10 text-rose-300"
             }`}
         >
           {isIncome ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
@@ -160,7 +160,7 @@ const PaymentHistoryList = ({
     );
     return (
       withContainer ? (
-        <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border shadow-sm overflow-hidden">
+        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border shadow-sm overflow-hidden">
           {Skeleton}
         </div>
       ) : (
@@ -173,7 +173,7 @@ const PaymentHistoryList = ({
     <>
       <div className="divide-y divide-gray-100 dark:divide-white/10">
         {rows.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-gray-500 dark:text-white/50">
+          <div className="px-5 py-6 text-center text-sm text-gray-500 dark:text-white/50">
             {t("paymentHistoryNotFound")}
           </div>
         ) : (
@@ -200,7 +200,7 @@ const PaymentHistoryList = ({
   );
 
   return withContainer ? (
-    <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border shadow-sm overflow-hidden">
+    <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border shadow-sm overflow-hidden">
       {Body}
     </div>
   ) : (

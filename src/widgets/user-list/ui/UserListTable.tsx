@@ -250,17 +250,14 @@ export const UserListTable = memo(({
 
             {/* Pagination */}
             <div
-                className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 dark:border-primarydark/20 sm:flex-row sm:items-center sm:justify-between sm:px-6"
-                style={{
-                    background: 'linear-gradient(90deg, var(--color-main) 0%, var(--color-primarydark) 100%)'
-                }}
+                className="flex flex-col gap-3 border-t border-gray-200 dark:border-primarydark/20 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 bg-primary dark:bg-[linear-gradient(90deg,var(--color-main)_0%,var(--color-primarydark)_100%)]"
             >
-                <span className="text-center text-sm text-white sm:text-left">
+                <span className="text-center text-sm text-maindark dark:text-white sm:text-left">
                     {pagination ? (
                         t("paginationSummary", {
-                          from: (pagination.page - 1) * pagination.limit + 1,
-                          to: Math.min(pagination.page * pagination.limit, pagination.total),
-                          total: pagination.total,
+                            from: (pagination.page - 1) * pagination.limit + 1,
+                            to: Math.min(pagination.page * pagination.limit, pagination.total),
+                            total: pagination.total,
                         })
                     ) : (
                         t("totalUsersCount", { count: users.length })

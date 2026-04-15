@@ -54,11 +54,13 @@ describe("DashboardPage", () => {
   beforeEach(() => {
     getDashboardMock.mockReturnValue({
       data: {
-        orders: {
-          acceptedCount: 12,
-          soldAndPaid: 5,
-          cancelled: 2,
-          profit: 480000,
+        data: {
+          orders: {
+            acceptedCount: 12,
+            soldAndPaid: 5,
+            cancelled: 2,
+            profit: 480000,
+          },
         },
       },
     });
@@ -70,6 +72,9 @@ describe("DashboardPage", () => {
     expect(screen.getByText("Bugungi statistika")).toBeInTheDocument();
     expect(screen.getByLabelText("Boshlanish → Tugash")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Bugun" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Boshlanish")).toBeInTheDocument();
+    expect(screen.getByLabelText("Tugash")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bugun" })).toBeInTheDocument();
   });
 
   it("passes dashboard metrics into child widgets", () => {

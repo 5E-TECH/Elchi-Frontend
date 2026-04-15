@@ -163,12 +163,15 @@ const ProductTable = () => {
   );
 
   const searchFilters = useSelector((state: RootState) => state.search);
+  const searchValue = searchFilters.product_search;
   const { page, limit, setPage, resetPagination } = usePagination({
     key: "products",
     defaultLimit: 10,
   });
-  const hasPaginationFilterSyncStarted = useRef(false);
-  const searchValue = searchFilters.product_search;
+  const previousFilterSyncRef = useRef({
+    filterValue,
+    searchValue,
+  });
 
   const apiParams = useMemo(() => {
     const params: Record<string, string | number> = { page, limit };
@@ -199,13 +202,22 @@ const ProductTable = () => {
   ) ?? productData.length;
 
   useEffect(() => {
-    if (!hasPaginationFilterSyncStarted.current) {
-      hasPaginationFilterSyncStarted.current = true;
+    const previous = previousFilterSyncRef.current;
+    const hasFilterChanged =
+      previous.filterValue !== filterValue ||
+      previous.searchValue !== searchValue;
+
+    if (!hasFilterChanged) {
       return;
     }
 
+    previousFilterSyncRef.current = {
+      filterValue,
+      searchValue,
+    };
+
     resetPagination(limit);
-  }, [filterValue, resetPagination, searchValue, limit]);
+  }, [filterValue, limit, resetPagination, searchValue]);
 
   // ─── Delete Handlers ────────────────────────────────────────────────────
 

@@ -59,9 +59,9 @@
     "description": "Daromad = Market tarifi − Kuryer tarifi (faqat sotilgan buyurtmalar hisoblanadi)",
     "tooltip_value": "{{value}}M UZS",
     "types": {
-      "area": "Area",
-      "bar": "Bar",
-      "combo": "Combo"
+      "area": "Maydon",
+      "bar": "Ustun",
+      "combo": "Aralash"
     }
   },
   "financial_analysis": {
