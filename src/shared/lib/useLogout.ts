@@ -9,7 +9,6 @@ export const useLogout = () => {
     const logout = () => {
         // 1. Clear LocalStorage
         localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
         localStorage.removeItem("name");
         localStorage.removeItem("theme"); // Optional, maybe keep theme? I'll clear just in case
 

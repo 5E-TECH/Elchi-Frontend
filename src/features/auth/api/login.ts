@@ -9,7 +9,7 @@ export const login = "login";
 interface LoginResponse {
   user: User;
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
 }
 
 

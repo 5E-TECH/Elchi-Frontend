@@ -3,6 +3,7 @@ import { BASE_URL } from "../const";
 
 export const api = axios.create({
     baseURL: BASE_URL,
+    withCredentials: true,
     paramsSerializer: {
         indexes: null  // Creates ?status=paid&status=sold instead of status[0]=paid
     } as any // Cast to any to avoid TS error if types don't match perfectly without qs
@@ -24,7 +25,6 @@ api.interceptors.response.use(
 
         if (status === 401) {
             localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
             window.location.href = "/login";
         }
 
