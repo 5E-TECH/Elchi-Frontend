@@ -37,8 +37,8 @@ const CloseShiftPopup = ({
 
   return (
     <Popup isShow={isOpen} onClose={handleClose}>
-      <div className="w-[92vw] max-w-[460px] overflow-hidden rounded-2xl border border-white/10 bg-primary shadow-2xl dark:bg-maindark">
-        <div className="flex items-start justify-between bg-gradient-to-r from-rose-500 via-orange-500 to-amber-400 px-6 py-5">
+      <div className="w-[92vw] max-w-115 overflow-hidden rounded-2xl border border-white/10 bg-primary shadow-2xl dark:bg-maindark">
+        <div className="flex items-start justify-between bg-linear-to-r from-rose-500 via-orange-500 to-amber-400 px-6 py-5">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/16 text-white shadow-lg backdrop-blur-sm">
               <Square size={20} />
@@ -101,7 +101,7 @@ const CloseShiftPopup = ({
             type="button"
             onClick={handleConfirm}
             disabled={isLoading}
-            className="inline-flex h-11 min-w-40 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 via-orange-500 to-orange-400 px-5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 min-w-40 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-rose-500 via-orange-500 to-orange-400 px-5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? (
               <>

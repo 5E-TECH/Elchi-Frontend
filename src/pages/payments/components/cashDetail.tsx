@@ -295,7 +295,7 @@ const CashDetail = () => {
           </div>
 
           <div
-            className="relative overflow-hidden rounded-[1.45rem] border border-[color:var(--color-border-soft)] p-4 shadow-xl"
+            className="relative overflow-hidden rounded-[1.45rem] border border-border-soft p-4 shadow-xl"
             style={{
               background:
                 "linear-gradient(135deg, color-mix(in srgb, var(--color-main) 18%, var(--color-maindark)) 0%, var(--color-maindark) 48%, color-mix(in srgb, var(--color-purple) 30%, var(--color-maindark)) 100%)",
@@ -369,7 +369,7 @@ const CashDetail = () => {
 
             <div className="space-y-3 p-3.5">
               <div>
-                <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-white/50">
+                <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-text-muted dark:text-white/50">
                   {t("amountLabel")} <span className="text-rose-400">*</span>
                 </label>
                 <div className="relative">
@@ -389,7 +389,7 @@ const CashDetail = () => {
               </div>
 
               <div>
-                <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-white/50">
+                <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-text-muted dark:text-white/50">
                   {t("paymentType")} <span className="text-rose-400">*</span>
                 </label>
                 <div className="relative">
@@ -434,7 +434,7 @@ const CashDetail = () => {
               </div>
 
               <div>
-                <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-white/50">
+                <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-text-muted dark:text-white/50">
                   {t("comment")}
                 </label>
                 <textarea
@@ -513,7 +513,7 @@ const CashDetail = () => {
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
             <div className="rounded-[1.2rem] p-3.5 shadow-lg" style={{ background: "linear-gradient(135deg, var(--color-success) 0%, color-mix(in srgb, var(--color-success) 72%, var(--color-main)) 100%)" }}>
               <div className="mb-3.5 flex items-center justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[1rem] bg-primary/15 text-primary">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                   <TrendingUp size={16} />
                 </div>
                 <TrendingUp size={14} className="text-primary/70" />
@@ -529,7 +529,7 @@ const CashDetail = () => {
 
             <div className="rounded-[1.2rem] p-3.5 shadow-lg" style={{ background: "linear-gradient(135deg, var(--color-error) 0%, color-mix(in srgb, var(--color-error) 60%, var(--color-purple)) 100%)" }}>
               <div className="mb-3.5 flex items-center justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[1rem] bg-primary/15 text-primary">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                   <TrendingDown size={16} />
                 </div>
                 <TrendingDown size={14} className="text-primary/70" />
@@ -583,7 +583,7 @@ const CashDetail = () => {
                 </button>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-semibold text-[color:var(--color-text-muted)] transition-colors hover:text-maindark dark:text-[color:var(--color-text-muted-dark)] dark:hover:text-primary"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-border-soft px-4 py-2 text-sm font-semibold text-text-muted transition-colors hover:text-maindark dark:text-text-muted-dark dark:hover:text-primary"
                 >
                   <ArrowLeftRight size={15} />
                   {t("history")}
