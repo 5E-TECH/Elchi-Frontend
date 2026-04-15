@@ -12,10 +12,6 @@ import {
   PackageCheck,
   Send,
   Store,
-  List,
-  ArrowLeftRight,
-  TrendingDown,
-  TrendingUp,
   Truck,
   Wallet2,
 } from "lucide-react";
@@ -236,9 +232,6 @@ const CashDetail = () => {
     });
   }, [cashbox?.cashbox_type, detailData?.cashboxHistory, entityName]);
 
-  const income = toNumber(detailData?.income);
-  const expense = toNumber(detailData?.outcome);
-
   const paginatedHistoryRows = useMemo(
     () =>
       historyRows.slice(
@@ -367,7 +360,6 @@ const CashDetail = () => {
               </div>
             </div>
 
-<<<<<<< HEAD
             <div className="space-y-3 p-3.5">
               <div>
                 <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-white/50">
@@ -379,84 +371,6 @@ const CashDetail = () => {
                     placeholder="0"
                     {...register("amount")}
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 pr-16 text-sm font-semibold text-gray-900 transition-all placeholder-gray-400 focus:border-main focus:outline-none focus:ring-2 focus:ring-main/40 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder-white/20"
-=======
-            <div className="rounded-2xl bg-linear-to-br from-error to-warning p-5 shadow-lg">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-white/80">{t("expense")}</span>
-                <TrendingDown size={18} className="text-white/70" />
-              </div>
-              <p className="text-2xl font-black text-white">-{fmt(expense)}</p>
-              <p className="mt-1 text-xs text-white/60">UZS</p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className={`w-full rounded-2xl bg-linear-to-r py-4 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 ${cfg.actionGradient} flex items-center justify-center gap-2.5`}
-          >
-            {type === "market" ? <CreditCard size={18} /> : <PackageCheck size={18} />}
-            <span>{cfg.actionLabel}</span>
-            <span className="text-xs font-normal text-white/60">
-              {" "}
-              - {type === "market" ? t("payToMarket") : t("receiveFromCourier")}
-            </span>
-          </button>
-
-          <div>
-            <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-white/50">
-              {t("amountLabel")} <span className="text-rose-400">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                placeholder="0"
-                {...register("amount")}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-16 text-sm font-semibold text-gray-900 transition-all placeholder-gray-400 focus:border-main focus:outline-none focus:ring-2 focus:ring-main/40 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder-white/20"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-white/30">
-                UZS
-              </span>
-            </div>
-            {errors.amount && (
-              <p className="mt-1 text-xs text-error">{errors.amount.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-white/50">
-              {t("paymentType")} <span className="text-rose-400">*</span>
-            </label>
-            <div className="relative">
-              <Controller
-                control={control}
-                name="paymentType"
-                render={({ field }) => (
-                  <select
-                    value={field.value}
-                    onChange={field.onChange}
-                    className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-900 transition-all focus:border-main focus:outline-none focus:ring-2 focus:ring-main/40 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                  >
-                    {paymentTypeOptions.map((option) => (
-                      <option
-                        key={option.value}
-                        value={option.value}
-                        className="dark:bg-primarydark"
-                      >
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              />
-              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path
-                    d="M2.5 4.5L6 8L9.5 4.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
->>>>>>> 44b4d60 (vercel confilicr bartaraf etildi)
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-white/30">
                     UZS
@@ -566,34 +480,10 @@ const CashDetail = () => {
                 placeholder={`${t("startDate")} → ${t("endDate")}`}
                 className="w-full"
               />
-            <div className="p-3.5">
-              <div className="flex items-center gap-2">
-                <div className="w-full">
-                  <CustomDatePicker
-                    value={draftDateFrom}
-                    onChange={setDraftDateFrom}
-                    placeholder={t("startDate")}
-                    maxDate={draftDateTo || undefined}
-                    className="w-full"
-                    size="sm"
-                  />
-                </div>
-                <span className="select-none text-sm text-gray-300 dark:text-white/20">
-                  —
-                </span>
-                <div className="w-full">
-                  <CustomDatePicker
-                    value={draftDateTo}
-                    onChange={setDraftDateTo}
-                    placeholder={t("endDate")}
-                    minDate={draftDateFrom || undefined}
-                    className="w-full"
-                    size="sm"
-                  />
-                </div>
-              </div>
-              {(draftDateFrom || draftDateTo) && (
-                <div className="mt-3 flex items-center justify-end">
+            </div>
+            {(draftDateFrom || draftDateTo) && (
+              <div className="px-4 pb-2">
+                <div className="flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() => {
@@ -605,48 +495,14 @@ const CashDetail = () => {
                     {t("clear")}
                   </button>
                 </div>
-              )}
-              {((draftDateFrom && !draftDateTo) ||
-                (!draftDateFrom && draftDateTo)) && (
-                <p className="pt-3 text-xs text-gray-500 dark:text-white/45">
-                  {t("dateRangeRequired")}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-            <div className="rounded-[1.2rem] p-3.5 shadow-lg" style={{ background: "linear-gradient(135deg, var(--color-success) 0%, color-mix(in srgb, var(--color-success) 72%, var(--color-main)) 100%)" }}>
-              <div className="mb-3.5 flex items-center justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[1rem] bg-primary/15 text-primary">
-                  <TrendingUp size={16} />
-                </div>
-                <TrendingUp size={14} className="text-primary/70" />
               </div>
-              <p className="text-[13px] font-semibold text-primary/80">{t("income")}</p>
-              <p className="mt-2.5 text-[1.35rem] font-black leading-none text-primary">
-                +{fmt(income)}
+            )}
+            {((draftDateFrom && !draftDateTo) ||
+              (!draftDateFrom && draftDateTo)) && (
+              <p className="px-4 pb-4 text-xs text-gray-500 dark:text-white/45">
+                {t("dateRangeRequired")}
               </p>
-              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary/65">
-                UZS
-              </p>
-            </div>
-
-            <div className="rounded-[1.2rem] p-3.5 shadow-lg" style={{ background: "linear-gradient(135deg, var(--color-error) 0%, color-mix(in srgb, var(--color-error) 60%, var(--color-purple)) 100%)" }}>
-              <div className="mb-3.5 flex items-center justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[1rem] bg-primary/15 text-primary">
-                  <TrendingDown size={16} />
-                </div>
-                <TrendingDown size={14} className="text-primary/70" />
-              </div>
-              <p className="text-[13px] font-semibold text-primary/80">{t("expense")}</p>
-              <p className="mt-2.5 text-[1.35rem] font-black leading-none text-primary">
-                -{fmt(expense)}
-              </p>
-              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary/65">
-                UZS
-              </p>
-            </div>
+            )}
           </div>
 
           {isFetching && !isLoading && (
@@ -656,44 +512,19 @@ const CashDetail = () => {
             </div>
           )}
 
-          <div className={`${sectionClassName} min-h-0`}>
+          <div className={sectionClassName}>
             <div className={`${sectionHeaderClassName} flex items-center justify-between`}>
               <div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20">
-                    <List size={18} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      {t("paymentHistoryTitle")}
-                    </p>
-                    <p className="text-[11px] text-gray-400 dark:text-white/40">
-                      {t("lastOperations")}
-                    </p>
-                  </div>
-                </div>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  {t("paymentHistoryTitle")}
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-white/40">
+                  {t("lastOperations")}
+                </p>
               </div>
               <span className="rounded-full bg-main/12 px-3 py-1 text-xs font-bold text-main">
                 {t("countLabel", { count: historyRows.length })}
               </span>
-            </div>
-            <div className="px-4 pt-2.5">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-main to-purple px-4 py-2 text-sm font-semibold text-primary shadow-lg shadow-main/20"
-                >
-                  <List size={15} />
-                  {t("allInfo")}
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-semibold text-[color:var(--color-text-muted)] transition-colors hover:text-maindark dark:text-[color:var(--color-text-muted-dark)] dark:hover:text-primary"
-                >
-                  <ArrowLeftRight size={15} />
-                  {t("history")}
-                </button>
-              </div>
             </div>
             <PaymentHistoryList
               data={paginatedHistoryRows}
