@@ -5,7 +5,7 @@ const initialState: UserState = {
   user: null,
   isAuthenticated: !!localStorage.getItem("accessToken"),
   accessToken: localStorage.getItem("accessToken"),
-  refreshToken: localStorage.getItem("refreshToken"),
+  refreshToken: null,
   loading: false,
   isAppInitializing: !!localStorage.getItem("accessToken"), // If token exists, we are initializing (fetching profile)
   error: null,
@@ -15,15 +15,17 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    loginSuccess: (state, action: PayloadAction<{ accessToken: string; refreshToken: string; user: User }>) => {
+    loginSuccess: (
+      state,
+      action: PayloadAction<{ accessToken: string; user: User; refreshToken?: string | null }>,
+    ) => {
       state.loading = false;
       state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
+      state.refreshToken = action.payload.refreshToken ?? null;
       state.user = action.payload.user;
       state.isAuthenticated = true;
       state.error = null;
       localStorage.setItem("accessToken", action.payload.accessToken);
-      localStorage.setItem("refreshToken", action.payload.refreshToken);
       localStorage.setItem("role", action.payload.user.role);
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -46,7 +48,6 @@ export const userSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
       localStorage.removeItem("role");
     }
   },
