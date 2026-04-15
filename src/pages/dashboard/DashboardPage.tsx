@@ -155,7 +155,7 @@ const DashboardPage = () => {
                 setToDate(endDate ? toISO(endDate) : "");
               }}
               placeholder={`${t("datePicker.from")} → ${t("datePicker.to")}`}
-              className="w-full sm:w-[22rem]"
+              className="w-full sm:w-88"
             />
             {hasDateFilter && (
               <button

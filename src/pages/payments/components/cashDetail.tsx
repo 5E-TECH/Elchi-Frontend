@@ -367,6 +367,7 @@ const CashDetail = () => {
               </div>
             </div>
 
+<<<<<<< HEAD
             <div className="space-y-3 p-3.5">
               <div>
                 <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-white/50">
@@ -378,6 +379,84 @@ const CashDetail = () => {
                     placeholder="0"
                     {...register("amount")}
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 pr-16 text-sm font-semibold text-gray-900 transition-all placeholder-gray-400 focus:border-main focus:outline-none focus:ring-2 focus:ring-main/40 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder-white/20"
+=======
+            <div className="rounded-2xl bg-linear-to-br from-error to-warning p-5 shadow-lg">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-white/80">{t("expense")}</span>
+                <TrendingDown size={18} className="text-white/70" />
+              </div>
+              <p className="text-2xl font-black text-white">-{fmt(expense)}</p>
+              <p className="mt-1 text-xs text-white/60">UZS</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className={`w-full rounded-2xl bg-linear-to-r py-4 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 ${cfg.actionGradient} flex items-center justify-center gap-2.5`}
+          >
+            {type === "market" ? <CreditCard size={18} /> : <PackageCheck size={18} />}
+            <span>{cfg.actionLabel}</span>
+            <span className="text-xs font-normal text-white/60">
+              {" "}
+              - {type === "market" ? t("payToMarket") : t("receiveFromCourier")}
+            </span>
+          </button>
+
+          <div>
+            <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-white/50">
+              {t("amountLabel")} <span className="text-rose-400">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                placeholder="0"
+                {...register("amount")}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-16 text-sm font-semibold text-gray-900 transition-all placeholder-gray-400 focus:border-main focus:outline-none focus:ring-2 focus:ring-main/40 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder-white/20"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-white/30">
+                UZS
+              </span>
+            </div>
+            {errors.amount && (
+              <p className="mt-1 text-xs text-error">{errors.amount.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-white/50">
+              {t("paymentType")} <span className="text-rose-400">*</span>
+            </label>
+            <div className="relative">
+              <Controller
+                control={control}
+                name="paymentType"
+                render={({ field }) => (
+                  <select
+                    value={field.value}
+                    onChange={field.onChange}
+                    className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-900 transition-all focus:border-main focus:outline-none focus:ring-2 focus:ring-main/40 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  >
+                    {paymentTypeOptions.map((option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        className="dark:bg-primarydark"
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M2.5 4.5L6 8L9.5 4.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+>>>>>>> 44b4d60 (vercel confilicr bartaraf etildi)
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-white/30">
                     UZS

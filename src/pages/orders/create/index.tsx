@@ -230,7 +230,7 @@ const OrderCreateFormContent = () => {
           />
         </div>
 
-        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 py-3 sm:px-6 sm:py-5">
+        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-2 sm:p-3">
           <OrderStepper
             steps={steps}
             currentStep={step}
