@@ -11,6 +11,7 @@ type Props = {
   count?: number;
   disabled?: boolean;
   onSelect: (mode: PrintMode) => void;
+  className?: string;
 };
 
 const PrintModeSelect = ({
@@ -18,6 +19,7 @@ const PrintModeSelect = ({
   count = 0,
   disabled = false,
   onSelect,
+  className = "",
 }: Props) => {
   const { t } = useTranslation("mails");
   const [open, setOpen] = useState(false);
@@ -99,14 +101,15 @@ const PrintModeSelect = ({
           disabled={triggerDisabled}
           onClick={() => setOpen((v) => !v)}
           className={`
-            flex items-center gap-2
-            px-4 py-2 rounded-xl
+            flex items-center justify-center gap-2
+            px-4 py-3 rounded-2xl
             bg-[var(--color-glass)]
             border border-[var(--color-purple-light)]
             text-[var(--color-purple-light)]
             hover:opacity-95
             transition-opacity
             ${triggerDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+            ${className}
           `}
           aria-label={t("print")}
         >

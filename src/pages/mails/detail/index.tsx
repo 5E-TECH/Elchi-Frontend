@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, Ban, MapPin } from "lucide-react";
+import { AlertTriangle, Ban, MapPin, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   useMails,
@@ -27,6 +27,8 @@ import { useMailDetailState } from "./model/useMailDetailState";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import { useOrders } from "../../../entities/orders";
+import PopupConfirm from "../../../shared/components/popupConfirm";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const MailDetailSkeleton = memo(() => (
@@ -158,6 +160,8 @@ const MailDetailPage = () => {
   const receivePost = useReceivePost();
   const receiveCanceledPost = useReceiveCanceledPost();
   const sendPost = useSendPost();
+  const { SendToPost } = useOrders();
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   // ─── Region nomi ──────────────────────────────────────────────────────────
   const regionName = useMemo(
@@ -303,6 +307,26 @@ const MailDetailPage = () => {
     [selectedOrders],
   );
 
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.size === 0) return;
+
+    apiRequest({
+      request: () => SendToPost.mutateAsync(Array.from(selectedIds)),
+      successMessage: t("selectedOrdersRemovedSuccess"),
+      errorMessage: t("selectedOrdersRemovedError"),
+      onSuccess: async () => {
+        setIsDeleteConfirmOpen(false);
+        clearSelection();
+        const refreshed = await refetchRegularDetail();
+        const remainingOrders = refreshed.data?.data?.allOrdersByPostId?.length ?? 0;
+
+        if (remainingOrders === 0) {
+          navigate("/mails?tab=today");
+        }
+      },
+    });
+  }, [selectedIds, apiRequest, SendToPost, t, clearSelection, refetchRegularDetail, navigate]);
+
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (regularLoading || refusedLoading)
     return (
@@ -370,14 +394,35 @@ const MailDetailPage = () => {
 
       {/* Rol asosida tugma */}
       {orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier && (
-        <SendButton
-          selectedCount={selectedIds.size}
-          isCourier={isCourier}
-          mode={isRefusedDetail ? "receive" : "send"}
-          onSend={handleSend}
-          onReceive={handleReceive}
-          isBusy={!isCourier && !isRefusedDetail && isCheckingCouriers}
-        />
+        <div className="flex flex-col gap-3">
+          {selectedIds.size > 0 && !isCourier && !isRefusedDetail && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-rose-300/30 bg-rose-500/12 px-5 py-3.5 text-sm font-semibold text-rose-100 transition-colors hover:bg-rose-500/18"
+              >
+                <Trash2 size={16} />
+                {t("delete")} ({selectedIds.size})
+              </button>
+
+              <PrintModeSelect
+                count={selectedIds.size}
+                onSelect={handlePrint}
+                className="w-full"
+              />
+            </div>
+          )}
+
+          <SendButton
+            selectedCount={selectedIds.size}
+            isCourier={isCourier}
+            mode={isRefusedDetail ? "receive" : "send"}
+            onSend={handleSend}
+            onReceive={handleReceive}
+            isBusy={!isCourier && !isRefusedDetail && isCheckingCouriers}
+          />
+        </div>
       )}
 
       {/* Pochta jo'natish modali — faqat courier bo'lmaganlar uchun */}
@@ -393,6 +438,17 @@ const MailDetailPage = () => {
       )}
 
       {browserPrintOrders.length > 0 && <PrintOnlyOrders orders={browserPrintOrders} />}
+
+      <PopupConfirm
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteSelected}
+        isLoading={SendToPost.isPending}
+        title={t("deleteSelectedOrdersTitle")}
+        message={t("deleteSelectedOrdersMessage", { count: selectedIds.size })}
+        confirmLabel={t("delete")}
+        variant="danger"
+      />
     </div>
   );
 };
