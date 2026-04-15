@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import LogoTextDark from "../../../shared/assets/logoo.png";
-import CustomDatePicker from "../../../shared/ui/CustomDatePicker";
+import DateRangePicker from "../../../shared/ui/DateRangePicker";
 import PopupSelect from "../../../shared/components/popupSelect";
 import CashboxFormPopup from "./CashboxFormPopup";
 import CloseShiftPopup from "./CloseShiftPopup";
@@ -40,7 +40,17 @@ const toNumber = (v: unknown, fallback = 0): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
+const toIsoDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+const parseIsoDate = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+};
 
 const buildRangeStart = (type: "today" | "week" | "month") => {
   const today = new Date();
@@ -497,26 +507,19 @@ const MainCashbox = () => {
                 </button>
               )}
             </div>
-            <div className="p-4 flex items-center gap-2">
-              <div className="w-full">
-                <CustomDatePicker
-                  value={draftHistoryFrom}
-                  onChange={setDraftHistoryFrom}
-                  placeholder={t("startDate")}
-                  maxDate={draftHistoryTo || undefined}
-                  className="w-full"
-                />
-              </div>
-              <span className="text-gray-300 dark:text-white/20 text-sm select-none">—</span>
-              <div className="w-full">
-                <CustomDatePicker
-                  value={draftHistoryTo}
-                  onChange={setDraftHistoryTo}
-                  placeholder={t("endDate")}
-                  minDate={draftHistoryFrom || undefined}
-                  className="w-full"
-                />
-              </div>
+            <div className="p-4">
+              <DateRangePicker
+                value={{
+                  startDate: draftHistoryFrom ? parseIsoDate(draftHistoryFrom) : null,
+                  endDate: draftHistoryTo ? parseIsoDate(draftHistoryTo) : null,
+                }}
+                onChange={({ startDate, endDate }) => {
+                  setDraftHistoryFrom(startDate ? toIsoDate(startDate) : "");
+                  setDraftHistoryTo(endDate ? toIsoDate(endDate) : "");
+                }}
+                placeholder={`${t("startDate")} → ${t("endDate")}`}
+                className="w-full"
+              />
             </div>
             {((draftHistoryFrom && !draftHistoryTo) || (!draftHistoryFrom && draftHistoryTo)) && (
               <p className="px-4 pb-4 text-xs text-gray-500 dark:text-white/45">

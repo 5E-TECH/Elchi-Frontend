@@ -145,5 +145,23 @@
   "validationDistrict": "Select a district",
   "validationSelectProduct": "Select at least one product",
   "validationTotalPriceRequired": "Enter the total order amount",
-  "district": "District"
+  "district": "District",
+  "tracking": {
+    "title": "Order history",
+    "empty": "No tracking history found",
+    "error": "An error occurred while loading data",
+    "loadMore": "Load more",
+    "by": "Changed by",
+    "role": "Role",
+    "note": "Note",
+    "action": {
+      "created": "Created",
+      "statusChange": "Status changed",
+      "sold": "Sold",
+      "paid": "Paid",
+      "cancelled": "Cancelled",
+      "closed": "Closed",
+      "rollback": "Rolled back"
+    }
+  }
 }

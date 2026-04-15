@@ -145,5 +145,23 @@
   "validationDistrict": "Tumanni tanlang",
   "validationSelectProduct": "Kamida bitta mahsulot tanlang",
   "validationTotalPriceRequired": "Buyurtmaning umumiy summasini kiriting",
-  "district": "Tuman"
+  "district": "Tuman",
+  "tracking": {
+    "title": "Buyurtma tarixi",
+    "empty": "Tracking tarix topilmadi",
+    "error": "Ma'lumotlarni yuklashda xatolik yuz berdi",
+    "loadMore": "Ko'proq yuklash",
+    "by": "Kim tomonidan",
+    "role": "Rol",
+    "note": "Izoh",
+    "action": {
+      "created": "Yaratildi",
+      "statusChange": "Holat o'zgartirildi",
+      "sold": "Sotildi",
+      "paid": "To'landi",
+      "cancelled": "Bekor qilindi",
+      "closed": "Yopildi",
+      "rollback": "Qaytarildi"
+    }
+  }
 }

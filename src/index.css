@@ -134,14 +134,18 @@
 .order-filter-multiselect .ant-select-selector {
   min-height: 48px !important;
   padding: 7px 40px 7px 14px !important;
-  border: 1px solid color-mix(in srgb, var(--color-primarydark) 20%, transparent) !important;
+  border: 2px solid color-mix(in srgb, var(--color-primarydark) 20%, transparent) !important;
   border-radius: 0.75rem !important;
-  background: color-mix(in srgb, var(--color-maindark) 55%, transparent) !important;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-background-deep) 22%, transparent) !important;
+  background: color-mix(in srgb, var(--color-primary) 100%, transparent) !important;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-background-deep) 12%, transparent) !important;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     background-color 0.2s ease !important;
+}
+
+.dark .order-filter-multiselect .ant-select-selector {
+  background: color-mix(in srgb, var(--color-primarydark) 100%, transparent) !important;
 }
 
 .order-filter-multiselect.order-filter-multiselect--with-icon .ant-select-selector {
@@ -154,7 +158,7 @@
 }
 
 .order-filter-multiselect.ant-select-focused .ant-select-selector {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-main) 20%, transparent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-main) 10%, transparent) !important;
 }
 
 .order-filter-multiselect .ant-select-selection-wrap {
@@ -162,11 +166,11 @@
 }
 
 .order-filter-multiselect .ant-select-selection-placeholder {
-  color: color-mix(in srgb, var(--color-primary) 36%, transparent) !important;
+  color: color-mix(in srgb, var(--color-text-muted) 85%, transparent) !important;
 }
 
-.order-filter-multiselect .ant-select-selection-item {
-  color: var(--color-primary) !important;
+.dark .order-filter-multiselect .ant-select-selection-placeholder {
+  color: color-mix(in srgb, var(--color-text-muted-dark) 85%, transparent) !important;
 }
 
 .order-filter-multiselect .ant-select-selection-overflow {
@@ -182,6 +186,14 @@
 .order-filter-multiselect .ant-select-selection-search-input,
 .order-filter-multiselect .ant-select-arrow,
 .order-filter-multiselect .ant-select-clear {
+  color: var(--color-maindark) !important;
+}
+
+.dark .order-filter-multiselect .ant-select-selection-item,
+.dark .order-filter-multiselect .ant-select-selection-item-content,
+.dark .order-filter-multiselect .ant-select-selection-search-input,
+.dark .order-filter-multiselect .ant-select-arrow,
+.dark .order-filter-multiselect .ant-select-clear {
   color: var(--color-primary) !important;
 }
 
@@ -190,30 +202,50 @@
 }
 
 .order-filter-multiselect.ant-select-multiple .ant-select-selection-item {
-  border: 1px solid color-mix(in srgb, var(--color-main) 22%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-main) 20%, transparent) !important;
   border-radius: 999px !important;
-  background: color-mix(in srgb, var(--color-main) 12%, transparent) !important;
+  background: color-mix(in srgb, var(--color-main) 10%, var(--color-primary) 90%) !important;
+  color: var(--color-maindark) !important;
+}
+
+.dark .order-filter-multiselect.ant-select-multiple .ant-select-selection-item {
+  background: color-mix(in srgb, var(--color-main) 14%, var(--color-primarydark) 86%) !important;
+  color: var(--color-primary) !important;
 }
 
 .order-filter-multiselect.ant-select-multiple .ant-select-selection-item-remove {
-  color: color-mix(in srgb, var(--color-primary) 75%, transparent) !important;
+  color: color-mix(in srgb, var(--color-text-muted) 90%, transparent) !important;
+}
+
+.dark .order-filter-multiselect.ant-select-multiple .ant-select-selection-item-remove {
+  color: color-mix(in srgb, var(--color-text-muted-dark) 90%, transparent) !important;
 }
 
 .order-filter-multiselect.ant-select-multiple .ant-select-selection-item-remove:hover {
-  color: var(--color-primary) !important;
+  color: var(--color-main) !important;
 }
 
 .order-filter-multiselect-dropdown {
   padding: 6px !important;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-primarydark) 20%, transparent) !important;
   border-radius: 1rem !important;
-  background: color-mix(in srgb, var(--color-maindark) 96%, transparent) !important;
+  background: color-mix(in srgb, var(--color-primary) 100%, transparent) !important;
+  box-shadow: 0 20px 45px color-mix(in srgb, var(--color-background-deep) 18%, transparent) !important;
+}
+
+.dark .order-filter-multiselect-dropdown {
+  border-color: color-mix(in srgb, var(--color-primarydark) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--color-primarydark) 100%, transparent) !important;
   box-shadow: 0 20px 45px color-mix(in srgb, var(--color-background-deep) 45%, transparent) !important;
 }
 
 .order-filter-multiselect-dropdown .ant-select-item {
   min-height: 40px;
   border-radius: 0.75rem;
+  color: var(--color-maindark) !important;
+}
+
+.dark .order-filter-multiselect-dropdown .ant-select-item {
   color: var(--color-primary) !important;
 }
 

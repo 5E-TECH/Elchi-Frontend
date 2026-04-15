@@ -28,6 +28,7 @@ import { useOrders } from "../../../entities/orders";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
+import { OrderTracking } from "../../../widgets/order-tracking";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -634,6 +635,8 @@ const NewOrderUpdate = () => {
           </div>
         </div>
       )}
+
+      {orderId ? <OrderTracking orderId={orderId} /> : null}
 
       {/* ─── Address Edit Popup ─────────────────────────────────────────────── */}
       <UpdatePopup

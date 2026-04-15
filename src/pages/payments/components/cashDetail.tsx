@@ -30,7 +30,7 @@ import {
 import HeaderName from "../../../shared/components/headerName";
 import PaymentHistoryList from "./PaymentHistoryList";
 import type { Pagination, PaymentRow } from "./patmentHistoryTable";
-import CustomDatePicker from "../../../shared/ui/CustomDatePicker";
+import DateRangePicker from "../../../shared/ui/DateRangePicker";
 import { useCashBox } from "../../../entities/payments";
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
@@ -48,6 +48,19 @@ const formatDisplayName = (value?: string | null) => {
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const toIsoDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseIsoDate = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
 };
 
 const normalizeType = (
@@ -608,28 +621,19 @@ const CashDetail = () => {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2 p-4">
-              <div className="w-full">
-                <CustomDatePicker
-                  value={draftDateFrom}
-                  onChange={setDraftDateFrom}
-                  placeholder={t("startDate")}
-                  maxDate={draftDateTo || undefined}
-                  className="w-full"
-                />
-              </div>
-              <span className="select-none text-sm text-gray-300 dark:text-white/20">
-                —
-              </span>
-              <div className="w-full">
-                <CustomDatePicker
-                  value={draftDateTo}
-                  onChange={setDraftDateTo}
-                  placeholder={t("endDate")}
-                  minDate={draftDateFrom || undefined}
-                  className="w-full"
-                />
-              </div>
+            <div className="p-4">
+              <DateRangePicker
+                value={{
+                  startDate: draftDateFrom ? parseIsoDate(draftDateFrom) : null,
+                  endDate: draftDateTo ? parseIsoDate(draftDateTo) : null,
+                }}
+                onChange={({ startDate, endDate }) => {
+                  setDraftDateFrom(startDate ? toIsoDate(startDate) : "");
+                  setDraftDateTo(endDate ? toIsoDate(endDate) : "");
+                }}
+                placeholder={`${t("startDate")} → ${t("endDate")}`}
+                className="w-full"
+              />
             </div>
             {((draftDateFrom && !draftDateTo) ||
               (!draftDateFrom && draftDateTo)) && (

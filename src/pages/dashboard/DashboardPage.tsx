@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import { useDashboard } from "../../entities/dashboard";
-import CustomDatePicker from "../../shared/ui/CustomDatePicker";
+import DateRangePicker from "../../shared/ui/DateRangePicker";
 import type { RootState } from "../../app/config/store";
 import {
   removeFilterValue,
@@ -14,7 +14,17 @@ import {
 
 // ─── Sana yordamchilari ───────────────────────────────────────────────────────
 
-const toISO = (d: Date) => d.toISOString().slice(0, 10);
+const toISO = (d: Date) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+const parseISO = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+};
 
 const getToday = () => {
   const now = new Date();
@@ -144,20 +154,17 @@ const DashboardPage = () => {
 
           {/* Sanalar va tozalash */}
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
-            <CustomDatePicker
-              value={fromDate}
-              onChange={setFromDate}
-              placeholder={t("datePicker.from")}
-              maxDate={toDate || undefined}
-              className="w-full sm:w-44"
-            />
-            <span className="hidden text-sm text-maindark/30 dark:text-primary/30 sm:inline">-</span>
-            <CustomDatePicker
-              value={toDate}
-              onChange={setToDate}
-              placeholder={t("datePicker.to")}
-              minDate={fromDate || undefined}
-              className="w-full sm:w-44"
+            <DateRangePicker
+              value={{
+                startDate: fromDate ? parseISO(fromDate) : null,
+                endDate: toDate ? parseISO(toDate) : null,
+              }}
+              onChange={({ startDate, endDate }) => {
+                setFromDate(startDate ? toISO(startDate) : "");
+                setToDate(endDate ? toISO(endDate) : "");
+              }}
+              placeholder={`${t("datePicker.from")} → ${t("datePicker.to")}`}
+              className="w-full sm:w-[22rem]"
             />
             {hasDateFilter && (
               <button

@@ -26,21 +26,27 @@ vi.mock("../../widgets/financial-analysis/ui/FinancialAnalysis", () => ({
   ),
 }));
 
-vi.mock("../../shared/ui/CustomDatePicker", () => ({
+vi.mock("../../shared/ui/DateRangePicker", () => ({
   default: ({
     value,
     onChange,
     placeholder,
   }: {
-    value: string;
-    onChange: (value: string) => void;
+    value: { startDate: Date | null; endDate: Date | null };
+    onChange: (value: { startDate: Date | null; endDate: Date | null }) => void;
     placeholder: string;
   }) => (
-    <input
+    <button
       aria-label={placeholder}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-    />
+      onClick={() =>
+        onChange({
+          startDate: new Date("2026-04-01"),
+          endDate: new Date("2026-04-14"),
+        })
+      }
+    >
+      {value.startDate?.toISOString() ?? "empty"}
+    </button>
   ),
 }));
 
@@ -62,8 +68,7 @@ describe("DashboardPage", () => {
     renderWithProviders(<DashboardPage />);
 
     expect(screen.getByText("Bugungi statistika")).toBeInTheDocument();
-    expect(screen.getByLabelText("Boshlanish")).toBeInTheDocument();
-    expect(screen.getByLabelText("Tugash")).toBeInTheDocument();
+    expect(screen.getByLabelText("Boshlanish → Tugash")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Bugun" })).not.toBeInTheDocument();
   });
 
@@ -78,7 +83,7 @@ describe("DashboardPage", () => {
     const user = userEvent.setup();
     renderWithProviders(<DashboardPage />);
 
-    await user.type(screen.getByLabelText("Boshlanish"), "2026-04-01");
+    await user.click(screen.getByLabelText("Boshlanish → Tugash"));
 
     expect(screen.getByText("Tanlangan davr statistikasi")).toBeInTheDocument();
   });
