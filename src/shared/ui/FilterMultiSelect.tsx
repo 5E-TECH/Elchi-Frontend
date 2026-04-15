@@ -32,12 +32,12 @@ const FilterMultiSelect = ({
   disabled = false,
 }: FilterMultiSelectProps) => {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="relative space-y-0">
       <label
         htmlFor={name}
-        className="block text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-white/60"
+        className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
       >
-        <span className="ml-1 flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5">
           {Icon && <Icon size={11} className="text-main/70" />}
           {label}
         </span>

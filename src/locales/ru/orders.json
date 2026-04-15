@@ -145,5 +145,23 @@
   "validationDistrict": "Выберите район",
   "validationSelectProduct": "Выберите хотя бы один товар",
   "validationTotalPriceRequired": "Введите общую сумму заказа",
-  "district": "Район"
+  "district": "Район",
+  "tracking": {
+    "title": "История заказа",
+    "empty": "История отслеживания не найдена",
+    "error": "Произошла ошибка при загрузке данных",
+    "loadMore": "Загрузить еще",
+    "by": "Кем изменено",
+    "role": "Роль",
+    "note": "Примечание",
+    "action": {
+      "created": "Создан",
+      "statusChange": "Статус изменен",
+      "sold": "Продан",
+      "paid": "Оплачен",
+      "cancelled": "Отменен",
+      "closed": "Закрыт",
+      "rollback": "Возвращен"
+    }
+  }
 }

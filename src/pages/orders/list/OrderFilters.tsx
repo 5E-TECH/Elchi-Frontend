@@ -16,12 +16,11 @@ import { useMarkets } from "../../../entities/markets";
 import type { OrderStatus } from "../../../entities/order/types/order";
 import { resetFilters, setFilterValue } from "../../../features/Select/model/FilterSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
-import Select from "../../../shared/ui/Select";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
 import { clearAllSearch, setSearchValue } from "../../../features/search/model/searchSlice";
 import type { RootState } from "../../../app/config/store";
-import FilterMultiSelect from "../../../shared/ui/FilterMultiSelect";
+import SearchableSelect from "../../../shared/ui/SearchableSelect";
 
 // ── Holat variantlari ─────────────────────────────────────────────────────
 const ALL_STATUSES: { value: OrderStatus | ""; label: string }[] = [
@@ -68,7 +67,6 @@ const parseStatusValues = (value: unknown): OrderStatus[] => {
         .filter((item): item is OrderStatus => item.length > 0);
 };
 
-const serializeStatusValues = (value: OrderStatus[]) => value.join(",");
 const getStringFilterValue = (value: unknown, fallback = "") =>
     typeof value === "string" ? value : fallback;
 
@@ -174,13 +172,12 @@ const OrderFilters = memo(({ onExport }: Props) => {
         }
     };
 
-    const updateStatus = (value: string[]) => {
-        const normalizedValue = value.filter((item): item is OrderStatus => Boolean(item));
+    const updateStatus = (value: string) => {
+        const normalizedValue = value as OrderStatus | "";
         dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: normalizedValue }));
 
-        const serializedValue = serializeStatusValues(normalizedValue);
-        if (serializedValue) {
-            setParam(ORDER_FILTER_KEYS.status, serializedValue);
+        if (normalizedValue) {
+            setParam(ORDER_FILTER_KEYS.status, normalizedValue);
         } else {
             removeParam(ORDER_FILTER_KEYS.status);
         }
@@ -242,12 +239,12 @@ const OrderFilters = memo(({ onExport }: Props) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* MARKET */}
                 {!isMarketRole && (
-                    <Select
+                    <SearchableSelect
                         label={t("filterMarket")}
                         name={ORDER_FILTER_KEYS.marketId}
                         value={marketId}
-                        onChange={(e) =>
-                            update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, e.target.value)
+                        onChange={(value) =>
+                            update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, value)
                         }
                         options={markets}
                         placeholder={t("filterMarketPlaceholder")}
@@ -257,12 +254,12 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 )}
 
                 {/* VILOYAT */}
-                <Select
+                <SearchableSelect
                     label={t("filterRegion")}
                     name={ORDER_FILTER_KEYS.regionId}
                     value={regionId}
-                    onChange={(e) =>
-                        update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, e.target.value)
+                    onChange={(value) =>
+                        update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, value)
                     }
                     options={regions}
                     placeholder={t("filterRegionPlaceholder")}
@@ -272,12 +269,12 @@ const OrderFilters = memo(({ onExport }: Props) => {
 
                 {/* KURYER */}
                 {!isMarketRole && (
-                    <Select
+                    <SearchableSelect
                         label={t("filterCourier")}
                         name={ORDER_FILTER_KEYS.courierId}
                         value={courierId}
-                        onChange={(e) =>
-                            update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, e.target.value)
+                        onChange={(value) =>
+                            update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, value)
                         }
                         options={couriers}
                         placeholder={t("filterCourierPlaceholder")}
@@ -287,10 +284,10 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 )}
 
                 {/* HOLAT */}
-                <FilterMultiSelect
+                <SearchableSelect
                     label={t("filterStatus")}
                     name={ORDER_FILTER_KEYS.status}
-                    value={statusValues}
+                    value={statusValues[0] ?? ""}
                     onChange={updateStatus}
                     options={statuses}
                     placeholder={t("filterStatusPlaceholder")}
@@ -343,7 +340,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                                 key={status}
                                 label={`${t("chipStatus")}: ${statuses.find((item) => item.value === status)?.label ?? status}`}
                                 onRemove={() =>
-                                    updateStatus(statusValues.filter((item) => item !== status))
+                                    updateStatus("")
                                 }
                             />
                         ))}
