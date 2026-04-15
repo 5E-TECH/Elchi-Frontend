@@ -18,6 +18,7 @@ import { useProducts } from "../../../../entities/product";
 import type { DeliveryType } from "../../../../entities/order/types/order";
 import { GlobalSearchInput } from "../../../../features/search";
 import type { RootState } from "../../../../app/config/store";
+import SearchableSelect from "../../../../shared/ui/SearchableSelect";
 import {
   formatPhone,
   formatPrice,
@@ -27,10 +28,7 @@ import {
 } from "../model/orderCreateForm";
 import {
   FormFieldError,
-  getDisabledFieldClassName,
   getFieldClassName,
-  getSelectFieldClassName,
-  SelectFieldShell,
 } from "./formFieldStyles";
 
 const inputCls = `
@@ -148,6 +146,14 @@ const Step2Combined = () => {
 
   const regionList = toArray(regions);
   const districtList = toArray(districts);
+  const regionOptions = regionList.map((region: any) => ({
+    value: String(region.id),
+    label: region.name,
+  }));
+  const districtOptions = districtList.map((district: any) => ({
+    value: String(district.id),
+    label: district.name,
+  }));
   const allProducts = toArray(productsData);
   const filteredProducts = allProducts.filter((product: any) =>
     product.name?.toLowerCase().includes(productSearch.toLowerCase()),
@@ -295,35 +301,22 @@ const Step2Combined = () => {
             control={control}
             name="customer.region_id"
             render={({ field }) => (
-              <Field
-                label={t("filterRegion")}
-                required
-                icon={<MapPin size={12} />}
-                error={errors.customer?.region_id?.message}
-              >
-                <SelectFieldShell
-                  hasError={!!errors.customer?.region_id?.message}
+              <div className="flex flex-col gap-1.5">
+                <SearchableSelect
+                  label={`${t("filterRegion")} *`}
+                  name={field.name}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  options={regionOptions}
+                  placeholder={
+                    regLoading ? t("loading", { ns: "common" }) : t("selectRegion")
+                  }
+                  icon={MapPin}
+                  loading={regLoading}
                   disabled={regLoading}
-                >
-                  <select
-                    {...field}
-                    disabled={regLoading}
-                    className={getSelectFieldClassName(
-                      getDisabledFieldClassName(`${inputCls} cursor-pointer`),
-                      !!errors.customer?.region_id?.message,
-                    )}
-                  >
-                    <option value="">
-                      {regLoading ? t("loading", { ns: "common" }) : t("selectRegion")}
-                    </option>
-                    {regionList.map((region: any) => (
-                      <option key={region.id} value={region.id}>
-                        {region.name}
-                      </option>
-                    ))}
-                  </select>
-                </SelectFieldShell>
-              </Field>
+                />
+                <FormFieldError message={errors.customer?.region_id?.message} />
+              </div>
             )}
           />
 
@@ -331,39 +324,26 @@ const Step2Combined = () => {
             control={control}
             name="customer.district_id"
             render={({ field }) => (
-              <Field
-                label={t("district")}
-                required
-                icon={<MapPin size={12} />}
-                error={errors.customer?.district_id?.message}
-              >
-                <SelectFieldShell
-                  hasError={!!errors.customer?.district_id?.message}
+              <div className="flex flex-col gap-1.5">
+                <SearchableSelect
+                  label={`${t("district")} *`}
+                  name={field.name}
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  options={districtOptions}
+                  placeholder={
+                    !selectedRegionId
+                      ? t("selectRegionFirst")
+                      : distLoading
+                        ? t("loading", { ns: "common" })
+                        : t("selectDistrict")
+                  }
+                  icon={Building2}
+                  loading={distLoading}
                   disabled={!selectedRegionId || distLoading}
-                >
-                  <select
-                    {...field}
-                    disabled={!selectedRegionId || distLoading}
-                    className={getSelectFieldClassName(
-                      getDisabledFieldClassName(`${inputCls} cursor-pointer`),
-                      !!errors.customer?.district_id?.message,
-                    )}
-                  >
-                    <option value="">
-                      {!selectedRegionId
-                        ? t("selectRegionFirst")
-                        : distLoading
-                          ? t("loading", { ns: "common" })
-                          : t("selectDistrict")}
-                    </option>
-                    {districtList.map((district: any) => (
-                      <option key={district.id} value={district.id}>
-                        {district.name}
-                      </option>
-                    ))}
-                  </select>
-                </SelectFieldShell>
-              </Field>
+                />
+                <FormFieldError message={errors.customer?.district_id?.message} />
+              </div>
             )}
           />
 
