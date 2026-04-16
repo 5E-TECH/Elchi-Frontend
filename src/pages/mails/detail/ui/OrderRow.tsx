@@ -10,21 +10,36 @@ import {
   Package2,
   Warehouse,
   House,
+  Trash2,
 } from "lucide-react";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import { formatDate, formatPrice, getStatusLabel, getStatusStyle } from "../lib/helpers";
 import Checkbox from "./Checkbox";
 import { HISTORY_TABLE_COLS, TABLE_COLS } from "./OrdersTable";
+import PrintModeSelect from "./PrintModeSelect";
+import type { PrintMode } from "../lib/printMode";
 
 interface OrderRowProps {
   order: PostOrder;
   checked: boolean;
   onToggle: (id: string) => void;
+  onPrint?: (order: PostOrder, mode: PrintMode) => void;
+  onDelete?: (orderId: string) => void;
+  canDelete?: boolean;
   variant?: "default" | "history";
   readOnly?: boolean;
 }
 
-const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly = false }: OrderRowProps) => {
+const OrderRow = memo(({
+  order,
+  checked,
+  onToggle,
+  onPrint,
+  onDelete,
+  canDelete = false,
+  variant = "default",
+  readOnly = false,
+}: OrderRowProps) => {
   const { t } = useTranslation(["mails", "orders", "common"]);
   const customerName = order.customer?.name ?? t("mails:customerNumber", { id: order.customer_id });
   const customerPhone = order.customer?.phone_number ?? t("mails:phoneUnavailable");
@@ -154,41 +169,41 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
       }}
     >
       {/* XL table layout */}
-      <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 xl:gap-3 px-3 xl:px-4 py-3.5`}>
+      <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 px-3 xl:px-4 py-3.5`}>
         {readOnly ? <div /> : <Checkbox checked={checked} onChange={() => onToggle(order.id)} />}
 
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 shrink-0">
             <User size={13} className="text-slate-500 dark:text-white/70" />
           </div>
-          <span className="text-sm font-semibold text-gray-800 dark:text-white truncate">
+          <span className="text-[13px] font-semibold text-gray-800 dark:text-white truncate">
             {customerName}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5 min-w-0">
           <Phone size={12} className="text-black dark:text-white/50 shrink-0" />
-          <span className="text-xs text-gray-500 dark:text-white font-medium truncate">
+          <span className="text-[14px] leading-none text-gray-500 dark:text-white/95 font-medium truncate">
             {customerPhone}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5 min-w-0">
           <MapPin size={12} className="text-black dark:text-white/50 shrink-0" />
-          <span className="text-xs text-gray-500 dark:text-white font-medium truncate">
+          <span className="text-[14px] leading-none text-gray-500 dark:text-white/95 font-medium truncate">
             {districtName}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5 min-w-0">
           <Store size={12} className="text-black dark:text-white/50 shrink-0" />
-          <span className="text-xs text-gray-600 dark:text-white font-semibold truncate">
+          <span className="text-[14px] leading-none text-gray-600 dark:text-white/95 font-semibold truncate">
             {marketName}
           </span>
         </div>
 
         <div>
-          <span className="text-sm font-bold text-red-500">
+          <span className="text-[14px] font-bold text-red-500">
             {formatPrice(order.total_price)}
           </span>
         </div>
@@ -207,16 +222,16 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 whitespace-nowrap">
+        <div className="flex items-center gap-1.5 whitespace-nowrap pl-1">
           <Calendar size={11} className="text-black dark:text-white/50 shrink-0" />
-          <span className="text-[11px] text-black dark:text-white font-medium">
+          <span className="text-[13px] text-black dark:text-white font-medium">
             {formatDate(order.updatedAt ?? order.createdAt)}
           </span>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-center">
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-semibold ${getStatusStyle(
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[13px] font-semibold ${getStatusStyle(
               order.status as OrderStatus,
             )}`}
             style={{ whiteSpace: "nowrap" }}
@@ -224,6 +239,32 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
             <Package2 size={11} />
             {getStatusLabel(order.status as OrderStatus)}
           </span>
+        </div>
+
+        <div
+          className="flex items-center justify-center gap-1.5"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {onPrint ? (
+            <PrintModeSelect
+              variant="icon"
+              count={1}
+              onSelect={(mode) => onPrint(order, mode)}
+            />
+          ) : null}
+          {canDelete && onDelete ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete(order.id);
+              }}
+              className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20 transition-all duration-200 shrink-0"
+              aria-label={t("mails:delete")}
+            >
+              <Trash2 size={13} />
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -259,7 +300,7 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
               </span>
             </div>
 
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
               <span className="text-sm font-bold text-red-500">
                 {formatPrice(order.total_price)}
               </span>
@@ -291,11 +332,39 @@ const OrderRow = memo(({ order, checked, onToggle, variant = "default", readOnly
                   <Warehouse size={11} />
                   Markazgacha
                 </span>
-              )}
-            </div>
+            )}
           </div>
+
+          {(onPrint || (canDelete && onDelete)) && (
+            <div
+              className="mt-3 flex items-center gap-2"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {onPrint ? (
+                <PrintModeSelect
+                  variant="icon"
+                  count={1}
+                  onSelect={(mode) => onPrint(order, mode)}
+                />
+              ) : null}
+              {canDelete && onDelete ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(order.id);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-500 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20 transition-all duration-200"
+                >
+                  <Trash2 size={12} />
+                  {t("mails:delete")}
+                </button>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
+    </div>
     </div>
   );
 });

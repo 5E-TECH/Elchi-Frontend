@@ -175,4 +175,22 @@
   "closeShiftError": "Ошибка при закрытии смены",
   "currency": "UZS",
   "mainCashboxReport": "Отчет по основной кассе"
+  ,"marketCashboxLabel": "Касса маркета"
+  ,"courierCashboxLabel": "Касса курьера"
+  ,"payAction": "Оплатить"
+  ,"receiveAction": "Принять"
+  ,"userFallback": "Пользователь"
+  ,"receiveFromCourier": "Принять от курьера"
+  ,"payToMarket": "Оплатить маркету"
+  ,"paySalary": "Выплатить зарплату"
+  ,"courierShort": "Курьер"
+  ,"marketShort": "Маркет"
+  ,"expenseShort": "Расход"
+  ,"incomeShort": "Доход"
+  ,"salaryShort": "Зарплата"
+  ,"excel": "Excel"
+  ,"sell": "Продажа"
+  ,"cancelOperation": "Отмена"
+  ,"extraCost": "Доп. расход"
+  ,"currencyAmountSuffix": "сум"
 }

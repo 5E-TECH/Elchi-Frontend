@@ -216,7 +216,7 @@ const PaymentHistoryTable = ({
         {hasPagination && onPageChange && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 dark:border-glass-border">
             <span className="text-xs text-gray-500 dark:text-white/40">
-              {activePage}-sahifa / {totalPages}
+              {t("pageLabel", { page: activePage, totalPages })}
             </span>
             <Pagination
               totalItems={safeTotal}

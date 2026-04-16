@@ -83,51 +83,51 @@ const summarizeHistory = (items: PaymentRow[] = []) =>
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ActionLabel =
-  | "Receive from courier"
-  | "Pay to market"
-  | "Spend from cashbox"
-  | "Refill cashbox"
-  | "Pay salary";
+  | "receiveFromCourier"
+  | "payToMarket"
+  | "spendFromCashbox"
+  | "fillCashbox"
+  | "paySalary";
 
 const ACTIONS: {
   icon: React.ReactNode;
   label: ActionLabel;
-  shortLabel: string;
+  shortLabelKey: string;
   color: string;
   bg: string;
 }[] = [
   {
     icon: <Truck size={20} />,
-    label: "Receive from courier",
-    shortLabel: "Kuryer",
+    label: "receiveFromCourier",
+    shortLabelKey: "courierShort",
     color: "text-emerald-400",
     bg: "bg-emerald-500/15 hover:bg-emerald-500/25",
   },
   {
     icon: <Store size={20} />,
-    label: "Pay to market",
-    shortLabel: "Market",
+    label: "payToMarket",
+    shortLabelKey: "marketShort",
     color: "text-blue-400",
     bg: "bg-blue-500/15 hover:bg-blue-500/25",
   },
   {
     icon: <Minus size={20} />,
-    label: "Spend from cashbox",
-    shortLabel: "Chiqim",
+    label: "spendFromCashbox",
+    shortLabelKey: "expenseShort",
     color: "text-rose-400",
     bg: "bg-rose-500/15 hover:bg-rose-500/25",
   },
   {
     icon: <Plus size={20} />,
-    label: "Refill cashbox",
-    shortLabel: "Kirim",
+    label: "fillCashbox",
+    shortLabelKey: "incomeShort",
     color: "text-teal-400",
     bg: "bg-teal-500/15 hover:bg-teal-500/25",
   },
   {
     icon: <DollarSign size={20} />,
-    label: "Pay salary",
-    shortLabel: "Maosh",
+    label: "paySalary",
+    shortLabelKey: "salaryShort",
     color: "text-amber-400",
     bg: "bg-amber-500/15 hover:bg-amber-500/25",
   },
@@ -268,11 +268,11 @@ const MainCashbox = () => {
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleActionClick = useCallback((label: ActionLabel) => {
     const map: Record<ActionLabel, () => void> = {
-      "Pay salary": () => setIsSalaryPopupOpen(true),
-      "Receive from courier": () => setIsCourierPopupOpen(true),
-      "Pay to market": () => setIsMarketPopupOpen(true),
-      "Spend from cashbox": () => setIsSpendPopupOpen(true),
-      "Refill cashbox": () => setIsRefillPopupOpen(true),
+      paySalary: () => setIsSalaryPopupOpen(true),
+      receiveFromCourier: () => setIsCourierPopupOpen(true),
+      payToMarket: () => setIsMarketPopupOpen(true),
+      spendFromCashbox: () => setIsSpendPopupOpen(true),
+      fillCashbox: () => setIsRefillPopupOpen(true),
     };
     map[label]?.();
   }, []);
@@ -398,16 +398,16 @@ const MainCashbox = () => {
               {t("quickActions")}
             </p>
             <div className="grid grid-cols-5 gap-1.5">
-              {ACTIONS.map(({ icon, label, shortLabel, color, bg }) => (
+              {ACTIONS.map(({ icon, label, shortLabelKey, color, bg }) => (
                 <button
                   key={label}
                   onClick={() => handleActionClick(label)}
-                  title={label}
+                  title={t(label)}
                   className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl ${bg} ${color} transition-all duration-150 active:scale-95`}
                 >
                   <span className="text-current">{icon}</span>
                   <span className="text-[10px] font-semibold text-center leading-tight text-gray-600 dark:text-white/60">
-                    {shortLabel}
+                    {t(shortLabelKey)}
                   </span>
                 </button>
               ))}
@@ -421,7 +421,7 @@ const MainCashbox = () => {
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-main/60 text-main text-sm font-semibold hover:bg-main/10 transition-colors"
             >
               <Download size={15} />
-              Excel
+              {t("excel")}
             </button>
             <button
               onClick={() => setIsCloseShiftPopupOpen(true)}

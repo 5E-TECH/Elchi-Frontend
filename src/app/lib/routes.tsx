@@ -64,6 +64,10 @@ const ErrorBoundaryPage = lazy(() => import("../../shared/ui/ErrorBoundaryPage")
 const AppRouter = () => {
   return useRoutes([
     { path: "/login", element: <Login /> },
+    { path: "/403", element: <ForbiddenPage /> },
+    { path: "/404", element: <NotFound /> },
+    { path: "/500", element: <ServerErrorPage /> },
+    { path: "/runtime-error", element: <ErrorBoundaryPage /> },
     {
       path: "/",
       element: <Auth />,
@@ -166,22 +170,6 @@ const AppRouter = () => {
                 { index: true, element: <BranchesPage /> },
                 { path: ":id", element: <BranchDetailPage /> },
               ],
-            },
-            {
-              path: "403",
-              element: <ForbiddenPage />,
-            },
-            {
-              path: "404",
-              element: <NotFound />,
-            },
-            {
-              path: "500",
-              element: <ServerErrorPage />,
-            },
-            {
-              path: "runtime-error",
-              element: <ErrorBoundaryPage />,
             },
             {
               path: "*",
