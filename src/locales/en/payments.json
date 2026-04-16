@@ -175,4 +175,22 @@
   "closeShiftError": "An error occurred while closing the shift",
   "currency": "UZS",
   "mainCashboxReport": "Main cashbox report"
+  ,"marketCashboxLabel": "Market cashbox"
+  ,"courierCashboxLabel": "Courier cashbox"
+  ,"payAction": "Pay"
+  ,"receiveAction": "Receive"
+  ,"userFallback": "User"
+  ,"receiveFromCourier": "Receive from courier"
+  ,"payToMarket": "Pay to market"
+  ,"paySalary": "Pay salary"
+  ,"courierShort": "Courier"
+  ,"marketShort": "Market"
+  ,"expenseShort": "Expense"
+  ,"incomeShort": "Income"
+  ,"salaryShort": "Salary"
+  ,"excel": "Excel"
+  ,"sell": "Sale"
+  ,"cancelOperation": "Cancel"
+  ,"extraCost": "Extra cost"
+  ,"currencyAmountSuffix": "so'm"
 }
