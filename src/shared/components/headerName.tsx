@@ -21,7 +21,7 @@ const HeaderName = ({ name, description, icon, onIconClick }: HeaderNameProps) =
           {name}
         </h2>
         {description && (
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 m-0 font-medium">
+          <p className="text-[11px] text-gray-500 dark:text-white m-0 font-medium">
             {description}
           </p>
         )}

@@ -103,9 +103,9 @@ const CashboxFormPopup = ({
 
     return (
         <Popup isShow={isOpen} onClose={handleClose}>
-            <div className="bg-primary dark:bg-maindark w-[92vw] max-w-[460px] rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+            <div className="bg-primary dark:bg-maindark w-[92vw] max-w-115 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
                 {/* Gradient header */}
-                <div className={`bg-gradient-to-r ${accentColor} px-6 py-5 flex items-center justify-between`}>
+                <div className={`bg-linear-to-r ${accentColor} px-6 py-5 flex items-center justify-between`}>
                     <HeaderName name={title} description={description} icon={icon} />
                     <button
                         onClick={handleClose}
@@ -200,7 +200,7 @@ const CashboxFormPopup = ({
                     <Button
                         label={isLoading ? t("loadingLabel") : submitLabel}
                         icon={submitIcon}
-                        className={`px-7 bg-gradient-to-r ${accentColor} text-white ${!isValid || isLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90"
+                        className={`px-7 bg-linear-to-r ${accentColor} text-white ${!isValid || isLoading ? "opacity-50 cursor-not-allowed" : "hover:opacity-90"
                             }`}
                         onClick={handleSubmit(submitForm)}
                         disabled={!isValid || isLoading}

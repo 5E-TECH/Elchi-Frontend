@@ -1,10 +1,11 @@
-import { memo, useEffect, useMemo, useRef } from "react";
-import { ListOrdered, Plus } from "lucide-react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { BookMarked, ListOrdered, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import Button from "../../shared/components/button";
 import { useOrders } from "../../entities/order/api/orderApi";
+import { useMarkets } from "../../entities/markets";
 import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
 import OrderFilters, { ORDER_FILTER_KEYS } from "./list/OrderFilters";
 import OrdersTable from "./list/OrdersTable";
@@ -13,6 +14,8 @@ import type { RootState } from "../../app/config/store";
 import CourierOrders from "./list/courier/index";
 import { usePagination } from "../../shared/lib/usePagination";
 import Pagination from "../../shared/components/pagination";
+import PopupSelect from "../../shared/components/popupSelect";
+import type { MarketOption } from "./create/model/orderCreateForm";
 
 const LIMIT = 10;
 const isOrderStatus = (value: string): value is OrderStatus =>
@@ -66,7 +69,9 @@ const Orders = () => {
   const { t } = useTranslation("orders");
   const navigate = useNavigate();
   const { getOrders } = useOrders();
+  const { getMarkets } = useMarkets();
   const { getAllParams } = useQueryParams();
+  const [showMarketSelect, setShowMarketSelect] = useState(false);
 
   // Redux filterlarni olish (UserListPage patterndek)
   const filters = useSelector((state: RootState) => state.filter);
@@ -167,6 +172,32 @@ const Orders = () => {
   }, [filtersKey, resetPagination]);
 
   const { data, isLoading } = getOrders(apiParams);
+  const { data: marketsResponse, isLoading: isMarketsLoading } = getMarkets(
+    { limit: 100 },
+    showMarketSelect,
+  );
+
+  const markets = useMemo<MarketOption[]>(() => {
+    const payload = marketsResponse as
+      | { data?: { items?: MarketOption[] } }
+      | { data?: MarketOption[] }
+      | MarketOption[]
+      | undefined;
+
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (Array.isArray(payload?.data)) {
+      return payload.data;
+    }
+
+    if (Array.isArray(payload?.data?.items)) {
+      return payload.data.items;
+    }
+
+    return [];
+  }, [marketsResponse]);
 
   const rawPagination = (data as { meta?: Record<string, unknown>; pagination?: Record<string, unknown> } | undefined)?.meta
     ?? (data as { pagination?: Record<string, unknown> } | undefined)?.pagination
@@ -183,6 +214,23 @@ const Orders = () => {
       </div>
     );
   }
+
+  const handleOpenNewOrder = () => {
+    if (role === "market") {
+      navigate("add");
+      return;
+    }
+
+    setShowMarketSelect(true);
+  };
+
+  const handleSelectMarket = (market: MarketOption) => {
+    navigate("add", {
+      state: {
+        selectedMarket: market,
+      },
+    });
+  };
 
   return (
     <div className="rounded-2xl bg-sidebar p-3 sm:p-4 lg:p-6 dark:bg-maindark flex flex-col gap-4 sm:gap-5 min-h-full">
@@ -206,7 +254,7 @@ const Orders = () => {
           <Button
             label={t("newOrders")}
             icon={<Plus size={16} />}
-            onClick={() => navigate("add")}
+            onClick={handleOpenNewOrder}
             className="w-full rounded-2xl py-3 text-sm shadow-lg shadow-main/20 sm:w-auto sm:rounded-xl sm:py-2.5"
           />
         </div>
@@ -243,6 +291,24 @@ const Orders = () => {
           </div>
         )}
       </div>
+
+      <PopupSelect<MarketOption>
+        isOpen={showMarketSelect}
+        onClose={() => setShowMarketSelect(false)}
+        title={t("selectMarket")}
+        description={t("marketModalSubtitle")}
+        data={markets}
+        onSelect={handleSelectMarket}
+        keyExtractor={(item) => item.id}
+        searchKeys={["name", "phone_number", "phone"]}
+        icon={<BookMarked />}
+        selectLabel={t("selectLabel")}
+        cancelLabel={t("cancel", { ns: "common" })}
+        labelKey="name"
+        secondaryLabelKey="phone_number"
+        placeholder={t("searchMarket")}
+        className={isMarketsLoading ? "pointer-events-none opacity-90" : ""}
+      />
     </div>
   );
 };

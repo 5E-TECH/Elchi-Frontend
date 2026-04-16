@@ -19,10 +19,20 @@ interface Step1MarketSearchValues {
   search: string;
 }
 
+interface Step1MarketProps {
+  autoOpenOnMount?: boolean;
+  onSelectMarket?: (market: MarketOption) => void;
+  compact?: boolean;
+}
+
 const getMarketPhone = (market?: MarketOption | null) =>
   market?.phone_number ?? market?.phone ?? "";
 
-  const Step1Market = () => {
+const Step1Market = ({
+  autoOpenOnMount = false,
+  onSelectMarket,
+  compact = false,
+}: Step1MarketProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useTranslation(["orders", "common"]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -84,6 +94,14 @@ const getMarketPhone = (market?: MarketOption | null) =>
   const selectedMarket = field.value;
   const selectedPhone = getMarketPhone(selectedMarket);
 
+  useEffect(() => {
+    if (!autoOpenOnMount || selectedMarket) {
+      return;
+    }
+
+    setIsOpen(true);
+  }, [autoOpenOnMount, selectedMarket]);
+
   const visibleMarkets = useMemo(() => {
     if (!selectedMarket) return markets;
 
@@ -129,6 +147,7 @@ const getMarketPhone = (market?: MarketOption | null) =>
     field.onChange(market);
     setIsOpen(false);
     setSearchValue("search", "");
+    onSelectMarket?.(market);
   };
 
   const handleClear = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -139,19 +158,21 @@ const getMarketPhone = (market?: MarketOption | null) =>
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-start sm:items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main/10">
-          <Store size={18} className="text-main" />
+      {!compact && (
+        <div className="flex items-start gap-3 sm:items-center">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main/10">
+            <Store size={18} className="text-main" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-maindark dark:text-primary">
+              {t("selectMarketTitle")}
+            </h3>
+            <p className="text-xs text-gray-400">
+              {t("selectMarket")}
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h3 className="text-base font-semibold text-maindark dark:text-primary">
-            {t("selectMarketTitle")}
-          </h3>
-          <p className="text-xs text-gray-400">
-            {t("selectMarket")}
-          </p>
-        </div>
-      </div>
+      )}
 
       {selectedMarket && (
         <div className="flex flex-col gap-3 rounded-2xl border border-main/15 bg-main/5 p-4 dark:bg-main/10 sm:flex-row sm:items-center sm:justify-between">
@@ -182,38 +203,40 @@ const getMarketPhone = (market?: MarketOption | null) =>
       )}
 
       <div ref={containerRef} className="relative">
-        <button
-          type="button"
-          onClick={handleOpen}
-          className={`
-            flex w-full items-center gap-3 rounded-2xl border bg-primary px-4 py-3.5 text-left transition-all duration-200 dark:bg-primarydark
-            ${isOpen
-              ? "border-main shadow-sm shadow-main/10"
-              : error
-                ? "border-error"
-                : "border-gray-200 hover:border-main/25 dark:border-primarydark"}
-          `}
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sidebar dark:bg-maindark">
-            <Store size={16} className="text-main" />
-          </div>
+        {(!compact || !selectedMarket) && (
+          <button
+            type="button"
+            onClick={handleOpen}
+            className={`
+              flex w-full items-center gap-3 rounded-2xl border bg-primary px-4 py-3.5 text-left transition-all duration-200 dark:bg-primarydark
+              ${isOpen
+                ? "border-main shadow-sm shadow-main/10"
+                : error
+                  ? "border-error"
+                  : "border-gray-200 hover:border-main/25 dark:border-primarydark"}
+            `}
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sidebar dark:bg-maindark">
+              <Store size={16} className="text-main" />
+            </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-maindark dark:text-primary">
-              {selectedMarket ? selectedMarket.name : t("selectMarketButton")}
-            </p>
-            <p className="mt-0.5 text-xs text-gray-400">
-              {selectedMarket
-                ? t("selectAnotherMarket")
-                : t("searchInstruction")}
-            </p>
-          </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-maindark dark:text-primary">
+                {selectedMarket ? selectedMarket.name : t("selectMarketButton")}
+              </p>
+              <p className="mt-0.5 text-xs text-gray-400">
+                {selectedMarket
+                  ? t("selectAnotherMarket")
+                  : t("searchInstruction")}
+              </p>
+            </div>
 
-          <ChevronDown
-            size={18}
-            className={`shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-          />
-        </button>
+            <ChevronDown
+              size={18}
+              className={`shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+        )}
 
         <div className="mt-2">
           <FormFieldError message={error?.message} />

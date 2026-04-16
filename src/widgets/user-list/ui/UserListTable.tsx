@@ -9,6 +9,7 @@ import type { ColumnConfig } from '../../../shared/components/Table/Table.types'
 import { useUser } from '../../../entities/user/api/userApi';
 import { useTranslation } from 'react-i18next';
 import Pagination from '../../../shared/components/pagination';
+import { useAppNotification } from '../../../app/providers/notification/NotificationProvider';
 
 interface UserListTableProps {
     users: User[];
@@ -37,6 +38,7 @@ export const UserListTable = memo(({
     const { t } = useTranslation("users");
     const navigate = useNavigate();
     const { updateUserStatus } = useUser();
+    const { api } = useAppNotification();
 
     // Hozirda so'rov ketayotgan userlar ID lari
     const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
@@ -53,6 +55,48 @@ export const UserListTable = memo(({
         updateUserStatus.mutate(
             { id: user.id, status: newStatus },
             {
+                onSuccess: () => {
+                    api.success({
+                        message: t("statusChangeSuccessTitle"),
+                        description: t(
+                            newStatus === "active"
+                                ? "statusActivatedSuccess"
+                                : "statusDeactivatedSuccess",
+                            { name: user.name },
+                        ),
+                        placement: "topRight",
+                        duration: 4,
+                    });
+                },
+                onError: (error: unknown) => {
+                    const errorMessage =
+                        typeof error === "object" &&
+                        error !== null &&
+                        "response" in error &&
+                        typeof (error as {
+                            response?: { data?: { message?: string; error?: string } };
+                        }).response?.data?.message === "string"
+                            ? (error as {
+                                response?: { data?: { message?: string; error?: string } };
+                            }).response?.data?.message
+                            : typeof error === "object" &&
+                              error !== null &&
+                              "response" in error &&
+                              typeof (error as {
+                                  response?: { data?: { message?: string; error?: string } };
+                              }).response?.data?.error === "string"
+                                ? (error as {
+                                    response?: { data?: { message?: string; error?: string } };
+                                }).response?.data?.error
+                                : t("statusChangeErrorDescription");
+
+                    api.error({
+                        message: t("statusChangeErrorTitle"),
+                        description: errorMessage,
+                        placement: "topRight",
+                        duration: 5,
+                    });
+                },
                 onSettled: () => {
                     // So'rov tugagach (success yoki error) loading o'chiriladi
                     setLoadingIds(prev => {

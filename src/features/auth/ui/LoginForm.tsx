@@ -9,7 +9,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useTranslation } from "react-i18next";
 import { createLoginSchema } from "../../../shared/lib/validation/loginSchema";
 import {
-  loginSuccess,
   setLoading,
   setAppInitializing,
   setError,
@@ -95,9 +94,7 @@ const LoginForm = () => {
     signinUser.mutate(
       payload,
       {
-        onSuccess: (responseData) => {
-          // Save token, user, and role to Redux and localStorage
-          dispatch(loginSuccess(responseData));
+        onSuccess: async () => {
           navigate("/");
         },
         onError: (error) => {

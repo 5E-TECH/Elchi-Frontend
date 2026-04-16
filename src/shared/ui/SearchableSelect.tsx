@@ -7,7 +7,7 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
 } from "react";
-import { ChevronDown, X, type LucideIcon } from "lucide-react";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export interface SearchableSelectOption {
@@ -41,8 +41,10 @@ const SearchableSelect = ({
   const { t } = useTranslation("common");
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value),
@@ -71,6 +73,7 @@ const SearchableSelect = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
         setSearchValue("");
+        setHighlightedIndex(-1);
         setIsOpen(false);
       }
     };
@@ -81,6 +84,25 @@ const SearchableSelect = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const selectedIndex = filteredOptions.findIndex((option) => option.value === value);
+    setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : filteredOptions.length > 0 ? 0 : -1);
+  }, [filteredOptions, isOpen, value]);
+
+  useEffect(() => {
+    if (!isOpen || highlightedIndex < 0) {
+      return;
+    }
+
+    optionRefs.current[highlightedIndex]?.scrollIntoView({
+      block: "nearest",
+    });
+  }, [highlightedIndex, isOpen]);
 
   const openDropdown = () => {
     if (disabled) {
@@ -93,24 +115,39 @@ const SearchableSelect = ({
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
     setSearchValue("");
-    setIsOpen(false);
-  };
-
-  const handleClear = () => {
-    onChange("");
-    setSearchValue("");
+    setHighlightedIndex(-1);
     setIsOpen(false);
   };
 
   const handleTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
+    if (
+      event.key === "Enter" ||
+      event.key === " " ||
+      event.key === "ArrowDown" ||
+      event.key === "ArrowUp"
+    ) {
       event.preventDefault();
       openDropdown();
+      return;
     }
 
     if (event.key === "Escape") {
       setSearchValue("");
+      setHighlightedIndex(-1);
       setIsOpen(false);
+      return;
+    }
+
+    const isPrintableKey =
+      event.key.length === 1 &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey;
+
+    if (isPrintableKey) {
+      event.preventDefault();
+      setSearchValue(event.key);
+      setIsOpen(true);
     }
   };
 
@@ -119,8 +156,43 @@ const SearchableSelect = ({
   };
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedIndex((current) =>
+        filteredOptions.length === 0
+          ? -1
+          : current < filteredOptions.length - 1
+            ? current + 1
+            : 0,
+      );
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedIndex((current) =>
+        filteredOptions.length === 0
+          ? -1
+          : current > 0
+            ? current - 1
+            : filteredOptions.length - 1,
+      );
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+
+      if (highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
+        handleSelect(filteredOptions[highlightedIndex].value);
+      }
+
+      return;
+    }
+
     if (event.key === "Escape") {
       setSearchValue("");
+      setHighlightedIndex(-1);
       setIsOpen(false);
     }
   };
@@ -145,7 +217,7 @@ const SearchableSelect = ({
         } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-text"}`}
       >
         {Icon && (
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] transition-colors group-hover:text-main group-focus-within:text-main dark:text-[color:var(--color-text-muted-dark)]">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] transition-colors group-hover:text-main group-focus-within:text-main dark:text-[color:var(--color-text-muted-dark)]">
             <Icon size={18} />
           </span>
         )}
@@ -185,23 +257,9 @@ const SearchableSelect = ({
         )}
 
         <span className="ml-2 flex items-center gap-1.5">
-          {value && !disabled && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                handleClear();
-              }}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--color-text-muted)] transition-colors hover:bg-main/10 hover:text-main dark:text-[color:var(--color-text-muted-dark)]"
-              aria-label={t("clear")}
-            >
-              <X size={14} />
-            </button>
-          )}
-
           <ChevronDown
             size={18}
-            className={`shrink-0 text-[color:var(--color-text-muted)] transition-all duration-200 dark:text-[color:var(--color-text-muted-dark)] ${
+            className={`pointer-events-none shrink-0 text-[color:var(--color-text-muted)] transition-all duration-200 dark:text-[color:var(--color-text-muted-dark)] ${
               isOpen ? "rotate-180 text-main" : ""
             }`}
           />
@@ -216,17 +274,24 @@ const SearchableSelect = ({
                 {t("loading")}
               </div>
             ) : filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => {
+              filteredOptions.map((option, optionIndex) => {
                 const isSelected = option.value === value;
+                const isHighlighted = optionIndex === highlightedIndex;
 
                 return (
                   <button
                     key={option.value}
+                    ref={(element) => {
+                      optionRefs.current[optionIndex] = element;
+                    }}
                     type="button"
                     onClick={() => handleSelect(option.value)}
+                    onMouseEnter={() => setHighlightedIndex(optionIndex)}
                     className={`flex h-11 w-full items-center rounded-xl px-3 text-left text-sm font-medium transition-colors ${
-                      isSelected
-                        ? "bg-main/10 text-main"
+                      isHighlighted
+                        ? "bg-main text-white shadow-sm shadow-main/25"
+                        : isSelected
+                        ? "bg-main/20 text-main dark:bg-main/25 dark:text-white"
                         : "text-[color:var(--color-maindark)] hover:bg-main/10 dark:text-[color:var(--color-primary)] dark:hover:bg-main/10"
                     }`}
                   >
