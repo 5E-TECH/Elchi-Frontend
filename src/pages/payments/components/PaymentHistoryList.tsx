@@ -76,7 +76,7 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
   const dateStr = (row.payment_date || row.createdAt || row.created_at || "") as string;
 
   return (
-    <div className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-gray-50/60 dark:hover:bg-white/[0.03] transition-colors">
+    <div className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-gray-50/60 dark:hover:bg-white/3 transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${isIncome

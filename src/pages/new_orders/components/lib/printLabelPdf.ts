@@ -1,5 +1,4 @@
 import { jsPDF } from "jspdf";
-import QRCode from "qrcode";
 import type { ApiOrder } from "../OrderCard";
 
 type LabelOrder = ApiOrder & {
@@ -359,14 +358,6 @@ const drawPage = (pdf: jsPDF, order: LabelOrder, logoUrl: string, qrUrl: string)
   drawBottomSection(pdf, order);
 };
 
-const generateQr = (text: string): Promise<string> =>
-  QRCode.toDataURL(text, {
-    width: 180,
-    margin: 0,
-    color: { dark: "#000000", light: "#ffffff" },
-    errorCorrectionLevel: "M",
-  });
-
 const loadImage = (src: string): Promise<string> =>
   new Promise((resolve, reject) => {
     const image = new Image();
@@ -388,6 +379,11 @@ const loadImage = (src: string): Promise<string> =>
     image.onerror = reject;
     image.src = src;
   });
+
+const generateQr = async (text: string): Promise<string> => {
+  const qrSource = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${encodeURIComponent(text)}`;
+  return loadImage(qrSource);
+};
 
 export const openOrdersLabelPdf = async (orders: ApiOrder[]): Promise<void> => {
   if (!orders.length) return;

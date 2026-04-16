@@ -4,14 +4,18 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
+  ArrowLeftRight,
   CalendarClock,
   CreditCard,
   Eye,
   EyeOff,
+  List,
   Loader2,
   PackageCheck,
   Send,
   Store,
+  TrendingDown,
+  TrendingUp,
   Truck,
   Wallet2,
 } from "lucide-react";
@@ -251,6 +255,30 @@ const CashDetail = () => {
     [currentPage, historyRows.length],
   );
 
+  const income = useMemo(
+    () =>
+      historyRows.reduce((sum, row) => {
+        if (row.operation_type !== "income") {
+          return sum;
+        }
+
+        return sum + Math.abs(toNumber(row.amount));
+      }, 0),
+    [historyRows],
+  );
+
+  const expense = useMemo(
+    () =>
+      historyRows.reduce((sum, row) => {
+        if (row.operation_type !== "expense") {
+          return sum;
+        }
+
+        return sum + Math.abs(toNumber(row.amount));
+      }, 0),
+    [historyRows],
+  );
+
   useEffect(() => {
     setCurrentPage(1);
   }, [appliedDateFrom, appliedDateTo, historyRows.length]);
@@ -484,8 +512,6 @@ const CashDetail = () => {
             {(draftDateFrom || draftDateTo) && (
               <div className="px-4 pb-2">
                 <div className="flex items-center justify-end">
-              {(draftDateFrom || draftDateTo) && (
-                <div className="mt-3 flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() => {
@@ -497,18 +523,24 @@ const CashDetail = () => {
                     {t("clear")}
                   </button>
                 </div>
-              )}
-              {((draftDateFrom && !draftDateTo) ||
-                (!draftDateFrom && draftDateTo)) && (
-                <p className="pt-3 text-xs text-gray-500 dark:text-white/45">
-                  {t("dateRangeRequired")}
-                </p>
-              )}
-            </div>
+              </div>
+            )}
+            {((draftDateFrom && !draftDateTo) ||
+              (!draftDateFrom && draftDateTo)) && (
+              <p className="px-4 pb-4 text-xs text-text-muted dark:text-text-muted-dark">
+                {t("dateRangeRequired")}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-            <div className="rounded-[1.2rem] p-3.5 shadow-lg" style={{ background: "linear-gradient(135deg, var(--color-success) 0%, color-mix(in srgb, var(--color-success) 72%, var(--color-main)) 100%)" }}>
+            <div
+              className="rounded-[1.2rem] p-3.5 shadow-lg"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-success) 0%, color-mix(in srgb, var(--color-success) 72%, var(--color-main)) 100%)",
+              }}
+            >
               <div className="mb-3.5 flex items-center justify-between">
                 <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                   <TrendingUp size={16} />
@@ -524,24 +556,33 @@ const CashDetail = () => {
               </p>
             </div>
 
-            <div className="rounded-[1.2rem] p-3.5 shadow-lg" style={{ background: "linear-gradient(135deg, var(--color-error) 0%, color-mix(in srgb, var(--color-error) 60%, var(--color-purple)) 100%)" }}>
+            <div
+              className="rounded-[1.2rem] p-3.5 shadow-lg"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-error) 0%, color-mix(in srgb, var(--color-error) 60%, var(--color-purple)) 100%)",
+              }}
+            >
               <div className="mb-3.5 flex items-center justify-between">
                 <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                   <TrendingDown size={16} />
                 </div>
                 <TrendingDown size={14} className="text-primary/70" />
               </div>
-            )}
-            {((draftDateFrom && !draftDateTo) ||
-              (!draftDateFrom && draftDateTo)) && (
-              <p className="px-4 pb-4 text-xs text-gray-500 dark:text-white/45">
-                {t("dateRangeRequired")}
+              <p className="text-[13px] font-semibold text-primary/80">
+                {t("expense")}
               </p>
-            )}
+              <p className="mt-2.5 text-[1.35rem] font-black leading-none text-primary">
+                -{fmt(expense)}
+              </p>
+              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary/65">
+                UZS
+              </p>
+            </div>
           </div>
 
           {isFetching && !isLoading && (
-            <div className="flex items-center gap-2 px-1 text-xs text-gray-500 dark:text-white/50">
+            <div className="flex items-center gap-2 px-1 text-xs text-text-muted dark:text-text-muted-dark">
               <Loader2 size={14} className="animate-spin text-main" />
               {t("transactionsUpdating")}
             </div>
@@ -550,10 +591,10 @@ const CashDetail = () => {
           <div className={sectionClassName}>
             <div className={`${sectionHeaderClassName} flex items-center justify-between`}>
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">
+                <p className="text-sm font-bold text-maindark dark:text-primary">
                   {t("paymentHistoryTitle")}
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-white/40">
+                <p className="text-[11px] text-text-muted dark:text-text-muted-dark">
                   {t("lastOperations")}
                 </p>
               </div>

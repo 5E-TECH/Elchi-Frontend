@@ -228,7 +228,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   return (
     <Popup isShow={!!row} onClose={onClose}>
       <div
-        className="w-[92vw] max-w-[30rem] h-[90vh] max-h-[52rem] rounded-3xl overflow-hidden shadow-2xl flex flex-col bg-[var(--color-background)]"
+        className="w-[92vw] max-w-120 h-[90vh] max-h-208 rounded-3xl overflow-hidden shadow-2xl flex flex-col bg-background"
         onClick={(event) => event.stopPropagation()}
       >
         <div
@@ -575,7 +575,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                           {orderItems.map((item) => (
                             <div
                               key={item.id}
-                              className="px-2.5 py-2 rounded-lg bg-primary/5 border border-white/10 min-w-[8rem]"
+                              className="px-2.5 py-2 rounded-lg bg-primary/5 border border-white/10 min-w-32"
                             >
                               <p className="text-[12px] font-semibold text-primary leading-tight">
                                 {item.product?.name || `Product #${item.product_id}`}
