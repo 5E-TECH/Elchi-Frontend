@@ -1,8 +1,9 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   Calendar,
   ChevronRight,
   CheckCircle2,
+  MapPinned,
   Inbox,
   Package,
   RefreshCcw,
@@ -12,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import type { RootState } from "../../../app/config/store";
+import FilterSelect from "../../../shared/ui/FilterSelect";
 
 interface Region {
   id: string;
@@ -147,8 +149,30 @@ const OldMails = () => {
   const isCourier = role === "courier";
   const { getOldMails } = useMails();
   const { data, isLoading, isError } = getOldMails(isCourier);
+  const [selectedRegionId, setSelectedRegionId] = useState("");
 
   const mails: MailItem[] = useMemo(() => data?.data?.data ?? [], [data]);
+  const regionOptions = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          mails
+            .filter((mail) => mail.region?.id && mail.region?.name)
+            .map((mail) => [
+              mail.region.id,
+              { value: mail.region.id, label: mail.region.name },
+            ]),
+        ).values(),
+      ).sort((left, right) => left.label.localeCompare(right.label, "uz")),
+    [mails],
+  );
+  const filteredMails = useMemo(
+    () =>
+      selectedRegionId
+        ? mails.filter((mail) => mail.region?.id === selectedRegionId)
+        : mails,
+    [mails, selectedRegionId],
+  );
 
   if (isLoading) {
     return (
@@ -187,10 +211,47 @@ const OldMails = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {mails.map((mail) => (
-        <OldMailCard key={mail.id} item={mail} />
-      ))}
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-end sm:justify-between dark:bg-white/3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white dark:text-white">
+            {t("oldRegionFilterTitle")}
+          </p>
+          <p className="text-xs text-white/60 dark:text-white/55">
+            {t("oldRegionFilterHint")}
+          </p>
+        </div>
+
+        <div className="w-full sm:w-72">
+          <FilterSelect
+            label={t("oldRegionFilterLabel")}
+            name="old-mails-region-filter"
+            value={selectedRegionId}
+            onChange={setSelectedRegionId}
+            options={regionOptions}
+            placeholder={t("oldRegionFilterPlaceholder")}
+            icon={MapPinned}
+            hideLabel
+          />
+        </div>
+      </div>
+
+      {filteredMails.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
+            <Inbox size={28} className="text-main" />
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            {t("oldRegionFilterEmpty")}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {filteredMails.map((mail) => (
+            <OldMailCard key={mail.id} item={mail} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

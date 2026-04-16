@@ -13,7 +13,6 @@ import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 
 const printOptions = [
-  { key: "thermal", icon: <Printer size={18} />, bg: "bg-blue-500/10 text-blue-500", titleKey: "thermalPrinter", subKey: "viaMqtt" },
   { key: "browser", icon: <Globe size={18} />, bg: "bg-emerald-500/10 text-emerald-500", titleKey: "browserPrint", subKey: "anyPrinter" },
   { key: "pdf", icon: <FileText size={18} />, bg: "bg-amber-500/10 text-amber-500", titleKey: "pdfPrint", subKey: "gainschaPrinter" },
 ];
@@ -123,20 +122,35 @@ const NewOrderDetail = () => {
       return;
     }
 
+    setIsOpen(false);
+
     if (mode === "pdf") {
-      const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
-      openOrdersLabelPdf(printableOrders);
-      setIsOpen(false);
+      try {
+        const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
+        await openOrdersLabelPdf(printableOrders);
+      } catch {
+        notifApi.error({
+          message: t("print"),
+          description: "PDF yaratishda xatolik yuz berdi.",
+          placement: "topRight",
+          duration: 5,
+        });
+      }
       return;
     }
 
-    notifApi.info({
-      message: t("print"),
-      description: "Hozircha faqat PDF (60x100mm) format tayyorlandi.",
-      placement: "topRight",
-      duration: 4,
-    });
-    setIsOpen(false);
+    // Browser print (fallback)
+    try {
+      const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
+      await openOrdersLabelPdf(printableOrders);
+    } catch {
+      notifApi.error({
+        message: t("print"),
+        description: "PDF yaratishda xatolik yuz berdi.",
+        placement: "topRight",
+        duration: 5,
+      });
+    }
   }, [notifApi, orders, selectedIds, t]);
 
   return (
@@ -153,13 +167,20 @@ const NewOrderDetail = () => {
             <GlobalSearchInput searchKey="new_order_detail_search" placeholder={t("searchOrder")} />
 
             <div className="relative" ref={dropdownRef}>
-              <button onClick={() => setIsOpen((p) => !p)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-main hover:bg-main/90 text-white font-semibold text-sm transition-all shadow-md shadow-main/20 cursor-pointer">
+              <button
+                type="button"
+                onClick={() => setIsOpen((p) => !p)}
+                disabled={selectedIds.size === 0}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm transition-all shadow-md shadow-main/20 ${selectedIds.size === 0
+                  ? "bg-main/40 cursor-not-allowed shadow-none"
+                  : "bg-main hover:bg-main/90 cursor-pointer"
+                  }`}
+              >
                 <Printer size={16} /> {t("print")}
                 <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
               </button>
 
-              {isOpen && (
+              {isOpen && selectedIds.size > 0 && (
                 <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-primarydark shadow-2xl z-50 p-2">
                   {printOptions.map((o) => (
                     <button key={o.key} onClick={() => { void handlePrint(o.key); }}
@@ -250,7 +271,7 @@ const NewOrderDetail = () => {
         title={t("receiveOrderTitle")}
         message={t("receiveOrderMessage")}
         confirmLabel={t("receiveConfirm")}
-        variant="warning"
+        variant="success"
       />
     </div>
   );

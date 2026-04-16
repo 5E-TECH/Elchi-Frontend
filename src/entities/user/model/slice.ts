@@ -5,6 +5,9 @@ const initialState: UserState = {
   user: null,
   isAuthenticated: false,
   accessToken: null,
+  isAuthenticated: !!localStorage.getItem("accessToken"),
+  accessToken: localStorage.getItem("accessToken"),
+  refreshToken: null,
   loading: false,
   isAppInitializing: true,
   error: null,
@@ -24,6 +27,18 @@ export const userSlice = createSlice({
     setAccessToken: (state, action: PayloadAction<string | null>) => {
       state.accessToken = action.payload;
       state.isAuthenticated = Boolean(action.payload);
+    loginSuccess: (
+      state,
+      action: PayloadAction<{ accessToken: string; user: User; refreshToken?: string | null }>,
+    ) => {
+      state.loading = false;
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken ?? null;
+      state.user = action.payload.user;
+      state.isAuthenticated = true;
+      state.error = null;
+      localStorage.setItem("accessToken", action.payload.accessToken);
+      localStorage.setItem("role", action.payload.user.role);
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -46,6 +61,9 @@ export const userSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("role");
+    }
   },
 });
 

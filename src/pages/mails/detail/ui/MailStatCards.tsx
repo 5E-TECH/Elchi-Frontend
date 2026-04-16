@@ -28,16 +28,22 @@ const StatCard = memo(
     main,
     sub,
     highlighted = false,
+    tone = "primary",
   }: {
     icon: React.ReactNode;
     label: string;
     main: React.ReactNode;
     sub?: string;
     highlighted?: boolean;
+    tone?: "primary" | "success" | "danger";
   }) => (
     <div
       className={`flex items-center gap-4 px-5 py-4 rounded-2xl border ${highlighted
-          ? "bg-linear-to-br from-main to-primarydark border-main/40 text-white"
+          ? tone === "success"
+            ? "bg-linear-to-br from-emerald-500 to-emerald-400 border-emerald-300/40 text-white"
+            : tone === "danger"
+              ? "bg-linear-to-br from-rose-500 to-red-500 border-rose-300/40 text-white"
+              : "bg-linear-to-br from-main to-primarydark border-main/40 text-white"
           : "bg-white dark:bg-primarydark border-gray-100 dark:border-white/10"
         }`}
     >
@@ -85,6 +91,7 @@ const MailStatCards = memo(
       {showSelectionCard && (
         <StatCard
           highlighted
+          tone={selectedCount === totalOrders && totalOrders > 0 ? "success" : "danger"}
           icon={<Package size={18} />}
           label="Tanlangan"
           main={
