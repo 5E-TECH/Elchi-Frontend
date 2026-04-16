@@ -25,7 +25,7 @@ export const StatusTransitionBadge = ({ oldStatus, newStatus }: StatusTransition
   return (
     <div className="flex flex-wrap items-center gap-2">
       <StatusBadge status={previousStatus} />
-      <ArrowRight size={14} className="text-gray-400 dark:text-white/40" />
+      <ArrowRight size={14} className="text-gray-400 dark:text-white" />
       <StatusBadge status={nextStatus} />
     </div>
   );

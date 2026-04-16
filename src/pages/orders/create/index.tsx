@@ -1,6 +1,7 @@
 import { memo, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, ListPlus, SendHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListPlus, Package, SendHorizontal } from "lucide-react";
 import { FormProvider, useForm, useWatch, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useSelector } from "react-redux";
@@ -20,6 +21,157 @@ import {
   type MarketOption,
   type OrderCreateFormValues,
 } from "./model/orderCreateForm";
+import { useOrders as useIncomingOrders } from "../../../entities/orders";
+import type { ApiOrder } from "../../new_orders/components/OrderCard";
+import { Table } from "../../../shared/components/Table/Table";
+import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
+import OrderStatusBadge from "../list/OrderStatusBadge";
+
+type MarketNewOrdersTableProps = {
+  marketId?: number;
+  marketName?: string;
+  onRowClick: (order: ApiOrder) => void;
+};
+
+const formatMoney = (value: number) => `${(value ?? 0).toLocaleString("uz-UZ")} so'm`;
+
+const formatCreatedAt = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const MarketNewOrdersTable = ({
+  marketId,
+  marketName,
+  onRowClick,
+}: MarketNewOrdersTableProps) => {
+  const { t } = useTranslation("orders");
+  const { getTodayOrdersByMarket } = useIncomingOrders();
+  const enabled = Boolean(marketId);
+  const { data, isLoading } = getTodayOrdersByMarket(marketId ?? 0, undefined, enabled);
+  const orders: ApiOrder[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+
+  const columns = useMemo<ColumnConfig<ApiOrder>[]>(
+    () => [
+      {
+        key: "customer",
+        label: t("customer"),
+        render: (customer: ApiOrder["customer"]) => (
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-maindark dark:text-primary">
+              {customer?.name ?? "—"}
+            </p>
+            <p className="text-xs text-gray-400">{customer?.phone_number ?? ""}</p>
+          </div>
+        ),
+      },
+      {
+        key: "address",
+        label: `${t("filterRegion")} / ${t("district")}`,
+        render: (_: ApiOrder["address"], order) => (
+          <div className="min-w-0">
+            <p className="truncate text-sm text-maindark dark:text-primary">
+              {order.customer?.district?.name ?? order.district?.name ?? "—"}
+            </p>
+            <p className="truncate text-xs text-gray-400">
+              {order.customer?.region?.name ?? order.region?.name ?? order.address ?? "—"}
+            </p>
+          </div>
+        ),
+      },
+      {
+        key: "where_deliver",
+        label: t("deliveryType"),
+        render: (whereDeliver: ApiOrder["where_deliver"]) => (
+          <span
+            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+              whereDeliver === "center"
+                ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                : "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+            }`}
+          >
+            {whereDeliver === "center" ? t("deliveryCenter") : t("deliveryHome")}
+          </span>
+        ),
+      },
+      {
+        key: "status",
+        label: t("orderStatus"),
+        render: (status: ApiOrder["status"]) => <OrderStatusBadge status={status as never} />,
+      },
+      {
+        key: "total_price",
+        label: t("sumLabel"),
+        render: (totalPrice: ApiOrder["total_price"]) => (
+          <span className="text-sm font-semibold text-maindark dark:text-primary">
+            {formatMoney(totalPrice)}
+          </span>
+        ),
+      },
+      {
+        key: "createdAt",
+        label: t("date"),
+        render: (createdAt: ApiOrder["createdAt"]) => (
+          <span className="whitespace-nowrap text-xs text-gray-400">
+            {formatCreatedAt(createdAt)}
+          </span>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  if (!marketId) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-2xl border border-gray-200 bg-primary p-4 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-main/10 text-main">
+              <Package size={18} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="truncate text-base font-bold text-maindark dark:text-primary">
+                {t("newOrders")}
+              </h3>
+              <p className="truncate text-xs text-gray-400">
+                {marketName ?? "—"}
+              </p>
+            </div>
+          </div>
+        </div>
+        <span className="rounded-full bg-main/10 px-3 py-1 text-xs font-bold text-main">
+          {t("totalOrdersSummary", { count: orders.length })}
+        </span>
+      </div>
+
+      <Table
+        data={orders}
+        columns={columns}
+        keyExtractor={(order) => order.id}
+        loading={isLoading}
+        emptyMessage={t("ordersNotFound")}
+        onRowClick={onRowClick}
+        hoverable
+        bordered
+      />
+    </section>
+  );
+};
 
 const StepActions = ({
   step,
@@ -115,6 +267,7 @@ const OrderCreateFormContent = () => {
   const { t } = useTranslation(["orders", "common"]);
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { createOrder } = useOrders();
   const { api } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
@@ -148,6 +301,7 @@ const OrderCreateFormContent = () => {
   const market = useWatch({ control, name: "market" });
   const customer = useWatch({ control, name: "customer" });
   const details = useWatch({ control, name: "details" });
+  const selectedMarketId = market?.id ?? selectedMarketFromState?.id;
 
   const canNext = useMemo(() => {
     if (step === 1) {
@@ -189,6 +343,7 @@ const OrderCreateFormContent = () => {
   const onSubmit = (values: OrderCreateFormValues) => {
     createOrder.mutate(buildCreateOrderPayload(values, { includeMarketId: !isMarketRole }), {
       onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ["orders"] });
         reset({
           ...ORDER_CREATE_DEFAULT_VALUES,
           market: isMarketRole ? null : values.market,
@@ -262,6 +417,14 @@ const OrderCreateFormContent = () => {
           onNext={() => {
             void handleNext();
           }}
+        />
+
+        <MarketNewOrdersTable
+          marketId={selectedMarketId}
+          marketName={market?.name ?? selectedMarketFromState?.name}
+          onRowClick={(order) =>
+            navigate(`/new-orders/${selectedMarketId}/edit/${order.id}`)
+          }
         />
       </form>
     </FormProvider>

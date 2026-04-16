@@ -117,7 +117,7 @@ const STATUS_CONFIG: Record<string, { labelKey: string; cls: string }> = {
 const FIELD_CLS =
   "w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 text-gray-800 dark:text-white text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all";
 const ICON_CLS =
-  "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 pointer-events-none";
+  "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white pointer-events-none";
 
 const PAYMENT_ROWS = (order: OrderDetail) => [
   { labelKey: "total", value: fmt(order.total_price), cls: "text-gray-900 dark:text-white font-bold" },
@@ -146,7 +146,7 @@ const SectionHead = memo(({
       <div className={`p-2.5 rounded-xl ${ic}`}>{icon}</div>
       <div>
         <p className="font-semibold text-sm text-gray-900 dark:text-white">{title}</p>
-        {sub && <p className="text-xs text-gray-400 dark:text-white/40">{sub}</p>}
+        {sub && <p className="text-xs text-gray-400 dark:text-white">{sub}</p>}
       </div>
     </div>
     {action}
@@ -166,7 +166,7 @@ const InfoRow = memo(({
       {icon}
     </div>
     <div className="flex flex-col">
-      <span className="text-[10px] text-gray-400 dark:text-white/40 uppercase tracking-wider font-medium">
+      <span className="text-[10px] text-gray-400 dark:text-white uppercase tracking-wider font-medium">
         {label}
       </span>
       <span className="text-sm font-semibold text-gray-900 dark:text-white">{value}</span>
@@ -180,7 +180,7 @@ const EditBtn = memo(({ onClick }: { onClick: () => void }) => {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 text-xs font-semibold transition-colors"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 text-xs font-semibold transition-colors"
     >
       <Edit2 size={12} /> {t("edit")}
     </button>
@@ -207,7 +207,7 @@ const SelectField = memo(({
   options: ReadonlyArray<{ value: string; label: string }>;
 }) => (
   <div className="space-y-1.5">
-    <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">{label}</label>
+    <label className="text-sm text-gray-500 dark:text-white ml-1">{label}</label>
     <div className="relative">
       <div className={ICON_CLS}><Icon size={16} /></div>
       <select
@@ -222,7 +222,7 @@ const SelectField = memo(({
           </option>
         ))}
       </select>
-      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 dark:text-white/40">
+      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 dark:text-white">
         <ChevronDown size={14} />
       </div>
     </div>
@@ -239,9 +239,9 @@ const InputField = memo(({
   placeholder: string;
 }) => (
   <div className="space-y-1.5">
-    <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">{label}</label>
+    <label className="text-sm text-gray-500 dark:text-white ml-1">{label}</label>
     <div className="relative">
-      <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white/40 pointer-events-none">
+      <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white pointer-events-none">
         <Icon size={16} />
       </div>
       <input
@@ -249,7 +249,7 @@ const InputField = memo(({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`${FIELD_CLS} pl-10 pr-4 placeholder:text-gray-400 dark:placeholder:text-white/25`}
+        className={`${FIELD_CLS} pl-10 pr-4 placeholder:text-gray-400 dark:placeholder:text-white/80`}
       />
     </div>
   </div>
@@ -463,7 +463,7 @@ const NewOrderUpdate = () => {
           <Skeleton /><Skeleton />
         </div>
       ) : !order ? (
-        <div className="h-64 flex items-center justify-center text-gray-400 dark:text-white/30">
+        <div className="h-64 flex items-center justify-center text-gray-400 dark:text-white">
           <p className="font-bold uppercase tracking-widest text-sm">{t("notFound")}</p>
         </div>
       ) : (
@@ -479,7 +479,7 @@ const NewOrderUpdate = () => {
                   sub={t("productsCount", { count: order.items.length })}
                   action={<EditBtn onClick={handleOpenOrderPopup} />}
                 />
-                <div className="grid grid-cols-[1fr_auto] text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/30 border-b border-gray-100 dark:border-white/6 pb-2">
+                <div className="grid grid-cols-[1fr_auto] text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white border-b border-gray-100 dark:border-white/6 pb-2">
                   <span>{t("product")}</span>
                   <span>{t("quantity")}</span>
                 </div>
@@ -506,7 +506,7 @@ const NewOrderUpdate = () => {
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
                             {item.product?.name ?? t("productFallback", { id: item.id })}
                           </p>
-                          <p className="text-xs text-gray-400 dark:text-white/40">ID: {item.id}</p>
+                          <p className="text-xs text-gray-400 dark:text-white">ID: {item.id}</p>
                         </div>
                       </div>
                       <span className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 text-main font-black text-sm flex items-center justify-center">
@@ -516,7 +516,7 @@ const NewOrderUpdate = () => {
                   ))}
                 </div>
                 <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/6">
-                  <span className="text-xs text-gray-400 dark:text-white/40 font-medium">{t("deliveryType")}:</span>
+                  <span className="text-xs text-gray-400 dark:text-white font-medium">{t("deliveryType")}:</span>
                   <span className="text-xs font-bold text-main">
                     {t(DELIVER_LABELS[order.where_deliver] ?? "deliverAddress")}
                   </span>
@@ -541,8 +541,8 @@ const NewOrderUpdate = () => {
                     className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/6 last:border-0"
                   >
                     <div className="flex items-center gap-2">
-                      <Banknote size={14} className="text-gray-400 dark:text-white/30" />
-                      <span className="text-sm text-gray-500 dark:text-white/60">{t(labelKey)}</span>
+                      <Banknote size={14} className="text-gray-400 dark:text-white" />
+                      <span className="text-sm text-gray-500 dark:text-white">{t(labelKey)}</span>
                     </div>
                     <span className={`text-sm tabular-nums ${cls}`}>{value}</span>
                   </div>
@@ -564,7 +564,7 @@ const NewOrderUpdate = () => {
                   action={
                     <button
                       onClick={handleOpenCustomerPopup}
-                      className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white/40 hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors"
+                      className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors"
                     >
                       <Edit2 size={14} />
                     </button>
@@ -581,13 +581,13 @@ const NewOrderUpdate = () => {
                     <p className="font-bold text-sm text-gray-900 dark:text-white">
                       {order.customer.name}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-white/40">
+                    <p className="text-xs text-gray-400 dark:text-white">
                       {t("customerProfileHint")}
                     </p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/30 mb-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white mb-1">
                     {t("contactInformation")}
                   </p>
                   <InfoRow
@@ -636,7 +636,7 @@ const NewOrderUpdate = () => {
         </div>
       )}
 
-      {orderId ? <OrderTracking orderId={orderId} /> : null}
+      {orderId ? <OrderTracking orderId={orderId} currentStatus={order?.status} /> : null}
 
       {/* ─── Address Edit Popup ─────────────────────────────────────────────── */}
       <UpdatePopup
@@ -739,9 +739,9 @@ const NewOrderUpdate = () => {
 
         {/* Izoh */}
         <div className="space-y-1.5">
-          <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">{t("note")}</label>
+          <label className="text-sm text-gray-500 dark:text-white ml-1">{t("note")}</label>
           <div className="relative">
-            <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white/40 pointer-events-none">
+            <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white pointer-events-none">
               <MessageSquare size={16} />
             </div>
             <textarea
@@ -749,7 +749,7 @@ const NewOrderUpdate = () => {
               onChange={handleOrderCommentChange}
               placeholder={t("enterNote")}
               rows={4}
-              className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all resize-none placeholder:text-gray-400 dark:placeholder:text-white/25"
+              className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all resize-none placeholder:text-gray-400 dark:placeholder:text-white/80"
             />
           </div>
         </div>

@@ -1,13 +1,12 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { type UserState, type User } from "./types";
+import type { UserState, User } from "./types";
 
 const initialState: UserState = {
   user: null,
-  isAuthenticated: !!localStorage.getItem("accessToken"),
-  accessToken: localStorage.getItem("accessToken"),
-  refreshToken: localStorage.getItem("refreshToken"),
+  isAuthenticated: false,
+  accessToken: null,
   loading: false,
-  isAppInitializing: !!localStorage.getItem("accessToken"), // If token exists, we are initializing (fetching profile)
+  isAppInitializing: true,
   error: null,
 };
 
@@ -15,16 +14,16 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    loginSuccess: (state, action: PayloadAction<{ accessToken: string; refreshToken: string; user: User }>) => {
+    loginSuccess: (state, action: PayloadAction<{ accessToken: string; user?: User | null }>) => {
       state.loading = false;
       state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
-      state.user = action.payload.user;
+      state.user = action.payload.user ?? state.user;
       state.isAuthenticated = true;
       state.error = null;
-      localStorage.setItem("accessToken", action.payload.accessToken);
-      localStorage.setItem("refreshToken", action.payload.refreshToken);
-      localStorage.setItem("role", action.payload.user.role);
+    },
+    setAccessToken: (state, action: PayloadAction<string | null>) => {
+      state.accessToken = action.payload;
+      state.isAuthenticated = Boolean(action.payload);
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -38,19 +37,26 @@ export const userSlice = createSlice({
     },
     setProfile: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
+      state.isAuthenticated = true;
     },
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
-      state.refreshToken = null;
       state.isAuthenticated = false;
+      state.loading = false;
       state.error = null;
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("role");
-    }
+    },
   },
 });
 
-export const { loginSuccess, setLoading, setAppInitializing, setError, setProfile, logout } = userSlice.actions;
+export const {
+  loginSuccess,
+  setAccessToken,
+  setLoading,
+  setAppInitializing,
+  setError,
+  setProfile,
+  logout,
+} = userSlice.actions;
+
 export default userSlice.reducer;

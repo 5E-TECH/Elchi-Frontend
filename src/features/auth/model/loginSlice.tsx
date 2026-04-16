@@ -34,6 +34,8 @@ export const roleSlice = createSlice({
       state.role = null;
       state.region = null;
       state.name = null;
+      localStorage.removeItem("region");
+      localStorage.removeItem("name");
     },
     setId: (state, action: PayloadAction<string>) => {
       state.id = action.payload;

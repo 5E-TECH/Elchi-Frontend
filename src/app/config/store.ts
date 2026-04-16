@@ -1,7 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import sidebarSlice from "../../widgets/Sidebar/model/sidebarSlice";
 import userReducer from "../../entities/user/model/slice";
-import logout from "../../entities/user/model/slice";
 import filterslice from "../../features/Select/model/FilterSlice";
 import searchSlice from "../../features/search/model/searchSlice";
 import roleReducer from "../../features/auth/model/loginSlice";
@@ -14,7 +13,6 @@ export const store = configureStore({
     filter: filterslice,
     search: searchSlice,
     role: roleReducer,
-    logout,
     pagination: paginationReducer,
   },
 });

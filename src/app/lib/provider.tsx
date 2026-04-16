@@ -9,6 +9,7 @@ import { ThemeProvider } from "../providers/theme/ThemeContext";
 import { NotificationProvider } from "../providers/notification/NotificationProvider";
 import PageLoader from "../../shared/ui/PageLoader";
 import i18n from "../../i18n";
+import AuthBootstrap from "../../auth/AuthBootstrap";
 
 const queryClient = new QueryClient();
 
@@ -51,11 +52,13 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
           <BrowserRouter>
             <QueryClientProvider client={queryClient}>
               <NotificationProvider>
-                <GlobalLoader>
-                  <Suspense fallback={<PageLoader />}>
-                    {children}
-                  </Suspense>
-                </GlobalLoader>
+                <AuthBootstrap>
+                  <GlobalLoader>
+                    <Suspense fallback={<PageLoader />}>
+                      {children}
+                    </Suspense>
+                  </GlobalLoader>
+                </AuthBootstrap>
               </NotificationProvider>
             </QueryClientProvider>
           </BrowserRouter>
