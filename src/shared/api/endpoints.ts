@@ -60,7 +60,7 @@ export const API_ENDPOINTS = {
     PAYMENT_COURIER: "cashbox/payment/courier",
     PAYMENT_MARKET: "cashbox/payment/market",
     USER_BY_ID: (id: string | number) => `cashbox/user/${id}`,
-    MY_CASHBOX: "cashbox/my-cashbox",
+    MY_CASHBOX: "finance/cashbox/my-cashbox",
     MAIN: "cashbox/main",
     SPEND: "cashbox/spend",
     FILL: "cashbox/fill",

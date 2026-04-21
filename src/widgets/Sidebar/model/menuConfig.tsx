@@ -11,10 +11,10 @@ import {
   FileText,
   Bell,
   Building2,
-//   LucideIcon,
+  //   LucideIcon,
 } from "lucide-react";
 
-export type UserRole = "admin" | "market" | "courier";
+export type UserRole = "admin" | "superadmin" | "market" | "courier";
 
 export interface NavItem {
   to: string;
@@ -28,7 +28,7 @@ export interface NavItem {
  * Icon'lar component'ga JSX sifatida ishlatiladi
  */
 export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
-  admin: [
+  superadmin: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
@@ -42,18 +42,29 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { to: "/branches", icon: Building2, label: "branches" },
     { to: "/logs", icon: FileText, label: "logs" },
   ],
+  admin: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
+    { to: "/mails", icon: MailOpen, label: "mails" },
+    { to: "/products", icon: Apple, label: "products" },
+    { to: "/all-users", icon: UserRound, label: "users" },
+    { to: "/payments", icon: CreditCard, label: "payments" },
+    { to: "/financial-balance", icon: Scale, label: "balance" },
+    { to: "/regions", icon: MapPinned, label: "regions" },
+  ],
   market: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/order/markets/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/products", icon: Apple, label: "products" },
-    { to: "/payments", icon: CreditCard, label: "payments" },
+    { to: "/cash-box", icon: CreditCard, label: "payments" },
     { to: "/m-balance", icon: Scale, label: "balance" },
   ],
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
-    { to: "/m-balance", icon: Scale, label: "balance" },
+    { to: "/cash-box", icon: CreditCard, label: "payments" },
   ],
 };

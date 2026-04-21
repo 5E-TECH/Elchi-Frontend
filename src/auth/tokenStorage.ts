@@ -1,4 +1,12 @@
-let accessToken: string | null = null;
+const resolveInitialAccessToken = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem("accessToken");
+};
+
+let accessToken: string | null = resolveInitialAccessToken();
 
 export const tokenStorage = {
   getAccessToken() {
@@ -7,6 +15,16 @@ export const tokenStorage = {
 
   setAccessToken(token: string | null) {
     accessToken = token;
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (token) {
+      window.localStorage.setItem("accessToken", token);
+    } else {
+      window.localStorage.removeItem("accessToken");
+    }
   },
 
   clear() {
