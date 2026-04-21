@@ -11,12 +11,14 @@ import {
   Warehouse,
   House,
   Trash2,
+  FileText,
+  Globe,
 } from "lucide-react";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
+import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
 import { formatDate, formatPrice, getStatusLabel, getStatusStyle } from "../lib/helpers";
 import Checkbox from "./Checkbox";
 import { HISTORY_TABLE_COLS, TABLE_COLS } from "./OrdersTable";
-import PrintModeSelect from "./PrintModeSelect";
 import type { PrintMode } from "../lib/printMode";
 
 interface OrderRowProps {
@@ -48,6 +50,20 @@ const OrderRow = memo(({
   const isAddressDelivery = order.where_deliver === "address";
   const locationLabel = order.address?.trim() || districtName;
   const isHistory = variant === "history";
+  const printOptions: PrintSelectOption[] = [
+    {
+      id: "browser",
+      label: t("mails:printOptions.browser.label"),
+      hint: t("mails:printOptions.browser.hint"),
+      icon: <Globe size={14} className="text-[var(--color-info)]" />,
+    },
+    {
+      id: "pdf_100x60",
+      label: t("mails:printOptions.labelPdf.label"),
+      hint: t("mails:printOptions.labelPdf.hint"),
+      icon: <FileText size={14} className="text-[var(--color-error)]" />,
+    },
+  ];
 
   if (isHistory) {
     return (
@@ -249,7 +265,10 @@ const OrderRow = memo(({
             <PrintModeSelect
               variant="icon"
               count={1}
-              onSelect={(mode) => onPrint(order, mode)}
+              onSelect={(mode) => onPrint(order, mode as PrintMode)}
+              buttonLabel={t("mails:print")}
+              menuLabel={t("mails:printMenu")}
+              options={printOptions}
             />
           ) : null}
           {canDelete && onDelete ? (
@@ -344,7 +363,10 @@ const OrderRow = memo(({
                 <PrintModeSelect
                   variant="icon"
                   count={1}
-                  onSelect={(mode) => onPrint(order, mode)}
+                  onSelect={(mode) => onPrint(order, mode as PrintMode)}
+                  buttonLabel={t("mails:print")}
+                  menuLabel={t("mails:printMenu")}
+                  options={printOptions}
                 />
               ) : null}
               {canDelete && onDelete ? (

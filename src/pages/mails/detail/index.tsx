@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, Ban, MapPin } from "lucide-react";
+import { AlertTriangle, Ban, FileText, Globe, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   useMails,
@@ -12,15 +12,14 @@ import {
   useSendPost,
 } from "../../../entities/mails";
 import HeaderName from "../../../shared/components/headerName";
+import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
 
 // ─── UI komponentlar ──────────────────────────────────────────────────────────
 import MailStatCards from "./ui/MailStatCards";
 import OrdersTable from "./ui/OrdersTable";
 import SendButton from "./ui/SendButton";
 import SendPostModal from "./ui/SendPostModal";
-import PrintModeSelect from "./ui/PrintModeSelect";
 import { printOrders, type PrintMode } from "./lib/printMode";
-import PrintOnlyOrders from "./ui/PrintOnlyOrders";
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
@@ -285,24 +284,26 @@ const MailDetailPage = () => {
     () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
     [orders, selectedIds],
   );
-
-  const [browserPrintOrders, setBrowserPrintOrders] = useState<PostOrder[]>([]);
-
-  useEffect(() => {
-    const onAfter = () => setBrowserPrintOrders([]);
-    window.addEventListener("afterprint", onAfter);
-    return () => window.removeEventListener("afterprint", onAfter);
-  }, []);
+  const printOptions = useMemo<PrintSelectOption[]>(
+    () => [
+      {
+        id: "browser",
+        label: t("printOptions.browser.label"),
+        hint: t("printOptions.browser.hint"),
+        icon: <Globe size={14} className="text-[var(--color-info)]" />,
+      },
+      {
+        id: "pdf_100x60",
+        label: t("printOptions.labelPdf.label"),
+        hint: t("printOptions.labelPdf.hint"),
+        icon: <FileText size={14} className="text-[var(--color-error)]" />,
+      },
+    ],
+    [t],
+  );
 
   const handlePrintOrders = useCallback((mode: PrintMode, printTargets: PostOrder[]) => {
     if (printTargets.length === 0) return;
-
-    if (mode === "browser") {
-      setBrowserPrintOrders(printTargets);
-      setTimeout(() => window.print(), 50);
-      return;
-    }
-
     printOrders(mode, printTargets);
   }, []);
 
@@ -387,7 +388,15 @@ const MailDetailPage = () => {
             onIconClick={handleBack}
           />
         </div>
-        {!isOldDetail && <PrintModeSelect count={selectedIds.size} onSelect={handlePrint} />}
+        {!isOldDetail && (
+          <PrintModeSelect
+            count={selectedIds.size}
+            onSelect={(mode) => handlePrint(mode as PrintMode)}
+            buttonLabel={t("print")}
+            menuLabel={t("printMenu")}
+            options={printOptions}
+          />
+        )}
       </div>
 
       {/* Stat kartalar */}
@@ -439,9 +448,6 @@ const MailDetailPage = () => {
           onSuccess={handleSendSuccess}
         />
       )}
-
-      {browserPrintOrders.length > 0 && <PrintOnlyOrders orders={browserPrintOrders} />}
-
       <PopupConfirm
         isOpen={isDeleteConfirmOpen}
         onClose={() => {

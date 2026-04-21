@@ -27,6 +27,8 @@ import { useCashBox } from "../../../entities/payments";
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
 import ElchiIconWhite from "../../../shared/assets/logo oq.png";
+import ElchiIconBlack from "../../../shared/assets/logo qora.png";
+import { useTheme } from "../../../app/providers/theme/ThemeContext";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -127,10 +129,12 @@ const cashDetailSchema: yup.ObjectSchema<CashDetailFormValues> = yup.object({
 
 const CashDetail = () => {
   const { t } = useTranslation("payments");
+  const { theme } = useTheme();
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
   const navigate = useNavigate();
   const { getCashBoxById } = useCashBox();
+  const brandLogo = theme === "dark" ? ElchiIconWhite : ElchiIconBlack;
 
   const [draftDateFrom, setDraftDateFrom] = useState("");
   const [draftDateTo, setDraftDateTo] = useState("");
@@ -329,7 +333,7 @@ const CashDetail = () => {
               <div className="flex items-center gap-2.5">
                 <div className={`flex h-11 w-11 items-center justify-center rounded-[1.2rem] ${cfg.iconBg}`}>
                   <img
-                    src={ElchiIconWhite}
+                    src={brandLogo}
                     alt="Elchi"
                     className="h-5 w-5 object-contain"
                   />
