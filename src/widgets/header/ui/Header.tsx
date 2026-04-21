@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import {
   Bell,
+  ScanQrCode,
   Check,
   ChevronDown,
   Globe,
@@ -261,7 +262,19 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           )}
         </div>
 
-        {/* Mobile Search Button */}
+        <button
+          type="button"
+          onClick={() => navigate("/scan")}
+          className="group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-main/15 bg-primary text-maindark shadow-sm transition-all duration-300 hover:border-main/35 hover:bg-main/10 dark:border-white/10 dark:bg-maindark dark:text-primary md:h-11 md:w-11"
+          aria-label={t("scannerTitle")}
+          title={t("scannerTitle")}
+        >
+          <span className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),transparent_55%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <span className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-main/12 text-main dark:bg-primary/10 dark:text-primary">
+            <ScanQrCode className="h-4.5 w-4.5" />
+          </span>
+        </button>
+
         <button
           onClick={() => setIsSearchOpen(true)}
           className="md:hidden p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"

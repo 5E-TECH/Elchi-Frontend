@@ -14,6 +14,7 @@ const Login = lazy(() => import("../../features/auth"));
 const DashboardLayout = lazy(
   () => import("../../widgets/layout/dashboardLayout"),
 );
+const ScanLayout = lazy(() => import("../../widgets/layout/scanLayout"));
 const DashboardPage = lazy(() => import("../../pages/dashboard/DashboardPage"));
 const UserListPage = lazy(() => import("../../pages/users/list/UserListPage"));
 const CreateUserPage = lazy(
@@ -49,6 +50,8 @@ const MainCashbox = lazy(
 const CashDetail = lazy(
   () => import("../../pages/payments/components/cashDetail"),
 );
+const ScanPage = lazy(() => import("../../pages/scan"));
+const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
 
@@ -72,6 +75,20 @@ const AppRouter = () => {
       path: "/",
       element: <Auth />,
       children: [
+        {
+          path: "/",
+          element: <ScanLayout />,
+          children: [
+            {
+              path: "scan",
+              element: <ScanPage />,
+            },
+            {
+              path: "scan/:token",
+              element: <ScanDetailPage />,
+            },
+          ],
+        },
         {
           path: "/",
           element: <DashboardLayout />,

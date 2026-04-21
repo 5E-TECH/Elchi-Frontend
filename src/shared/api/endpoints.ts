@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
   ORDERS: {
     BASE: "orders",
     BY_ID: (id: string | number) => `orders/${id}`,
+    QR_CODE: (token: string | number) => `orders/qr-code/${token}`,
     RECEIVE: "orders/receive",
     MARKETS_NEW: "orders/markets/new",
     MARKET_NEW: (marketId: string | number) => `orders/markets/${marketId}/new`,

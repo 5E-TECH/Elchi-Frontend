@@ -1,11 +1,12 @@
-import { memo, useMemo } from "react";
-import { MapPin, Package, ChevronRight, TrendingUp } from "lucide-react";
+import { memo, useMemo, useState } from "react";
+import { MapPin, Package, ChevronRight, TrendingUp, MapPinned, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import MailSummaryStats from "./MailSummaryStats";
+import FilterSelect from "../../../shared/ui/FilterSelect";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Region {
@@ -139,6 +140,8 @@ const TodaysMails = () => {
   const { t } = useTranslation("mails");
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
+  const [selectedRegionId, setSelectedRegionId] = useState("");
+  const [regionSearch, setRegionSearch] = useState("");
 
   const { getNewMails, getNewMailsCourier } = useMails();
 
@@ -149,14 +152,41 @@ const TodaysMails = () => {
   } = isCourier ? getNewMailsCourier() : getNewMails();
 
   const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
+  const regionOptions = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          mails
+            .filter((mail) => mail.region?.id && mail.region?.name)
+            .map((mail) => [
+              mail.region.id,
+              { value: mail.region.id, label: mail.region.name },
+            ]),
+        ).values(),
+      ).sort((left, right) => left.label.localeCompare(right.label, "uz")),
+    [mails],
+  );
+  const filteredMails = useMemo(() => {
+    const normalizedSearch = regionSearch.trim().toLocaleLowerCase();
+
+    return mails.filter((mail) => {
+      const matchesRegion =
+        !selectedRegionId || mail.region?.id === selectedRegionId;
+      const regionName = mail.region?.name?.toLocaleLowerCase() ?? "";
+      const matchesSearch =
+        !normalizedSearch || regionName.includes(normalizedSearch);
+
+      return matchesRegion && matchesSearch;
+    });
+  }, [mails, regionSearch, selectedRegionId]);
 
   // Umumiy hisob-kitoblar
   const stats = useMemo(() => {
-    const totalOrders = mails.reduce((sum, m) => sum + m.order_quantity, 0);
-    const totalPrice = mails.reduce((sum, m) => sum + m.post_total_price, 0);
-    const totalRegions = mails.length;
+    const totalOrders = filteredMails.reduce((sum, m) => sum + m.order_quantity, 0);
+    const totalPrice = filteredMails.reduce((sum, m) => sum + m.post_total_price, 0);
+    const totalRegions = filteredMails.length;
     return { totalOrders, totalPrice, totalRegions };
-  }, [mails]);
+  }, [filteredMails]);
 
   // Loading holati
   if (isLoading) {
@@ -201,20 +231,58 @@ const TodaysMails = () => {
 
   return (
     <div className="space-y-5">
-      <MailSummaryStats
-        totalRegions={stats.totalRegions}
-        totalOrders={stats.totalOrders}
-        totalPrice={formatPrice(stats.totalPrice)}
-        isCourier={role === "courier"}
-        accent="success"
-      />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <MailSummaryStats
+          totalRegions={stats.totalRegions}
+          totalOrders={stats.totalOrders}
+          totalPrice={formatPrice(stats.totalPrice)}
+          isCourier={role === "courier"}
+          accent="success"
+        />
 
-      {/* 4-ustunli grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {mails.map((mail) => (
-          <MailCard key={mail.id} item={mail} />
-        ))}
+        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+          <div className="w-full sm:w-64">
+            <FilterSelect
+              label={t("oldRegionFilterLabel")}
+              name="today-mails-region-filter"
+              value={selectedRegionId}
+              onChange={setSelectedRegionId}
+              options={regionOptions}
+              placeholder={t("oldRegionFilterPlaceholder")}
+              icon={MapPinned}
+              hideLabel
+            />
+          </div>
+
+          <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-white/10 bg-white/6 px-3 text-white/80 sm:w-64">
+            <Search size={16} className="shrink-0 text-white/45" />
+            <input
+              type="text"
+              value={regionSearch}
+              onChange={(event) => setRegionSearch(event.target.value)}
+              placeholder={t("oldRegionFilterPlaceholder")}
+              className="w-full bg-transparent text-sm outline-none placeholder:text-white/35"
+            />
+          </label>
+        </div>
       </div>
+
+      {filteredMails.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
+            <Package size={28} className="text-main" />
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            {t("oldRegionFilterEmpty")}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {filteredMails.map((mail) => (
+            <MailCard key={mail.id} item={mail} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

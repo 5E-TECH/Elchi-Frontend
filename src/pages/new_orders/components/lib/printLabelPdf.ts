@@ -251,11 +251,13 @@ const drawLogoBlock = (pdf: jsPDF, logoUrl: string, qrUrl: string, order: LabelO
   pdf.addImage(qrUrl, "PNG", qrX, qrY, qrSize, qrSize, "", "FAST");
 
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(9.1);
+  pdf.setCharSpace(0.24);
+  pdf.setFontSize(11.4);
   const dateY = qrY + qrSize + 12.8;
   pdf.text(formatDate(order.createdAt), panelX + panelW / 2, dateY, {
     align: "center",
   });
+  pdf.setCharSpace(0);
 };
 
 const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
@@ -279,11 +281,11 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
     const isLast = index === zoneARows.length - 1;
 
     if (!isLast) {
-      pdf.setLineWidth(0.35);
+      pdf.setLineWidth(0.45);
       pdf.line(RIGHT_X, rowBottom, M + FULL_W, rowBottom);
     }
 
-    const labelFontSize = 6;
+    const labelFontSize = 6.8;
     const labelX = row.key === "sender" ? RIGHT_X + 2.1 : RIGHT_X + PAD;
     const labelW = row.key === "sender" ? LABEL_COL - 4.2 : LABEL_COL - PAD * 2;
 
@@ -301,7 +303,7 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
 
     if (row.key === "total") {
       const totalText = `${values.total} | ${getDeliveryLabel(order)}`;
-      const amountSize = fitFontSize(pdf, totalText, valueW, 8.2, 7.8);
+      const amountSize = fitFontSize(pdf, totalText, valueW, 9.9, 9.1);
       drawCellText(pdf, totalText, valueX, currentY, valueW, rowHeight, amountSize, {
         bold: true,
         maxLines: 1,
@@ -310,7 +312,7 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
       });
     } else if (row.key === "sender") {
       const senderText = values.sender;
-      drawCellText(pdf, senderText, valueX, currentY, valueW, rowHeight, 7.2, {
+      drawCellText(pdf, senderText, valueX, currentY, valueW, rowHeight, 8.9, {
         bold: true,
         maxLines: 1,
         ellipsis: true,
@@ -318,7 +320,7 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
         topPadding: 2.2,
       });
     } else if (row.key === "address") {
-      const addressSize = fitFontSize(pdf, values.address, valueW, 8.2, 7.8);
+      const addressSize = fitFontSize(pdf, values.address, valueW, 9.8, 9);
       drawCellText(pdf, values.address, valueX, currentY, valueW, rowHeight, addressSize, {
         maxLines: 2,
         ellipsis: true,
@@ -327,7 +329,7 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
         topPadding: 2.2,
       });
     } else if (row.key === "phone") {
-      const phoneSize = fitFontSize(pdf, values.phone, valueW, 8.2, 7.8);
+      const phoneSize = fitFontSize(pdf, values.phone, valueW, 9.8, 9.1);
       drawCellText(pdf, values.phone, valueX, currentY, valueW, rowHeight, phoneSize, {
         bold: true,
         maxLines: 1,
@@ -336,7 +338,7 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
         topPadding: 2.2,
       });
     } else {
-      const nameSize = fitFontSize(pdf, values.fullName, valueW, 8.2, 7.8);
+      const nameSize = fitFontSize(pdf, values.fullName, valueW, 9.8, 9.1);
       drawCellText(pdf, values.fullName, valueX, currentY, valueW, rowHeight, nameSize, {
         bold: true,
         maxLines: 1,
@@ -368,11 +370,11 @@ const drawBottomSection = (pdf: jsPDF, order: LabelOrder) => {
     const isLast = index === zoneBRows.length - 1;
 
     if (!isLast) {
-      pdf.setLineWidth(0.35);
+      pdf.setLineWidth(0.45);
       pdf.line(M, rowBottom, M + FULL_W, rowBottom);
     }
 
-    drawCellText(pdf, row.label, M + PAD, currentY, LABEL_COL - PAD * 2, row.h, 6, {
+    drawCellText(pdf, row.label, M + PAD, currentY, LABEL_COL - PAD * 2, row.h, 6.8, {
       bold: true,
       maxLines: 1,
       valign: "top",
@@ -382,7 +384,7 @@ const drawBottomSection = (pdf: jsPDF, order: LabelOrder) => {
     const valueX = M + LABEL_COL + PAD;
     const valueW = FULL_W - LABEL_COL - PAD * 2;
 
-    drawCellText(pdf, values[row.key], valueX, currentY, valueW, row.h, 7.2, {
+    drawCellText(pdf, values[row.key], valueX, currentY, valueW, row.h, 8.8, {
       maxLines: row.key === "product" ? 2 : 1,
       ellipsis: true,
       bold: true,
@@ -399,6 +401,7 @@ const drawPage = (pdf: jsPDF, order: LabelOrder, logoUrl: string, qrUrl: string)
   pdf.rect(0, 0, PAGE_W, PAGE_H, "F");
 
   pdf.setDrawColor(20, 20, 20);
+  pdf.setLineDashPattern([], 0);
   pdf.setLineWidth(0.7);
   pdf.rect(M, M, FULL_W, FULL_H);
   pdf.line(M, BOTTOM_Y, M + FULL_W, BOTTOM_Y);
@@ -435,13 +438,242 @@ const generateQr = async (text: string): Promise<string> => {
   return loadImage(qrSource);
 };
 
+const toAbsoluteAssetUrl = (src: string) => new URL(src, window.location.origin).toString();
+
+const getScanRoute = (order: ApiOrder | LabelOrder) => {
+  const qrId = (order as { qr_code_token?: string | null }).qr_code_token?.trim() || order.id;
+  return `${window.location.origin}/scan/${encodeURIComponent(qrId)}`;
+};
+
+const escapeHtml = (value: string) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
+  const logoSrc = toAbsoluteAssetUrl(pdfLogoUrl);
+  const logoFallbackSrc = toAbsoluteAssetUrl(pdfLogoFallbackUrl);
+
+  const sheets = orders
+    .map((order) => {
+      const fullName = escapeHtml(safe(order.customer?.name));
+      const phone = escapeHtml(formatPhoneNumber(order.customer?.phone_number));
+      const address = escapeHtml(getAddress(order));
+      const total = escapeHtml(`${formatMoney(order.total_price)} so'm | ${getDeliveryLabel(order)}`);
+      const sender = escapeHtml(getSender(order));
+      const product = escapeHtml(getProducts(order));
+      const landmark = escapeHtml(safe(order.landmark));
+      const comment = escapeHtml(safe(order.comment));
+      const logist = escapeHtml(getLogist(order));
+      const date = escapeHtml(formatDate(order.createdAt));
+      const qrText = encodeURIComponent(getScanRoute(order));
+      const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${qrText}`;
+
+      return `
+        <section class="sheet">
+          <div class="label">
+            <div class="left">
+              <div class="brand">
+                <img class="brand-icon" src="${logoSrc}" alt="Elchi" onerror="this.onerror=null;this.src='${logoFallbackSrc}'" />
+                <div class="brand-text">
+                  <div class="brand-name">ELCHI</div>
+                  <div class="brand-sub">POCHTA</div>
+                </div>
+              </div>
+              <img class="qr" src="${qrSrc}" alt="QR" />
+              <div class="date">${date}</div>
+            </div>
+
+            <div class="right">
+              <table class="top-table">
+                <tr><td class="k">F.I.O:</td><td class="v">${fullName}</td></tr>
+                <tr><td class="k">Telefon:</td><td class="v">${phone}</td></tr>
+                <tr><td class="k">Manzil:</td><td class="v">${address}</td></tr>
+                <tr><td class="k">Jami:</td><td class="v">${total}</td></tr>
+                <tr><td class="k">Jo'natuvchi:</td><td class="v">${sender}</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <table class="bottom-table">
+            <tr><td class="k">Mahsulot:</td><td class="v">${product}</td></tr>
+            <tr><td class="k">Mo'ljal:</td><td class="v">${landmark}</td></tr>
+            <tr><td class="k">Izoh:</td><td class="v">${comment}</td></tr>
+            <tr><td class="k">Logist:</td><td class="v">${logist}</td></tr>
+          </table>
+        </section>
+      `;
+    })
+    .join("");
+
+  const html = `<!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Elchi Label Print</title>
+      <style>
+        @page { size: 100mm 60mm; margin: 0; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #fff; font-family: Arial, sans-serif; }
+        body { color: #000; }
+        #printBtn {
+          position: fixed;
+          top: 8px;
+          right: 8px;
+          z-index: 9999;
+          padding: 8px 10px;
+          border-radius: 10px;
+          border: 1px solid rgba(0,0,0,.15);
+          background: #111827;
+          color: #fff;
+          font-weight: 700;
+          font-size: 12px;
+          cursor: pointer;
+        }
+        .sheet {
+          width: 100mm;
+          height: 60mm;
+          padding: 2mm;
+          page-break-after: always;
+        }
+        .label {
+          width: 100%;
+          height: 34mm;
+          display: grid;
+          grid-template-columns: 24mm 1fr;
+          border: 0.22mm solid #111;
+          border-bottom: none;
+        }
+        .left {
+          border-right: 0.22mm solid #111;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 0.6mm 1mm 0.8mm;
+        }
+        .brand {
+          width: 100%;
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+          gap: 1.2mm;
+          margin-bottom: 1.2mm;
+        }
+        .brand-icon {
+          width: 7mm;
+          height: 7mm;
+          object-fit: contain;
+        }
+        .brand-name {
+          font-size: 8pt;
+          font-weight: 800;
+          letter-spacing: .18pt;
+          line-height: 1;
+        }
+        .brand-sub {
+          font-size: 4.7pt;
+          font-weight: 800;
+          line-height: 1.05;
+        }
+        .qr {
+          width: 19.8mm;
+          height: 19.8mm;
+          display: block;
+          image-rendering: pixelated;
+        }
+        .date {
+          margin-top: 2.2mm;
+          font-size: 11.2pt;
+          font-weight: 800;
+          letter-spacing: .24pt;
+          line-height: 1;
+        }
+        .right { min-width: 0; }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          table-layout: fixed;
+        }
+        .top-table { height: 100%; }
+        .top-table td,
+        .bottom-table td {
+          border-bottom: 0.16mm solid #111;
+          vertical-align: top;
+          padding: 0.85mm 1.1mm;
+          color: #000;
+        }
+        .top-table tr:last-child td,
+        .bottom-table tr:last-child td {
+          border-bottom: none;
+        }
+        .top-table .k,
+        .bottom-table .k {
+          width: 14mm;
+          font-size: 6.8pt;
+          font-weight: 800;
+          border-right: 0.16mm solid #111;
+          white-space: nowrap;
+        }
+        .top-table .v {
+          font-size: 9.3pt;
+          font-weight: 900;
+          line-height: 1.14;
+          word-break: break-word;
+        }
+        .bottom-table {
+          width: 100%;
+          height: 22mm;
+          border: 0.22mm solid #111;
+        }
+        .bottom-table .v {
+          font-size: 8.5pt;
+          font-weight: 900;
+          line-height: 1.14;
+          word-break: break-word;
+        }
+        @media print {
+          #printBtn { display: none; }
+          html, body { width: 100mm; height: 60mm; overflow: hidden; }
+        }
+      </style>
+    </head>
+    <body>
+      <button id="printBtn" type="button">Print</button>
+      ${sheets}
+      <script>
+        const triggerPrint = () => {
+          try { window.focus(); } catch {}
+          try { window.print(); } catch {}
+        };
+        window.addEventListener('load', () => setTimeout(triggerPrint, 250));
+        document.getElementById('printBtn')?.addEventListener('click', triggerPrint);
+        window.onafterprint = () => window.close();
+      </script>
+    </body>
+  </html>`;
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const blobUrl = URL.createObjectURL(blob);
+  const printWindow = window.open(blobUrl, "_blank", "noopener,noreferrer,width=960,height=720");
+
+  if (!printWindow) {
+    URL.revokeObjectURL(blobUrl);
+    return;
+  }
+
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 120_000);
+};
+
 export const openOrdersLabelPdf = async (orders: ApiOrder[]): Promise<void> => {
   if (!orders.length) return;
 
   const [logoUrl, ...qrUrls] = await Promise.all([
     loadImage(pdfLogoUrl).catch(() => loadImage(pdfLogoFallbackUrl)).catch(() => ""),
     ...orders.map((order) =>
-      generateQr(`${window.location.origin}/new-orders/orders/${order.id}`),
+      generateQr(getScanRoute(order)),
     ),
   ]);
 
@@ -469,4 +701,9 @@ export const openOrdersLabelPdf = async (orders: ApiOrder[]): Promise<void> => {
   }
 
   window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+};
+
+export const openOrdersLabelBrowserPrint = (orders: ApiOrder[]): void => {
+  if (!orders.length) return;
+  openBrowserLabelPrintWindow(orders as LabelOrder[]);
 };

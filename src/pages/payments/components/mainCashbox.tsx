@@ -18,7 +18,8 @@ import {
   TrendingDown,
 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
-import LogoTextDark from "../../../shared/assets/logoo.png";
+import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
+import LogoTextDark from "../../../shared/assets/logo yozuvlik oq.png";
 import DateRangePicker from "../../../shared/ui/DateRangePicker";
 import PopupSelect from "../../../shared/components/popupSelect";
 import CashboxFormPopup from "./CashboxFormPopup";
@@ -29,6 +30,7 @@ import type { PaymentRow } from "./patmentHistoryTable";
 import PaymentHistoryList from "./PaymentHistoryList";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import { useTranslation } from "react-i18next";
+import { useTheme } from "../../../app/providers/theme/ThemeContext";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -145,6 +147,7 @@ const Skeleton = ({ className }: { className?: string }) => (
 
 const MainCashbox = () => {
   const { t } = useTranslation("payments");
+  const { theme } = useTheme();
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [isSalaryPopupOpen, setIsSalaryPopupOpen] = useState(false);
   const [isCourierPopupOpen, setIsCourierPopupOpen] = useState(false);
@@ -188,6 +191,7 @@ const MainCashbox = () => {
   );
 
   const { data: cashboxInfoRes, isLoading: cashboxInfoLoading } = getCashBoxInfo();
+  const currentLogo = theme === "dark" ? LogoTextDark : LogoText;
   const { data: mainCashboxRes, isLoading: mainCashboxLoading } = getCashBoxMain(mainCashboxParams);
   const historyParams = useMemo(
     () => ({
@@ -337,7 +341,7 @@ const MainCashbox = () => {
             {/* Top row: logo + eye */}
             <div className="relative z-10 flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <img src={LogoTextDark} alt="Elchi" className="w-16 object-contain hidden dark:block" />
+                <img src={currentLogo} alt="Elchi" className="w-16 object-contain" />
                 <div className="text-white -ml-3">
                   <h2 className="font-extrabold text-xl leading-none">ELCHI</h2>
                   <p className="text-[10px] font-medium tracking-widest opacity-60">POCHTA</p>

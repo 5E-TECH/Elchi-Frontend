@@ -7,6 +7,7 @@ import { useLogout } from "../../../shared/lib/useLogout";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
+import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { Controller, useForm } from "react-hook-form";
 import { GlobalSearchInput } from "../../../features/search";
@@ -40,6 +41,8 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
         }));
     }, [userRole, t]);
 
+    const currentLogo = theme === "dark" ? LogoTextdark : LogoText;
+
     if (!isOpen) return null;
 
     return (
@@ -55,7 +58,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 {/* Header Section */}
                 <div className="flex flex-col gap-4 px-6 py-6 border-b border-white/5">
                     <div className="flex items-center justify-between">
-                        <img src={LogoTextdark} alt="Logo" className="h-12 w-auto object-contain" />
+                        <img src={currentLogo} alt="Logo" className="h-12 w-auto object-contain" />
                         <button
                             onClick={onClose}
                             className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white transition-colors"

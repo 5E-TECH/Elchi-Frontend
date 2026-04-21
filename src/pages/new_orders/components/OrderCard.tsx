@@ -15,6 +15,7 @@ export const Checkbox = memo(({ checked, onChange }: { checked: boolean; onChang
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface ApiOrder {
     id: string;
+    qr_code_token?: string | null;
     status: string;
     where_deliver: "center" | "home" | "address";
     total_price: number;
