@@ -71,7 +71,7 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
   const amount = Number(row.amount ?? 0);
   const created = row.created_by || "-";
   const commentInfo = extractRollback(row.comment || "");
-  const cashboxType = row.cashbox_type || row.cashbox?.cashbox_type || row.payment_method || "";
+  const cashboxType = row.payment_method || row.cashbox_type || row.cashbox?.cashbox_type || "";
   const sourceType = row.source_type || "";
   const dateStr = (row.payment_date || row.createdAt || row.created_at || "") as string;
 
@@ -101,6 +101,11 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
             {cashboxType && <Badge text={labelCashboxType(cashboxType) || cashboxType} tone="neutral" />}
             {op && <Badge text={labelOperation(op) || op} tone={isIncome ? "green" : "red"} />}
           </div>
+          {commentInfo.text && (
+            <p className="mt-1 text-[11px] leading-5 text-gray-500 dark:text-white/45 whitespace-pre-line">
+              {commentInfo.text}
+            </p>
+          )}
         </div>
       </div>
 
@@ -109,6 +114,11 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
           {sign}
           {fmt(Math.abs(amount))} so&apos;m
         </p>
+        {typeof row.balance_after === "number" && (
+          <p className="mt-1 text-[11px] text-gray-500 dark:text-white/45">
+            Balans: {fmt(row.balance_after)} so&apos;m
+          </p>
+        )}
         <p className="text-[11px] text-gray-500 dark:text-white/35 flex items-center gap-1.5 justify-end mt-1 m-0">
           <Calendar size={12} className="shrink-0" />
           {formatDate(dateStr)}

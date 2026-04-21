@@ -1,6 +1,7 @@
 import { lazy, memo } from "react";
 import { Navigate, useRoutes } from "react-router-dom";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
+import type { RootState } from "../config/store";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -49,6 +50,9 @@ const MainCashbox = lazy(
 const CashDetail = lazy(
   () => import("../../pages/payments/components/cashDetail"),
 );
+const MyCashboxPage = lazy(
+  () => import("../../pages/payments/components/MyCashboxPage"),
+);
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
 
@@ -56,10 +60,21 @@ const Region = lazy(() => import("../../pages/region/index"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
 const BranchesPage = lazy(() => import("../../pages/branches"));
 const BranchDetailPage = lazy(() => import("../../pages/branches/ui/BranchDetailPage"));
+const LogsPage = lazy(() => import("../../pages/logs"));
 const ForbiddenPage = lazy(() => import("../../shared/ui/Forbidden"));
 const NotFound = lazy(() => import("../../shared/ui/NotFound"));
 const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
 const ErrorBoundaryPage = lazy(() => import("../../shared/ui/ErrorBoundaryPage"));
+
+const isPaymentsManager = (state: RootState) => {
+  const role = state.role.role;
+  return role === "admin" || role === "superadmin";
+};
+
+const hasSelfCashboxAccess = (state: RootState) => {
+  const role = state.role.role;
+  return role === "courier" || role === "market";
+};
 
 const AppRouter = () => {
   return useRoutes([
@@ -143,10 +158,51 @@ const AppRouter = () => {
             {
               path: "payments",
               children: [
-                { index: true, element: <Payments /> },
-                { path: "main-cashbox", element: <MainCashbox /> },
-                { path: "cash-detail/:id", element: <CashDetail /> },
+                {
+                  index: true,
+                  element: (
+                    <ProtectedRoute
+                      canActivate={isPaymentsManager}
+                      redirectTo="/cash-box"
+                    >
+                      <Payments />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "main-cashbox",
+                  element: (
+                    <ProtectedRoute
+                      canActivate={isPaymentsManager}
+                      redirectTo="/cash-box"
+                    >
+                      <MainCashbox />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "cash-detail/:id",
+                  element: (
+                    <ProtectedRoute
+                      canActivate={isPaymentsManager}
+                      redirectTo="/cash-box"
+                    >
+                      <CashDetail />
+                    </ProtectedRoute>
+                  ),
+                },
               ],
+            },
+            {
+              path: "cash-box",
+              element: (
+                <ProtectedRoute
+                  canActivate={hasSelfCashboxAccess}
+                  redirectTo="/payments"
+                >
+                  <MyCashboxPage />
+                </ProtectedRoute>
+              ),
             },
             {
               path: "financial-balance",
@@ -166,6 +222,10 @@ const AppRouter = () => {
                 { index: true, element: <BranchesPage /> },
                 { path: ":id", element: <BranchDetailPage /> },
               ],
+            },
+            {
+              path: "logs",
+              element: <LogsPage />,
             },
             {
               path: "403",
