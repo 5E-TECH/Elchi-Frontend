@@ -60,7 +60,7 @@ const Region = lazy(() => import("../../pages/region/index"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
 const BranchesPage = lazy(() => import("../../pages/branches"));
 const BranchDetailPage = lazy(() => import("../../pages/branches/ui/BranchDetailPage"));
-const LogsPage = lazy(() => import("../../pages/logs"));
+const LogsPage = lazy(() => import("../../pages/logs/index"));
 const ForbiddenPage = lazy(() => import("../../shared/ui/Forbidden"));
 const NotFound = lazy(() => import("../../shared/ui/NotFound"));
 const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
