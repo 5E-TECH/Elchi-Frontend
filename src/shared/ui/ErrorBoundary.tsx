@@ -20,15 +20,19 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Global ErrorBoundary xatoligi:", error, errorInfo);
 
-    const payload = JSON.stringify({
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-    });
+    try {
+      const payload = JSON.stringify({
+        message: error.message,
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+      });
 
-    sessionStorage.setItem("elchi_runtime_error", payload);
+      window.sessionStorage.setItem("elchi_runtime_error", payload);
+    } catch {
+      // Ignore storage failures and still try to navigate to the runtime error page.
+    }
 
-    if (window.location.pathname !== "/runtime-error") {
+    if (typeof window !== "undefined" && window.location.pathname !== "/runtime-error") {
       window.location.replace("/runtime-error");
     }
   }

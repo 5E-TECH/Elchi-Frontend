@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, Ban, MapPin, Trash2 } from "lucide-react";
+import { AlertTriangle, Ban, FileText, Globe, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   useMails,
@@ -12,15 +12,14 @@ import {
   useSendPost,
 } from "../../../entities/mails";
 import HeaderName from "../../../shared/components/headerName";
+import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
 
 // ─── UI komponentlar ──────────────────────────────────────────────────────────
 import MailStatCards from "./ui/MailStatCards";
 import OrdersTable from "./ui/OrdersTable";
 import SendButton from "./ui/SendButton";
 import SendPostModal from "./ui/SendPostModal";
-import PrintModeSelect from "./ui/PrintModeSelect";
 import { printOrders, type PrintMode } from "./lib/printMode";
-import PrintOnlyOrders from "./ui/PrintOnlyOrders";
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
@@ -77,6 +76,7 @@ const MailDetailPage = () => {
   const postId = id;
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
+  const isSuperAdmin = role === "superadmin";
   const navState = location.state as { fromTab?: string; type?: string; view?: string } | null;
 
   const search = location.search ? new URLSearchParams(location.search) : null;
@@ -162,6 +162,7 @@ const MailDetailPage = () => {
   const sendPost = useSendPost();
   const { SendToPost } = useOrders();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
 
   // ─── Region nomi ──────────────────────────────────────────────────────────
   const regionName = useMemo(
@@ -283,39 +284,58 @@ const MailDetailPage = () => {
     () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
     [orders, selectedIds],
   );
+  const printOptions = useMemo<PrintSelectOption[]>(
+    () => [
+      {
+        id: "browser",
+        label: t("printOptions.browser.label"),
+        hint: t("printOptions.browser.hint"),
+        icon: <Globe size={14} className="text-[var(--color-info)]" />,
+      },
+      {
+        id: "pdf_100x60",
+        label: t("printOptions.labelPdf.label"),
+        hint: t("printOptions.labelPdf.hint"),
+        icon: <FileText size={14} className="text-[var(--color-error)]" />,
+      },
+    ],
+    [t],
+  );
 
-  const [browserPrintOrders, setBrowserPrintOrders] = useState<PostOrder[]>([]);
-
-  useEffect(() => {
-    const onAfter = () => setBrowserPrintOrders([]);
-    window.addEventListener("afterprint", onAfter);
-    return () => window.removeEventListener("afterprint", onAfter);
+  const handlePrintOrders = useCallback((mode: PrintMode, printTargets: PostOrder[]) => {
+    if (printTargets.length === 0) return;
+    printOrders(mode, printTargets);
   }, []);
 
   const handlePrint = useCallback(
     (mode: PrintMode) => {
-      if (mode === "browser") {
-        if (selectedOrders.length === 0) return;
-        setBrowserPrintOrders(selectedOrders);
-        // next tick: allow PrintOnlyOrders to render
-        setTimeout(() => window.print(), 50);
-        return;
-      }
-
-      printOrders(mode, selectedOrders);
+      handlePrintOrders(mode, selectedOrders);
     },
-    [selectedOrders],
+    [handlePrintOrders, selectedOrders],
   );
 
+  const handlePrintOne = useCallback(
+    (order: PostOrder, mode: PrintMode) => {
+      handlePrintOrders(mode, [order]);
+    },
+    [handlePrintOrders],
+  );
+
+  const handleDeleteOne = useCallback((orderId: string) => {
+    setDeleteTargetIds([orderId]);
+    setIsDeleteConfirmOpen(true);
+  }, []);
+
   const handleDeleteSelected = useCallback(() => {
-    if (selectedIds.size === 0) return;
+    if (deleteTargetIds.length === 0) return;
 
     apiRequest({
-      request: () => SendToPost.mutateAsync(Array.from(selectedIds)),
+      request: () => SendToPost.mutateAsync(deleteTargetIds),
       successMessage: t("selectedOrdersRemovedSuccess"),
       errorMessage: t("selectedOrdersRemovedError"),
       onSuccess: async () => {
         setIsDeleteConfirmOpen(false);
+        setDeleteTargetIds([]);
         clearSelection();
         const refreshed = await refetchRegularDetail();
         const remainingOrders = refreshed.data?.data?.allOrdersByPostId?.length ?? 0;
@@ -325,7 +345,7 @@ const MailDetailPage = () => {
         }
       },
     });
-  }, [selectedIds, apiRequest, SendToPost, t, clearSelection, refetchRegularDetail, navigate]);
+  }, [deleteTargetIds, apiRequest, SendToPost, t, clearSelection, refetchRegularDetail, navigate]);
 
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (regularLoading || refusedLoading)
@@ -368,7 +388,15 @@ const MailDetailPage = () => {
             onIconClick={handleBack}
           />
         </div>
-        {!isOldDetail && <PrintModeSelect count={selectedIds.size} onSelect={handlePrint} />}
+        {!isOldDetail && (
+          <PrintModeSelect
+            count={selectedIds.size}
+            onSelect={(mode) => handlePrint(mode as PrintMode)}
+            buttonLabel={t("print")}
+            menuLabel={t("printMenu")}
+            options={printOptions}
+          />
+        )}
       </div>
 
       {/* Stat kartalar */}
@@ -388,6 +416,9 @@ const MailDetailPage = () => {
         someSelected={someSelected}
         onToggleAll={toggleAll}
         onToggleOne={toggleOne}
+        onPrintOne={handlePrintOne}
+        onDeleteOne={handleDeleteOne}
+        canDelete={isSuperAdmin && !isRefusedDetail}
         variant={isOldDetail ? "history" : "default"}
         readOnly={isReadOnlyRefusedCourier}
       />
@@ -395,25 +426,6 @@ const MailDetailPage = () => {
       {/* Rol asosida tugma */}
       {orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier && (
         <div className="flex flex-col gap-3">
-          {selectedIds.size > 0 && !isCourier && !isRefusedDetail && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setIsDeleteConfirmOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-rose-300/30 bg-rose-500/12 px-5 py-3.5 text-sm font-semibold text-rose-100 transition-colors hover:bg-rose-500/18"
-              >
-                <Trash2 size={16} />
-                {t("delete")} ({selectedIds.size})
-              </button>
-
-              <PrintModeSelect
-                count={selectedIds.size}
-                onSelect={handlePrint}
-                className="w-full"
-              />
-            </div>
-          )}
-
           <SendButton
             selectedCount={selectedIds.size}
             isCourier={isCourier}
@@ -436,16 +448,16 @@ const MailDetailPage = () => {
           onSuccess={handleSendSuccess}
         />
       )}
-
-      {browserPrintOrders.length > 0 && <PrintOnlyOrders orders={browserPrintOrders} />}
-
       <PopupConfirm
         isOpen={isDeleteConfirmOpen}
-        onClose={() => setIsDeleteConfirmOpen(false)}
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setDeleteTargetIds([]);
+        }}
         onConfirm={handleDeleteSelected}
         isLoading={SendToPost.isPending}
         title={t("deleteSelectedOrdersTitle")}
-        message={t("deleteSelectedOrdersMessage", { count: selectedIds.size })}
+        message={t("deleteSelectedOrdersMessage", { count: deleteTargetIds.length })}
         confirmLabel={t("delete")}
         variant="danger"
       />

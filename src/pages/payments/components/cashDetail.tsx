@@ -27,6 +27,8 @@ import { useCashBox } from "../../../entities/payments";
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
 import ElchiIconWhite from "../../../shared/assets/logo oq.png";
+import ElchiIconBlack from "../../../shared/assets/logo qora.png";
+import { useTheme } from "../../../app/providers/theme/ThemeContext";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -84,24 +86,24 @@ export interface DetailState {
 
 const CONFIG = {
   market: {
-    kassaLabel: "Market kassasi",
+    kassaLabelKey: "marketCashboxLabel",
     brand: "ELCHI",
     headerIcon: <Store size={20} />,
     entityIcon: <Store size={18} className="text-white" />,
-    actionLabel: "Pay",
-    actionSub: "Marketga to'lov",
-    submitLabel: "Pay",
+    actionLabelKey: "payAction",
+    actionSubKey: "payToMarketDescription",
+    submitLabelKey: "payAction",
     actionGradient: "from-main to-primarydark",
     iconBg: "bg-main/30",
   },
   courier: {
-    kassaLabel: "Kuryer kassasi",
+    kassaLabelKey: "courierCashboxLabel",
     brand: "ELCHI",
     headerIcon: <Truck size={20} />,
     entityIcon: <Truck size={18} className="text-white" />,
-    actionLabel: "Receive",
-    actionSub: "Kuryerdan qabul qilish",
-    submitLabel: "Receive",
+    actionLabelKey: "receiveAction",
+    actionSubKey: "receiveFromCourierDescription",
+    submitLabelKey: "receiveAction",
     actionGradient: "from-success to-info",
     iconBg: "bg-success/25",
   },
@@ -127,10 +129,12 @@ const cashDetailSchema: yup.ObjectSchema<CashDetailFormValues> = yup.object({
 
 const CashDetail = () => {
   const { t } = useTranslation("payments");
+  const { theme } = useTheme();
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
   const navigate = useNavigate();
   const { getCashBoxById } = useCashBox();
+  const brandLogo = theme === "dark" ? ElchiIconWhite : ElchiIconBlack;
 
   const [draftDateFrom, setDraftDateFrom] = useState("");
   const [draftDateTo, setDraftDateTo] = useState("");
@@ -181,7 +185,7 @@ const CashDetail = () => {
     { value: "transfer", label: "Transfer" },
   ];
 
-  const entityName = user?.name?.trim() || "Foydalanuvchi";
+  const entityName = user?.name?.trim() || t("userFallback");
   const totalBalance = toNumber(cashbox?.balance ?? state?.entity?.amount);
   const cashBalance = toNumber(cashbox?.balance_cash);
   const cardBalance = toNumber(cashbox?.balance_card);
@@ -309,7 +313,7 @@ const CashDetail = () => {
           <div className="px-1">
             <HeaderName
               name={entityName}
-              description={cfg.kassaLabel}
+              description={t(cfg.kassaLabelKey)}
               icon={cfg.headerIcon}
               onIconClick={() => navigate(-1)}
             />
@@ -329,7 +333,7 @@ const CashDetail = () => {
               <div className="flex items-center gap-2.5">
                 <div className={`flex h-11 w-11 items-center justify-center rounded-[1.2rem] ${cfg.iconBg}`}>
                   <img
-                    src={ElchiIconWhite}
+                    src={brandLogo}
                     alt="Elchi"
                     className="h-5 w-5 object-contain"
                   />
@@ -380,9 +384,9 @@ const CashDetail = () => {
                   {type === "market" ? <CreditCard size={20} /> : <PackageCheck size={20} />}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-primary">{cfg.actionLabel}</p>
+                  <p className="text-sm font-bold text-primary">{t(cfg.actionLabelKey)}</p>
                   <p className="text-xs text-primary/70">
-                    {type === "market" ? t("payToMarketDescription") : t("receiveFromCourierDescription")}
+                    {t(cfg.actionSubKey)}
                   </p>
                 </div>
               </div>
@@ -472,7 +476,7 @@ const CashDetail = () => {
                 className={`flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-[0.98] ${cfg.actionGradient}`}
               >
                 <Send size={16} />
-                {cfg.submitLabel}
+                {t(cfg.submitLabelKey)}
               </button>
             </div>
           </div>

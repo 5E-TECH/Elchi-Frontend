@@ -41,36 +41,36 @@
   "name": "Ism",
   "phone": "Telefon",
   "role": "Rol",
-  "amountLabel": "Amount",
-  "comment": "Comment",
-  "paymentHistoryNotFound": "Payment history topilmadi",
+  "amountLabel": "Summa",
+  "comment": "Izoh",
+  "paymentHistoryNotFound": "To'lov tarixi topilmadi",
   "pageLabel": "{{page}}-sahifa / {{totalPages}}",
   "previousPage": "Oldingi sahifa",
   "nextPage": "Keyingi sahifa",
-  "createdBy": "Created by",
-  "amount": "Amount",
-  "paymentDate": "Payment date",
-  "total": "total",
+  "createdBy": "Yaratgan",
+  "amount": "Summa",
+  "paymentDate": "To'lov sanasi",
+  "total": "jami",
   "financeHistoryNotFound": "Finance tarixi topilmadi",
   "historyLower": "history",
-  "paymentHistory": "Payment history",
+  "paymentHistory": "To'lov tarixi",
   "lastOperations": "So'nggi operatsiyalar",
-  "todayTransactions": "Today's transactions",
+  "todayTransactions": "Bugungi tranzaksiyalar",
   "todayOperations": "Bugungi operatsiyalar",
   "noOperations": "Operatsiyalar yo'q",
   "today": "Bugun",
   "thisWeek": "Bu hafta",
   "thisMonth": "Bu oy",
   "paymentMethod": "To'lov turi",
-  "user": "User",
-  "phoneNumber": "Phone number",
-  "type": "Type",
+  "user": "Foydalanuvchi",
+  "phoneNumber": "Telefon raqami",
+  "type": "Turi",
   "order": "Order",
   "district": "District",
-  "totalPrice": "Total price",
-  "toBePaid": "To be paid",
+  "totalPrice": "Jami summa",
+  "toBePaid": "To'lanishi kerak",
   "paid": "Paid",
-  "address": "Address",
+  "address": "Manzil",
   "qty": "Qty",
   "detailLoading": "Detail yuklanmoqda",
   "detailLoadingDescription": "Backenddan payment history detail olinmoqda.",
@@ -89,8 +89,8 @@
   "optionalComment": "Izoh (ixtiyoriy)",
   "closeShiftPlaceholder": "Smena haqida izoh...",
   "paymentTypeRequired": "payment type majburiy",
-  "amountRequired": "Amount majburiy",
-  "mainCashboxTitle": "Main Cashbox",
+  "amountRequired": "Summa majburiy",
+  "mainCashboxTitle": "Asosiy kassa",
   "mainCashboxDescription": "Asosiy kassa boshqaruvi",
   "cashbox": "Kassa",
   "mainCashbox": "Asosiy kassa",
@@ -145,13 +145,13 @@
   "allInfo": "Barcha ma'lumotlar",
   "report": "Hisobot",
   "exportReport": "Hisobotni eksport qilish",
-  "commentPlaceholder": "Komment...",
+  "commentPlaceholder": "Izoh...",
   "paymentType": "To'lov turi",
-  "paymentTypePlaceholder": "payment type",
+  "paymentTypePlaceholder": "To'lov turini tanlang",
   "closeShiftComment": "Smena yopish izohi",
-  "amountPositiveValidation": "Amount 0 dan katta bo'lishi kerak",
-  "loadingLabel": "Loading...",
-  "cancelLabel": "Cancel",
+  "amountPositiveValidation": "Summa 0 dan katta bo'lishi kerak",
+  "loadingLabel": "Yuklanmoqda...",
+  "cancelLabel": "Bekor qilish",
   "mainSection": "Asosiy kassa",
   "incomeSection": "Kirim",
   "expenseSection": "Xarajat",
@@ -175,4 +175,22 @@
   "closeShiftError": "Smenani yopishda xatolik yuz berdi",
   "currency": "UZS",
   "mainCashboxReport": "Asosiy kassa hisobot"
+  ,"marketCashboxLabel": "Market kassasi"
+  ,"courierCashboxLabel": "Kuryer kassasi"
+  ,"payAction": "To'lash"
+  ,"receiveAction": "Qabul qilish"
+  ,"userFallback": "Foydalanuvchi"
+  ,"receiveFromCourier": "Kuryerdan qabul qilish"
+  ,"payToMarket": "Marketga to'lov"
+  ,"paySalary": "Maosh to'lash"
+  ,"courierShort": "Kuryer"
+  ,"marketShort": "Market"
+  ,"expenseShort": "Chiqim"
+  ,"incomeShort": "Kirim"
+  ,"salaryShort": "Maosh"
+  ,"excel": "Excel"
+  ,"sell": "Sotuv"
+  ,"cancelOperation": "Bekor qilish"
+  ,"extraCost": "Qo'shimcha xarajat"
+  ,"currencyAmountSuffix": "so'm"
 }

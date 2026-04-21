@@ -1,7 +1,8 @@
-import { memo, useState, useRef, useEffect, useCallback } from "react";
+import { memo, useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
-import { MoveLeft, Printer, Globe, FileText, ChevronDown, CheckCircle2, Loader2 } from "lucide-react";
+import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
+import { MoveLeft, Globe, FileText, CheckCircle2, Loader2 } from "lucide-react";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useNavigate, useParams } from "react-router-dom";
 import { GlobalSearchInput, useDebounce } from "../../../features/search";
@@ -12,18 +13,11 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 
-const printOptions = [
-  { key: "browser", icon: <Globe size={18} />, bg: "bg-emerald-500/10 text-emerald-500", titleKey: "browserPrint", subKey: "anyPrinter" },
-  { key: "pdf", icon: <FileText size={18} />, bg: "bg-amber-500/10 text-amber-500", titleKey: "pdfPrint", subKey: "gainschaPrinter" },
-];
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
   const { t } = useTranslation("newOrders");
   const navigate = useNavigate();
   const { marketId } = useParams();
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
@@ -47,14 +41,6 @@ const NewOrderDetail = () => {
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
   const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
   const orders: ApiOrder[] = res?.data ?? res ?? [];
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
@@ -122,8 +108,6 @@ const NewOrderDetail = () => {
       return;
     }
 
-    setIsOpen(false);
-
     if (mode === "pdf") {
       try {
         const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
@@ -141,8 +125,8 @@ const NewOrderDetail = () => {
 
     // Browser print (fallback)
     try {
-      const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
-      await openOrdersLabelPdf(printableOrders);
+      const { openOrdersLabelBrowserPrint } = await import("./lib/printLabelPdf");
+      openOrdersLabelBrowserPrint(printableOrders);
     } catch {
       notifApi.error({
         message: t("print"),
@@ -152,6 +136,24 @@ const NewOrderDetail = () => {
       });
     }
   }, [notifApi, orders, selectedIds, t]);
+
+  const printOptions = useMemo<PrintSelectOption[]>(
+    () => [
+      {
+        id: "browser",
+        label: t("browserPrint"),
+        hint: t("anyPrinter"),
+        icon: <Globe size={14} className="text-emerald-500" />,
+      },
+      {
+        id: "pdf",
+        label: t("pdfPrint"),
+        hint: t("gainschaPrinter"),
+        icon: <FileText size={14} className="text-amber-500" />,
+      },
+    ],
+    [t],
+  );
 
   return (
     <div className="flex flex-col h-full rounded-2xl bg-sidebar dark:bg-maindark overflow-hidden">
@@ -166,35 +168,16 @@ const NewOrderDetail = () => {
           <div className="flex items-center gap-3">
             <GlobalSearchInput searchKey="new_order_detail_search" placeholder={t("searchOrder")} />
 
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setIsOpen((p) => !p)}
-                disabled={selectedIds.size === 0}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm transition-all shadow-md shadow-main/20 ${selectedIds.size === 0
-                  ? "bg-main/40 cursor-not-allowed shadow-none"
-                  : "bg-main hover:bg-main/90 cursor-pointer"
-                  }`}
-              >
-                <Printer size={16} /> {t("print")}
-                <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {isOpen && selectedIds.size > 0 && (
-                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-primarydark shadow-2xl z-50 p-2">
-                  {printOptions.map((o) => (
-                    <button key={o.key} onClick={() => { void handlePrint(o.key); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
-                      <div className={`p-2 rounded-lg ${o.bg} shrink-0`}>{o.icon}</div>
-                      <div className="text-left">
-                        <div className="text-sm font-semibold text-gray-800 dark:text-white">{t(o.titleKey)}</div>
-                        <div className="text-xs text-gray-400">{t(o.subKey)}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <PrintModeSelect
+              count={selectedIds.size}
+              onSelect={(mode) => {
+                void handlePrint(mode);
+              }}
+              buttonLabel={t("print")}
+              menuLabel={t("print")}
+              options={printOptions}
+              className={selectedIds.size === 0 ? "bg-main/40 shadow-none border-main/40 text-white" : "bg-main hover:bg-main/90 border-main text-white shadow-md shadow-main/20"}
+            />
           </div>
         </div>
 

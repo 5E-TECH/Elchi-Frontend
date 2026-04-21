@@ -1,17 +1,25 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, FileText, Globe, Printer, ReceiptText } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import type { PrintMode } from "../lib/printMode";
+import { ChevronDown, Printer } from "lucide-react";
 
 type MenuPosition = { top: number; left: number };
+
+export type PrintSelectOption = {
+  id: string;
+  label: string;
+  hint?: string;
+  icon: React.ReactNode;
+};
 
 type Props = {
   variant?: "header" | "icon";
   count?: number;
   disabled?: boolean;
-  onSelect: (mode: PrintMode) => void;
+  onSelect: (mode: string) => void;
   className?: string;
+  buttonLabel?: string;
+  menuLabel?: string;
+  options: PrintSelectOption[];
 };
 
 const PrintModeSelect = ({
@@ -20,41 +28,21 @@ const PrintModeSelect = ({
   disabled = false,
   onSelect,
   className = "",
+  buttonLabel = "Print",
+  menuLabel = "Print menu",
+  options,
 }: Props) => {
-  const { t } = useTranslation("mails");
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<MenuPosition | null>(null);
 
-  const options = useMemo(
-    () => [
-      {
-        id: "browser" as const,
-        label: t("printOptions.browser.label"),
-        hint: t("printOptions.browser.hint"),
-        icon: <Globe size={14} className="text-[var(--color-info)]" />,
-      },
-      {
-        id: "pdf_100x60" as const,
-        label: t("printOptions.labelPdf.label"),
-        hint: t("printOptions.labelPdf.hint"),
-        icon: <FileText size={14} className="text-[var(--color-error)]" />,
-      },
-      {
-        id: "thermal_80mm" as const,
-        label: t("printOptions.thermal.label"),
-        hint: t("printOptions.thermal.hint"),
-        icon: <ReceiptText size={14} className="text-[var(--color-success)]" />,
-      },
-    ],
-    [t],
-  );
+  const normalizedOptions = useMemo(() => options, [options]);
 
   useEffect(() => {
     if (!open) return;
-    const onMouseDown = (e: MouseEvent) => {
-      const target = e.target as Node;
+    const onMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (menuRef.current?.contains(target)) return;
       if (triggerRef.current?.contains(target)) return;
       setOpen(false);
@@ -65,32 +53,34 @@ const PrintModeSelect = ({
 
   useEffect(() => {
     if (!open) return;
+
     const updatePosition = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const MENU_WIDTH = 288; // w-72
-      const GAP = 8;
-      const nextTop = rect.bottom + GAP;
-      const preferredLeft = rect.left;
-      const clampedLeft = Math.max(GAP, Math.min(preferredLeft, window.innerWidth - MENU_WIDTH - GAP));
-      setPos({ top: nextTop, left: clampedLeft });
+      const menuWidth = 288;
+      const gap = 8;
+      const top = rect.bottom + gap;
+      const left = Math.max(gap, Math.min(rect.left, window.innerWidth - menuWidth - gap));
+      setPos({ top, left });
     };
 
     updatePosition();
     window.addEventListener("resize", updatePosition);
     document.addEventListener("scroll", updatePosition, true);
+
     return () => {
       window.removeEventListener("resize", updatePosition);
       document.removeEventListener("scroll", updatePosition, true);
     };
   }, [open]);
 
-  const handlePick = (mode: PrintMode) => {
+  const handlePick = (mode: string) => {
     onSelect(mode);
     setOpen(false);
   };
 
-  const triggerDisabled = disabled || (variant === "header" && count === 0);
+  const triggerDisabled =
+    disabled || normalizedOptions.length === 0 || (variant === "header" && count === 0);
 
   return (
     <>
@@ -99,7 +89,7 @@ const PrintModeSelect = ({
           ref={triggerRef}
           type="button"
           disabled={triggerDisabled}
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen((value) => !value)}
           className={`
             flex items-center justify-center gap-2
             px-4 py-3 rounded-2xl
@@ -111,11 +101,11 @@ const PrintModeSelect = ({
             ${triggerDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
             ${className}
           `}
-          aria-label={t("print")}
+          aria-label={buttonLabel}
         >
           <Printer size={16} className="text-[var(--color-purple-light)]" />
           <span className="text-sm font-semibold">
-            {t("print")} ({count})
+            {buttonLabel} ({count})
           </span>
           <ChevronDown
             size={16}
@@ -127,7 +117,7 @@ const PrintModeSelect = ({
           ref={triggerRef}
           type="button"
           disabled={triggerDisabled}
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen((value) => !value)}
           className={`
             flex items-center justify-center w-7 h-7 rounded-lg
             bg-gray-100 dark:bg-white/8
@@ -137,47 +127,55 @@ const PrintModeSelect = ({
             transition-all duration-200 shrink-0
             ${triggerDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           `}
-          aria-label={t("print")}
+          aria-label={buttonLabel}
         >
           <Printer size={13} />
         </button>
       )}
 
-      {open && pos && createPortal(
-        <div
-          ref={menuRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left }}
-          className="
-            z-[9999] w-72
-            rounded-xl overflow-hidden
-            bg-[var(--color-surface-dark)]
-            border border-[var(--color-glass-border)]
-            shadow-2xl shadow-black/30
-          "
-          role="dialog"
-          aria-label={t("printMenu")}
-        >
-          {options.map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => handlePick(opt.id)}
+      {open && pos
+        ? createPortal(
+            <div
+              ref={menuRef}
+              style={{ position: "fixed", top: pos.top, left: pos.left }}
               className="
-                w-full px-4 py-3
-                flex items-center gap-3 text-left
-                hover:bg-[var(--color-glass)] transition-colors
+                z-[9999] w-72
+                rounded-xl overflow-hidden
+                bg-[var(--color-surface-dark)]
+                border border-[var(--color-glass-border)]
+                shadow-2xl shadow-black/30
               "
+              role="dialog"
+              aria-label={menuLabel}
             >
-              <div className="shrink-0">{opt.icon}</div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-[var(--color-primary)] truncate">{opt.label}</div>
-                <div className="text-xs text-[var(--color-primary)] opacity-55 truncate">{opt.hint}</div>
-              </div>
-            </button>
-          ))}
-        </div>,
-        document.body,
-      )}
+              {normalizedOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handlePick(option.id)}
+                  className="
+                    w-full px-4 py-3
+                    flex items-center gap-3 text-left
+                    hover:bg-[var(--color-glass)] transition-colors
+                  "
+                >
+                  <div className="shrink-0">{option.icon}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-[var(--color-primary)] truncate">
+                      {option.label}
+                    </div>
+                    {option.hint ? (
+                      <div className="text-xs text-[var(--color-primary)] opacity-55 truncate">
+                        {option.hint}
+                      </div>
+                    ) : null}
+                  </div>
+                </button>
+              ))}
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 };

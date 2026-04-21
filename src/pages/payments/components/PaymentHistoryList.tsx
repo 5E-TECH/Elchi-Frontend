@@ -21,18 +21,18 @@ const formatDate = (dateStr: string) => {
   }
 };
 
-const labelCashboxType = (v?: string) => {
+const labelCashboxType = (v?: string, t?: (key: string) => string) => {
   if (!v) return "";
-  if (v === "cash") return "Naqd";
+  if (v === "cash") return t ? t("cash") : "Cash";
   if (v === "card") return "Click";
   if (v === "transfer") return "Transfer";
   return v;
 };
 
-const labelOperation = (v?: string) => {
+const labelOperation = (v?: string, t?: (key: string) => string) => {
   if (!v) return "";
-  if (v === "income") return "Kirim";
-  if (v === "expense") return "Chiqim";
+  if (v === "income") return t ? t("income") : "Income";
+  if (v === "expense") return t ? t("expense") : "Expense";
   return v;
 };
 
@@ -60,11 +60,12 @@ const Badge = memo(({ text, tone }: { text: string; tone: "neutral" | "green" | 
 
 const RollbackBadge = memo(() => (
   <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold whitespace-nowrap bg-violet-500/15 text-violet-300">
-    Rollback
+    ROLLBACK
   </span>
 ));
 
 const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
+  const { t } = useTranslation("payments");
   const op = row.operation_type;
   const isIncome = op === "income";
   const sign = isIncome ? "+" : "-";
@@ -98,8 +99,8 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
                 {sourceType}
               </span>
             )}
-            {cashboxType && <Badge text={labelCashboxType(cashboxType) || cashboxType} tone="neutral" />}
-            {op && <Badge text={labelOperation(op) || op} tone={isIncome ? "green" : "red"} />}
+            {cashboxType && <Badge text={labelCashboxType(cashboxType, t) || cashboxType} tone="neutral" />}
+            {op && <Badge text={labelOperation(op, t) || op} tone={isIncome ? "green" : "red"} />}
           </div>
           {commentInfo.text && (
             <p className="mt-1 text-[11px] leading-5 text-gray-500 dark:text-white/45 whitespace-pre-line">
@@ -112,7 +113,7 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
       <div className="text-right shrink-0">
         <p className={`text-[13px] font-black tabular-nums m-0 ${isIncome ? "text-emerald-300" : "text-rose-300"}`}>
           {sign}
-          {fmt(Math.abs(amount))} so&apos;m
+          {fmt(Math.abs(amount))} {t("currencyAmountSuffix")}
         </p>
         {typeof row.balance_after === "number" && (
           <p className="mt-1 text-[11px] text-gray-500 dark:text-white/45">

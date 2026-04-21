@@ -15,6 +15,7 @@ const Login = lazy(() => import("../../features/auth"));
 const DashboardLayout = lazy(
   () => import("../../widgets/layout/dashboardLayout"),
 );
+const ScanLayout = lazy(() => import("../../widgets/layout/scanLayout"));
 const DashboardPage = lazy(() => import("../../pages/dashboard/DashboardPage"));
 const UserListPage = lazy(() => import("../../pages/users/list/UserListPage"));
 const CreateUserPage = lazy(
@@ -53,6 +54,8 @@ const CashDetail = lazy(
 const MyCashboxPage = lazy(
   () => import("../../pages/payments/components/MyCashboxPage"),
 );
+const ScanPage = lazy(() => import("../../pages/scan"));
+const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
 
@@ -79,10 +82,28 @@ const hasSelfCashboxAccess = (state: RootState) => {
 const AppRouter = () => {
   return useRoutes([
     { path: "/login", element: <Login /> },
+    { path: "/403", element: <ForbiddenPage /> },
+    { path: "/404", element: <NotFound /> },
+    { path: "/500", element: <ServerErrorPage /> },
+    { path: "/runtime-error", element: <ErrorBoundaryPage /> },
     {
       path: "/",
       element: <Auth />,
       children: [
+        {
+          path: "/",
+          element: <ScanLayout />,
+          children: [
+            {
+              path: "scan",
+              element: <ScanPage />,
+            },
+            {
+              path: "scan/:token",
+              element: <ScanDetailPage />,
+            },
+          ],
+        },
         {
           path: "/",
           element: <DashboardLayout />,
