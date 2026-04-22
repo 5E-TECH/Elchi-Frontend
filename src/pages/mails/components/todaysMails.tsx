@@ -1,18 +1,19 @@
 import { memo, useMemo, useState } from "react";
-import { MapPin, Package, ChevronRight, TrendingUp, MapPinned, Search } from "lucide-react";
+import { MapPin, Package, ChevronRight, TrendingUp, MapPinned } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import MailSummaryStats from "./MailSummaryStats";
-import FilterSelect from "../../../shared/ui/FilterSelect";
+import SearchableSelect from "../../../shared/ui/SearchableSelect";
+import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Region {
   id: string;
   name: string;
-  sato_code: string;
+  sato_code?: string;
 }
 
 interface MailItem {
@@ -91,11 +92,6 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
                 })
               : regionName}{" "}
           </h3>
-          {/* {item.region?.sato_code && (
-            <p className="text-white/50 text-xs mt-0.5">
-              {item.region.sato_code}
-            </p>
-          )} */}
         </div>
 
         {/* Divider */}
@@ -141,7 +137,6 @@ const TodaysMails = () => {
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
   const [selectedRegionId, setSelectedRegionId] = useState("");
-  const [regionSearch, setRegionSearch] = useState("");
 
   const { getNewMails, getNewMailsCourier } = useMails();
 
@@ -153,32 +148,16 @@ const TodaysMails = () => {
 
   const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
   const regionOptions = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          mails
-            .filter((mail) => mail.region?.id && mail.region?.name)
-            .map((mail) => [
-              mail.region.id,
-              { value: mail.region.id, label: mail.region.name },
-            ]),
-        ).values(),
-      ).sort((left, right) => left.label.localeCompare(right.label, "uz")),
-    [mails],
+    () => buildRegionFilterOptions(mails, t("oldRegionFilterPlaceholder")),
+    [mails, t],
   );
-  const filteredMails = useMemo(() => {
-    const normalizedSearch = regionSearch.trim().toLocaleLowerCase();
-
-    return mails.filter((mail) => {
-      const matchesRegion =
-        !selectedRegionId || mail.region?.id === selectedRegionId;
-      const regionName = mail.region?.name?.toLocaleLowerCase() ?? "";
-      const matchesSearch =
-        !normalizedSearch || regionName.includes(normalizedSearch);
-
-      return matchesRegion && matchesSearch;
-    });
-  }, [mails, regionSearch, selectedRegionId]);
+  const filteredMails = useMemo(
+    () =>
+      selectedRegionId
+        ? mails.filter((mail) => mail.region?.id === selectedRegionId)
+        : mails,
+    [mails, selectedRegionId],
+  );
 
   // Umumiy hisob-kitoblar
   const stats = useMemo(() => {
@@ -240,30 +219,18 @@ const TodaysMails = () => {
           accent="success"
         />
 
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <div className="w-full sm:w-64">
-            <FilterSelect
-              label={t("oldRegionFilterLabel")}
-              name="today-mails-region-filter"
-              value={selectedRegionId}
-              onChange={setSelectedRegionId}
-              options={regionOptions}
-              placeholder={t("oldRegionFilterPlaceholder")}
-              icon={MapPinned}
-              hideLabel
-            />
-          </div>
-
-          <label className="flex h-11 w-full items-center gap-2 rounded-2xl border border-white/10 bg-white/6 px-3 text-white/80 sm:w-64">
-            <Search size={16} className="shrink-0 text-white/45" />
-            <input
-              type="text"
-              value={regionSearch}
-              onChange={(event) => setRegionSearch(event.target.value)}
-              placeholder={t("oldRegionFilterPlaceholder")}
-              className="w-full bg-transparent text-sm outline-none placeholder:text-white/35"
-            />
-          </label>
+        <div className="w-full sm:w-72 lg:w-72">
+          <SearchableSelect
+            label={t("oldRegionFilterLabel")}
+            name="today-mails-region-filter"
+            value={selectedRegionId}
+            onChange={setSelectedRegionId}
+            options={regionOptions}
+            placeholder={t("oldRegionFilterPlaceholder")}
+            icon={MapPinned}
+            hideLabel
+            size="sm"
+          />
         </div>
       </div>
 

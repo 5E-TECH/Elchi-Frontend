@@ -88,6 +88,13 @@ vi.mock("../../../entities/product", () => ({
       isLoading: false,
       isFetching: false,
     }),
+    getProductById: () => ({
+      data: {
+        data: { id: 1, name: "Olma", image_url: "/uploads/olma.png", market: { id: 1, name: "Fresh" } },
+      },
+      isLoading: false,
+      isFetching: false,
+    }),
     deleteProduct: { mutate: deleteMutateMock, isPending: false },
     updateProduct: { mutateAsync: updateMutateAsyncMock, isPending: false },
   }),

@@ -6,6 +6,7 @@ import { renderWithProviders } from "../../../test/test-utils";
 
 const navigateMock = vi.fn();
 const updateUserStatusMutateMock = vi.fn();
+const deleteUserMutateMock = vi.fn();
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -19,6 +20,10 @@ vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
     updateUserStatus: {
       mutate: updateUserStatusMutateMock,
+    },
+    deleteUser: {
+      mutate: deleteUserMutateMock,
+      isPending: false,
     },
   }),
 }));
@@ -44,6 +49,7 @@ describe("UserListTable", () => {
   beforeEach(() => {
     navigateMock.mockReset();
     updateUserStatusMutateMock.mockReset();
+    deleteUserMutateMock.mockReset();
   });
 
   it("renders table rows and pagination summary", () => {

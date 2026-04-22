@@ -20,7 +20,7 @@ interface SendPostModalProps {
     postId: string;
     regionId: string;
     selectedIds: Set<string>;
-    onSuccess: () => void;
+    onSuccess: (sentIds?: string[]) => void;
 }
 
 interface SendPostFormValues {
@@ -168,7 +168,7 @@ const SendPostModal = memo(
                     errorMessage: t("sendError"),
                     onSuccess: () => {
                         resetState();
-                        onSuccess();
+                        onSuccess(orderIds);
                         onClose();
                     },
                     onError: () => {
@@ -198,7 +198,7 @@ const SendPostModal = memo(
                 errorMessage: t("sendError"),
                 onSuccess: () => {
                     resetState();
-                    onSuccess();
+                    onSuccess(orderIds);
                     onClose();
                 },
             });

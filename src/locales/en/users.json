@@ -142,5 +142,11 @@
   "defaultTariffPlaceholder": "Select",
   "phoneNumberLabel": "Phone",
   "registeredAt": "Registered",
-  "deleteTitle": "Delete"
+  "deleteTitle": "Delete",
+  "deleteUserTitle": "Delete user",
+  "deleteUserMessage": "Are you sure you want to delete \"{{name}}\"?",
+  "deleteSuccessTitle": "User deleted",
+  "deleteSuccessDescription": "\"{{name}}\" was deleted successfully",
+  "deleteErrorTitle": "Delete failed",
+  "deleteErrorDescription": "An error occurred while deleting the user"
 }

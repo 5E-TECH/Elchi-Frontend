@@ -1,21 +1,18 @@
-import { memo, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Filter, RefreshCw } from 'lucide-react';
+import { memo } from 'react';
+import { useDispatch } from 'react-redux';
+import { Filter, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import Select from '../../../../shared/ui/Select';
 import { GlobalSearchInput } from '../../../search';
 import { resetFilters } from '../../../Select/model/FilterSlice';
 import { clearAllSearch } from '../../../search/model/searchSlice';
 import { useQueryParams } from '../../../../shared/lib/useQueryParams';
-import type { RootState } from '../../../../app/config/store';
 import { useTranslation } from 'react-i18next';
+import FilterClearButton from '../../../../shared/ui/FilterClearButton';
 
 export const UserFilters = memo(() => {
     const { t } = useTranslation("users");
     const dispatch = useDispatch();
     const { clearAllParams } = useQueryParams();
-
-    // Redux dan filter qiymatlarini olish
-    const filters = useSelector((state: RootState) => state.filter);
 
     // Role options - Backend API ga mos value lar
     const roleOptions = [
@@ -33,77 +30,69 @@ export const UserFilters = memo(() => {
         { value: 'inactive', label: t('statusInactive') },
     ];
 
-    // Filter qiymatlari o'zgarganda consolega chiqarish
-    useEffect(() => {
-        if (filters.userRole || filters.userStatus || filters.userSearch) {
-            console.log("=== USER FILTERS - REDUX QIYMATLARI ===");
-            if (filters.userRole) console.log("Role:", filters.userRole);
-            if (filters.userStatus) console.log("Status:", filters.userStatus);
-            if (filters.userSearch) console.log("Search:", filters.userSearch);
-            console.log("========================================");
-        }
-    }, [filters]);
-
     // Tozalash funksiyasi
     const handleReset = () => {
-        // 1. Redux filterlarni tozalash
         dispatch(resetFilters());
-
-        // 2. Redux searchni tozalash
         dispatch(clearAllSearch());
-
-        // 3. URL params tozalash
         clearAllParams();
-
-        console.log("✅ Barcha filterlar tozalandi");
     };
 
     return (
-        <div className="bg-primary dark:bg-main p-5 rounded-2xl shadow-lg shadow-black/10 flex flex-col xl:flex-row items-center gap-4 mb-6">
-            <div className="flex items-center gap-3 text-main dark:text-primary font-semibold text-lg mr-2 min-w-max">
-                <div className="p-2 rounded-lg dark:text-primary">
-                    <Filter size={20} />
+        <section className="relative mb-6 overflow-visible rounded-[28px] border border-white/55 bg-white/75 p-4 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045] dark:shadow-black/10">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-main/20 blur-3xl dark:bg-main/25" />
+            <div className="pointer-events-none absolute -bottom-20 left-1/4 h-32 w-32 rounded-full bg-emerald-400/10 blur-3xl" />
+
+            <div className="relative flex flex-col gap-4 xl:flex-row xl:items-end">
+                <div className="flex min-w-56 items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
+                        <SlidersHorizontal size={19} />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <Filter size={13} className="text-main" />
+                            <p className="m-0 text-[11px] font-black uppercase tracking-[0.22em] text-main/80">
+                                {t("title")}
+                            </p>
+                        </div>
+                        <p className="m-0 mt-1 text-sm font-semibold text-slate-700 dark:text-white/80">
+                            {t("pageDescription")}
+                        </p>
+                    </div>
                 </div>
-                {t("title")}
+
+                <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(180px,0.75fr)_minmax(180px,0.75fr)_minmax(260px,1.35fr)_auto] xl:items-end">
+                    <Select
+                        name="role"
+                        options={roleOptions}
+                        placeholder={t("rolePlaceholder")}
+                        icon={ShieldCheck}
+                        className="border-white/70 bg-white/85 shadow-sm dark:border-white/10 dark:bg-white/7"
+                        useRedux={true}
+                        reduxKey="userRole"
+                    />
+
+                    <Select
+                        name="status"
+                        options={statusOptions}
+                        placeholder={t("statusSelect")}
+                        className="border-white/70 bg-white/85 shadow-sm dark:border-white/10 dark:bg-white/7"
+                        useRedux={true}
+                        reduxKey="userStatus"
+                    />
+
+                    <GlobalSearchInput
+                        searchKey="userSearch"
+                        placeholder={t("searchPlaceholder")}
+                        className="md:col-span-2 xl:col-span-1"
+                    />
+
+                    <FilterClearButton
+                        onClick={handleReset}
+                        className="h-12 rounded-2xl px-5 xl:w-auto"
+                    />
+                </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
-                {/* Role Select - Redux bilan */}
-                <Select
-                    name="role"
-                    options={roleOptions}
-                    placeholder={t("rolePlaceholder")}
-                    className="bg-primary dark:bg-maindark border-2 border-primary dark:border-primarydark"
-                    useRedux={true}
-                    reduxKey="userRole"
-                />
-
-                {/* Status Select - Redux bilan */}
-                <Select
-                    name="status"
-                    options={statusOptions}
-                    placeholder={t("statusSelect")}
-                    className="bg-primary dark:bg-maindark border-2 border-primary dark:border-primarydark"
-                    useRedux={true}
-                    reduxKey="userStatus"
-                />
-
-                {/* Global Search Input - Redux va URL params bilan */}
-                <GlobalSearchInput
-                    searchKey="userSearch"
-                    placeholder={t("searchPlaceholder")}
-                    className="xl:col-span-2"
-                />
-            </div>
-
-            <button
-                onClick={handleReset}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-main dark:text-main dark:bg-primary hover:text-maindark dark:hover:text-maindark bg-transparent border-2 border-main dark:border-primary transition-all whitespace-nowrap active:scale-95 w-full xl:w-auto font-medium hover:shadow-md"
-            >
-                <RefreshCw size={18} />
-                {t("clear")}
-            </button>
-        </div>
+        </section>
     );
 });
 

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import HeaderName from "../../shared/components/headerName";
 import FilterSelect from "../../shared/ui/FilterSelect";
+import FilterClearButton from "../../shared/ui/FilterClearButton";
 import PaymentHistoryTable from "./components/patmentHistoryTable";
 import PopupSelect from "../../shared/components/popupSelect";
 import { useNavigate } from "react-router-dom";
@@ -397,15 +398,12 @@ const Payments = () => {
         </div>
         {Object.values(filters).some(Boolean) && (
           <div className="flex items-center justify-end mt-3">
-            <button
+            <FilterClearButton
               onClick={() => {
                 reset(INIT);
                 resetPagination(limit);
               }}
-              className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
-            >
-              ✕ {t("clearFilters")}
-            </button>
+            />
           </div>
         )}
       </div>

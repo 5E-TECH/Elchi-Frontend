@@ -117,6 +117,13 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
+  const deleteUser = useMutation({
+    mutationFn: (id: string) =>
+      api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
   return {
     createAdmin,
     createMarket,
@@ -127,5 +134,6 @@ export const useUser = () => {
     getUserById,
     updateUserStatus,
     updateUser,
+    deleteUser,
   };
 };
