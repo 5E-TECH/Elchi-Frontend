@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import Button from "../../shared/components/button";
+import HeaderName from "../../shared/components/headerName";
 import { useOrders } from "../../entities/order/api/orderApi";
 import { useMarkets } from "../../entities/markets";
 import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
@@ -79,7 +80,7 @@ const Orders = () => {
   const role = useSelector((state: RootState) => state.role.role);
 
 
-  const { page, limit, setPage, resetPagination } = usePagination({
+  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "orders",
     defaultLimit: LIMIT,
   });
@@ -238,19 +239,11 @@ const Orders = () => {
       {/* ── Header ── */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main text-primary shadow-lg shadow-main/20">
-              <ListOrdered size={18} />
-            </div>
-            <div className="min-w-0">
-              <h2 className="m-0 text-[16px] font-bold leading-tight text-main dark:text-primary">
-                {t("list")}
-              </h2>
-              <p className="mt-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                {t("totalOrdersSummary", { count: total })}
-              </p>
-            </div>
-          </div>
+          <HeaderName
+            name={t("list")}
+            description={t("totalOrdersSummary", { count: total })}
+            icon={<ListOrdered />}
+          />
           <Button
             label={t("newOrders")}
             icon={<Plus size={16} />}
@@ -286,6 +279,7 @@ const Orders = () => {
               itemsPerPage={itemsPerPage}
               currentPage={currentPage}
               onPageChange={setPage}
+              onItemsPerPageChange={setLimit}
               className="pt-0"
             />
           </div>

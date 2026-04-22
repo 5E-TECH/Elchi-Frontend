@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import DateRangePicker from "./DateRangePicker";
 
 interface FilterDateRangeProps {
@@ -11,6 +12,7 @@ interface FilterDateRangeProps {
     toClassName?: string;
     iconClassName?: string;
     size?: "sm" | "md";
+    placeholder?: string;
 }
 
 const FilterDateRange = memo(({
@@ -20,7 +22,10 @@ const FilterDateRange = memo(({
     onChangeDateTo,
     className = "",
     size = "md",
+    placeholder,
 }: FilterDateRangeProps) => {
+    const { t } = useTranslation("common");
+
     const parseISODate = (value: string) => {
         if (!value) return null;
 
@@ -52,6 +57,7 @@ const FilterDateRange = memo(({
             }}
             className={className}
             size={size}
+            placeholder={placeholder ?? `${t("startDate")} → ${t("endDate")}`}
         />
     );
 });

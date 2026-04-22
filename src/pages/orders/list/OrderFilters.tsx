@@ -9,7 +9,6 @@ import {
     Truck,
     Tag,
     Download,
-    RefreshCw,
 } from "lucide-react";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useMarkets } from "../../../entities/markets";
@@ -18,6 +17,8 @@ import { resetFilters, setFilterValue } from "../../../features/Select/model/Fil
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
+import FilterMultiSelect from "../../../shared/ui/FilterMultiSelect";
+import FilterClearButton from "../../../shared/ui/FilterClearButton";
 import { clearAllSearch, setSearchValue } from "../../../features/search/model/searchSlice";
 import type { RootState } from "../../../app/config/store";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
@@ -146,6 +147,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
         {
             status: "active",
             limit: 100,
+            ...(regionId ? { region_id: regionId } : {}),
         },
         canLoadRoleDependentOptions,
     );
@@ -172,12 +174,14 @@ const OrderFilters = memo(({ onExport }: Props) => {
         }
     };
 
-    const updateStatus = (value: string) => {
-        const normalizedValue = value as OrderStatus | "";
+    const updateStatus = (value: string[]) => {
+        const normalizedValue = value.filter((item): item is OrderStatus =>
+            ALL_STATUSES.some((statusOption) => statusOption.value === item),
+        );
         dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: normalizedValue }));
 
-        if (normalizedValue) {
-            setParam(ORDER_FILTER_KEYS.status, normalizedValue);
+        if (normalizedValue.length > 0) {
+            setParam(ORDER_FILTER_KEYS.status, normalizedValue.join(","));
         } else {
             removeParam(ORDER_FILTER_KEYS.status);
         }
@@ -258,9 +262,10 @@ const OrderFilters = memo(({ onExport }: Props) => {
                     label={t("filterRegion")}
                     name={ORDER_FILTER_KEYS.regionId}
                     value={regionId}
-                    onChange={(value) =>
-                        update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, value)
-                    }
+                    onChange={(value) => {
+                        update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, value);
+                        update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "");
+                    }}
                     options={regions}
                     placeholder={t("filterRegionPlaceholder")}
                     icon={MapPin}
@@ -284,10 +289,10 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 )}
 
                 {/* HOLAT */}
-                <SearchableSelect
+                <FilterMultiSelect
                     label={t("filterStatus")}
                     name={ORDER_FILTER_KEYS.status}
-                    value={statusValues[0] ?? ""}
+                    value={statusValues}
                     onChange={updateStatus}
                     options={statuses}
                     placeholder={t("filterStatusPlaceholder")}
@@ -299,13 +304,10 @@ const OrderFilters = memo(({ onExport }: Props) => {
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 {/* Tozalash tugmasi */}
                 {hasFilter && (
-                    <button
+                    <FilterClearButton
                         onClick={handleReset}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs font-semibold text-red-400 transition-colors hover:text-red-500 sm:w-auto sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:py-0"
-                    >
-                        <RefreshCw size={13} />
-                        Tozalash
-                    </button>
+                        className="shrink-0"
+                    />
                 )}
 
                 {/* Aktiv filter chip-lar */}
@@ -340,13 +342,13 @@ const OrderFilters = memo(({ onExport }: Props) => {
                                 key={status}
                                 label={`${t("chipStatus")}: ${statuses.find((item) => item.value === status)?.label ?? status}`}
                                 onRemove={() =>
-                                    updateStatus("")
+                                    updateStatus(statusValues.filter((item) => item !== status))
                                 }
                             />
                         ))}
                         {dateFrom && (
                             <FilterChip
-                                label={`Dan: ${dateFrom}`}
+                                label={`${t("chipFrom")}: ${dateFrom}`}
                                 onRemove={() =>
                                     update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, "")
                                 }
@@ -354,7 +356,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                         )}
                         {dateTo && (
                             <FilterChip
-                                label={`Gacha: ${dateTo}`}
+                                label={`${t("chipTo")}: ${dateTo}`}
                                 onRemove={() =>
                                     update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, "")
                                 }
@@ -362,7 +364,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                         )}
                         {search && (
                             <FilterChip
-                                label={`Qidiruv: "${search}"`}
+                                label={`${t("chipSearch")}: "${search}"`}
                                 onRemove={() => updateSearch("")}
                             />
                         )}
@@ -384,7 +386,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                         "
                     >
                         <Download size={14} />
-                        Export Excel
+                        {t("export", { ns: "common" })}
                     </button>
                 )}
             </div>

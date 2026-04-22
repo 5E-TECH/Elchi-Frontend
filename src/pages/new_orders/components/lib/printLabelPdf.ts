@@ -104,8 +104,13 @@ const joinParts = (...parts: Array<string | null | undefined>) =>
 const getAddress = (order: LabelOrder) => {
   const region = order.customer?.region?.name ?? order.region?.name ?? "";
   const district = order.customer?.district?.name ?? order.district?.name ?? "";
+  return joinParts(region, district) || "-";
+};
+
+const getLandmark = (order: LabelOrder) => {
+  const landmark = safe(order.landmark, "");
   const address = safe(order.address, "");
-  return [joinParts(region, district), address].filter(Boolean).join(", ") || "-";
+  return landmark || address || "-";
 };
 
 const getProducts = (order: LabelOrder) =>
@@ -355,7 +360,7 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
 const drawBottomSection = (pdf: jsPDF, order: LabelOrder) => {
   const values = {
     product: getProducts(order),
-    landmark: safe(order.landmark),
+    landmark: getLandmark(order),
     comment: safe(order.comment),
     logist: getLogist(order),
   };
@@ -465,7 +470,7 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
       const total = escapeHtml(`${formatMoney(order.total_price)} so'm | ${getDeliveryLabel(order)}`);
       const sender = escapeHtml(getSender(order));
       const product = escapeHtml(getProducts(order));
-      const landmark = escapeHtml(safe(order.landmark));
+      const landmark = escapeHtml(getLandmark(order));
       const comment = escapeHtml(safe(order.comment));
       const logist = escapeHtml(getLogist(order));
       const date = escapeHtml(formatDate(order.createdAt));

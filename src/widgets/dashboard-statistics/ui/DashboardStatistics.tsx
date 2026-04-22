@@ -18,7 +18,8 @@ interface StatCardProps {
   icon: React.ReactNode;
   variant: ColorVariant;
   badge?: string;
-  showCurrency?: boolean;
+  suffix?: string;
+  compact?: boolean;
 }
 
 export interface DashboardStatisticsProps {
@@ -37,10 +38,16 @@ const VARIANT_COLOR: Record<ColorVariant, string> = {
   warning: "var(--color-warning)",
 };
 
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat("uz-UZ").format(value);
+
+const formatMoney = (value: number) =>
+  formatNumber(value).replace(/\u00A0/g, " ");
+
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 
 const StatCard = memo(
-  ({ title, value, icon, variant, badge, showCurrency = false }: StatCardProps) => {
+  ({ title, value, icon, variant, badge, suffix, compact = false }: StatCardProps) => {
     const color = VARIANT_COLOR[variant];
 
     return (
@@ -83,12 +90,16 @@ const StatCard = memo(
           </p>
 
           <div className="flex items-baseline gap-1.5">
-            <span className="text-[28px] font-bold leading-none tracking-tight text-maindark dark:text-primary">
+            <span
+              className={`min-w-0 break-words font-bold leading-none tracking-tight text-maindark dark:text-primary ${
+                compact ? "text-[22px] sm:text-[24px]" : "text-[28px]"
+              }`}
+            >
               {value}
             </span>
-            {showCurrency && (
-              <span className="text-[11px] font-semibold text-maindark/50 dark:text-sidebar/50">
-                UZS
+            {suffix && (
+              <span className="shrink-0 text-[11px] font-semibold uppercase text-maindark/50 dark:text-sidebar/50">
+                {suffix}
               </span>
             )}
           </div>
@@ -127,10 +138,11 @@ const DashboardStatistics = memo(
       },
       {
         title: t("cards.profit"),
-        value: profit,
+        value: formatMoney(profit),
         icon: <DollarSign size={20} />,
         variant: "warning",
-        showCurrency: true,
+        suffix: "so'm",
+        compact: true,
       },
     ];
 

@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback, useMemo } from "react";
+import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
@@ -12,6 +12,52 @@ import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
+import { playScanFeedback } from "../../scan/lib/scanShared";
+
+const SCANNER_IDLE_MS = 80;
+const SCANNER_CLEAR_MS = 350;
+const SCAN_ERROR_REPEAT_COUNT = 3;
+const SCAN_ERROR_REPEAT_DELAY_MS = 170;
+
+const playMissingOrderFeedback = () => {
+  Array.from({ length: SCAN_ERROR_REPEAT_COUNT }).forEach((_, index) => {
+    window.setTimeout(() => {
+      void playScanFeedback("error");
+    }, index * SCAN_ERROR_REPEAT_DELAY_MS);
+  });
+};
+
+const normalizeScannerValue = (value: string) => {
+  const trimmed = value.trim();
+  const candidates = new Set<string>();
+
+  const addCandidate = (candidate?: string | null) => {
+    if (!candidate) return;
+    try {
+      const decoded = decodeURIComponent(candidate.trim());
+      if (decoded) candidates.add(decoded.toLowerCase());
+    } catch {
+      const fallback = candidate.trim();
+      if (fallback) candidates.add(fallback.toLowerCase());
+    }
+  };
+
+  addCandidate(trimmed);
+
+  const scanMatch = trimmed.match(/\/scan\/([^/?#\s]+)/i);
+  addCandidate(scanMatch?.[1]);
+
+  try {
+    const url = new URL(trimmed);
+    const parts = url.pathname.split("/").filter(Boolean);
+    const scanIndex = parts.findIndex((part) => part.toLowerCase() === "scan");
+    addCandidate(scanIndex >= 0 ? parts[scanIndex + 1] : parts.at(-1));
+  } catch {
+    // Scanner may send only token/id instead of a full URL.
+  }
+
+  return [...candidates];
+};
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
@@ -41,10 +87,114 @@ const NewOrderDetail = () => {
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
   const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
   const orders: ApiOrder[] = res?.data ?? res ?? [];
+  const scannerBufferRef = useRef("");
+  const scannerLastKeyAtRef = useRef(0);
+  const scannerClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const orderScanIndex = useMemo(() => {
+    const index = new Map<string, string>();
+
+    orders.forEach((order) => {
+      index.set(String(order.id).toLowerCase(), order.id);
+      if (order.qr_code_token?.trim()) {
+        index.set(order.qr_code_token.trim().toLowerCase(), order.id);
+      }
+    });
+
+    return index;
+  }, [orders]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   }, []);
+
+  const selectByScannedCode = useCallback((rawValue: string) => {
+    const candidates = normalizeScannerValue(rawValue);
+    const orderId = candidates
+      .map((candidate) => orderScanIndex.get(candidate))
+      .find(Boolean);
+
+    if (!orderId) {
+      if (rawValue.trim().length < 6 && !rawValue.includes("/scan/")) {
+        return false;
+      }
+
+      notifApi.warning({
+        message: "QR topilmadi",
+        description: "Bu QR kod ushbu ro'yxatdagi orderlarga mos kelmadi.",
+        placement: "topRight",
+        duration: 3,
+      });
+      playMissingOrderFeedback();
+      return true;
+    }
+
+    setSelectedIds((prev) => {
+      if (prev.has(orderId)) return prev;
+      const next = new Set(prev);
+      next.add(orderId);
+      return next;
+    });
+
+    notifApi.success({
+      message: "Order belgilandi",
+      description: `#${orderId}`,
+      placement: "topRight",
+      duration: 2,
+    });
+    void playScanFeedback("success");
+    return true;
+  }, [notifApi, orderScanIndex]);
+
+  useEffect(() => {
+    const clearScannerBuffer = () => {
+      scannerBufferRef.current = "";
+      scannerLastKeyAtRef.current = 0;
+    };
+
+    const scheduleScannerClear = () => {
+      if (scannerClearTimerRef.current) {
+        clearTimeout(scannerClearTimerRef.current);
+      }
+      scannerClearTimerRef.current = setTimeout(clearScannerBuffer, SCANNER_CLEAR_MS);
+    };
+
+    const handleScannerKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+      if (event.key === "Enter") {
+        const scannedValue = scannerBufferRef.current.trim();
+        clearScannerBuffer();
+
+        if (!scannedValue) return;
+
+        if (selectByScannedCode(scannedValue)) {
+          event.preventDefault();
+        }
+        return;
+      }
+
+      if (event.key.length !== 1) return;
+
+      const now = Date.now();
+      if (now - scannerLastKeyAtRef.current > SCANNER_IDLE_MS) {
+        scannerBufferRef.current = "";
+      }
+
+      scannerBufferRef.current += event.key;
+      scannerLastKeyAtRef.current = now;
+      scheduleScannerClear();
+    };
+
+    window.addEventListener("keydown", handleScannerKeyDown, true);
+
+    return () => {
+      window.removeEventListener("keydown", handleScannerKeyDown, true);
+      if (scannerClearTimerRef.current) {
+        clearTimeout(scannerClearTimerRef.current);
+      }
+    };
+  }, [selectByScannedCode]);
 
   const toggleSelectAll = useCallback(() => {
     setSelectedIds((p) => p.size === orders.length ? new Set() : new Set(orders.map((o) => o.id)));

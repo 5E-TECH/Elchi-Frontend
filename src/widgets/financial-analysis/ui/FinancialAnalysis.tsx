@@ -63,17 +63,17 @@ const VARIANT_COLOR: Record<ColorVariant, string> = {
 
 // ─── Chart constants ──────────────────────────────────────────────────────────
 
-const MAIN_COLOR = "#576adb";
-const GREEN_COLOR = "#22c55e";
+const MAIN_COLOR = "var(--color-main)";
+const GREEN_COLOR = "var(--color-success)";
 
 const AXIS_PROPS = {
-  tick: { fill: "rgba(100,107,155,0.65)", fontSize: 10 },
+  tick: { fill: "var(--color-dashboard-chart-axis)", fontSize: 12, fontWeight: 600 },
   axisLine: false as const,
   tickLine: false as const,
 };
 
 const GRID_PROPS = {
-  stroke: "rgba(76,87,152,0.25)",
+  stroke: "var(--color-dashboard-chart-grid)",
   strokeDasharray: "4 4",
   vertical: false,
 };
@@ -88,9 +88,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     <div
       className="rounded-xl px-3 py-2 text-[11px]
         bg-sidebar dark:bg-maindark
-        border border-black/[0.07] dark:border-primarydark/50"
+        border"
+      style={{ borderColor: "var(--color-dashboard-border)" }}
     >
-      <p className="mb-1 font-semibold text-maindark/50 dark:text-sidebar/50">
+      <p className="mb-1 font-semibold" style={{ color: "var(--color-dashboard-text-muted)" }}>
         {label}
       </p>
       {payload.map((entry: any, i: number) => (
@@ -170,7 +171,8 @@ const FinanceCard = memo(({
     <div
       className="relative flex flex-col rounded-xl overflow-hidden
         bg-sidebar dark:bg-maindark
-        border border-black/[0.07] dark:border-primarydark/25"
+        border"
+      style={{ borderColor: "var(--color-dashboard-border)" }}
     >
       <span
         className="absolute top-0 left-0 right-0 h-0.75"
@@ -190,7 +192,7 @@ const FinanceCard = memo(({
               <p className="text-[13px] font-semibold leading-tight text-maindark dark:text-primary">
                 {title}
               </p>
-              <p className="text-[11px] leading-tight mt-px text-maindark/45 dark:text-sidebar/45">
+              <p className="mt-1 text-xs leading-tight" style={{ color: "var(--color-dashboard-text-soft)" }}>
                 {subtitle}
               </p>
             </div>
@@ -209,13 +211,13 @@ const FinanceCard = memo(({
                 {value}
               </span>
               {currency && (
-                <span className="text-[11px] font-semibold text-maindark/45 dark:text-sidebar/45">
+                <span className="text-xs font-semibold" style={{ color: "var(--color-dashboard-text-soft)" }}>
                   {currency}
                 </span>
               )}
             </div>
             {valueLabel && (
-              <p className="text-[11px] mt-0.5 text-maindark/40 dark:text-sidebar/40">
+              <p className="mt-1 text-xs" style={{ color: "var(--color-dashboard-text-soft)" }}>
                 {valueLabel}
               </p>
             )}
@@ -242,10 +244,11 @@ const FinanceCard = memo(({
 
       {compareLabel && (
         <div
-          className="flex items-center justify-between px-4 py-2.5 text-[11px]
-            border-t border-black/[0.07] dark:border-primarydark/20"
+          className="flex items-center justify-between px-4 py-2.5 text-xs
+            border-t"
+          style={{ borderColor: "var(--color-dashboard-border)" }}
         >
-          <span className="flex items-center gap-1 text-maindark/45 dark:text-sidebar/45">
+          <span className="flex items-center gap-1" style={{ color: "var(--color-dashboard-text-soft)" }}>
             <TrendingDown size={11} />
             {compareLabel}
           </span>
@@ -292,7 +295,8 @@ const PeriodStatsCard = memo(({ totalOrders, sold, profit, period }: {
     <div
       className="relative flex flex-col rounded-xl overflow-hidden
         bg-sidebar dark:bg-maindark
-        border border-black/[0.07] dark:border-primarydark/25"
+        border"
+      style={{ borderColor: "var(--color-dashboard-border)" }}
     >
       <span
         className="absolute top-0 left-0 right-0 h-0.75"
@@ -310,15 +314,15 @@ const PeriodStatsCard = memo(({ totalOrders, sold, profit, period }: {
             <p className="text-[13px] font-semibold leading-tight text-maindark dark:text-primary">
               {t("period_stats.title")}
             </p>
-            <p className="text-[11px] leading-tight mt-px text-maindark/45 dark:text-sidebar/45">
+            <p className="mt-1 text-xs leading-tight" style={{ color: "var(--color-dashboard-text-soft)" }}>
               {t(`periods.${period}`)} {t("period_stats.subtitle")}
             </p>
           </div>
         </div>
         <div className="flex flex-col gap-3">
           {periodStats.map(({ label, value, color }) => (
-            <div key={label} className="flex items-center justify-between text-[12px]">
-              <span className="text-maindark/50 dark:text-sidebar/50">{label}</span>
+            <div key={label} className="flex items-center justify-between text-[13px]">
+              <span style={{ color: "var(--color-dashboard-text-muted)" }}>{label}</span>
               <span className="font-bold" style={{ color }}>{value}</span>
             </div>
           ))}
@@ -346,7 +350,8 @@ const RevenueChart = memo(({ data }: { data: Array<{ date: string; revenue: numb
     <div
       className="rounded-2xl p-5 mt-4
         bg-sidebar dark:bg-maindark
-        border border-black/[0.07] dark:border-primarydark/30"
+        border"
+      style={{ borderColor: "var(--color-dashboard-border)" }}
     >
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[14px] font-semibold tracking-[-0.1px] text-maindark dark:text-primary">
@@ -363,10 +368,11 @@ const RevenueChart = memo(({ data }: { data: Array<{ date: string; revenue: numb
             <button
               key={type}
               onClick={() => setActiveType(type)}
-              className={`px-3.5 py-1 rounded-md text-[11px] font-semibold transition-all duration-150 ${activeType === type
+              className={`px-3.5 py-1 rounded-md text-xs font-semibold transition-all duration-150 ${activeType === type
                 ? "bg-[var(--color-main)] text-white"
-                : "text-maindark/60 dark:text-sidebar/75"
+                : ""
                 }`}
+              style={activeType === type ? undefined : { color: "var(--color-dashboard-text-muted)" }}
             >
               {t(`chart.types.${type.toLowerCase()}`)}
             </button>
@@ -378,7 +384,7 @@ const RevenueChart = memo(({ data }: { data: Array<{ date: string; revenue: numb
         {chart()}
       </ResponsiveContainer>
 
-      <p className="text-center text-[11px] mt-2.5 tracking-[0.2px] text-maindark/30 dark:text-sidebar/30">
+      <p className="mt-3 text-center text-[13px] tracking-[0.2px]" style={{ color: "var(--color-dashboard-text-muted)" }}>
         {t("chart.description")}
       </p>
     </div>
@@ -457,7 +463,7 @@ const FinancialAnalysis = memo(
               <h2 className="text-[15px] font-semibold leading-tight text-maindark dark:text-primary">
                 {t("financial_analysis.title")}
               </h2>
-              <p className="text-[11px] text-maindark/45 dark:text-sidebar/45">
+              <p className="mt-1 text-xs" style={{ color: "var(--color-dashboard-text-soft)" }}>
                 {t("financial_analysis.subtitle")}
               </p>
             </div>
@@ -474,10 +480,11 @@ const FinancialAnalysis = memo(
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-3.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 ${period === p
+                className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 ${period === p
                   ? "bg-[var(--color-main)] text-white"
-                  : "text-maindark/60 dark:text-sidebar/75"
+                  : ""
                   }`}
+                style={period === p ? undefined : { color: "var(--color-dashboard-text-muted)" }}
               >
                 {t(`periods.${p}`)}
               </button>

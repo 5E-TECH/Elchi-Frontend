@@ -24,6 +24,7 @@ interface UserListTableProps {
     };
     currentPage: number;
     onPageChange: (page: number) => void;
+    onItemsPerPageChange?: (limit: number) => void;
 }
 
 export const UserListTable = memo(({
@@ -33,7 +34,8 @@ export const UserListTable = memo(({
     // error,
     pagination,
     currentPage,
-    onPageChange
+    onPageChange,
+    onItemsPerPageChange,
 }: UserListTableProps) => {
     const { t } = useTranslation("users");
     const navigate = useNavigate();
@@ -312,6 +314,7 @@ export const UserListTable = memo(({
                     itemsPerPage={pagination?.limit || users.length || 1}
                     currentPage={pagination?.page || currentPage}
                     onPageChange={onPageChange}
+                    onItemsPerPageChange={onItemsPerPageChange}
                     className="w-full pt-0 sm:w-auto"
                     summary={null}
                 />

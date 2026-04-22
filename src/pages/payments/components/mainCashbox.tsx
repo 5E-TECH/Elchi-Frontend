@@ -158,6 +158,7 @@ const MainCashbox = () => {
   const [draftHistoryFrom, setDraftHistoryFrom] = useState("");
   const [draftHistoryTo, setDraftHistoryTo] = useState("");
   const [historyPage, setHistoryPage] = useState(1);
+  const [historyLimit, setHistoryLimit] = useState(10);
   const navigate = useNavigate();
 
   const { getUser } = useUser();
@@ -196,10 +197,10 @@ const MainCashbox = () => {
   const historyParams = useMemo(
     () => ({
       page: historyPage,
-      limit: 10,
+      limit: historyLimit,
       ...(draftHistoryFrom && draftHistoryTo && { fromDate: draftHistoryFrom, toDate: draftHistoryTo }),
     }),
-    [draftHistoryFrom, draftHistoryTo, historyPage],
+    [draftHistoryFrom, draftHistoryTo, historyLimit, historyPage],
   );
   const {
     data: historyRes,
@@ -550,6 +551,10 @@ const MainCashbox = () => {
               pagination={historyPagination}
               currentPage={historyPage}
               onPageChange={setHistoryPage}
+              onItemsPerPageChange={(limit) => {
+                setHistoryLimit(limit);
+                setHistoryPage(1);
+              }}
               withContainer={false}
             />
 

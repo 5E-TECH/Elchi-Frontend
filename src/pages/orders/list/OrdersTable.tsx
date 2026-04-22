@@ -13,6 +13,22 @@ interface Props {
     onRowClick?: (order: OrderListItem) => void;
 }
 
+const formatPhoneNumber = (phone: string | null | undefined) => {
+    if (!phone) return "";
+
+    const normalized = phone.replace(/\D/g, "");
+
+    if (normalized.startsWith("998") && normalized.length >= 12) {
+        return `+998 ${normalized.slice(3, 5)} ${normalized.slice(5, 8)} ${normalized.slice(8, 10)} ${normalized.slice(10, 12)}`;
+    }
+
+    if (normalized.length === 9) {
+        return `${normalized.slice(0, 2)} ${normalized.slice(2, 5)} ${normalized.slice(5, 7)} ${normalized.slice(7, 9)}`;
+    }
+
+    return phone;
+};
+
 const formatPrice = (num: number) =>
     (num ?? 0).toLocaleString("uz-UZ") + " so'm";
 
@@ -53,7 +69,7 @@ const columns = [
                         {customer?.name ?? "—"}
                     </p>
                     <p className="text-xs text-gray-400 font-mono">
-                        {customer?.phone_number ?? ""}
+                        {formatPhoneNumber(customer?.phone_number)}
                     </p>
                 </div>
             </div>
@@ -63,14 +79,14 @@ const columns = [
         key: "district" as const,
         label: "Tuman / Viloyat",
         render: (district: OrderListItem["district"]) => (
-            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                <MapPin size={12} className="shrink-0 text-main/60" />
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                <MapPin size={14} className="shrink-0 text-main/70" />
                 <div className="min-w-0">
-                    <p className="text-xs font-medium text-maindark dark:text-primary truncate">
+                    <p className="text-[14px] font-semibold text-maindark dark:text-primary truncate">
                         {district?.name ?? "—"}
                     </p>
                     {district?.region?.name && (
-                        <p className="text-[11px] text-gray-400 truncate">
+                        <p className="text-[13px] font-medium text-gray-600 dark:text-gray-300/90 truncate">
                             {district.region.name}
                         </p>
                     )}
@@ -101,9 +117,9 @@ const columns = [
         key: "where_deliver" as const,
         label: "Yetkazish",
         render: (val: OrderListItem["where_deliver"]) => (
-            <span className={`text-xs font-medium px-2 py-1 rounded-lg ${val === "center"
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    : "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+            <span className={`rounded-lg px-2.5 py-1.5 text-[13px] font-semibold ${val === "center"
+                    ? "bg-blue-600/16 dark:bg-blue-500/24 text-blue-700 dark:text-blue-200"
+                    : "bg-green-600/16 dark:bg-green-500/24 text-green-700 dark:text-green-200"
                 }`}>
                 {val === "center" ? "Markaz" : "Uy"}
             </span>
@@ -129,9 +145,11 @@ const columns = [
         sortable: true as const,
         sortValue: (row: OrderListItem) => new Date(row.createdAt).getTime(),
         render: (val: string) => (
-            <div className="flex items-center gap-1.5 text-gray-400">
-                <Calendar size={12} className="shrink-0" />
-                <span className="text-xs whitespace-nowrap">{formatDate(val)}</span>
+            <div className="flex items-center gap-2">
+                <Calendar size={14} className="shrink-0 text-gray-600 dark:text-gray-300/80" />
+                <span className="whitespace-nowrap text-[13px] font-medium text-gray-700 dark:text-gray-200">
+                    {formatDate(val)}
+                </span>
             </div>
         ),
     },
@@ -151,9 +169,9 @@ const OrdersTable = ({ data, isLoading, onRowClick }: Props) => {
                     ...column,
                     label: t("deliveryType"),
                     render: (val: OrderListItem["where_deliver"]) => (
-                        <span className={`text-xs font-medium px-2 py-1 rounded-lg ${val === "center"
-                                ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                                : "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                        <span className={`rounded-lg px-2.5 py-1.5 text-[13px] font-semibold ${val === "center"
+                                ? "bg-blue-600/16 dark:bg-blue-500/24 text-blue-700 dark:text-blue-200"
+                                : "bg-green-600/16 dark:bg-green-500/24 text-green-700 dark:text-green-200"
                             }`}>
                             {val === "center" ? t("deliveryCenter") : t("deliveryHome")}
                         </span>
