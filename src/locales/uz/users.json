@@ -142,5 +142,11 @@
   "defaultTariffPlaceholder": "Tanlang",
   "phoneNumberLabel": "Telefon",
   "registeredAt": "Ro'yxatdan o'tgan",
-  "deleteTitle": "O'chirish"
+  "deleteTitle": "O'chirish",
+  "deleteUserTitle": "Foydalanuvchini o'chirish",
+  "deleteUserMessage": "\"{{name}}\" foydalanuvchisini o'chirishni tasdiqlaysizmi?",
+  "deleteSuccessTitle": "Foydalanuvchi o'chirildi",
+  "deleteSuccessDescription": "\"{{name}}\" muvaffaqiyatli o'chirildi",
+  "deleteErrorTitle": "O'chirib bo'lmadi",
+  "deleteErrorDescription": "Foydalanuvchini o'chirishda xatolik yuz berdi"
 }

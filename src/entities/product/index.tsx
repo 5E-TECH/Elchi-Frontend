@@ -9,11 +9,7 @@ export const useProducts = () => {
 
   const createProduct = useMutation({
     mutationFn: (data: FormData) =>
-      api.post(API_ENDPOINTS.PRODUCTS.BASE, data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }),
+      api.post(API_ENDPOINTS.PRODUCTS.BASE, data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [products] });
       client.invalidateQueries({ queryKey: ["market"] });
@@ -28,13 +24,16 @@ export const useProducts = () => {
       placeholderData: (prev: any) => prev,
     });
 
+  const getProductById = (id: number | undefined, enabled: boolean = true) =>
+    useQuery({
+      queryKey: [products, "detail", id],
+      queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.BY_ID(id as number)).then((res) => res.data),
+      enabled: Boolean(id) && enabled,
+    });
+
   const updateProduct = useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      api.patch(API_ENDPOINTS.PRODUCTS.BY_ID(id), data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }),
+      api.patch(API_ENDPOINTS.PRODUCTS.BY_ID(id), data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [products] });
       client.invalidateQueries({ queryKey: ["market"] });
@@ -67,6 +66,7 @@ export const useProducts = () => {
   return {
     createProduct,
     getProducts,
+    getProductById,
     updateProduct,
     deleteProduct,
     getByMarketId,

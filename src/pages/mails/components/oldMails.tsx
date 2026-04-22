@@ -13,12 +13,13 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import type { RootState } from "../../../app/config/store";
-import FilterSelect from "../../../shared/ui/FilterSelect";
+import SearchableSelect from "../../../shared/ui/SearchableSelect";
+import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
 
 interface Region {
   id: string;
   name: string;
-  sato_code: string;
+  sato_code?: string;
 }
 
 interface MailItem {
@@ -153,18 +154,8 @@ const OldMails = () => {
 
   const mails: MailItem[] = useMemo(() => data?.data?.data ?? [], [data]);
   const regionOptions = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          mails
-            .filter((mail) => mail.region?.id && mail.region?.name)
-            .map((mail) => [
-              mail.region.id,
-              { value: mail.region.id, label: mail.region.name },
-            ]),
-        ).values(),
-      ).sort((left, right) => left.label.localeCompare(right.label, "uz")),
-    [mails],
+    () => buildRegionFilterOptions(mails, t("oldRegionFilterPlaceholder")),
+    [mails, t],
   );
   const filteredMails = useMemo(
     () =>
@@ -223,7 +214,7 @@ const OldMails = () => {
         </div>
 
         <div className="w-full sm:w-72">
-          <FilterSelect
+          <SearchableSelect
             label={t("oldRegionFilterLabel")}
             name="old-mails-region-filter"
             value={selectedRegionId}
@@ -232,6 +223,7 @@ const OldMails = () => {
             placeholder={t("oldRegionFilterPlaceholder")}
             icon={MapPinned}
             hideLabel
+            size="sm"
           />
         </div>
       </div>

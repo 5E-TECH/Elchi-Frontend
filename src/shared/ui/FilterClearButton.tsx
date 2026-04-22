@@ -14,7 +14,7 @@ const FilterClearButton = ({ onClick, className = "" }: FilterClearButtonProps) 
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-500/14 hover:text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300 dark:hover:bg-red-400/14 dark:hover:text-red-200 sm:w-auto sm:justify-start ${className}`}
+      className={`flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/35 bg-linear-to-r from-rose-500 to-red-500 px-3.5 py-2 text-sm font-extrabold text-white shadow-lg shadow-rose-500/20 transition-all hover:-translate-y-0.5 hover:shadow-rose-500/30 active:translate-y-0 dark:border-rose-300/20 dark:from-rose-500 dark:to-red-500 dark:text-white sm:w-auto sm:justify-start ${className}`}
     >
       <RefreshCw size={14} />
       {t("clear")}

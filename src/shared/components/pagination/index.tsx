@@ -1,5 +1,6 @@
 import {
   memo,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -7,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -63,6 +65,7 @@ const Pagination = ({
     top: 0,
   });
   const limitRef = useRef<HTMLDivElement | null>(null);
+  const limitDropdownRef = useRef<HTMLDivElement | null>(null);
   const safeItemsPerPage = Math.max(1, itemsPerPage);
   const pageSizeOptions = useMemo(
     () =>
@@ -82,7 +85,7 @@ const Pagination = ({
 
   const pages = buildPageItems(currentPage, totalPages);
 
-  const updateLimitDropdownPosition = () => {
+  const updateLimitDropdownPosition = useCallback(() => {
     const rect = limitRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -102,7 +105,7 @@ const Pagination = ({
         ? rect.top - LIMIT_DROPDOWN_HEIGHT - gap
         : rect.bottom + gap,
     });
-  };
+  }, []);
 
   useLayoutEffect(() => {
     if (!isLimitOpen) return;
@@ -113,7 +116,11 @@ const Pagination = ({
     if (!isLimitOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (!limitRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        !limitRef.current?.contains(target)
+        && !limitDropdownRef.current?.contains(target)
+      ) {
         setIsLimitOpen(false);
       }
     };
@@ -128,7 +135,7 @@ const Pagination = ({
       window.removeEventListener("resize", updateLimitDropdownPosition);
       window.removeEventListener("scroll", updateLimitDropdownPosition, true);
     };
-  }, [isLimitOpen]);
+  }, [isLimitOpen, updateLimitDropdownPosition]);
 
   if (totalItems === 0 && !summary) {
     return null;
@@ -149,8 +156,11 @@ const Pagination = ({
             <span className="whitespace-nowrap">{t("itemsPerPage")}</span>
             <button
               type="button"
-              onClick={() => setIsLimitOpen((current) => !current)}
-              className="flex h-8 min-w-18 items-center justify-between gap-2 rounded-full border border-main/20 bg-main/8 px-3 text-xs font-extrabold text-main transition hover:border-main/40 hover:bg-main/12 dark:border-white/12 dark:bg-primary/10 dark:text-primary dark:hover:bg-primary/15"
+              onClick={() => {
+                updateLimitDropdownPosition();
+                setIsLimitOpen((current) => !current);
+              }}
+              className="flex h-8 min-w-[4.5rem] items-center justify-between gap-2 rounded-full border border-main/20 bg-main/8 px-3 text-xs font-extrabold text-main transition hover:border-main/40 hover:bg-main/12 dark:border-white/12 dark:bg-primary/10 dark:text-primary dark:hover:bg-primary/15"
               aria-expanded={isLimitOpen}
             >
               {safeItemsPerPage}
@@ -160,8 +170,9 @@ const Pagination = ({
               />
             </button>
 
-            {isLimitOpen && (
+            {isLimitOpen && createPortal(
               <div
+                ref={limitDropdownRef}
                 style={{
                   left: limitDropdownPosition.left,
                   top: limitDropdownPosition.top,
@@ -191,7 +202,8 @@ const Pagination = ({
                     </button>
                   );
                 })}
-              </div>
+              </div>,
+              document.body,
             )}
           </div>
         )}

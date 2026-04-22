@@ -12,52 +12,12 @@ import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
-import { playScanFeedback } from "../../scan/lib/scanShared";
-
-const SCANNER_IDLE_MS = 80;
-const SCANNER_CLEAR_MS = 350;
-const SCAN_ERROR_REPEAT_COUNT = 3;
-const SCAN_ERROR_REPEAT_DELAY_MS = 170;
-
-const playMissingOrderFeedback = () => {
-  Array.from({ length: SCAN_ERROR_REPEAT_COUNT }).forEach((_, index) => {
-    window.setTimeout(() => {
-      void playScanFeedback("error");
-    }, index * SCAN_ERROR_REPEAT_DELAY_MS);
-  });
-};
-
-const normalizeScannerValue = (value: string) => {
-  const trimmed = value.trim();
-  const candidates = new Set<string>();
-
-  const addCandidate = (candidate?: string | null) => {
-    if (!candidate) return;
-    try {
-      const decoded = decodeURIComponent(candidate.trim());
-      if (decoded) candidates.add(decoded.toLowerCase());
-    } catch {
-      const fallback = candidate.trim();
-      if (fallback) candidates.add(fallback.toLowerCase());
-    }
-  };
-
-  addCandidate(trimmed);
-
-  const scanMatch = trimmed.match(/\/scan\/([^/?#\s]+)/i);
-  addCandidate(scanMatch?.[1]);
-
-  try {
-    const url = new URL(trimmed);
-    const parts = url.pathname.split("/").filter(Boolean);
-    const scanIndex = parts.findIndex((part) => part.toLowerCase() === "scan");
-    addCandidate(scanIndex >= 0 ? parts[scanIndex + 1] : parts.at(-1));
-  } catch {
-    // Scanner may send only token/id instead of a full URL.
-  }
-
-  return [...candidates];
-};
+import { useKeyboardScanner } from "../../../shared/lib/useKeyboardScanner";
+import {
+  normalizeScannerValue,
+  playMissingOrderFeedback,
+  playScanFeedback,
+} from "../../scan/lib/scanShared";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
@@ -67,6 +27,9 @@ const NewOrderDetail = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
+  const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
+  const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
+  const selectedOrdersKeyRef = useRef("");
 
   const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder } = useOrders();
   const { api: notifApi } = useAppNotification();
@@ -86,10 +49,15 @@ const NewOrderDetail = () => {
 
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
   const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
-  const orders: ApiOrder[] = res?.data ?? res ?? [];
-  const scannerBufferRef = useRef("");
-  const scannerLastKeyAtRef = useRef(0);
-  const scannerClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rawOrders: ApiOrder[] = res?.data ?? res ?? [];
+  const orders = useMemo(
+    () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
+    [rawOrders, receivedOrderIds],
+  );
+  const ordersKey = useMemo(
+    () => orders.map((order) => order.id).join("|"),
+    [orders],
+  );
 
   const orderScanIndex = useMemo(() => {
     const index = new Map<string, string>();
@@ -107,6 +75,13 @@ const NewOrderDetail = () => {
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   }, []);
+
+  useEffect(() => {
+    if (!orders.length || selectedOrdersKeyRef.current === ordersKey) return;
+
+    selectedOrdersKeyRef.current = ordersKey;
+    setSelectedIds(new Set(orders.map((order) => order.id)));
+  }, [orders, ordersKey]);
 
   const selectByScannedCode = useCallback((rawValue: string) => {
     const candidates = normalizeScannerValue(rawValue);
@@ -129,72 +104,55 @@ const NewOrderDetail = () => {
       return true;
     }
 
-    setSelectedIds((prev) => {
-      if (prev.has(orderId)) return prev;
-      const next = new Set(prev);
-      next.add(orderId);
-      return next;
-    });
+    if (pendingScanOrderIdsRef.current.has(orderId)) {
+      return true;
+    }
 
-    notifApi.success({
-      message: "Order belgilandi",
-      description: `#${orderId}`,
-      placement: "topRight",
-      duration: 2,
-    });
-    void playScanFeedback("success");
+    pendingScanOrderIdsRef.current.add(orderId);
+    createReceiveOrder.mutate(
+      { order_ids: [orderId] },
+      {
+        onSuccess: () => {
+          setReceivedOrderIds((prev) => {
+            const next = new Set(prev);
+            next.add(orderId);
+            return next;
+          });
+          setSelectedIds((prev) => {
+            if (!prev.has(orderId)) return prev;
+            const next = new Set(prev);
+            next.delete(orderId);
+            return next;
+          });
+          void refetch();
+          notifApi.success({
+            message: "Order qabul qilindi",
+            description: `#${orderId} mailsga o'tkazildi.`,
+            placement: "topRight",
+            duration: 2,
+          });
+          void playScanFeedback("success");
+        },
+        onError: (err: any) => {
+          const msg = err?.response?.data?.message ?? err?.message ?? t("receiveError");
+          notifApi.error({
+            message: t("receiveError"),
+            description: msg,
+            placement: "topRight",
+            duration: 5,
+          });
+          playMissingOrderFeedback();
+        },
+        onSettled: () => {
+          pendingScanOrderIdsRef.current.delete(orderId);
+        },
+      },
+    );
+
     return true;
-  }, [notifApi, orderScanIndex]);
+  }, [createReceiveOrder, notifApi, orderScanIndex, refetch, t]);
 
-  useEffect(() => {
-    const clearScannerBuffer = () => {
-      scannerBufferRef.current = "";
-      scannerLastKeyAtRef.current = 0;
-    };
-
-    const scheduleScannerClear = () => {
-      if (scannerClearTimerRef.current) {
-        clearTimeout(scannerClearTimerRef.current);
-      }
-      scannerClearTimerRef.current = setTimeout(clearScannerBuffer, SCANNER_CLEAR_MS);
-    };
-
-    const handleScannerKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
-
-      if (event.key === "Enter") {
-        const scannedValue = scannerBufferRef.current.trim();
-        clearScannerBuffer();
-
-        if (!scannedValue) return;
-
-        if (selectByScannedCode(scannedValue)) {
-          event.preventDefault();
-        }
-        return;
-      }
-
-      if (event.key.length !== 1) return;
-
-      const now = Date.now();
-      if (now - scannerLastKeyAtRef.current > SCANNER_IDLE_MS) {
-        scannerBufferRef.current = "";
-      }
-
-      scannerBufferRef.current += event.key;
-      scannerLastKeyAtRef.current = now;
-      scheduleScannerClear();
-    };
-
-    window.addEventListener("keydown", handleScannerKeyDown, true);
-
-    return () => {
-      window.removeEventListener("keydown", handleScannerKeyDown, true);
-      if (scannerClearTimerRef.current) {
-        clearTimeout(scannerClearTimerRef.current);
-      }
-    };
-  }, [selectByScannedCode]);
+  useKeyboardScanner({ onScan: selectByScannedCode });
 
   const toggleSelectAll = useCallback(() => {
     setSelectedIds((p) => p.size === orders.length ? new Set() : new Set(orders.map((o) => o.id)));
@@ -227,6 +185,11 @@ const NewOrderDetail = () => {
     const isAll = ids.length === orders.length;
     createReceiveOrder.mutate({ order_ids: ids }, {
       onSuccess: () => {
+        setReceivedOrderIds((prev) => {
+          const next = new Set(prev);
+          ids.forEach((id) => next.add(id));
+          return next;
+        });
         setIsReceiveConfirmOpen(false);
         setSelectedIds(new Set());
         if (isAll) {

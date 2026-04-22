@@ -32,6 +32,17 @@ const formatPhoneNumber = (phone: string | null | undefined) => {
 const formatPrice = (num: number) =>
     (num ?? 0).toLocaleString("uz-UZ") + " so'm";
 
+const getDeliveryBadgeClassName = (value: OrderListItem["where_deliver"]) =>
+    value === "center"
+        ? "bg-linear-to-r from-blue-500 to-sky-500 text-white shadow-blue-500/25"
+        : "bg-linear-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/25";
+
+const DeliveryBadge = ({ value, label }: { value: OrderListItem["where_deliver"]; label: string }) => (
+    <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-[12px] font-extrabold shadow-lg ring-1 ring-white/12 ${getDeliveryBadgeClassName(value)}`}>
+        {label}
+    </span>
+);
+
 const formatDate = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString("uz-UZ", {
@@ -117,12 +128,7 @@ const columns = [
         key: "where_deliver" as const,
         label: "Yetkazish",
         render: (val: OrderListItem["where_deliver"]) => (
-            <span className={`rounded-lg px-2.5 py-1.5 text-[13px] font-semibold ${val === "center"
-                    ? "bg-blue-600/16 dark:bg-blue-500/24 text-blue-700 dark:text-blue-200"
-                    : "bg-green-600/16 dark:bg-green-500/24 text-green-700 dark:text-green-200"
-                }`}>
-                {val === "center" ? "Markaz" : "Uy"}
-            </span>
+            <DeliveryBadge value={val} label={val === "center" ? "Markaz" : "Uy"} />
         ),
     },
     {
@@ -169,12 +175,10 @@ const OrdersTable = ({ data, isLoading, onRowClick }: Props) => {
                     ...column,
                     label: t("deliveryType"),
                     render: (val: OrderListItem["where_deliver"]) => (
-                        <span className={`rounded-lg px-2.5 py-1.5 text-[13px] font-semibold ${val === "center"
-                                ? "bg-blue-600/16 dark:bg-blue-500/24 text-blue-700 dark:text-blue-200"
-                                : "bg-green-600/16 dark:bg-green-500/24 text-green-700 dark:text-green-200"
-                            }`}>
-                            {val === "center" ? t("deliveryCenter") : t("deliveryHome")}
-                        </span>
+                        <DeliveryBadge
+                            value={val}
+                            label={val === "center" ? t("deliveryCenter") : t("deliveryHome")}
+                        />
                     ),
                 };
             }

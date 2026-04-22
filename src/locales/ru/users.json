@@ -142,5 +142,11 @@
   "defaultTariffPlaceholder": "Выберите",
   "phoneNumberLabel": "Телефон",
   "registeredAt": "Зарегистрирован",
-  "deleteTitle": "Удалить"
+  "deleteTitle": "Удалить",
+  "deleteUserTitle": "Удалить пользователя",
+  "deleteUserMessage": "Вы уверены, что хотите удалить \"{{name}}\"?",
+  "deleteSuccessTitle": "Пользователь удален",
+  "deleteSuccessDescription": "\"{{name}}\" успешно удален",
+  "deleteErrorTitle": "Не удалось удалить",
+  "deleteErrorDescription": "Произошла ошибка при удалении пользователя"
 }
