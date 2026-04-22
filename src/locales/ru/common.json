@@ -72,6 +72,12 @@
   "selectDateRange": "Выберите диапазон дат",
   "startDate": "Начало",
   "endDate": "Конец",
+  "dateRangePlaceholder": "{{from}} → {{to}}",
+  "datePicker": {
+    "clearAriaLabel": "Очистить диапазон дат",
+    "months": ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
+    "weekDaysShort": ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+  },
   "retry": "Повторить",
   "refresh": "Обновить",
   "scannerTitle": "QR Scanner",
@@ -114,7 +120,9 @@
   "settings": "Настройки",
   "help": "Помощь",
   "privacyPolicy": "Политика конфиденциальности",
+  "footerRightsReserved": "Все права защищены",
   "systemWorking": "Система переводов работает",
   "optional": "Необязательно",
-  "uploadImage": "Загрузить изображение"
+  "uploadImage": "Загрузить изображение",
+  "itemsPerPage": "На странице"
 }

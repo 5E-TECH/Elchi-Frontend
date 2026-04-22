@@ -19,7 +19,7 @@ const UserListPage = memo(() => {
   const filters = useSelector((state: RootState) => state.filter);
   const searchFilters = useSelector((state: RootState) => state.search);
 
-  const { page, limit, setPage, resetPagination } = usePagination({
+  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "users",
     defaultLimit: 10,
   });
@@ -98,6 +98,7 @@ const UserListPage = memo(() => {
         pagination={data?.data?.meta}
         currentPage={page}
         onPageChange={setPage}
+        onItemsPerPageChange={setLimit}
       />
     </div>
   );

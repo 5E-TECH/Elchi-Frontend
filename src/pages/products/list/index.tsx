@@ -164,7 +164,7 @@ const ProductTable = () => {
 
   const searchFilters = useSelector((state: RootState) => state.search);
   const searchValue = searchFilters.product_search;
-  const { page, limit, setPage, resetPagination } = usePagination({
+  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "products",
     defaultLimit: 10,
   });
@@ -452,6 +452,7 @@ const ProductTable = () => {
           itemsPerPage={responseLimit}
           currentPage={responsePage}
           onPageChange={setPage}
+          onItemsPerPageChange={setLimit}
           className="pt-0"
         />
       </div>

@@ -141,6 +141,7 @@ const CashDetail = () => {
   const [appliedDateFrom, setAppliedDateFrom] = useState("");
   const [appliedDateTo, setAppliedDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [historyLimit, setHistoryLimit] = useState(HISTORY_PAGE_SIZE);
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   useEffect(() => {
@@ -243,20 +244,20 @@ const CashDetail = () => {
   const paginatedHistoryRows = useMemo(
     () =>
       historyRows.slice(
-        (currentPage - 1) * HISTORY_PAGE_SIZE,
-        currentPage * HISTORY_PAGE_SIZE,
+        (currentPage - 1) * historyLimit,
+        currentPage * historyLimit,
       ),
-    [currentPage, historyRows],
+    [currentPage, historyLimit, historyRows],
   );
 
   const pagination = useMemo<Pagination>(
     () => ({
       page: currentPage,
-      limit: HISTORY_PAGE_SIZE,
+      limit: historyLimit,
       total: historyRows.length,
-      totalPages: Math.max(1, Math.ceil(historyRows.length / HISTORY_PAGE_SIZE)),
+      totalPages: Math.max(1, Math.ceil(historyRows.length / historyLimit)),
     }),
-    [currentPage, historyRows.length],
+    [currentPage, historyLimit, historyRows.length],
   );
 
   const income = useMemo(
@@ -630,6 +631,10 @@ const CashDetail = () => {
               pagination={pagination}
               currentPage={currentPage}
               onPageChange={setCurrentPage}
+              onItemsPerPageChange={(limit) => {
+                setHistoryLimit(limit);
+                setCurrentPage(1);
+              }}
               withContainer={false}
             />
           </div>

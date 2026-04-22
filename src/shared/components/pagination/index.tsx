@@ -1,12 +1,25 @@
-import { memo, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+const LIMIT_DROPDOWN_WIDTH = 132;
+const LIMIT_DROPDOWN_HEIGHT = 174;
 
 interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   currentPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (limit: number) => void;
   summary?: ReactNode;
   className?: string;
 }
@@ -39,11 +52,25 @@ const Pagination = ({
   itemsPerPage,
   currentPage,
   onPageChange,
+  onItemsPerPageChange,
   summary,
   className = "",
 }: PaginationProps) => {
   const { t } = useTranslation("common");
+  const [isLimitOpen, setIsLimitOpen] = useState(false);
+  const [limitDropdownPosition, setLimitDropdownPosition] = useState({
+    left: 0,
+    top: 0,
+  });
+  const limitRef = useRef<HTMLDivElement | null>(null);
   const safeItemsPerPage = Math.max(1, itemsPerPage);
+  const pageSizeOptions = useMemo(
+    () =>
+      Array.from(new Set([...PAGE_SIZE_OPTIONS, safeItemsPerPage])).sort(
+        (a, b) => a - b,
+      ),
+    [safeItemsPerPage],
+  );
   const totalPages = Math.max(1, Math.ceil(totalItems / safeItemsPerPage));
   const from = totalItems === 0 ? 0 : (currentPage - 1) * safeItemsPerPage + 1;
   const to = totalItems === 0 ? 0 : Math.min(currentPage * safeItemsPerPage, totalItems);
@@ -53,11 +80,59 @@ const Pagination = ({
     </span>
   );
 
+  const pages = buildPageItems(currentPage, totalPages);
+
+  const updateLimitDropdownPosition = () => {
+    const rect = limitRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const gap = 8;
+    const viewportPadding = 8;
+    const left = Math.min(
+      Math.max(rect.right - LIMIT_DROPDOWN_WIDTH, viewportPadding),
+      window.innerWidth - LIMIT_DROPDOWN_WIDTH - viewportPadding,
+    );
+    const shouldOpenAbove =
+      rect.bottom + gap + LIMIT_DROPDOWN_HEIGHT > window.innerHeight &&
+      rect.top > LIMIT_DROPDOWN_HEIGHT;
+
+    setLimitDropdownPosition({
+      left,
+      top: shouldOpenAbove
+        ? rect.top - LIMIT_DROPDOWN_HEIGHT - gap
+        : rect.bottom + gap,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!isLimitOpen) return;
+    updateLimitDropdownPosition();
+  }, [isLimitOpen]);
+
+  useEffect(() => {
+    if (!isLimitOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!limitRef.current?.contains(event.target as Node)) {
+        setIsLimitOpen(false);
+      }
+    };
+
+    updateLimitDropdownPosition();
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("resize", updateLimitDropdownPosition);
+    window.addEventListener("scroll", updateLimitDropdownPosition, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", updateLimitDropdownPosition);
+      window.removeEventListener("scroll", updateLimitDropdownPosition, true);
+    };
+  }, [isLimitOpen]);
+
   if (totalItems === 0 && !summary) {
     return null;
   }
-
-  const pages = buildPageItems(currentPage, totalPages);
 
   return (
     <div className={`flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between ${className}`}>
@@ -65,7 +140,62 @@ const Pagination = ({
         {resolvedSummary}
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-end">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+        {onItemsPerPageChange && (
+          <div
+            ref={limitRef}
+            className="relative flex items-center gap-2 rounded-full border border-main/15 bg-white px-2.5 py-1.5 text-xs font-semibold text-maindark/70 shadow-sm shadow-main/5 dark:border-white/10 dark:bg-white/[0.08] dark:text-primary/75"
+          >
+            <span className="whitespace-nowrap">{t("itemsPerPage")}</span>
+            <button
+              type="button"
+              onClick={() => setIsLimitOpen((current) => !current)}
+              className="flex h-8 min-w-18 items-center justify-between gap-2 rounded-full border border-main/20 bg-main/8 px-3 text-xs font-extrabold text-main transition hover:border-main/40 hover:bg-main/12 dark:border-white/12 dark:bg-primary/10 dark:text-primary dark:hover:bg-primary/15"
+              aria-expanded={isLimitOpen}
+            >
+              {safeItemsPerPage}
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${isLimitOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {isLimitOpen && (
+              <div
+                style={{
+                  left: limitDropdownPosition.left,
+                  top: limitDropdownPosition.top,
+                  width: LIMIT_DROPDOWN_WIDTH,
+                }}
+                className="fixed z-[9999] overflow-hidden rounded-2xl border border-main/15 bg-white p-1.5 shadow-2xl shadow-maindark/20 dark:border-white/10 dark:bg-maindark dark:shadow-black/40"
+              >
+                {pageSizeOptions.map((option) => {
+                  const isSelected = option === safeItemsPerPage;
+
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => {
+                        onItemsPerPageChange(option);
+                        setIsLimitOpen(false);
+                      }}
+                      className={`flex h-9 w-full items-center justify-between rounded-xl px-3 text-sm font-bold transition-colors ${
+                        isSelected
+                          ? "bg-main text-primary shadow-sm shadow-main/20"
+                          : "text-maindark/75 hover:bg-main/8 hover:text-main dark:text-primary/80 dark:hover:bg-primary/10 dark:hover:text-primary"
+                      }`}
+                    >
+                      {option}
+                      {isSelected ? <Check size={14} /> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         <button
           type="button"
           onClick={() => onPageChange(currentPage - 1)}

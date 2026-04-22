@@ -134,6 +134,7 @@ export interface PaymentHistoryListProps {
   isLoading?: boolean;
   pagination?: Pagination;
   onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (limit: number) => void;
   currentPage?: number;
   withContainer?: boolean;
 }
@@ -143,6 +144,7 @@ const PaymentHistoryList = ({
   isLoading = false,
   pagination,
   onPageChange,
+  onItemsPerPageChange,
   currentPage,
   withContainer = true,
 }: PaymentHistoryListProps) => {
@@ -202,6 +204,7 @@ const PaymentHistoryList = ({
             itemsPerPage={pagination.limit}
             currentPage={activePage}
             onPageChange={onPageChange}
+            onItemsPerPageChange={onItemsPerPageChange}
             className="w-full pt-0 sm:w-auto"
             summary={null}
           />

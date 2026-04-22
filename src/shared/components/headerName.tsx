@@ -9,19 +9,19 @@ interface HeaderNameProps {
 
 const HeaderName = ({ name, description, icon, onIconClick }: HeaderNameProps) => {
   return (
-    <div className="flex items-center gap-2.5 py-2.5 rounded-2xl text-maindark">
+    <div className="flex w-fit min-w-[230px] max-w-full items-center gap-3.5 py-2.5 text-maindark">
       <div
         onClick={onIconClick}
-        className={`flex items-center justify-center w-9 h-9 shadow-xl bg-main dark:bg-main/10 text-primary rounded-xl ${onIconClick ? "cursor-pointer hover:bg-main/80 transition-colors" : ""}`}
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg dark:bg-primary/10 dark:text-primary [&_svg]:!h-5 [&_svg]:!w-5 [&_svg]:!text-current ${onIconClick ? "cursor-pointer transition-colors hover:bg-main/85 dark:hover:bg-primary/15" : ""}`}
       >
         {icon}
       </div>
-      <div className="flex flex-col">
-        <h2 className="text-[16px] font-bold leading-tight text-main dark:text-primary m-0">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <h2 className="m-0 truncate text-[18px] font-extrabold leading-tight text-main dark:text-primary">
           {name}
         </h2>
         {description && (
-          <p className="text-[11px] text-gray-500 dark:text-white m-0 font-medium">
+          <p className="m-0 truncate text-[12.5px] font-semibold leading-tight text-main/70 dark:text-primary/80">
             {description}
           </p>
         )}

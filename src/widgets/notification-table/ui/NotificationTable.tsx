@@ -103,6 +103,7 @@ const NotificationTable = ({ onEdit }: NotificationTableProps) => {
           itemsPerPage={currentLimit}
           currentPage={currentPage}
           onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}
+          onItemsPerPageChange={(limit) => setParams((prev) => ({ ...prev, page: 1, limit }))}
           className="w-full pt-0 sm:w-auto"
           summary={null}
         />
