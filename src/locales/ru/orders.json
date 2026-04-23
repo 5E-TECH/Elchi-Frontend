@@ -127,6 +127,8 @@
   "stepTwoDescription": "Данные клиента и заказа",
   "orderCreatedMarketRole": "Заказ создан. Вы можете продолжить добавлять новые заказы для своих товаров.",
   "orderCreatedForMarket": "Заказ создан. Вы можете добавить еще один заказ для этого маркета.",
+  "orderCreateErrorTitle": "Заказ не создан",
+  "orderCreateErrorFallback": "Проверьте данные и попробуйте еще раз",
   "createPageDescription": "Выполните шаги для создания заказа",
   "selectMarketTitle": "Выберите маркет",
   "selectedMarket": "Выбранный маркет",

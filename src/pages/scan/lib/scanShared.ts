@@ -1,46 +1,24 @@
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
+import { extractScannerToken, normalizeScannerCandidates } from "../../../shared/lib/scanToken";
+
+export { extractScannerToken, normalizeScannerCandidates };
 
 export const getScanOrderQueryKey = (token: string) =>
-  ["scan-order", token] as const;
+  ["scan-order", extractScannerToken(token) ?? token.trim()] as const;
 
-export const fetchScanOrder = async (token: string) =>
-  api.get(API_ENDPOINTS.ORDERS.QR_CODE(token)).then((res) => res.data);
+export const fetchScanOrder = async (token: string) => {
+  const normalizedToken = extractScannerToken(token) ?? token.trim();
+  return api
+    .get(API_ENDPOINTS.ORDERS.QR_CODE(encodeURIComponent(normalizedToken)))
+    .then((res) => res.data);
+};
 
 const SCAN_ERROR_REPEAT_COUNT = 3;
 const SCAN_ERROR_REPEAT_DELAY_MS = 170;
 
 export const normalizeScannerValue = (value: string) => {
-  const trimmed = value.trim();
-  const candidates = new Set<string>();
-
-  const addCandidate = (candidate?: string | null) => {
-    if (!candidate) return;
-
-    try {
-      const decoded = decodeURIComponent(candidate.trim());
-      if (decoded) candidates.add(decoded.toLowerCase());
-    } catch {
-      const fallback = candidate.trim();
-      if (fallback) candidates.add(fallback.toLowerCase());
-    }
-  };
-
-  addCandidate(trimmed);
-
-  const scanMatch = trimmed.match(/\/scan\/([^/?#\s]+)/i);
-  addCandidate(scanMatch?.[1]);
-
-  try {
-    const url = new URL(trimmed);
-    const parts = url.pathname.split("/").filter(Boolean);
-    const scanIndex = parts.findIndex((part) => part.toLowerCase() === "scan");
-    addCandidate(scanIndex >= 0 ? parts[scanIndex + 1] : parts.at(-1));
-  } catch {
-    // Scanner may send only token/id instead of a full URL.
-  }
-
-  return [...candidates];
+  return normalizeScannerCandidates(value);
 };
 
 export const playMissingOrderFeedback = () => {

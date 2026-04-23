@@ -20,6 +20,7 @@ import { memo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  extractScannerToken,
   fetchScanOrder,
   getScanOrderQueryKey,
   playScanFeedback,
@@ -119,11 +120,12 @@ const ScanDetailPage = () => {
   const { t } = useTranslation("common");
   const navigate = useNavigate();
   const { token = "" } = useParams();
+  const normalizedToken = extractScannerToken(token) ?? token.trim();
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: getScanOrderQueryKey(token),
-    queryFn: () => fetchScanOrder(token),
-    enabled: Boolean(token),
+    queryKey: getScanOrderQueryKey(normalizedToken),
+    queryFn: () => fetchScanOrder(normalizedToken),
+    enabled: Boolean(normalizedToken),
   });
 
   useEffect(() => {

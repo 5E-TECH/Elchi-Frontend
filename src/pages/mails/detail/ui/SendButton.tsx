@@ -26,7 +26,7 @@ const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onRe
                     disabled={isDisabled}
                     onClick={onReceive}
                     className={`flex w-full items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-semibold text-base transition-all duration-200 ${!isDisabled
-                            ? "bg-main hover:bg-primarydark text-white shadow-lg shadow-main/30 hover:shadow-main/40 hover:scale-[1.02] cursor-pointer"
+                            ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:scale-[1.02] cursor-pointer"
                             : "bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/30 cursor-not-allowed"
                         }`}
                 >

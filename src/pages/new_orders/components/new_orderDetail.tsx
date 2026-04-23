@@ -12,9 +12,8 @@ import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
-import { useKeyboardScanner } from "../../../shared/lib/useKeyboardScanner";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
-  normalizeScannerValue,
   playMissingOrderFeedback,
   playScanFeedback,
 } from "../../scan/lib/scanShared";
@@ -59,19 +58,6 @@ const NewOrderDetail = () => {
     [orders],
   );
 
-  const orderScanIndex = useMemo(() => {
-    const index = new Map<string, string>();
-
-    orders.forEach((order) => {
-      index.set(String(order.id).toLowerCase(), order.id);
-      if (order.qr_code_token?.trim()) {
-        index.set(order.qr_code_token.trim().toLowerCase(), order.id);
-      }
-    });
-
-    return index;
-  }, [orders]);
-
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   }, []);
@@ -83,29 +69,20 @@ const NewOrderDetail = () => {
     setSelectedIds(new Set(orders.map((order) => order.id)));
   }, [orders, ordersKey]);
 
-  const selectByScannedCode = useCallback((rawValue: string) => {
-    const candidates = normalizeScannerValue(rawValue);
-    const orderId = candidates
-      .map((candidate) => orderScanIndex.get(candidate))
-      .find(Boolean);
-
-    if (!orderId) {
-      if (rawValue.trim().length < 6 && !rawValue.includes("/scan/")) {
-        return false;
-      }
-
-      notifApi.warning({
+  const handleMissingScannedOrder = useCallback(() => {
+    notifApi.warning({
         message: "QR topilmadi",
         description: "Bu QR kod ushbu ro'yxatdagi orderlarga mos kelmadi.",
         placement: "topRight",
         duration: 3,
       });
-      playMissingOrderFeedback();
-      return true;
-    }
+    playMissingOrderFeedback();
+  }, [notifApi]);
 
+  const receiveScannedOrder = useCallback((order: ApiOrder) => {
+    const orderId = order.id;
     if (pendingScanOrderIdsRef.current.has(orderId)) {
-      return true;
+      return;
     }
 
     pendingScanOrderIdsRef.current.add(orderId);
@@ -148,11 +125,13 @@ const NewOrderDetail = () => {
         },
       },
     );
+  }, [createReceiveOrder, notifApi, refetch, t]);
 
-    return true;
-  }, [createReceiveOrder, notifApi, orderScanIndex, refetch, t]);
-
-  useKeyboardScanner({ onScan: selectByScannedCode });
+  useOrderQrScanner({
+    orders,
+    onMatch: receiveScannedOrder,
+    onMissing: handleMissingScannedOrder,
+  });
 
   const toggleSelectAll = useCallback(() => {
     setSelectedIds((p) => p.size === orders.length ? new Set() : new Set(orders.map((o) => o.id)));

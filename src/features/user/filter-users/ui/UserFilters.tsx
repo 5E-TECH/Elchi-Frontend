@@ -8,22 +8,43 @@ import { clearAllSearch } from '../../../search/model/searchSlice';
 import { useQueryParams } from '../../../../shared/lib/useQueryParams';
 import { useTranslation } from 'react-i18next';
 import FilterClearButton from '../../../../shared/ui/FilterClearButton';
+import type { UserRole } from '../../../../entities/user/types/user';
+import { getUserRoleLabelKey } from '../../../../entities/user/lib/role';
 
-export const UserFilters = memo(() => {
+const defaultRoles: UserRole[] = [
+    "admin",
+    "manager",
+    "registrator",
+    "courier",
+    "market",
+    "marketing",
+    "operator",
+    "superadmin",
+    "customer",
+];
+
+const normalizeRoles = (roles?: string[]) => {
+    const normalized = roles
+        ?.filter((role): role is UserRole =>
+            typeof role === "string" && defaultRoles.includes(role as UserRole),
+        ) ?? defaultRoles;
+
+    return [...new Set(normalized)];
+};
+
+interface UserFiltersProps {
+    availableRoles?: string[];
+}
+
+export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
     const { t } = useTranslation("users");
     const dispatch = useDispatch();
     const { clearAllParams } = useQueryParams();
 
-    // Role options - Backend API ga mos value lar
-    const roleOptions = [
-        { value: 'admin', label: t('roleAdmin') },
-        { value: 'registrator', label: t('roleRegistrator') },
-        { value: 'manager', label: t('roleManager') },
-        { value: 'courier', label: t('roleCourier') },
-        { value: 'market', label: t('roleMarket') },
-        { value: 'operator', label: t('roleOperator') },
-        { value: 'superadmin', label: t('roleSuperAdmin') },
-    ];
+    const roleOptions = normalizeRoles(availableRoles).map((role) => ({
+        value: role,
+        label: t(getUserRoleLabelKey(role)),
+    }));
 
     // Status options
     const statusOptions = [
