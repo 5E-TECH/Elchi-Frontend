@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback, useMemo } from "react";
+import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
@@ -12,6 +12,12 @@ import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
+import { useKeyboardScanner } from "../../../shared/lib/useKeyboardScanner";
+import {
+  normalizeScannerValue,
+  playMissingOrderFeedback,
+  playScanFeedback,
+} from "../../scan/lib/scanShared";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
@@ -21,6 +27,9 @@ const NewOrderDetail = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
+  const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
+  const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
+  const selectedOrdersKeyRef = useRef("");
 
   const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder } = useOrders();
   const { api: notifApi } = useAppNotification();
@@ -40,11 +49,110 @@ const NewOrderDetail = () => {
 
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
   const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
-  const orders: ApiOrder[] = res?.data ?? res ?? [];
+  const rawOrders: ApiOrder[] = res?.data ?? res ?? [];
+  const orders = useMemo(
+    () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
+    [rawOrders, receivedOrderIds],
+  );
+  const ordersKey = useMemo(
+    () => orders.map((order) => order.id).join("|"),
+    [orders],
+  );
+
+  const orderScanIndex = useMemo(() => {
+    const index = new Map<string, string>();
+
+    orders.forEach((order) => {
+      index.set(String(order.id).toLowerCase(), order.id);
+      if (order.qr_code_token?.trim()) {
+        index.set(order.qr_code_token.trim().toLowerCase(), order.id);
+      }
+    });
+
+    return index;
+  }, [orders]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   }, []);
+
+  useEffect(() => {
+    if (!orders.length || selectedOrdersKeyRef.current === ordersKey) return;
+
+    selectedOrdersKeyRef.current = ordersKey;
+    setSelectedIds(new Set(orders.map((order) => order.id)));
+  }, [orders, ordersKey]);
+
+  const selectByScannedCode = useCallback((rawValue: string) => {
+    const candidates = normalizeScannerValue(rawValue);
+    const orderId = candidates
+      .map((candidate) => orderScanIndex.get(candidate))
+      .find(Boolean);
+
+    if (!orderId) {
+      if (rawValue.trim().length < 6 && !rawValue.includes("/scan/")) {
+        return false;
+      }
+
+      notifApi.warning({
+        message: "QR topilmadi",
+        description: "Bu QR kod ushbu ro'yxatdagi orderlarga mos kelmadi.",
+        placement: "topRight",
+        duration: 3,
+      });
+      playMissingOrderFeedback();
+      return true;
+    }
+
+    if (pendingScanOrderIdsRef.current.has(orderId)) {
+      return true;
+    }
+
+    pendingScanOrderIdsRef.current.add(orderId);
+    createReceiveOrder.mutate(
+      { order_ids: [orderId] },
+      {
+        onSuccess: () => {
+          setReceivedOrderIds((prev) => {
+            const next = new Set(prev);
+            next.add(orderId);
+            return next;
+          });
+          setSelectedIds((prev) => {
+            if (!prev.has(orderId)) return prev;
+            const next = new Set(prev);
+            next.delete(orderId);
+            return next;
+          });
+          void refetch();
+          notifApi.success({
+            message: "Order qabul qilindi",
+            description: `#${orderId} mailsga o'tkazildi.`,
+            placement: "topRight",
+            duration: 2,
+          });
+          void playScanFeedback("success");
+        },
+        onError: (err: any) => {
+          const msg = err?.response?.data?.message ?? err?.message ?? t("receiveError");
+          notifApi.error({
+            message: t("receiveError"),
+            description: msg,
+            placement: "topRight",
+            duration: 5,
+          });
+          playMissingOrderFeedback();
+        },
+        onSettled: () => {
+          pendingScanOrderIdsRef.current.delete(orderId);
+        },
+      },
+    );
+
+    return true;
+  }, [createReceiveOrder, notifApi, orderScanIndex, refetch, t]);
+
+  useKeyboardScanner({ onScan: selectByScannedCode });
 
   const toggleSelectAll = useCallback(() => {
     setSelectedIds((p) => p.size === orders.length ? new Set() : new Set(orders.map((o) => o.id)));
@@ -77,6 +185,11 @@ const NewOrderDetail = () => {
     const isAll = ids.length === orders.length;
     createReceiveOrder.mutate({ order_ids: ids }, {
       onSuccess: () => {
+        setReceivedOrderIds((prev) => {
+          const next = new Set(prev);
+          ids.forEach((id) => next.add(id));
+          return next;
+        });
         setIsReceiveConfirmOpen(false);
         setSelectedIds(new Set());
         if (isAll) {

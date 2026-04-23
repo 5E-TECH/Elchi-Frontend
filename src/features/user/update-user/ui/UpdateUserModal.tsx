@@ -1,25 +1,22 @@
 import { memo, useEffect } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import {
-  AtSign,
   Building,
   Building2,
   Calendar,
-  DollarSign,
   Home,
   Lock,
   Phone,
-  Save,
   Store,
   User,
-  X,
 } from "lucide-react";
-import Popup from "../../../../shared/ui/Popup";
+import UpdatePopup from "../../../../shared/components/popupUpdate";
 import Select from "../../../../shared/ui/Select";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import { UserRoleBadge } from "../../../../entities/user/ui/UserRoleBadge";
-import type { UpdateUserRequest, User as UserType } from "../../../../entities/user/types/user";
+import type { UpdateUserRequest } from "../../../../entities/user/types/user";
+import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
 
@@ -121,12 +118,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
     clearErrors,
   } = methods;
 
-  const userData: UserType | null = (() => {
-    const data = rawUser as any;
-    if (data?.data?.data) return data.data.data;
-    if (data?.data) return data.data;
-    return data ?? null;
-  })();
+  const userData = unwrapUserResponse(rawUser) ?? null;
 
   const { data: regionsData } = getRegions();
   const regionList: { id: string; name: string }[] = (() => {
@@ -139,7 +131,8 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
   })();
 
   const role = userData?.role ?? "";
-  const isAdmin = role === "admin" || role === "manager" || role === "superadmin";
+  const isAdmin = role === "admin" || role === "manager" || role === "registrator";
+  const isSuperAdmin = role === "superadmin";
   const isCourier = role === "courier";
   const isMarket = role === "market" || role === "marketing";
   const isCustomer = role === "customer";
@@ -215,11 +208,6 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
     }
 
     if (isAdmin) {
-      if (values.salary) {
-        const amount = parseAmount(values.salary);
-        if (amount !== (userData as any).salary) payload.salary = amount;
-      }
-
       if (values.payment_day) {
         const paymentDay = Number(values.payment_day);
         if (paymentDay !== Number((userData as any).payment_day)) {
@@ -247,10 +235,6 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
     }
 
     if (isMarket) {
-      if (values.username && values.username !== userData.username) {
-        payload.username = values.username;
-      }
-
       if (values.tariff_home) {
         const tariffHome = parseAmount(values.tariff_home);
         if (tariffHome !== (userData as any).tariff_home) {
@@ -288,16 +272,19 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
   };
 
   const inputCls = `
-    w-full bg-slate-50 dark:bg-[#1a1f3a] border
-    border-slate-200 dark:border-[#4c5798]/20
-    focus:border-main dark:focus:border-main focus:ring-main/10
-    rounded-xl px-4 py-3 text-slate-800 dark:text-white text-sm font-medium
-    placeholder:text-slate-400 dark:placeholder:text-white/30
-    focus:outline-none focus:ring-2 transition-all duration-200 shadow-sm
+    h-13 w-full rounded-2xl border-2 border-white/70 bg-white/85 px-5
+    text-[15px] font-semibold text-maindark shadow-[0_10px_28px_rgba(15,23,42,0.08)]
+    outline-none transition-all duration-200
+    placeholder:text-slate-400
+    hover:border-main/45 hover:bg-white
+    focus:border-main focus:bg-white focus:ring-4 focus:ring-main/15
+    dark:border-white/10 dark:bg-white/7 dark:text-white
+    dark:placeholder:text-white/35 dark:hover:border-main/45 dark:hover:bg-white/10
+    dark:focus:border-main dark:focus:bg-white/10
   `;
 
   const labelCls =
-    "block text-xs font-bold text-slate-500 dark:text-white/60 mb-1.5 ml-1 uppercase tracking-wide";
+    "mb-2 ml-1 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:text-white/60";
 
   const SectionDivider = ({ title }: { title: string }) => (
     <div className="col-span-full flex items-center gap-3 py-1">
@@ -330,7 +317,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
           <label className={labelCls}>{label}</label>
           <div className="relative">
             {prefix && (
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/50 font-medium text-sm select-none z-10">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/55 font-bold text-[15px] select-none z-10">
                 {prefix}
               </span>
             )}
@@ -359,7 +346,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                   ? "border-red-400 dark:border-red-500 focus:ring-red-400/20"
                   : ""
               }`}
-              style={prefix ? { paddingLeft: "3.5rem" } : undefined}
+              style={prefix ? { paddingLeft: "4.25rem" } : undefined}
             />
           </div>
           {fieldState.error?.message && (
@@ -375,42 +362,24 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
   const isPending = updateUser.isPending;
 
   return (
-    <Popup isShow={!!userId} onClose={onClose}>
-      <div
-        className="
-          bg-white dark:bg-maindark w-[92vw] max-w-2xl rounded-2xl shadow-2xl
-          flex flex-col overflow-hidden
-          border border-slate-100 dark:border-primarydark/20
-          max-h-[90vh]
-        "
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-main/10 flex items-center justify-center">
-              <User size={17} className="text-main" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-800 dark:text-white leading-tight">
-                {isLoading ? t("loading") : t("editUserTitle", { name: userData?.name ?? "" })}
-              </h2>
-              {userData && (
-                <div className="mt-1">
-                  <UserRoleBadge role={userData.role} />
-                </div>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
+    <UpdatePopup
+      isOpen={!!userId}
+      onClose={onClose}
+      onSave={handleSubmit(onSubmit)}
+      title={isLoading ? t("loading") : t("editUserTitle", { name: userData?.name ?? "" })}
+      icon={<User size={20} />}
+      saveLabel={t("saveChanges")}
+      cancelLabel={t("cancel")}
+      isLoading={isPending || isLoading}
+    >
+      {userData && (
+        <div className="mb-4">
+          <UserRoleBadge role={userData.role} />
         </div>
+      )}
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 gap-5">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="space-y-1.5">
                   <div className="h-3 w-24 rounded bg-slate-100 dark:bg-white/5 animate-pulse" />
@@ -420,7 +389,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+              <div className="grid grid-cols-1 gap-y-5">
                 {!isCustomer && (
                   <div className="col-span-full">
                     <SectionDivider title={t("mainData")} />
@@ -464,24 +433,26 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       placeholder: "••••••",
                     })}
 
-                    <Controller
-                      control={control}
-                      name="status"
-                      render={({ field }) => (
-                        <Select
-                          label={t("status")}
-                          name={field.name}
-                          value={field.value}
-                          onChange={(event) => field.onChange(event.target.value)}
-                          options={[
-                            { value: "active", label: t("statusActive") },
-                            { value: "inactive", label: t("statusInactive") },
-                            { value: "blocked", label: t("statusBlocked") },
-                          ]}
-                          placeholder={t("statusPlaceholder")}
-                        />
-                      )}
-                    />
+                    {!isSuperAdmin && (
+                      <Controller
+                        control={control}
+                        name="status"
+                        render={({ field }) => (
+                          <Select
+                            label={t("status")}
+                            name={field.name}
+                            value={field.value}
+                            onChange={(event) => field.onChange(event.target.value)}
+                            options={[
+                              { value: "active", label: t("statusActive") },
+                              { value: "inactive", label: t("statusInactive") },
+                              { value: "blocked", label: t("statusBlocked") },
+                            ]}
+                            placeholder={t("statusPlaceholder")}
+                          />
+                        )}
+                      />
+                    )}
                   </>
                 )}
 
@@ -490,17 +461,6 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                     <div className="col-span-full">
                       <SectionDivider title={t("financialInfo")} />
                     </div>
-
-                    {renderTextInput({
-                      name: "salary",
-                      label: (
-                        <>
-                          <DollarSign size={11} className="inline mr-1 mb-px" />
-                          {t("salaryWithCurrency")}
-                        </>
-                      ),
-                      placeholder: "5 000 000",
-                    })}
 
                     {renderTextInput({
                       name: "payment_day",
@@ -544,7 +504,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       placeholder: "8 000",
                     })}
 
-                    <div className="relative col-span-full sm:col-span-1">
+                    <div className="relative col-span-full">
                       <Controller
                         control={control}
                         name="region_id"
@@ -571,17 +531,6 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                     <div className="col-span-full">
                       <SectionDivider title={t("marketInfo")} />
                     </div>
-
-                    {renderTextInput({
-                      name: "username",
-                      label: (
-                        <>
-                          <AtSign size={11} className="inline mr-1 mb-px" />
-                          Username
-                        </>
-                      ),
-                      placeholder: "market_01",
-                    })}
 
                     <Controller
                       control={control}
@@ -627,37 +576,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
               </div>
             </form>
           )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-3 bg-slate-50/50 dark:bg-white/5 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 rounded-xl font-semibold text-sm text-slate-500 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
-          >
-            {t("cancel")}
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isPending || isLoading}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-main hover:bg-main/90 shadow-md shadow-main/20 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isPending ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>{t("saving")}</span>
-              </>
-            ) : (
-              <>
-                <Save size={15} strokeWidth={2.5} />
-                <span>{t("saveChanges")}</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </Popup>
+    </UpdatePopup>
   );
 });
 

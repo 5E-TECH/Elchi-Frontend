@@ -37,6 +37,16 @@ export const useMailDetailState = (orders: PostOrder[]) => {
         });
     }, []);
 
+    const selectOne = useCallback((id: string) => {
+        setSelectedIds((prev) => {
+            if (prev.has(id)) return prev;
+
+            const next = new Set(prev);
+            next.add(id);
+            return next;
+        });
+    }, []);
+
     const clearSelection = useCallback(() => {
         setSelectedIds(new Set());
     }, []);
@@ -47,6 +57,7 @@ export const useMailDetailState = (orders: PostOrder[]) => {
         someSelected,
         toggleAll,
         toggleOne,
+        selectOne,
         clearSelection,
     };
 };

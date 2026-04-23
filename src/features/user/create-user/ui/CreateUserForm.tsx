@@ -4,6 +4,7 @@ import type {
   CreateAdminRequest,
   CreateCourierRequest,
   CreateMarketRequest,
+  CreateRegistratorRequest,
   UserRole,
 } from "../../../../entities/user/types/user";
 import { RoleSelector } from "./RoleSelector";
@@ -23,6 +24,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
+import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -136,25 +138,7 @@ export const CreateUserForm = memo(() => {
   const { t } = useTranslation("users");
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const getRoleLabel = (userRole: UserRole) => {
-    switch (userRole) {
-      case "admin":
-        return t("roleAdmin");
-      case "manager":
-        return t("roleManager");
-      case "courier":
-        return t("roleCourier");
-      case "marketing":
-      case "market":
-        return t("roleMarket");
-      case "operator":
-        return t("roleOperator");
-      case "superadmin":
-        return t("roleSuperAdmin");
-      default:
-        return t("roleCustomer");
-    }
-  };
+  const getRoleLabel = (userRole: UserRole) => t(getUserRoleLabelKey(userRole));
 
   const methods = useForm<CreateUserFormValues>({
     defaultValues: INITIAL_FORM,
@@ -172,7 +156,7 @@ export const CreateUserForm = memo(() => {
 
   const role = useWatch({ control, name: "role" });
 
-  const { createAdmin, createMarket, createCourier, getRegions } = useUser();
+  const { createAdmin, createRegistrator, createMarket, createCourier, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
 
   const { data: regionsData } = getRegions();
@@ -190,7 +174,10 @@ export const CreateUserForm = memo(() => {
   }, [role, reset]);
 
   const isPending =
-    createAdmin.isPending || createMarket.isPending || createCourier.isPending;
+    createAdmin.isPending ||
+    createRegistrator.isPending ||
+    createMarket.isPending ||
+    createCourier.isPending;
 
   const validateByRole = (values: CreateUserFormValues): boolean => {
     let valid = true;
@@ -214,7 +201,7 @@ export const CreateUserForm = memo(() => {
       valid = false;
     }
 
-    if (role === "admin" || role === "manager") {
+    if (role === "admin" || role === "manager" || role === "registrator") {
       if (!values.salary) {
         setError("salary", { message: t("salaryRequired") });
         valid = false;
@@ -275,7 +262,7 @@ export const CreateUserForm = memo(() => {
 
     const rawPhone = `+998${parsePhone(values.phone)}`;
 
-    if (role === "admin") {
+    if (role === "admin" || role === "registrator") {
       const payload: CreateAdminRequest = {
         name: values.fullName,
         phone_number: rawPhone,
@@ -284,9 +271,12 @@ export const CreateUserForm = memo(() => {
         payment_day: Number(values.paymentDay),
       };
 
+      const mutation = role === "admin" ? createAdmin : createRegistrator;
+      const successMessage = role === "admin" ? t("createAdmin") : t("createRegistrator");
+
       await apiRequest({
-        request: () => createAdmin.mutateAsync(payload),
-        successMessage: t("createAdmin"),
+        request: () => mutation.mutateAsync(payload as CreateAdminRequest & CreateRegistratorRequest),
+        successMessage,
         errorMessage: t("loadError"),
         onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
@@ -484,7 +474,7 @@ export const CreateUserForm = memo(() => {
               className={`p-2 rounded-xl bg-linear-to-br text-white shadow-md ${
                 role === "admin"
                   ? "from-purple-500 to-indigo-600"
-                  : role === "manager"
+                  : role === "manager" || role === "registrator"
                     ? "from-blue-500 to-cyan-500"
                     : role === "courier"
                       ? "from-orange-500 to-amber-500"
@@ -519,7 +509,7 @@ export const CreateUserForm = memo(() => {
 
                 <div className="h-px bg-slate-100 dark:bg-white/5" />
 
-                {(role === "admin" || role === "manager") && (
+                {(role === "admin" || role === "manager" || role === "registrator") && (
                   <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     {renderInput({
                       label: t("salaryWithCurrency"),
@@ -632,7 +622,7 @@ export const CreateUserForm = memo(() => {
               className={`relative overflow-hidden flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-sm ${
                 role === "admin"
                   ? "bg-linear-to-r from-purple-600 to-indigo-600"
-                  : role === "manager"
+                  : role === "manager" || role === "registrator"
                     ? "bg-linear-to-r from-blue-500 to-cyan-500"
                     : role === "courier"
                       ? "bg-linear-to-r from-orange-500 to-amber-500"
@@ -669,6 +659,7 @@ const ShieldIcon = ({
     case "admin":
       return <Shield size={size} />;
     case "manager":
+    case "registrator":
       return <Calendar size={size} />;
     case "courier":
       return <Store size={size} />;

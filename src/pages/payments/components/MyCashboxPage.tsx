@@ -49,6 +49,7 @@ const MyCashboxPage = () => {
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [historyLimit, setHistoryLimit] = useState(HISTORY_PAGE_SIZE);
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   const params = useMemo(
@@ -113,20 +114,20 @@ const MyCashboxPage = () => {
   const paginatedHistoryRows = useMemo(
     () =>
       historyRows.slice(
-        (currentPage - 1) * HISTORY_PAGE_SIZE,
-        currentPage * HISTORY_PAGE_SIZE,
+        (currentPage - 1) * historyLimit,
+        currentPage * historyLimit,
       ),
-    [currentPage, historyRows],
+    [currentPage, historyLimit, historyRows],
   );
 
   const pagination = useMemo<Pagination>(
     () => ({
       page: currentPage,
-      limit: HISTORY_PAGE_SIZE,
+      limit: historyLimit,
       total: historyRows.length,
-      totalPages: Math.max(1, Math.ceil(historyRows.length / HISTORY_PAGE_SIZE)),
+      totalPages: Math.max(1, Math.ceil(historyRows.length / historyLimit)),
     }),
-    [currentPage, historyRows.length],
+    [currentPage, historyLimit, historyRows.length],
   );
 
   const headerIcon = currentRole === "market" ? <Store size={20} /> : <Truck size={20} />;

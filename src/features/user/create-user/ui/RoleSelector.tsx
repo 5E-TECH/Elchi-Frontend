@@ -2,6 +2,7 @@ import { memo } from 'react';
 import type { UserRole } from '../../../../entities/user/types/user';
 import { Shield, Users, Truck, Store, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getUserRoleLabelKey } from '../../../../entities/user/lib/role';
 
 interface RoleSelectorProps {
     selectedRole: UserRole;
@@ -17,7 +18,7 @@ const roles: { id: UserRole; label: string; icon: any; gradient: string; shadow:
         shadow: 'shadow-purple-500/20'
     },
     {
-        id: 'manager',
+        id: 'registrator',
         label: "Ro'yxatchi",
         icon: Users,
         gradient: 'from-blue-500 to-cyan-500',
@@ -81,13 +82,7 @@ export const RoleSelector = memo(({ selectedRole, onSelect }: RoleSelectorProps)
                                     block font-bold text-sm transition-colors duration-300
                                     ${isSelected ? 'text-white' : 'text-slate-600 dark:text-white/70 group-hover:text-slate-900 dark:group-hover:text-white'}
                                 `}>
-                                    {role.id === "admin"
-                                      ? t("roleAdmin")
-                                      : role.id === "manager"
-                                        ? t("roleManager")
-                                        : role.id === "courier"
-                                          ? t("roleCourier")
-                                          : t("roleMarket")}
+                                    {t(getUserRoleLabelKey(role.id))}
                                 </span>
                                 <span className={`
                                     block text-xs transition-colors duration-300 mt-0.5

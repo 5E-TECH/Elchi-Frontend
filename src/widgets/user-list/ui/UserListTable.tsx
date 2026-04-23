@@ -10,6 +10,7 @@ import { useUser } from '../../../entities/user/api/userApi';
 import { useTranslation } from 'react-i18next';
 import Pagination from '../../../shared/components/pagination';
 import { useAppNotification } from '../../../app/providers/notification/NotificationProvider';
+import PopupConfirm from '../../../shared/components/popupConfirm';
 
 interface UserListTableProps {
     users: User[];
@@ -23,7 +24,9 @@ interface UserListTableProps {
         totalPages: number;
     };
     currentPage: number;
+    currentLimit?: number;
     onPageChange: (page: number) => void;
+    onItemsPerPageChange?: (limit: number) => void;
 }
 
 export const UserListTable = memo(({
@@ -33,15 +36,29 @@ export const UserListTable = memo(({
     // error,
     pagination,
     currentPage,
-    onPageChange
+    currentLimit = pagination?.limit ?? users.length ?? 10,
+    onPageChange,
+    onItemsPerPageChange,
 }: UserListTableProps) => {
     const { t } = useTranslation("users");
     const navigate = useNavigate();
-    const { updateUserStatus } = useUser();
+    const { updateUserStatus, deleteUser } = useUser();
     const { api } = useAppNotification();
 
     // Hozirda so'rov ketayotgan userlar ID lari
     const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
+    const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+
+    const formatPhoneNumber = (phone: string) => {
+        const digits = phone.replace(/\D/g, "");
+        const local = digits.startsWith("998") ? digits.slice(3) : digits;
+
+        if (local.length === 9) {
+            return `+998 (${local.slice(0, 2)}) ${local.slice(2, 5)}-${local.slice(5, 7)}-${local.slice(7, 9)}`;
+        }
+
+        return phone;
+    };
 
     const handleStatusToggle = (user: User, e: React.MouseEvent) => {
         e.stopPropagation(); // Row click ga o'tmasin
@@ -109,6 +126,51 @@ export const UserListTable = memo(({
         );
     };
 
+    const handleDeleteConfirm = () => {
+        if (!deleteTarget || deleteUser.isPending) return;
+
+        deleteUser.mutate(deleteTarget.id, {
+            onSuccess: () => {
+                api.success({
+                    message: t("deleteSuccessTitle"),
+                    description: t("deleteSuccessDescription", { name: deleteTarget.name }),
+                    placement: "topRight",
+                    duration: 4,
+                });
+                setDeleteTarget(null);
+            },
+            onError: (error: unknown) => {
+                const errorMessage =
+                    typeof error === "object" &&
+                    error !== null &&
+                    "response" in error &&
+                    typeof (error as {
+                        response?: { data?: { message?: string; error?: string } };
+                    }).response?.data?.message === "string"
+                        ? (error as {
+                            response?: { data?: { message?: string; error?: string } };
+                        }).response?.data?.message
+                        : typeof error === "object" &&
+                          error !== null &&
+                          "response" in error &&
+                          typeof (error as {
+                              response?: { data?: { message?: string; error?: string } };
+                          }).response?.data?.error === "string"
+                            ? (error as {
+                                response?: { data?: { message?: string; error?: string } };
+                            }).response?.data?.error
+                            : t("deleteErrorDescription");
+
+                api.error({
+                    message: t("deleteErrorTitle"),
+                    description: errorMessage,
+                    placement: "topRight",
+                    duration: 5,
+                });
+            },
+        });
+    };
+
     // console.log('=== BACKEND DATA ===');
     // console.log('Full Response:', data);
     // console.log('Users:', data?.data?.items);
@@ -122,11 +184,11 @@ export const UserListTable = memo(({
             width: '30%',
             sortable: true,
             render: (value) => (
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
+                    <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-xs font-black text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
                         {String(value).charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-gray-900 dark:text-white text-sm font-medium">{value}</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">{value}</span>
                 </div>
             ),
         },
@@ -135,7 +197,11 @@ export const UserListTable = memo(({
             label: t('phone'),
             width: '25%',
             sortable: true,
-            className: 'text-gray-600 dark:text-gray-400 text-sm font-mono',
+            render: (value) => (
+                <span className="text-[15px] font-bold tabular-nums tracking-wide text-slate-700 dark:text-white/85">
+                    {formatPhoneNumber(String(value ?? ""))}
+                </span>
+            ),
         },
         {
             key: 'role',
@@ -211,8 +277,12 @@ export const UserListTable = memo(({
 
                         {/* ── Delete Button ── */}
                         <button
-                            onClick={(e) => { e.stopPropagation(); }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget(user);
+                            }}
                             className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200"
+                            aria-label={t("deleteTitle")}
                         >
                             <Trash2 size={20} />
                         </button>
@@ -226,7 +296,7 @@ export const UserListTable = memo(({
     // Loading state
     if (isLoading) {
         return (
-            <div className="bg-white dark:bg-maindark rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
+            <div className="overflow-hidden rounded-[24px] border border-white/55 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center space-y-3">
                         <span className="relative flex h-12 w-12 mx-auto">
@@ -245,7 +315,7 @@ export const UserListTable = memo(({
     // Error state
     if (isError) {
         return (
-            <div className="bg-white dark:bg-maindark rounded-xl border border-red-200 dark:border-red-900/20 overflow-hidden shadow-sm">
+            <div className="overflow-hidden rounded-[24px] border border-red-200/70 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-red-400/20 dark:bg-white/[0.045]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -266,7 +336,7 @@ export const UserListTable = memo(({
     // Empty state
     if (users.length === 0) {
         return (
-            <div className="bg-white dark:bg-maindark rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
+            <div className="overflow-hidden rounded-[24px] border border-white/55 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -283,40 +353,54 @@ export const UserListTable = memo(({
     }
 
     return (
-        <div className="bg-white dark:bg-maindark rounded-xl border border-gray-200 dark:border-primarydark/20 overflow-hidden shadow-sm">
-            <Table
-                data={users}
-                columns={columns}
-                keyExtractor={(user) => user.id}
-                hoverable
-                onRowClick={(user) => navigate(`/all-users/${user.id}`)}
-            />
-
-            {/* Pagination */}
-            <div
-                className="flex flex-col gap-3 border-t border-gray-200 dark:border-primarydark/20 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 bg-primary dark:bg-[linear-gradient(90deg,var(--color-main)_0%,var(--color-primarydark)_100%)]"
-            >
-                <span className="text-center text-sm text-maindark dark:text-white sm:text-left">
-                    {pagination ? (
-                        t("paginationSummary", {
-                            from: (pagination.page - 1) * pagination.limit + 1,
-                            to: Math.min(pagination.page * pagination.limit, pagination.total),
-                            total: pagination.total,
-                        })
-                    ) : (
-                        t("totalUsersCount", { count: users.length })
-                    )}
-                </span>
-                <Pagination
-                    totalItems={pagination?.total || users.length}
-                    itemsPerPage={pagination?.limit || users.length || 1}
-                    currentPage={pagination?.page || currentPage}
-                    onPageChange={onPageChange}
-                    className="w-full pt-0 sm:w-auto"
-                    summary={null}
+        <>
+            <div className="overflow-hidden rounded-[24px] border border-white/55 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
+                <Table
+                    data={users}
+                    columns={columns}
+                    keyExtractor={(user) => user.id}
+                    hoverable
+                    onRowClick={(user) => navigate(`/all-users/${user.id}`)}
                 />
+
+                {/* Pagination */}
+                <div
+                    className="flex flex-col gap-3 border-t border-slate-200/70 bg-white/70 px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-white/[0.035]"
+                >
+                    <span className="text-center text-sm font-semibold text-slate-600 dark:text-white/65 sm:text-left">
+                        {pagination ? (
+                            t("paginationSummary", {
+                                from: (currentPage - 1) * currentLimit + 1,
+                                to: Math.min(currentPage * currentLimit, pagination.total),
+                                total: pagination.total,
+                            })
+                        ) : (
+                            t("totalUsersCount", { count: users.length })
+                        )}
+                    </span>
+                    <Pagination
+                        totalItems={pagination?.total || users.length}
+                        itemsPerPage={currentLimit}
+                        currentPage={currentPage}
+                        onPageChange={onPageChange}
+                        onItemsPerPageChange={onItemsPerPageChange}
+                        className="w-full pt-0 sm:w-auto"
+                        summary={null}
+                    />
+                </div>
             </div>
-        </div>
+
+            <PopupConfirm
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleDeleteConfirm}
+                isLoading={deleteUser.isPending}
+                title={t("deleteUserTitle")}
+                message={t("deleteUserMessage", { name: deleteTarget?.name ?? "" })}
+                confirmLabel={t("deleteTitle")}
+                variant="danger"
+            />
+        </>
     );
 });
 

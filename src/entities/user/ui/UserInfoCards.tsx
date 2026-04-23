@@ -2,10 +2,8 @@ import { memo } from 'react';
 import {
     User as UserIcon,
     Phone,
-    AtSign,
     ShieldCheck,
     // Activity,
-    Wallet,
     CalendarDays,
     Home,
     Building2,
@@ -14,15 +12,13 @@ import {
 } from 'lucide-react';
 import type { User } from '../types/user';
 import { useTranslation } from 'react-i18next';
+import { getUserRoleLabelKey } from '../lib/role';
 
 interface UserInfoCardsProps {
     user: User;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const formatMoney = (n: number) =>
-    n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm";
 
 // ─── Info Chip ─────────────────────────────────────────────────────────────────
 
@@ -67,7 +63,7 @@ const Divider = ({ title }: { title: string }) => (
 
 export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
     const { t } = useTranslation("users");
-    const isAdmin = user.role === 'admin' || user.role === 'manager' || user.role === 'superadmin';
+    const hasPaymentInfo = user.role === 'admin' || user.role === 'manager' || user.role === 'registrator';
     const isCourier = user.role === 'courier';
     const isMarket = user.role === 'market' || user.role === 'marketing';
     const isCustomer = user.role === 'customer';
@@ -109,16 +105,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                     iconBg="bg-violet-50 dark:bg-violet-500/10"
                     iconColor="text-violet-500"
                     label={t("role")}
-                    value={t(
-                      user.role === "admin" ? "roleAdmin"
-                      : user.role === "manager" ? "roleManager"
-                      : user.role === "courier" ? "roleCourier"
-                      : user.role === "market" ? "roleMarket"
-                      : user.role === "marketing" ? "roleMarket"
-                      : user.role === "operator" ? "roleOperator"
-                      : user.role === "superadmin" ? "roleSuperAdmin"
-                      : "roleCustomer"
-                    )}
+                    value={t(getUserRoleLabelKey(user.role))}
                 />
 
                 {/* <InfoChip
@@ -140,16 +127,6 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                     }
                 /> */}
 
-                {user.username && user.role !== 'customer' && (
-                    <InfoChip
-                        icon={AtSign}
-                        iconBg="bg-indigo-50 dark:bg-indigo-500/10"
-                        iconColor="text-indigo-500"
-                        label="Username"
-                        value={<span className="text-indigo-500">{user.username}</span>}
-                    />
-                )}
-
                 {isCustomer && (
                     <InfoChip
                         icon={Package}
@@ -161,27 +138,17 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                 )}
 
                 {/* ── Admin / Manager: Moliya ── */}
-                {isAdmin && (
+                {hasPaymentInfo && user.payment_day && (
                     <>
                         <Divider title={t("financial")} />
 
                         <InfoChip
-                            icon={Wallet}
-                            iconBg="bg-main/10 dark:bg-main/20"
-                            iconColor="text-main"
-                            label={t("salary")}
-                            value={<span className="text-main font-bold">{formatMoney(user.salary)}</span>}
+                            icon={CalendarDays}
+                            iconBg="bg-purple-50 dark:bg-purple-500/10"
+                            iconColor="text-purple-500"
+                            label={t("paymentDay")}
+                            value={`${user.payment_day}-kun`}
                         />
-
-                        {user.payment_day && (
-                            <InfoChip
-                                icon={CalendarDays}
-                                iconBg="bg-purple-50 dark:bg-purple-500/10"
-                                iconColor="text-purple-500"
-                                label={t("paymentDay")}
-                                value={`${user.payment_day}-kun`}
-                            />
-                        )}
                     </>
                 )}
 
@@ -210,7 +177,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                             iconBg="bg-orange-50 dark:bg-orange-500/10"
                             iconColor="text-orange-500"
                             label={t("homeTariff")}
-                            value={<span className="text-orange-500 font-bold">{formatMoney(user.tariff_home ?? 0)}</span>}
+                            value={<span className="text-orange-500 font-bold">{Number(user.tariff_home ?? 0).toLocaleString('uz-UZ')} so'm</span>}
                         />
 
                         <InfoChip
@@ -218,7 +185,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                             iconBg="bg-amber-50 dark:bg-amber-500/10"
                             iconColor="text-amber-500"
                             label={t("centerTariff")}
-                            value={<span className="text-amber-500 font-bold">{formatMoney(user.tariff_center ?? 0)}</span>}
+                            value={<span className="text-amber-500 font-bold">{Number(user.tariff_center ?? 0).toLocaleString('uz-UZ')} so'm</span>}
                         />
                     </>
                 )}
@@ -233,7 +200,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                             iconBg="bg-emerald-50 dark:bg-emerald-500/10"
                             iconColor="text-emerald-500"
                             label={t("homeTariff")}
-                            value={<span className="text-emerald-500 font-bold">{formatMoney(user.tariff_home ?? 0)}</span>}
+                            value={<span className="text-emerald-500 font-bold">{Number(user.tariff_home ?? 0).toLocaleString('uz-UZ')} so'm</span>}
                         />
 
                         <InfoChip
@@ -241,7 +208,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                             iconBg="bg-teal-50 dark:bg-teal-500/10"
                             iconColor="text-teal-500"
                             label={t("centerTariff")}
-                            value={<span className="text-teal-500 font-bold">{formatMoney(user.tariff_center ?? 0)}</span>}
+                            value={<span className="text-teal-500 font-bold">{Number(user.tariff_center ?? 0).toLocaleString('uz-UZ')} so'm</span>}
                         />
 
                         <InfoChip

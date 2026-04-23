@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import HeaderName from "../../shared/components/headerName";
 import FilterSelect from "../../shared/ui/FilterSelect";
+import FilterClearButton from "../../shared/ui/FilterClearButton";
 import PaymentHistoryTable from "./components/patmentHistoryTable";
 import PopupSelect from "../../shared/components/popupSelect";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { usePagination } from "../../shared/lib/usePagination";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
+const DEFAULT_PAYMENTS_LIMIT = 10;
 
 const toPositiveNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -93,13 +95,13 @@ const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
 
 const Payments = () => {
   const { t } = useTranslation("payments");
-  const { page, limit, setPage, resetPagination } = usePagination({
+  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "payments",
-    defaultLimit: 20,
+    defaultLimit: DEFAULT_PAYMENTS_LIMIT,
     pageParam: "paymentsPage",
     limitParam: "paymentsLimit",
   });
-  const hasPaginationFilterSyncStarted = useRef(false);
+  const previousFiltersKeyRef = useRef("");
   const [isGivenPopupOpen, setIsGivenPopupOpen] = useState(false);
   const [isReceivedPopupOpen, setIsReceivedPopupOpen] = useState(false);
   const { control, watch, reset } = useForm<PaymentsFilterFormValues>({
@@ -120,6 +122,7 @@ const Payments = () => {
     }),
     [createdBy, operationType, sourceType],
   );
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   const navigate = useNavigate();
   const { getFinanceHistory, getCashBoxInfo } = useCashBox();
@@ -244,18 +247,18 @@ const Payments = () => {
   }, [page, limit, filters]);
 
   useEffect(() => {
-    if (!hasPaginationFilterSyncStarted.current) {
-      hasPaginationFilterSyncStarted.current = true;
+    if (!previousFiltersKeyRef.current) {
+      previousFiltersKeyRef.current = filtersKey;
       return;
     }
 
-    resetPagination(20);
-  }, [
-    filters.created_by,
-    filters.operation_type,
-    filters.source_type,
-    resetPagination,
-  ]);
+    if (previousFiltersKeyRef.current === filtersKey) {
+      return;
+    }
+
+    previousFiltersKeyRef.current = filtersKey;
+    resetPagination(limit);
+  }, [filtersKey, limit, resetPagination]);
 
   const { data: historyData, isLoading: historyLoading } =
     getFinanceHistory(queryParams);
@@ -398,15 +401,12 @@ const Payments = () => {
         </div>
         {Object.values(filters).some(Boolean) && (
           <div className="flex items-center justify-end mt-3">
-            <button
+            <FilterClearButton
               onClick={() => {
                 reset(INIT);
-                resetPagination(20);
+                resetPagination(limit);
               }}
-              className="text-xs text-rose-400 hover:text-rose-500 font-semibold flex items-center gap-1 transition-colors"
-            >
-              ✕ {t("clearFilters")}
-            </button>
+            />
           </div>
         )}
       </div>
@@ -417,6 +417,7 @@ const Payments = () => {
         isLoading={historyLoading}
         pagination={pagination}
         onPageChange={setPage}
+        onItemsPerPageChange={setLimit}
         currentPage={page}
       />
 

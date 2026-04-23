@@ -13,6 +13,9 @@ export const API_ENDPOINTS = {
   ADMINS: {
     BASE: "admins",
   },
+  REGISTRATORS: {
+    BASE: "registrators",
+  },
   MARKETS: {
     BASE: "markets",
     BY_ID: (id: string | number) => `markets/${id}`,

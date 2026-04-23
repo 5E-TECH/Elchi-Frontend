@@ -12,6 +12,7 @@ import search from "../features/search/model/searchSlice";
 import role from "../features/auth/model/loginSlice";
 import pagination from "../features/pagination/model/paginationSlice";
 import i18n from "../i18n";
+import { NotificationProvider } from "../app/providers/notification/NotificationProvider";
 
 export const createTestStore = (preloadedState?: Record<string, unknown>) =>
   configureStore({
@@ -52,7 +53,9 @@ export const renderWithProviders = (
       <I18nextProvider i18n={i18n}>
         <Provider store={store}>
           <MemoryRouter initialEntries={[route]}>
-            <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+            <QueryClientProvider client={queryClient}>
+              <NotificationProvider>{ui}</NotificationProvider>
+            </QueryClientProvider>
           </MemoryRouter>
         </Provider>
       </I18nextProvider>,

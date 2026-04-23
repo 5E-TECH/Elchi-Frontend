@@ -93,7 +93,7 @@ const toSourceTypeLabel = (value: string, t: (key: string) => string) => {
 const HistoryTab = () => {
   const { t } = useTranslation("payments");
   const { getFinanceHistory } = useCashBox();
-  const { page, limit, setPage, resetPagination } = usePagination({
+  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "payments",
     defaultLimit: 10,
     pageParam: "financialBalanceHistoryPage",
@@ -302,6 +302,7 @@ const HistoryTab = () => {
             itemsPerPage={pagination.limit}
             currentPage={pagination.page}
             onPageChange={setPage}
+            onItemsPerPageChange={setLimit}
             className="w-full pt-0 sm:w-auto"
             summary={null}
           />

@@ -63,6 +63,7 @@ interface PaymentHistoryTableProps {
   isLoading?: boolean;
   pagination?: Pagination;
   onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (limit: number) => void;
   currentPage?: number;
 }
 
@@ -73,6 +74,7 @@ const PaymentHistoryTable = ({
   isLoading = false,
   pagination,
   onPageChange,
+  onItemsPerPageChange,
   currentPage,
 }: PaymentHistoryTableProps) => {
   const { t } = useTranslation("payments");
@@ -223,6 +225,7 @@ const PaymentHistoryTable = ({
               itemsPerPage={safeLimit}
               currentPage={activePage}
               onPageChange={onPageChange}
+              onItemsPerPageChange={onItemsPerPageChange}
               className="w-full pt-0 sm:w-auto"
               summary={null}
             />

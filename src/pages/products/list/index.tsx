@@ -23,7 +23,6 @@ import UpdatePopup from "../../../shared/components/popupUpdate";
 import { useNavigate } from "react-router-dom";
 import { useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
-import SelectInput from "../../../features/Select/selectInput";
 import { GlobalSearchInput } from "../../../features/search";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -32,12 +31,19 @@ import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
 import Pagination from "../../../shared/components/pagination";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import SearchableSelect from "../../../shared/ui/SearchableSelect";
 
 interface Product {
   id: number;
   name: string;
   image?: string | null;
   image_url?: string | null;
+  imageUrl?: string | null;
+  photo?: string | null;
+  photo_url?: string | null;
+  file?: string | null;
+  url?: string | null;
   actions?: undefined;
   market: {
     id: number;
@@ -72,14 +78,56 @@ const productFilterSchema: yup.ObjectSchema<ProductFilterFormValues> = yup.objec
 });
 
 const editProductSchema: yup.ObjectSchema<EditProductFormValues> = yup.object({
-  name: yup.string().defined(),
+  name: yup.string().trim().required("validationNameRequired"),
   image: yup.mixed<File>().nullable().defined(),
 });
+
+const getBackendErrorMessage = (err: unknown): string | undefined => {
+  const axiosErr = err as AxiosError<{
+    message?: unknown;
+    error?: unknown;
+    detail?: unknown;
+  }>;
+  const payload = axiosErr?.response?.data;
+  const rawMessage = payload?.message ?? payload?.error ?? payload?.detail ?? axiosErr?.message;
+
+  if (Array.isArray(rawMessage)) {
+    const message = rawMessage.map(String).filter(Boolean).join(", ");
+    return message || undefined;
+  }
+
+  if (typeof rawMessage === "string") {
+    const message = rawMessage.trim();
+    return message || undefined;
+  }
+
+  return undefined;
+};
+
+const getProductPayload = (response: unknown): Product | null => {
+  const responseData = response as {
+    data?: Product | { data?: Product };
+  } | Product | undefined;
+
+  if (!responseData) return null;
+  if ("id" in responseData) return responseData as Product;
+  if (responseData.data && "id" in responseData.data) return responseData.data as Product;
+  if (
+    responseData.data
+    && "data" in responseData.data
+    && responseData.data.data
+  ) {
+    return responseData.data.data;
+  }
+
+  return null;
+};
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
 const ProductTable = () => {
   const { t } = useTranslation("products");
+  const { api: notificationApi } = useAppNotification();
   const navigate = useNavigate();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -125,13 +173,30 @@ const ProductTable = () => {
     }
 
     try {
-      const baseOrigin = new URL(BASE_URL).origin;
-      if (trimmed.startsWith("/")) return `${baseOrigin}${trimmed}`;
-      return `${baseOrigin}/${trimmed}`;
+      if (BASE_URL.startsWith("/")) {
+        if (trimmed.startsWith("/")) return trimmed;
+        return `${BASE_URL.replace(/\/+$/, "")}/${trimmed.replace(/^\/+/, "")}`;
+      }
+
+      const base = new URL(`${BASE_URL.replace(/\/+$/, "")}/`);
+      return new URL(trimmed.replace(/^\/+/, ""), base).toString();
     } catch {
       return trimmed;
     }
   }, []);
+
+  const getProductImageUrl = useCallback((product?: Product | null): string | undefined => {
+    if (!product) return undefined;
+    return resolveImageUrl(
+      product.image_url
+        ?? product.imageUrl
+        ?? product.image
+        ?? product.photo_url
+        ?? product.photo
+        ?? product.file
+        ?? product.url,
+    );
+  }, [resolveImageUrl]);
 
   // ─── Data Fetching ──────────────────────────────────────────────────────
 
@@ -148,7 +213,7 @@ const ProductTable = () => {
       }),
     );
 
-  // SelectInput uchun market options
+  // Shared searchable select uchun market options
   const marketOptions = markets.map((m) => ({
     value: String(m.id),
     label: m.name,
@@ -164,7 +229,7 @@ const ProductTable = () => {
 
   const searchFilters = useSelector((state: RootState) => state.search);
   const searchValue = searchFilters.product_search;
-  const { page, limit, setPage, resetPagination } = usePagination({
+  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "products",
     defaultLimit: 10,
   });
@@ -182,8 +247,13 @@ const ProductTable = () => {
     return params;
   }, [filterValue, limit, page, searchValue]);
 
-  const { getProducts, deleteProduct, updateProduct } = useProducts();
+  const { getProducts, getProductById, deleteProduct, updateProduct } = useProducts();
   const { data: products, isLoading } = getProducts(apiParams);
+  const { data: editProductResponse } = getProductById(editTarget?.id, Boolean(editTarget));
+  const editProductDetail = useMemo(
+    () => getProductPayload(editProductResponse),
+    [editProductResponse],
+  );
   const productData = products?.data?.items ?? products?.data ?? [];
   const rawPagination = products?.data?.meta
     ?? products?.data?.pagination
@@ -269,41 +339,63 @@ const ProductTable = () => {
     });
   }, [setEditValue]);
 
-  const handleEditSave = useCallback(async (values: EditProductFormValues) => {
-    if (!editTarget) return;
-    const buildFormData = (nameKey: "name" | "product_name") => {
-      const formData = new FormData();
-      formData.append(nameKey, values.name);
-      if (values.image) formData.append("image", values.image);
-      return formData;
-    };
-
-    const isNameNotAllowed = (err: unknown): boolean => {
-      const axiosErr = err as AxiosError<{ message?: unknown }>;
-      const msg = axiosErr?.response?.data?.message;
-      if (typeof msg === "string") return msg.includes("property name should not exist");
-      if (Array.isArray(msg)) return msg.some((m) => String(m).includes("property name should not exist"));
-      return false;
-    };
-
-    try {
-      await updateProduct.mutateAsync({ id: editTarget.id, data: buildFormData("name") });
-      setEditTarget(null);
-    } catch (err) {
-      if (!isNameNotAllowed(err)) return;
-      await updateProduct.mutateAsync({ id: editTarget.id, data: buildFormData("product_name") });
-      setEditTarget(null);
-    }
-  }, [editTarget, updateProduct]);
-
-  const handleEditCancel = useCallback(() => {
+  const closeEditPopup = useCallback(() => {
     setEditTarget(null);
     setEditValue("image", null);
+    resetEditForm({
+      name: "",
+      image: null,
+    });
     setEditPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return undefined;
     });
-  }, [setEditValue]);
+  }, [resetEditForm, setEditValue]);
+
+  const handleEditSave = useCallback(async (values: EditProductFormValues) => {
+    if (!editTarget) return;
+
+    const productName = values.name.trim();
+    if (!productName) {
+      notificationApi.warning({
+        message: t("validationNameRequired"),
+        placement: "topRight",
+      });
+      return;
+    }
+
+    const buildFormData = () => {
+      const formData = new FormData();
+      formData.append("name", productName);
+      if (values.image instanceof File) formData.append("image", values.image);
+      return formData;
+    };
+
+    const notifySuccess = () => {
+      notificationApi.success({
+        message: t("updateSuccess"),
+        placement: "topRight",
+      });
+    };
+
+    const notifyError = (err: unknown) => {
+      notificationApi.error({
+        message: t("updateError"),
+        description: getBackendErrorMessage(err),
+        placement: "topRight",
+      });
+    };
+
+    try {
+      await updateProduct.mutateAsync({ id: editTarget.id, data: buildFormData() });
+      notifySuccess();
+      closeEditPopup();
+    } catch (err) {
+      notifyError(err);
+    }
+  }, [closeEditPopup, editTarget, notificationApi, t, updateProduct]);
+
+  const handleEditCancel = closeEditPopup;
 
   // ─── Table Columns ─────────────────────────────────────────────────────
 
@@ -413,11 +505,16 @@ const ProductTable = () => {
             control={filterControl}
             name="market_id"
             render={({ field }) => (
-              <SelectInput
+              <SearchableSelect
+                label={t("marketName")}
+                name={field.name}
                 value={field.value}
                 onChange={field.onChange}
                 options={marketOptions}
                 placeholder={t("selectMarket")}
+                icon={Store}
+                hideLabel
+                surface="search"
               />
             )}
           />
@@ -452,6 +549,7 @@ const ProductTable = () => {
           itemsPerPage={responseLimit}
           currentPage={responsePage}
           onPageChange={setPage}
+          onItemsPerPageChange={setLimit}
           className="pt-0"
         />
       </div>
@@ -492,7 +590,7 @@ const ProductTable = () => {
         isLoading={updateProduct.isPending}
         imageProps={{
           label: t("image"),
-          value: resolveImageUrl(editTarget?.image_url ?? editTarget?.image),
+          value: getProductImageUrl(editProductDetail ?? editTarget),
           onChange: handleEditImageChange,
           previewUrl: editPreviewUrl,
         }}
@@ -509,7 +607,11 @@ const ProductTable = () => {
             placeholder={t("namePlaceholder")}
           />
           {editErrors.name && (
-            <p className="text-xs text-red-500">{editErrors.name.message}</p>
+            <p className="text-xs text-red-500">
+              {editErrors.name.message === "validationNameRequired"
+                ? t("validationNameRequired")
+                : editErrors.name.message}
+            </p>
           )}
         </div>
       </UpdatePopup>

@@ -25,6 +25,9 @@ interface SearchableSelectProps {
   icon?: LucideIcon;
   loading?: boolean;
   disabled?: boolean;
+  size?: "sm" | "md";
+  hideLabel?: boolean;
+  surface?: "default" | "search";
 }
 
 const SearchableSelect = ({
@@ -37,6 +40,9 @@ const SearchableSelect = ({
   icon: Icon,
   loading = false,
   disabled = false,
+  size = "md",
+  hideLabel = false,
+  surface = "default",
 }: SearchableSelectProps) => {
   const { t } = useTranslation("common");
   const [isOpen, setIsOpen] = useState(false);
@@ -197,23 +203,32 @@ const SearchableSelect = ({
     }
   };
 
+  const controlSizeClass =
+    size === "sm" ? "h-11 rounded-xl px-3.5" : "h-12 rounded-xl px-4";
+  const controlSurfaceClass =
+    surface === "search"
+      ? "bg-primary dark:bg-maindark border-gray-200 dark:border-primarydark/30"
+      : "bg-white/85 dark:bg-white/7 border-white/70 dark:border-white/10";
+
   return (
     <div ref={containerRef} className="relative space-y-0">
-      <label
-        htmlFor={name}
-        className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-      >
-        <span className="flex items-center gap-1.5">
-          {Icon && <Icon size={11} className="text-main/70" />}
-          {label}
-        </span>
-      </label>
+      {!hideLabel && (
+        <label
+          htmlFor={name}
+          className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
+        >
+          <span className="flex items-center gap-1.5">
+            {Icon && <Icon size={11} className="text-main/70" />}
+            {label}
+          </span>
+        </label>
+      )}
 
       <div
-        className={`group relative flex h-12 w-full items-center rounded-xl border-2 bg-[color:var(--color-primary)] px-4 text-left shadow-sm transition-all duration-200 outline-none dark:bg-[color:var(--color-primarydark)] ${
+        className={`group relative flex w-full items-center border-2 text-left shadow-sm transition-all duration-200 outline-none ${controlSizeClass} ${controlSurfaceClass} ${
           isOpen
             ? "border-main ring-2 ring-main/10"
-            : "border-[color:var(--color-border-soft)] hover:border-main/50"
+            : "hover:border-main/50"
         } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-text"}`}
       >
         {Icon && (

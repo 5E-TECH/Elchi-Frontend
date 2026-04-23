@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { User } from '../types/user';
 import { useTranslation } from 'react-i18next';
+import { getUserRoleLabelKey } from '../lib/role';
 
 interface UserDetailHeaderProps {
     user: User;
@@ -21,6 +22,7 @@ const roleConfig: Record<string, {
 }> = {
     admin: { from: 'from-purple-500', to: 'to-indigo-600', icon: Shield, label: 'Admin' },
     manager: { from: 'from-blue-500', to: 'to-cyan-600', icon: Users, label: "Ro'yxatchi" },
+    registrator: { from: 'from-blue-500', to: 'to-cyan-600', icon: Users, label: "Ro'yxatchi" },
     courier: { from: 'from-orange-400', to: 'to-amber-500', icon: Truck, label: 'Kuryer' },
     market: { from: 'from-emerald-500', to: 'to-teal-600', icon: Store, label: 'Market' },
     marketing: { from: 'from-emerald-500', to: 'to-teal-600', icon: Store, label: 'Market' },
@@ -77,14 +79,7 @@ export const UserDetailHeader = memo(({ user }: UserDetailHeaderProps) => {
                 <div className="absolute top-3 left-4 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1">
                     <Icon size={12} className="text-white" />
                     <span className="text-white text-[11px] font-semibold">
-                      {user.role === "admin" ? t("roleAdmin")
-                        : user.role === "manager" ? t("roleManager")
-                        : user.role === "courier" ? t("roleCourier")
-                        : user.role === "market" ? t("roleMarket")
-                        : user.role === "marketing" ? t("roleMarket")
-                        : user.role === "operator" ? t("roleOperator")
-                        : user.role === "superadmin" ? t("roleSuperAdmin")
-                        : t("roleCustomer")}
+                      {t(getUserRoleLabelKey(user.role))}
                     </span>
                 </div>
             </div>

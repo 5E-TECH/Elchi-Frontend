@@ -72,6 +72,12 @@
   "selectDateRange": "Sana oralig'ini tanlang",
   "startDate": "Boshlanish",
   "endDate": "Tugash",
+  "dateRangePlaceholder": "{{from}} → {{to}}",
+  "datePicker": {
+    "clearAriaLabel": "Sanalar oralig'ini tozalash",
+    "months": ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
+    "weekDaysShort": ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"]
+  },
   "retry": "Qayta urinish",
   "refresh": "Yangilash",
   "scannerTitle": "QR Scanner",
@@ -111,11 +117,19 @@
   "scannerDetectedCode": "Skanerlangan kod",
   "language": "Til",
   "notifications": "Bildirishnomalar",
+  "notificationsDescription": "Tizim bildirishnomalarini boshqarish",
+  "addNotification": "Bildirishnoma qo'shish",
+  "notificationUser": "Foydalanuvchi",
+  "notificationChatId": "Chat ID",
+  "notificationsNotFound": "Bildirishnomalar topilmadi",
+  "notificationsEmptyCount": "0 ta bildirishnoma",
   "settings": "Sozlamalar",
   "help": "Yordam",
   "privacyPolicy": "Maxfiylik siyosati",
+  "footerRightsReserved": "Barcha huquqlar himoyalangan",
   "systemWorking": "Tarjima tizimi ishlayapti",
   "optional": "ixtiyoriy",
   "uploadImage": "Rasm yuklash",
   "paginationSummary": "{{from}}-{{to}} dan {{total}} tasi ko'rsatilmoqda"
+  ,"itemsPerPage": "Sahifada"
 }

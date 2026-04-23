@@ -71,6 +71,16 @@
   --color-region-map-stroke: #4d6bff;
   --color-region-map-label: #38507d;
   --color-region-map-tooltip-shadow: rgba(39, 44, 82, 0.18);
+  --color-dashboard-chart-axis: rgba(39, 44, 82, 0.78);
+  --color-dashboard-chart-grid: rgba(87, 106, 219, 0.14);
+  --color-dashboard-text-soft: rgba(39, 44, 82, 0.66);
+  --color-dashboard-text-muted: rgba(39, 44, 82, 0.82);
+  --color-dashboard-border: rgba(39, 44, 82, 0.08);
+  --color-footer-text: rgba(39, 44, 82, 0.72);
+  --color-footer-divider: rgba(39, 44, 82, 0.14);
+  --color-date-picker-trigger: rgba(39, 44, 82, 0.9);
+  --color-date-picker-placeholder: rgba(39, 44, 82, 0.72);
+  --color-date-picker-weekday: rgba(39, 44, 82, 0.62);
 }
 
 /* ───────────────────────────── Print (MailDetail) ─────────────────────────── */
@@ -137,6 +147,19 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+.dark {
+  --color-dashboard-chart-axis: rgba(244, 245, 250, 0.7);
+  --color-dashboard-chart-grid: rgba(255, 255, 255, 0.1);
+  --color-dashboard-text-soft: rgba(244, 245, 250, 0.42);
+  --color-dashboard-text-muted: rgba(244, 245, 250, 0.78);
+  --color-dashboard-border: rgba(255, 255, 255, 0.08);
+  --color-footer-text: rgba(244, 245, 250, 0.58);
+  --color-footer-divider: rgba(255, 255, 255, 0.12);
+  --color-date-picker-trigger: rgba(244, 245, 250, 0.96);
+  --color-date-picker-placeholder: rgba(244, 245, 250, 0.8);
+  --color-date-picker-weekday: rgba(244, 245, 250, 0.72);
+}
+
 /* ─── Global Dark Mode overrides ──────────────────────────────────────────── */
 /* input / select / textarea – Tailwind bg class YO'Q bo'lsa dark fonda matn ko'rinadigan bo'lsin */
 .dark input:not([class*="bg-"]),
@@ -160,10 +183,10 @@
 .order-filter-multiselect .ant-select-selector {
   min-height: 48px !important;
   padding: 7px 40px 7px 14px !important;
-  border: 2px solid color-mix(in srgb, var(--color-primarydark) 20%, transparent) !important;
+  border: 2px solid rgba(255, 255, 255, 0.7) !important;
   border-radius: 0.75rem !important;
-  background: color-mix(in srgb, var(--color-primary) 100%, transparent) !important;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-background-deep) 12%, transparent) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -171,7 +194,8 @@
 }
 
 .dark .order-filter-multiselect .ant-select-selector {
-  background: color-mix(in srgb, var(--color-primarydark) 100%, transparent) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
 }
 
 .order-filter-multiselect.order-filter-multiselect--with-icon .ant-select-selector {
@@ -180,15 +204,8 @@
 
 .order-filter-multiselect.ant-select-focused .ant-select-selector,
 .order-filter-multiselect:hover .ant-select-selector {
-  border-color: color-mix(in srgb, var(--color-main) 50%, transparent) !important;
-}
-
-.order-filter-multiselect.ant-select-focused .ant-select-selector {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-main) 10%, transparent) !important;
-}
-
-.order-filter-multiselect .ant-select-selection-wrap {
-  align-items: center;
+  border-color: var(--color-main) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-main) 14%, transparent) !important;
 }
 
 .order-filter-multiselect .ant-select-selection-placeholder {
@@ -197,14 +214,6 @@
 
 .dark .order-filter-multiselect .ant-select-selection-placeholder {
   color: color-mix(in srgb, var(--color-text-muted-dark) 85%, transparent) !important;
-}
-
-.order-filter-multiselect .ant-select-selection-overflow {
-  gap: 6px;
-}
-
-.order-filter-multiselect .ant-select-selection-overflow-item {
-  align-self: center;
 }
 
 .order-filter-multiselect .ant-select-selection-item,
@@ -223,32 +232,17 @@
   color: var(--color-primary) !important;
 }
 
-.order-filter-multiselect .ant-select-selection-item {
-  margin-inline-end: 0 !important;
-}
-
 .order-filter-multiselect.ant-select-multiple .ant-select-selection-item {
-  border: 1px solid color-mix(in srgb, var(--color-main) 20%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-main) 24%, transparent) !important;
   border-radius: 999px !important;
-  background: color-mix(in srgb, var(--color-main) 10%, var(--color-primary) 90%) !important;
-  color: var(--color-maindark) !important;
+  background: color-mix(in srgb, var(--color-main) 12%, var(--color-primary) 88%) !important;
+  color: var(--color-main) !important;
+  font-weight: 600 !important;
 }
 
 .dark .order-filter-multiselect.ant-select-multiple .ant-select-selection-item {
-  background: color-mix(in srgb, var(--color-main) 14%, var(--color-primarydark) 86%) !important;
+  background: color-mix(in srgb, var(--color-main) 26%, transparent) !important;
   color: var(--color-primary) !important;
-}
-
-.order-filter-multiselect.ant-select-multiple .ant-select-selection-item-remove {
-  color: color-mix(in srgb, var(--color-text-muted) 90%, transparent) !important;
-}
-
-.dark .order-filter-multiselect.ant-select-multiple .ant-select-selection-item-remove {
-  color: color-mix(in srgb, var(--color-text-muted-dark) 90%, transparent) !important;
-}
-
-.order-filter-multiselect.ant-select-multiple .ant-select-selection-item-remove:hover {
-  color: var(--color-main) !important;
 }
 
 .order-filter-multiselect-dropdown {
@@ -260,28 +254,8 @@
 }
 
 .dark .order-filter-multiselect-dropdown {
-  border-color: color-mix(in srgb, var(--color-primarydark) 45%, transparent) !important;
-  background: color-mix(in srgb, var(--color-primarydark) 100%, transparent) !important;
-  box-shadow: 0 20px 45px color-mix(in srgb, var(--color-background-deep) 45%, transparent) !important;
-}
-
-.order-filter-multiselect-dropdown .ant-select-item {
-  min-height: 40px;
-  border-radius: 0.75rem;
-  color: var(--color-maindark) !important;
-}
-
-.dark .order-filter-multiselect-dropdown .ant-select-item {
-  color: var(--color-primary) !important;
-}
-
-.order-filter-multiselect-dropdown .ant-select-item-option-active,
-.order-filter-multiselect-dropdown .ant-select-item-option-selected {
-  background: color-mix(in srgb, var(--color-main) 18%, transparent) !important;
-}
-
-.order-filter-multiselect-dropdown .ant-empty-description {
-  color: color-mix(in srgb, var(--color-primary) 60%, transparent) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: var(--color-primarydark) !important;
 }
 
 @layer utilities {

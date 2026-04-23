@@ -19,7 +19,7 @@ const UserListPage = memo(() => {
   const filters = useSelector((state: RootState) => state.filter);
   const searchFilters = useSelector((state: RootState) => state.search);
 
-  const { page, limit, setPage, resetPagination } = usePagination({
+  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "users",
     defaultLimit: 10,
   });
@@ -47,6 +47,7 @@ const UserListPage = memo(() => {
 
   const { getUser } = useUser();
   const { data, isLoading, isError, error } = getUser(apiParams);
+  const meta = data?.data?.meta;
 
   useEffect(() => {
     if (!previousFiltersKeyRef.current) {
@@ -59,14 +60,16 @@ const UserListPage = memo(() => {
     }
 
     previousFiltersKeyRef.current = filtersKey;
-    resetPagination(10);
-  }, [filtersKey, resetPagination]);
+    resetPagination(limit);
+  }, [filtersKey, limit, resetPagination]);
 
   return (
-    <div className="p-4 md:p-6 rounded-2xl bg-sidebar dark:bg-maindark min-h-full">
+    <div className="relative min-h-full overflow-hidden rounded-[28px] bg-sidebar p-4 md:p-6 dark:bg-maindark">
+      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-main/12 blur-3xl dark:bg-main/18" />
+      <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-emerald-400/8 blur-3xl" />
 
       {/* Header — mobilda ustma-ust, desktopda yonma-yon */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+      <div className="relative z-10 mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderName
           name={t("title")}
           description={t("pageDescription")}
@@ -82,23 +85,33 @@ const UserListPage = memo(() => {
       </div>
 
       {/* Statistika kartalar */}
-      <UserStats />
+      <div className="relative z-10">
+        <UserStats
+          totalUsers={meta?.totalUsers ?? meta?.total}
+          totalMarkets={meta?.totalMarket}
+          totalEmployees={meta?.totalEmployees}
+        />
+      </div>
 
       {/* Filterlar — mobilda to'liq kenglikda */}
-      <div className="w-full">
+      <div className="relative z-20 w-full">
         <UserFilters />
       </div>
 
       {/* Jadval */}
-      <UserListTable
-        users={data?.data?.items || []}
-        isLoading={isLoading}
-        isError={isError}
-        error={error}
-        pagination={data?.data?.meta}
-        currentPage={page}
-        onPageChange={setPage}
-      />
+      <div className="relative z-10">
+        <UserListTable
+          users={data?.data?.items || []}
+          isLoading={isLoading}
+          isError={isError}
+          error={error}
+          pagination={meta}
+          currentPage={page}
+          currentLimit={limit}
+          onPageChange={setPage}
+          onItemsPerPageChange={setLimit}
+        />
+      </div>
     </div>
   );
 });

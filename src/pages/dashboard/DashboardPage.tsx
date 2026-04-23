@@ -5,7 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import { useDashboard } from "../../entities/dashboard";
+import HeaderName from "../../shared/components/headerName";
 import DateRangePicker from "../../shared/ui/DateRangePicker";
+import FilterClearButton from "../../shared/ui/FilterClearButton";
 import type { RootState } from "../../app/config/store";
 import {
   removeFilterValue,
@@ -100,22 +102,11 @@ const DashboardPage = () => {
     <div className="min-h-full rounded-2xl p-5 bg-primary dark:bg-maindark">
       {/* Page header */}
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "var(--color-main)", color: "var(--color-primary)" }}
-          >
-            <LayoutDashboard size={18} />
-          </div>
-          <div>
-            <h1 className="text-[16px] font-bold leading-tight text-maindark dark:text-primary">
-              {hasDateFilter ? t("page_title_filtered") : t("page_title_today")}
-            </h1>
-            <p className="text-[11px] text-maindark/50 dark:text-sidebar/50">
-              {hasDateFilter ? t("page_subtitle_filtered") : t("page_subtitle_today")}
-            </p>
-          </div>
-        </div>
+        <HeaderName
+          name={hasDateFilter ? t("page_title_filtered") : t("page_title_today")}
+          description={hasDateFilter ? t("page_subtitle_filtered") : t("page_subtitle_today")}
+          icon={<LayoutDashboard />}
+        />
         <div className="flex w-full flex-col gap-2 lg:w-auto lg:items-end">
           {/* Tezkor tugmalar */}
           <div className="flex gap-1.5">
@@ -158,18 +149,15 @@ const DashboardPage = () => {
               className="w-full sm:w-88"
             />
             {hasDateFilter && (
-              <button
-                type="button"
+              <FilterClearButton
                 onClick={() => {
                   setFromDate("");
                   setToDate("");
                   dispatch(removeFilterValue("dashboardFromDate"));
                   dispatch(removeFilterValue("dashboardToDate"));
                 }}
-                className="rounded-xl border border-error/20 bg-error/8 px-3 py-2 text-xs font-semibold text-error transition-opacity hover:opacity-85 sm:w-auto"
-              >
-                {t("quickRanges.clear")}
-              </button>
+                className="sm:w-auto"
+              />
             )}
           </div>
         </div>

@@ -45,9 +45,9 @@ const Sidebar = () => {
         }`}
     >
       {/* Header with Logo */}
-      <div className="flex items-center justify-center h-24 bg-sidebar dark:bg-maindark overflow-hidden">
+      <div className="flex h-24 items-center justify-start bg-sidebar pl-4 dark:bg-maindark overflow-hidden">
         <div
-          className={`transition-all duration-300 flex items-center justify-center ${!sidebarRedux.isOpen ? "w-full px-2" : "w-full px-6"
+          className={`transition-all duration-300 flex items-center justify-start ${!sidebarRedux.isOpen ? "w-full px-2" : "w-full px-3"
             }`}
         >
           <img

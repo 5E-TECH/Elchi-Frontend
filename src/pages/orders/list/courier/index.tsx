@@ -5,6 +5,7 @@ import Tabs from "./list/tabs";
 import SellModal from "./list/SellModal";
 import CancelModal from "./list/CancelModal";
 import PopupConfirm from "../../../../shared/components/popupConfirm";
+import HeaderName from "../../../../shared/components/headerName";
 import PendingOrdersTable from "./list/ordertable/pendingOrderTable";
 import AllOrdersTable from "./list/ordertable/AllOrdersTable";
 import CancelledOrdersTable from "./list/ordertable/CancelledOrdersTable";
@@ -143,19 +144,11 @@ const CourierOrders = () => {
     <div className="relative">
       <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4">
         <div className="rounded-2xl border border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20 sm:h-13 sm:w-13">
-              <ListOrdered size={20} />
-            </div>
-            <div className="min-w-0">
-              <h2 className="m-0 text-lg font-bold leading-tight text-main dark:text-primary sm:text-[1.7rem]">
-                {t("list")}
-              </h2>
-              <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-                {t("totalOrdersSummary", { count: orders.length })}
-              </p>
-            </div>
-          </div>
+          <HeaderName
+            name={t("list")}
+            description={t("totalOrdersSummary", { count: orders.length })}
+            icon={<ListOrdered />}
+          />
 
           <Tabs onChange={handleTabChange} defaultTab={activeTab} />
         </div>

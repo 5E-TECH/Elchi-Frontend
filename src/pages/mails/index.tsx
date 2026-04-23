@@ -6,6 +6,7 @@ import TodaysMails from "./components/todaysMails";
 import OldMails from "./components/oldMails";
 import RefusedMails from "./components/refusedMails";
 import ReturnMails from "./components/returnMails";
+import HeaderName from "../../shared/components/headerName";
 
 type Tab = "today" | "return" | "refused" | "old";
 
@@ -72,19 +73,11 @@ const Mails = () => {
   return (
     <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4 lg:p-6">
       <div className="rounded-2xl border border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-4">
-        <div className="flex items-center gap-2.5 rounded-2xl bg-main/5 px-1 py-1.5 sm:bg-transparent sm:px-0 sm:py-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main text-primary shadow-lg shadow-main/20">
-            <Mail size={18} />
-          </div>
-          <div className="min-w-0">
-            <h2 className="m-0 text-[16px] font-bold leading-tight text-main dark:text-primary">
-              {t("title")}
-            </h2>
-            <p className="mt-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
-              {t("pageDescription")}
-            </p>
-          </div>
-        </div>
+        <HeaderName
+          name={t("title")}
+          description={t("pageDescription")}
+          icon={<Mail />}
+        />
       </div>
 
       {/* Tabs */}

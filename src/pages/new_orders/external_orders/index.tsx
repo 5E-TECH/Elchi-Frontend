@@ -67,6 +67,13 @@ const ExternalOrdersPage = () => {
     setSearchParams(nextParams, { replace: true });
   };
 
+  const updateLimit = (nextLimit: number) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("page", "1");
+    nextParams.set("limit", String(Math.max(1, nextLimit)));
+    setSearchParams(nextParams, { replace: true });
+  };
+
   const columns = useMemo<ColumnConfig<Integration>[]>(
     () => [
       {
@@ -261,6 +268,7 @@ const ExternalOrdersPage = () => {
             itemsPerPage={currentLimit}
             currentPage={currentPage}
             onPageChange={updatePage}
+            onItemsPerPageChange={updateLimit}
             className="pt-0"
           />
         </div>

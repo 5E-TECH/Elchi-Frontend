@@ -72,6 +72,12 @@
   "selectDateRange": "Select date range",
   "startDate": "Start date",
   "endDate": "End date",
+  "dateRangePlaceholder": "{{from}} → {{to}}",
+  "datePicker": {
+    "clearAriaLabel": "Clear date range",
+    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "weekDaysShort": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+  },
   "retry": "Retry",
   "refresh": "Refresh",
   "scannerTitle": "QR Scanner",
@@ -111,10 +117,18 @@
   "scannerDetectedCode": "Scanned code",
   "language": "Language",
   "notifications": "Notifications",
+  "notificationsDescription": "Manage system notifications",
+  "addNotification": "Add notification",
+  "notificationUser": "User",
+  "notificationChatId": "Chat ID",
+  "notificationsNotFound": "No notifications found",
+  "notificationsEmptyCount": "0 notifications",
   "settings": "Settings",
   "help": "Help",
   "privacyPolicy": "Privacy policy",
+  "footerRightsReserved": "All rights reserved",
   "systemWorking": "Translation system is working",
   "optional": "Optional",
-  "uploadImage": "Upload image"
+  "uploadImage": "Upload image",
+  "itemsPerPage": "Per page"
 }

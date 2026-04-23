@@ -238,6 +238,10 @@ const AppRouter = () => {
               element: <NotificationsPage />,
             },
             {
+              path: "notification",
+              element: <Navigate replace to="/notifications" />,
+            },
+            {
               path: "branches",
               children: [
                 { index: true, element: <BranchesPage /> },

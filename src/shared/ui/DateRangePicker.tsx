@@ -1,23 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
-
-const UZ_MONTHS = [
-  "Yanvar",
-  "Fevral",
-  "Mart",
-  "Aprel",
-  "May",
-  "Iyun",
-  "Iyul",
-  "Avgust",
-  "Sentabr",
-  "Oktabr",
-  "Noyabr",
-  "Dekabr",
-] as const;
-
-const UZ_DAYS_SHORT = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"] as const;
+import { useTranslation } from "react-i18next";
 
 const PANEL_MAX_WIDTH = 520;
 const PANEL_MIN_HEIGHT = 320;
@@ -119,10 +103,11 @@ interface DateRangePickerProps {
 const DateRangePicker = ({
   value,
   onChange,
-  placeholder = "Boshlanish → Tugash",
+  placeholder,
   className = "",
   size = "md",
 }: DateRangePickerProps) => {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [draftStartDate, setDraftStartDate] = useState<Date | null>(value.startDate);
   const [draftEndDate, setDraftEndDate] = useState<Date | null>(value.endDate);
@@ -139,6 +124,14 @@ const DateRangePicker = ({
 
   const triggerRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const months = useMemo(
+    () => t("datePicker.months", { returnObjects: true }) as string[],
+    [t],
+  );
+  const weekDaysShort = useMemo(
+    () => t("datePicker.weekDaysShort", { returnObjects: true }) as string[],
+    [t],
+  );
 
   const committedStartDate = value.startDate ? startOfDay(value.startDate) : null;
   const committedEndDate = value.endDate ? startOfDay(value.endDate) : null;
@@ -149,9 +142,10 @@ const DateRangePicker = ({
   const rightMonthDays = useMemo(() => buildMonthDays(rightMonth), [rightMonth]);
 
   const hasRange = Boolean(committedStartDate && committedEndDate);
+  const fallbackPlaceholder = `${t("startDate")} → ${t("endDate")}`;
   const triggerLabel = hasRange
     ? `${formatTriggerDate(committedStartDate)} → ${formatTriggerDate(committedEndDate)}`
-    : placeholder;
+    : (placeholder ?? fallbackPlaceholder);
 
   useEffect(() => {
     if (!open) {
@@ -203,10 +197,13 @@ const DateRangePicker = ({
 
   const openCalendar = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
-    const baseDate = committedStartDate ?? new Date();
+    const today = startOfDay(new Date());
+    const baseDate = committedStartDate ?? today;
+    const nextDraftStart = committedStartDate ?? today;
+    const nextDraftEnd = committedEndDate ?? (committedStartDate ? null : today);
 
-    setDraftStartDate(committedStartDate);
-    setDraftEndDate(committedEndDate);
+    setDraftStartDate(nextDraftStart);
+    setDraftEndDate(nextDraftEnd);
     setHoveredDate(null);
     setVisibleMonth(new Date(baseDate.getFullYear(), baseDate.getMonth(), 1));
 
@@ -285,10 +282,11 @@ const DateRangePicker = ({
   const renderMonth = (monthDate: Date, days: ReturnType<typeof buildMonthDays>) => (
     <div className="flex min-w-0 flex-1 flex-col">
       <div className="mb-1 grid grid-cols-7 gap-y-0.5">
-        {UZ_DAYS_SHORT.map((day) => (
+        {weekDaysShort.map((day) => (
           <div
             key={`${monthDate.getMonth()}-${day}`}
-            className="py-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
+            className="py-0.5 text-center text-[11px] font-bold uppercase tracking-wide"
+            style={{ color: "var(--color-date-picker-weekday)" }}
           >
             {day}
           </div>
@@ -324,7 +322,7 @@ const DateRangePicker = ({
                     setHoveredDate(normalizedDate);
                   }
                 }}
-                className={`relative flex h-7 w-full items-center justify-center rounded-full border text-[12px] font-medium transition-colors ${
+                className={`flex h-8 w-full items-center justify-center rounded-full text-[13px] font-semibold transition-colors ${
                   isRangeStart || isRangeEnd
                     ? "border-main bg-main text-primary"
                     : isToday
@@ -349,27 +347,23 @@ const DateRangePicker = ({
   return (
     <div ref={triggerRef} className={`relative ${className}`}>
       <div
-        className={`group flex h-14 w-full items-center gap-3 rounded-[1.1rem] border bg-[color:var(--color-surface-elevated)] px-3.5 text-left shadow-[0_12px_28px_color-mix(in_srgb,var(--color-background-deep)_10%,transparent)] backdrop-blur-sm transition-all duration-200 dark:bg-[color:var(--color-surface-elevated-dark)] ${
+        className={`group flex w-full items-center rounded-xl border-2 bg-[color:var(--color-primary)] px-4 text-left shadow-sm transition-all duration-200 dark:bg-[color:var(--color-primarydark)] ${
           open
-            ? "border-main shadow-[0_14px_34px_color-mix(in_srgb,var(--color-main)_18%,transparent)] ring-2 ring-main/15"
-            : "border-[color:var(--color-border-strong)] hover:border-main/50 hover:shadow-[0_14px_34px_color-mix(in_srgb,var(--color-main)_10%,transparent)]"
-        } ${size === "sm" ? "text-[13px]" : "text-sm"}`}
+            ? "border-main ring-2 ring-main/10"
+            : "border-[color:var(--color-border-soft)] hover:border-main/50"
+        } ${size === "sm" ? "h-12 text-[13px]" : "h-12 text-sm"}`}
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main/12 text-main shadow-inner shadow-main/8">
-          <Calendar
-            size={size === "sm" ? 14 : 16}
-            className="shrink-0 transition-colors group-hover:text-main group-focus-within:text-main"
-          />
-        </div>
+        <Calendar
+          size={size === "sm" ? 15 : 16}
+          className="mr-2.5 shrink-0 transition-colors group-hover:text-main group-focus-within:text-main"
+          style={{ color: "var(--color-date-picker-placeholder)" }}
+        />
 
         <button
           type="button"
           onClick={openCalendar}
-          className={`min-w-0 flex-1 truncate bg-transparent text-left outline-none ${
-            hasRange
-              ? "font-semibold text-[color:var(--color-maindark)] dark:text-[color:var(--color-primary)]"
-              : "font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-          }`}
+          className="min-w-0 flex-1 truncate bg-transparent text-left font-semibold outline-none"
+          style={{ color: hasRange ? "var(--color-date-picker-trigger)" : "var(--color-date-picker-placeholder)" }}
         >
           <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-main/70">
             Sana oralig&apos;i
@@ -383,10 +377,11 @@ const DateRangePicker = ({
           <button
             type="button"
             onClick={handleClear}
-            className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--color-text-muted)] transition-colors hover:bg-main/10 hover:text-main dark:text-[color:var(--color-text-muted-dark)]"
-            aria-label="Sanalar oralig'ini tozalash"
+            className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-main/10 hover:text-main"
+            style={{ color: "var(--color-date-picker-placeholder)" }}
+            aria-label={t("datePicker.clearAriaLabel")}
           >
-          <X size={14} />
+            <X size={15} />
           </button>
         )}
       </div>
@@ -408,25 +403,27 @@ const DateRangePicker = ({
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--color-text-muted)] transition-colors hover:bg-main/10 hover:text-main dark:text-[color:var(--color-text-muted-dark)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-main/10 hover:text-main"
+                style={{ color: "var(--color-date-picker-placeholder)" }}
               >
                 <ChevronLeft size={14} />
               </button>
 
               <div className="flex flex-1 items-center gap-3 px-2">
                 <div className="flex-1 text-center text-[13px] font-bold text-[color:var(--color-maindark)] dark:text-[color:var(--color-primary)]">
-                  {UZ_MONTHS[leftMonth.getMonth()]} {leftMonth.getFullYear()}
+                  {months[leftMonth.getMonth()] ?? ""} {leftMonth.getFullYear()}
                 </div>
                 <div className="h-5 w-px bg-[color:var(--color-border-soft)]" />
                 <div className="flex-1 text-center text-[13px] font-bold text-[color:var(--color-maindark)] dark:text-[color:var(--color-primary)]">
-                  {UZ_MONTHS[rightMonth.getMonth()]} {rightMonth.getFullYear()}
+                  {months[rightMonth.getMonth()] ?? ""} {rightMonth.getFullYear()}
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--color-text-muted)] transition-colors hover:bg-main/10 hover:text-main dark:text-[color:var(--color-text-muted-dark)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-main/10 hover:text-main"
+                style={{ color: "var(--color-date-picker-placeholder)" }}
               >
                 <ChevronRight size={14} />
               </button>
@@ -443,7 +440,7 @@ const DateRangePicker = ({
                 onClick={handleToday}
                 className="rounded-lg bg-main/10 px-2.5 py-1 text-[12px] font-semibold text-[color:var(--color-maindark)] transition-colors hover:bg-main/20 dark:text-[color:var(--color-primary)]"
               >
-                Bugun
+                {t("today")}
               </button>
             </div>
           </div>,

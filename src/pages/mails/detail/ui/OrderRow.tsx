@@ -219,7 +219,7 @@ const OrderRow = memo(({
         </div>
 
         <div>
-          <span className="text-[14px] font-bold text-red-500">
+          <span className="text-[14px] font-bold text-gray-900 dark:text-white">
             {formatPrice(order.total_price)}
           </span>
         </div>
@@ -320,7 +320,7 @@ const OrderRow = memo(({
             </div>
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-              <span className="text-sm font-bold text-red-500">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">
                 {formatPrice(order.total_price)}
               </span>
 

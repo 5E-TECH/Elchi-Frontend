@@ -1,7 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
-import type { CreateAdminRequest, CreateCourierRequest, CreateMarketRequest, UpdateUserRequest, UserStatus } from "../types/user";
+import type {
+  CreateAdminRequest,
+  CreateCourierRequest,
+  CreateMarketRequest,
+  CreateRegistratorRequest,
+  UpdateUserRequest,
+  UserStatus,
+} from "../types/user";
 
 export const user = "user";
 
@@ -40,6 +47,13 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
+  const createRegistrator = useMutation({
+    mutationFn: (data: CreateRegistratorRequest) =>
+      api.post(API_ENDPOINTS.REGISTRATORS.BASE, data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
   const createMarket = useMutation({
     mutationFn: (data: CreateMarketRequest) => api.post(API_ENDPOINTS.MARKETS.BASE, data),
     onSuccess: () =>
@@ -65,6 +79,14 @@ export const useUser = () => {
       queryFn: () =>
         api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res: any) => res.data),
       enabled: !!id,
+    });
+
+  const getMyProfile = () =>
+    useQuery({
+      queryKey: [user, "profile"],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res: any) => res.data),
+      staleTime: 60 * 1000,
     });
 
   //   const getUserById = (id: string | undefined, params?: IUserFilter) =>
@@ -117,15 +139,25 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
+  const deleteUser = useMutation({
+    mutationFn: (id: string) =>
+      api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
   return {
     createAdmin,
+    createRegistrator,
     createMarket,
     createCourier,
     getRegions,
     getUser,
     getCouriers,
     getUserById,
+    getMyProfile,
     updateUserStatus,
     updateUser,
+    deleteUser,
   };
 };

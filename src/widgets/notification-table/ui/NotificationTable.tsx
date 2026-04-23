@@ -1,6 +1,7 @@
 import { Button } from "antd";
 import { useMemo, useState } from "react";
 import { EditOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 import {
   NotificationStatusBadge,
   useNotifications,
@@ -18,6 +19,7 @@ interface NotificationTableProps {
 }
 
 const NotificationTable = ({ onEdit }: NotificationTableProps) => {
+  const { t } = useTranslation("common");
   const [params, setParams] = useState<NotificationParams>({
     page: 1,
     limit: 10,
@@ -31,49 +33,49 @@ const NotificationTable = ({ onEdit }: NotificationTableProps) => {
     () => [
       {
         key: "user",
-        label: "Foydalanuvchi",
+        label: t("notificationUser"),
         sortable: true,
-        sortValue: (row) => row.user.fullName,
+        sortValue: (row) => row.user?.fullName ?? "",
         render: (_, record) => (
           <div className="flex flex-col">
-            <span className="font-medium text-gray-900 dark:text-white">{record.user.fullName}</span>
-            <span className="text-xs text-[var(--color-text-muted)]">@{record.user.username}</span>
+            <span className="font-medium text-gray-900 dark:text-white">{record.user?.fullName ?? "—"}</span>
+            <span className="text-xs text-[var(--color-text-muted)]">@{record.user?.username ?? "—"}</span>
           </div>
         ),
       },
       {
         key: "chat_id",
-        label: "Chat ID",
+        label: t("notificationChatId"),
         sortable: true,
         className: "font-mono text-xs sm:text-sm text-gray-600 dark:text-gray-300",
       },
       {
         key: "status",
-        label: "Holat",
+        label: t("status"),
         sortable: true,
         render: (status: Notification["status"]) => <NotificationStatusBadge status={status} />,
       },
       {
         key: "created_at",
-        label: "Sana",
+        label: t("date"),
         sortable: true,
         sortValue: (row) => new Date(row.created_at).getTime(),
         render: (value: string) => formatDate(value),
       },
       {
         key: "id",
-        label: "Amallar",
+        label: t("actions"),
         render: (_, record) => (
           <div className="flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
             <Button size="small" icon={<EditOutlined />} onClick={() => onEdit(record)}>
-              Tahrirlash
+              {t("edit")}
             </Button>
             <DeleteNotificationButton id={record.id} />
           </div>
         ),
       },
     ],
-    [onEdit],
+    [onEdit, t],
   );
 
   return (
@@ -83,7 +85,7 @@ const NotificationTable = ({ onEdit }: NotificationTableProps) => {
         columns={columns}
         data={data?.data ?? []}
         loading={isLoading}
-        emptyMessage="Bildirishnomalar topilmadi"
+        emptyMessage={t("notificationsNotFound")}
       />
 
       <div
@@ -94,8 +96,12 @@ const NotificationTable = ({ onEdit }: NotificationTableProps) => {
       >
         <span className="text-sm text-white">
           {totalItems
-            ? `${(currentPage - 1) * currentLimit + 1}-${Math.min(currentPage * currentLimit, totalItems)} dan ${totalItems} tasi ko'rsatilmoqda`
-            : "0 ta bildirishnoma"}
+            ? t("paginationSummary", {
+                from: (currentPage - 1) * currentLimit + 1,
+                to: Math.min(currentPage * currentLimit, totalItems),
+                total: totalItems,
+              })
+            : t("notificationsEmptyCount")}
         </span>
 
         <Pagination
@@ -103,6 +109,7 @@ const NotificationTable = ({ onEdit }: NotificationTableProps) => {
           itemsPerPage={currentLimit}
           currentPage={currentPage}
           onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}
+          onItemsPerPageChange={(limit) => setParams((prev) => ({ ...prev, page: 1, limit }))}
           className="w-full pt-0 sm:w-auto"
           summary={null}
         />
