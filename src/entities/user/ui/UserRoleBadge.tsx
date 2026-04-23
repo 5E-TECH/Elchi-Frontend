@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { UserRole } from '../types/user';
 import { useTranslation } from 'react-i18next';
+import { getUserRoleLabelKey } from '../lib/role';
 
 interface UserRoleBadgeProps {
     role: UserRole;
@@ -14,6 +15,10 @@ const roleConfig: Record<UserRole, { label: string; className: string }> = {
     manager: {
         label: 'Manager',
         className: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+    },
+    registrator: {
+        label: "Ro'yxatchi",
+        className: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
     },
     marketing: {
         label: 'Marketing',
@@ -52,23 +57,7 @@ export const UserRoleBadge = memo(({ role }: UserRoleBadgeProps) => {
         <span
             className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.className}`}
         >
-            {role === "admin"
-              ? t("roleAdmin")
-              : role === "manager"
-                ? t("roleManager")
-                : role === "marketing"
-                  ? t("roleMarketing")
-                  : role === "operator"
-                    ? t("roleOperator")
-                    : role === "courier"
-                      ? t("roleCourier")
-                      : role === "market"
-                        ? t("roleMarket")
-                        : role === "superadmin"
-                          ? t("roleSuperAdmin")
-                          : role === "customer"
-                            ? t("roleCustomer")
-                            : t("roleUnknown")}
+            {t(getUserRoleLabelKey(role))}
         </span>
     );
 });

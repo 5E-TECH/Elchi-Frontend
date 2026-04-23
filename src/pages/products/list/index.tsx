@@ -23,7 +23,6 @@ import UpdatePopup from "../../../shared/components/popupUpdate";
 import { useNavigate } from "react-router-dom";
 import { useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
-import SelectInput from "../../../features/Select/selectInput";
 import { GlobalSearchInput } from "../../../features/search";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -33,6 +32,7 @@ import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
 import Pagination from "../../../shared/components/pagination";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import SearchableSelect from "../../../shared/ui/SearchableSelect";
 
 interface Product {
   id: number;
@@ -213,7 +213,7 @@ const ProductTable = () => {
       }),
     );
 
-  // SelectInput uchun market options
+  // Shared searchable select uchun market options
   const marketOptions = markets.map((m) => ({
     value: String(m.id),
     label: m.name,
@@ -505,11 +505,16 @@ const ProductTable = () => {
             control={filterControl}
             name="market_id"
             render={({ field }) => (
-              <SelectInput
+              <SearchableSelect
+                label={t("marketName")}
+                name={field.name}
                 value={field.value}
                 onChange={field.onChange}
                 options={marketOptions}
                 placeholder={t("selectMarket")}
+                icon={Store}
+                hideLabel
+                surface="search"
               />
             )}
           />

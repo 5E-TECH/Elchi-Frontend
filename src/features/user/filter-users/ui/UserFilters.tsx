@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useDispatch } from 'react-redux';
 import { Filter, ShieldCheck, SlidersHorizontal } from 'lucide-react';
-import Select from '../../../../shared/ui/Select';
+import FilterSelect from '../../../../shared/ui/FilterSelect';
 import { GlobalSearchInput } from '../../../search';
 import { resetFilters } from '../../../Select/model/FilterSlice';
 import { clearAllSearch } from '../../../search/model/searchSlice';
@@ -17,6 +17,7 @@ export const UserFilters = memo(() => {
     // Role options - Backend API ga mos value lar
     const roleOptions = [
         { value: 'admin', label: t('roleAdmin') },
+        { value: 'registrator', label: t('roleRegistrator') },
         { value: 'manager', label: t('roleManager') },
         { value: 'courier', label: t('roleCourier') },
         { value: 'market', label: t('roleMarket') },
@@ -61,21 +62,23 @@ export const UserFilters = memo(() => {
                 </div>
 
                 <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(180px,0.75fr)_minmax(180px,0.75fr)_minmax(260px,1.35fr)_auto] xl:items-end">
-                    <Select
+                    <FilterSelect
+                        label={t("role")}
                         name="role"
                         options={roleOptions}
                         placeholder={t("rolePlaceholder")}
                         icon={ShieldCheck}
-                        className="border-white/70 bg-white/85 shadow-sm dark:border-white/10 dark:bg-white/7"
+                        hideLabel
                         useRedux={true}
                         reduxKey="userRole"
                     />
 
-                    <Select
+                    <FilterSelect
+                        label={t("status")}
                         name="status"
                         options={statusOptions}
                         placeholder={t("statusSelect")}
-                        className="border-white/70 bg-white/85 shadow-sm dark:border-white/10 dark:bg-white/7"
+                        hideLabel
                         useRedux={true}
                         reduxKey="userStatus"
                     />

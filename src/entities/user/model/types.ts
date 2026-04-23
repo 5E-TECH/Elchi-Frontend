@@ -3,7 +3,7 @@ export interface User {
     username: string;
     name: string;
     phone_number: string;
-    role: "superadmin" | "admin" | "manager" | "courier" | "client" | "market" | "marketing" | "operator" | "customer";
+    role: "superadmin" | "admin" | "manager" | "registrator" | "courier" | "client" | "market" | "marketing" | "operator" | "customer";
     status: "active" | "inactive" | "blocked";
     createdAt: string;
     updatedAt: string;

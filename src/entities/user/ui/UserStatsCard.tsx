@@ -86,7 +86,8 @@ const AdminStats = ({ user }: { user: User }) => {
     const paymentDay = Number(user.payment_day ?? 1);
     // useMemo: bir marta hisoblanadi, re-render loop bo'lmaydi
     const { progress, passedDays, totalDays, remainDays, nextPayDate } = calcCycleProgress(paymentDay);
-    const earned = Math.floor(user.salary * (progress / 100));
+    const salary = Number(user.salary ?? 0);
+    const earned = Math.floor(salary * (progress / 100));
 
     return (
         <div className="space-y-4">
@@ -111,7 +112,7 @@ const AdminStats = ({ user }: { user: User }) => {
                             <p className="text-xl sm:text-2xl font-black tabular-nums leading-none flex flex-wrap items-baseline">
                                 <span>{formatNum(earned)}</span>
                                 <span className="text-white/40 font-medium mx-1">/</span>
-                                <span className="text-white/70">{formatNum(user.salary)}</span>
+                                <span className="text-white/70">{formatNum(salary)}</span>
                                 <span className="text-xs sm:text-sm font-semibold text-white/60 ml-1">so'm</span>
                             </p>
                             <p className="text-white text-[10px] sm:text-xs mt-1">{t("accumulatedProgress", { passed: passedDays, total: totalDays, percent: progress.toFixed(0) })}</p>
@@ -169,7 +170,7 @@ const AdminStats = ({ user }: { user: User }) => {
 
 export const UserStatsCard = memo(({ user }: UserStatsCardProps) => {
     const { t } = useTranslation("users");
-    const isAdmin = user.role === 'admin' || user.role === 'manager' || user.role === 'superadmin';
+    const isAdmin = user.role === 'admin' || user.role === 'manager' || user.role === 'registrator' || user.role === 'superadmin';
 
     if (!isAdmin) return null;
 

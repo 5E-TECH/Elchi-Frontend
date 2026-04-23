@@ -47,6 +47,7 @@ const UserListPage = memo(() => {
 
   const { getUser } = useUser();
   const { data, isLoading, isError, error } = getUser(apiParams);
+  const meta = data?.data?.meta;
 
   useEffect(() => {
     if (!previousFiltersKeyRef.current) {
@@ -85,7 +86,11 @@ const UserListPage = memo(() => {
 
       {/* Statistika kartalar */}
       <div className="relative z-10">
-        <UserStats />
+        <UserStats
+          totalUsers={meta?.totalUsers ?? meta?.total}
+          totalMarkets={meta?.totalMarket}
+          totalEmployees={meta?.totalEmployees}
+        />
       </div>
 
       {/* Filterlar — mobilda to'liq kenglikda */}
@@ -100,7 +105,7 @@ const UserListPage = memo(() => {
           isLoading={isLoading}
           isError={isError}
           error={error}
-          pagination={data?.data?.meta}
+          pagination={meta}
           currentPage={page}
           currentLimit={limit}
           onPageChange={setPage}
