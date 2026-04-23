@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
 import { useLogout } from "../../../shared/lib/useLogout";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
@@ -23,6 +24,8 @@ import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { useNavigate } from "react-router-dom";
 import { GlobalSearchInput } from "../../../features/search";
 import { LANGUAGE_STORAGE_KEY, normalizeLanguage } from "../../../i18n";
+import type { RootState } from "../../../app/config/store";
+import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -99,6 +102,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const { logout } = useLogout();
   const { theme, toggleTheme } = useTheme();
   const { t, i18n } = useTranslation("common");
+  const { t: tUsers } = useTranslation("users");
+  const profile = useSelector((state: RootState) => state.user.user);
+  const roleState = useSelector((state: RootState) => state.role);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const languageMenuRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +119,17 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       (language) =>
         language.key === normalizeLanguage(i18n.resolvedLanguage ?? i18n.language),
     ) ?? LANGUAGE_OPTIONS[0];
+  const profileRecord = profile as typeof profile & {
+    fullName?: string;
+    full_name?: string;
+  };
+  const profileFullName =
+    profileRecord?.fullName ||
+    profileRecord?.full_name ||
+    profileRecord?.name ||
+    roleState.name ||
+    t("profile");
+  const profileRole = tUsers(getUserRoleLabelKey(profileRecord?.role || roleState.role));
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -320,8 +337,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
           <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-[--border-default] cursor-pointer hover:opacity-80 transition-opacity">
             <div className="text-right hidden md:block text-maindark dark:text-primary">
-              <h4 className="text-sm font-bold">Admin User</h4>
-              <p className="text-xs">Super Admin</p>
+              <h4 className="max-w-36 truncate text-sm font-bold">{profileFullName}</h4>
+              <p className="text-xs">{profileRole}</p>
             </div>
             <div
               onClick={() => navigate("profile")}
