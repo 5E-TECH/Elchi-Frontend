@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'manager' | 'marketing' | 'operator' | 'courier' | 'market' | 'superadmin' | 'customer';
+export type UserRole = 'admin' | 'manager' | 'registrator' | 'marketing' | 'operator' | 'courier' | 'market' | 'superadmin' | 'customer';
 
 export type UserStatus = 'active' | 'inactive' | 'blocked';
 
@@ -77,6 +77,9 @@ export interface UserListResponse {
             limit: number;
             total: number;
             totalPages: number;
+            totalMarket?: number;
+            totalEmployees?: number;
+            totalUsers?: number;
         };
     };
 }
@@ -91,6 +94,8 @@ export interface CreateAdminRequest {
     salary: number;         // Maosh (so'm)
     payment_day: number;    // To'lov kuni (1-31)
 }
+
+export interface CreateRegistratorRequest extends CreateAdminRequest {}
 
 // Admin yaratish response
 export interface CreateAdminResponse {
@@ -151,4 +156,3 @@ export interface UpdateUserRequest {
     default_tariff?: 'address' | 'center';
     region_id?: string;
 }
-

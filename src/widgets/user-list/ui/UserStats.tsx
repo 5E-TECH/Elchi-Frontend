@@ -2,38 +2,58 @@ import { memo } from 'react';
 import { Users, Store, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-export const UserStats = memo(() => {
+interface UserStatsProps {
+    totalUsers?: number;
+    totalMarkets?: number;
+    totalEmployees?: number;
+}
+
+const formatCount = (value?: number) =>
+    Number(value ?? 0).toLocaleString('uz-UZ');
+
+const getProgress = (value: number, total: number) =>
+    total > 0 ? Math.round((value / total) * 100) : 0;
+
+export const UserStats = memo(({
+    totalUsers = 0,
+    totalMarkets = 0,
+    totalEmployees = 0,
+}: UserStatsProps) => {
     const { t } = useTranslation("users");
+    const safeTotalUsers = Number(totalUsers) || 0;
+    const safeTotalMarkets = Number(totalMarkets) || 0;
+    const safeTotalEmployees = Number(totalEmployees) || 0;
+
     const stats = [
         {
             label: t('allUsers'),
-            value: '150',
+            value: formatCount(safeTotalUsers),
             icon: Users,
             colorFrom: '#3b82f6',
             colorTo: '#2563eb',
             bg: 'bg-blue-500/10',
             text: 'text-blue-500',
-            progress: 70
+            progress: 100
         },
         {
             label: t('markets'),
-            value: '92',
+            value: formatCount(safeTotalMarkets),
             icon: Store,
             colorFrom: '#10b981',
             colorTo: '#059669',
             bg: 'bg-emerald-500/10',
             text: 'text-emerald-500',
-            progress: 45
+            progress: getProgress(safeTotalMarkets, safeTotalUsers)
         },
         {
             label: t('employees'),
-            value: '58',
+            value: formatCount(safeTotalEmployees),
             icon: UserCheck,
             colorFrom: '#8b5cf6',
             colorTo: '#7c3aed',
             bg: 'bg-purple-light/10',
             text: 'text-purple-light',
-            progress: 30
+            progress: getProgress(safeTotalEmployees, safeTotalUsers)
         }
     ];
 

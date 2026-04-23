@@ -14,6 +14,7 @@ interface UpdatePopupProps {
   saveLabel?: string;
   cancelLabel?: string;
   isLoading?: boolean;
+  widthClassName?: string;
   // Rasm uchun ixtiyoriy propslar
   imageProps?: {
     label: string;
@@ -33,6 +34,7 @@ const UpdatePopup = ({
   saveLabel = "Saqlash",
   cancelLabel = "Bekor qilish",
   isLoading = false,
+  widthClassName = "max-w-md",
   imageProps,
 }: UpdatePopupProps) => {
   const { t } = useTranslation("common");
@@ -41,7 +43,7 @@ const UpdatePopup = ({
 
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className="bg-sidebar dark:bg-maindark w-[92vw] max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200 dark:border-white/5">
+      <div className={`bg-sidebar dark:bg-maindark w-[92vw] ${widthClassName} rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200 dark:border-white/5`}>
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
           <div className="flex items-center gap-3">
