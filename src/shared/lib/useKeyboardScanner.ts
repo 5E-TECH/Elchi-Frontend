@@ -4,6 +4,7 @@ interface UseKeyboardScannerOptions {
   enabled?: boolean;
   idleMs?: number;
   clearMs?: number;
+  captureEditableTargets?: boolean;
   onScan: (value: string) => boolean | void;
 }
 
@@ -26,6 +27,7 @@ export const useKeyboardScanner = ({
   enabled = true,
   idleMs = DEFAULT_IDLE_MS,
   clearMs = DEFAULT_CLEAR_MS,
+  captureEditableTargets = false,
   onScan,
 }: UseKeyboardScannerOptions) => {
   const scannerBufferRef = useRef("");
@@ -54,7 +56,12 @@ export const useKeyboardScanner = ({
     };
 
     const handleScannerKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey || isEditableTarget(event.target)) {
+      if (
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        (!captureEditableTargets && isEditableTarget(event.target))
+      ) {
         return;
       }
 
@@ -91,5 +98,5 @@ export const useKeyboardScanner = ({
         clearTimeout(scannerClearTimerRef.current);
       }
     };
-  }, [clearMs, enabled, idleMs]);
+  }, [captureEditableTargets, clearMs, enabled, idleMs]);
 };

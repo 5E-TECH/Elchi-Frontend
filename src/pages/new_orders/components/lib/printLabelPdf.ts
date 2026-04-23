@@ -445,9 +445,9 @@ const generateQr = async (text: string): Promise<string> => {
 
 const toAbsoluteAssetUrl = (src: string) => new URL(src, window.location.origin).toString();
 
-const getScanRoute = (order: ApiOrder | LabelOrder) => {
+const getQrPayload = (order: ApiOrder | LabelOrder) => {
   const qrId = (order as { qr_code_token?: string | null }).qr_code_token?.trim() || order.id;
-  return `${window.location.origin}/scan/${encodeURIComponent(qrId)}`;
+  return String(qrId);
 };
 
 const escapeHtml = (value: string) =>
@@ -474,7 +474,7 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
       const comment = escapeHtml(safe(order.comment));
       const logist = escapeHtml(getLogist(order));
       const date = escapeHtml(formatDate(order.createdAt));
-      const qrText = encodeURIComponent(getScanRoute(order));
+      const qrText = encodeURIComponent(getQrPayload(order));
       const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${qrText}`;
 
       return `
@@ -678,7 +678,7 @@ export const openOrdersLabelPdf = async (orders: ApiOrder[]): Promise<void> => {
   const [logoUrl, ...qrUrls] = await Promise.all([
     loadImage(pdfLogoUrl).catch(() => loadImage(pdfLogoFallbackUrl)).catch(() => ""),
     ...orders.map((order) =>
-      generateQr(getScanRoute(order)),
+      generateQr(getQrPayload(order)),
     ),
   ]);
 

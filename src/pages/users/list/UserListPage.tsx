@@ -11,6 +11,39 @@ import type { RootState } from "../../../app/config/store";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
+import type { User } from "../../../entities/user/types/user";
+
+const extractRolesFromUsersResponse = (response: unknown): string[] => {
+  const payload = response as {
+    data?: {
+      roles?: Array<string | { role?: string; value?: string; name?: string }>;
+      roleCounts?: Record<string, unknown> | Array<{ role?: string; value?: string; name?: string }>;
+      items?: User[];
+    };
+  } | undefined;
+
+  const roles = payload?.data?.roles;
+  if (Array.isArray(roles) && roles.length > 0) {
+    return roles
+      .map((role) => (typeof role === "string" ? role : role.role ?? role.value ?? role.name))
+      .filter((role): role is string => Boolean(role));
+  }
+
+  const roleCounts = payload?.data?.roleCounts;
+  if (Array.isArray(roleCounts) && roleCounts.length > 0) {
+    return roleCounts
+      .map((role) => role.role ?? role.value ?? role.name)
+      .filter((role): role is string => Boolean(role));
+  }
+
+  if (roleCounts && !Array.isArray(roleCounts)) {
+    return Object.keys(roleCounts);
+  }
+
+  return (payload?.data?.items ?? [])
+    .map((item) => item.role)
+    .filter(Boolean);
+};
 
 const UserListPage = memo(() => {
   const { t } = useTranslation("users");
@@ -47,6 +80,14 @@ const UserListPage = memo(() => {
 
   const { getUser } = useUser();
   const { data, isLoading, isError, error } = getUser(apiParams);
+  const { data: roleFilterData } = getUser({
+    page: 1,
+    limit: 100,
+  });
+  const availableRoles = useMemo(
+    () => extractRolesFromUsersResponse(roleFilterData),
+    [roleFilterData],
+  );
   const meta = data?.data?.meta;
 
   useEffect(() => {
@@ -95,7 +136,7 @@ const UserListPage = memo(() => {
 
       {/* Filterlar — mobilda to'liq kenglikda */}
       <div className="relative z-20 w-full">
-        <UserFilters />
+        <UserFilters availableRoles={availableRoles} />
       </div>
 
       {/* Jadval */}

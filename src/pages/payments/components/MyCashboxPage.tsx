@@ -49,7 +49,7 @@ const MyCashboxPage = () => {
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [historyLimit, setHistoryLimit] = useState(HISTORY_PAGE_SIZE);
+  const [historyLimit] = useState(HISTORY_PAGE_SIZE);
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   const params = useMemo(

@@ -16,31 +16,11 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import QrScanner from "../../shared/lib/qrScanner";
 import {
+  extractScannerToken,
   fetchScanOrder,
   getScanOrderQueryKey,
   playScanFeedback,
 } from "./lib/scanShared";
-
-const extractScannedId = (rawValue: string, origin: string): string | null => {
-  const value = rawValue.trim();
-  if (!value) return null;
-
-  try {
-    const url = new URL(value);
-    const parts = url.pathname.split("/").filter(Boolean);
-    const lastPart = parts.at(-1);
-
-    if (!lastPart) return null;
-
-    if (url.origin === origin) {
-      return decodeURIComponent(lastPart);
-    }
-  } catch {
-    // continue with plain token parsing
-  }
-
-  return /^[A-Za-z0-9_-]{1,}$/u.test(value) ? value : null;
-};
 
 const ScanPage = () => {
   const { t } = useTranslation("common");
@@ -83,19 +63,19 @@ const ScanPage = () => {
 
     stopScannerRef.current = stopScanner;
 
-    const handleSuccess = (rawValue: string, nextId: string) => {
+    const handleSuccess = (nextToken: string) => {
       stopScanner();
       setError("");
       setScanState("success");
-      setScanResult(rawValue);
-      setScannedId(nextId);
+      setScanResult(nextToken);
+      setScannedId(nextToken);
       void playScanFeedback("success");
       void queryClient.prefetchQuery({
-        queryKey: getScanOrderQueryKey(nextId),
-        queryFn: () => fetchScanOrder(nextId),
+        queryKey: getScanOrderQueryKey(nextToken),
+        queryFn: () => fetchScanOrder(nextToken),
       });
       redirectTimeoutRef.current = window.setTimeout(() => {
-        navigate(`/scan/${encodeURIComponent(nextId)}`);
+        navigate(`/scan/${encodeURIComponent(nextToken)}`);
       }, 180);
     };
 
@@ -126,10 +106,10 @@ const ScanPage = () => {
             if (Date.now() < nextAllowedScanAtRef.current) return;
 
             const rawValue = typeof result === "string" ? result : result.data;
-            const nextToken = extractScannedId(rawValue, window.location.origin);
+            const nextToken = extractScannerToken(rawValue, window.location.origin);
 
             if (nextToken) {
-              handleSuccess(rawValue, nextToken);
+              handleSuccess(nextToken);
               return;
             }
 

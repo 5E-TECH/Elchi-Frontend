@@ -127,6 +127,8 @@
   "stepTwoDescription": "Mijoz va buyurtma ma'lumotlari",
   "orderCreatedMarketRole": "Buyurtma yaratildi. Mahsulotlaringiz uchun yangi buyurtma kiritishda davom etishingiz mumkin.",
   "orderCreatedForMarket": "Buyurtma yaratildi. Shu market uchun yangi buyurtma kiritishingiz mumkin.",
+  "orderCreateErrorTitle": "Buyurtma yaratilmadi",
+  "orderCreateErrorFallback": "Ma'lumotlarni tekshirib qayta urinib ko'ring",
   "createPageDescription": "Buyurtma yaratish uchun qadamlarni bajaring",
   "selectMarketTitle": "Market tanlang",
   "selectedMarket": "Tanlangan market",

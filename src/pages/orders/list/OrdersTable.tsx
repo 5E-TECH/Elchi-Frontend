@@ -11,6 +11,7 @@ interface Props {
     data: OrderListItem[];
     isLoading: boolean;
     onRowClick?: (order: OrderListItem) => void;
+    rowNumberOffset?: number;
 }
 
 const formatPhoneNumber = (phone: string | null | undefined) => {
@@ -54,13 +55,13 @@ const formatDate = (iso: string) => {
     });
 };
 
-const columns = [
+const createColumns = (rowNumberOffset: number) => [
     {
         key: "id" as const,
         label: "#",
         width: "50px",
         render: (_: any, _row: OrderListItem, i: number) => (
-            <span className="text-xs font-semibold text-gray-400">{i + 1}</span>
+            <span className="text-xs font-semibold text-gray-400">{rowNumberOffset + i + 1}</span>
         ),
     },
     {
@@ -161,11 +162,11 @@ const columns = [
     },
 ];
 
-const OrdersTable = ({ data, isLoading, onRowClick }: Props) => {
+const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props) => {
     const { t } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
     const tableColumns = useMemo(() => {
-        const translatedColumns = columns.map((column) => {
+        const translatedColumns = createColumns(rowNumberOffset).map((column) => {
             if (column.key === "customer") return { ...column, label: t("customer") };
             if (column.key === "district") return { ...column, label: t("filterRegion") + " / " + t("district") };
             if (column.key === "market") return { ...column, label: t("market") };
@@ -191,7 +192,7 @@ const OrdersTable = ({ data, isLoading, onRowClick }: Props) => {
         }
 
         return translatedColumns;
-    }, [role, t]);
+    }, [role, rowNumberOffset, t]);
 
     if (isLoading) {
         return (

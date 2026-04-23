@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setSearchValue } from "../model/searchSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import { useDebounce } from "../../../shared/lib/useDebounce";
+import { extractScannerToken } from "../../../shared/lib/scanToken";
 import type { RootState } from "../../../app/config/store";
 
 type NativeInputProps = Omit<
@@ -104,20 +105,29 @@ const GlobalSearchInputBase = forwardRef<HTMLInputElement, GlobalSearchInputProp
       return localValue;
     }, [isControlled, localValue, value]);
 
+    const normalizePossibleScanValue = (nextValue: string) => {
+      if (!nextValue.includes("/scan/")) return nextValue;
+
+      const token = extractScannerToken(nextValue, window.location.origin);
+      return token && token.length >= 6 ? token : nextValue;
+    };
+
     const emitChange = (nextValue: string) => {
+      const normalizedValue = normalizePossibleScanValue(nextValue);
+
       if (!isControlled) {
-        setLocalValue(nextValue);
+        setLocalValue(normalizedValue);
       }
 
       if (isGlobalMode && searchKey) {
         if (syncWithRedux) {
-          dispatch(setSearchValue({ key: searchKey, value: nextValue }));
+          dispatch(setSearchValue({ key: searchKey, value: normalizedValue }));
         }
-        debouncedSaveToUrl(nextValue);
+        debouncedSaveToUrl(normalizedValue);
         return;
       }
 
-      onValueChange?.(nextValue);
+      onValueChange?.(normalizedValue);
     };
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {

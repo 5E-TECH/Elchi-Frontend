@@ -268,6 +268,7 @@ const Orders = () => {
         <OrdersTable
           data={items}
           isLoading={isLoading}
+          rowNumberOffset={(currentPage - 1) * itemsPerPage}
           onRowClick={(order) => navigate(`edit/${order.id}`)}
         />
 
