@@ -89,6 +89,7 @@
   "optionalComment": "Комментарий (необязательно)",
   "closeShiftPlaceholder": "Комментарий о смене...",
   "paymentTypeRequired": "Тип оплаты обязателен",
+  "commentRequired": "Комментарий обязателен",
   "amountRequired": "Сумма обязательна",
   "mainCashboxTitle": "Основная касса",
   "mainCashboxDescription": "Управление основной кассой",

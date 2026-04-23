@@ -1,13 +1,11 @@
 import { memo, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Store, Truck } from "lucide-react";
-import type { Pagination, PaymentRow } from "./patmentHistoryTable";
+import type { PaymentRow } from "./patmentHistoryTable";
 import { useCashBox } from "../../../entities/payments";
 import type { RootState } from "../../../app/config/store";
 import { useTranslation } from "react-i18next";
 import CashboxRolePageLayout from "./CashboxRolePageLayout";
-
-const HISTORY_PAGE_SIZE = 8;
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -48,12 +46,12 @@ const MyCashboxPage = () => {
 
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [historyLimit, setHistoryLimit] = useState(HISTORY_PAGE_SIZE);
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   const params = useMemo(
     () => ({
+      page: 1,
+      limit: 0,
       ...(selectedDateFrom && { fromDate: toRangeBoundary(selectedDateFrom, "start") }),
       ...(selectedDateTo && { toDate: toRangeBoundary(selectedDateTo, "end") }),
     }),
@@ -111,25 +109,6 @@ const MyCashboxPage = () => {
     });
   }, [cashbox?.cashbox_type, detailData, entityName]);
 
-  const paginatedHistoryRows = useMemo(
-    () =>
-      historyRows.slice(
-        (currentPage - 1) * historyLimit,
-        currentPage * historyLimit,
-      ),
-    [currentPage, historyLimit, historyRows],
-  );
-
-  const pagination = useMemo<Pagination>(
-    () => ({
-      page: currentPage,
-      limit: historyLimit,
-      total: historyRows.length,
-      totalPages: Math.max(1, Math.ceil(historyRows.length / historyLimit)),
-    }),
-    [currentPage, historyLimit, historyRows.length],
-  );
-
   const headerIcon = currentRole === "market" ? <Store size={20} /> : <Truck size={20} />;
   const accentIcon = currentRole === "market" ? <Store size={18} /> : <Truck size={18} />;
   const accentClass =
@@ -167,10 +146,7 @@ const MyCashboxPage = () => {
       dateRangePlaceholder={`${t("startDate")} → ${t("endDate")}`}
       incomeAmount={incomeAmount}
       expenseAmount={outcomeAmount}
-      historyRows={paginatedHistoryRows}
-      pagination={pagination}
-      currentPage={currentPage}
-      onPageChange={setCurrentPage}
+      historyRows={historyRows}
       incomeLabel={t("income")}
       expenseLabel={t("expense")}
       todayTransactionsLabel={t("todayTransactions")}

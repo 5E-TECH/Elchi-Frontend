@@ -4,7 +4,7 @@ import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Loader2, Store, Truck } from "lucide-react";
-import type { Pagination, PaymentRow } from "./patmentHistoryTable";
+import type { PaymentRow } from "./patmentHistoryTable";
 import { useCashBox } from "../../../entities/payments";
 import { useMarkets } from "../../../entities/markets";
 import { useTranslation } from "react-i18next";
@@ -49,8 +49,6 @@ const normalizeType = (
   if (cashboxType === "couriers" || role === "courier") return "courier";
   return "market";
 };
-
-const HISTORY_PAGE_SIZE = 8;
 
 export interface DetailState {
   type: "market" | "courier";
@@ -112,8 +110,6 @@ const CashDetail = () => {
 
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [historyLimit, setHistoryLimit] = useState(HISTORY_PAGE_SIZE);
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   const detailParams = useMemo(
@@ -227,25 +223,6 @@ const CashDetail = () => {
     });
   }, [cashbox?.cashbox_type, cashboxHistory, entityName]);
 
-  const paginatedHistoryRows = useMemo(
-    () =>
-      historyRows.slice(
-        (currentPage - 1) * historyLimit,
-        currentPage * historyLimit,
-      ),
-    [currentPage, historyLimit, historyRows],
-  );
-
-  const pagination = useMemo<Pagination>(
-    () => ({
-      page: currentPage,
-      limit: historyLimit,
-      total: historyRows.length,
-      totalPages: Math.max(1, Math.ceil(historyRows.length / historyLimit)),
-    }),
-    [currentPage, historyLimit, historyRows.length],
-  );
-
   const income = useMemo(
     () =>
       historyRows.reduce((sum, row) => {
@@ -351,10 +328,7 @@ const CashDetail = () => {
       dateRangePlaceholder={`${t("startDate")} → ${t("endDate")}`}
       incomeAmount={income}
       expenseAmount={expense}
-      historyRows={paginatedHistoryRows}
-      pagination={pagination}
-      currentPage={currentPage}
-      onPageChange={setCurrentPage}
+      historyRows={historyRows}
       incomeLabel={t("income")}
       expenseLabel={t("expense")}
       todayTransactionsLabel={t("todayTransactions")}
