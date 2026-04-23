@@ -277,6 +277,7 @@ const DateRangePicker = ({
   };
 
   const { previewStart, previewEnd } = getPreviewRange(draftStartDate, draftEndDate, hoveredDate);
+  const today = startOfDay(new Date());
 
   const renderMonth = (monthDate: Date, days: ReturnType<typeof buildMonthDays>) => (
     <div className="flex min-w-0 flex-1 flex-col">
@@ -297,6 +298,7 @@ const DateRangePicker = ({
           const normalizedDate = startOfDay(date);
           const isRangeStart = previewStart ? isSameDay(normalizedDate, previewStart) : false;
           const isRangeEnd = previewEnd ? isSameDay(normalizedDate, previewEnd) : false;
+          const isToday = isSameDay(normalizedDate, today);
           const isInRange =
             previewStart &&
             previewEnd &&
@@ -322,13 +324,18 @@ const DateRangePicker = ({
                 }}
                 className={`flex h-8 w-full items-center justify-center rounded-full text-[13px] font-semibold transition-colors ${
                   isRangeStart || isRangeEnd
-                    ? "bg-main text-primary"
+                    ? "border-main bg-main text-primary"
+                    : isToday
+                      ? "border-[color:var(--color-maindark)] bg-[color:var(--color-maindark)] font-bold text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
                     : isCurrentMonth
-                      ? "text-[color:var(--color-maindark)] hover:bg-main/10 dark:text-[color:var(--color-primary)] dark:hover:bg-main/10"
-                      : "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
+                      ? "border-transparent text-[color:var(--color-maindark)] hover:bg-main/10 dark:text-[color:var(--color-primary)] dark:hover:bg-main/10"
+                      : "border-transparent text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
                 }`}
               >
                 {date.getDate()}
+                {isToday && !isRangeStart && !isRangeEnd && (
+                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-white" />
+                )}
               </button>
             </div>
           );
@@ -358,7 +365,12 @@ const DateRangePicker = ({
           className="min-w-0 flex-1 truncate bg-transparent text-left font-semibold outline-none"
           style={{ color: hasRange ? "var(--color-date-picker-trigger)" : "var(--color-date-picker-placeholder)" }}
         >
-          {triggerLabel}
+          <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-main/70">
+            Sana oralig&apos;i
+          </span>
+          <span className="block truncate">
+            {triggerLabel}
+          </span>
         </button>
 
         {hasRange && (

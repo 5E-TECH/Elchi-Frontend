@@ -192,5 +192,12 @@
   ,"sell": "Sale"
   ,"cancelOperation": "Cancel"
   ,"extraCost": "Extra cost"
+  ,"transferOption": "Transfer"
+  ,"toMarketTransferOption": "Transfer to store"
+  ,"marketRequired": "Please select a market"
+  ,"receivePaymentSuccess": "Payment from courier was accepted successfully"
+  ,"receivePaymentError": "Failed to accept payment from courier"
+  ,"marketPaymentSuccess": "Payment to market was sent successfully"
+  ,"marketPaymentError": "Failed to send payment to market"
   ,"currencyAmountSuffix": "so'm"
 }

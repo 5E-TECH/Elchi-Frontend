@@ -1,8 +1,9 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, Calendar } from "lucide-react";
 import type { Pagination, PaymentRow } from "./patmentHistoryTable";
 import { useTranslation } from "react-i18next";
 import PaginationComponent from "../../../shared/components/pagination";
+import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -25,7 +26,8 @@ const labelCashboxType = (v?: string, t?: (key: string) => string) => {
   if (!v) return "";
   if (v === "cash") return t ? t("cash") : "Cash";
   if (v === "card") return "Click";
-  if (v === "transfer") return "Transfer";
+  if (v === "transfer") return t ? t("transferOption") : "Transfer";
+  if (v === "click_to_market") return t ? t("toMarketTransferOption") : "Transfer to market";
   return v;
 };
 
@@ -64,7 +66,8 @@ const RollbackBadge = memo(() => (
   </span>
 ));
 
-const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
+const HistoryRow = memo(
+  ({ row, onClick }: { row: PaymentRow; onClick: (row: PaymentRow) => void }) => {
   const { t } = useTranslation("payments");
   const op = row.operation_type;
   const isIncome = op === "income";
@@ -77,7 +80,11 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
   const dateStr = (row.payment_date || row.createdAt || row.created_at || "") as string;
 
   return (
-    <div className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-gray-50/60 dark:hover:bg-white/3 transition-colors">
+    <button
+      type="button"
+      onClick={() => onClick(row)}
+      className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left hover:bg-gray-50/60 dark:hover:bg-white/3 transition-colors cursor-pointer"
+    >
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${isIncome
@@ -125,9 +132,10 @@ const HistoryRow = memo(({ row }: { row: PaymentRow }) => {
           {formatDate(dateStr)}
         </p>
       </div>
-    </div>
-  );
-});
+    </button>
+    );
+  },
+);
 
 export interface PaymentHistoryListProps {
   data?: PaymentRow[];
@@ -149,6 +157,7 @@ const PaymentHistoryList = ({
   withContainer = true,
 }: PaymentHistoryListProps) => {
   const { t } = useTranslation("payments");
+  const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
   const activePage = pagination?.page ?? currentPage ?? 1;
   const hasPagination = pagination && pagination.totalPages > 1;
 
@@ -184,18 +193,26 @@ const PaymentHistoryList = ({
 
   const Body = (
     <>
-      <div className="divide-y divide-gray-100 dark:divide-white/10">
+      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
+        <div className="divide-y divide-gray-100 dark:divide-white/10">
         {rows.length === 0 ? (
           <div className="px-5 py-6 text-center text-sm text-gray-500 dark:text-white/50">
             {t("paymentHistoryNotFound")}
           </div>
         ) : (
-          rows.map((row) => <HistoryRow key={row.id} row={row} />)
+          rows.map((row) => (
+            <HistoryRow
+              key={row.id}
+              row={row}
+              onClick={setSelectedRow}
+            />
+          ))
         )}
+        </div>
       </div>
 
       {hasPagination && onPageChange && (
-        <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 dark:border-glass-border">
+        <div className="flex shrink-0 items-center justify-between border-t border-gray-100 px-5 py-3.5 dark:border-glass-border">
           <span className="text-xs text-gray-500 dark:text-white/40">
             {t("pageLabel", { page: activePage, totalPages: pagination.totalPages })}
           </span>
@@ -210,11 +227,16 @@ const PaymentHistoryList = ({
           />
         </div>
       )}
+
+      <FinanceHistoryDetailPopup
+        row={selectedRow}
+        onClose={() => setSelectedRow(null)}
+      />
     </>
   );
 
   return withContainer ? (
-    <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border shadow-sm overflow-hidden">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-sm dark:border-glass-border dark:bg-maindark">
       {Body}
     </div>
   ) : (

@@ -1,22 +1,19 @@
 import { memo, useMemo } from "react";
 import {
-  X,
-  TrendingUp,
-  TrendingDown,
-  MessageSquare,
   ArrowRight,
-  CreditCard,
   Calendar,
-  User,
-  Landmark,
-  ExternalLink,
+  CircleDollarSign,
+  CreditCard,
+  Loader2,
+  MapPin,
+  MessageSquare,
   Phone,
   ShoppingCart,
-  MapPin,
+  TrendingDown,
+  TrendingUp,
+  User,
   Wallet,
-  CircleDollarSign,
-  Package,
-  Loader2,
+  X,
 } from "lucide-react";
 import Popup from "../../../shared/ui/Popup";
 import type { PaymentRow } from "./patmentHistoryTable";
@@ -26,51 +23,38 @@ import {
   type FinanceHistoryDetail,
 } from "../../../entities/payments";
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
-
 const fmt = (n: number) => Math.abs(n).toLocaleString("uz-UZ");
 
 const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "—";
-    try {
-        const d = new Date(dateStr);
-        const pad = (n: number) => String(n).padStart(2, "0");
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    } catch {
-        return dateStr;
-    }
-};
-
-const getOperationLabel = (value?: string | null) => {
-  if (value === "income") return "Income";
-  if (value === "expense") return "Expense";
-  return value || "—";
+  if (!dateStr) return "—";
+  try {
+    const d = new Date(dateStr);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  } catch {
+    return dateStr;
+  }
 };
 
 const getSourceTypeLabel = (value?: string | null) => {
   const normalized = value?.toLowerCase();
-  if (normalized === "sell") return "Sale";
-  if (normalized === "correction") return "Correction";
-  if (normalized === "salary") return "Salary";
-  if (normalized === "market_payment") return "Market payment";
-  if (normalized === "manual_income") return "Manual income";
-  if (normalized === "manual_expense") return "Manual expense";
+  if (normalized === "sell") return "Sotuv";
+  if (normalized === "correction") return "Tuzatish";
+  if (normalized === "salary") return "Oylik";
+  if (normalized === "market_payment") return "Market to'lovi";
+  if (normalized === "manual_income") return "Qo'lda kirim";
+  if (normalized === "manual_expense") return "Qo'lda chiqim";
   return value || "—";
 };
 
 const getPaymentMethodLabel = (value?: string | null) => {
   const normalized = value?.toLowerCase();
-  if (normalized === "cash") return "Cash";
+  if (normalized === "cash") return "Naqd";
   if (normalized === "click") return "Click";
   if (normalized === "payme") return "Payme";
-  if (normalized === "transfer") return "Transfer";
-  if (normalized === "card") return "Card";
-  return value || "—";
-};
-
-const getCashboxTypeLabel = (value?: string | null) => {
-  if (value === "markets") return "Markets";
-  if (value === "couriers") return "Couriers";
+  if (normalized === "transfer") return "O'tkazma";
+  if (normalized === "click_to_market") return "Do'konga o'tkazma";
+  if (normalized === "card") return "Karta";
   return value || "—";
 };
 
@@ -85,12 +69,12 @@ const getRoleLabel = (value?: string | null) => {
 
 const getStatusLabel = (value?: string | null) => {
   if (!value) return "—";
-  if (value === "sold") return "Sold";
-  if (value === "cancelled") return "Cancelled";
-  if (value === "paid") return "Paid";
-  if (value === "partly_paid") return "Partly paid";
-  if (value === "new") return "New";
-  if (value === "received") return "Received";
+  if (value === "sold") return "To'langan";
+  if (value === "cancelled") return "Bekor qilingan";
+  if (value === "paid") return "To'langan";
+  if (value === "partly_paid") return "Qisman to'langan";
+  if (value === "new") return "Yangi";
+  if (value === "received") return "Qabul qilingan";
   return value;
 };
 
@@ -110,7 +94,7 @@ const resolvePrimaryActor = (detail?: FinanceHistoryDetail | null) => {
     detail.source_user ||
     detail.created_by_user ||
     detail.user ||
-    (detail.cashbox?.cashbox_type === "markets" ? detail.order?.market : null) ||
+    detail.order?.market ||
     null
   );
 };
@@ -128,32 +112,32 @@ const resolveDirectionValue = (
 const getActorPhone = (actor?: FinanceHistoryActor | null) =>
   actor?.phone_number?.trim() || "—";
 
-// ─── InfoCard ─────────────────────────────────────────────────────────────────
-
-interface InfoCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  accentClassName?: string;
-  fullWidth?: boolean;
-}
-
 const InfoCard = memo(
-  ({ icon, label, value, accentClassName = "bg-main/15", fullWidth }: InfoCardProps) => (
+  ({
+    icon,
+    label,
+    value,
+    fullWidth = false,
+    accentClassName = "bg-[var(--color-main-soft)] dark:bg-main/25",
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    value: React.ReactNode;
+    fullWidth?: boolean;
+    accentClassName?: string;
+  }) => (
     <div
-      className={`flex flex-col gap-1.5 rounded-xl p-3.5 bg-white/5 border border-white/10 ${fullWidth ? "col-span-2" : ""}`}
+      className={`rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-main)_10%,var(--color-sidebar))] p-3 dark:border-white/10 dark:bg-primarydark/55 ${fullWidth ? "col-span-2" : ""}`}
     >
-      <div className="flex items-center gap-1.5">
-        <div
-          className={`w-5 h-5 rounded-md flex items-center justify-center ${accentClassName}`}
-        >
+      <div className="flex items-center gap-2">
+        <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${accentClassName}`}>
           {icon}
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-text-muted)] dark:text-white/75">
           {label}
         </span>
       </div>
-      <div className="text-[13px] font-semibold text-white/90 pl-0.5">
+      <div className="mt-2 text-[14px] font-semibold leading-5 text-[var(--color-maindark)] dark:text-white">
         {value}
       </div>
     </div>
@@ -172,29 +156,27 @@ const PopupState = memo(
     description: string;
     isError?: boolean;
   }) => (
-    <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+    <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
       <div
         className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
-          isError ? "bg-error/15 text-error" : "bg-primary/15 text-primary"
+          isError
+            ? "bg-[var(--color-main-soft)] text-[var(--color-main)] dark:bg-main/25 dark:text-white"
+            : "bg-[var(--color-main-soft)] text-[var(--color-main)] dark:bg-main/25 dark:text-white"
         }`}
       >
-        {isError ? (
-          <MessageSquare size={24} />
-        ) : (
-          <Loader2 size={24} className="animate-spin" />
-        )}
+        {isError ? <MessageSquare size={24} /> : <Loader2 size={24} className="animate-spin" />}
       </div>
       <div>
-        <p className="text-sm font-bold text-primary">{title}</p>
-        <p className="mt-1 text-xs text-primary/55">{description}</p>
+        <p className="text-sm font-bold text-[var(--color-maindark)] dark:text-white">{title}</p>
+        <p className="mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-white/75">
+          {description}
+        </p>
       </div>
     </div>
   ),
 );
 
 PopupState.displayName = "PopupState";
-
-// ─── FinanceHistoryDetailPopup ────────────────────────────────────────────────
 
 interface Props {
   row: PaymentRow | null;
@@ -212,10 +194,13 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   const actor = useMemo(() => resolvePrimaryActor(detail), [detail]);
   const actorName = getActorName(actor);
   const actorPhone = getActorPhone(actor);
+  const hasComment = Boolean(detail?.comment);
+  const actorRole = getRoleLabel(
+    actor?.role ?? detail?.order?.market?.role ?? detail?.cashbox?.cashbox_type,
+  );
   const directionLabel = isIncome ? "Qayerdan" : "Qayerga";
   const directionValue = resolveDirectionValue(detail, actor);
   const order = detail?.order;
-  const orderItems = order?.items ?? [];
   const locationLabel = [
     order?.district?.name ?? order?.customer?.district?.name ?? "",
     order?.region?.name ?? order?.customer?.region?.name ?? "",
@@ -228,54 +213,51 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   return (
     <Popup isShow={!!row} onClose={onClose}>
       <div
-        className="w-[92vw] max-w-120 h-[90vh] max-h-208 rounded-3xl overflow-hidden shadow-2xl flex flex-col bg-background"
+        className="flex max-h-[94vh] w-[94vw] max-w-[38rem] flex-col overflow-hidden rounded-[2rem] border border-[color:var(--color-border-soft)] bg-sidebar shadow-2xl shadow-[0_28px_60px_var(--color-background-soft)] dark:border-white/10 dark:bg-maindark"
         onClick={(event) => event.stopPropagation()}
       >
         <div
           className="shrink-0 px-5 py-4"
           style={{
-            background: isIncome
-              ? "linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 72%, var(--color-main)))"
-              : "linear-gradient(135deg, var(--color-error), color-mix(in srgb, var(--color-error) 72%, var(--color-purple)))",
+            background:
+              "linear-gradient(135deg, var(--color-main) 0%, var(--color-primarydark) 100%)",
           }}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center backdrop-blur-sm">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
                 {isIncome ? (
-                  <TrendingUp size={20} className="text-primary" />
+                  <TrendingUp size={20} className="text-white" />
                 ) : (
-                  <TrendingDown size={20} className="text-primary" />
+                  <TrendingDown size={20} className="text-white" />
                 )}
               </div>
               <div>
-                <p className="text-[15px] font-bold text-primary leading-tight">
-                  {getOperationLabel(display?.operation_type)}
+                <p className="text-[16px] font-bold capitalize text-white">
+                  {isIncome ? "kirim" : "chiqim"}
                 </p>
-                <p className="text-[11px] text-primary/75 flex items-center gap-1 mt-0.5">
-                  <Landmark size={11} />
-                  Payment history
-                </p>
+                <p className="mt-0.5 text-[12px] text-white/80">To'lov tarixi</p>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-primary/20 hover:bg-primary/30 flex items-center justify-center transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white"
             >
-              <X size={16} className="text-primary" />
+              <X size={16} />
             </button>
           </div>
 
-          <div className="h-px bg-primary/20 my-3.5" />
+          <div className="my-3 h-px bg-white/20" />
 
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[11px] text-primary/65 mb-1">Amount</p>
-              <p className="text-[28px] font-extrabold text-primary leading-none">
+              <p className="text-[11px] text-white/75">Miqdor</p>
+              <p className="mt-1 text-[30px] leading-none font-extrabold text-white">
                 {isIncome ? "+" : "-"}
                 {fmt(display?.amount ?? 0)}
-                <span className="text-[14px] font-semibold text-primary/75 ml-1.5">
+                <span className="ml-1.5 text-[14px] font-medium uppercase text-white/85">
                   UZS
                 </span>
               </p>
@@ -283,11 +265,8 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
 
             {display?.balance_after !== undefined && (
               <div className="text-right">
-                <p className="text-[10px] text-primary/55">
-                  Balance after transaction
-                </p>
-                <p className="text-[13px] font-bold text-primary">
-                  {display.balance_after < 0 ? "-" : ""}
+                <p className="text-[10px] text-white/70">Amaldan keyingi balans</p>
+                <p className="mt-1 text-[13px] font-bold text-white">
                   {fmt(display.balance_after)} UZS
                 </p>
               </div>
@@ -295,9 +274,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
           </div>
         </div>
 
-        <div
-          className="flex-1 min-h-0 flex flex-col gap-3 p-4 pb-6 overflow-y-auto custom-scrollbar"
-        >
+        <div className="min-h-0 space-y-3 overflow-hidden bg-sidebar p-4 dark:bg-maindark">
           {isLoading && (
             <PopupState
               title="Detail yuklanmoqda"
@@ -315,279 +292,146 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
 
           {!isLoading && !isError && (
             <>
-              {detail?.comment && (
-                <div
-                  className="flex items-start gap-3 rounded-xl p-3.5 border"
-                  style={{
-                    background: isIncome
-                      ? "color-mix(in srgb, var(--color-success) 10%, transparent)"
-                      : "color-mix(in srgb, var(--color-error) 10%, transparent)",
-                    borderColor: isIncome
-                      ? "color-mix(in srgb, var(--color-success) 22%, transparent)"
-                      : "color-mix(in srgb, var(--color-error) 22%, transparent)",
-                  }}
-                >
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      isIncome ? "bg-success/15" : "bg-error/15"
-                    }`}
-                  >
-                    <MessageSquare
-                      size={16}
-                      className={isIncome ? "text-success" : "text-error"}
-                    />
-                  </div>
-                  <div>
-                    <p
-                      className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${
-                        isIncome ? "text-success" : "text-error"
-                      }`}
-                    >
-                      Comment
-                    </p>
-                    <p className="text-[13px] text-primary/85 leading-relaxed whitespace-pre-line">
-                      {detail.comment}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div
-                className="flex items-center gap-3 rounded-xl p-3.5 border"
-                style={{
-                  background: isIncome
-                    ? "color-mix(in srgb, var(--color-success) 10%, transparent)"
-                    : "color-mix(in srgb, var(--color-error) 10%, transparent)",
-                  borderColor: isIncome
-                    ? "color-mix(in srgb, var(--color-success) 22%, transparent)"
-                    : "color-mix(in srgb, var(--color-error) 22%, transparent)",
-                }}
-              >
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    isIncome ? "bg-success/15" : "bg-error/15"
-                  }`}
-                >
-                  <ArrowRight
-                    size={16}
-                    className={isIncome ? "text-success" : "text-error"}
+              <div className="grid grid-cols-2 gap-3">
+                {actorPhone !== "—" && (
+                  <InfoCard
+                    icon={<Phone size={12} className="text-[var(--color-main)] dark:text-white" />}
+                    label="Telefon raqami"
+                    value={actorPhone}
+                    accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
                   />
-                </div>
-                <div>
-                  <p
-                    className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${
-                      isIncome ? "text-success" : "text-error"
-                    }`}
-                  >
-                    {directionLabel}
-                  </p>
-                  <p className="text-[14px] font-bold text-primary">{directionValue}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
+                )}
                 <InfoCard
-                  icon={<CreditCard size={12} className="text-main" />}
-                  label="Source type"
-                  value={<span>{getSourceTypeLabel(detail?.source_type)}</span>}
+                  icon={<ArrowRight size={12} className="text-[var(--color-main)] dark:text-white" />}
+                  label={directionLabel}
+                  value={directionValue}
+                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
                 />
-
                 <InfoCard
-                  icon={<Wallet size={12} className="text-main" />}
+                  icon={<CreditCard size={12} className="text-[var(--color-main)] dark:text-white" />}
+                  label="Manba turi"
+                  value={getSourceTypeLabel(detail?.source_type)}
+                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
+                />
+                <InfoCard
+                  icon={<Wallet size={12} className="text-[var(--color-main)] dark:text-white" />}
                   label="To'lov turi"
-                  value={<span>{getPaymentMethodLabel(detail?.payment_method)}</span>}
+                  value={getPaymentMethodLabel(detail?.payment_method)}
+                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
                 />
-
                 <InfoCard
-                  icon={<Calendar size={12} className="text-main" />}
-                  label="Payment date"
+                  icon={<Calendar size={12} className="text-[var(--color-main)] dark:text-white" />}
+                  label="To'lov kuni"
                   value={formatDate(detail?.payment_date ?? detail?.createdAt)}
+                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
                 />
-
                 <InfoCard
-                  icon={<User size={12} className="text-main" />}
-                  label="User"
+                  icon={<User size={12} className="text-[var(--color-main)] dark:text-white" />}
+                  label="Foydalanuvchi"
                   value={
                     <div className="flex flex-col gap-1">
                       <span>{actorName || detail?.created_by || "—"}</span>
-                      <span className="text-[11px] inline-flex w-fit px-2 py-0.5 rounded-md bg-warning/15 text-warning">
-                        {getRoleLabel(
-                          actor?.role ?? order?.market?.role ?? detail?.cashbox?.cashbox_type,
-                        )}
+                      <span className="inline-flex w-fit rounded-md border border-[color:var(--color-border-soft)] bg-[var(--color-main-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-main)] dark:border-white/10 dark:bg-main/25 dark:text-white">
+                        {actorRole}
                       </span>
                     </div>
                   }
+                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
                 />
-
-                {actorPhone !== "—" && (
-                  <InfoCard
-                    icon={<Phone size={12} className="text-main" />}
-                    label="Phone number"
-                    value={actorPhone}
-                    fullWidth
-                  />
-                )}
               </div>
 
-              {detail?.cashbox && (
-                <div className="rounded-xl border border-white/10 overflow-hidden bg-primary/5">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-primary/5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-main/15">
-                        <Landmark size={15} className="text-main" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-main">
-                          Cashbox
-                        </p>
-                        <p className="text-primary font-bold text-[13px]">
-                          #{detail.cashbox.id}
-                        </p>
-                      </div>
-                    </div>
-                    <ExternalLink size={14} className="text-primary/30" />
-                  </div>
-
-                  <div className="divide-y divide-white/6">
-                    <div className="flex items-center justify-between px-4 py-2.5 text-[12px]">
-                      <span className="text-primary/55">Balance</span>
-                      <span className="font-bold text-primary">
-                        {fmt(detail.cashbox.balance)} UZS
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between px-4 py-2.5 text-[12px]">
-                      <span className="text-primary/55">Type</span>
-                      <span className="font-bold text-primary">
-                        {getCashboxTypeLabel(detail.cashbox.cashbox_type)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between px-4 py-2.5 text-[12px]">
-                      <span className="text-primary/55">Cash balance</span>
-                      <span className="font-bold text-primary">
-                        {fmt(detail.cashbox.balance_cash ?? 0)} UZS
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between px-4 py-2.5 text-[12px]">
-                      <span className="text-primary/55">Card balance</span>
-                      <span className="font-bold text-primary">
-                        {fmt(detail.cashbox.balance_card ?? 0)} UZS
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {order && (
-                <div
-                  className="rounded-xl border overflow-hidden"
-                  style={{
-                    borderColor: isIncome
-                      ? "color-mix(in srgb, var(--color-success) 22%, transparent)"
-                      : "color-mix(in srgb, var(--color-info) 22%, transparent)",
-                    background:
-                      "color-mix(in srgb, var(--color-info) 7%, transparent)",
-                  }}
-                >
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-success/15 flex items-center justify-center">
-                        <ShoppingCart size={16} className="text-success" />
+                <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-main)_12%,var(--color-sidebar))] dark:border-white/10 dark:bg-primarydark/55">
+                  <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-4 py-3 dark:border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--color-main)]">
+                        <ShoppingCart size={17} className="text-white" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-success">
-                          Order
+                        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[var(--color-main)] dark:text-white/85">
+                          Buyurtma
                         </p>
-                        <p className="text-primary font-bold text-[13px]">
-                          #{order.id}
-                        </p>
+                        <p className="text-[15px] font-bold text-[var(--color-maindark)] dark:text-white">#{order.id}</p>
                       </div>
                     </div>
-                    {order.market?.name && (
-                      <span className="text-[11px] text-primary/65 font-semibold">
-                        {order.market.name}
-                      </span>
-                    )}
                   </div>
 
-                  <div className="px-4 py-3 space-y-2.5">
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <InfoCard
-                        icon={<MapPin size={12} className="text-main" />}
-                        label="District"
-                        value={locationLabel || "—"}
-                      />
-                      <InfoCard
-                        icon={<Phone size={12} className="text-main" />}
-                        label="Phone number"
-                        value={order.customer?.phone_number || "—"}
-                      />
+                  <div className="space-y-3 px-4 py-3 text-[14px]">
+                    {hasComment && (
+                      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-sidebar/70 p-3 dark:border-white/10 dark:bg-maindark/40">
+                        <div className="mb-2 flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
+                          <MessageSquare size={12} className="text-[var(--color-main)] dark:text-white" />
+                          <span>Izoh</span>
+                        </div>
+                        <p className="whitespace-pre-line text-[var(--color-maindark)] dark:text-white">
+                          {detail?.comment}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-[1fr_auto] gap-y-2.5">
+                      <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
+                        <MapPin size={12} className="text-[var(--color-main)] dark:text-white" />
+                        <span>Hudud</span>
+                      </div>
+                      <span className="text-right font-medium text-[var(--color-maindark)] dark:text-white">
+                        {locationLabel || "—"}
+                      </span>
+
+                      <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
+                        <Phone size={12} className="text-[var(--color-main)] dark:text-white" />
+                        <span>Telefon nomer</span>
+                      </div>
+                      <span className="text-right font-medium text-[var(--color-maindark)] dark:text-white">
+                        {order.customer?.phone_number || "—"}
+                      </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2.5">
-                      <InfoCard
-                        icon={<CircleDollarSign size={12} className="text-main" />}
-                        label="Total price"
-                        value={`${fmt(order.total_price ?? 0)} UZS`}
-                      />
-                      <InfoCard
-                        icon={<CircleDollarSign size={12} className="text-main" />}
-                        label="To be paid"
-                        value={`${fmt(order.to_be_paid ?? 0)} UZS`}
-                      />
-                      <InfoCard
-                        icon={<CircleDollarSign size={12} className="text-main" />}
-                        label="Paid"
-                        value={`${fmt(order.paid_amount ?? 0)} UZS`}
-                      />
+                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
+                          <CircleDollarSign size={12} className="text-[var(--color-main)] dark:text-white" />
+                          <span>Umumiy narx</span>
+                        </div>
+                        <span className="font-bold text-[var(--color-main)] dark:text-white">
+                          {fmt(order.total_price ?? order.to_be_paid ?? 0)} UZS
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <InfoCard
-                        icon={<ShoppingCart size={12} className="text-main" />}
-                        label="Status"
-                        value={getStatusLabel(order.status)}
-                      />
-                      <InfoCard
-                        icon={<ExternalLink size={12} className="text-main" />}
-                        label="Delivery"
-                        value={getDeliveryLabel(order.where_deliver)}
-                      />
+                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
+                          <ShoppingCart size={12} className="text-[var(--color-main)] dark:text-white" />
+                          <span>Holat</span>
+                        </div>
+                        <span className="rounded-full border border-[color:var(--color-border-soft)] bg-[var(--color-main-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-main)] dark:border-white/10 dark:bg-main/25 dark:text-white">
+                          {getStatusLabel(order.status)}
+                        </span>
+                      </div>
                     </div>
 
                     {order.address && (
-                      <InfoCard
-                        icon={<MapPin size={12} className="text-main" />}
-                        label="Address"
-                        value={order.address}
-                        fullWidth
-                      />
-                    )}
-
-                    {orderItems.length > 0 && (
-                      <div className="rounded-xl border border-white/10 bg-primary/5 p-3.5">
-                        <div className="flex items-center gap-2 mb-2.5">
-                          <Package size={14} className="text-main" />
-                          <p className="text-[11px] font-bold uppercase tracking-widest text-main m-0">
-                            Mahsulotlar
-                          </p>
+                      <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
+                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
+                          <MapPin size={12} className="text-[var(--color-main)] dark:text-white" />
+                          <span>Manzil</span>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {orderItems.map((item) => (
-                            <div
-                              key={item.id}
-                              className="px-2.5 py-2 rounded-lg bg-primary/5 border border-white/10 min-w-32"
-                            >
-                              <p className="text-[12px] font-semibold text-primary leading-tight">
-                                {item.product?.name || `Product #${item.product_id}`}
-                              </p>
-                              <p className="text-[11px] text-primary/55 mt-1">
-                                Qty: {item.quantity}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
+                        <p className="mt-1 leading-5 text-[var(--color-maindark)] dark:text-white">{order.address}</p>
                       </div>
                     )}
+
+                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
+                          <ArrowRight size={12} className="text-[var(--color-main)] dark:text-white" />
+                          <span>Yetkazish</span>
+                        </div>
+                        <span className="font-medium text-[var(--color-maindark)] dark:text-white">
+                          {getDeliveryLabel(order.where_deliver)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
