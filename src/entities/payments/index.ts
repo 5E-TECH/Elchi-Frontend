@@ -119,7 +119,7 @@ export const useCashBox = () => {
       queryKey: [cashbox, id, params],
       queryFn: () =>
         api
-          .get(API_ENDPOINTS.CASHBOX.USER_BY_ID(id as string), { params })
+          .get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(id as string), { params })
           .then((res) => res.data),
       enabled: bool,
     });

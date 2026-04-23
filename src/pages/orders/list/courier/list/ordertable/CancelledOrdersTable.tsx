@@ -148,7 +148,7 @@ const CancelledOrdersTable = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between rounded-2xl border border-[color:var(--color-border-soft)] bg-primary px-4 py-3 dark:border-primarydark/60 dark:bg-maindark xl:hidden">
+      <div className="flex items-center justify-between rounded-2xl border border-border-soft bg-primary px-4 py-3 dark:border-primarydark/60 dark:bg-maindark xl:hidden">
         <span className="text-sm font-semibold text-maindark dark:text-primary">
           {t("selectAll")}
         </span>

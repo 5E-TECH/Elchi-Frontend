@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import QrScanner from "qr-scanner";
+import QrScanner from "../../shared/lib/qrScanner";
 import {
   fetchScanOrder,
   getScanOrderQueryKey,
@@ -122,7 +122,7 @@ const ScanPage = () => {
 
         const scanner = new QrScanner(
           videoRef.current,
-          (result) => {
+          (result: string | { data: string }) => {
             if (Date.now() < nextAllowedScanAtRef.current) return;
 
             const rawValue = typeof result === "string" ? result : result.data;

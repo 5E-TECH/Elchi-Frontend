@@ -192,5 +192,12 @@
   ,"sell": "Sotuv"
   ,"cancelOperation": "Bekor qilish"
   ,"extraCost": "Qo'shimcha xarajat"
+  ,"transferOption": "O'tkazma"
+  ,"toMarketTransferOption": "Do'konga o'tkazma"
+  ,"marketRequired": "Marketni tanlang"
+  ,"receivePaymentSuccess": "Kuryerdan to'lov muvaffaqiyatli qabul qilindi"
+  ,"receivePaymentError": "Kuryerdan to'lovni qabul qilishda xatolik yuz berdi"
+  ,"marketPaymentSuccess": "Marketga to'lov muvaffaqiyatli amalga oshirildi"
+  ,"marketPaymentError": "Marketga to'lovni yuborishda xatolik yuz berdi"
   ,"currencyAmountSuffix": "so'm"
 }

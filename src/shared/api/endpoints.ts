@@ -57,8 +57,8 @@ export const API_ENDPOINTS = {
     CANCEL_RECEIVE: (postId: string | number) => `post/cancel/receive/${postId}`,
   },
   CASHBOX: {
-    PAYMENT_COURIER: "cashbox/payment/courier",
-    PAYMENT_MARKET: "cashbox/payment/market",
+    PAYMENT_COURIER: "finance/cashbox/payment/courier",
+    PAYMENT_MARKET: "finance/cashbox/payment/market",
     USER_BY_ID: (id: string | number) => `cashbox/user/${id}`,
     MY_CASHBOX: "finance/cashbox/my-cashbox",
     MAIN: "cashbox/main",
@@ -75,6 +75,7 @@ export const API_ENDPOINTS = {
   FINANCE: {
     CASHBOX_ALL_INFO: "finance/cashbox/all-info",
     CASHBOX_MAIN: "finance/cashbox/main",
+    CASHBOX_BY_USER: (id: string | number) => `finance/cashbox/user/${id}`,
     HISTORY: "finance/history",
     HISTORY_BY_ID: (id: string | number) => `finance/history/${id}`,
     OPERATION_TYPE: "finance/operation-type",

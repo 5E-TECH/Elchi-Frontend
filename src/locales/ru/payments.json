@@ -192,5 +192,12 @@
   ,"sell": "Продажа"
   ,"cancelOperation": "Отмена"
   ,"extraCost": "Доп. расход"
+  ,"transferOption": "Перевод"
+  ,"toMarketTransferOption": "Перевод в магазин"
+  ,"marketRequired": "Выберите маркет"
+  ,"receivePaymentSuccess": "Платеж от курьера успешно принят"
+  ,"receivePaymentError": "Ошибка при приеме платежа от курьера"
+  ,"marketPaymentSuccess": "Платеж маркету успешно отправлен"
+  ,"marketPaymentError": "Ошибка при отправке платежа маркету"
   ,"currencyAmountSuffix": "сум"
 }

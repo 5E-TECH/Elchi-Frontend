@@ -123,7 +123,7 @@ const Payments = () => {
 
   const navigate = useNavigate();
   const { getFinanceHistory, getCashBoxInfo } = useCashBox();
-  const { getUser } = useUser();
+  const { getUser, getCouriers } = useUser();
   const { getMarkets } = useMarkets();
 
   // ── API dan cashbox ma'lumotlarini olish ──────────────────────────────────
@@ -131,11 +131,11 @@ const Payments = () => {
 
   // Faqat popup ochiq bo'lganda yuklanadi
   const { data: marketsData, isLoading: marketsLoading } = getMarkets(
-    {},
+    { status: "active", limit: 0 },
     isGivenPopupOpen,
   );
-  const { data: couriersData, isLoading: couriersLoading } = getUser(
-    { role: "courier", limit: 100 },
+  const { data: couriersData, isLoading: couriersLoading } = getCouriers(
+    { status: "active", limit: 0 },
     isReceivedPopupOpen,
   );
 
@@ -153,7 +153,8 @@ const Payments = () => {
         name: m.name,
         phone_number: m.phone_number ?? m.phone ?? "",
         role: m.role ?? "market",
-        amount: m.amount ?? 0,
+        cashbox: m.cashbox,
+        amount: Number(m.cashbox?.balance ?? m.amount ?? 0),
       })),
     [marketsData],
   );
@@ -167,7 +168,9 @@ const Payments = () => {
         phone_number: c.phone_number ?? c.phone ?? "",
         role: c.role ?? "courier",
         region: c.region?.name || "Noma'lum",
-        amount: c.amount ?? 0,
+        region_id: c.region?.id ?? c.region_id ?? "",
+        cashbox: c.cashbox,
+        amount: Number(c.cashbox?.balance ?? 0),
       })),
     [couriersData],
   );
@@ -439,18 +442,18 @@ const Payments = () => {
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <div
-                className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${isSelected ? "bg-white/20 text-white" : "bg-main/10 text-main"}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold ${isSelected ? "bg-white/20 text-white" : "bg-main/10 text-main"}`}
               >
                 <Store size={16} />
               </div>
-              <span
+              <p
                 className={`font-medium ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
               >
                 {market.name}
-              </span>
+              </p>
             </div>
             <span
-              className={`text-sm font-semibold ${isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}
+              className={`text-sm font-semibold ${isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
             >
               {fmt(market.amount)} UZS
             </span>
@@ -493,14 +496,14 @@ const Payments = () => {
                   {courier.name}
                 </p>
                 <p
-                  className={`text-xs ${isSelected ? "text-white/60" : "text-gray-400 dark:text-white/40"}`}
+                  className={`text-xs ${isSelected ? "text-white/70" : "text-gray-500 dark:text-white/75"}`}
                 >
                   {courier.region}
                 </p>
               </div>
             </div>
             <span
-              className={`text-sm font-semibold ${courier.amount < 0 ? "text-rose-400" : isSelected ? "text-white/80" : "text-gray-500 dark:text-white/50"}`}
+              className={`text-sm font-semibold ${courier.amount < 0 ? "text-rose-400" : isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
             >
               {courier.amount < 0 ? "-" : ""}
               {fmt(Math.abs(courier.amount))} UZS

@@ -280,6 +280,7 @@ const DateRangePicker = ({
   };
 
   const { previewStart, previewEnd } = getPreviewRange(draftStartDate, draftEndDate, hoveredDate);
+  const today = startOfDay(new Date());
 
   const renderMonth = (monthDate: Date, days: ReturnType<typeof buildMonthDays>) => (
     <div className="flex min-w-0 flex-1 flex-col">
@@ -299,6 +300,7 @@ const DateRangePicker = ({
           const normalizedDate = startOfDay(date);
           const isRangeStart = previewStart ? isSameDay(normalizedDate, previewStart) : false;
           const isRangeEnd = previewEnd ? isSameDay(normalizedDate, previewEnd) : false;
+          const isToday = isSameDay(normalizedDate, today);
           const isInRange =
             previewStart &&
             previewEnd &&
@@ -322,15 +324,20 @@ const DateRangePicker = ({
                     setHoveredDate(normalizedDate);
                   }
                 }}
-                className={`flex h-7 w-full items-center justify-center rounded-full text-[12px] font-medium transition-colors ${
+                className={`relative flex h-7 w-full items-center justify-center rounded-full border text-[12px] font-medium transition-colors ${
                   isRangeStart || isRangeEnd
-                    ? "bg-main text-primary"
+                    ? "border-main bg-main text-primary"
+                    : isToday
+                      ? "border-[color:var(--color-maindark)] bg-[color:var(--color-maindark)] font-bold text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset]"
                     : isCurrentMonth
-                      ? "text-[color:var(--color-maindark)] hover:bg-main/10 dark:text-[color:var(--color-primary)] dark:hover:bg-main/10"
-                      : "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
+                      ? "border-transparent text-[color:var(--color-maindark)] hover:bg-main/10 dark:text-[color:var(--color-primary)] dark:hover:bg-main/10"
+                      : "border-transparent text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
                 }`}
               >
                 {date.getDate()}
+                {isToday && !isRangeStart && !isRangeEnd && (
+                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-white" />
+                )}
               </button>
             </div>
           );
@@ -342,37 +349,44 @@ const DateRangePicker = ({
   return (
     <div ref={triggerRef} className={`relative ${className}`}>
       <div
-        className={`group flex h-12 w-full items-center rounded-xl border-2 bg-[color:var(--color-primary)] px-4 text-left shadow-sm transition-all duration-200 dark:bg-[color:var(--color-primarydark)] ${
+        className={`group flex h-14 w-full items-center gap-3 rounded-[1.1rem] border bg-[color:var(--color-surface-elevated)] px-3.5 text-left shadow-[0_12px_28px_color-mix(in_srgb,var(--color-background-deep)_10%,transparent)] backdrop-blur-sm transition-all duration-200 dark:bg-[color:var(--color-surface-elevated-dark)] ${
           open
-            ? "border-main ring-2 ring-main/10"
-            : "border-[color:var(--color-border-soft)] hover:border-main/50"
+            ? "border-main shadow-[0_14px_34px_color-mix(in_srgb,var(--color-main)_18%,transparent)] ring-2 ring-main/15"
+            : "border-[color:var(--color-border-strong)] hover:border-main/50 hover:shadow-[0_14px_34px_color-mix(in_srgb,var(--color-main)_10%,transparent)]"
         } ${size === "sm" ? "text-[13px]" : "text-sm"}`}
       >
-        <Calendar
-          size={size === "sm" ? 14 : 16}
-          className="mr-2 shrink-0 text-[color:var(--color-text-muted)] transition-colors group-hover:text-main group-focus-within:text-main dark:text-[color:var(--color-text-muted-dark)]"
-        />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main/12 text-main shadow-inner shadow-main/8">
+          <Calendar
+            size={size === "sm" ? 14 : 16}
+            className="shrink-0 transition-colors group-hover:text-main group-focus-within:text-main"
+          />
+        </div>
 
         <button
           type="button"
           onClick={openCalendar}
-          className={`min-w-0 flex-1 truncate bg-transparent text-left font-medium outline-none ${
+          className={`min-w-0 flex-1 truncate bg-transparent text-left outline-none ${
             hasRange
-              ? "text-[color:var(--color-maindark)] dark:text-[color:var(--color-primary)]"
-              : "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
+              ? "font-semibold text-[color:var(--color-maindark)] dark:text-[color:var(--color-primary)]"
+              : "font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
           }`}
         >
-          {triggerLabel}
+          <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-main/70">
+            Sana oralig&apos;i
+          </span>
+          <span className="block truncate">
+            {triggerLabel}
+          </span>
         </button>
 
         {hasRange && (
           <button
             type="button"
             onClick={handleClear}
-            className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--color-text-muted)] transition-colors hover:bg-main/10 hover:text-main dark:text-[color:var(--color-text-muted-dark)]"
+            className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--color-text-muted)] transition-colors hover:bg-main/10 hover:text-main dark:text-[color:var(--color-text-muted-dark)]"
             aria-label="Sanalar oralig'ini tozalash"
           >
-            <X size={14} />
+          <X size={14} />
           </button>
         )}
       </div>

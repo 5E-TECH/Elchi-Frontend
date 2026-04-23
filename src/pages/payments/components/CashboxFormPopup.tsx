@@ -5,10 +5,15 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { X } from "lucide-react";
 import Popup from "../../../shared/ui/Popup";
+import Select from "../../../shared/ui/Select";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
+import {
+    formatAmountInput,
+    parseAmountInput,
+} from "./lib/amountInput";
 
 interface CashboxFormValues {
     amount: string;
@@ -21,8 +26,7 @@ const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
         .string()
         .required(i18n.t("payments:amountRequired"))
         .test("positive-number", i18n.t("payments:amountPositiveValidation"), (value) => {
-            if (!value) return false;
-            return Number(value) > 0;
+            return parseAmountInput(value) > 0;
         }),
     source_type_id: yup.string().defined(),
     comment: yup.string().defined(),
@@ -89,7 +93,7 @@ const CashboxFormPopup = ({
 
     const submitForm = (values: CashboxFormValues) => {
         onSubmit({
-            amount: Number(values.amount),
+            amount: parseAmountInput(values.amount),
             ...(values.source_type_id ? { source_type_id: values.source_type_id } : {}),
             comment: values.comment,
         });
@@ -98,7 +102,7 @@ const CashboxFormPopup = ({
 
     const isValid =
         amount !== "" &&
-        Number(amount) > 0 &&
+        parseAmountInput(amount) > 0 &&
         (!hasSourceTypes || sourceTypeId !== "");
 
     return (
@@ -116,23 +120,32 @@ const CashboxFormPopup = ({
                 </div>
 
                 {/* Form body */}
-                <div className="px-6 py-6 flex flex-col gap-5">
+                <div className="px-5 py-5 flex flex-col gap-4">
                     {/* Amount */}
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-white/70">
+                        <label className="text-[13px] font-semibold text-gray-700 dark:text-white/70">
                             {t("amountLabel")} <span className="text-rose-400">*</span>
                         </label>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                min={0}
-                                placeholder="0"
-                                {...register("amount")}
-                                className="w-full h-12 rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 pr-16 text-gray-900 dark:text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all placeholder-gray-400"
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-white/40 pointer-events-none">
-                                UZS
-                            </span>
+                        <div className="rounded-[1rem] border border-gray-200 bg-gray-50/90 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-glass-border dark:bg-white/[0.04]">
+                            <div className="relative">
+                                <Controller
+                                    control={control}
+                                    name="amount"
+                                    render={({ field }) => (
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            placeholder="0"
+                                            value={formatAmountInput(field.value)}
+                                            onChange={(event) => field.onChange(event.target.value)}
+                                            className="h-9 w-full rounded-[0.8rem] bg-transparent px-3 pr-16 text-sm font-semibold tracking-[0.02em] text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/20"
+                                        />
+                                    )}
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-main/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.1em] text-main dark:bg-white/10 dark:text-white/75 pointer-events-none">
+                                    UZS
+                                </span>
+                            </div>
                         </div>
                         {errors.amount && (
                             <p className="text-xs text-red-500">{errors.amount.message}</p>
@@ -142,51 +155,42 @@ const CashboxFormPopup = ({
                     {/* Payment type */}
                     {hasSourceTypes && (
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-white/70">
-                            {t("paymentType")} <span className="text-rose-400">*</span>
-                        </label>
-                        <div className="relative">
-                            <Controller
-                                control={control}
-                                name="source_type_id"
-                                render={({ field }) => (
-                                    <select
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        className="w-full h-12 rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all appearance-none cursor-pointer"
-                                    >
-                                        <option value="">{t("paymentTypePlaceholder")}</option>
-                                        {sourceTypes.map((t) => (
-                                            <option key={t.id} value={String(t.id)}>
-                                                {t.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <path d="M6 9l6 6 6-6" />
-                                </svg>
-                            </span>
-                        </div>
-                        {errors.source_type_id && (
-                            <p className="text-xs text-red-500">{errors.source_type_id.message}</p>
-                        )}
+                        <Controller
+                            control={control}
+                            name="source_type_id"
+                            render={({ field }) => (
+                                <Select
+                                    label={t("paymentType")}
+                                    name={field.name}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    options={sourceTypes.map((item) => ({
+                                        value: String(item.id),
+                                        label: item.name,
+                                    }))}
+                                    placeholder={t("paymentTypePlaceholder")}
+                                    required
+                                    error={errors.source_type_id?.message}
+                                    className="dark:bg-[#312D4B] dark:border-glass-border dark:focus:border-main dark:focus:ring-main/10"
+                                />
+                            )}
+                        />
                     </div>
                     )}
 
                     {/* Comment */}
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-white/70">
+                        <label className="text-[13px] font-semibold text-gray-700 dark:text-white/70">
                             {t("comment")}
                         </label>
-                        <textarea
-                            rows={3}
-                            placeholder={t("commentPlaceholder")}
-                            {...register("comment")}
-                            className="w-full rounded-xl border border-gray-200 dark:border-glass-border bg-white dark:bg-primarydark px-4 py-3 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all resize-none placeholder-gray-400"
-                        />
+                        <div className="rounded-[1rem] border border-gray-200 bg-gray-50/90 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-glass-border dark:bg-white/[0.04]">
+                            <textarea
+                                rows={2}
+                                placeholder={t("commentPlaceholder")}
+                                {...register("comment")}
+                                className="w-full resize-none rounded-[0.8rem] bg-transparent px-3 py-2.5 text-[13px] leading-4.5 text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/20"
+                            />
+                        </div>
                     </div>
                 </div>
 
