@@ -28,9 +28,8 @@ import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useOrders } from "../../../entities/orders";
 import PopupConfirm from "../../../shared/components/popupConfirm";
-import { useKeyboardScanner } from "../../../shared/lib/useKeyboardScanner";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
-  normalizeScannerValue,
   playMissingOrderFeedback,
   playScanFeedback,
 } from "../../scan/lib/scanShared";
@@ -185,54 +184,32 @@ const MailDetailPage = () => {
   // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
   const regionId = useMemo(() => orders[0]?.region_id ?? "", [orders]);
 
-  const orderScanIndex = useMemo(() => {
-    const index = new Map<string, string>();
-
-    orders.forEach((order) => {
-      index.set(String(order.id).toLowerCase(), order.id);
-      if (order.qr_code_token?.trim()) {
-        index.set(order.qr_code_token.trim().toLowerCase(), order.id);
-      }
-    });
-
-    return index;
-  }, [orders]);
-
-  const selectByScannedCode = useCallback((rawValue: string) => {
-    const candidates = normalizeScannerValue(rawValue);
-    const orderId = candidates
-      .map((candidate) => orderScanIndex.get(candidate))
-      .find(Boolean);
-
-    if (!orderId) {
-      if (rawValue.trim().length < 6 && !rawValue.includes("/scan/")) {
-        return false;
-      }
-
-      notifApi.warning({
+  const handleMissingScannedOrder = useCallback(() => {
+    notifApi.warning({
         message: "QR topilmadi",
         description: "Bu QR kod ushbu pochta orderlariga mos kelmadi.",
         placement: "topRight",
         duration: 3,
       });
-      playMissingOrderFeedback();
-      return true;
-    }
+    playMissingOrderFeedback();
+  }, [notifApi]);
 
-    selectOne(orderId);
+  const selectScannedOrder = useCallback((order: PostOrder) => {
+    selectOne(order.id);
     notifApi.success({
       message: "Order tanlandi",
-      description: `#${orderId}`,
+      description: `#${order.id}`,
       placement: "topRight",
       duration: 2,
     });
     void playScanFeedback("success");
-    return true;
-  }, [notifApi, orderScanIndex, selectOne]);
+  }, [notifApi, selectOne]);
 
-  useKeyboardScanner({
+  useOrderQrScanner({
+    orders,
     enabled: orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier,
-    onScan: selectByScannedCode,
+    onMatch: selectScannedOrder,
+    onMissing: handleMissingScannedOrder,
   });
 
   const handleBack = useCallback(() => {
@@ -246,12 +223,13 @@ const MailDetailPage = () => {
   // ─── Pochtani qabul qilish (faqat courier uchun) ─────────────────────────
   const handleReceive = useCallback(() => {
     if (selectedIds.size === 0 || !postId) return;
+    const receivedIds = Array.from(selectedIds);
 
     apiRequest({
       request: () =>
         (isRefusedDetail ? receiveCanceledPost : receivePost).mutateAsync({
           postId,
-          payload: { order_ids: Array.from(selectedIds) },
+          payload: { order_ids: receivedIds },
         }),
       successMessage: isRefusedDetail
         ? t("receiveRefusedSuccess")
@@ -260,8 +238,13 @@ const MailDetailPage = () => {
         ? t("receiveRefusedError")
         : t("receiveError"),
       onSuccess: () => {
+        setSentOrderIds((prev) => {
+          const next = new Set(prev);
+          receivedIds.forEach((id) => next.add(id));
+          return next;
+        });
         clearSelection();
-        navigate("/mails");
+        void refetchRegularDetail();
       },
     });
   }, [
@@ -272,7 +255,8 @@ const MailDetailPage = () => {
     receivePost,
     apiRequest,
     clearSelection,
-    navigate,
+    refetchRegularDetail,
+    t,
   ]);
 
   // ─── Muvaffaqiyatli yuborilgandan keyin ───────────────────────────────────

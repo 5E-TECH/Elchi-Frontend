@@ -76,7 +76,7 @@ const PopupSelect = <T extends Record<string, any>>({
 
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className={`bg-primary dark:bg-maindark w-[92vw] max-w-140 rounded-2xl px-5 md:px-8 py-7 md:py-10 text-main dark:text-primary shadow-2xl flex flex-col max-h-[90vh] ${className}`}>
+      <div className={`bg-[color:var(--color-surface-elevated)] dark:bg-[color:var(--color-surface-elevated-dark)] w-[92vw] max-w-140 rounded-2xl border border-[color:var(--color-border-soft)] px-5 md:px-8 py-7 md:py-10 text-maindark dark:text-primary shadow-2xl flex flex-col max-h-[90vh] ${className}`}>
         <div className="flex justify-between items-center mb-6">
           <HeaderName
             name={title}
@@ -84,7 +84,7 @@ const PopupSelect = <T extends Record<string, any>>({
             icon={icon}
           />
           <X
-            className="absolute top-6 right-6 cursor-pointer text-gray-400 hover:text-red-500 dark:text-gray-400 dark:hover:text-gray-200"
+            className="absolute top-6 right-6 cursor-pointer text-[color:var(--color-text-muted)] hover:text-error dark:hover:text-primary"
             onClick={onClose}
           />
         </div>
@@ -100,9 +100,9 @@ const PopupSelect = <T extends Record<string, any>>({
               onValueChange={field.onChange}
               placeholder={placeholder}
               className="mb-4 px-2"
-              inputClassName="bg-primary dark:bg-primarydark text-gray-900 dark:text-primary border-gray-400 dark:border-primarydark py-3 placeholder:text-gray-400 dark:placeholder:text-gray-400 shadow-none focus:shadow-none"
-              iconClassName="text-gray-400 group-focus-within:text-main"
-              clearButtonClassName="text-gray-400 hover:text-main"
+              inputClassName="bg-sidebar dark:bg-primarydark text-maindark dark:text-primary border-[color:var(--color-border-soft)] py-3 placeholder:text-[color:var(--color-text-muted)] shadow-none focus:shadow-none"
+              iconClassName="text-[color:var(--color-text-muted)] group-focus-within:text-main"
+              clearButtonClassName="text-[color:var(--color-text-muted)] hover:text-main"
             />
           )}
         />
@@ -146,10 +146,10 @@ const PopupSelect = <T extends Record<string, any>>({
           })}
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="flex justify-end gap-3 pt-4 border-t border-[color:var(--color-border-soft)]">
           <Button
             label={cancelLabel}
-            className="border border-gray-200 dark:border-primarydark text-primarydark dark:text-primary hover:bg-gray-50 dark:hover:bg-primary/5"
+            className="border border-[color:var(--color-border-soft)] text-maindark dark:text-primary hover:bg-main/5 dark:hover:bg-primary/5"
             onClick={onClose}
           />
           <Button

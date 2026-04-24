@@ -70,7 +70,7 @@
   "statusInactive": "Inactive",
   "statusBlocked": "Blocked",
   "roleAdmin": "Admin",
-  "roleManager": "Registrar",
+  "roleManager": "Manager",
   "roleRegistrator": "Registrar",
   "roleCourier": "Courier",
   "roleMarket": "Market",

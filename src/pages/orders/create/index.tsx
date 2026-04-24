@@ -1,16 +1,22 @@
 import { memo, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, ListPlus, Package, SendHorizontal } from "lucide-react";
-import { FormProvider, useForm, useWatch, type Resolver } from "react-hook-form";
+import { ChevronLeft, ChevronRight, ListPlus, Package, SendHorizontal, Store } from "lucide-react";
+import {
+  FormProvider,
+  useForm,
+  useWatch,
+  type Path,
+  type Resolver,
+  type UseFormSetError,
+} from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
-import OrderStepper from "./ui/OrderStepper";
 import Step1Market from "./ui/Step1Market";
 import Step2Combined from "./ui/Step2Combined";
-import { FormStateNote, getActionButtonClassName } from "./ui/formFieldStyles";
+import { FormFieldError, getActionButtonClassName } from "./ui/formFieldStyles";
 import { useOrders } from "../../../entities/order/api/orderApi";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { RootState } from "../../../app/config/store";
@@ -23,9 +29,98 @@ import {
 } from "./model/orderCreateForm";
 import { useOrders as useIncomingOrders } from "../../../entities/orders";
 import type { ApiOrder } from "../../new_orders/components/OrderCard";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import OrderStatusBadge from "../list/OrderStatusBadge";
+import OrdersTable from "../list/OrdersTable";
+import type { OrderListItem } from "../../../entities/order/types/order";
+
+type BackendErrorPayload = {
+  message?: unknown;
+  error?: unknown;
+  detail?: unknown;
+  errors?: unknown;
+  data?: {
+    message?: unknown;
+    errors?: unknown;
+  };
+};
+
+const normalizeBackendMessage = (value: unknown): string | undefined => {
+  if (!value) return undefined;
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value.map(normalizeBackendMessage).filter(Boolean).join(", ");
+  }
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>)
+      .map(normalizeBackendMessage)
+      .filter(Boolean)
+      .join(", ");
+  }
+  return String(value);
+};
+
+const getBackendPayload = (error: unknown): BackendErrorPayload | undefined =>
+  (error as { response?: { data?: BackendErrorPayload } })?.response?.data;
+
+const getOrderCreateErrorMessage = (
+  error: unknown,
+  fallback: string,
+): string => {
+  const data = getBackendPayload(error);
+
+  return (
+    normalizeBackendMessage(data?.message) ||
+    normalizeBackendMessage(data?.data?.message) ||
+    normalizeBackendMessage(data?.errors) ||
+    normalizeBackendMessage(data?.data?.errors) ||
+    normalizeBackendMessage(data?.detail) ||
+    normalizeBackendMessage(data?.error) ||
+    normalizeBackendMessage((error as { message?: unknown })?.message) ||
+    fallback
+  );
+};
+
+const orderCreateFieldErrorMap: Record<string, Path<OrderCreateFormValues>> = {
+  phone: "customer.phone",
+  phone_number: "customer.phone",
+  "customer.phone": "customer.phone",
+  "customer.phone_number": "customer.phone",
+  extra_phone: "customer.extra_phone",
+  "customer.extra_phone": "customer.extra_phone",
+  name: "customer.name",
+  "customer.name": "customer.name",
+  region_id: "customer.region_id",
+  "customer.region_id": "customer.region_id",
+  district_id: "customer.district_id",
+  "customer.district_id": "customer.district_id",
+  address: "customer.address",
+  "customer.address": "customer.address",
+  total_price: "details.total_price",
+  "details.total_price": "details.total_price",
+  items: "details.items",
+  "details.items": "details.items",
+  order_item_info: "details.items",
+};
+
+const applyOrderCreateFieldErrors = (
+  error: unknown,
+  setError: UseFormSetError<OrderCreateFormValues>,
+) => {
+  const data = getBackendPayload(error);
+  const errors = data?.errors ?? data?.data?.errors;
+
+  if (!errors || typeof errors !== "object" || Array.isArray(errors)) {
+    return;
+  }
+
+  Object.entries(errors as Record<string, unknown>).forEach(([key, value]) => {
+    const fieldName = orderCreateFieldErrorMap[key];
+    const message = normalizeBackendMessage(value);
+
+    if (fieldName && message) {
+      setError(fieldName, { type: "server", message });
+    }
+  });
+};
 
 type MarketNewOrdersTableProps = {
   marketId?: number;
@@ -33,23 +128,55 @@ type MarketNewOrdersTableProps = {
   onRowClick: (order: ApiOrder) => void;
 };
 
-const formatMoney = (value: number) => `${(value ?? 0).toLocaleString("uz-UZ")} so'm`;
-
-const formatCreatedAt = (value: string) => {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
-
-  return date.toLocaleString("uz-UZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const mapMarketOrderToListItem = (
+  order: ApiOrder,
+  marketId?: number,
+  marketName?: string,
+): OrderListItem => ({
+  id: order.id,
+  market_id: marketId ? String(marketId) : "",
+  customer_id: order.customer?.id ?? "",
+  product_quantity: order.items?.reduce((total, item) => total + (item.quantity ?? 0), 0) ?? 0,
+  status: order.status as OrderListItem["status"],
+  where_deliver: order.where_deliver === "center" ? "center" : "address",
+  total_price: order.total_price ?? 0,
+  to_be_paid: order.to_be_paid ?? 0,
+  paid_amount: order.paid_amount ?? 0,
+  district_id: null,
+  region_id: null,
+  address: order.address,
+  operator: null,
+  comment: order.comment,
+  post_id: null,
+  createdAt: order.createdAt,
+  updatedAt: order.createdAt,
+  deleted: false,
+  items: (order.items ?? []).map((item) => ({
+    id: item.id,
+    product_id: item.product?.id ?? "",
+    order_id: order.id,
+    quantity: item.quantity,
+    createdAt: order.createdAt,
+    updatedAt: order.createdAt,
+  })),
+  customer: {
+    id: order.customer?.id ?? "",
+    name: order.customer?.name ?? "",
+    phone_number: order.customer?.phone_number ?? "",
+  },
+  market: {
+    id: marketId ? String(marketId) : "",
+    name: marketName ?? "—",
+  },
+  district: {
+    id: "",
+    name: order.customer?.district?.name ?? order.district?.name ?? "—",
+    region: {
+      id: "",
+      name: order.customer?.region?.name ?? order.region?.name ?? order.address ?? "—",
+    },
+  },
+});
 
 const MarketNewOrdersTable = ({
   marketId,
@@ -61,75 +188,9 @@ const MarketNewOrdersTable = ({
   const enabled = Boolean(marketId);
   const { data, isLoading } = getTodayOrdersByMarket(marketId ?? 0, undefined, enabled);
   const orders: ApiOrder[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-
-  const columns = useMemo<ColumnConfig<ApiOrder>[]>(
-    () => [
-      {
-        key: "customer",
-        label: t("customer"),
-        render: (customer: ApiOrder["customer"]) => (
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-maindark dark:text-primary">
-              {customer?.name ?? "—"}
-            </p>
-            <p className="text-xs text-gray-400">{customer?.phone_number ?? ""}</p>
-          </div>
-        ),
-      },
-      {
-        key: "address",
-        label: `${t("filterRegion")} / ${t("district")}`,
-        render: (_: ApiOrder["address"], order) => (
-          <div className="min-w-0">
-            <p className="truncate text-sm text-maindark dark:text-primary">
-              {order.customer?.district?.name ?? order.district?.name ?? "—"}
-            </p>
-            <p className="truncate text-xs text-gray-400">
-              {order.customer?.region?.name ?? order.region?.name ?? order.address ?? "—"}
-            </p>
-          </div>
-        ),
-      },
-      {
-        key: "where_deliver",
-        label: t("deliveryType"),
-        render: (whereDeliver: ApiOrder["where_deliver"]) => (
-          <span
-            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-              whereDeliver === "center"
-                ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                : "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
-            }`}
-          >
-            {whereDeliver === "center" ? t("deliveryCenter") : t("deliveryHome")}
-          </span>
-        ),
-      },
-      {
-        key: "status",
-        label: t("orderStatus"),
-        render: (status: ApiOrder["status"]) => <OrderStatusBadge status={status as never} />,
-      },
-      {
-        key: "total_price",
-        label: t("sumLabel"),
-        render: (totalPrice: ApiOrder["total_price"]) => (
-          <span className="text-sm font-semibold text-maindark dark:text-primary">
-            {formatMoney(totalPrice)}
-          </span>
-        ),
-      },
-      {
-        key: "createdAt",
-        label: t("date"),
-        render: (createdAt: ApiOrder["createdAt"]) => (
-          <span className="whitespace-nowrap text-xs text-gray-400">
-            {formatCreatedAt(createdAt)}
-          </span>
-        ),
-      },
-    ],
-    [t],
+  const orderListItems = useMemo(
+    () => orders.map((order) => mapMarketOrderToListItem(order, marketId, marketName)),
+    [marketId, marketName, orders],
   );
 
   if (!marketId) {
@@ -159,15 +220,13 @@ const MarketNewOrdersTable = ({
         </span>
       </div>
 
-      <Table
-        data={orders}
-        columns={columns}
-        keyExtractor={(order) => order.id}
-        loading={isLoading}
-        emptyMessage={t("ordersNotFound")}
-        onRowClick={onRowClick}
-        hoverable
-        bordered
+      <OrdersTable
+        data={orderListItems}
+        isLoading={isLoading}
+        onRowClick={(order) => {
+          const originalOrder = orders.find((item) => item.id === order.id);
+          if (originalOrder) onRowClick(originalOrder);
+        }}
       />
     </section>
   );
@@ -189,7 +248,6 @@ const StepActions = ({
   isMarketRole: boolean;
 }) => {
   const { t } = useTranslation(["orders", "common"]);
-  const stepsLength = 2;
 
   return (
     <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -202,26 +260,14 @@ const StepActions = ({
         {step === 1 || isMarketRole ? t("back", { ns: "common" }) : t("previous", { ns: "common" })}
       </button>
 
-      <div className="flex w-full flex-col items-center gap-2 px-0 text-center sm:w-auto sm:px-4">
-        <span className="text-xs text-gray-400 font-medium">
-          {step} / {stepsLength}
-        </span>
-        {isSubmitting ? (
-          <FormStateNote
-            state="loading"
-            message={t("createSubmitting")}
-          />
-        ) : canNext ? (
-          <FormStateNote
-            state="success"
-            message={step < 2 ? t("stepReadyMessage") : t("orderReadyMessage")}
-          />
-        ) : (
-          <FormStateNote
-            state="info"
-            message={step < 2 ? t("selectMarketFirst") : t("fillRequiredFields")}
-          />
-        )}
+      <div className="hidden text-center text-xs font-semibold text-[color:var(--color-text-muted)] sm:block">
+        {isSubmitting
+          ? t("createSubmitting")
+          : canNext
+            ? t("orderReadyMessage")
+            : step < 2
+              ? t("selectMarketFirst")
+              : t("fillRequiredFields")}
       </div>
 
       {step < 2 ? (
@@ -277,13 +323,7 @@ const OrderCreateFormContent = () => {
   const [step, setStep] = useState(
     isMarketRole || selectedMarketFromState ? 2 : 1,
   );
-  const steps = useMemo(
-    () => [
-      { id: 1, label: t("stepOneLabel"), description: t("stepOneDescription") },
-      { id: 2, label: t("stepTwoLabel"), description: t("stepTwoDescription") },
-    ],
-    [t],
-  );
+  const [serverError, setServerError] = useState("");
 
   const methods = useForm<OrderCreateFormValues>({
     resolver: yupResolver(
@@ -296,12 +336,13 @@ const OrderCreateFormContent = () => {
     },
   });
 
-  const { control, handleSubmit, trigger, reset } = methods;
+  const { control, handleSubmit, trigger, reset, setError } = methods;
 
   const market = useWatch({ control, name: "market" });
   const customer = useWatch({ control, name: "customer" });
   const details = useWatch({ control, name: "details" });
   const selectedMarketId = market?.id ?? selectedMarketFromState?.id;
+  const selectedMarketName = market?.name ?? selectedMarketFromState?.name;
 
   const canNext = useMemo(() => {
     if (step === 1) {
@@ -329,6 +370,8 @@ const OrderCreateFormContent = () => {
   };
 
   const handleNext = async () => {
+    setServerError("");
+
     if (isMarketRole) {
       setStep(2);
       return;
@@ -341,6 +384,8 @@ const OrderCreateFormContent = () => {
   };
 
   const onSubmit = (values: OrderCreateFormValues) => {
+    setServerError("");
+
     createOrder.mutate(buildCreateOrderPayload(values, { includeMarketId: !isMarketRole }), {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -358,10 +403,27 @@ const OrderCreateFormContent = () => {
           duration: 4,
         });
       },
+      onError: (error) => {
+        const message = getOrderCreateErrorMessage(
+          error,
+          t("orderCreateErrorFallback"),
+        );
+
+        applyOrderCreateFieldErrors(error, setError);
+        setServerError(message);
+        api.error({
+          message: t("orderCreateErrorTitle"),
+          description: message,
+          placement: "topRight",
+          duration: 5,
+        });
+      },
     });
   };
 
   const handleFinalSubmit = async () => {
+    setServerError("");
+
     const isValid = await trigger([
       "customer.phone",
       "customer.name",
@@ -386,22 +448,24 @@ const OrderCreateFormContent = () => {
         }}
         className="p-3 sm:p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-3 sm:gap-6 min-h-full"
       >
-        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 sm:px-4">
-          <HeaderName
-            name={t("newOrders")}
-            description={t("createPageDescription")}
-            icon={<ListPlus />}
-          />
+        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 py-3 sm:px-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <HeaderName
+              name={t("newOrders")}
+              description={selectedMarketName ? t("selectedMarket") : t("createPageDescription")}
+              icon={<ListPlus />}
+            />
+
+            {selectedMarketName && (
+              <div className="inline-flex max-w-full items-center gap-2 self-start rounded-2xl border border-main/15 bg-main/8 px-4 py-2.5 text-sm font-bold text-main dark:bg-main/12 md:self-center">
+                <Store size={16} />
+                <span className="truncate">{selectedMarketName}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-2 sm:p-3">
-          <OrderStepper
-            steps={steps}
-            currentStep={step}
-            stepNotes={!isMarketRole && market?.name ? { 1: market.name } : undefined}
-            hiddenDescriptions={step > 1 ? [1] : undefined}
-          />
-        </div>
+        <FormFieldError message={serverError} />
 
         <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-6 flex-1">
           {!isMarketRole && step === 1 && <Step1Market />}

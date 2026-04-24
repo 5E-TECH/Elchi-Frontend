@@ -91,7 +91,7 @@ const cashDetailSchema: yup.ObjectSchema<CashboxActionFormValues> = yup.object({
     .test("positive-number", i18n.t("payments:amountPositiveValidation"), (value) =>
       parseAmountInput(value) > 0),
   paymentType: yup.string().required(i18n.t("payments:paymentTypeRequired")),
-  marketId: yup.string().when("paymentType", {
+  marketId: yup.string().defined().when("paymentType", {
     is: "click_to_market",
     then: (schema) => schema.required(i18n.t("payments:marketRequired")),
     otherwise: (schema) => schema.defined(),

@@ -127,6 +127,8 @@
   "stepTwoDescription": "Customer and order details",
   "orderCreatedMarketRole": "Order created. You can continue adding new orders for your products.",
   "orderCreatedForMarket": "Order created. You can add another order for this market.",
+  "orderCreateErrorTitle": "Order was not created",
+  "orderCreateErrorFallback": "Check the details and try again",
   "createPageDescription": "Complete the steps to create an order",
   "selectMarketTitle": "Select market",
   "selectedMarket": "Selected market",
