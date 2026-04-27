@@ -33,6 +33,7 @@ import {
   playMissingOrderFeedback,
   playScanFeedback,
 } from "../../scan/lib/scanShared";
+import { getMailTabPath, normalizeMailTab } from "../lib/navigation";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const MailDetailSkeleton = memo(() => (
@@ -82,12 +83,18 @@ const MailDetailPage = () => {
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
   const isSuperAdmin = role === "superadmin";
-  const navState = location.state as { fromTab?: string; type?: string; view?: string } | null;
+  const navState = location.state as {
+    fromTab?: string;
+    type?: string;
+    view?: string;
+    fromSearch?: string;
+  } | null;
 
   const search = location.search ? new URLSearchParams(location.search) : null;
   const fromTabRaw = navState?.fromTab ?? search?.get("from") ?? undefined;
   const typeRaw = navState?.type ?? search?.get("type") ?? undefined;
   const viewRaw = navState?.view ?? search?.get("view") ?? undefined;
+  const fromSearch = navState?.fromSearch ?? "";
 
   const isRefusedDetail = typeRaw === "refused";
   const isOldDetail = viewRaw === "old";
@@ -213,12 +220,8 @@ const MailDetailPage = () => {
   });
 
   const handleBack = useCallback(() => {
-    const tab =
-      fromTab === "today" || fromTab === "refused" || fromTab === "old"
-        ? fromTab
-        : "today";
-    navigate(`/mails?tab=${tab}`);
-  }, [fromTab, navigate]);
+    navigate(`${getMailTabPath(normalizeMailTab(fromTab))}${fromSearch}`);
+  }, [fromSearch, fromTab, navigate]);
 
   // ─── Pochtani qabul qilish (faqat courier uchun) ─────────────────────────
   const handleReceive = useCallback(() => {
@@ -274,7 +277,7 @@ const MailDetailPage = () => {
       ).length ?? 0;
 
     if (remainingOrders === 0) {
-      navigate("/mails?tab=today");
+      navigate(getMailTabPath("today"));
     }
   }, [clearSelection, navigate, refetchRegularDetail, selectedIds]);
 
@@ -390,7 +393,7 @@ const MailDetailPage = () => {
         const remainingOrders = refreshed.data?.data?.allOrdersByPostId?.length ?? 0;
 
         if (remainingOrders === 0) {
-          navigate("/mails?tab=today");
+          navigate(getMailTabPath("today"));
         }
       },
     });

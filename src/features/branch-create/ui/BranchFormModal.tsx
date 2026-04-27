@@ -2,7 +2,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Form, Input, message } from "antd";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useEffect, useMemo } from "react";
-import { Building2, Phone } from "lucide-react";
+import { Building2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useUsers } from "../../../entities/user";
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
@@ -13,7 +14,15 @@ import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import FormPopup, { popupLabelClassName } from "../../../shared/ui/FormPopup";
 import Select from "../../../shared/ui/Select";
+import SearchableSelect from "../../../shared/ui/SearchableSelect";
+import PhoneInput from "../../../shared/ui/PhoneInput";
 import { GlobalSearchInput } from "../../search";
+import { applyBranchBackendErrors } from "../../branch/lib/backendBranchErrors";
+import {
+  getBranchTypeOptions,
+  getParentBranchOptions,
+  useParentBranchOptions,
+} from "../../branch/lib/branchFormOptions";
 
 type RegionOption = {
   id: string;
@@ -32,8 +41,10 @@ const useRegionOptions = () =>
   });
 
 const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const { t } = useTranslation("branches");
   const createBranch = useCreateBranch();
   const { data: regions = [] } = useRegionOptions();
+  const { data: parentBranches, isLoading: parentBranchesLoading } = useParentBranchOptions(open);
   const { data: managers = [] } = useUsers({
     status: "active",
     role: ["admin", "operator"],
@@ -45,13 +56,17 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     control,
     handleSubmit,
     reset,
+    setError,
     setValue,
     formState: { errors },
   } = useForm<CreateBranchDto>({
     resolver: yupResolver(branchSchema),
     defaultValues: {
       name: "",
-      phone_number: "",
+      parent_id: "",
+      type: "CITY",
+      code: "",
+      phone_number: "+998",
       region_id: "",
       district_id: "",
       address: "",
@@ -60,6 +75,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     },
   });
 
+  const selectedType = useWatch({ control, name: "type" });
   const selectedRegionId = useWatch({ control, name: "region_id" });
   const districts = useMemo(
     () => regions.find((region) => String(region.id) === selectedRegionId)?.districts ?? [],
@@ -75,10 +91,15 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
   );
   const statusOptions = useMemo(
     () => [
-      { value: "active", label: "Faol" },
-      { value: "inactive", label: "Nofaol" },
+      { value: "active", label: t("status.active") },
+      { value: "inactive", label: t("status.inactive") },
     ],
-    [],
+    [t],
+  );
+  const branchTypeOptions = useMemo(() => getBranchTypeOptions(t), [t]);
+  const parentOptions = useMemo(
+    () => getParentBranchOptions(parentBranches?.data, t),
+    [parentBranches?.data, t],
   );
   const managerOptions = useMemo(
     () =>
@@ -96,10 +117,19 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
   }, [open, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
-    await createBranch.mutateAsync(values);
-    message.success("Filial yaratildi");
-    onClose();
-    reset();
+    try {
+      const payload: CreateBranchDto = {
+        ...values,
+        code: values.code.trim(),
+        parent_id: values.type === "HQ" ? "" : values.parent_id,
+      };
+      await createBranch.mutateAsync(payload);
+      message.success(t("messages.created"));
+      onClose();
+      reset();
+    } catch (error) {
+      applyBranchBackendErrors(error, setError);
+    }
   });
 
   return (
@@ -110,15 +140,16 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
         event.preventDefault();
         void onSubmit();
       }}
-      title="Yangi filial"
-      description="Filial ma'lumotlarini kiriting va uni tizimga qo'shing."
+      title={t("create.title")}
+      description={t("create.description")}
       icon={<Building2 size={22} />}
-      submitLabel="Saqlash"
+      submitLabel={t("actions.save")}
       isLoading={createBranch.isPending}
       theme="branch"
+      widthClassName="max-w-xl"
     >
       <Form layout="vertical" component={false}>
-        <Form.Item label={<span className={popupLabelClassName}>Filial nomi</span>} validateStatus={errors.name ? "error" : ""} help={errors.name?.message}>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.name")}</span>} validateStatus={errors.name ? "error" : ""} help={errors.name?.message}>
           <Controller
             control={control}
             name="name"
@@ -128,7 +159,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 value={field.value}
                 onValueChange={field.onChange}
                 onBlur={field.onBlur}
-                placeholder="Filial nomini kiriting"
+                placeholder={t("placeholders.name")}
                 icon={Building2}
                 error={Boolean(errors.name)}
                 syncWithRedux={false}
@@ -137,26 +168,83 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
             )}
           />
         </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>Telefon raqami</span>} validateStatus={errors.phone_number ? "error" : ""} help={errors.phone_number?.message}>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.type")}</span>} validateStatus={errors.type ? "error" : ""} help={errors.type?.message}>
           <Controller
             control={control}
-            name="phone_number"
+            name="type"
+            render={({ field }) => (
+              <Select
+                name={field.name}
+                value={field.value}
+                options={branchTypeOptions}
+                placeholder={t("placeholders.type")}
+                onChange={(event) => {
+                  field.onChange(event.target.value);
+                  if (event.target.value === "HQ") {
+                    setValue("parent_id", "");
+                  }
+                }}
+              />
+            )}
+          />
+        </Form.Item>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.parent")}</span>} validateStatus={errors.parent_id ? "error" : ""} help={errors.parent_id?.message}>
+          <Controller
+            control={control}
+            name="parent_id"
+            render={({ field }) => (
+              <SearchableSelect
+                label={t("fields.parent")}
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                disabled={selectedType === "HQ"}
+                options={parentOptions}
+                loading={parentBranchesLoading}
+                placeholder={selectedType === "HQ" ? t("placeholders.parentForHq") : t("placeholders.parent")}
+                icon={Building2}
+                hideLabel
+                surface="search"
+              />
+            )}
+          />
+        </Form.Item>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.code")}</span>} validateStatus={errors.code ? "error" : ""} help={errors.code?.message}>
+          <Controller
+            control={control}
+            name="code"
             render={({ field }) => (
               <GlobalSearchInput
                 name={field.name}
                 value={field.value}
-                onValueChange={field.onChange}
+                onValueChange={(value) => field.onChange(value.toUpperCase())}
                 onBlur={field.onBlur}
-                placeholder="+998901234567"
-                icon={Phone}
-                error={Boolean(errors.phone_number)}
+                placeholder={t("placeholders.code")}
+                icon={Building2}
+                error={Boolean(errors.code)}
                 syncWithRedux={false}
                 syncWithUrl={false}
               />
             )}
           />
         </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>Viloyat</span>} validateStatus={errors.region_id ? "error" : ""} help={errors.region_id?.message}>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.phone")}</span>} validateStatus={errors.phone_number ? "error" : ""} help={errors.phone_number?.message}>
+          <Controller
+            control={control}
+            name="phone_number"
+            render={({ field }) => (
+              <PhoneInput
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={t("placeholders.phone")}
+                error={Boolean(errors.phone_number)}
+              />
+            )}
+          />
+        </Form.Item>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.region")}</span>} validateStatus={errors.region_id ? "error" : ""} help={errors.region_id?.message}>
           <Controller
             control={control}
             name="region_id"
@@ -165,7 +253,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 name={field.name}
                 value={field.value}
                 options={regionOptions}
-                placeholder="Viloyatni tanlang"
+                placeholder={t("placeholders.region")}
                 onChange={(event) => {
                   field.onChange(event.target.value);
                   setValue("district_id", "");
@@ -174,7 +262,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
             )}
           />
         </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>Tuman</span>} validateStatus={errors.district_id ? "error" : ""} help={errors.district_id?.message}>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.district")}</span>} validateStatus={errors.district_id ? "error" : ""} help={errors.district_id?.message}>
           <Controller
             control={control}
             name="district_id"
@@ -184,13 +272,13 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 value={field.value}
                 disabled={!selectedRegionId}
                 options={districtOptions}
-                placeholder="Tumanni tanlang"
+                placeholder={t("placeholders.district")}
                 onChange={(event) => field.onChange(event.target.value)}
               />
             )}
           />
         </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>Manzil</span>} validateStatus={errors.address ? "error" : ""} help={errors.address?.message}>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.address")}</span>} validateStatus={errors.address ? "error" : ""} help={errors.address?.message}>
           <Controller
             control={control}
             name="address"
@@ -198,12 +286,12 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
               <Input.TextArea
                 {...field}
                 rows={3}
-                placeholder="Filial manzilini kiriting"
+                placeholder={t("placeholders.address")}
               />
             )}
           />
         </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>Holat</span>} validateStatus={errors.status ? "error" : ""} help={errors.status?.message}>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.status")}</span>} validateStatus={errors.status ? "error" : ""} help={errors.status?.message}>
           <Controller
             control={control}
             name="status"
@@ -212,13 +300,13 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 name={field.name}
                 value={field.value}
                 options={statusOptions}
-                placeholder="Holatni tanlang"
+                placeholder={t("placeholders.status")}
                 onChange={(event) => field.onChange(event.target.value)}
               />
             )}
           />
         </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>Mas'ul xodim</span>} validateStatus={errors.manager_id ? "error" : ""} help={errors.manager_id?.message}>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.manager")}</span>} validateStatus={errors.manager_id ? "error" : ""} help={errors.manager_id?.message}>
           <Controller
             control={control}
             name="manager_id"
@@ -227,7 +315,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 name={field.name}
                 value={field.value}
                 options={managerOptions}
-                placeholder="Mas'ul xodimni tanlang"
+                placeholder={t("placeholders.manager")}
                 onChange={(event) => field.onChange(event.target.value)}
               />
             )}

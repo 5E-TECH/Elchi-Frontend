@@ -8,7 +8,7 @@ import Button from "../../../shared/components/button";
 import HeaderName from "../../../shared/components/headerName";
 import { BranchListWidget } from "../../../widgets/branch-list";
 
-type ViewMode = "table" | "card";
+type ViewMode = "table" | "card" | "tree";
 
 const STORAGE_KEY = "branches-view-mode";
 
@@ -17,7 +17,7 @@ const BranchesPage = () => {
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved === "card" ? "card" : "table";
+    return saved === "table" || saved === "card" || saved === "tree" ? saved : "tree";
   });
 
   useEffect(() => {

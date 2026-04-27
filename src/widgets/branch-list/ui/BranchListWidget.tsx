@@ -1,13 +1,16 @@
-import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
+import { ApartmentOutlined, AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import { Empty, Spin } from "antd";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useBranches, type Branch, type BranchParams } from "../../../entities/branch";
+import Pagination from "../../../shared/components/pagination";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import BranchCards from "./BranchCards";
 import BranchTable from "./BranchTable";
+import BranchTree from "./BranchTree";
 
-type ViewMode = "table" | "card";
+type ViewMode = "table" | "card" | "tree";
 
 interface BranchListWidgetProps {
   viewMode: ViewMode;
@@ -15,29 +18,43 @@ interface BranchListWidgetProps {
   onEdit: (branch: Branch) => void;
 }
 
-const statusOptions = [
-  { value: "active", label: "Faol" },
-  { value: "inactive", label: "Nofaol" },
-];
-
-const viewModeOptions: { value: ViewMode; icon: ReactNode; label: string }[] = [
-  { value: "table", icon: <BarsOutlined />, label: "Jadval" },
-  { value: "card", icon: <AppstoreOutlined />, label: "Kartalar" },
-];
-
 const BranchListWidget = ({
   viewMode,
   onViewModeChange,
   onEdit,
 }: BranchListWidgetProps) => {
+  const { t } = useTranslation("branches");
   const [params, setParams] = useState<BranchParams>({
     page: 1,
     limit: 12,
     search: "",
     status: "",
   });
-  const { data, isLoading } = useBranches(params);
-  const totalPages = Math.max(Math.ceil((data?.total ?? 0) / (data?.limit ?? params.limit ?? 12)), 1);
+  const queryParams = useMemo(
+    () => (viewMode === "tree" ? { ...params, page: 1, limit: 100 } : params),
+    [params, viewMode],
+  );
+  const { data, isLoading } = useBranches(queryParams);
+  const currentPage = data?.page ?? params.page ?? 1;
+  const currentLimit = data?.limit ?? params.limit ?? 12;
+  const totalItems = data?.total ?? 0;
+  const from = totalItems === 0 ? 0 : (currentPage - 1) * currentLimit + 1;
+  const to = totalItems === 0 ? 0 : Math.min(currentPage * currentLimit, totalItems);
+  const statusOptions = useMemo(
+    () => [
+      { value: "active", label: t("status.active") },
+      { value: "inactive", label: t("status.inactive") },
+    ],
+    [t],
+  );
+  const viewModeOptions: { value: ViewMode; icon: ReactNode; label: string }[] = useMemo(
+    () => [
+      { value: "tree", icon: <ApartmentOutlined />, label: t("list.treeView") },
+      { value: "table", icon: <BarsOutlined />, label: t("list.tableView") },
+      { value: "card", icon: <AppstoreOutlined />, label: t("list.cardView") },
+    ],
+    [t],
+  );
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-sm dark:border-primarydark/60 dark:bg-maindark">
@@ -46,7 +63,7 @@ const BranchListWidget = ({
           <div className="min-w-0 flex-1">
             <FilterSearch
               value={params.search ?? ""}
-              placeholder="Filial nomi yoki manzil bo'yicha qidirish"
+              placeholder={t("list.searchPlaceholder")}
               onChange={(search) => setParams((prev) => ({ ...prev, search, page: 1 }))}
               debounceDelay={400}
             />
@@ -54,11 +71,11 @@ const BranchListWidget = ({
           <div className="w-full xl:w-[180px]">
             <FilterSelect
               name="branch_status"
-              label="Holat"
+              label={t("fields.status")}
               value={params.status ?? ""}
               onChange={(status) => setParams((prev) => ({ ...prev, status: status as BranchParams["status"], page: 1 }))}
               options={statusOptions}
-              placeholder="Barchasi"
+              placeholder={t("list.allStatuses")}
             />
           </div>
           <div className="flex xl:pb-[1px]">
@@ -92,50 +109,33 @@ const BranchListWidget = ({
         <Spin spinning={isLoading}>
           {viewMode === "table" ? (
             <BranchTable data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-          ) : (
+          ) : viewMode === "card" ? (
             <BranchCards data={data?.data ?? []} loading={isLoading} />
+          ) : (
+            <BranchTree data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
           )}
         </Spin>
 
-        {viewMode === "card" && data && !data.data.length ? <Empty description="Filiallar topilmadi" /> : null}
+        {viewMode === "card" && data && !data.data.length ? <Empty description={t("list.notFound")} /> : null}
       </div>
 
-      <div
-        className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-primarydark/60"
-        style={{
-          background: "linear-gradient(90deg, var(--color-main) 0%, var(--color-primarydark) 100%)",
-        }}
-      >
-        <span className="text-sm text-white">
-          {data?.total
-            ? `${(data.page - 1) * data.limit + 1}-${Math.min(data.page * data.limit, data.total)} dan ${data.total} tasi ko'rsatilmoqda`
-            : "0 ta filial"}
-        </span>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              setParams((prev) => ({ ...prev, page: Math.max((data?.page ?? prev.page ?? 1) - 1, 1) }))
+      {viewMode !== "tree" ? (
+        <div className="border-t border-gray-200 px-4 py-4 sm:px-6 dark:border-primarydark/60">
+          <Pagination
+            totalItems={totalItems}
+            itemsPerPage={currentLimit}
+            currentPage={currentPage}
+            onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}
+            onItemsPerPageChange={(limit) => setParams((prev) => ({ ...prev, limit, page: 1 }))}
+            summary={
+              totalItems > 0
+                ? t("list.paginationSummary", { from, to, total: totalItems })
+                : t("list.emptyCount")
             }
-            className="rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={(data?.page ?? params.page ?? 1) <= 1}
-          >
-            Oldingi
-          </button>
-          <span className="px-2 text-sm font-medium text-white">
-            {data?.page ?? params.page ?? 1} / {totalPages}
-          </span>
-          <button
-            type="button"
-            onClick={() => setParams((prev) => ({ ...prev, page: (data?.page ?? prev.page ?? 1) + 1 }))}
-            className="rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={(data?.page ?? params.page ?? 1) >= totalPages}
-          >
-            Keyingi
-          </button>
+            pageSizeOptions={[12, 24, 48, 96]}
+          />
         </div>
-      </div>
+      ) : null}
     </div>
   );
 };

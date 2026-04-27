@@ -1,5 +1,6 @@
 import { lazy, memo } from "react";
 import { Navigate, useRoutes } from "react-router-dom";
+import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
 
@@ -17,6 +18,8 @@ const DashboardLayout = lazy(
 );
 const ScanLayout = lazy(() => import("../../widgets/layout/scanLayout"));
 const DashboardPage = lazy(() => import("../../pages/dashboard/DashboardPage"));
+const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
+const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const UserListPage = lazy(() => import("../../pages/users/list/UserListPage"));
 const CreateUserPage = lazy(
   () => import("../../pages/users/create/CreateUserPage"),
@@ -79,6 +82,26 @@ const hasSelfCashboxAccess = (state: RootState) => {
   return role === "courier" || role === "market";
 };
 
+const canViewBranchDashboard = (state: RootState) => {
+  const role = state.role.role;
+  return role === "manager" || role === "operator";
+};
+
+const canViewDispatch = (state: RootState) => {
+  const role = state.role.role;
+  return role === "superadmin";
+};
+
+const DashboardEntry = () => {
+  const role = useSelector((state: RootState) => state.role.role);
+
+  if (role === "manager" || role === "operator") {
+    return <Navigate replace to="/branch-dashboard" />;
+  }
+
+  return <DashboardPage />;
+};
+
 const AppRouter = () => {
   return useRoutes([
     { path: "/login", element: <Login /> },
@@ -108,7 +131,23 @@ const AppRouter = () => {
           path: "/",
           element: <DashboardLayout />,
           children: [
-            { index: true, element: <DashboardPage /> },
+            { index: true, element: <DashboardEntry /> },
+            {
+              path: "branch-dashboard",
+              element: (
+                <ProtectedRoute canActivate={canViewBranchDashboard}>
+                  <BranchDashboardPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "dispatch",
+              element: (
+                <ProtectedRoute canActivate={canViewDispatch}>
+                  <DispatchPage />
+                </ProtectedRoute>
+              ),
+            },
             { path: "profile", element: <Profile /> },
             {
               path: "all-users",
@@ -171,6 +210,10 @@ const AppRouter = () => {
               path: "mails",
               children: [
                 { index: true, element: <Mails /> },
+                { path: "today", element: <Mails /> },
+                { path: "return", element: <Mails /> },
+                { path: "refused", element: <Mails /> },
+                { path: "old", element: <Mails /> },
                 { path: ":id", element: <MailDetail /> },
               ],
             },

@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
+import store from "../../../app/config/store";
+import { setProfile } from "../model/slice";
+import { setName, setRole } from "../../../features/auth/model/loginSlice";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
@@ -9,6 +12,7 @@ import type {
   UpdateUserRequest,
   UserStatus,
 } from "../types/user";
+import { unwrapUserResponse } from "../lib/normalizeUser";
 
 export const user = "user";
 
@@ -135,8 +139,27 @@ export const useUser = () => {
   const updateUser = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
       api.patch(API_ENDPOINTS.USERS.BY_ID(id), data).then((res: any) => res.data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+    onSuccess: (response, variables) => {
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+
+      const currentProfile = store.getState().user.user;
+      if (!currentProfile || currentProfile.id !== variables.id) {
+        return;
+      }
+
+      const updatedProfile =
+        unwrapUserResponse(response) ??
+        ({
+          ...currentProfile,
+          ...variables.data,
+          name: variables.data.name ?? currentProfile.name,
+          role: currentProfile.role,
+        } as any);
+
+      store.dispatch(setProfile(updatedProfile as any));
+      store.dispatch(setName(updatedProfile.name));
+      store.dispatch(setRole(updatedProfile.role));
+    },
   });
 
   const deleteUser = useMutation({

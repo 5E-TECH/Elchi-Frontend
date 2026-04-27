@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { render } from "@testing-library/react";
 import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
+import type { RootState } from "../app/config/store";
 import sidebar from "../widgets/Sidebar/model/sidebarSlice";
 import user from "../entities/user/model/slice";
 import filter from "../features/Select/model/FilterSlice";
@@ -14,17 +15,19 @@ import pagination from "../features/pagination/model/paginationSlice";
 import i18n from "../i18n";
 import { NotificationProvider } from "../app/providers/notification/NotificationProvider";
 
-export const createTestStore = (preloadedState?: Record<string, unknown>) =>
+const rootReducer = combineReducers({
+  sidebar,
+  user,
+  filter,
+  search,
+  role,
+  pagination,
+});
+
+export const createTestStore = (preloadedState?: Partial<RootState>) =>
   configureStore({
-    reducer: {
-      sidebar,
-      user,
-      filter,
-      search,
-      role,
-      pagination,
-    },
-    preloadedState: preloadedState as never,
+    reducer: rootReducer,
+    preloadedState,
   });
 
 export const renderWithProviders = (
@@ -34,7 +37,7 @@ export const renderWithProviders = (
     preloadedState,
   }: {
     route?: string;
-    preloadedState?: Record<string, unknown>;
+    preloadedState?: Partial<RootState>;
   } = {},
 ) => {
   const store = createTestStore(preloadedState);

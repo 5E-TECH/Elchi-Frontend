@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Mails from "./index";
 import { renderWithProviders } from "../../test/test-utils";
@@ -17,14 +17,14 @@ vi.mock("./components/oldMails", () => ({
 
 describe("Mails page", () => {
   it("renders today tab by default", () => {
-    renderWithProviders(<Mails />, { route: "/mails" });
+    renderWithProviders(<Mails />, { route: "/mails/today" });
 
     expect(screen.getByText("today-content")).toBeInTheDocument();
   });
 
   it("switches to refused tab", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<Mails />, { route: "/mails" });
+    renderWithProviders(<Mails />, { route: "/mails/today" });
 
     await user.click(screen.getByRole("button", { name: /Rad etilgan pochtalar/i }));
 
@@ -33,16 +33,18 @@ describe("Mails page", () => {
 
   it("switches to old tab", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<Mails />, { route: "/mails" });
+    renderWithProviders(<Mails />, { route: "/mails/today" });
 
     await user.click(screen.getByRole("button", { name: /Eski pochtalar/i }));
 
     expect(screen.getByText("old-content")).toBeInTheDocument();
   });
 
-  it("reads initial tab from query string", () => {
+  it("redirects legacy tab query to the path route", async () => {
     renderWithProviders(<Mails />, { route: "/mails?tab=refused" });
 
-    expect(screen.getByText("refused-content")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("refused-content")).toBeInTheDocument();
+    });
   });
 });

@@ -365,12 +365,7 @@ const DateRangePicker = ({
           className="min-w-0 flex-1 truncate bg-transparent text-left font-semibold outline-none"
           style={{ color: hasRange ? "var(--color-date-picker-trigger)" : "var(--color-date-picker-placeholder)" }}
         >
-          <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-main/70">
-            Sana oralig&apos;i
-          </span>
-          <span className="block truncate">
-            {triggerLabel}
-          </span>
+          <span className="block truncate">{triggerLabel}</span>
         </button>
 
         {hasRange && (

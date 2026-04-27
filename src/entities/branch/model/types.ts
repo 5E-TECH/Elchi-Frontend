@@ -1,6 +1,14 @@
+export type BranchType = "HQ" | "CITY" | "REGIONAL" | "DISTRICT";
+
 export interface Branch {
   id: string;
   name: string;
+  parent_id?: string;
+  parent?: { id: string; name: string } | null;
+  type?: BranchType;
+  level?: number;
+  code?: string;
+  phone_number?: string;
   region: { id: string; name: string };
   district: { id: string; name: string };
   address: string;

@@ -156,6 +156,11 @@ export interface PaginatedPostsResponse {
   };
 }
 
+interface GetOldMailsParams {
+  page?: number;
+  limit?: number;
+}
+
 // ─── Mail list item (post/new, post/old, post/rejected) ───────────────────────
 export interface MailItem {
   id: string;
@@ -210,13 +215,22 @@ export const useMails = () => {
       queryFn: () => api.get(API_ENDPOINTS.POSTS.COURIER_REJECTED).then((res) => res.data),
     });
 
-  const getOldMails = (isCourier = false) =>
+  const getOldMails = (isCourier = false, params?: GetOldMailsParams) =>
     useQuery<PaginatedPostsResponse>({
-      queryKey: [MAILS_KEY, "old", isCourier ? "courier" : "default"],
+      queryKey: [
+        MAILS_KEY,
+        "old",
+        isCourier ? "courier" : "default",
+        params?.page ?? 1,
+        params?.limit ?? 8,
+      ],
       queryFn: () =>
         api
           .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
-            params: { page: 1, limit: 8 },
+            params: {
+              page: params?.page ?? 1,
+              limit: params?.limit ?? 8,
+            },
           })
           .then((res) => res.data),
     });

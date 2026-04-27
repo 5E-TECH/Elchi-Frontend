@@ -1,6 +1,7 @@
 import { Button } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { BranchStatusBadge, type Branch } from "../../../entities/branch";
 import { DeleteBranchButton } from "../../../features/branch-delete";
 import { Table } from "../../../shared/components/Table/Table";
@@ -14,6 +15,7 @@ interface BranchTableProps {
 }
 
 const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
+  const { t } = useTranslation("branches");
   const navigate = useNavigate();
   const actionButtonClassName =
     "!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !p-0 !font-medium !text-[var(--color-maindark)] transition-colors hover:!border-[var(--color-main)] hover:!bg-[color:color-mix(in_srgb,var(--color-main)_22%,white)] hover:!text-[var(--color-main)] dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-[var(--color-main)] dark:hover:!bg-primarydark/70 dark:hover:!text-white";
@@ -23,7 +25,7 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
   const columns: ColumnConfig<Branch>[] = [
     {
       key: "name",
-      label: "Nomi",
+      label: t("table.name"),
       sortable: true,
       render: (_, record) => (
         <button
@@ -40,38 +42,38 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
     },
     {
       key: "region",
-      label: "Hudud",
+      label: t("table.area"),
       sortable: true,
       sortValue: (row) => `${row.region.name} ${row.district.name}`,
       render: (_, record) => `${record.region.name}, ${record.district.name}`,
     },
     {
       key: "address",
-      label: "Manzil",
+      label: t("fields.address"),
       sortable: true,
     },
     {
       key: "status",
-      label: "Holat",
+      label: t("fields.status"),
       sortable: true,
       render: (status: Branch["status"]) => <BranchStatusBadge status={status} />,
     },
     {
       key: "employees_count",
-      label: "Xodimlar",
+      label: t("table.employees"),
       sortable: true,
       className: "text-center",
     },
     {
       key: "created_at",
-      label: "Sana",
+      label: t("table.date"),
       sortable: true,
       sortValue: (row) => new Date(row.created_at).getTime(),
       render: (value: string) => formatDate(value, "DD.MM.YYYY"),
     },
     {
       key: "id",
-      label: "Amallar",
+      label: t("table.actions"),
       render: (_, record) => (
         <div className="flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
           <Button
@@ -79,8 +81,8 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
             icon={<EditOutlined />}
             className={actionButtonClassName}
             onClick={() => onEdit(record)}
-            aria-label="Tahrirlash"
-            title="Tahrirlash"
+            aria-label={t("actions.edit")}
+            title={t("actions.edit")}
           />
           <DeleteBranchButton id={record.id} className={deleteButtonClassName} />
         </div>
@@ -95,7 +97,7 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
       loading={loading}
       columns={columns}
       data={data}
-      emptyMessage="Filiallar topilmadi"
+      emptyMessage={t("list.notFound")}
       onRowClick={(branch) => navigate(`/branches/${branch.id}`)}
     />
   );

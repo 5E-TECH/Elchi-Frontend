@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -15,12 +15,15 @@ import {
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import QrScanner from "../../shared/lib/qrScanner";
+import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import {
   extractScannerToken,
-  fetchScanOrder,
-  getScanOrderQueryKey,
   playScanFeedback,
 } from "./lib/scanShared";
+import {
+  fetchScanDetail,
+  getScanDetailQueryKey,
+} from "./lib/scanResource";
 
 const ScanPage = () => {
   const { t } = useTranslation("common");
@@ -40,6 +43,43 @@ const ScanPage = () => {
   const [scanState, setScanState] = useState<"idle" | "success" | "invalid">("idle");
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [hasTorch, setHasTorch] = useState(false);
+  const [cameraUnavailable, setCameraUnavailable] = useState(false);
+
+  const handleDecodedValue = useCallback((rawValue: string) => {
+    if (Date.now() < nextAllowedScanAtRef.current) return true;
+
+    const nextToken = extractScannerToken(rawValue, window.location.origin);
+
+    if (nextToken) {
+      stopScannerRef.current();
+      setError("");
+      setScanState("success");
+      setScanResult(nextToken);
+      setScannedId(nextToken);
+      void playScanFeedback("success");
+      void queryClient.prefetchQuery({
+        queryKey: getScanDetailQueryKey(nextToken),
+        queryFn: () => fetchScanDetail(nextToken),
+      });
+      redirectTimeoutRef.current = window.setTimeout(() => {
+        navigate(`/scan/${encodeURIComponent(nextToken)}`);
+      }, 180);
+      return true;
+    }
+
+    setScanState("invalid");
+    setScanResult(rawValue);
+    setError(t("scannerInvalidQr"));
+    void playScanFeedback("error");
+    nextAllowedScanAtRef.current = Date.now() + 1800;
+    return true;
+  }, [navigate, queryClient, t]);
+
+  useKeyboardScanner({
+    enabled: true,
+    captureEditableTargets: true,
+    onScan: handleDecodedValue,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -63,30 +103,6 @@ const ScanPage = () => {
 
     stopScannerRef.current = stopScanner;
 
-    const handleSuccess = (nextToken: string) => {
-      stopScanner();
-      setError("");
-      setScanState("success");
-      setScanResult(nextToken);
-      setScannedId(nextToken);
-      void playScanFeedback("success");
-      void queryClient.prefetchQuery({
-        queryKey: getScanOrderQueryKey(nextToken),
-        queryFn: () => fetchScanOrder(nextToken),
-      });
-      redirectTimeoutRef.current = window.setTimeout(() => {
-        navigate(`/scan/${encodeURIComponent(nextToken)}`);
-      }, 180);
-    };
-
-    const handleInvalid = (rawValue: string) => {
-      setScanState("invalid");
-      setScanResult(rawValue);
-      setError(t("scannerInvalidQr"));
-      void playScanFeedback("error");
-      nextAllowedScanAtRef.current = Date.now() + 1800;
-    };
-
     const startScanner = async () => {
       setIsStarting(true);
       setError("");
@@ -100,20 +116,17 @@ const ScanPage = () => {
           throw new Error(t("scannerStartError"));
         }
 
+        const supportError = await QrScanner.getSupportError();
+        if (supportError) {
+          setCameraUnavailable(true);
+          throw new Error(supportError);
+        }
+
         const scanner = new QrScanner(
           videoRef.current,
           (result: string | { data: string }) => {
-            if (Date.now() < nextAllowedScanAtRef.current) return;
-
             const rawValue = typeof result === "string" ? result : result.data;
-            const nextToken = extractScannerToken(rawValue, window.location.origin);
-
-            if (nextToken) {
-              handleSuccess(nextToken);
-              return;
-            }
-
-            handleInvalid(rawValue);
+            handleDecodedValue(rawValue);
           },
           {
             preferredCamera: "environment",
@@ -126,6 +139,7 @@ const ScanPage = () => {
 
         scannerRef.current = scanner;
         await scanner.start();
+        setCameraUnavailable(false);
 
         if (cancelled) {
           scanner.destroy();
@@ -174,7 +188,7 @@ const ScanPage = () => {
         redirectTimeoutRef.current = null;
       }
     };
-  }, [navigate, queryClient, scannerSession, t]);
+  }, [handleDecodedValue, navigate, queryClient, scannerSession, t]);
 
   const handleToggleTorch = async () => {
     const scanner = scannerRef.current;
@@ -189,6 +203,7 @@ const ScanPage = () => {
   };
 
   const handleRestart = () => {
+    if (cameraUnavailable) return;
     stopScannerRef.current();
     setScannerSession((prev) => prev + 1);
   };
@@ -368,14 +383,16 @@ const ScanPage = () => {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={handleRestart}
-              className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark transition hover:border-main/30 hover:bg-main/5 hover:text-main dark:bg-maindark dark:text-white/80 dark:hover:bg-white/[0.09] dark:hover:text-white"
-            >
-              <RefreshCw size={15} />
-              {t("retry")}
-            </button>
+            {!cameraUnavailable ? (
+              <button
+                type="button"
+                onClick={handleRestart}
+                className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark transition hover:border-main/30 hover:bg-main/5 hover:text-main dark:bg-maindark dark:text-white/80 dark:hover:bg-white/[0.09] dark:hover:text-white"
+              >
+                <RefreshCw size={15} />
+                {t("retry")}
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

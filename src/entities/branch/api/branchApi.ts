@@ -1,14 +1,38 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type { PaginatedResponse } from "../../../shared/types/pagination";
-import type { Branch, BranchParams, BranchSetting, Employee } from "../model/types";
+import type { Branch, BranchParams, BranchSetting, BranchType, Employee } from "../model/types";
+
+const normalizeBranchType = (value: unknown): BranchType | undefined => {
+  const normalized = String(value ?? "").toUpperCase();
+
+  if (normalized === "HQ") return "HQ";
+  if (normalized === "CITY") return "CITY";
+  if (normalized === "REGIONAL" || normalized === "REGION") return "REGIONAL";
+  if (normalized === "DISTRICT") return "DISTRICT";
+
+  return undefined;
+};
 
 const normalizeBranch = (value: unknown): Branch => {
-  const item = value as Branch;
+  const item = value as Branch & Record<string, any>;
+  const parent = item.parent ?? item.parent_branch ?? null;
+  const type = item.type ?? item.branch_type;
 
   return {
     id: String(item.id),
     name: item.name ?? "Noma'lum filial",
+    parent_id: item.parent_id ? String(item.parent_id) : parent?.id ? String(parent.id) : "",
+    parent: parent
+      ? {
+          id: String(parent.id ?? ""),
+          name: parent.name ?? "—",
+        }
+      : null,
+    type: normalizeBranchType(type),
+    level: Number(item.level ?? 0),
+    code: item.code ?? "",
+    phone_number: item.phone_number ?? item.phone ?? "",
     region: {
       id: String(item.region?.id ?? ""),
       name: item.region?.name ?? "—",
