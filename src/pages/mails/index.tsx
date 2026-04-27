@@ -1,17 +1,20 @@
 import { memo, type ReactNode } from "react";
 import { Mail, Package, AlertTriangle, Clock, RotateCcw } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import TodaysMails from "./components/todaysMails";
 import OldMails from "./components/oldMails";
 import RefusedMails from "./components/refusedMails";
 import ReturnMails from "./components/returnMails";
 import HeaderName from "../../shared/components/headerName";
-
-type Tab = "today" | "return" | "refused" | "old";
+import {
+  getMailTabPath,
+  normalizeMailTab,
+  type MailTab,
+} from "./lib/navigation";
 
 interface TabItem {
-  key: Tab;
+  key: MailTab;
   icon: ReactNode;
   labelKey: "todayTab" | "returnTab" | "refusedTab" | "oldTab";
   activeWrapperClassName: string;
@@ -59,15 +62,22 @@ const tabs: TabItem[] = [
 
 const Mails = () => {
   const { t } = useTranslation("mails");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const activeTab: Tab =
-    tabParam === "today" || tabParam === "return" || tabParam === "refused" || tabParam === "old"
-      ? tabParam
-      : "today";
+  const location = useLocation();
+  const navigate = useNavigate();
+  const tabParam = new URLSearchParams(location.search).get("tab");
 
-  const handleTabChange = (tab: Tab) => {
-    setSearchParams({ tab });
+  if (tabParam) {
+    return <Navigate replace to={getMailTabPath(tabParam)} />;
+  }
+
+  if (location.pathname === "/mails") {
+    return <Navigate replace to={getMailTabPath("today")} />;
+  }
+
+  const activeTab = normalizeMailTab(location.pathname.split("/").filter(Boolean).at(-1));
+
+  const handleTabChange = (tab: MailTab) => {
+    navigate(getMailTabPath(tab));
   };
 
   return (

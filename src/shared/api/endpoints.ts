@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
     BASE: "orders",
     BY_ID: (id: string | number) => `orders/${id}`,
     QR_CODE: (token: string | number) => `orders/qr-code/${token}`,
+    ASSIGN_COURIER: "orders/assign-courier",
     RECEIVE: "orders/receive",
     MARKETS_NEW: "orders/markets/new",
     MARKET_NEW: (marketId: string | number) => `orders/markets/${marketId}/new`,
@@ -50,6 +51,7 @@ export const API_ENDPOINTS = {
     NEW: "post/new",
     ON_THE_ROAD: "post/on-the-road",
     COURIER_OLD: "post/courier/old-posts",
+    QR_CODE: (token: string | number) => `post/qr-code/${token}`,
     ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/${postId}`,
     REJECTED_ORDERS_BY_POST_ID: (postId: string | number) => `post/orders/rejected/${postId}`,
     REJECTED: "post/rejected",
@@ -58,6 +60,10 @@ export const API_ENDPOINTS = {
     BY_ID: (postId: string | number) => `post/${postId}`,
     RECEIVE: (postId: string | number) => `post/receive/${postId}`,
     CANCEL_RECEIVE: (postId: string | number) => `post/cancel/receive/${postId}`,
+  },
+  PACKAGES: {
+    QR_CODE: (token: string | number) => `packages/qr-code/${token}`,
+    RECEIVE: (id: string | number) => `packages/receive/${id}`,
   },
   CASHBOX: {
     PAYMENT_COURIER: "finance/cashbox/payment/courier",

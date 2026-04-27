@@ -1,0 +1,99 @@
+{
+  "create": {
+    "title": "Yangi filial",
+    "description": "Filial ma'lumotlarini kiriting va uni tizimga qo'shing."
+  },
+  "edit": {
+    "title": "Filialni tahrirlash",
+    "description": "Filial ma'lumotlarini yangilang va o'zgarishlarni saqlang."
+  },
+  "actions": {
+    "save": "Saqlash",
+    "update": "Yangilash",
+    "edit": "Tahrirlash",
+    "details": "Batafsil"
+  },
+  "fields": {
+    "name": "Filial nomi",
+    "parent": "Yuqori filial",
+    "type": "Filial turi",
+    "code": "Qisqa nom",
+    "phone": "Telefon raqami",
+    "region": "Viloyat",
+    "district": "Tuman",
+    "address": "Manzil",
+    "status": "Holat",
+    "manager": "Mas'ul xodim"
+  },
+  "placeholders": {
+    "name": "Filial nomini kiriting",
+    "parent": "Yuqori filialni tanlang",
+    "parentForHq": "HQ uchun yuqori filial kerak emas",
+    "type": "Filial turini tanlang",
+    "code": "Masalan: TSH-CHL",
+    "phone": "90 123 45 67",
+    "region": "Viloyatni tanlang",
+    "district": "Tumanni tanlang",
+    "address": "Filial manzilini kiriting",
+    "status": "Holatni tanlang",
+    "manager": "Mas'ul xodimni tanlang"
+  },
+  "branchTypes": {
+    "HQ": "HQ",
+    "CITY": "Shahar",
+    "REGIONAL": "Viloyat",
+    "DISTRICT": "Tuman",
+    "city": "Shahar",
+    "regional": "Viloyat",
+    "district": "Tuman",
+    "unknown": "Noma'lum"
+  },
+  "status": {
+    "active": "Faol",
+    "inactive": "Nofaol"
+  },
+  "messages": {
+    "created": "Filial yaratildi",
+    "updated": "Filial yangilandi"
+  },
+  "errors": {
+    "codeExists": "Bu code allaqachon mavjud",
+    "circularParent": "Aylanma bog'lanish aniqlandi"
+  },
+  "list": {
+    "searchPlaceholder": "Filial nomi yoki manzil bo'yicha qidirish",
+    "allStatuses": "Barchasi",
+    "tableView": "Jadval",
+    "cardView": "Kartalar",
+    "treeView": "Daraxt",
+    "notFound": "Filiallar topilmadi",
+    "emptyCount": "0 ta filial",
+    "paginationSummary": "{{from}}-{{to}} dan {{total}} tasi ko'rsatilmoqda",
+    "employeeCount": "{{count}} xodim"
+  },
+  "table": {
+    "name": "Nomi",
+    "area": "Hudud",
+    "employees": "Xodimlar",
+    "date": "Sana",
+    "actions": "Amallar"
+  },
+  "tree": {
+    "level": "{{level}}-daraja"
+  },
+  "validation": {
+    "minName": "Kamida 2 ta belgi",
+    "name": "Filial nomini kiriting",
+    "parent": "Yuqori filialni tanlang",
+    "type": "Filial turini tanlang",
+    "hqDisabled": "HQ allaqachon mavjud",
+    "code": "Qisqa nomni kiriting",
+    "phone": "Telefon raqamini kiriting",
+    "phoneFormat": "Telefon raqam 9 ta raqamdan iborat bo'lishi kerak",
+    "region": "Viloyatni tanlang",
+    "district": "Tumanni tanlang",
+    "address": "Manzilni kiriting",
+    "status": "Holat tanlang",
+    "manager": "Mas'ul xodimni tanlang"
+  }
+}

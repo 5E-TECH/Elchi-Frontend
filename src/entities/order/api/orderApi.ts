@@ -11,6 +11,11 @@ import type {
 
 export const ORDER_KEY = "orders";
 
+export interface AssignCourierRequest {
+    courier_id: string;
+    order_ids: string[];
+}
+
 export const useOrders = () => {
     const client = useQueryClient();
 
@@ -36,5 +41,12 @@ export const useOrders = () => {
             placeholderData: (prev) => prev,
         });
 
-    return { createOrder, getOrders, getExternalOrders };
+    const assignCourier = useMutation({
+        mutationFn: (data: AssignCourierRequest) =>
+            api.post(API_ENDPOINTS.ORDERS.ASSIGN_COURIER, data).then((res) => res.data),
+        onSuccess: () =>
+            client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
+    });
+
+    return { createOrder, getOrders, getExternalOrders, assignCourier };
 };

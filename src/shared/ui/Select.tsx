@@ -108,6 +108,7 @@ const Select = memo(
                             <option
                                 key={opt.value}
                                 value={opt.value}
+                                disabled={opt.disabled}
                                 className="dark:bg-[#1a1f3a] text-slate-800 dark:text-white"
                             >
                                 {opt.label}

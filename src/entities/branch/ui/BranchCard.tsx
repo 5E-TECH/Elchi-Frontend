@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { Building2, MapPin, Users } from "lucide-react";
 import type { Branch } from "../model/types";
 import BranchStatusBadge from "./BranchStatusBadge";
 
 const BranchCard = ({ branch }: { branch: Branch }) => {
+  const { t } = useTranslation("branches");
   const navigate = useNavigate();
 
   return (
@@ -36,7 +38,7 @@ const BranchCard = ({ branch }: { branch: Branch }) => {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-              Manzil
+              {t("fields.address")}
             </p>
             <p className="mt-1 text-sm leading-6 text-[var(--color-maindark)] dark:text-white/85">
               {branch.address}
@@ -54,15 +56,15 @@ const BranchCard = ({ branch }: { branch: Branch }) => {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-                Xodimlar
+                {t("table.employees")}
               </p>
               <p className="text-base font-bold text-[var(--color-maindark)] dark:text-white">
-                {branch.employees_count} xodim
+                {t("list.employeeCount", { count: branch.employees_count })}
               </p>
             </div>
           </div>
           <span className="rounded-full border border-[color:var(--color-border-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-main)] dark:border-primarydark/50 dark:text-white/85">
-            Batafsil
+            {t("actions.details")}
           </span>
         </div>
       </div>

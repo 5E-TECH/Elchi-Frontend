@@ -1,0 +1,99 @@
+{
+  "create": {
+    "title": "New Branch",
+    "description": "Enter branch details and add it to the system."
+  },
+  "edit": {
+    "title": "Edit Branch",
+    "description": "Update branch details and save the changes."
+  },
+  "actions": {
+    "save": "Save",
+    "update": "Update",
+    "edit": "Edit",
+    "details": "Details"
+  },
+  "fields": {
+    "name": "Branch name",
+    "parent": "Parent branch",
+    "type": "Branch type",
+    "code": "Short name",
+    "phone": "Phone number",
+    "region": "Region",
+    "district": "District",
+    "address": "Address",
+    "status": "Status",
+    "manager": "Responsible employee"
+  },
+  "placeholders": {
+    "name": "Enter branch name",
+    "parent": "Select parent branch",
+    "parentForHq": "HQ does not need a parent branch",
+    "type": "Select branch type",
+    "code": "Example: TSH-CHL",
+    "phone": "90 123 45 67",
+    "region": "Select region",
+    "district": "Select district",
+    "address": "Enter branch address",
+    "status": "Select status",
+    "manager": "Select responsible employee"
+  },
+  "branchTypes": {
+    "HQ": "HQ",
+    "CITY": "City",
+    "REGIONAL": "Regional",
+    "DISTRICT": "District",
+    "city": "City",
+    "regional": "Regional",
+    "district": "District",
+    "unknown": "Unknown"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "messages": {
+    "created": "Branch created",
+    "updated": "Branch updated"
+  },
+  "errors": {
+    "codeExists": "This code already exists",
+    "circularParent": "Circular parent relationship detected"
+  },
+  "list": {
+    "searchPlaceholder": "Search by branch name or address",
+    "allStatuses": "All",
+    "tableView": "Table",
+    "cardView": "Cards",
+    "treeView": "Tree",
+    "notFound": "No branches found",
+    "emptyCount": "0 branches",
+    "paginationSummary": "Showing {{from}}-{{to}} of {{total}}",
+    "employeeCount": "{{count}} employees"
+  },
+  "table": {
+    "name": "Name",
+    "area": "Area",
+    "employees": "Employees",
+    "date": "Date",
+    "actions": "Actions"
+  },
+  "tree": {
+    "level": "Level {{level}}"
+  },
+  "validation": {
+    "minName": "At least 2 characters",
+    "name": "Enter branch name",
+    "parent": "Select parent branch",
+    "type": "Select branch type",
+    "hqDisabled": "HQ already exists",
+    "code": "Enter short name",
+    "phone": "Enter phone number",
+    "phoneFormat": "Phone number must contain 9 digits",
+    "region": "Select region",
+    "district": "Select district",
+    "address": "Enter address",
+    "status": "Select status",
+    "manager": "Select responsible employee"
+  }
+}

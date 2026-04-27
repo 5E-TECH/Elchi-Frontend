@@ -1,0 +1,23 @@
+{
+  "title": "Dispatch orders",
+  "subtitle": "Select a courier and scan order QR codes one by one",
+  "courierLabel": "Select courier",
+  "courierPlaceholder": "Select courier",
+  "scannerTitle": "Scanner panel",
+  "scannerSubtitle": "Only order QR codes are accepted",
+  "scannerWaiting": "Select a courier and scan order QR codes",
+  "pendingTitle": "Orders to assign",
+  "pendingEmpty": "No orders added yet",
+  "pendingHint": "Scanned orders are temporarily stored here",
+  "remove": "Remove",
+  "invalidQr": "This QR code is not valid for dispatch",
+  "duplicateOrder": "This order is already in the list",
+  "wrongType": "Only order QR codes can be scanned",
+  "orderLookupError": "Failed to fetch order details",
+  "assignButton": "Assign {{count}} orders to {{courier}}",
+  "assignSuccess": "✓ {{count}} orders assigned",
+  "assignLoading": "Assigning...",
+  "sessionReset": "New session started",
+  "marketFallback": "Market not specified",
+  "selectCourierFirst": "Select a courier first"
+}

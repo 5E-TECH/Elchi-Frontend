@@ -24,6 +24,7 @@ interface PaginationProps {
   onItemsPerPageChange?: (limit: number) => void;
   summary?: ReactNode;
   className?: string;
+  pageSizeOptions?: number[];
 }
 
 const buildPageItems = (page: number, totalPages: number) => {
@@ -57,6 +58,7 @@ const Pagination = ({
   onItemsPerPageChange,
   summary,
   className = "",
+  pageSizeOptions: customPageSizeOptions,
 }: PaginationProps) => {
   const { t } = useTranslation("common");
   const [isLimitOpen, setIsLimitOpen] = useState(false);
@@ -69,10 +71,10 @@ const Pagination = ({
   const safeItemsPerPage = Math.max(1, itemsPerPage);
   const pageSizeOptions = useMemo(
     () =>
-      Array.from(new Set([...PAGE_SIZE_OPTIONS, safeItemsPerPage])).sort(
+      Array.from(new Set([...(customPageSizeOptions ?? PAGE_SIZE_OPTIONS), safeItemsPerPage])).sort(
         (a, b) => a - b,
       ),
-    [safeItemsPerPage],
+    [customPageSizeOptions, safeItemsPerPage],
   );
   const totalPages = Math.max(1, Math.ceil(totalItems / safeItemsPerPage));
   const from = totalItems === 0 ? 0 : (currentPage - 1) * safeItemsPerPage + 1;

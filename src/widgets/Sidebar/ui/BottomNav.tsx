@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { SIDEBAR_CONFIG, type UserRole } from "../model/menuConfig";
+import { SIDEBAR_CONFIG, type SidebarUserRole } from "../model/menuConfig";
 import type { RootState } from "../../../app/config/store";
 
 interface BottomNavProps {
@@ -15,7 +15,7 @@ const BottomNav = ({ onMenuClick }: BottomNavProps) => {
 
     // ─── Redux dan haqiqiy rolni oling ───────────────────────────────────────
     const { role } = useSelector((state: RootState) => state.role);
-    const userRole = (role as UserRole) || "admin";
+    const userRole = (role as SidebarUserRole) || "admin";
 
     // ─── Rolga mos itemlarni olib, faqat birinchi 4 tasini ko'rsatish ────────
     const navItems = (SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin).slice(0, 4);
