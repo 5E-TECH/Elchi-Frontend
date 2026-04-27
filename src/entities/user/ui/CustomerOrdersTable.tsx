@@ -108,16 +108,16 @@ export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) =
     ];
 
     return (
-        <div className="bg-white dark:bg-maindark rounded-2xl border border-slate-100 dark:border-primarydark/20 shadow-sm overflow-hidden mt-5">
+        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-primarydark/20 dark:bg-maindark">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5">
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5 dark:border-white/5 sm:px-6 sm:py-4">
                 <div className="flex items-center gap-2.5">
                     <div className="w-1 h-5 bg-main rounded-full" />
                     <h3 className="text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white">
                         {t("userHistory")}
                     </h3>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-main/5 border border-main/10">
+                <div className="flex items-center gap-1.5 rounded-full border border-main/10 bg-main/5 px-2.5 py-1 sm:px-3">
                     <Info size={12} className="text-main" />
                     <span className="text-[10px] font-bold text-main uppercase tracking-widest">
                         {t("totalLabel")}: {orders.length}
@@ -133,6 +133,43 @@ export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) =
                     keyExtractor={(o) => o.id}
                     hoverable
                     onRowClick={(order) => navigate(`/new-orders/${order.market_id}/edit/${order.id}`)}
+                    mobileRowRender={(order) => {
+                        const config = STATUS_MAP[String(order.status)] ?? STATUS_MAP.new;
+                        return (
+                            <div className="rounded-xl border border-white/10 bg-white/4 p-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="m-0 flex items-center gap-1.5 truncate text-sm font-bold text-slate-800 dark:text-white">
+                                            <Tag size={13} className="text-main shrink-0" />
+                                            #{order.id}
+                                        </p>
+                                        <p className="m-0 mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-white/60">
+                                            <Calendar size={11} className="shrink-0" />
+                                            {formatDate(order.createdAt)}
+                                        </p>
+                                    </div>
+                                    <span className={`rounded-lg border border-current/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${config.bg} ${config.color}`}>
+                                        {config.label}
+                                    </span>
+                                </div>
+
+                                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 dark:bg-white/10 dark:text-white/80">
+                                        <Package size={11} className="shrink-0" />
+                                        {t("productCount", { count: order.product_quantity })}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 dark:bg-white/10 dark:text-white/80">
+                                        <Truck size={11} className="shrink-0" />
+                                        {order.where_deliver === 'center' ? t('centerOnlyTariff') : t('doorTariff')}
+                                    </span>
+                                </div>
+
+                                <div className="mt-2 text-base font-black text-main tabular-nums">
+                                    {formatMoney(Number(order.total_price))}
+                                </div>
+                            </div>
+                        );
+                    }}
                 />
             ) : (
                 <div className="p-12 text-center">

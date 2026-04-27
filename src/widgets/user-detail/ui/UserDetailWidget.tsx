@@ -72,20 +72,20 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
   // ── Success ──
   return (
     <>
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex flex-col items-start gap-4 lg:flex-row lg:gap-6">
         {/* Chap — Profil Sidebar */}
-        <div className="w-full lg:w-72 shrink-0">
+        <div className="w-full shrink-0 lg:w-72">
           <UserDetailHeader user={user} />
         </div>
 
         {/* O'ng — Kontent */}
-        <div className="w-full flex-1 min-w-0 space-y-5">
+        <div className="w-full min-w-0 flex-1 space-y-4 sm:space-y-5">
           {/* Edit tugmasi — sahifa yuqorisida */}
           <div className="flex justify-end">
             <button
               onClick={() => setShowEdit(true)}
               className="
-                flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm
+                flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold sm:w-auto sm:px-5
                 bg-main text-white hover:bg-main/90
                 shadow-md shadow-main/20 transition-all duration-200
                 active:scale-95

@@ -129,8 +129,8 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="relative w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+84px)] pt-4 backdrop-blur-sm sm:items-center sm:px-0 sm:pb-0 sm:pt-0">
+      <div className="relative mx-0 flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl max-h-[calc(100dvh-118px)] dark:bg-gray-900 sm:mx-4 sm:max-h-[90vh]">
         {/* Header */}
         <div className="bg-green-500 px-5 pt-5 pb-4">
           <div className="flex items-center justify-between mb-3">
@@ -172,7 +172,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {/* Qisman sotish toggle */}
           <div
             onClick={() => setIsPartial((p) => !p)}
@@ -314,7 +314,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5">
+        <div className="shrink-0 border-t border-gray-100 bg-white px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-4 dark:border-white/10 dark:bg-gray-900 sm:pb-5">
           <button
             onClick={handleSubmit}
             disabled={isLoading}

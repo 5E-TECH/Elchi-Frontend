@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { Calendar, History } from "lucide-react";
+import { Banknote, Calendar, History, UserRound } from "lucide-react";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
@@ -212,6 +212,53 @@ const PaymentHistoryTable = ({
           keyExtractor={(row) => row.id}
           emptyMessage={t("financeHistoryNotFound")}
           onRowClick={(row) => setSelectedRow(row)}
+          mobileRowRender={(row, index) => {
+            const isIncome = row.operation_type === "income";
+            const rowNumber = rowOffset + index + 1;
+            const paymentDate = formatDate(
+              (row.payment_date || row.createdAt || row.created_at || "") as string,
+            );
+            const sourceLabel = row.source_type || "-";
+            const cashboxLabel = row.cashbox_type || row.cashbox?.cashbox_type || "-";
+
+            return (
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
+                    <UserRound size={16} />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                      {row.created_by || "-"}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-500 dark:text-white/65">
+                      <Calendar size={13} />
+                      <span className="truncate">{paymentDate}</span>
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-white/60">
+                      <span>{sourceLabel}</span>
+                      <span>•</span>
+                      <span>{cashboxLabel}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <span className="text-xs font-semibold text-main">#{rowNumber}</span>
+                  <span
+                    className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold ${isIncome ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-400"}`}
+                  >
+                    {row.operation_type ? (isIncome ? t("income") : t("expense")) : "-"}
+                  </span>
+                  <span className={`inline-flex items-center gap-1 text-sm font-bold ${isIncome ? "text-emerald-400" : "text-rose-400"}`}>
+                    <Banknote size={13} />
+                    {isIncome ? "+" : "-"}{fmt(Math.abs(row.amount))} UZS
+                  </span>
+                </div>
+              </div>
+            );
+          }}
         />
 
         {/* Pagination */}

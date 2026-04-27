@@ -1,11 +1,12 @@
 import { memo } from 'react';
-import { Users, Store, UserCheck } from 'lucide-react';
+import { UserPlus, Users, Store, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface UserStatsProps {
     totalUsers?: number;
     totalMarkets?: number;
     totalEmployees?: number;
+    onAdd?: () => void;
 }
 
 const formatCount = (value?: number) =>
@@ -18,6 +19,7 @@ export const UserStats = memo(({
     totalUsers = 0,
     totalMarkets = 0,
     totalEmployees = 0,
+    onAdd,
 }: UserStatsProps) => {
     const { t } = useTranslation("users");
     const safeTotalUsers = Number(totalUsers) || 0;
@@ -31,8 +33,8 @@ export const UserStats = memo(({
             icon: Users,
             colorFrom: '#3b82f6',
             colorTo: '#2563eb',
-            bg: 'bg-blue-500/10',
-            text: 'text-blue-500',
+            bg: 'bg-blue-500/20 dark:bg-blue-500/25',
+            text: 'text-blue-600 dark:text-blue-300',
             progress: 100
         },
         {
@@ -41,8 +43,8 @@ export const UserStats = memo(({
             icon: Store,
             colorFrom: '#10b981',
             colorTo: '#059669',
-            bg: 'bg-emerald-500/10',
-            text: 'text-emerald-500',
+            bg: 'bg-emerald-500/20 dark:bg-emerald-500/25',
+            text: 'text-emerald-600 dark:text-emerald-300',
             progress: getProgress(safeTotalMarkets, safeTotalUsers)
         },
         {
@@ -51,46 +53,46 @@ export const UserStats = memo(({
             icon: UserCheck,
             colorFrom: '#8b5cf6',
             colorTo: '#7c3aed',
-            bg: 'bg-purple-light/10',
-            text: 'text-purple-light',
+            bg: 'bg-purple-light/20 dark:bg-purple-light/25',
+            text: 'text-purple-light dark:text-purple-200',
             progress: getProgress(safeTotalEmployees, safeTotalUsers)
         }
     ];
 
     return (
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={`mb-4 grid gap-2 sm:mb-6 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 ${onAdd ? "grid-cols-4" : "grid-cols-3"}`}>
             {stats.map((stat, index) => {
                 const IconComponent = stat.icon;
                 return (
                     <div
                         key={index}
-                        className="group relative cursor-default overflow-hidden rounded-[24px] border border-white/55 bg-white/75 p-5 shadow-[0_18px_55px_rgba(15,23,42,0.07)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 dark:border-white/10 dark:bg-white/[0.045] dark:shadow-black/10"
+                        className="group relative cursor-default overflow-hidden rounded-2xl border border-white/55 bg-white/75 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.07)] backdrop-blur-xl transition-all duration-300 sm:rounded-[24px] sm:p-5 sm:shadow-[0_18px_55px_rgba(15,23,42,0.07)] sm:hover:-translate-y-1 dark:border-white/10 dark:bg-white/[0.045] dark:shadow-black/10"
                         style={{
                             boxShadow: `0 4px 24px ${stat.colorFrom}18, 0 1px 4px rgba(0,0,0,0.06)`,
                         }}
                     >
                         {/* Decorative blob */}
                         <div
-                            className="absolute -right-8 -top-8 w-36 h-36 rounded-full blur-3xl opacity-15 group-hover:opacity-25 transition-opacity duration-500"
+                            className="absolute -right-8 -top-8 hidden h-36 w-36 rounded-full blur-3xl opacity-15 transition-opacity duration-500 group-hover:opacity-25 sm:block"
                             style={{ background: `radial-gradient(circle, ${stat.colorFrom}, ${stat.colorTo})` }}
                         />
 
                         <div className="relative z-10">
                             {/* Top row: label + icon */}
-                            <div className="flex items-start justify-between mb-4">
-                                <div>
-                                    <p className="mb-1 text-sm font-semibold leading-snug text-slate-500 dark:text-white/55">
+                            <div className="flex items-center justify-between">
+                                <div className="min-w-0">
+                                    <p className="mb-0.5 hidden truncate text-[11px] font-semibold leading-4 text-slate-500 dark:text-white sm:block sm:text-base sm:leading-snug">
                                         {stat.label}
                                     </p>
-                                    <h3 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                                    <h3 className="text-2xl font-black leading-none tracking-tight text-slate-900 dark:text-white sm:text-[40px]">
                                         {stat.value}
                                     </h3>
                                 </div>
                                 {/* Icon badge */}
                                 <div
-                                    className={`shrink-0 rounded-2xl border border-white/50 p-3 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/8 ${stat.bg} ${stat.text}`}
+                                    className={`shrink-0 rounded-xl border border-white/60 bg-white/70 p-2 shadow-sm backdrop-blur-sm sm:rounded-2xl sm:p-3 dark:border-white/10 dark:bg-slate-900/35 ${stat.bg} ${stat.text}`}
                                 >
-                                    <IconComponent size={22} strokeWidth={2.5} />
+                                    <IconComponent size={17} strokeWidth={2.7} className="sm:h-[22px] sm:w-[22px]" />
                                 </div>
                             </div>
 
@@ -113,6 +115,20 @@ export const UserStats = memo(({
                     </div>
                 );
             })}
+
+            {onAdd && (
+                <button
+                    type="button"
+                    onClick={onAdd}
+                    aria-label={t("addUser")}
+                    className="group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-white/55 bg-white/75 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.07)] backdrop-blur-xl transition-all duration-300 hover:border-main/40 hover:shadow-[0_14px_32px_rgba(87,106,219,0.2)] dark:border-white/10 dark:bg-white/[0.045] sm:hidden"
+                >
+                    <span className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-main/20 blur-2xl transition-opacity group-hover:opacity-80" />
+                    <span className="relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/60 bg-main text-white shadow-md shadow-main/30">
+                        <UserPlus size={20} strokeWidth={2.4} />
+                    </span>
+                </button>
+            )}
         </div>
     );
 });

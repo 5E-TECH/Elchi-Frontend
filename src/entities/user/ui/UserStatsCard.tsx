@@ -176,13 +176,13 @@ export const UserStatsCard = memo(({ user }: UserStatsCardProps) => {
 
     return (
         <div className="bg-white dark:bg-maindark rounded-2xl border border-slate-100 dark:border-primarydark/20 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2.5 px-6 py-4 border-b border-slate-100 dark:border-white/5">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 px-4 py-3.5 dark:border-white/5 sm:px-6 sm:py-4">
                 <div className="w-1 h-5 bg-main rounded-full" />
                 <h3 className="text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white">
                     {t("financialStats")}
                 </h3>
             </div>
-            <div className="p-5">
+            <div className="p-4 sm:p-5">
                 <AdminStats user={user} />
             </div>
         </div>

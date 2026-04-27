@@ -14,7 +14,7 @@ import {
   User,
 } from "lucide-react";
 import HeaderName from "../../shared/components/headerName";
-import FilterSelect from "../../shared/ui/FilterSelect";
+import FilterSelect, { type FilterSelectOption } from "../../shared/ui/FilterSelect";
 import FilterClearButton from "../../shared/ui/FilterClearButton";
 import PaymentHistoryTable from "./components/patmentHistoryTable";
 import PopupSelect from "../../shared/components/popupSelect";
@@ -73,6 +73,7 @@ const normalizePagination = (
 const DROPDOWN_FILTERS = [
   { name: "operation_type", labelKey: "operationType", icon: TrendingUp },
   { name: "source_type", labelKey: "sourceType", icon: BadgeDollarSign },
+  { name: "cashbox_type", labelKey: "cashboxType", icon: Landmark },
   { name: "created_by", labelKey: "createdBy", icon: User },
 ] as const;
 
@@ -81,6 +82,7 @@ type DropdownKey = (typeof DROPDOWN_FILTERS)[number]["name"];
 const INIT = {
   operation_type: "",
   source_type: "",
+  cashbox_type: "",
   created_by: "",
 };
 
@@ -90,6 +92,7 @@ const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
   yup.object({
     operation_type: yup.string().defined(),
     source_type: yup.string().defined(),
+    cashbox_type: yup.string().defined(),
     created_by: yup.string().defined(),
   });
 
@@ -112,15 +115,17 @@ const Payments = () => {
   });
   const operationType = watch("operation_type");
   const sourceType = watch("source_type");
+  const cashboxType = watch("cashbox_type");
   const createdBy = watch("created_by");
 
   const filters = useMemo(
     () => ({
       operation_type: operationType,
       source_type: sourceType,
+      cashbox_type: cashboxType,
       created_by: createdBy,
     }),
-    [createdBy, operationType, sourceType],
+    [cashboxType, createdBy, operationType, sourceType],
   );
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
@@ -215,7 +220,7 @@ const Payments = () => {
     },
   ] as const;
   const staticFilterOptions: Record<
-    Exclude<DropdownKey, "created_by">,
+    "operation_type" | "source_type",
     { value: string; label: string }[]
   > = {
     operation_type: [
@@ -274,6 +279,15 @@ const Payments = () => {
     [creatorsData],
   );
 
+  const cashboxTypeOptions = useMemo<FilterSelectOption[]>(
+    () => [
+      { value: "main", label: "Asosiy", icon: Landmark },
+      { value: "couriers", label: "Courier", icon: Truck },
+      { value: "markets", label: "Market", icon: Store },
+    ],
+    [],
+  );
+
   const handleCardClick = (
     path: string | null,
     showPopup: "given" | "received" | null,
@@ -283,18 +297,17 @@ const Payments = () => {
     else if (path) navigate(path);
   };
 
-  const filterOptionsMap: Record<
-    DropdownKey,
-    { value: string; label: string }[]
-  > = {
+  const filterOptionsMap: Record<DropdownKey, FilterSelectOption[]> = {
     operation_type: staticFilterOptions.operation_type,
     source_type: staticFilterOptions.source_type,
+    cashbox_type: cashboxTypeOptions,
     created_by: creatorOptions,
   };
 
   const loadingMap: Record<DropdownKey, boolean> = {
     operation_type: false,
     source_type: false,
+    cashbox_type: false,
     created_by: creatorsLoading,
   };
 
@@ -309,7 +322,7 @@ const Payments = () => {
   );
 
   return (
-    <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-6 min-h-full">
+    <div className="rounded-2xl bg-sidebar p-3 sm:p-4 md:p-6 dark:bg-maindark flex flex-col gap-4 sm:gap-6 min-h-full">
       {/* Header */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border px-4 shadow-sm">
         <HeaderName
@@ -320,7 +333,7 @@ const Payments = () => {
       </div>
 
       {/* Stats */}
-      <div className="flex items-stretch gap-4">
+      <div className="flex flex-col items-stretch gap-3 sm:gap-4 lg:flex-row">
         {CARDS.map(
           ({
             label,
@@ -336,12 +349,12 @@ const Payments = () => {
             <div
               key={label}
               onClick={() => handleCardClick(path, showPopup)}
-              className={`relative flex-1 overflow-hidden rounded-2xl p-6 border border-glass-border shadow-lg hover:scale-[1.02] transition-transform duration-300 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
+              className={`relative flex-1 overflow-hidden rounded-2xl p-4 sm:p-5 lg:p-6 border border-glass-border shadow-lg hover:scale-[1.02] transition-transform duration-300 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
             >
               <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white opacity-[0.06]" />
-              <div className="flex items-start justify-between mb-5">
+              <div className="mb-4 flex items-start justify-between sm:mb-5">
                 <div
-                  className={`flex items-center justify-center w-11 h-11 rounded-xl text-white ${iconBg}`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl text-white sm:h-11 sm:w-11 ${iconBg}`}
                 >
                   {icon}
                 </div>
@@ -354,16 +367,16 @@ const Payments = () => {
                       </span>
                     </div>
                   )}
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/70">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white/70 sm:h-8 sm:w-8">
                     {action}
                   </div>
                 </div>
               </div>
-              <p className="text-sm font-medium text-white/60 mb-2">{label}</p>
+              <p className="mb-2 text-sm font-medium text-white/60">{label}</p>
               {cashboxLoading ? (
                 <div className="h-9 w-32 rounded-lg bg-white/10 animate-pulse" />
               ) : (
-                <p className="text-3xl font-extrabold text-white">
+                <p className="text-2xl font-extrabold text-white sm:text-3xl">
                   {fmt(amount)}
                 </p>
               )}
@@ -378,7 +391,7 @@ const Payments = () => {
         <p className="text-sm font-bold text-gray-700 dark:text-white/70 mb-4">
           {t("filters")}
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
           {DROPDOWN_FILTERS.map(({ name, labelKey, icon }) => (
             <Controller
               key={name}
@@ -391,7 +404,11 @@ const Payments = () => {
                   value={field.value}
                   onChange={field.onChange}
                   options={filterOptionsMap[name] || []}
-                  placeholder={t("selectPlaceholder")}
+                  placeholder={
+                    name === "cashbox_type"
+                      ? t("all", { ns: "common" })
+                      : t("selectPlaceholder")
+                  }
                   icon={icon}
                   loading={loadingMap[name]}
                 />

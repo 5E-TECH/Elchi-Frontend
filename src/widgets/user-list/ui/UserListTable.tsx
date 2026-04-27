@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Phone, Trash2, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { User } from '../../../entities/user/types/user';
 import { UserStatusBadge } from '../../../entities/user/ui/UserStatusBadge';
@@ -171,6 +171,72 @@ export const UserListTable = memo(({
         });
     };
 
+    const renderUserActions = (user: User, compact = false) => {
+        const isActive = user.status === 'active';
+        const isPending = loadingIds.has(user.id);
+
+        return (
+            <div
+                className={`flex items-center justify-center ${compact ? 'gap-1.5' : 'w-[45%] gap-1'}`}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button
+                    onClick={(e) => handleStatusToggle(user, e)}
+                    disabled={isPending}
+                    title={isActive ? t("deactivate") : t("activate")}
+                    role="switch"
+                    aria-checked={isActive}
+                    className={`
+                        relative ${compact ? 'h-5 w-9' : 'w-11 h-6'} rounded-full
+                        transition-all duration-300 ease-in-out
+                        focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+                        ${isPending
+                            ? 'cursor-not-allowed opacity-70 bg-slate-300 dark:bg-white/20 focus-visible:ring-slate-400'
+                            : isActive
+                                ? 'bg-emerald-500 hover:bg-emerald-600 focus-visible:ring-emerald-500 shadow-md shadow-emerald-500/30'
+                                : 'bg-slate-300 dark:bg-white/20 hover:bg-slate-400 dark:hover:bg-white/30 focus-visible:ring-slate-400'
+                        }
+                    `}
+                >
+                    <span
+                        className={`
+                            absolute left-0.5 top-0.5
+                            ${compact ? 'h-4 w-4' : 'w-5 h-5'} rounded-full bg-white shadow-sm
+                            flex items-center justify-center
+                            transition-all duration-300 ease-in-out
+                            ${isActive && !isPending ? (compact ? 'translate-x-4' : 'translate-x-5') : 'translate-x-0'}
+                        `}
+                    >
+                        {isPending ? (
+                            <span
+                                className={`${compact ? 'h-2.5 w-2.5' : 'w-3 h-3'} rounded-full border-2 border-slate-300 border-t-main animate-spin block`}
+                            />
+                        ) : isActive ? (
+                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                <path d="M1 4L3.5 6.5L9 1" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        ) : (
+                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                                <path d="M1.5 1.5L6.5 6.5M6.5 1.5L1.5 6.5" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
+                            </svg>
+                        )}
+                    </span>
+                </button>
+
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(user);
+                    }}
+                    className={`${compact ? 'p-1.5' : 'p-1.5'} rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200`}
+                    aria-label={t("deleteTitle")}
+                >
+                    <Trash2 size={compact ? 17 : 20} />
+                </button>
+            </div>
+        );
+    };
+
     // console.log('=== BACKEND DATA ===');
     // console.log('Full Response:', data);
     // console.log('Users:', data?.data?.items);
@@ -220,75 +286,7 @@ export const UserListTable = memo(({
             key: 'id',
             label: t('action'),
             width: '15%',
-            render: (_, user) => {
-                const isActive = user.status === 'active';
-                const isPending = loadingIds.has(user.id);
-
-                return (
-                    <div className="flex items-center w-[45%] justify-center gap-1" onClick={(e) => e.stopPropagation()}>
-
-                        {/* ── Switch Toggle ── */}
-                        <button
-                            onClick={(e) => handleStatusToggle(user, e)}
-                            disabled={isPending}
-                            title={isActive ? t("deactivate") : t("activate")}
-                            role="switch"
-                            aria-checked={isActive}
-                            className={`
-                                relative w-11 h-6 rounded-full
-                                transition-all duration-300 ease-in-out
-                                focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                                ${isPending
-                                    ? 'cursor-not-allowed opacity-70 bg-slate-300 dark:bg-white/20 focus-visible:ring-slate-400'
-                                    : isActive
-                                        ? 'bg-emerald-500 hover:bg-emerald-600 focus-visible:ring-emerald-500 shadow-md shadow-emerald-500/30'
-                                        : 'bg-slate-300 dark:bg-white/20 hover:bg-slate-400 dark:hover:bg-white/30 focus-visible:ring-slate-400'
-                                }
-                            `}
-                        >
-                            {/* Thumb */}
-                            <span
-                                className={`
-                                    absolute top-0.5 left-0.5
-                                    w-5 h-5 rounded-full bg-white shadow-sm
-                                    flex items-center justify-center
-                                    transition-all duration-300 ease-in-out
-                                    ${isActive && !isPending ? 'translate-x-5' : 'translate-x-0'}
-                                `}
-                            >
-                                {isPending ? (
-                                    /* Spinner: aylanuvchi yoy */
-                                    <span
-                                        className="w-3 h-3 rounded-full border-2 border-slate-300 border-t-main animate-spin block"
-                                    />
-                                ) : isActive ? (
-                                    /* Check mark */
-                                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                                        <path d="M1 4L3.5 6.5L9 1" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                ) : (
-                                    /* X mark */
-                                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                                        <path d="M1.5 1.5L6.5 6.5M6.5 1.5L1.5 6.5" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
-                                    </svg>
-                                )}
-                            </span>
-                        </button>
-
-                        {/* ── Delete Button ── */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteTarget(user);
-                            }}
-                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200"
-                            aria-label={t("deleteTitle")}
-                        >
-                            <Trash2 size={20} />
-                        </button>
-                    </div>
-                );
-            },
+            render: (_, user) => renderUserActions(user),
         },
     ];
 
@@ -360,6 +358,33 @@ export const UserListTable = memo(({
                     columns={columns}
                     keyExtractor={(user) => user.id}
                     hoverable
+                    mobileRowRender={(user) => (
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
+                                    <UserRound size={16} />
+                                </div>
+
+                                <div className="min-w-0">
+                                    <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                                        {user.name}
+                                    </p>
+                                    <p className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-500 dark:text-white/65">
+                                        <Phone size={13} />
+                                        <span className="truncate">{formatPhoneNumber(String(user.phone_number ?? ""))}</span>
+                                    </p>
+                                    <div className="mt-2">
+                                        <UserRoleBadge role={user.role as any} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex shrink-0 flex-col items-end gap-2">
+                                <UserStatusBadge status={user.status as any} />
+                                {renderUserActions(user, true)}
+                            </div>
+                        </div>
+                    )}
                     onRowClick={(user) => navigate(`/all-users/${user.id}`)}
                 />
 

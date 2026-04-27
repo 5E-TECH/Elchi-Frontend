@@ -30,7 +30,7 @@ const DashboardLayout = () => {
       </div>
 
       {/* Mobile Navigation */}
-      <BottomNav onMenuClick={() => setIsMenuOpen(true)} />
+      <BottomNav />
 
       {/* Mobile Drawer Menu */}
       <MobileMenu
