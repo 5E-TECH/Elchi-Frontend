@@ -32,7 +32,7 @@ const ExternalIntegrationDetail = () => {
     : "";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-20 sm:pb-24 md:pb-4">
       {/* Top row (screenshot-like) */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">

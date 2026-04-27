@@ -4,7 +4,7 @@ import HeaderName from "../../../shared/components/headerName";
 import DateRangePicker from "../../../shared/ui/DateRangePicker";
 import PaymentHistoryList from "./PaymentHistoryList";
 import CashboxSummaryCard from "./CashboxSummaryCard";
-import type { Pagination, PaymentRow } from "./patmentHistoryTable";
+import type { PaymentRow } from "./patmentHistoryTable";
 
 interface CashboxRolePageLayoutProps {
   entityName: string;
@@ -26,9 +26,6 @@ interface CashboxRolePageLayoutProps {
   incomeAmount: number;
   expenseAmount: number;
   historyRows: PaymentRow[];
-  pagination: Pagination;
-  currentPage: number;
-  onPageChange: (page: number) => void;
   incomeLabel: string;
   expenseLabel: string;
   todayTransactionsLabel: string;
@@ -61,9 +58,6 @@ const CashboxRolePageLayout = ({
   incomeAmount,
   expenseAmount,
   historyRows,
-  pagination,
-  currentPage,
-  onPageChange,
   incomeLabel,
   expenseLabel,
   todayTransactionsLabel,
@@ -161,9 +155,6 @@ const CashboxRolePageLayout = ({
           <div className="min-h-[16rem] flex-1 overflow-hidden max-h-none lg:min-h-0 lg:max-h-[52vh] xl:max-h-[calc(100vh-18rem)]">
             <PaymentHistoryList
               data={historyRows}
-              pagination={pagination}
-              onPageChange={onPageChange}
-              currentPage={currentPage}
             />
           </div>
         </div>

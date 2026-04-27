@@ -13,12 +13,14 @@ import * as yup from "yup";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Image, X, Trash2, Edit, MoveLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useProducts } from "../../../entities/product";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import i18n from "../../../i18n";
+import type { RootState } from "../../../app/config/store";
 
 interface ExistingProduct {
   id: number;
@@ -60,18 +62,44 @@ ProductNameCell.displayName = "ProductNameCell";
 
 const CreateProductPage = () => {
   const { t } = useTranslation("products");
+  const roleState = useSelector((state: RootState) => state.role);
+  const profile = useSelector((state: RootState) => state.user.user);
+  const isMarketRole = roleState.role === "market";
   const [preview, setPreview] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ExistingProduct | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevPreviewRef = useRef<string | null>(null);
 
-  const { createProduct, getByMarketId, deleteProduct } = useProducts();
+  const { createProduct, getByMarketId, getMyProducts, deleteProduct } = useProducts();
   const { id } = useParams<{ id: string }>();
+  const marketIdFromState = roleState.id ?? profile?.id;
+  const effectiveMarketId = id ?? marketIdFromState ?? "";
 
-  const { data: marketD } = getByMarketId(id);
-  const marketData = marketD?.data || [];
-  const marketName: string | null = marketD?.data?.[0]?.market?.name ?? null;
+  const { data: marketD } = getByMarketId(
+    effectiveMarketId || undefined,
+    !isMarketRole && Boolean(effectiveMarketId),
+  );
+  const { data: myProductsData } = getMyProducts(isMarketRole);
+
+  const marketData = useMemo<ExistingProduct[]>(() => {
+    if (isMarketRole) {
+      const source = myProductsData?.data?.items ?? myProductsData?.data ?? [];
+      return Array.isArray(source) ? source : [];
+    }
+
+    const source = marketD?.data ?? [];
+    return Array.isArray(source) ? source : [];
+  }, [isMarketRole, marketD?.data, myProductsData?.data, myProductsData?.data?.items]);
+
+  const marketName: string | null = useMemo(() => {
+    if (isMarketRole) {
+      return profile?.name ?? roleState.name ?? null;
+    }
+
+    if (!Array.isArray(marketD?.data) || !marketD.data.length) return null;
+    return marketD.data[0]?.market?.name ?? null;
+  }, [isMarketRole, marketD?.data, profile?.name, roleState.name]);
 
   const navigate = useNavigate();
   const {
@@ -210,11 +238,13 @@ const CreateProductPage = () => {
 
   const onSubmit = useCallback(
     async (values: CreateProductFormValues) => {
-      if (!id || isPending) return;
+      if (isPending) return;
 
       const formData = new FormData();
       formData.append("name", values.name.trim());
-      formData.append("market_id", id);
+      if (effectiveMarketId) {
+        formData.append("market_id", effectiveMarketId);
+      }
       if (values.image) formData.append("image", values.image);
 
       await createProduct.mutateAsync(formData, {
@@ -223,7 +253,7 @@ const CreateProductPage = () => {
         },
       });
     },
-    [id, isPending, createProduct, resetForm],
+    [isPending, effectiveMarketId, createProduct, resetForm],
   );
 
   return (

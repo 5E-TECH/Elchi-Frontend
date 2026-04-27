@@ -16,6 +16,7 @@ import type { RootState } from "../../app/config/store";
 export interface FilterSelectOption {
     value: string;
     label: string;
+    icon?: LucideIcon;
 }
 
 interface FilterSelectProps {
@@ -249,6 +250,9 @@ const FilterSelect = memo(({
                                     role="option"
                                     aria-selected={isSelected}
                                 >
+                                    {option.icon ? (
+                                        <option.icon size={15} className="shrink-0" />
+                                    ) : null}
                                     <span className="min-w-0 flex-1 truncate">{option.label}</span>
                                     {isSelected && !isPlaceholder ? (
                                         <Check size={15} className="shrink-0" />

@@ -32,8 +32,8 @@ interface ChipProps {
 }
 
 const InfoChip = ({ icon: Icon, iconBg, iconColor, label, value, wide }: ChipProps) => (
-    <div className={`flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:border-main/30 dark:hover:border-main/30 hover:shadow-sm transition-all group ${wide ? 'col-span-2' : ''}`}>
-        <div className={`w-9 h-9 rounded-xl ${iconBg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+    <div className={`group flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-main/30 hover:shadow-sm dark:border-white/5 dark:bg-white/5 dark:hover:border-main/30 sm:p-4 ${wide ? 'md:col-span-2' : ''}`}>
+        <div className={`h-9 w-9 shrink-0 rounded-xl ${iconBg} flex items-center justify-center transition-transform group-hover:scale-110`}>
             <Icon size={17} className={iconColor} />
         </div>
         <div className="min-w-0 flex-1">
@@ -50,7 +50,7 @@ const InfoChip = ({ icon: Icon, iconBg, iconColor, label, value, wide }: ChipPro
 // ─── Separator ────────────────────────────────────────────────────────────────
 
 const Divider = ({ title }: { title: string }) => (
-    <div className="col-span-2 flex items-center gap-3 pt-1">
+    <div className="col-span-full flex items-center gap-3 pt-1 md:col-span-2">
         <div className="h-px flex-1 bg-slate-100 dark:bg-white/10" />
         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-white whitespace-nowrap">
             {title}
@@ -73,7 +73,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
     return (
         <div className="bg-white dark:bg-maindark rounded-2xl border border-slate-100 dark:border-primarydark/20 shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center gap-2.5 px-6 py-4 border-b border-slate-100 dark:border-white/5">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 px-4 py-3.5 dark:border-white/5 sm:px-6 sm:py-4">
                 <div className="w-1 h-5 bg-main rounded-full" />
                 <h3 className="text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white">
                     {t("profileInfo")}
@@ -81,7 +81,7 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
             </div>
 
             {/* Grid */}
-            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 sm:p-5">
 
                 {/* ── Umumiy ── */}
                 <InfoChip

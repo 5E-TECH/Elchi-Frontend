@@ -1,8 +1,7 @@
 import { memo, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, Calendar } from "lucide-react";
-import type { Pagination, PaymentRow } from "./patmentHistoryTable";
+import type { PaymentRow } from "./patmentHistoryTable";
 import { useTranslation } from "react-i18next";
-import PaginationComponent from "../../../shared/components/pagination";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
@@ -140,26 +139,16 @@ const HistoryRow = memo(
 export interface PaymentHistoryListProps {
   data?: PaymentRow[];
   isLoading?: boolean;
-  pagination?: Pagination;
-  onPageChange?: (page: number) => void;
-  onItemsPerPageChange?: (limit: number) => void;
-  currentPage?: number;
   withContainer?: boolean;
 }
 
 const PaymentHistoryList = ({
   data = [],
   isLoading = false,
-  pagination,
-  onPageChange,
-  onItemsPerPageChange,
-  currentPage,
   withContainer = true,
 }: PaymentHistoryListProps) => {
   const { t } = useTranslation("payments");
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
-  const activePage = pagination?.page ?? currentPage ?? 1;
-  const hasPagination = pagination && pagination.totalPages > 1;
 
   const rows = useMemo(() => data ?? [], [data]);
 
@@ -193,7 +182,7 @@ const PaymentHistoryList = ({
 
   const Body = (
     <>
-      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
+      <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto max-h-[24rem] sm:max-h-[28rem] lg:max-h-[32rem]">
         <div className="divide-y divide-gray-100 dark:divide-white/10">
         {rows.length === 0 ? (
           <div className="px-5 py-6 text-center text-sm text-gray-500 dark:text-white/50">
@@ -210,23 +199,6 @@ const PaymentHistoryList = ({
         )}
         </div>
       </div>
-
-      {hasPagination && onPageChange && (
-        <div className="flex shrink-0 items-center justify-between border-t border-gray-100 px-5 py-3.5 dark:border-glass-border">
-          <span className="text-xs text-gray-500 dark:text-white/40">
-            {t("pageLabel", { page: activePage, totalPages: pagination.totalPages })}
-          </span>
-          <PaginationComponent
-            totalItems={pagination.total}
-            itemsPerPage={pagination.limit}
-            currentPage={activePage}
-            onPageChange={onPageChange}
-            onItemsPerPageChange={onItemsPerPageChange}
-            className="w-full pt-0 sm:w-auto"
-            summary={null}
-          />
-        </div>
-      )}
 
       <FinanceHistoryDetailPopup
         row={selectedRow}

@@ -89,6 +89,7 @@
   "optionalComment": "Comment (optional)",
   "closeShiftPlaceholder": "Comment about the shift...",
   "paymentTypeRequired": "Payment type is required",
+  "commentRequired": "Comment is required",
   "amountRequired": "Amount is required",
   "mainCashboxTitle": "Main Cashbox",
   "mainCashboxDescription": "Main cashbox management",

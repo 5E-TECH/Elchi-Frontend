@@ -152,5 +152,8 @@
   "deleteSuccessTitle": "Пользователь удален",
   "deleteSuccessDescription": "\"{{name}}\" успешно удален",
   "deleteErrorTitle": "Не удалось удалить",
-  "deleteErrorDescription": "Произошла ошибка при удалении пользователя"
+  "deleteErrorDescription": "Произошла ошибка при удалении пользователя",
+  "filterPanelTitle": "Пользователи",
+  "filterPanelDescription": "Сортировка пользователей",
+  "activeFiltersCount": "Активных фильтров: {{count}}"
 }

@@ -52,9 +52,10 @@ const StatusBadge = memo(({ status }: { status: string }) => {
 });
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
-export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }: {
+export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, showCheckbox = true }: {
     order: ApiOrder; isSelected: boolean;
-    onToggle: () => void; onEdit: (id: string) => void; onDelete: (id: string) => void;
+    onToggle?: () => void; onEdit: (id: string) => void; onDelete: (id: string) => void;
+    showCheckbox?: boolean;
 }) => {
     const { t } = useTranslation("newOrders");
     const location = order.customer?.district?.name
@@ -66,20 +67,23 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
     });
 
     return (
-        <div onClick={onToggle}
-            className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer ${isSelected
+        <div
+            onClick={showCheckbox && onToggle ? onToggle : undefined}
+            className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${showCheckbox ? "cursor-pointer" : "cursor-default"} ${isSelected
                 ? "border-emerald-500 shadow-xl shadow-emerald-500/25 bg-white dark:bg-maindark"
                 : "border-gray-100 dark:border-white/5 bg-white dark:bg-maindark hover:border-main/20 hover:shadow-md shadow-sm"}`}>
 
             {isSelected && <div className="absolute inset-0 bg-linear-to-br from-emerald-500/8 via-emerald-500/4 to-transparent pointer-events-none" />}
             <div className={`h-0.5 w-full transition-all ${isSelected ? "bg-linear-to-r from-emerald-500 to-emerald-300/40" : "bg-transparent"}`} />
 
-            <div className="p-5 flex gap-4 relative">
+            <div className="relative flex flex-col gap-3 p-3 sm:flex-row sm:gap-4 sm:p-5">
                 {/* Chap: checkbox + ID */}
-                <div className="flex flex-col items-center gap-2 pt-0.5 min-w-fit">
-                    <Checkbox checked={isSelected} onChange={onToggle} />
-                    <div className="flex-1 w-px bg-gray-100 dark:bg-white/5" />
-                    <span className="text-[9px] font-black text-gray-300 dark:text-gray-700 uppercase [writing-mode:vertical-lr] rotate-180 tracking-widest">#{order.id}</span>
+                <div className="flex min-w-fit items-center gap-2 sm:flex-col sm:items-center sm:pt-0.5">
+                    {showCheckbox && onToggle && (
+                        <Checkbox checked={isSelected} onChange={onToggle} />
+                    )}
+                    <div className="hidden w-px flex-1 bg-gray-100 dark:bg-white/5 sm:block" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-300 dark:text-gray-700 sm:[writing-mode:vertical-lr] sm:rotate-180">#{order.id}</span>
                 </div>
 
                 {/* O'rta: info */}
@@ -90,7 +94,7 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
                         <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10">
                             {t(deliverLabel[order.where_deliver] ?? "deliverAddress")}
                         </span>
-                        <span className="ml-auto text-[10px] text-gray-400 tabular-nums">{date}</span>
+                        <span className="w-full text-[10px] text-gray-400 tabular-nums sm:ml-auto sm:w-auto">{date}</span>
                     </div>
 
                     {/* Mijoz */}
@@ -127,8 +131,8 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
                 </div>
 
                 {/* O'ng: narx + actions */}
-                <div className="flex flex-col items-end justify-between gap-3 pl-4 border-l border-gray-100 dark:border-white/6 shrink-0">
-                    <div className="text-right">
+                <div className="flex w-full shrink-0 items-center justify-between gap-3 border-t border-gray-100 pt-3 dark:border-white/6 sm:w-auto sm:flex-col sm:items-end sm:justify-between sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                    <div className="text-left sm:text-right">
                         <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1">{t("total")}</p>
                         <p className="text-lg font-black text-gray-900 dark:text-white tabular-nums leading-tight">{fmt(order.total_price)}</p>
                         <p className="text-[10px] text-main font-bold">UZS</p>
@@ -136,7 +140,7 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete }
                             <p className="text-[10px] text-emerald-500 font-semibold mt-1">✓ {fmt(order.paid_amount)} {t("paid").toLowerCase()}</p>
                         )}
                     </div>
-                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-xl">
+                    <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-white/5">
                         <button onClick={(e) => { e.stopPropagation(); onEdit(order.id); }}
                             className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-main transition-all active:scale-90">
                             <SquarePen size={16} />

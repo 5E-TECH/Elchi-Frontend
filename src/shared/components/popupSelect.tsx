@@ -1,6 +1,6 @@
 import { memo, useState, type ReactNode, useMemo } from 'react';
 import HeaderName from './headerName';
-import { Check, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import Button from './button';
 import Popup from '../ui/Popup';
 import { Controller, useForm } from "react-hook-form";
@@ -115,39 +115,32 @@ const PopupSelect = <T extends Record<string, any>>({
               <div
                 key={key}
                 onClick={() => handleItemClick(item)}
-                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${isSelected
-                  ? "border-main bg-main text-primary shadow-lg shadow-main/20"
-                  : "border-transparent bg-sidebar/70 text-maindark hover:border-main/20 hover:bg-main/5 dark:bg-primary/5 dark:text-primary dark:hover:bg-primary/10"
+                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border  ${isSelected
+                  ? "bg-main dark:bg-transparent shadow-[0_0_0_1px_rgba(99,102,241,1)]"
+                  : "bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-primary/5"
                   }`}
               >
-                {renderItem ? (
-                  renderItem(item, isSelected)
-                ) : (
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-medium text-sm ${isSelected
-                      ? "bg-primary/18 text-primary"
-                      : "bg-[color:color-mix(in_srgb,var(--color-main)_12%,transparent)] text-main dark:bg-primarydark dark:text-gray-300"
-                      }`}>
-                      {key}
+                <div className="flex-1 min-w-0">
+                  {renderItem ? (
+                    renderItem(item, isSelected)
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-gray-400 dark:bg-primarydark flex items-center justify-center text-primary dark:text-gray-300 font-medium text-sm">
+                        {key}
+                      </div>
+                      <div>
+                        <h3 className="text-maindark dark:text-primary font-medium text-lg leading-tight">
+                          {labelKey ? item[labelKey] : String(item)}
+                        </h3>
+                        {secondaryLabelKey && (
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">
+                            {item[secondaryLabelKey]}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h3 className={`font-medium text-lg leading-tight ${isSelected ? "text-primary" : "text-maindark dark:text-primary"}`}>
-                        {labelKey ? item[labelKey] : String(item)}
-                      </h3>
-                      {secondaryLabelKey && (
-                        <p className={`text-sm ${isSelected ? "text-primary/75" : "text-gray-500 dark:text-gray-400"}`}>
-                          {item[secondaryLabelKey]}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {isSelected && (
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                    <Check size={14} strokeWidth={3} />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             );
           })}

@@ -89,6 +89,7 @@
   "optionalComment": "Izoh (ixtiyoriy)",
   "closeShiftPlaceholder": "Smena haqida izoh...",
   "paymentTypeRequired": "payment type majburiy",
+  "commentRequired": "Izoh majburiy",
   "amountRequired": "Summa majburiy",
   "mainCashboxTitle": "Asosiy kassa",
   "mainCashboxDescription": "Asosiy kassa boshqaruvi",

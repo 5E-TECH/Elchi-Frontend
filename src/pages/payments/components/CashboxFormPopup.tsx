@@ -3,9 +3,8 @@ import { memo, useEffect, type ReactNode } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import Popup from "../../../shared/ui/Popup";
-import Select from "../../../shared/ui/Select";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
 import { useTranslation } from "react-i18next";
@@ -17,20 +16,9 @@ import {
 
 interface CashboxFormValues {
     amount: string;
-    source_type_id: string;
+    type: string;
     comment: string;
 }
-
-const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
-    amount: yup
-        .string()
-        .required(i18n.t("payments:amountRequired"))
-        .test("positive-number", i18n.t("payments:amountPositiveValidation"), (value) => {
-            return parseAmountInput(value) > 0;
-        }),
-    source_type_id: yup.string().defined(),
-    comment: yup.string().defined(),
-});
 
 interface CashboxFormPopupProps {
     isOpen: boolean;
@@ -42,8 +30,12 @@ interface CashboxFormPopupProps {
     submitLabel: string;
     submitIcon?: ReactNode;
     sourceTypes?: { id: string | number; name: string }[];
+    typeLabel?: string;
+    typePlaceholder?: string;
+    requireType?: boolean;
+    requireComment?: boolean;
     isLoading?: boolean;
-    onSubmit: (data: { amount: number; source_type_id?: string; comment: string }) => void;
+    onSubmit: (data: { amount: number; type?: string; comment: string }) => void;
 }
 
 const CashboxFormPopup = ({
@@ -56,10 +48,29 @@ const CashboxFormPopup = ({
     submitLabel,
     submitIcon,
     sourceTypes = [],
+    typeLabel,
+    typePlaceholder,
+    requireType = false,
+    requireComment = false,
     isLoading = false,
     onSubmit,
 }: CashboxFormPopupProps) => {
     const { t } = useTranslation("payments");
+    const cashboxFormSchema: yup.ObjectSchema<CashboxFormValues> = yup.object({
+        amount: yup
+            .string()
+            .required(i18n.t("payments:amountRequired"))
+            .test("positive-number", i18n.t("payments:amountPositiveValidation"), (value) => {
+                return parseAmountInput(value) > 0;
+            }),
+        type: requireType
+            ? yup.string().required(i18n.t("payments:paymentTypeRequired"))
+            : yup.string().defined(),
+        comment: requireComment
+            ? yup.string().trim().required(i18n.t("payments:commentRequired"))
+            : yup.string().defined(),
+    });
+
     const {
         register,
         control,
@@ -70,15 +81,16 @@ const CashboxFormPopup = ({
     } = useForm<CashboxFormValues>({
         defaultValues: {
             amount: "",
-            source_type_id: "",
+            type: "",
             comment: "",
         },
         resolver: yupResolver(cashboxFormSchema) as Resolver<CashboxFormValues>,
     });
 
     const amount = watch("amount");
-    const sourceTypeId = watch("source_type_id");
-    const hasSourceTypes = sourceTypes.length > 0;
+    const selectedType = watch("type");
+    const comment = watch("comment");
+    const hasTypeOptions = sourceTypes.length > 0;
 
     const handleClose = () => {
         reset();
@@ -94,16 +106,16 @@ const CashboxFormPopup = ({
     const submitForm = (values: CashboxFormValues) => {
         onSubmit({
             amount: parseAmountInput(values.amount),
-            ...(values.source_type_id ? { source_type_id: values.source_type_id } : {}),
-            comment: values.comment,
+            ...(values.type ? { type: values.type } : {}),
+            comment: values.comment.trim(),
         });
-        handleClose();
     };
 
     const isValid =
         amount !== "" &&
         parseAmountInput(amount) > 0 &&
-        (!hasSourceTypes || sourceTypeId !== "");
+        (!requireType || selectedType !== "") &&
+        (!requireComment || comment.trim() !== "");
 
     return (
         <Popup isShow={isOpen} onClose={handleClose}>
@@ -153,35 +165,51 @@ const CashboxFormPopup = ({
                     </div>
 
                     {/* Payment type */}
-                    {hasSourceTypes && (
+                    {hasTypeOptions && (
                     <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-semibold text-gray-700 dark:text-white/70">
+                            {(typeLabel ?? t("paymentType"))} {requireType && <span className="text-rose-400">*</span>}
+                        </label>
                         <Controller
                             control={control}
-                            name="source_type_id"
+                            name="type"
                             render={({ field }) => (
-                                <Select
-                                    label={t("paymentType")}
-                                    name={field.name}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    options={sourceTypes.map((item) => ({
-                                        value: String(item.id),
-                                        label: item.name,
-                                    }))}
-                                    placeholder={t("paymentTypePlaceholder")}
-                                    required
-                                    error={errors.source_type_id?.message}
-                                    className="dark:bg-[#312D4B] dark:border-glass-border dark:focus:border-main dark:focus:ring-main/10"
-                                />
+                                <div className="rounded-[1rem] border border-gray-200 bg-gray-50/90 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-glass-border dark:bg-white/[0.04]">
+                                    <div className="relative">
+                                        <select
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            className="h-9 w-full appearance-none rounded-[0.8rem] bg-transparent px-3 pr-9 text-sm font-medium text-gray-900 outline-none dark:text-white"
+                                        >
+                                            <option value="">
+                                                {typePlaceholder ?? t("paymentTypePlaceholder")}
+                                            </option>
+                                            {sourceTypes.map((item) => (
+                                                <option key={item.id} value={String(item.id)} className="dark:bg-maindark">
+                                                    {item.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown
+                                            size={16}
+                                            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40"
+                                        />
+                                    </div>
+                                </div>
                             )}
                         />
+                        {errors.type && (
+                            <p className="text-xs text-red-500">{errors.type.message}</p>
+                        )}
                     </div>
                     )}
 
                     {/* Comment */}
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[13px] font-semibold text-gray-700 dark:text-white/70">
-                            {t("comment")}
+                            {t("comment")} {requireComment && <span className="text-rose-400">*</span>}
                         </label>
                         <div className="rounded-[1rem] border border-gray-200 bg-gray-50/90 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-glass-border dark:bg-white/[0.04]">
                             <textarea
@@ -191,6 +219,9 @@ const CashboxFormPopup = ({
                                 className="w-full resize-none rounded-[0.8rem] bg-transparent px-3 py-2.5 text-[13px] leading-4.5 text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/20"
                             />
                         </div>
+                        {errors.comment && (
+                            <p className="text-xs text-red-500">{errors.comment.message}</p>
+                        )}
                     </div>
                 </div>
 

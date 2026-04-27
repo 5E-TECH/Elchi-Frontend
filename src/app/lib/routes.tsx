@@ -184,9 +184,7 @@ const AppRouter = () => {
                   path: "create-product/:id",
                   element: (
                     <ProtectedRoute
-                      canActivate={(state) =>
-                        state.role.role !== "market" || Boolean(state.user.user?.add_order)
-                      }
+                      canActivate={() => true}
                     >
                       <ProductCreate />
                     </ProtectedRoute>

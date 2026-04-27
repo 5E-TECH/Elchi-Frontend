@@ -15,9 +15,9 @@ export const UserDetailPage = () => {
   const user = unwrapUserResponse(data);
 
   return (
-    <div className="p-6 bg-sidebar dark:bg-maindark min-h-full rounded-2xl">
+    <div className="rounded-2xl bg-sidebar p-3 min-h-full dark:bg-maindark sm:p-4 lg:p-6">
       {/* Page Header */}
-      <div className="mb-6" onClick={() => navigate(-1)}>
+      <div className="mb-4 sm:mb-6" onClick={() => navigate(-1)}>
         <HeaderName
           name={t("userDetailsTitle")}
           description={t("userDetailsDescription")}

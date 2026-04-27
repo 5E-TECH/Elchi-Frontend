@@ -1,4 +1,3 @@
-import { TimelineRoot } from "../../../shared/ui/Timeline";
 import type { TrackingEvent } from "../../../entities/order";
 import { TrackingTimelineItem } from "./TrackingTimelineItem";
 
@@ -7,7 +6,7 @@ type TrackingTimelineProps = {
 };
 
 export const TrackingTimeline = ({ events }: TrackingTimelineProps) => (
-  <TimelineRoot>
+  <div className="space-y-6">
     {events.map((event, index) => (
       <TrackingTimelineItem
         key={event.id}
@@ -15,7 +14,7 @@ export const TrackingTimeline = ({ events }: TrackingTimelineProps) => (
         isLast={index === events.length - 1}
       />
     ))}
-  </TimelineRoot>
+  </div>
 );
 
 export default TrackingTimeline;

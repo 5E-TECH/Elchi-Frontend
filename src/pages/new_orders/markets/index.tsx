@@ -102,11 +102,11 @@ const columns: ColumnConfig<TableRow>[] = [
 const StatCard = ({ icon, label, value, iconCls }: {
   icon: React.ReactNode; label: string; value: string | number; iconCls: string;
 }) => (
-  <div className="flex items-center gap-3 p-4 rounded-2xl w-full bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10">
+  <div className="flex w-full items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3.5 dark:border-white/10 dark:bg-primarydark sm:p-4">
     <div className={`p-2.5 rounded-xl ${iconCls}`}>{icon}</div>
-    <div className="flex flex-col">
+    <div className="flex min-w-0 flex-col">
       <span className="text-xs text-gray-400 font-medium">{label}</span>
-      <strong className="text-lg text-gray-800 dark:text-white leading-tight">{value}</strong>
+      <strong className="truncate text-base leading-tight text-gray-800 dark:text-white sm:text-lg">{value}</strong>
     </div>
   </div>
 );
@@ -116,6 +116,9 @@ const Markets = () => {
   const { t } = useTranslation("newOrders");
   const { getTodayOrders } = useOrders();
   const navigate = useNavigate();
+  const roleState = useSelector((state: RootState) => state.role);
+  const isMarketRole = roleState.role === "market";
+  const marketId = roleState.id;
 
   // Redux dan search qiymatini olish (GlobalSearchInput Redux ga yozadi)
   const searchQuery = useSelector((state: RootState) =>
@@ -130,8 +133,16 @@ const Markets = () => {
     applyDebounce(searchQuery);
   }, [searchQuery, applyDebounce]);
 
+  useEffect(() => {
+    if (!isMarketRole || !marketId) {
+      return;
+    }
+
+    navigate(`/new-orders/${marketId}`, { replace: true });
+  }, [isMarketRole, marketId, navigate]);
+
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
-  const { data: response, isLoading } = getTodayOrders(params);
+  const { data: response, isLoading } = getTodayOrders(params, !isMarketRole);
 
   // API dan kelgan array ni jadval uchun flat qilamiz
   const rows: TableRow[] = useMemo(() => {
@@ -145,17 +156,27 @@ const Markets = () => {
     }));
   }, [response]);
 
+  if (isMarketRole) {
+    return (
+      <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-primary dark:border-primarydark/50 dark:bg-primarydark">
+        <span className="text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+          Yuklanmoqda...
+        </span>
+      </div>
+    );
+  }
+
   // Statistika
   const totalOrders = rows.reduce((s, r) => s + r.orders_count, 0);
   const totalSum = rows.reduce((s, r) => s + r.total_price_sum, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 pb-20 sm:space-y-6 sm:pb-24 md:pb-4">
       {/* Search */}
       <div>
         <GlobalSearchInput searchKey="market_search" placeholder={t("marketNameOrPhoneSearch")} />
       </div>
-      <div className="flex items-center justify-between gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
           icon={<Store size={20} />}
           label={t("marketsCount")}

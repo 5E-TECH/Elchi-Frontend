@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Table } from "../../../../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../../../../shared/components/Table/Table.types";
-import { User } from "lucide-react";
+import { Calendar, MapPin, Phone, Store, User } from "lucide-react";
 import type { Order } from "./pendingOrderTable";
 import OrderStatusBadge from "../../../OrderStatusBadge";
 
@@ -24,6 +24,14 @@ const CancelledOrdersTable = ({
   const { t } = useTranslation("orders");
   const allChecked = orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
   const someChecked = orders.some((o) => selectedIds.has(o.id));
+  const formatDate = (value: string) =>
+    new Date(value).toLocaleString("uz-UZ", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const renderSelectAllCheckbox = () => (
     <input
@@ -161,6 +169,67 @@ const CancelledOrdersTable = ({
         keyExtractor={(row) => row.id}
         loading={loading}
         emptyMessage={t("cancelledOrdersEmpty")}
+        mobileRowRender={(row) => (
+          <div
+            className={`rounded-xl border p-3 ${
+              selectedIds.has(row.id)
+                ? "border-emerald-400/60 bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]"
+                : "border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/4"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(row.id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onSelectChange(row.id, e.target.checked);
+                  }}
+                  className="mt-0.5 h-4 w-4 cursor-pointer accent-red-500"
+                />
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-sm font-bold text-slate-900 dark:text-white">{row.customer?.name ?? "—"}</p>
+                  <p className="m-0 mt-1 flex items-center gap-1 text-xs text-slate-500 dark:text-white/70">
+                    <Phone size={12} className="shrink-0" />
+                    <span className="truncate">{row.customer?.phone_number ?? "—"}</span>
+                  </p>
+                </div>
+              </div>
+              <OrderStatusBadge status="cancelled" />
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 dark:bg-white/10 dark:text-white/85">
+                <Store size={11} className="shrink-0" />
+                <span className="truncate">{row.market?.name ?? "—"}</span>
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 dark:bg-white/10 dark:text-white/85">
+                <MapPin size={11} className="shrink-0" />
+                <span className="truncate">{row.district?.name ?? "—"}</span>
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold ${
+                  row.where_deliver === "center"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200"
+                    : "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200"
+                }`}
+              >
+                {row.where_deliver === "center" ? t("deliveryToCenter") : t("deliveryToHome")}
+              </span>
+            </div>
+
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="text-base font-bold text-slate-900 dark:text-white">
+                {Number(row.total_price).toLocaleString("uz-UZ")} so'm
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-white/65">
+                <Calendar size={11} className="shrink-0" />
+                {formatDate(row.created_at)}
+              </span>
+            </div>
+          </div>
+        )}
       />
     </div>
   );

@@ -1,5 +1,15 @@
 import { memo, useMemo } from "react";
-import { Package, MapPin, Store, Calendar, Banknote } from "lucide-react";
+import {
+    Package,
+    MapPin,
+    Store,
+    Calendar,
+    Banknote,
+    Phone,
+    Home,
+    Truck,
+    ChevronRight,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Table } from "../../../shared/components/Table/Table";
@@ -222,6 +232,77 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props
         );
     }
 
+    const renderMobileCard = (order: OrderListItem, index: number) => (
+        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-transform active:scale-[0.98] dark:border-primarydark/70 dark:bg-primarydark/70">
+            <div className="mb-3 flex items-center justify-between">
+                <OrderStatusBadge status={order.status} />
+                <span className="text-xs text-gray-400">#{rowNumberOffset + index + 1}</span>
+            </div>
+
+            <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-main to-primarydark text-white">
+                    <span className="text-sm font-bold">
+                        {order.customer?.name?.[0]?.toUpperCase() ?? "?"}
+                    </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-base font-bold text-maindark dark:text-primary">
+                        {order.customer?.name ?? "—"}
+                    </h3>
+                    <a
+                        href={`tel:${order.customer?.phone_number ?? ""}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-main dark:text-gray-300 dark:hover:text-main"
+                    >
+                        <Phone size={14} className="shrink-0 text-emerald-500" />
+                        <span>{formatPhoneNumber(order.customer?.phone_number)}</span>
+                    </a>
+                </div>
+            </div>
+
+            <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                    <MapPin size={14} className="shrink-0 text-main/70" />
+                    <span className="truncate">{order.district?.name ?? "—"}</span>
+                </div>
+                {role !== "market" && (
+                    <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                        <Store size={14} className="shrink-0 text-main/70" />
+                        <span className="truncate">{order.market?.name ?? "—"}</span>
+                    </div>
+                )}
+                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                    <Calendar size={14} className="shrink-0 text-main/70" />
+                    <span className="truncate">{formatDate(order.createdAt)}</span>
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-gray-100 pt-3 dark:border-primarydark/70">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t("price")}</p>
+                        <p className="font-bold text-maindark dark:text-primary">
+                            {formatPrice(order.total_price)}
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 dark:bg-primarydark">
+                        {order.where_deliver === "address" ? (
+                            <Home size={14} className="text-amber-500" />
+                        ) : (
+                            <Truck size={14} className="text-sky-500" />
+                        )}
+                        <span className="text-xs text-gray-600 dark:text-gray-300">
+                            {order.where_deliver === "center" ? t("deliveryCenter") : t("deliveryHome")}
+                        </span>
+                    </div>
+                </div>
+
+                <ChevronRight size={18} className="text-gray-400" />
+            </div>
+        </div>
+    );
+
     return (
         <Table
             data={data}
@@ -229,6 +310,7 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props
             keyExtractor={(row) => row.id}
             loading={false}
             onRowClick={onRowClick}
+            mobileRowRender={renderMobileCard}
             striped
             hoverable
             bordered

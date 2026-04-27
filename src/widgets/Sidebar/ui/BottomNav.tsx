@@ -1,60 +1,59 @@
 import { memo } from "react";
 import { NavLink } from "react-router-dom";
-import { Menu } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { SIDEBAR_CONFIG, type SidebarUserRole } from "../model/menuConfig";
 import type { RootState } from "../../../app/config/store";
+const MOBILE_ADMIN_ALLOWED_LABELS = [
+    "dashboard",
+    "orders",
+    "users",
+    "payments",
+    "balance",
+] as const;
 
-interface BottomNavProps {
-    onMenuClick: () => void;
-}
-
-const BottomNav = ({ onMenuClick }: BottomNavProps) => {
+const BottomNav = () => {
     const { t } = useTranslation(["sidebar"]);
 
     // ─── Redux dan haqiqiy rolni oling ───────────────────────────────────────
     const { role } = useSelector((state: RootState) => state.role);
     const userRole = (role as SidebarUserRole) || "admin";
 
-    // ─── Rolga mos itemlarni olib, faqat birinchi 4 tasini ko'rsatish ────────
-    const navItems = (SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin).slice(0, 4);
+    // ─── Mobil uchun admin/superadmin da faqat 5 bo'lim ──────────────────────
+    const sourceItems = SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin;
+    const navItems =
+        userRole === "admin" || userRole === "superadmin"
+            ? sourceItems.filter((item) =>
+                MOBILE_ADMIN_ALLOWED_LABELS.includes(
+                    item.label as (typeof MOBILE_ADMIN_ALLOWED_LABELS)[number],
+                ),
+            )
+            : userRole === "courier"
+                ? sourceItems.slice(0, 4)
+                : sourceItems;
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden animate-slide-up">
-            <div className="mx-4 mb-4 glass-card-dark rounded-2xl flex items-center justify-around p-2 gap-1 shadow-2xl shadow-black/40 border border-white/10 overflow-hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up md:hidden">
+            <div
+                className="mx-4 mb-3 grid gap-1 overflow-hidden rounded-2xl border border-white/60 bg-[rgba(255,255,255,0.55)] p-2 shadow-[0_10px_30px_rgba(56,37,135,0.18)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/15 dark:bg-[rgba(33,25,73,0.52)] dark:shadow-[0_12px_34px_rgba(0,0,0,0.42)]"
+                style={{ gridTemplateColumns: `repeat(${Math.max(navItems.length, 1)}, minmax(0, 1fr))` }}
+            >
                 {navItems.map((item) => (
                     <NavLink
                         key={item.to}
                         to={item.to}
                         end={item.end}
+                        aria-label={t(item.label)}
                         className={({ isActive }) =>
-                            `flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-all duration-300 min-w-15 ${isActive
-                                ? "bg-main text-white shadow-lg shadow-main/30 scale-105"
-                                : "text-white hover:text-white"
+                            `flex items-center justify-center py-2 rounded-xl transition-all duration-300 min-w-0 ${isActive
+                                ? "bg-main/90 text-white shadow-[0_8px_22px_rgba(106,70,255,0.45)] scale-105"
+                                : "text-maindark/65 hover:bg-white/40 hover:text-maindark dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
                             }`
                         }
                     >
-                        {({ isActive }) => (
-                            <>
-                                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">
-                                    {t(item.label)}
-                                </span>
-                            </>
-                        )}
+                        {({ isActive }) => <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />}
                     </NavLink>
                 ))}
-
-                <button
-                    onClick={onMenuClick}
-                    className="flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-all duration-300 min-w-15 text-white/60 hover:text-white"
-                >
-                    <Menu size={20} strokeWidth={2} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                        {t("menu")}
-                    </span>
-                </button>
             </div>
         </nav>
     );

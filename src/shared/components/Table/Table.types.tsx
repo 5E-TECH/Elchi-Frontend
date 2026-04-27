@@ -1,12 +1,16 @@
 export interface ColumnConfig<T> {
   key: keyof T;
   label: React.ReactNode;
+  mobileLabel?: React.ReactNode;
   width?: string;
   sortable?: boolean;
   sortValue?: (row: T) => string | number | null | undefined;
   render?: (value: any, row: T, index: number) => React.ReactNode;
   renderHeader?: (label: React.ReactNode) => React.ReactNode;
   className?: string;
+  hideOnMobile?: boolean;
+  mobileOrder?: number;
+  mobileFullWidth?: boolean;
 }
 
 export interface TableProps<T> {
@@ -16,6 +20,7 @@ export interface TableProps<T> {
   loading?: boolean;
   emptyMessage?: string;
   onRowClick?: (row: T, index: number) => void;
+  mobileRowRender?: (row: T, index: number) => React.ReactNode;
   className?: string;
   dense?: boolean;
   striped?: boolean;
