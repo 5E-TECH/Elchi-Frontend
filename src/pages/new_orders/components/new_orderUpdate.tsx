@@ -440,10 +440,10 @@ const NewOrderUpdate = () => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-full rounded-2xl bg-sidebar dark:bg-maindark p-6 space-y-6">
+    <div className="min-h-full space-y-4 rounded-2xl bg-sidebar p-3 pb-20 dark:bg-maindark sm:space-y-5 sm:p-4 sm:pb-24 md:space-y-6 md:p-6 md:pb-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div onClick={handleNavigateBack} className="cursor-pointer">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div onClick={handleNavigateBack} className="cursor-pointer min-w-0">
           <HeaderName
             icon={<MoveLeft />}
             name={order?.customer?.name ?? t("orders")}
@@ -459,7 +459,7 @@ const NewOrderUpdate = () => {
 
       {/* Content */}
       {isLoading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
           <Skeleton /><Skeleton />
         </div>
       ) : !order ? (
@@ -467,19 +467,19 @@ const NewOrderUpdate = () => {
           <p className="font-bold uppercase tracking-widest text-sm">{t("notFound")}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
           {/* ── LEFT ── */}
           <div className="space-y-4">
             {/* Order Products */}
             <Card>
-              <div className="p-5 space-y-4">
+              <div className="space-y-4 p-3.5 sm:p-4 md:p-5">
                 <SectionHead
                   icon={<ShoppingBag size={16} />}
                   title={t("orderProducts")}
                   sub={t("productsCount", { count: order.items.length })}
                   action={<EditBtn onClick={handleOpenOrderPopup} />}
                 />
-                <div className="grid grid-cols-[1fr_auto] text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white border-b border-gray-100 dark:border-white/6 pb-2">
+                <div className="hidden border-b border-gray-100 pb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:border-white/6 dark:text-white sm:grid sm:grid-cols-[1fr_auto]">
                   <span>{t("product")}</span>
                   <span>{t("quantity")}</span>
                 </div>
@@ -487,7 +487,7 @@ const NewOrderUpdate = () => {
                   {order.items.map((item) => (
                     <div
                       key={item.id}
-                      className="grid grid-cols-[1fr_auto] items-center gap-3 py-2 border-b border-gray-50 dark:border-white/4 last:border-0"
+                      className="grid grid-cols-1 items-center gap-2 border-b border-gray-50 py-2 dark:border-white/4 sm:grid-cols-[1fr_auto] sm:gap-3"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
@@ -509,9 +509,14 @@ const NewOrderUpdate = () => {
                           <p className="text-xs text-gray-400 dark:text-white">ID: {item.id}</p>
                         </div>
                       </div>
-                      <span className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 text-main font-black text-sm flex items-center justify-center">
-                        {item.quantity}
-                      </span>
+                      <div className="flex items-center justify-between sm:block">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white/70 sm:hidden">
+                          {t("quantity")}
+                        </span>
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-main/10 text-sm font-black text-main dark:bg-main/20">
+                          {item.quantity}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -526,7 +531,7 @@ const NewOrderUpdate = () => {
 
             {/* Payment */}
             <Card>
-              <div className="p-5 space-y-1">
+              <div className="space-y-1 p-3.5 sm:p-4 md:p-5">
                 <div className="mb-4">
                   <SectionHead
                     icon={<CreditCard size={16} />}
@@ -555,7 +560,7 @@ const NewOrderUpdate = () => {
           <div className="space-y-4">
             {/* Customer */}
             <Card>
-              <div className="p-5 space-y-4">
+              <div className="space-y-4 p-3.5 sm:p-4 md:p-5">
                 <SectionHead
                   icon={<User size={16} />}
                   title={t("customerDetails")}
@@ -602,7 +607,7 @@ const NewOrderUpdate = () => {
 
             {/* Address */}
             <Card>
-              <div className="p-5 space-y-3">
+              <div className="space-y-3 p-3.5 sm:p-4 md:p-5">
                 <SectionHead
                   icon={<MapPin size={16} />}
                   title={t("addressTitle")}

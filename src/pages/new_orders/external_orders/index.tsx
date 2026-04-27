@@ -151,7 +151,7 @@ const ExternalOrdersPage = () => {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20 sm:pb-24 md:pb-4">
       <div className="rounded-3xl border border-glass-border bg-white/95 p-4 shadow-sm dark:bg-primarydark sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>

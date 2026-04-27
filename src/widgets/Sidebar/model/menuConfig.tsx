@@ -56,10 +56,9 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
   market: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/order/markets/new-orders", icon: Calendar1, label: "newOrders" },
+    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
-    { to: "/m-balance", icon: Scale, label: "balance" },
   ],
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },

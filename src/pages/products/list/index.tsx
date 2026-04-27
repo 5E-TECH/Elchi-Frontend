@@ -123,12 +123,63 @@ const getProductPayload = (response: unknown): Product | null => {
   return null;
 };
 
+const getValueAtPath = (source: unknown, path: string[]): unknown => {
+  let current: unknown = source;
+
+  for (const segment of path) {
+    if (typeof current !== "object" || current === null) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+
+  return current;
+};
+
+const getProductList = (response: unknown): Product[] => {
+  const candidates = [
+    getValueAtPath(response, ["data", "items"]),
+    getValueAtPath(response, ["data", "data", "items"]),
+    getValueAtPath(response, ["data", "products"]),
+    getValueAtPath(response, ["data"]),
+    getValueAtPath(response, ["items"]),
+    getValueAtPath(response, ["products"]),
+    response,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return (candidate as unknown[]).filter(
+        (item): item is Product =>
+          typeof item === "object" && item !== null && "id" in item,
+      );
+    }
+  }
+
+  return [];
+};
+
+const getProductMeta = (response: unknown): Record<string, unknown> => {
+  return (
+    getValueAtPath(response, ["data", "meta"])
+    ?? getValueAtPath(response, ["data", "pagination"])
+    ?? getValueAtPath(response, ["meta"])
+    ?? getValueAtPath(response, ["pagination"])
+    ?? {}
+  ) as Record<string, unknown>;
+};
+
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
 const ProductTable = () => {
   const { t } = useTranslation("products");
   const { api: notificationApi } = useAppNotification();
   const navigate = useNavigate();
+  const roleState = useSelector((state: RootState) => state.role);
+  const profile = useSelector((state: RootState) => state.user.user);
+  const isRoleResolved = Boolean(roleState.role);
+  const isMarketRole = roleState.role === "market";
+  const marketUserId = roleState.id ?? profile?.id;
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
@@ -201,17 +252,23 @@ const ProductTable = () => {
   // ─── Data Fetching ──────────────────────────────────────────────────────
 
   const { getMarkets } = useMarkets();
-  const { data } = getMarkets();
+  const { data } = getMarkets(undefined, isRoleResolved && !isMarketRole);
 
-  const markets: Market[] =
-    (data?.data?.items ?? []).map(
-      (item: { id: number; name: string; phone_number?: string }, index: number) => ({
+  const markets: Market[] = useMemo(() => {
+    const itemsRaw = (data as { data?: { items?: unknown } } | undefined)?.data?.items;
+    const items = Array.isArray(itemsRaw) ? itemsRaw : [];
+
+    return items
+      .filter((item): item is { id: number; name: string; phone_number?: string } =>
+        typeof item === "object" && item !== null && "id" in item && "name" in item,
+      )
+      .map((item, index) => ({
         id: item.id,
         name: item.name,
         phone: item.phone_number ?? "",
         index: index + 1,
-      }),
-    );
+      }));
+  }, [data]);
 
   // Shared searchable select uchun market options
   const marketOptions = markets.map((m) => ({
@@ -228,7 +285,9 @@ const ProductTable = () => {
   );
 
   const searchFilters = useSelector((state: RootState) => state.search);
-  const searchValue = searchFilters.product_search;
+  const searchValue = typeof searchFilters.product_search === "string"
+    ? searchFilters.product_search
+    : "";
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "products",
     defaultLimit: 10,
@@ -242,24 +301,28 @@ const ProductTable = () => {
     const params: Record<string, string | number> = { page, limit };
 
     if (searchValue) params.search = searchValue;
-    if (filterValue) params.market_id = filterValue;
+    if (!isMarketRole && filterValue) params.market_id = filterValue;
 
     return params;
-  }, [filterValue, limit, page, searchValue]);
+  }, [filterValue, isMarketRole, limit, page, searchValue]);
 
-  const { getProducts, getProductById, deleteProduct, updateProduct } = useProducts();
-  const { data: products, isLoading } = getProducts(apiParams);
+  const { getProducts, getMyProducts, getProductById, deleteProduct, updateProduct } = useProducts();
+  const { data: productsData, isLoading: isProductsLoading } = getProducts(
+    apiParams,
+    isRoleResolved && !isMarketRole,
+  );
+  const { data: myProductsData, isLoading: isMyProductsLoading } = getMyProducts(
+    isRoleResolved && isMarketRole,
+  );
+  const products = isMarketRole ? myProductsData : productsData;
+  const isLoading = isMarketRole ? isMyProductsLoading : isProductsLoading;
   const { data: editProductResponse } = getProductById(editTarget?.id, Boolean(editTarget));
   const editProductDetail = useMemo(
     () => getProductPayload(editProductResponse),
     [editProductResponse],
   );
-  const productData = products?.data?.items ?? products?.data ?? [];
-  const rawPagination = products?.data?.meta
-    ?? products?.data?.pagination
-    ?? products?.meta
-    ?? products?.pagination
-    ?? {};
+  const productData = useMemo(() => getProductList(products), [products]);
+  const rawPagination = useMemo(() => getProductMeta(products), [products]);
 
   const responsePage = toPositiveNumber(
     products?.page ?? rawPagination?.page,
@@ -474,6 +537,15 @@ const ProductTable = () => {
   );
 
   // ─── Render ─────────────────────────────────────────────────────────────
+  if (!isRoleResolved) {
+    return (
+      <div className="rounded-2xl bg-sidebar p-6 dark:bg-maindark">
+        <div className="flex h-40 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-main/20 border-t-main" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4 lg:p-6">
@@ -486,7 +558,22 @@ const ProductTable = () => {
         <Button
           label={t("create")}
           icon={<Plus />}
-          onClick={() => setShowMarketSelect(true)}
+          onClick={() => {
+            if (isMarketRole) {
+              if (!marketUserId) {
+                notificationApi.warning({
+                  message: "Market aniqlanmadi",
+                  description: "Sahifani qayta yuklab ko'ring yoki profil qayta yuklanishini kuting.",
+                  placement: "topRight",
+                });
+                return;
+              }
+              navigate(`/products/create-product/${marketUserId}`);
+              return;
+            }
+
+            setShowMarketSelect(true);
+          }}
         />
       </div>
 
@@ -500,25 +587,27 @@ const ProductTable = () => {
           />
         </div>
 
-        <div className="w-full lg:w-72">
-          <Controller
-            control={filterControl}
-            name="market_id"
-            render={({ field }) => (
-              <SearchableSelect
-                label={t("marketName")}
-                name={field.name}
-                value={field.value}
-                onChange={field.onChange}
-                options={marketOptions}
-                placeholder={t("selectMarket")}
-                icon={Store}
-                hideLabel
-                surface="search"
-              />
-            )}
-          />
-        </div>
+        {!isMarketRole && (
+          <div className="w-full lg:w-72">
+            <Controller
+              control={filterControl}
+              name="market_id"
+              render={({ field }) => (
+                <SearchableSelect
+                  label={t("marketName")}
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={marketOptions}
+                  placeholder={t("selectMarket")}
+                  icon={Store}
+                  hideLabel
+                  surface="search"
+                />
+              )}
+            />
+          </div>
+        )}
 
         <div className="flex min-w-0 items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-white/10 dark:bg-maindark lg:ml-auto lg:min-w-fit">
           <div className="p-2.5 rounded-lg bg-main/10 dark:bg-maindark text-main dark:text-purple-400">
@@ -555,20 +644,22 @@ const ProductTable = () => {
       </div>
 
       {/* Market Selection Popup */}
-      <PopupSelect<Market>
-        isOpen={showMarketSelect}
-        onClose={() => setShowMarketSelect(false)}
-        title={t("selectMarket")}
-        data={markets}
-        onSelect={handleSelectMarket}
-        keyExtractor={(item) => item.index}
-        searchKeys={["name"]}
-        icon={<BookMarked />}
-        selectLabel={t("select")}
-        cancelLabel={t("cancel")}
-        labelKey="name"
-        secondaryLabelKey="phone"
-      />
+      {!isMarketRole && (
+        <PopupSelect<Market>
+          isOpen={showMarketSelect}
+          onClose={() => setShowMarketSelect(false)}
+          title={t("selectMarket")}
+          data={markets}
+          onSelect={handleSelectMarket}
+          keyExtractor={(item) => item.index}
+          searchKeys={["name"]}
+          icon={<BookMarked />}
+          selectLabel={t("select")}
+          cancelLabel={t("cancel")}
+          labelKey="name"
+          secondaryLabelKey="phone"
+        />
+      )}
 
       {/* Delete Confirmation Popup */}
       <PopupConfirm
