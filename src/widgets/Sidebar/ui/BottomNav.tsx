@@ -28,7 +28,9 @@ const BottomNav = () => {
                     item.label as (typeof MOBILE_ADMIN_ALLOWED_LABELS)[number],
                 ),
             )
-            : sourceItems.slice(0, 4);
+            : userRole === "courier"
+                ? sourceItems.slice(0, 4)
+                : sourceItems;
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up md:hidden">

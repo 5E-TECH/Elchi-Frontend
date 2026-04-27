@@ -1,6 +1,5 @@
 import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import HeaderName from "../../../shared/components/headerName";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
 import { MoveLeft, Globe, FileText, CheckCircle2, Loader2 } from "lucide-react";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
@@ -23,6 +22,8 @@ const NewOrderDetail = () => {
   const { t } = useTranslation("newOrders");
   const navigate = useNavigate();
   const { marketId } = useParams();
+  const roleState = useSelector((state: RootState) => state.role);
+  const isMarketRole = roleState.role === "market";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
@@ -59,15 +60,25 @@ const NewOrderDetail = () => {
   );
 
   const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
-  }, []);
+    if (isMarketRole) return;
+    setSelectedIds((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) {
+        s.delete(id);
+      } else {
+        s.add(id);
+      }
+      return s;
+    });
+  }, [isMarketRole]);
 
   useEffect(() => {
+    if (isMarketRole) return;
     if (!orders.length || selectedOrdersKeyRef.current === ordersKey) return;
 
     selectedOrdersKeyRef.current = ordersKey;
     setSelectedIds(new Set(orders.map((order) => order.id)));
-  }, [orders, ordersKey]);
+  }, [isMarketRole, orders, ordersKey]);
 
   const handleMissingScannedOrder = useCallback(() => {
     notifApi.warning({
@@ -134,8 +145,9 @@ const NewOrderDetail = () => {
   });
 
   const toggleSelectAll = useCallback(() => {
+    if (isMarketRole) return;
     setSelectedIds((p) => p.size === orders.length ? new Set() : new Set(orders.map((o) => o.id)));
-  }, [orders]);
+  }, [isMarketRole, orders]);
 
   const handleEdit = useCallback((id: string) => navigate(`/new-orders/${marketId}/edit/${id}`), [navigate, marketId]);
 
@@ -251,53 +263,80 @@ const NewOrderDetail = () => {
     <div className="flex flex-col h-full rounded-2xl bg-sidebar dark:bg-maindark overflow-hidden">
 
       {/* Header */}
-      <div className="p-6 pb-4">
-        <div className="flex justify-between items-center">
-          <div onClick={() => navigate(-1)} className="cursor-pointer">
-            <HeaderName name={t("ordersHeader")} description={`${t("totalCount", { count: orders.length })} • ${fmt(totalSum)} so'm`} icon={<MoveLeft />} />
+      <div className="p-3 pb-3 sm:p-4 sm:pb-4 md:p-6 md:pb-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div
+            onClick={() => navigate(-1)}
+            className="group relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)] p-3 dark:bg-[color:var(--color-surface-elevated-dark)] sm:p-4"
+          >
+            <div className="pointer-events-none absolute -left-6 top-1/2 h-14 w-14 -translate-y-1/2 rounded-full bg-main/12 blur-xl transition-all duration-300 group-hover:bg-main/18" />
+            <div className={`relative flex items-start ${isMarketRole ? "gap-0" : "gap-3"}`}>
+              {!isMarketRole && (
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-main/15 text-main transition-all duration-300 group-hover:bg-main group-hover:text-primary dark:bg-main/25">
+                  <MoveLeft size={18} />
+                </div>
+              )}
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-extrabold leading-tight text-maindark dark:text-primary">
+                  {t("ordersHeader")}
+                </h2>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-maindark/65 dark:text-primary/70 sm:text-sm">
+                  {t("totalCount", { count: orders.length })} • {fmt(totalSum)} so'm
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <GlobalSearchInput searchKey="new_order_detail_search" placeholder={t("searchOrder")} />
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
+            <div className="w-full sm:flex-1 lg:w-80 lg:flex-none">
+              <GlobalSearchInput searchKey="new_order_detail_search" placeholder={t("searchOrder")} />
+            </div>
 
-            <PrintModeSelect
-              count={selectedIds.size}
-              onSelect={(mode) => {
-                void handlePrint(mode);
-              }}
-              buttonLabel={t("print")}
-              menuLabel={t("print")}
-              options={printOptions}
-              className={selectedIds.size === 0 ? "bg-main/40 shadow-none border-main/40 text-white" : "bg-main hover:bg-main/90 border-main text-white shadow-md shadow-main/20"}
-            />
+            {!isMarketRole && (
+              <PrintModeSelect
+                count={selectedIds.size}
+                onSelect={(mode) => {
+                  void handlePrint(mode);
+                }}
+                buttonLabel={t("print")}
+                menuLabel={t("print")}
+                options={printOptions}
+                className={selectedIds.size === 0 ? "bg-main/40 shadow-none border-main/40 text-white" : "bg-main hover:bg-main/90 border-main text-white shadow-md shadow-main/20"}
+              />
+            )}
           </div>
         </div>
 
         {/* Select All */}
-        <div className="mt-4 flex items-center justify-between px-4 py-3 rounded-xl bg-white dark:bg-maindark border border-gray-200 dark:border-white/5">
-          <div onClick={toggleSelectAll} className="flex items-center gap-3 cursor-pointer">
-            <Checkbox checked={allSelected} onChange={toggleSelectAll} />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {allSelected ? t("deselectAll") : t("selectAll")}
-            </span>
+        {!isMarketRole && (
+          <div className="mt-4 flex flex-col gap-2 rounded-xl border border-gray-200 bg-white px-3 py-3 dark:border-white/5 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-4">
+            <div onClick={toggleSelectAll} className="flex items-center gap-3 cursor-pointer">
+              <Checkbox checked={allSelected} onChange={toggleSelectAll} />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                {allSelected ? t("deselectAll") : t("selectAll")}
+              </span>
+            </div>
+            {selectedIds.size > 0 && (
+              <span className="text-xs font-bold text-white bg-main px-2.5 py-1 rounded-lg">{t("selectedCount", { count: selectedIds.size })}</span>
+            )}
           </div>
-          {selectedIds.size > 0 && (
-            <span className="text-xs font-bold text-white bg-main px-2.5 py-1 rounded-lg">{t("selectedCount", { count: selectedIds.size })}</span>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Orders List */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-6 pb-4 space-y-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-24 sm:px-4 sm:pb-28 md:px-6 md:pb-4">
         {isLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="w-8 h-8 rounded-full border-2 border-main/20 border-t-main animate-spin" />
           </div>
         ) : orders.length > 0 ? orders.map((order) => (
           <OrderCard key={order.id} order={order}
-            isSelected={selectedIds.has(order.id)}
+            isSelected={!isMarketRole && selectedIds.has(order.id)}
             onToggle={() => toggleSelect(order.id)}
-            onEdit={handleEdit} onDelete={handleDelete} />
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            showCheckbox={!isMarketRole}
+          />
         )) : (
           <div className="h-64 flex flex-col items-center justify-center text-gray-300 dark:text-gray-700">
             <FileText size={48} className="mb-4 opacity-20" />
@@ -307,26 +346,28 @@ const NewOrderDetail = () => {
       </div>
 
       {/* Sticky Footer — doim pastda qotib turadi */}
-      <div className="shrink-0 bg-sidebar dark:bg-maindark border-t border-gray-100 dark:border-white/5 px-6 py-4">
-        <button
-          onClick={() => setIsReceiveConfirmOpen(true)}
-          disabled={createReceiveOrder.isPending || selectedIds.size === 0}
-          className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base text-white
-            bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
-            hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer
-            disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
-            ${selectedIds.size === 0 ? "opacity-40" : "opacity-100"}`}
-        >
-          {createReceiveOrder.isPending
-            ? <Loader2 size={20} className="animate-spin" />
-            : <CheckCircle2 size={20} />}
-          {createReceiveOrder.isPending
-            ? t("receiving")
-            : selectedIds.size > 0
-              ? t("receiveOrders", { count: selectedIds.size })
-              : t("selectOrders")}
-        </button>
-      </div>
+      {!isMarketRole && (
+        <div className="shrink-0 border-t border-gray-100 bg-sidebar px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 dark:bg-maindark sm:px-4 sm:py-4 md:px-6">
+          <button
+            onClick={() => setIsReceiveConfirmOpen(true)}
+            disabled={createReceiveOrder.isPending || selectedIds.size === 0}
+            className={`w-full flex items-center justify-center gap-3 rounded-2xl py-3.5 text-sm font-bold text-white sm:py-4 sm:text-base
+              bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
+              hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer
+              disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
+              ${selectedIds.size === 0 ? "opacity-40" : "opacity-100"}`}
+          >
+            {createReceiveOrder.isPending
+              ? <Loader2 size={20} className="animate-spin" />
+              : <CheckCircle2 size={20} />}
+            {createReceiveOrder.isPending
+              ? t("receiving")
+              : selectedIds.size > 0
+                ? t("receiveOrders", { count: selectedIds.size })
+                : t("selectOrders")}
+          </button>
+        </div>
+      )}
 
       {/* Delete tasdiqlash popupi */}
       <PopupConfirm
