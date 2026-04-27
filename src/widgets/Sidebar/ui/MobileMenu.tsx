@@ -1,7 +1,6 @@
 import { memo } from "react";
 import { X, LogOut, Moon, Sun, Bell, User, ScanQrCode, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { SIDEBAR_CONFIG, type SidebarUserRole } from "../model/menuConfig";
 import { useLogout } from "../../../shared/lib/useLogout";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
 import { useSelector } from "react-redux";
@@ -27,7 +26,6 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const { logout } = useLogout();
     const { theme, toggleTheme } = useTheme();
     const roleState = useSelector((state: RootState) => state.role);
-    const userRole = (roleState.role as SidebarUserRole) || "admin";
     const { i18n } = useTranslation("common");
     const { control } = useForm<MobileMenuSearchValues>({
         defaultValues: { search: "" },
