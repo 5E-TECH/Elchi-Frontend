@@ -152,5 +152,8 @@
   "deleteSuccessTitle": "Foydalanuvchi o'chirildi",
   "deleteSuccessDescription": "\"{{name}}\" muvaffaqiyatli o'chirildi",
   "deleteErrorTitle": "O'chirib bo'lmadi",
-  "deleteErrorDescription": "Foydalanuvchini o'chirishda xatolik yuz berdi"
+  "deleteErrorDescription": "Foydalanuvchini o'chirishda xatolik yuz berdi",
+  "filterPanelTitle": "Foydalanuvchilar",
+  "filterPanelDescription": "Foydalanuvchilarni saralash",
+  "activeFiltersCount": "{{count}} ta faol filter"
 }

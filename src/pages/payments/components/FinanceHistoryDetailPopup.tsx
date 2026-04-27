@@ -1,21 +1,21 @@
 import { memo, useMemo } from "react";
 import {
-  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  BadgeCheck,
   Calendar,
-  CircleDollarSign,
   CreditCard,
+  ExternalLink,
   Loader2,
   MapPin,
   MessageSquare,
   Phone,
+  Receipt,
   ShoppingCart,
-  TrendingDown,
-  TrendingUp,
   User,
   Wallet,
   X,
 } from "lucide-react";
-import Popup from "../../../shared/ui/Popup";
 import type { PaymentRow } from "./patmentHistoryTable";
 import {
   useCashBox,
@@ -112,13 +112,23 @@ const resolveDirectionValue = (
 const getActorPhone = (actor?: FinanceHistoryActor | null) =>
   actor?.phone_number?.trim() || "—";
 
+const getDirectionCardClasses = (isIncome: boolean) =>
+  isIncome
+    ? "border-info/35 bg-linear-to-br from-info/14 to-info/7 dark:border-info/45 dark:from-info/25 dark:to-info/12"
+    : "border-warning/35 bg-linear-to-br from-warning/16 to-error/8 dark:border-warning/45 dark:from-warning/24 dark:to-error/14";
+
+const getDirectionIconClasses = (isIncome: boolean) =>
+  isIncome
+    ? "bg-linear-to-br from-info to-maindark text-primary"
+    : "bg-linear-to-br from-warning-start to-warning-end text-primary";
+
 const InfoCard = memo(
   ({
     icon,
     label,
     value,
     fullWidth = false,
-    accentClassName = "bg-[var(--color-main-soft)] dark:bg-main/25",
+    accentClassName = "bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10",
   }: {
     icon: React.ReactNode;
     label: string;
@@ -126,9 +136,7 @@ const InfoCard = memo(
     fullWidth?: boolean;
     accentClassName?: string;
   }) => (
-    <div
-      className={`rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-main)_10%,var(--color-sidebar))] p-3 dark:border-white/10 dark:bg-primarydark/55 ${fullWidth ? "col-span-2" : ""}`}
-    >
+    <div className={`rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-maindark)_4%,var(--color-primary))] p-3 dark:border-white/10 dark:bg-primarydark/55 ${fullWidth ? "col-span-2" : ""}`}>
       <div className="flex items-center gap-2">
         <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${accentClassName}`}>
           {icon}
@@ -200,6 +208,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   );
   const directionLabel = isIncome ? "Qayerdan" : "Qayerga";
   const directionValue = resolveDirectionValue(detail, actor);
+  const directionRoleLabel = getRoleLabel(detail?.source_user?.role ?? detail?.cashbox?.cashbox_type);
   const order = detail?.order;
   const locationLabel = [
     order?.district?.name ?? order?.customer?.district?.name ?? "",
@@ -211,39 +220,49 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   if (!row) return null;
 
   return (
-    <Popup isShow={!!row} onClose={onClose}>
+    <div
+      className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-[color:color-mix(in_srgb,var(--color-background-deep)_72%,transparent)] p-2 pb-10 pt-4 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={onClose}
+    >
       <div
-        className="flex max-h-[94vh] w-[94vw] max-w-[38rem] flex-col overflow-hidden rounded-[2rem] border border-[color:var(--color-border-soft)] bg-sidebar shadow-2xl shadow-[0_28px_60px_var(--color-background-soft)] dark:border-white/10 dark:bg-maindark"
+        className="flex max-h-[calc(100vh-4rem)] w-full max-w-[38rem] flex-col overflow-hidden rounded-[1.5rem] border border-[color:var(--color-border-soft)] bg-primary shadow-2xl shadow-[0_28px_60px_var(--color-background-soft)] dark:border-white/10 dark:bg-maindark"
         onClick={(event) => event.stopPropagation()}
       >
         <div
-          className="shrink-0 px-5 py-4"
+          className="relative shrink-0 overflow-hidden px-4 py-4 sm:px-5 sm:py-5"
           style={{
             background:
-              "linear-gradient(135deg, var(--color-main) 0%, var(--color-primarydark) 100%)",
+              isIncome
+                ? "linear-gradient(135deg, var(--color-success) 0%, color-mix(in srgb, var(--color-success) 62%, var(--color-maindark)) 100%)"
+                : "linear-gradient(135deg, var(--color-error) 0%, color-mix(in srgb, var(--color-error) 62%, var(--color-maindark)) 100%)",
           }}
         >
+          <div className="pointer-events-none absolute inset-0 opacity-30 [background:radial-gradient(circle_at_20%_20%,var(--color-glass-border)_0,transparent_45%)]" />
+
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
                 {isIncome ? (
-                  <TrendingUp size={20} className="text-white" />
+                  <ArrowUpRight size={20} className="text-primary" />
                 ) : (
-                  <TrendingDown size={20} className="text-white" />
+                  <ArrowDownRight size={20} className="text-primary" />
                 )}
               </div>
               <div>
-                <p className="text-[16px] font-bold capitalize text-white">
+                <p className="text-[16px] font-bold capitalize text-primary">
                   {isIncome ? "kirim" : "chiqim"}
                 </p>
-                <p className="mt-0.5 text-[12px] text-white/80">To'lov tarixi</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-primary/80">
+                  <Receipt size={12} />
+                  To'lov tarixi
+                </p>
               </div>
             </div>
 
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-primary transition-all hover:bg-white/30"
             >
               <X size={16} />
             </button>
@@ -253,11 +272,11 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
 
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[11px] text-white/75">Miqdor</p>
-              <p className="mt-1 text-[30px] leading-none font-extrabold text-white">
+              <p className="text-[11px] text-primary/75">Miqdor</p>
+              <p className="mt-1 text-[30px] leading-none font-extrabold text-primary">
                 {isIncome ? "+" : "-"}
                 {fmt(display?.amount ?? 0)}
-                <span className="ml-1.5 text-[14px] font-medium uppercase text-white/85">
+                <span className="ml-1.5 text-[14px] font-medium uppercase text-primary/85">
                   UZS
                 </span>
               </p>
@@ -265,8 +284,8 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
 
             {display?.balance_after !== undefined && (
               <div className="text-right">
-                <p className="text-[10px] text-white/70">Amaldan keyingi balans</p>
-                <p className="mt-1 text-[13px] font-bold text-white">
+                <p className="text-[10px] text-primary/70">Amaldan keyingi balans</p>
+                <p className="mt-1 text-[13px] font-bold text-primary">
                   {fmt(display.balance_after)} UZS
                 </p>
               </div>
@@ -274,7 +293,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
           </div>
         </div>
 
-        <div className="min-h-0 space-y-3 overflow-hidden bg-sidebar p-4 dark:bg-maindark">
+        <div className="min-h-0 space-y-3 overflow-y-auto bg-primary p-3 sm:p-4 dark:bg-maindark">
           {isLoading && (
             <PopupState
               title="Detail yuklanmoqda"
@@ -292,63 +311,100 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
 
           {!isLoading && !isError && (
             <>
+              {hasComment && (
+                <div className="rounded-2xl border border-[color:var(--color-warning-border)] bg-[var(--color-warning-soft)] p-4 dark:border-[color:var(--color-warning-border)] dark:bg-[var(--color-warning-surface)]">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--color-warning-start)] text-[var(--color-warning-text)] shadow-sm">
+                      <MessageSquare size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-warning-end)] dark:text-[var(--color-warning-text)]">
+                        Izoh
+                      </p>
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-maindark)] dark:text-primary">
+                        {detail?.comment}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className={`rounded-2xl border p-4 ${getDirectionCardClasses(isIncome)}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-sm ${getDirectionIconClasses(isIncome)}`}>
+                    {isIncome ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`mb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] dark:text-primary/85 ${isIncome ? "text-info" : "text-warning-end"}`}>
+                      {directionLabel}
+                    </p>
+                    <p className="truncate text-sm font-bold text-[var(--color-maindark)] dark:text-primary">
+                      {directionValue}
+                    </p>
+                    <p className="mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-primary/65">
+                      {directionRoleLabel}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 {actorPhone !== "—" && (
                   <InfoCard
-                    icon={<Phone size={12} className="text-[var(--color-main)] dark:text-white" />}
+                    icon={<Phone size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                     label="Telefon raqami"
                     value={actorPhone}
-                    accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
+                    accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                   />
                 )}
                 <InfoCard
-                  icon={<ArrowRight size={12} className="text-[var(--color-main)] dark:text-white" />}
-                  label={directionLabel}
-                  value={directionValue}
-                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
-                />
-                <InfoCard
-                  icon={<CreditCard size={12} className="text-[var(--color-main)] dark:text-white" />}
+                  icon={<CreditCard size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                   label="Manba turi"
                   value={getSourceTypeLabel(detail?.source_type)}
-                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
+                  accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
-                  icon={<Wallet size={12} className="text-[var(--color-main)] dark:text-white" />}
+                  icon={<Wallet size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                   label="To'lov turi"
                   value={getPaymentMethodLabel(detail?.payment_method)}
-                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
+                  accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
-                  icon={<Calendar size={12} className="text-[var(--color-main)] dark:text-white" />}
+                  icon={<Calendar size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                   label="To'lov kuni"
                   value={formatDate(detail?.payment_date ?? detail?.createdAt)}
-                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
+                  accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
-                  icon={<User size={12} className="text-[var(--color-main)] dark:text-white" />}
+                  icon={<User size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                   label="Foydalanuvchi"
                   value={
                     <div className="flex flex-col gap-1">
                       <span>{actorName || detail?.created_by || "—"}</span>
-                      <span className="inline-flex w-fit rounded-md border border-[color:var(--color-border-soft)] bg-[var(--color-main-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-main)] dark:border-white/10 dark:bg-main/25 dark:text-white">
+                      <span className="inline-flex w-fit rounded-md border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-main)_12%,var(--color-primary))] px-2 py-0.5 text-[10px] font-bold text-[var(--color-main)] dark:border-white/10 dark:bg-main/25 dark:text-white">
                         {actorRole}
                       </span>
                     </div>
                   }
-                  accentClassName="bg-[var(--color-main-soft)] dark:bg-main/25"
+                  accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
               </div>
 
               {order && (
-                <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-main)_12%,var(--color-sidebar))] dark:border-white/10 dark:bg-primarydark/55">
+                <div className="overflow-hidden rounded-2xl border border-[color:color-mix(in_srgb,var(--color-success)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--color-success)_9%,var(--color-primary))] dark:border-white/10 dark:bg-primarydark/55">
                   <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-4 py-3 dark:border-white/10">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--color-main)]">
-                        <ShoppingCart size={17} className="text-white" />
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-2xl"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, var(--color-success) 0%, color-mix(in srgb, var(--color-success) 62%, var(--color-maindark)) 100%)",
+                        }}
+                      >
+                        <ShoppingCart size={17} className="text-primary" />
                       </div>
                       <div>
-                        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[var(--color-main)] dark:text-white/85">
+                        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[var(--color-success)] dark:text-white/85">
                           Buyurtma
                         </p>
                         <p className="text-[15px] font-bold text-[var(--color-maindark)] dark:text-white">#{order.id}</p>
@@ -390,7 +446,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                     <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <CircleDollarSign size={12} className="text-[var(--color-main)] dark:text-white" />
+                          <Wallet size={12} className="text-[var(--color-main)] dark:text-white" />
                           <span>Umumiy narx</span>
                         </div>
                         <span className="font-bold text-[var(--color-main)] dark:text-white">
@@ -402,10 +458,26 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                     <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <ShoppingCart size={12} className="text-[var(--color-main)] dark:text-white" />
+                          <BadgeCheck size={12} className="text-[var(--color-main)] dark:text-white" />
                           <span>Holat</span>
                         </div>
-                        <span className="rounded-full border border-[color:var(--color-border-soft)] bg-[var(--color-main-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-main)] dark:border-white/10 dark:bg-main/25 dark:text-white">
+                        <span
+                          className="rounded-full border px-2 py-0.5 text-[10px] font-bold dark:border-white/10 dark:text-white"
+                          style={{
+                            color:
+                              order.status === "sold" || order.status === "paid"
+                                ? "var(--color-success)"
+                                : "var(--color-error)",
+                            background:
+                              order.status === "sold" || order.status === "paid"
+                                ? "color-mix(in srgb, var(--color-success) 15%, var(--color-primary))"
+                                : "color-mix(in srgb, var(--color-error) 15%, var(--color-primary))",
+                            borderColor:
+                              order.status === "sold" || order.status === "paid"
+                                ? "color-mix(in srgb, var(--color-success) 26%, transparent)"
+                                : "color-mix(in srgb, var(--color-error) 26%, transparent)",
+                          }}
+                        >
                           {getStatusLabel(order.status)}
                         </span>
                       </div>
@@ -424,7 +496,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                     <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <ArrowRight size={12} className="text-[var(--color-main)] dark:text-white" />
+                          <ExternalLink size={12} className="text-[var(--color-main)] dark:text-white" />
                           <span>Yetkazish</span>
                         </div>
                         <span className="font-medium text-[var(--color-maindark)] dark:text-white">
@@ -439,7 +511,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
           )}
         </div>
       </div>
-    </Popup>
+    </div>
   );
 });
 

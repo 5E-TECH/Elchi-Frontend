@@ -50,8 +50,6 @@ const MyCashboxPage = () => {
 
   const params = useMemo(
     () => ({
-      page: 1,
-      limit: 0,
       ...(selectedDateFrom && { fromDate: toRangeBoundary(selectedDateFrom, "start") }),
       ...(selectedDateTo && { toDate: toRangeBoundary(selectedDateTo, "end") }),
     }),

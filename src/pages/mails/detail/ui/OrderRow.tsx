@@ -17,7 +17,6 @@ import {
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
 import { formatDate, formatPrice, getStatusLabel, getStatusStyle } from "../lib/helpers";
-import Checkbox from "./Checkbox";
 import { HISTORY_TABLE_COLS, TABLE_COLS } from "./OrdersTable";
 import type { PrintMode } from "../lib/printMode";
 
@@ -68,7 +67,7 @@ const OrderRow = memo(({
   if (isHistory) {
     return (
       <div className="rounded-[22px] border border-slate-200/70 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:border-white/8 dark:bg-white/[0.03]">
-        <div className={`hidden xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-4`}>
+        <div className={`hidden 2xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-4`}>
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 shrink-0">
               <User size={14} className="text-slate-500 dark:text-white/70" />
@@ -117,7 +116,7 @@ const OrderRow = memo(({
           </div>
         </div>
 
-        <div className="xl:hidden px-4 py-4">
+        <div className="2xl:hidden px-4 py-4">
           <div className="flex items-start gap-3">
             <div className="flex items-center justify-center h-9 w-9 shrink-0 rounded-full border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
               <User size={15} className="text-slate-500 dark:text-white/70" />
@@ -177,7 +176,7 @@ const OrderRow = memo(({
     <div
       className={`group rounded-xl border transition-all duration-200 cursor-pointer ${
         checked
-          ? "bg-main/10 border-main/40 shadow-sm"
+          ? "bg-emerald-500/8 border-emerald-400/55 shadow-[0_0_0_1px_rgba(16,185,129,0.45),0_10px_26px_rgba(16,185,129,0.20)]"
           : "bg-white dark:bg-white/4 border-gray-100 dark:border-white/8 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-white/6"
       }`}
       onClick={() => {
@@ -185,9 +184,7 @@ const OrderRow = memo(({
       }}
     >
       {/* XL table layout */}
-      <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 px-3 xl:px-4 py-3.5`}>
-        {readOnly ? <div /> : <Checkbox checked={checked} onChange={() => onToggle(order.id)} />}
-
+      <div className={`hidden 2xl:grid ${TABLE_COLS} items-center gap-2 px-3 2xl:px-4 py-3.5`}>
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 shrink-0">
             <User size={13} className="text-slate-500 dark:text-white/70" />
@@ -288,28 +285,46 @@ const OrderRow = memo(({
       </div>
 
       {/* Compact layout (no horizontal scroll) */}
-      <div className="xl:hidden px-3 py-3.5">
-        <div className="flex items-start gap-3">
-          {readOnly ? null : (
-            <div className="pt-0.5">
-              <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
-            </div>
-          )}
-
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="m-0 break-words text-sm font-extrabold text-gray-900 dark:text-white sm:truncate">
+      <div className="2xl:hidden px-3 py-2.5">
+        <div className="lg:hidden">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="min-w-0">
+                <p className="m-0 truncate text-sm font-bold text-slate-900 dark:text-white">
                   {customerName}
                 </p>
-                <p className="m-0 mt-1 flex items-center gap-1.5 break-all text-[12px] text-gray-500 dark:text-white/70 sm:truncate">
-                  <Phone size={12} className="shrink-0 text-gray-400 dark:text-white/40" />
-                  {customerPhone}
+                <p className="m-0 mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-900 dark:text-white">
+                  <Phone size={13} className="shrink-0" />
+                  <span className="truncate">{customerPhone}</span>
                 </p>
-              </div>
 
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
+                    <Store size={11} className="shrink-0" />
+                    <span className="truncate">{marketName}</span>
+                  </span>
+                  <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
+                    <MapPin size={11} className="shrink-0" />
+                    <span className="truncate">{districtName}</span>
+                  </span>
+                  {isAddressDelivery ? (
+                    <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-orange-500/30 bg-orange-500/15 px-2 py-1 text-[11px] font-semibold text-orange-500">
+                      <House size={11} />
+                      {t("orders:deliveryToHome")}
+                    </span>
+                  ) : (
+                    <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-slate-500/20 bg-slate-500/15 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:text-white">
+                      <Warehouse size={11} />
+                      {t("orders:deliveryToCenter")}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 flex-col items-start gap-1.5">
               <span
-                className={`inline-flex w-fit items-center gap-1 self-start rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${getStatusStyle(
+                className={`inline-flex w-fit items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${getStatusStyle(
                   order.status as OrderStatus,
                 )}`}
                 style={{ whiteSpace: "nowrap" }}
@@ -317,46 +332,107 @@ const OrderRow = memo(({
                 <Package2 size={11} />
                 {getStatusLabel(order.status as OrderStatus)}
               </span>
-            </div>
 
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
+              <span className="text-base font-bold text-slate-900 dark:text-white">
                 {formatPrice(order.total_price)}
               </span>
 
-              <span className="inline-flex items-center gap-1.5 break-words text-[12px] text-gray-500 dark:text-white/70">
-                <Calendar size={12} className="shrink-0 text-gray-400 dark:text-white/40" />
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-900 dark:text-white">
+                <Calendar size={11} className="shrink-0" />
                 {formatDate(order.updatedAt ?? order.createdAt)}
               </span>
+
+              {(onPrint || (canDelete && onDelete)) && (
+                <div
+                  className="flex items-center gap-1.5"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {onPrint ? (
+                    <PrintModeSelect
+                      variant="icon"
+                      count={1}
+                      onSelect={(mode) => onPrint(order, mode as PrintMode)}
+                      buttonLabel={t("mails:print")}
+                      menuLabel={t("mails:printMenu")}
+                      options={printOptions}
+                    />
+                  ) : null}
+                  {canDelete && onDelete ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDelete(order.id);
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-500 transition-all duration-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                      aria-label={t("mails:delete")}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden lg:block">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="m-0 truncate text-base font-bold text-slate-900 dark:text-white">
+                {customerName}
+              </p>
+              <p className="m-0 mt-1 flex items-center gap-1 text-[13px] font-medium text-slate-900 dark:text-white">
+                <Phone size={13} className="shrink-0" />
+                <span className="truncate">{customerPhone}</span>
+              </p>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
-                <Store size={11} className="shrink-0" />
-                <span className="truncate">{marketName}</span>
+            <div className="flex shrink-0 items-start gap-3">
+              <span
+                className={`inline-flex w-fit items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${getStatusStyle(
+                  order.status as OrderStatus,
+                )}`}
+                style={{ whiteSpace: "nowrap" }}
+              >
+                <Package2 size={11} />
+                {getStatusLabel(order.status as OrderStatus)}
               </span>
-
-              <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
-                <MapPin size={11} className="shrink-0" />
-                <span className="truncate">{districtName}</span>
+              <span className="text-lg font-bold text-slate-900 dark:text-white">
+                {formatPrice(order.total_price)}
               </span>
+            </div>
+          </div>
 
-              {isAddressDelivery ? (
-                <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-orange-500/30 bg-orange-500/15 px-2 py-1 text-[11px] font-semibold text-orange-500">
-                  <House size={11} />
-                  Uygacha
-                </span>
-              ) : (
-                <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-slate-500/20 bg-slate-500/15 px-2 py-1 text-[11px] font-semibold text-slate-700 dark:text-white/80">
-                  <Warehouse size={11} />
-                  Markazgacha
-                </span>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
+              <Store size={11} className="shrink-0" />
+              <span className="truncate">{marketName}</span>
+            </span>
+            <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
+              <MapPin size={11} className="shrink-0" />
+              <span className="truncate">{districtName}</span>
+            </span>
+            {isAddressDelivery ? (
+              <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-orange-500/30 bg-orange-500/15 px-2 py-1 text-[11px] font-semibold text-orange-500">
+                <House size={11} />
+                {t("orders:deliveryToHome")}
+              </span>
+            ) : (
+              <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-slate-500/20 bg-slate-500/15 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:text-white">
+                <Warehouse size={11} />
+                {t("orders:deliveryToCenter")}
+              </span>
             )}
+            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-slate-900 dark:text-white">
+              <Calendar size={11} className="shrink-0" />
+              {formatDate(order.updatedAt ?? order.createdAt)}
+            </span>
           </div>
 
           {(onPrint || (canDelete && onDelete)) && (
             <div
-              className="mt-3 flex items-center gap-2"
+              className="mt-2 flex items-center justify-end gap-1.5"
               onClick={(event) => event.stopPropagation()}
             >
               {onPrint ? (
@@ -376,17 +452,16 @@ const OrderRow = memo(({
                     event.stopPropagation();
                     onDelete(order.id);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-500 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20 transition-all duration-200"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-500 transition-all duration-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
+                  aria-label={t("mails:delete")}
                 >
                   <Trash2 size={12} />
-                  {t("mails:delete")}
                 </button>
               ) : null}
             </div>
           )}
         </div>
       </div>
-    </div>
     </div>
   );
 });

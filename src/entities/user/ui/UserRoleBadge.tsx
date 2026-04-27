@@ -49,7 +49,7 @@ const roleConfig: Record<UserRole, { label: string; className: string }> = {
 export const UserRoleBadge = memo(({ role }: UserRoleBadgeProps) => {
     const { t } = useTranslation("users");
     const config = roleConfig[role] ?? {
-        label: role ?? "Noma'lum",
+        label: t("roleUnknown"),
         className: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
     };
 

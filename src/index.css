@@ -335,6 +335,23 @@
     animation: slideDown 0.25s ease-out forwards;
   }
 
+  /* Mobile drawer right-to-left animation */
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.28s ease-out forwards;
+  }
+
   /* ── PageLoader Animations ── */
   @keyframes loaderFadeIn {
     from {

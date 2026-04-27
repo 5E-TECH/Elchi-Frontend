@@ -152,5 +152,8 @@
   "deleteSuccessTitle": "User deleted",
   "deleteSuccessDescription": "\"{{name}}\" was deleted successfully",
   "deleteErrorTitle": "Delete failed",
-  "deleteErrorDescription": "An error occurred while deleting the user"
+  "deleteErrorDescription": "An error occurred while deleting the user",
+  "filterPanelTitle": "Users",
+  "filterPanelDescription": "Sort users",
+  "activeFiltersCount": "{{count}} active filters"
 }

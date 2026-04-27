@@ -221,7 +221,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       <div
         className={`flex items-center gap-3 md:gap-4 shrink-0 ${isSearchOpen ? "hidden md:flex" : "flex"}`}
       >
-        <div ref={languageMenuRef} className="relative">
+        <div ref={languageMenuRef} className="relative hidden md:block">
           <button
             type="button"
             onClick={() => setIsLanguageOpen((prev) => !prev)}
@@ -282,7 +282,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={() => navigate("/scan")}
-          className="group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-main/15 bg-primary text-maindark shadow-sm transition-all duration-300 hover:border-main/35 hover:bg-main/10 dark:border-white/10 dark:bg-maindark dark:text-primary md:h-11 md:w-11"
+          className="group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-main/15 bg-primary text-maindark shadow-sm transition-all duration-300 hover:border-main/35 hover:bg-main/10 dark:border-white/10 dark:bg-maindark dark:text-primary md:flex md:h-11 md:w-11"
           aria-label={t("scannerTitle")}
           title={t("scannerTitle")}
         >
