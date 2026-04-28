@@ -11,14 +11,15 @@ import {
   FileText,
   Bell,
   Building2,
+  type LucideIcon,
   //   LucideIcon,
 } from "lucide-react";
 
-export type UserRole = "admin" | "superadmin" | "market" | "courier";
+export type UserRole = "admin" | "superadmin" | "market" | "courier" | "registrator";
 
 export interface NavItem {
   to: string;
-  icon: any;
+  icon: LucideIcon;
   label: string;
   end?: boolean;
 }
@@ -59,6 +60,13 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
+  ],
+  registrator: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
+    { to: "/mails", icon: MailOpen, label: "mails" },
+    { to: "/products", icon: Apple, label: "products" },
   ],
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },
