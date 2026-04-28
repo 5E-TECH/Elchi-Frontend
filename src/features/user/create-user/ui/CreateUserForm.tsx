@@ -3,7 +3,9 @@ import { Controller, useForm, useWatch, type Path } from "react-hook-form";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
+  CreateManagerRequest,
   CreateMarketRequest,
+  CreateOperatorRequest,
   CreateRegistratorRequest,
   UserRole,
 } from "../../../../entities/user/types/user";
@@ -14,17 +16,23 @@ import { useAppNotification } from "../../../../app/providers/notification/Notif
 import {
   Building,
   Calendar,
+  ChevronDown,
   Eye,
   EyeOff,
   Send,
   Shield,
   Store,
+  Truck,
+  UserCog,
   User,
+  Users,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
+import { useBranches } from "../../../../entities/branch";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -63,6 +71,7 @@ interface CreateUserFormValues {
   salary: string;
   paymentDay: string;
   region: string;
+  branchId: string;
   homeRate: string;
   centerRate: string;
   deliveryType: "address" | "center" | "";
@@ -77,6 +86,7 @@ const INITIAL_FORM: CreateUserFormValues = {
   salary: "",
   paymentDay: "",
   region: "",
+  branchId: "",
   homeRate: "",
   centerRate: "",
   deliveryType: "",
@@ -119,6 +129,8 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
   salary: "salary",
   payment_day: "paymentDay",
   paymentDay: "paymentDay",
+  branch_id: "branchId",
+  branchId: "branchId",
   region: "region",
   region_id: "region",
   regionId: "region",
@@ -138,6 +150,10 @@ export const CreateUserForm = memo(() => {
   const { t } = useTranslation("users");
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [isCompactRolePicker, setIsCompactRolePicker] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 1280 : false,
+  );
+  const [isCompactRolePickerOpen, setIsCompactRolePickerOpen] = useState(false);
   const getRoleLabel = (userRole: UserRole) => t(getUserRoleLabelKey(userRole));
 
   const methods = useForm<CreateUserFormValues>({
@@ -155,9 +171,24 @@ export const CreateUserForm = memo(() => {
   } = methods;
 
   const role = useWatch({ control, name: "role" });
+  const rolePickerOptions: Array<{ key: UserRole; icon: JSX.Element }> = [
+    { key: "admin", icon: <Shield size={16} /> },
+    { key: "manager", icon: <Briefcase size={16} /> },
+    { key: "registrator", icon: <Users size={16} /> },
+    { key: "operator", icon: <UserCog size={16} /> },
+    { key: "courier", icon: <Truck size={16} /> },
+    { key: "marketing", icon: <Store size={16} /> },
+  ];
+  const activeRoleOption =
+    rolePickerOptions.find((option) => option.key === role) ?? rolePickerOptions[0];
 
-  const { createAdmin, createRegistrator, createMarket, createCourier, getRegions } = useUser();
+  const { createAdmin, createManager, createOperator, createRegistrator, createMarket, createCourier, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
+  const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches({
+    page: 1,
+    limit: 200,
+    status: "active",
+  });
 
   const { data: regionsData } = getRegions();
   const regionList: { id: string; name: string }[] = (() => {
@@ -168,13 +199,32 @@ export const CreateUserForm = memo(() => {
     if (data?.items && Array.isArray(data.items)) return data.items;
     return [];
   })();
+  const branchOptions = (branchesResponse?.data ?? []).map((branch) => ({
+    value: branch.id,
+    label: branch.name,
+  }));
 
   useEffect(() => {
     reset({ ...INITIAL_FORM, role });
   }, [role, reset]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      const compact = window.innerWidth < 1280;
+      setIsCompactRolePicker(compact);
+      if (!compact) {
+        setIsCompactRolePickerOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const isPending =
     createAdmin.isPending ||
+    createManager.isPending ||
+    createOperator.isPending ||
     createRegistrator.isPending ||
     createMarket.isPending ||
     createCourier.isPending;
@@ -201,7 +251,7 @@ export const CreateUserForm = memo(() => {
       valid = false;
     }
 
-    if (role === "admin" || role === "manager" || role === "registrator") {
+    if (role === "admin" || role === "registrator") {
       if (!values.salary) {
         setError("salary", { message: t("salaryRequired") });
         valid = false;
@@ -217,6 +267,11 @@ export const CreateUserForm = memo(() => {
           valid = false;
         }
       }
+    }
+
+    if ((role === "manager" || role === "operator") && !values.branchId) {
+      setError("branchId", { message: t("branchRequired") });
+      valid = false;
     }
 
     if (role === "courier") {
@@ -277,6 +332,42 @@ export const CreateUserForm = memo(() => {
       await apiRequest({
         request: () => mutation.mutateAsync(payload as CreateAdminRequest & CreateRegistratorRequest),
         successMessage,
+        errorMessage: t("loadError"),
+        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
+        onSuccess: () => navigate(-1),
+      });
+      return;
+    }
+
+    if (role === "manager") {
+      const payload: CreateManagerRequest = {
+        name: values.fullName,
+        phone_number: rawPhone,
+        password: values.password,
+        branch_id: values.branchId,
+      };
+
+      await apiRequest({
+        request: () => createManager.mutateAsync(payload),
+        successMessage: t("createManager"),
+        errorMessage: t("loadError"),
+        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
+        onSuccess: () => navigate(-1),
+      });
+      return;
+    }
+
+    if (role === "operator") {
+      const payload: CreateOperatorRequest = {
+        name: values.fullName,
+        phone_number: rawPhone,
+        password: values.password,
+        branch_id: values.branchId,
+      };
+
+      await apiRequest({
+        request: () => createOperator.mutateAsync(payload),
+        successMessage: t("createOperator"),
         errorMessage: t("loadError"),
         onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
@@ -438,29 +529,81 @@ export const CreateUserForm = memo(() => {
   );
 
   return (
-    <div className="w-full h-full rounded-2xl flex flex-col overflow-hidden transition-colors duration-300">
-      <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-slate-100 dark:border-white/5">
+    <div className="flex w-full min-h-full flex-col overflow-hidden rounded-2xl transition-colors duration-300">
+      <div className="shrink-0 border-b border-slate-100 px-3 py-3 dark:border-white/5 sm:px-4 md:px-6">
         <div className="text-right">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">
+          <h2 className="text-base font-bold text-slate-800 dark:text-white sm:text-lg">
             {t("createNewUser")}{" "}
             {getRoleLabel(role)}
           </h2>
         </div>
       </div>
 
-      <div className="flex flex-1 gap-6 overflow-hidden px-6 py-6">
-        <div className="w-72 flex flex-col gap-4 shrink-0">
-          <div className="bg-white dark:bg-maindark p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-primarydark/20">
+      <div className="flex flex-1 flex-col gap-4 overflow-visible px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:items-start lg:gap-6 lg:overflow-hidden lg:px-6 lg:py-6">
+        <div className="w-full shrink-0 lg:w-72">
+          <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-primarydark/20 dark:bg-maindark sm:p-4">
             <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
               {t("roleSelect")}
             </h3>
-            <RoleSelector
-              selectedRole={role}
-              onSelect={(nextRole) => setValue("role", nextRole)}
-            />
+            {isCompactRolePicker ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setIsCompactRolePickerOpen((prev) => !prev)}
+                  className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-main bg-main px-3 py-2.5 text-primary shadow-sm shadow-main/20 dark:text-white"
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary dark:bg-white/15 dark:text-white">
+                      {activeRoleOption.icon}
+                    </span>
+                    <span className="truncate text-left text-sm font-semibold">
+                      {getRoleLabel(activeRoleOption.key)}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className={`shrink-0 transition-transform duration-200 ${
+                      isCompactRolePickerOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isCompactRolePickerOpen && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {rolePickerOptions
+                      .filter((option) => option.key !== role)
+                      .map((option) => (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => {
+                            setValue("role", option.key);
+                            setIsCompactRolePickerOpen(false);
+                          }}
+                          className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700 transition-colors hover:border-main/30 hover:bg-main/5 dark:border-white/10 dark:bg-primarydark dark:text-white/80"
+                        >
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-main/10 text-main dark:bg-white/15 dark:text-white">
+                            {option.icon}
+                          </span>
+                          <span className="text-left text-sm font-semibold">
+                            {getRoleLabel(option.key)}
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar lg:max-h-none lg:overflow-visible lg:pr-0">
+                <RoleSelector
+                  selectedRole={role}
+                  onSelect={(nextRole) => setValue("role", nextRole)}
+                />
+              </div>
+            )}
           </div>
 
-          <div className="bg-linear-to-br from-main to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-main/20">
+          <div className="mt-4 rounded-2xl bg-linear-to-br from-main to-indigo-600 p-4 text-white shadow-lg shadow-main/20 sm:p-5">
             <h3 className="text-base font-bold mb-2">{getRoleLabel(role)}</h3>
             <p className="text-white/80 text-xs leading-relaxed">
               {t("roleMarketCardHint")}
@@ -468,8 +611,8 @@ export const CreateUserForm = memo(() => {
           </div>
         </div>
 
-        <div className="flex-1 bg-white dark:bg-maindark rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/20 border border-slate-100 dark:border-primarydark/20 flex flex-col overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-main shrink-0 flex items-center gap-4">
+        <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 dark:border-primarydark/20 dark:bg-maindark dark:shadow-black/20">
+          <div className="flex shrink-0 items-center gap-3 border-b border-slate-100 bg-slate-50/50 px-3 py-3 dark:border-white/5 dark:bg-main sm:gap-4 sm:px-4 md:px-6">
             <div
               className={`p-2 rounded-xl bg-linear-to-br text-white shadow-md ${
                 role === "admin"
@@ -483,15 +626,15 @@ export const CreateUserForm = memo(() => {
             >
               <ShieldIcon role={role} size={20} />
             </div>
-            <h1 className="text-xl font-bold text-slate-800 dark:text-white">
+            <h1 className="text-base font-bold text-slate-800 dark:text-white sm:text-lg md:text-xl">
               {t("addUserTitle")}
             </h1>
           </div>
 
-          <div className="flex-1 px-6 py-6 overflow-y-auto">
-            <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+          <div className="overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6">
+            <form id="create-user-form" onSubmit={handleSubmit(onSubmit)} className="w-full">
               <div className="space-y-8">
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
                   {renderInput({
                     label: t("fullNameShort"),
                     name: "fullName",
@@ -509,8 +652,8 @@ export const CreateUserForm = memo(() => {
 
                 <div className="h-px bg-slate-100 dark:bg-white/5" />
 
-                {(role === "admin" || role === "manager" || role === "registrator") && (
-                  <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {(role === "admin" || role === "registrator") && (
+                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
                     {renderInput({
                       label: t("salaryWithCurrency"),
                       name: "salary",
@@ -526,8 +669,30 @@ export const CreateUserForm = memo(() => {
                   </div>
                 )}
 
+                {(role === "manager" || role === "operator") && (
+                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
+                    <Controller
+                      control={control}
+                      name="branchId"
+                      render={({ field, fieldState }) => (
+                        <Select
+                          label={t("branchLabel")}
+                          name={field.name}
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={branchOptions}
+                          placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
+                          error={fieldState.error?.message}
+                          loading={isBranchesLoading}
+                          required
+                        />
+                      )}
+                    />
+                  </div>
+                )}
+
                 {role === "courier" && (
-                  <div className="grid grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 xl:grid-cols-3 md:gap-6">
                     <Controller
                       control={control}
                       name="region"
@@ -563,7 +728,7 @@ export const CreateUserForm = memo(() => {
                 )}
 
                 {role === "marketing" && (
-                  <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
                     {renderInput({
                       label: "Username",
                       name: "username",
@@ -604,43 +769,43 @@ export const CreateUserForm = memo(() => {
                   </div>
                 )}
               </div>
-            </form>
-          </div>
 
-          <div className="px-6 py-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-4 bg-slate-50/50 dark:bg-white/5 shrink-0">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-6 py-2.5 rounded-xl font-semibold text-slate-500 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-sm"
-            >
-              {t("cancel")}
-            </button>
-            <button
-              type="submit"
-              onClick={handleSubmit(onSubmit)}
-              disabled={isPending}
-              className={`relative overflow-hidden flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-sm ${
-                role === "admin"
-                  ? "bg-linear-to-r from-purple-600 to-indigo-600"
-                  : role === "manager" || role === "registrator"
-                    ? "bg-linear-to-r from-blue-500 to-cyan-500"
-                    : role === "courier"
-                      ? "bg-linear-to-r from-orange-500 to-amber-500"
-                      : "bg-linear-to-r from-emerald-500 to-teal-500"
-              }`}
-            >
-              {isPending ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>{t("saving")}</span>
-                </>
-              ) : (
-                <>
-                  <span>{t("save")}</span>
-                  <Send size={16} strokeWidth={2.5} />
-                </>
-              )}
-            </button>
+              <div className="mt-8 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 dark:border-white/5 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  className="w-full rounded-xl px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:bg-slate-100 dark:text-white/60 dark:hover:bg-white/5 sm:w-auto"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  type="submit"
+                  form="create-user-form"
+                  disabled={isPending}
+                  className={`relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none disabled:opacity-70 sm:w-auto ${
+                    role === "admin"
+                      ? "bg-linear-to-r from-purple-600 to-indigo-600"
+                      : role === "manager" || role === "registrator" || role === "operator"
+                        ? "bg-linear-to-r from-blue-500 to-cyan-500"
+                        : role === "courier"
+                          ? "bg-linear-to-r from-orange-500 to-amber-500"
+                          : "bg-linear-to-r from-emerald-500 to-teal-500"
+                  }`}
+                >
+                  {isPending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>{t("saving")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{t("save")}</span>
+                      <Send size={16} strokeWidth={2.5} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

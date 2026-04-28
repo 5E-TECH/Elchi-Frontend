@@ -175,6 +175,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                                         <FilterClearButton
                                             onClick={handleReset}
                                             className="h-12 rounded-2xl px-5"
+                                            responsiveIconOnly
                                         />
                                     </div>
                                 </div>
@@ -232,6 +233,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                         <FilterClearButton
                             onClick={handleReset}
                             className="h-12 rounded-2xl px-5 xl:w-auto"
+                            responsiveIconOnly
                         />
                     </div>
                 </div>
