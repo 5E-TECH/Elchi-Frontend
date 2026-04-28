@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { SIDEBAR_CONFIG, type UserRole } from "../model/menuConfig";
+import { SIDEBAR_CONFIG, type SidebarUserRole } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -21,7 +21,7 @@ const Sidebar = () => {
 
   // ─── User role'ni Redux dan oling ────────────────────────────────────────
   const { role } = useSelector((state: RootState) => state.role);
-  const userRole = (role as UserRole) || "admin";
+  const userRole = (role as SidebarUserRole) || "admin";
 
   // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
   const links = useMemo(() => {
@@ -41,11 +41,11 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`h-screen sticky top-0 left-0 hidden md:flex flex-col bg-sidebar dark:bg-maindark text-maindark dark:text-primary transition-all duration-300 ease-in-out shadow-xl z-50 ${!sidebarRedux.isOpen ? "w-24" : "w-72"
+      className={`h-screen sticky top-0 left-0 hidden md:flex flex-col bg-sidebar dark:bg-maindark text-maindark dark:text-primary transition-all duration-300 ease-in-out shadow-xl z-50 ${!sidebarRedux.isOpen ? "w-20" : "w-64"
         }`}
     >
       {/* Header with Logo */}
-      <div className="flex h-24 items-center justify-start bg-sidebar pl-4 dark:bg-maindark overflow-hidden">
+      <div className="flex h-20 items-center justify-start bg-sidebar pl-3 dark:bg-maindark overflow-hidden">
         <div
           className={`transition-all duration-300 flex items-center justify-start ${!sidebarRedux.isOpen ? "w-full px-2" : "w-full px-3"
             }`}
@@ -53,24 +53,24 @@ const Sidebar = () => {
           <img
             src={sidebarRedux.isOpen ? currentLogoText : currentLogoIcon}
             alt="Elchi Logo"
-            className={`object-contain transition-all duration-300 ${!sidebarRedux.isOpen ? "w-12 h-12" : "w-40 h-auto"
+            className={`object-contain transition-all duration-300 ${!sidebarRedux.isOpen ? "h-10 w-10" : "h-auto w-36"
               }`}
           />
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-2 custom-scrollbar bg-sidebar dark:bg-maindark">
+      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1.5 custom-scrollbar bg-sidebar dark:bg-maindark">
         {links.map((link) => (
           <SidebarLink key={link.to} {...link} />
         ))}
       </nav>
 
       {/* Footer with Toggle Button and Logout */}
-      <div className={`p-4 flex bg-primary/5 dark:bg-maindark/50 ${!sidebarRedux.isOpen ? "flex-col space-y-4 items-center" : "items-center justify-between"}`}>
+      <div className={`p-3 flex bg-primary/5 dark:bg-maindark/50 ${!sidebarRedux.isOpen ? "flex-col space-y-3 items-center" : "items-center justify-between"}`}>
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className="flex items-center justify-center p-2 rounded-lg transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10"
+          className="flex items-center justify-center rounded-lg p-2 transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10"
         >
           {sidebarRedux.isOpen ? (
             <>

@@ -9,12 +9,14 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import type { RootState } from "../../../app/config/store";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
+import Pagination from "../../../shared/components/pagination";
+import { usePagination } from "../../../shared/lib/usePagination";
 
 interface Region {
   id: string;
@@ -68,16 +70,21 @@ const getStatusMeta = (status: string) => {
 const OldMailCard = memo(({ item }: { item: MailItem }) => {
   const { t } = useTranslation("mails");
   const navigate = useNavigate();
+  const location = useLocation();
   const status = getStatusMeta(item.status);
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}`, { state: { fromTab: "old", view: "old" } })}
+      onClick={() => navigate(`/mails/${item.id}`, {
+        state: { fromTab: "old", view: "old", fromSearch: location.search },
+      })}
       onKeyDown={(e) =>
         e.key === "Enter" &&
-        navigate(`/mails/${item.id}`, { state: { fromTab: "old", view: "old" } })
+        navigate(`/mails/${item.id}`, {
+          state: { fromTab: "old", view: "old", fromSearch: location.search },
+        })
       }
       className="group relative overflow-hidden rounded-[22px] border border-slate-500/20 cursor-pointer"
       style={{
@@ -149,10 +156,15 @@ const OldMails = () => {
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
   const { getOldMails } = useMails();
-  const { data, isLoading, isError } = getOldMails(isCourier);
+  const { page, limit, setPage, setLimit } = usePagination({
+    key: "mails",
+    defaultLimit: 8,
+  });
+  const { data, isLoading, isError } = getOldMails(isCourier, { page, limit });
   const [selectedRegionId, setSelectedRegionId] = useState("");
 
   const mails: MailItem[] = useMemo(() => data?.data?.data ?? [], [data]);
+  const pagination = data?.data;
   const regionOptions = useMemo(
     () => buildRegionFilterOptions(mails, t("oldRegionFilterPlaceholder")),
     [mails, t],
@@ -238,10 +250,23 @@ const OldMails = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {filteredMails.map((mail) => (
-            <OldMailCard key={mail.id} item={mail} />
-          ))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {filteredMails.map((mail) => (
+              <OldMailCard key={mail.id} item={mail} />
+            ))}
+          </div>
+
+          {!selectedRegionId && pagination ? (
+            <Pagination
+              totalItems={pagination.total}
+              itemsPerPage={pagination.limit}
+              currentPage={pagination.page}
+              onPageChange={setPage}
+              onItemsPerPageChange={setLimit}
+              pageSizeOptions={[8, 16, 32, 64]}
+            />
+          ) : null}
         </div>
       )}
     </div>

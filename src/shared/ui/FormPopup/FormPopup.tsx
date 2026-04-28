@@ -41,19 +41,19 @@ const FormPopup = ({
       <form
         onSubmit={onSubmit}
         data-theme={theme}
-        className={`${styles.panel} flex max-h-[90vh] w-[92vw] ${widthClassName} flex-col overflow-hidden rounded-[1.75rem]`}
+        className={`${styles.panel} flex max-h-[90vh] w-[94vw] ${widthClassName} flex-col overflow-hidden rounded-3xl sm:w-[92vw] sm:rounded-[1.75rem]`}
       >
-        <div className={`${styles.header} flex items-start justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-6 py-5`}>
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--color-main)_0%,var(--color-primarydark)_100%)] text-white shadow-[0_16px_30px_rgba(87,106,219,0.28)]">
+        <div className={`${styles.header} flex items-start justify-between gap-3 border-b border-[color:var(--color-border-soft)] px-4 py-4 sm:gap-4 sm:px-6 sm:py-5`}>
+          <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--color-main)_0%,var(--color-primarydark)_100%)] text-white shadow-[0_16px_30px_rgba(87,106,219,0.28)] sm:h-12 sm:w-12">
               {icon}
             </div>
-            <div>
-              <h3 className="text-xl font-bold tracking-tight text-[var(--color-maindark)] dark:text-white">
+            <div className="min-w-0">
+              <h3 className="text-lg font-bold tracking-tight text-[var(--color-maindark)] dark:text-white sm:text-xl">
                 {title}
               </h3>
               {description ? (
-                <p className="mt-1 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
+                <p className="mt-1 text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] sm:text-sm">
                   {description}
                 </p>
               ) : null}
@@ -63,17 +63,17 @@ const FormPopup = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 text-[var(--color-maindark)] transition-colors hover:bg-[var(--color-main-soft)] dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 text-[var(--color-maindark)] transition-colors hover:bg-[var(--color-main-soft)] dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className={`${styles.body} ${styles.form} custom-scrollbar flex-1 overflow-y-auto px-6 py-5`}>
+        <div className={`${styles.body} ${styles.form} custom-scrollbar flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5`}>
           {children}
         </div>
 
-        <div className={`${styles.footer} flex gap-3 border-t border-[color:var(--color-border-soft)] px-6 py-5`}>
+        <div className={`${styles.footer} flex flex-col-reverse gap-3 border-t border-[color:var(--color-border-soft)] px-4 py-4 sm:flex-row sm:px-6 sm:py-5`}>
           <Button
             type="button"
             label={cancelLabel}

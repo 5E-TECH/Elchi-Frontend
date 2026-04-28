@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-export type PaginationScope = "orders" | "products" | "users" | "payments";
+export type PaginationScope = "orders" | "products" | "users" | "payments" | "mails";
 
 export interface PaginationEntry {
   page: number;
@@ -20,6 +20,7 @@ const initialState: PaginationState = {
   products: { page: 1, limit: 10 },
   users: { page: 1, limit: 10 },
   payments: { page: 1, limit: 10 },
+  mails: { page: 1, limit: 8 },
 };
 
 const normalizePositiveNumber = (value: number | undefined, fallback: number) => {

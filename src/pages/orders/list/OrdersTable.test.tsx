@@ -40,7 +40,7 @@ describe("OrdersTable", () => {
   it("hides market column for market role", () => {
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />, {
       preloadedState: {
-        role: { role: "market", id: "", region: "" },
+        role: { role: "market", id: "", region: "", name: "" },
       },
     });
 

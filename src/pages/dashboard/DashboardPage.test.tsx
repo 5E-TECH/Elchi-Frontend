@@ -71,10 +71,9 @@ describe("DashboardPage", () => {
 
     expect(screen.getByText("Bugungi statistika")).toBeInTheDocument();
     expect(screen.getByLabelText("Boshlanish → Tugash")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Bugun" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Boshlanish")).toBeInTheDocument();
-    expect(screen.getByLabelText("Tugash")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bugun" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bu hafta" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bu oy" })).toBeInTheDocument();
   });
 
   it("passes dashboard metrics into child widgets", () => {

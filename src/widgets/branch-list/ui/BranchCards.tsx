@@ -1,13 +1,16 @@
 import { Empty, Spin } from "antd";
+import { useTranslation } from "react-i18next";
 import { BranchCard, type Branch } from "../../../entities/branch";
 
 const BranchCards = ({ data, loading }: { data: Branch[]; loading?: boolean }) => {
+  const { t } = useTranslation("branches");
+
   if (loading) {
     return <Spin />;
   }
 
   if (!data.length) {
-    return <Empty description="Filiallar topilmadi" />;
+    return <Empty description={t("list.notFound")} />;
   }
 
   return (

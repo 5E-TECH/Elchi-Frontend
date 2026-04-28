@@ -1,15 +1,4 @@
-type BarcodeDetectorClass = {
-  new (options?: { formats?: string[] }): {
-    detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>>;
-  };
-  getSupportedFormats?: () => Promise<string[]>;
-};
-
-declare global {
-  interface Window {
-    BarcodeDetector?: BarcodeDetectorClass;
-  }
-}
+import BrowserQrScanner from "qr-scanner";
 
 export interface ScanResult {
   data: string;
@@ -23,128 +12,81 @@ interface QrScannerOptions {
   onDecodeError?: (error: unknown) => void;
 }
 
-type TorchCapabilities = MediaTrackCapabilities & {
-  torch?: boolean;
-};
-
 export default class QrScanner {
-  private readonly video: HTMLVideoElement;
-  private readonly onDecode: (result: string | ScanResult) => void;
-  private readonly options?: QrScannerOptions;
-  private stream: MediaStream | null = null;
-  private detector: InstanceType<BarcodeDetectorClass> | null = null;
-  private animationFrameId: number | null = null;
-  private paused = false;
-  private flashEnabled = false;
+  private readonly scanner: BrowserQrScanner;
 
   constructor(
     video: HTMLVideoElement,
     onDecode: (result: string | ScanResult) => void,
     options?: QrScannerOptions,
   ) {
-    this.video = video;
-    this.onDecode = onDecode;
-    this.options = options;
+    this.scanner = new BrowserQrScanner(
+      video,
+      (result) => {
+        if (options?.returnDetailedScanResult) {
+          onDecode({ data: result.data });
+          return;
+        }
+
+        onDecode(result.data);
+      },
+      {
+        preferredCamera: options?.preferredCamera === "user" ? "user" : "environment",
+        returnDetailedScanResult: true,
+        highlightScanRegion: options?.highlightScanRegion,
+        highlightCodeOutline: options?.highlightCodeOutline,
+        onDecodeError: options?.onDecodeError as ((error: Error | string) => void) | undefined,
+      },
+    );
+  }
+
+  static async getSupportError(): Promise<string | null> {
+    if (typeof window === "undefined") {
+      return "Scanner is unavailable in this environment.";
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return "Camera access is not available in this browser.";
+    }
+
+    const hasCamera = await BrowserQrScanner.hasCamera().catch(() => false);
+    if (!hasCamera) {
+      return "Camera not found on this device.";
+    }
+
+    return null;
   }
 
   async start(): Promise<void> {
-    const BarcodeDetectorApi = window.BarcodeDetector;
-
-    if (!BarcodeDetectorApi) {
-      throw new Error("BarcodeDetector API is not supported in this browser.");
+    const supportError = await QrScanner.getSupportError();
+    if (supportError) {
+      throw new Error(supportError);
     }
 
-    this.detector = new BarcodeDetectorApi({ formats: ["qr_code"] });
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: this.options?.preferredCamera === "environment"
-          ? { ideal: "environment" }
-          : undefined,
-      },
-      audio: false,
-    });
-
-    this.video.srcObject = this.stream;
-    this.video.setAttribute("playsinline", "true");
-    this.video.muted = true;
-    await this.video.play();
-    this.paused = false;
-    this.scanLoop();
+    await this.scanner.start();
   }
 
   stop(): void {
-    this.paused = true;
-    if (this.animationFrameId !== null) {
-      window.cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-    this.stream?.getTracks().forEach((track) => track.stop());
-    this.stream = null;
+    this.scanner.stop();
   }
 
-  pause(stopStream?: boolean): void {
-    this.paused = true;
-    if (stopStream) {
-      this.stop();
-      return;
-    }
-    if (this.animationFrameId !== null) {
-      window.cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-    this.video.pause();
+  pause(stopStream?: boolean): Promise<boolean> {
+    return this.scanner.pause(stopStream);
   }
 
   destroy(): void {
-    this.stop();
-    this.video.srcObject = null;
-    this.detector = null;
+    this.scanner.destroy();
   }
 
-  async hasFlash(): Promise<boolean> {
-    const track = this.stream?.getVideoTracks()[0];
-    if (!track) return false;
-    const capabilities = track.getCapabilities?.() as TorchCapabilities | undefined;
-    return Boolean(capabilities?.torch);
+  hasFlash(): Promise<boolean> {
+    return this.scanner.hasFlash();
   }
 
-  async toggleFlash(): Promise<void> {
-    const track = this.stream?.getVideoTracks()[0];
-    if (!track) return;
-    const capabilities = track.getCapabilities?.() as TorchCapabilities | undefined;
-    if (!capabilities?.torch) return;
-
-    this.flashEnabled = !this.flashEnabled;
-    await track.applyConstraints({
-      advanced: [{ torch: this.flashEnabled } as MediaTrackConstraintSet],
-    });
+  toggleFlash(): Promise<void> {
+    return this.scanner.toggleFlash();
   }
 
   isFlashOn(): boolean {
-    return this.flashEnabled;
+    return this.scanner.isFlashOn();
   }
-
-  private scanLoop = async () => {
-    if (this.paused || !this.detector) return;
-
-    try {
-      if (this.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        const results = await this.detector.detect(this.video);
-        const first = results[0];
-        if (first?.rawValue) {
-          if (this.options?.returnDetailedScanResult) {
-            this.onDecode({ data: first.rawValue });
-          } else {
-            this.onDecode(first.rawValue);
-          }
-        }
-      }
-    } catch (error) {
-      this.options?.onDecodeError?.(error);
-    } finally {
-      if (!this.paused) {
-        this.animationFrameId = window.requestAnimationFrame(this.scanLoop);
-      }
-    }
-  };
 }

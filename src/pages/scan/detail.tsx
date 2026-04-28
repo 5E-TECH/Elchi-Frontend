@@ -21,10 +21,15 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   extractScannerToken,
-  fetchScanOrder,
-  getScanOrderQueryKey,
   playScanFeedback,
 } from "./lib/scanShared";
+import {
+  fetchScanDetail,
+  getScanDetailQueryKey,
+  getScanResourceType,
+} from "./lib/scanResource";
+import ScanPackageDetail from "./ui/ScanPackageDetail";
+import ScanPostDetail from "./ui/ScanPostDetail";
 
 type ScanOrderView = {
   id: string;
@@ -121,10 +126,11 @@ const ScanDetailPage = () => {
   const navigate = useNavigate();
   const { token = "" } = useParams();
   const normalizedToken = extractScannerToken(token) ?? token.trim();
+  const resourceType = getScanResourceType(normalizedToken);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: getScanOrderQueryKey(normalizedToken),
-    queryFn: () => fetchScanOrder(normalizedToken),
+    queryKey: getScanDetailQueryKey(normalizedToken),
+    queryFn: () => fetchScanDetail(normalizedToken),
     enabled: Boolean(normalizedToken),
   });
 
@@ -134,7 +140,21 @@ const ScanDetailPage = () => {
     }
   }, [isError]);
 
-  const order = data ? normalizeOrder(data) : null;
+  if (data?.type === "package" || data?.type === "returned-package") {
+    return (
+      <ScanPackageDetail
+        data={data.data}
+        token={normalizedToken}
+        type={data.type}
+      />
+    );
+  }
+
+  if (data?.type === "post") {
+    return <ScanPostDetail data={data.data} />;
+  }
+
+  const order = data ? normalizeOrder(data.data) : null;
 
   if (isLoading) {
     return (
@@ -159,10 +179,10 @@ const ScanDetailPage = () => {
             <AlertTriangle size={36} />
           </div>
           <h2 className="m-0 mt-6 text-2xl font-extrabold">
-            {t("scannerOrderNotFound")}
+            {resourceType === "post" ? t("scannerPostNotFound") : t("scannerOrderNotFound")}
           </h2>
           <p className="m-0 mt-3 max-w-md text-sm leading-6 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            {t("scannerOrderNotFoundText")}
+            {resourceType === "post" ? t("scannerPostNotFoundText") : t("scannerOrderNotFoundText")}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button

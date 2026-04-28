@@ -2,7 +2,7 @@ import { memo } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { SIDEBAR_CONFIG, type UserRole } from "../model/menuConfig";
+import { SIDEBAR_CONFIG, type SidebarUserRole } from "../model/menuConfig";
 import type { RootState } from "../../../app/config/store";
 const MOBILE_ADMIN_ALLOWED_LABELS = [
     "dashboard",
@@ -17,7 +17,7 @@ const BottomNav = () => {
 
     // ─── Redux dan haqiqiy rolni oling ───────────────────────────────────────
     const { role } = useSelector((state: RootState) => state.role);
-    const userRole = (role as UserRole) || "admin";
+    const userRole = (role as SidebarUserRole) || "admin";
 
     // ─── Mobil uchun admin/superadmin da faqat 5 bo'lim ──────────────────────
     const sourceItems = SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin;

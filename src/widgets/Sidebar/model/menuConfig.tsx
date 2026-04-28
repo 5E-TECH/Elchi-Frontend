@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 
 export type UserRole = "admin" | "superadmin" | "market" | "courier" | "registrator";
+export type UserRole = "admin" | "superadmin" | "market" | "courier";
+export type BranchDashboardRole = "manager" | "operator";
+export type SidebarUserRole = UserRole | BranchDashboardRole;
 
 export interface NavItem {
   to: string;
@@ -28,7 +31,7 @@ export interface NavItem {
  * Barcha roller uchun static navigation configuration
  * Icon'lar component'ga JSX sifatida ishlatiladi
  */
-export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
+export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   superadmin: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
@@ -73,5 +76,15 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
+  ],
+  manager: [
+    { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
+    { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/mails", icon: MailOpen, label: "mails" },
+  ],
+  operator: [
+    { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
+    { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/mails", icon: MailOpen, label: "mails" },
   ],
 };
