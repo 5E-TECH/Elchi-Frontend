@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 export type UserRole = "admin" | "superadmin" | "market" | "courier" | "registrator";
-export type UserRole = "admin" | "superadmin" | "market" | "courier";
 export type BranchDashboardRole = "manager" | "operator";
 export type SidebarUserRole = UserRole | BranchDashboardRole;
 
