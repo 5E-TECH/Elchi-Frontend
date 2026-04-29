@@ -177,7 +177,7 @@ export const UserListTable = memo(({
 
         return (
             <div
-                className={`flex items-center justify-center ${compact ? 'gap-1.5' : 'w-[45%] gap-1'}`}
+                className={`flex items-center justify-center whitespace-nowrap ${compact ? 'min-w-[78px] gap-1.5' : 'min-w-[96px] gap-2'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -285,7 +285,8 @@ export const UserListTable = memo(({
         {
             key: 'id',
             label: t('action'),
-            width: '15%',
+            width: '18%',
+            className: 'whitespace-nowrap',
             render: (_, user) => renderUserActions(user),
         },
     ];

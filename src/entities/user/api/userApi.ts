@@ -7,7 +7,9 @@ import { setName, setRole } from "../../../features/auth/model/loginSlice";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
+  CreateManagerRequest,
   CreateMarketRequest,
+  CreateOperatorRequest,
   CreateRegistratorRequest,
   UpdateUserRequest,
   UserStatus,
@@ -54,6 +56,20 @@ export const useUser = () => {
   const createRegistrator = useMutation({
     mutationFn: (data: CreateRegistratorRequest) =>
       api.post(API_ENDPOINTS.REGISTRATORS.BASE, data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
+  const createManager = useMutation({
+    mutationFn: (data: CreateManagerRequest) =>
+      api.post(API_ENDPOINTS.MANAGERS.BASE, data),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
+  });
+
+  const createOperator = useMutation({
+    mutationFn: (data: CreateOperatorRequest) =>
+      api.post(API_ENDPOINTS.OPERATORS.BASE, data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
@@ -172,6 +188,8 @@ export const useUser = () => {
   return {
     createAdmin,
     createRegistrator,
+    createManager,
+    createOperator,
     createMarket,
     createCourier,
     getRegions,

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { UserRole } from '../../../../entities/user/types/user';
-import { Shield, Users, Truck, Store, Check } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { Shield, Users, Truck, Store, Check, Briefcase, UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getUserRoleLabelKey } from '../../../../entities/user/lib/role';
 
@@ -9,7 +10,7 @@ interface RoleSelectorProps {
     onSelect: (role: UserRole) => void;
 }
 
-const roles: { id: UserRole; label: string; icon: any; gradient: string; shadow: string }[] = [
+const roles: { id: UserRole; label: string; icon: LucideIcon; gradient: string; shadow: string }[] = [
     {
         id: 'admin',
         label: 'Admin',
@@ -18,11 +19,25 @@ const roles: { id: UserRole; label: string; icon: any; gradient: string; shadow:
         shadow: 'shadow-purple-500/20'
     },
     {
+        id: 'manager',
+        label: 'Menejer',
+        icon: Briefcase,
+        gradient: 'from-violet-500 to-fuchsia-500',
+        shadow: 'shadow-violet-500/20'
+    },
+    {
         id: 'registrator',
         label: "Ro'yxatchi",
         icon: Users,
         gradient: 'from-blue-500 to-cyan-500',
         shadow: 'shadow-blue-500/20'
+    },
+    {
+        id: 'operator',
+        label: 'Operator',
+        icon: UserCog,
+        gradient: 'from-sky-500 to-blue-500',
+        shadow: 'shadow-sky-500/20'
     },
     {
         id: 'courier',

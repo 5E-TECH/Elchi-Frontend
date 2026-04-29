@@ -97,6 +97,20 @@ export interface CreateAdminRequest {
 
 export interface CreateRegistratorRequest extends CreateAdminRequest {}
 
+export interface CreateManagerRequest {
+    name: string;
+    phone_number: string;
+    password: string;
+    branch_id: string;
+}
+
+export interface CreateOperatorRequest {
+    name: string;
+    phone_number: string;
+    password: string;
+    branch_id: string;
+}
+
 // Admin yaratish response
 export interface CreateAdminResponse {
     success: boolean;
