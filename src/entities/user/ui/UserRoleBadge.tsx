@@ -14,11 +14,11 @@ const roleConfig: Record<UserRole, { label: string; className: string }> = {
     },
     manager: {
         label: 'Manager',
-        className: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+        className: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/25',
     },
     registrator: {
         label: "Ro'yxatchi",
-        className: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
+        className: 'bg-amber-500/12 text-amber-600 border-amber-500/25 dark:text-amber-400',
     },
     marketing: {
         label: 'Marketing',

@@ -225,7 +225,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 dark:bg-maindark px-3 md:px-4 lg:px-6 py-3 md:py-4 bg-sidebar backdrop-blur-md transition-colors duration-300 shadow-sm border-b border-black/5 dark:border-white/5 h-17.5 md:h-auto">
+    <header className="sticky top-0 z-30 flex h-17.5 items-center justify-between gap-2 bg-sidebar px-3 py-3 transition-colors duration-300 md:h-auto md:px-4 md:py-4 lg:px-6 dark:bg-maindark">
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
         <div className="absolute inset-0 z-50 bg-sidebar dark:bg-maindark px-4 flex items-center animate-fade-in md:hidden">
@@ -241,9 +241,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                   autoFocus
                   placeholder="Qidiruv..."
                   className="w-full"
-                  inputClassName="bg-white border-primary text-black placeholder:text-black/50 py-2 shadow-lg shadow-main/10"
-                  iconClassName="text-black group-focus-within:text-main"
-                  clearButtonClassName="text-black/50 hover:text-black"
+                  inputClassName="border border-main/10 bg-white py-2 text-maindark placeholder:text-maindark/45 shadow-lg shadow-main/10 dark:border-white/10 dark:bg-[var(--color-card-surface-strong)] dark:text-primary dark:placeholder:text-primary/45"
+                  iconClassName="text-maindark/50 group-focus-within:text-main dark:text-primary/45"
+                  clearButtonClassName="text-maindark/45 hover:text-maindark dark:text-primary/45 dark:hover:text-primary"
                   onFocus={() => setIsSearchFocused(true)}
                   onValueChange={(nextValue) => {
                     field.onChange(nextValue);
@@ -296,9 +296,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               onBlur={field.onBlur}
               placeholder="Qidiruv..."
               className="w-full"
-              inputClassName="bg-white border-primary text-black placeholder:text-black py-2"
-              iconClassName="text-black group-focus-within:text-main"
-              clearButtonClassName="text-black/50 hover:text-black"
+              inputClassName="border border-main/10 bg-white py-2 text-maindark placeholder:text-maindark/45 dark:border-white/10 dark:bg-[var(--color-card-surface-strong)] dark:text-primary dark:placeholder:text-primary/45"
+              iconClassName="text-maindark/50 group-focus-within:text-main dark:text-primary/45"
+              clearButtonClassName="text-maindark/45 hover:text-maindark dark:text-primary/45 dark:hover:text-primary"
               onFocus={() => setIsSearchFocused(true)}
               onValueChange={(nextValue) => {
                 field.onChange(nextValue);
@@ -327,7 +327,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           <button
             type="button"
             onClick={() => setIsLanguageOpen((prev) => !prev)}
-            className="group flex h-9 items-center gap-1.5 rounded-xl border border-main/15 bg-primary px-2 text-maindark shadow-sm transition-all duration-200 hover:border-main/25 hover:bg-main/10 dark:border-white/10 dark:bg-maindark dark:text-primary"
+            className="el-glass-control group flex h-9 items-center gap-1.5 rounded-xl px-2 text-maindark transition-all duration-200 hover:border-[var(--color-border-strong)] hover:bg-main/10 dark:text-primary"
             aria-label={t("language")}
           >
             <span className="flex h-5 w-7 overflow-hidden rounded-lg shrink-0">
@@ -345,7 +345,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           </button>
 
           {isLanguageOpen && (
-            <div className="absolute right-0 top-full z-50 mt-2 w-44 rounded-2xl border border-main/15 bg-primary p-1.5 shadow-[0_20px_45px_var(--color-background-soft)] dark:border-white/10 dark:bg-maindark dark:shadow-[0_20px_45px_var(--color-background-deep)]">
+            <div className="el-card absolute right-0 top-full z-50 mt-2 w-44 rounded-2xl p-1.5">
               {LANGUAGE_OPTIONS.map((language) => {
                 const isSelected = language.key === activeLanguage.key;
                 return (
@@ -384,7 +384,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={() => navigate("/scan")}
-          className="group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-main/15 bg-primary text-maindark shadow-sm transition-all duration-300 hover:border-main/35 hover:bg-main/10 dark:border-white/10 dark:bg-maindark dark:text-primary lg:flex lg:h-11 lg:w-11"
+          className="el-glass-control group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition-all duration-300 hover:border-[var(--color-border-strong)] hover:bg-main/10 dark:text-primary lg:flex lg:h-11 lg:w-11"
           aria-label={t("scannerTitle")}
           title={t("scannerTitle")}
         >
@@ -414,7 +414,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <div className="hidden md:flex items-center gap-1.5 lg:gap-3 shrink-0">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-xl hover:bg-[--main]/10 text-maindark dark:text-primary transition-colors"
+            className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary"
             aria-label="Toggle theme"
           >
             {theme === "light" ? (
@@ -424,9 +424,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             )}
           </button>
 
-          <button className="relative hidden lg:inline-flex p-2 rounded-xl hover:bg-[--main]/10 text-maindark dark:text-primary transition-colors">
+          <button className="relative hidden rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 lg:inline-flex dark:text-primary">
             <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 md:w-2.5 md:h-2.5 bg-red-500 rounded-full border-2 border-[--bg-default]"></span>
+            <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-[var(--color-card-surface-strong)] bg-red-500 md:h-2.5 md:w-2.5"></span>
           </button>
 
           <button
@@ -437,7 +437,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
 
-          <div className="flex items-center gap-2 lg:gap-3 pl-2 lg:pl-3 border-l border-[--border-default] cursor-pointer hover:opacity-80 transition-opacity">
+          <div className="flex cursor-pointer items-center gap-2 border-l border-[var(--color-border-soft)] pl-2 transition-opacity hover:opacity-90 lg:gap-3 lg:pl-3">
             <div className="text-right hidden xl:block text-maindark dark:text-primary">
               <h4 className="max-w-36 truncate text-sm font-bold">{profileFullName}</h4>
               <p className="text-xs">{profileRole}</p>

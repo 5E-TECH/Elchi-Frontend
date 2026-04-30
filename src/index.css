@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* Brand and light mode palette */
   --color-main: #576adb;
   --color-maindark: #272c52;
   --color-primary: #ffffff;
@@ -10,6 +11,12 @@
   --color-background-soft: rgba(87, 106, 219, 0.12);
   --color-background-deep: rgba(39, 44, 82, 0.88);
   --color-main-soft: rgba(87, 106, 219, 0.18);
+  --color-page-surface: #ffffff;
+  --color-card-surface: #f8f9fd;
+  --color-card-surface-strong: #ffffff;
+  --color-card-shadow: rgba(39, 44, 82, 0.08);
+
+  /* Shared surfaces and text */
   --color-purple-soft: rgba(124, 58, 237, 0.22);
   --color-purple: #7c3aed;
   --color-purple-light: #8b5cf6;
@@ -19,8 +26,12 @@
   --color-surface: rgba(255, 255, 255, 0.6);
   --color-surface-dark: rgba(39, 44, 82, 0.85);
   --color-border-soft: rgba(87, 106, 219, 0.14);
+  --color-border-strong: rgba(87, 106, 219, 0.24);
   --color-text-muted: rgba(39, 44, 82, 0.62);
   --color-text-muted-dark: rgba(255, 255, 255, 0.62);
+  --color-dark-bg-py: #2a2540;
+
+  /* Tables and elevated blocks */
   --color-table-label: rgba(39, 44, 82, 0.82);
   --color-table-label-dark: rgba(255, 255, 255, 0.78);
   --color-table-header-start: var(--color-main);
@@ -31,16 +42,15 @@
   --color-table-card-hover-dark: rgba(87, 106, 219, 0.32);
   --color-surface-elevated: rgba(255, 255, 255, 0.96);
   --color-surface-elevated-dark: rgba(39, 44, 82, 0.96);
-  --color-border-soft: rgba(87, 106, 219, 0.14);
-  --color-border-strong: rgba(87, 106, 219, 0.24);
-  --color-text-muted: rgba(39, 44, 82, 0.62);
-  --color-text-muted-dark: rgba(255, 255, 255, 0.62);
+
+  /* Flags */
   --color-flag-uz-blue: #38bdf8;
   --color-flag-uz-red: #ef4444;
   --color-flag-uz-green: #22c55e;
   --color-flag-ru-blue: #2563eb;
   --color-flag-en-red: #ef4444;
   --color-flag-en-blue: #1d4ed8;
+
   /* ── Semantic colors ── */
   --color-info: #3b82f6;
   --color-success: #22c55e;
@@ -245,16 +255,57 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 .dark {
-  --color-dashboard-chart-axis: rgba(244, 245, 250, 0.7);
-  --color-dashboard-chart-grid: rgba(255, 255, 255, 0.1);
-  --color-dashboard-text-soft: rgba(244, 245, 250, 0.42);
-  --color-dashboard-text-muted: rgba(244, 245, 250, 0.78);
-  --color-dashboard-border: rgba(255, 255, 255, 0.08);
-  --color-footer-text: rgba(244, 245, 250, 0.58);
-  --color-footer-divider: rgba(255, 255, 255, 0.12);
-  --color-date-picker-trigger: rgba(244, 245, 250, 0.96);
-  --color-date-picker-placeholder: rgba(244, 245, 250, 0.8);
-  --color-date-picker-weekday: rgba(244, 245, 250, 0.72);
+  /* Dark mode palette inspired by the reference dashboard */
+  --color-main: #7c3aed;
+  --color-maindark: #252039;
+  --color-primarydark: #302b49;
+  --color-sidebar: #252039;
+  --color-background: #211d34;
+  --color-background-soft: rgba(139, 92, 246, 0.12);
+  --color-background-deep: rgba(18, 15, 29, 0.92);
+  --color-dark-bg-py: #2a2540;
+  --color-main-soft: rgba(124, 58, 237, 0.18);
+  --color-page-surface: #26213a;
+  --color-card-surface: #1f1a31;
+  --color-card-surface-strong: #28223b;
+  --color-card-shadow: rgba(11, 8, 21, 0.36);
+  --color-purple-soft: rgba(124, 58, 237, 0.22);
+  --color-purple: #7c3aed;
+  --color-purple-light: #9f7aea;
+  --color-purple-dark: #6d28d9;
+  --color-glass: rgba(231, 227, 252, 0.07);
+  --color-glass-border: rgba(231, 227, 252, 0.12);
+  --color-surface: rgba(48, 43, 73, 0.84);
+  --color-surface-dark: #2b2741;
+  --color-surface-elevated: #312c4a;
+  --color-surface-elevated-dark: #312c4a;
+  --color-border-soft: rgba(169, 152, 255, 0.14);
+  --color-border-strong: rgba(169, 152, 255, 0.28);
+  --color-text-muted-dark: rgba(231, 227, 252, 0.62);
+  --color-table-label-dark: rgba(231, 227, 252, 0.8);
+  --color-table-header-start: #7c3aed;
+  --color-table-header-end: #5b21b6;
+  --color-table-row-alt: rgba(124, 58, 237, 0.06);
+  --color-table-row-hover: rgba(124, 58, 237, 0.1);
+  --color-table-card-hover-dark: rgba(124, 58, 237, 0.2);
+  --color-dashboard-chart-axis: rgba(231, 227, 252, 0.7);
+  --color-dashboard-chart-grid: rgba(231, 227, 252, 0.1);
+  --color-dashboard-text-soft: rgba(231, 227, 252, 0.46);
+  --color-dashboard-text-muted: rgba(231, 227, 252, 0.78);
+  --color-dashboard-border: rgba(231, 227, 252, 0.08);
+  --color-footer-text: rgba(231, 227, 252, 0.6);
+  --color-footer-divider: rgba(231, 227, 252, 0.12);
+  --color-date-picker-trigger: rgba(231, 227, 252, 0.96);
+  --color-date-picker-placeholder: rgba(231, 227, 252, 0.72);
+  --color-date-picker-weekday: rgba(231, 227, 252, 0.62);
+  --color-info: #2563d8;
+  --color-success: #0d8f5b;
+  --color-error: #d82f48;
+  --color-warning: #c97900;
+}
+
+.dark body {
+  background: var(--color-dark-bg-py);
 }
 
 /* ─── Global Dark Mode overrides ──────────────────────────────────────────── */
@@ -262,19 +313,94 @@
 .dark input:not([class*="bg-"]),
 .dark select:not([class*="bg-"]),
 .dark textarea:not([class*="bg-"]) {
-  background-color: var(--color-primarydark);
-  color: #fff;
-  border-color: rgba(76, 87, 152, 0.35);
+  background-color: var(--color-surface-dark);
+  color: var(--color-primary);
+  border-color: var(--color-border-soft);
 }
 
 .dark input:not([class*="bg-"])::placeholder,
 .dark textarea:not([class*="bg-"])::placeholder {
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(231, 227, 252, 0.38);
 }
 
 /* Jadval qator matnlari – dark modeda */
 .dark td {
   color: rgba(244, 245, 250, 0.85);
+}
+
+@layer components {
+  .el-surface-page {
+    border: 1px solid var(--color-border-soft);
+    background: var(--color-page-surface);
+    box-shadow: 0 18px 54px color-mix(in srgb, var(--color-card-shadow) 78%, transparent);
+  }
+
+  .el-card {
+    border: 1px solid var(--color-border-soft);
+    background:
+      linear-gradient(180deg, var(--color-card-surface-strong), var(--color-card-surface)),
+      var(--color-card-surface);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 16px 36px var(--color-card-shadow);
+  }
+
+  .el-card-soft {
+    border: 1px solid var(--color-border-soft);
+    background: color-mix(in srgb, var(--color-card-surface) 94%, var(--color-page-surface));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 10px 26px color-mix(in srgb, var(--color-card-shadow) 72%, transparent);
+  }
+
+  .el-glass-control {
+    border: 1px solid var(--color-border-soft);
+    background: color-mix(in srgb, var(--color-card-surface-strong) 68%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+  }
+
+  .el-segmented {
+    display: inline-flex;
+    gap: 0.125rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border-soft);
+    background: color-mix(in srgb, var(--color-card-surface-strong) 62%, transparent);
+    padding: 0.1875rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .el-segmented-button {
+    border-radius: 0.55rem;
+    color: var(--color-dashboard-text-muted);
+    transition:
+      background-color 0.16s ease,
+      color 0.16s ease,
+      box-shadow 0.16s ease;
+  }
+
+  .el-segmented-button:hover {
+    color: var(--color-main);
+    background: var(--color-main-soft);
+  }
+
+  .dark .el-segmented-button:hover {
+    color: var(--color-primary);
+  }
+
+  .el-segmented-button-active {
+    color: var(--color-primary);
+    background: linear-gradient(135deg, var(--color-main), var(--color-purple-dark));
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--color-main) 28%, transparent);
+  }
+
+  .el-muted-text {
+    color: var(--color-dashboard-text-muted);
+  }
+
+  .el-soft-text {
+    color: var(--color-dashboard-text-soft);
+  }
 }
 
 .order-filter-multiselect .ant-select-selector {

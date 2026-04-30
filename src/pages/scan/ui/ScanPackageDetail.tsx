@@ -15,6 +15,8 @@ import {
 import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { Table } from "../../../shared/components/Table/Table";
+import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { getBackendErrorMessage, receiveScannedPackage, type ScanResourceType } from "../lib/scanResource";
 
 type PackageOrderRow = {
@@ -63,41 +65,129 @@ const formatDate = (value: unknown) => {
   });
 };
 
+const pickBranchName = (...values: any[]) => {
+  for (const value of values) {
+    const name = value?.name ?? value?.title ?? value?.branch_name ?? value;
+    const normalized = safe(name, "");
+    if (normalized) return normalized;
+  }
+
+  return "—";
+};
+
+const pickRegionName = (...values: any[]) => {
+  for (const value of values) {
+    const name =
+      value?.region?.name ??
+      value?.region_name ??
+      value?.name ??
+      value?.title ??
+      value;
+    const normalized = safe(name, "");
+    if (normalized) return normalized;
+  }
+
+  return "—";
+};
+
+const getPackageReceiveErrorText = (error: unknown, t: (key: string) => string) => {
+  const message = getBackendErrorMessage(error);
+  const normalized = message?.toLowerCase() ?? "";
+
+  if (
+    normalized.includes("already") ||
+    normalized.includes("qabul qilingan") ||
+    normalized.includes("accepted") ||
+    normalized.includes("received")
+  ) {
+    return t("scannerPackageAlreadyReceived");
+  }
+
+  if (
+    normalized.includes("cancel") ||
+    normalized.includes("bekor")
+  ) {
+    return t("scannerPackageCancelled");
+  }
+
+  if (
+    normalized.includes("branch") ||
+    normalized.includes("filial") ||
+    normalized.includes("permission") ||
+    normalized.includes("ruxsat")
+  ) {
+    return t("scannerPackageWrongBranch");
+  }
+
+  return message ?? t("scannerPackageReceiveError");
+};
+
 const normalizePackageDetail = (response: any, type: ScanResourceType, t: (key: string) => string): PackageView => {
   const source = response?.data ?? response;
   const payload = source?.data ?? source?.package ?? source?.batch ?? source;
-  const ordersSource = payload?.orders ?? payload?.items ?? payload?.order_list ?? [];
+  const ordersSource =
+    payload?.orders ??
+    payload?.items ??
+    payload?.order_list ??
+    payload?.allOrdersByPackageId ??
+    payload?.allOrdersByBatchId ??
+    [];
   const orders = Array.isArray(ordersSource) ? ordersSource : [];
   const driver = payload?.driver ?? payload?.courier ?? payload?.user ?? {};
-  const sourceBranch = payload?.source_branch ?? payload?.from_branch ?? payload?.branch_from ?? payload?.branch ?? {};
-  const destinationRegion = payload?.destination_region ?? payload?.to_region ?? payload?.region ?? {};
+  const sourceBranch =
+    payload?.source_branch ??
+    payload?.from_branch ??
+    payload?.fromBranch ??
+    payload?.branch_from ??
+    payload?.from ??
+    payload?.branch ??
+    {};
+  const destinationBranch =
+    payload?.to_branch ??
+    payload?.toBranch ??
+    payload?.destination_branch ??
+    payload?.to ??
+    {};
+  const destinationRegion =
+    payload?.destination_region ??
+    payload?.to_region ??
+    payload?.region ??
+    destinationBranch?.region ??
+    destinationBranch;
 
   return {
     id: safe(payload?.id ?? payload?.package_id ?? payload?.token),
     title: type === "returned-package" ? t("scannerReturnedPackageTitle") : t("scannerPackageTitle"),
-    sourceBranch: safe(sourceBranch?.name ?? sourceBranch),
-    destinationRegion: safe(destinationRegion?.name ?? destinationRegion),
+    sourceBranch: pickBranchName(sourceBranch),
+    destinationRegion: pickRegionName(destinationRegion, destinationBranch),
     ordersCount: safe(
       payload?.orders_count ??
+        payload?.ordersCount ??
         payload?.order_count ??
         payload?.total_orders ??
         orders.length,
     ),
-    totalAmount: formatMoney(payload?.total_price ?? payload?.amount ?? payload?.total_amount),
+    totalAmount: formatMoney(
+      payload?.total_price ??
+        payload?.totalPrice ??
+        payload?.amount ??
+        payload?.total_amount ??
+        payload?.total,
+    ),
     carNumber: safe(
-      payload?.vehicle_number ??
+        payload?.vehicle_number ??
         payload?.car_number ??
         payload?.vehicle_plate ??
         payload?.plate_number,
     ),
-    driver: safe(driver?.name ?? payload?.driver_name ?? payload?.courier_name),
-    createdAt: formatDate(payload?.createdAt ?? payload?.updatedAt ?? payload?.sent_at),
+    driver: safe(driver?.name ?? payload?.driver_name ?? payload?.courier_name ?? driver),
+    createdAt: formatDate(payload?.created_at ?? payload?.createdAt ?? payload?.updated_at ?? payload?.updatedAt ?? payload?.sent_at),
     status: safe(payload?.status),
     orders: orders.map((order: any) => ({
-      id: safe(order?.id),
-      customer: safe(order?.customer?.name ?? order?.customer_name ?? order?.name),
-      phone: safe(order?.customer?.phone_number ?? order?.phone ?? order?.phone_number),
-      amount: formatMoney(order?.total_price ?? order?.amount),
+      id: safe(order?.id ?? order?._id ?? order?.order_id),
+      customer: safe(order?.receiver ?? order?.customer?.name ?? order?.customer_name ?? order?.name),
+      phone: safe(order?.customer?.phone_number ?? order?.customer?.phone ?? order?.phone ?? order?.phone_number),
+      amount: formatMoney(order?.total_price ?? order?.price ?? order?.amount),
       status: safe(order?.status),
     })),
   };
@@ -114,6 +204,24 @@ const ScanPackageDetail = ({ data, token, type }: ScanPackageDetailProps) => {
   const navigate = useNavigate();
   const detail = useMemo(() => normalizePackageDetail(data, type, t), [data, t, type]);
   const [inlineMessage, setInlineMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const orderColumns = useMemo<ColumnConfig<PackageOrderRow>[]>(
+    () => [
+      {
+        key: "id",
+        label: t("scannerOrderId"),
+        render: (value) => <span className="font-black">{String(value)}</span>,
+      },
+      { key: "customer", label: t("scannerCustomer") },
+      { key: "phone", label: t("phone") },
+      {
+        key: "amount",
+        label: t("amount"),
+        render: (value) => <span className="font-bold">{String(value)}</span>,
+      },
+      { key: "status", label: t("status") },
+    ],
+    [t],
+  );
 
   const receiveMutation = useMutation({
     mutationFn: () => receiveScannedPackage(detail.id !== "—" ? detail.id : token),
@@ -129,7 +237,7 @@ const ScanPackageDetail = ({ data, token, type }: ScanPackageDetailProps) => {
     onError: (error) => {
       setInlineMessage({
         tone: "error",
-        text: getBackendErrorMessage(error) ?? t("scannerPackageReceiveError"),
+        text: getPackageReceiveErrorText(error, t),
       });
     },
   });
@@ -230,30 +338,14 @@ const ScanPackageDetail = ({ data, token, type }: ScanPackageDetailProps) => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-[color:var(--color-border-soft)] text-left">
-                    {[t("scannerOrderId"), t("scannerCustomer"), t("phone"), t("amount"), t("status")].map((label) => (
-                      <th key={label} className="px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-white/55">
-                        {label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {detail.orders.map((order) => (
-                    <tr key={order.id} className="border-b border-[color:var(--color-border-soft)] last:border-b-0">
-                      <td className="px-5 py-3 text-sm font-semibold text-maindark dark:text-white">{order.id}</td>
-                      <td className="px-5 py-3 text-sm text-maindark dark:text-white">{order.customer}</td>
-                      <td className="px-5 py-3 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{order.phone}</td>
-                      <td className="px-5 py-3 text-sm font-semibold text-maindark dark:text-white">{order.amount}</td>
-                      <td className="px-5 py-3 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{order.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              data={detail.orders}
+              columns={orderColumns}
+              keyExtractor={(row, index) => `${row.id}-${index}`}
+              emptyMessage={t("scannerPackageOrdersEmpty")}
+              dense
+              bordered={false}
+            />
           </div>
         </div>
 
@@ -301,8 +393,8 @@ const ScanPackageDetail = ({ data, token, type }: ScanPackageDetailProps) => {
           <button
             type="button"
             onClick={() => receiveMutation.mutate()}
-            disabled={receiveMutation.isPending}
-            className="flex w-full items-center justify-center gap-3 rounded-[28px] bg-emerald-500 px-6 py-5 text-base font-extrabold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={receiveMutation.isPending || inlineMessage?.tone === "success"}
+            className="flex w-full items-center justify-center gap-3 rounded-[28px] bg-emerald-600 px-6 py-5 text-base font-extrabold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {receiveMutation.isPending ? (
               <>

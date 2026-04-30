@@ -127,6 +127,22 @@ const ScanDetailPage = () => {
   const { token = "" } = useParams();
   const normalizedToken = extractScannerToken(token) ?? token.trim();
   const resourceType = getScanResourceType(normalizedToken);
+  const isPackageResource = resourceType === "package" || resourceType === "returned-package";
+  const loadingText = isPackageResource
+    ? t("scannerPackageLoading")
+    : resourceType === "post"
+      ? t("scannerPostLoading")
+      : t("scannerOrderLoading");
+  const notFoundTitle = isPackageResource
+    ? t("scannerPackageNotFound")
+    : resourceType === "post"
+      ? t("scannerPostNotFound")
+      : t("scannerOrderNotFound");
+  const notFoundText = isPackageResource
+    ? t("scannerPackageNotFoundText")
+    : resourceType === "post"
+      ? t("scannerPostNotFoundText")
+      : t("scannerOrderNotFoundText");
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: getScanDetailQueryKey(normalizedToken),
@@ -163,7 +179,7 @@ const ScanDetailPage = () => {
           <div className="flex flex-col items-center gap-4 text-maindark dark:text-white">
             <div className="h-11 w-11 animate-spin rounded-full border-2 border-main/20 border-t-main" />
             <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("scannerOrderLoading")}
+              {loadingText}
             </p>
           </div>
         </div>
@@ -179,10 +195,10 @@ const ScanDetailPage = () => {
             <AlertTriangle size={36} />
           </div>
           <h2 className="m-0 mt-6 text-2xl font-extrabold">
-            {resourceType === "post" ? t("scannerPostNotFound") : t("scannerOrderNotFound")}
+            {notFoundTitle}
           </h2>
           <p className="m-0 mt-3 max-w-md text-sm leading-6 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            {resourceType === "post" ? t("scannerPostNotFoundText") : t("scannerOrderNotFoundText")}
+            {notFoundText}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button

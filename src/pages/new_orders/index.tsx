@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { ClipboardList, QrCode, Store } from "lucide-react";
 import type { RootState } from "../../app/config/store";
+import HeaderName from "../../shared/components/headerName";
 
 type Tab = "markets" | "integrations";
 
@@ -20,21 +21,12 @@ const NewOrders = () => {
 
   return (
     <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4 md:p-6">
-      <div className="relative overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)] p-3 shadow-[0_12px_30px_color-mix(in_srgb,var(--color-background-deep)_12%,transparent)] dark:bg-[color:var(--color-surface-elevated-dark)] sm:p-4">
-        <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-main/10 blur-2xl" />
-        <div className="relative flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--color-main)_0%,var(--color-primarydark)_100%)] text-primary shadow-[0_12px_24px_color-mix(in_srgb,var(--color-main)_35%,transparent)]">
-            <ClipboardList size={18} />
-          </div>
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-extrabold leading-tight text-maindark dark:text-primary sm:text-2xl">
-              {t("pageTitle")}
-            </h1>
-            <p className="mt-1 text-xs font-semibold leading-relaxed text-maindark/65 dark:text-primary/70 sm:text-sm">
-              {t("pageDescription")}
-            </p>
-          </div>
-        </div>
+      <div className="mb-4">
+        <HeaderName
+          name={t("pageTitle")}
+          description={t("pageDescription")}
+          icon={<ClipboardList />}
+        />
       </div>
 
       {!isMarketRole && (

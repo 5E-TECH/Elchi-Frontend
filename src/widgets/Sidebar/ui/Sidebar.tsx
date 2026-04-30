@@ -41,26 +41,26 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`h-screen sticky top-0 left-0 hidden md:flex flex-col bg-sidebar dark:bg-maindark text-maindark dark:text-primary transition-all duration-300 ease-in-out shadow-xl z-50 ${!sidebarRedux.isOpen ? "w-20" : "w-64"
+      className={`sticky left-0 top-0 z-50 hidden h-screen flex-col bg-sidebar text-maindark transition-all duration-300 ease-in-out md:flex dark:bg-maindark dark:text-primary ${!sidebarRedux.isOpen ? "w-20" : "w-72"
         }`}
     >
       {/* Header with Logo */}
-      <div className="flex h-20 items-center justify-start bg-sidebar pl-3 dark:bg-maindark overflow-hidden">
+      <div className="flex h-22 items-center justify-start overflow-hidden bg-sidebar pl-4 dark:bg-maindark">
         <div
-          className={`transition-all duration-300 flex items-center justify-start ${!sidebarRedux.isOpen ? "w-full px-2" : "w-full px-3"
+          className={`transition-all duration-300 flex items-center justify-start ${!sidebarRedux.isOpen ? "w-full px-2" : "w-full px-4"
             }`}
         >
           <img
             src={sidebarRedux.isOpen ? currentLogoText : currentLogoIcon}
             alt="Elchi Logo"
-            className={`object-contain transition-all duration-300 ${!sidebarRedux.isOpen ? "h-10 w-10" : "h-auto w-36"
+            className={`object-contain transition-all duration-300 ${!sidebarRedux.isOpen ? "h-10 w-10" : "h-auto w-40"
               }`}
           />
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1.5 custom-scrollbar bg-sidebar dark:bg-maindark">
+      <nav className="flex-1 space-y-1.5 overflow-y-auto bg-sidebar px-3 py-4 custom-scrollbar dark:bg-maindark">
         {links.map((link) => (
           <SidebarLink key={link.to} {...link} />
         ))}

@@ -55,10 +55,10 @@ const CHART_TYPES: ChartType[] = ["Area", "Bar", "Combo"];
 const PERIODS: RevenuePeriod[] = ["daily", "weekly", "monthly", "yearly"];
 
 const VARIANT_COLOR: Record<ColorVariant, string> = {
-  info: "var(--color-info)",
-  success: "var(--color-success)",
-  error: "var(--color-error)",
-  warning: "var(--color-warning)",
+  info: "#2563eb",
+  success: "#059669",
+  error: "#e11d48",
+  warning: "#d97706",
 };
 
 // ─── Chart constants ──────────────────────────────────────────────────────────
@@ -86,10 +86,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div
-      className="rounded-xl px-3 py-2 text-[11px]
-        bg-sidebar dark:bg-maindark
-        border"
-      style={{ borderColor: "var(--color-dashboard-border)" }}
+      className="el-card-soft rounded-xl px-3 py-2 text-[11px]"
     >
       <p className="mb-1 font-semibold" style={{ color: "var(--color-dashboard-text-muted)" }}>
         {label}
@@ -169,13 +166,10 @@ const FinanceCard = memo(({
 
   return (
     <div
-      className="relative flex flex-col rounded-xl overflow-hidden
-        bg-sidebar dark:bg-maindark
-        border"
-      style={{ borderColor: "var(--color-dashboard-border)" }}
+      className="el-card relative flex min-h-[172px] flex-col overflow-hidden rounded-2xl"
     >
       <span
-        className="absolute top-0 left-0 right-0 h-0.75"
+        className="absolute left-0 right-0 top-0 h-1"
         style={{ background: accentColor }}
       />
 
@@ -183,8 +177,11 @@ const FinanceCard = memo(({
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: accentColor, color: "var(--color-primary)" }}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ring-1 ring-white/10"
+              style={{
+                background: accentColor,
+                color: "var(--color-primary)",
+              }}
             >
               {icon}
             </div>
@@ -199,7 +196,7 @@ const FinanceCard = memo(({
           </div>
           <Info
             size={13}
-            style={{ color: "var(--color-sidebar)", opacity: 0.3 }}
+            style={{ color: "var(--color-dashboard-text-muted)", opacity: 0.55 }}
             className="mt-0.5 shrink-0"
           />
         </div>
@@ -246,7 +243,7 @@ const FinanceCard = memo(({
         <div
           className="flex items-center justify-between px-4 py-2.5 text-xs
             border-t"
-          style={{ borderColor: "var(--color-dashboard-border)" }}
+          style={{ borderColor: "var(--color-border-soft)" }}
         >
           <span className="flex items-center gap-1" style={{ color: "var(--color-dashboard-text-soft)" }}>
             <TrendingDown size={11} />
@@ -293,20 +290,20 @@ const PeriodStatsCard = memo(({ totalOrders, sold, profit, period }: {
 
   return (
     <div
-      className="relative flex flex-col rounded-xl overflow-hidden
-        bg-sidebar dark:bg-maindark
-        border"
-      style={{ borderColor: "var(--color-dashboard-border)" }}
+      className="el-card relative flex min-h-[172px] flex-col overflow-hidden rounded-2xl"
     >
       <span
-        className="absolute top-0 left-0 right-0 h-0.75"
+        className="absolute left-0 right-0 top-0 h-1"
         style={{ background: "var(--color-error)" }}
       />
       <div className="flex flex-col flex-1 p-4 pt-5">
         <div className="flex items-center gap-2 mb-4">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "var(--color-error)", color: "var(--color-primary)" }}
+            className="flex h-8 w-8 items-center justify-center rounded-xl ring-1 ring-white/10"
+            style={{
+              background: "#e11d48",
+              color: "var(--color-primary)",
+            }}
           >
             <BarChart2 size={16} />
           </div>
@@ -348,31 +345,23 @@ const RevenueChart = memo(({ data }: { data: Array<{ date: string; revenue: numb
 
   return (
     <div
-      className="rounded-2xl p-5 mt-4
-        bg-sidebar dark:bg-maindark
-        border"
-      style={{ borderColor: "var(--color-dashboard-border)" }}
+      className="el-card mt-4 rounded-2xl p-5"
     >
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[14px] font-semibold tracking-[-0.1px] text-maindark dark:text-primary">
           {t("chart.title")}
         </h3>
         <div
-          className="flex p-0.75 rounded-lg gap-0.5"
-          style={{
-            background: "var(--color-glass)",
-            border: "1px solid rgba(76,87,152,0.3)",
-          }}
+          className="el-segmented"
         >
           {CHART_TYPES.map((type) => (
             <button
               key={type}
               onClick={() => setActiveType(type)}
-              className={`px-3.5 py-1 rounded-md text-xs font-semibold transition-all duration-150 ${activeType === type
-                ? "bg-[var(--color-main)] text-white"
+              className={`el-segmented-button px-3.5 py-1 text-xs font-semibold ${activeType === type
+                ? "el-segmented-button-active"
                 : ""
                 }`}
-              style={activeType === type ? undefined : { color: "var(--color-dashboard-text-muted)" }}
             >
               {t(`chart.types.${type.toLowerCase()}`)}
             </button>
@@ -470,21 +459,16 @@ const FinancialAnalysis = memo(
           </div>
 
           <div
-            className="flex p-0.75 rounded-lg gap-0.5"
-            style={{
-              background: "var(--color-glass)",
-              border: "1px solid rgba(76,87,152,0.3)",
-            }}
+            className="el-segmented"
           >
             {PERIODS.map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 ${period === p
-                  ? "bg-[var(--color-main)] text-white"
+                className={`el-segmented-button px-3.5 py-1.5 text-xs font-semibold ${period === p
+                  ? "el-segmented-button-active"
                   : ""
                   }`}
-                style={period === p ? undefined : { color: "var(--color-dashboard-text-muted)" }}
               >
                 {t(`periods.${p}`)}
               </button>
