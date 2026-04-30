@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Header from "../header/ui/Header";
 import Footer from "../footer/ui/Footer";
 import Sidebar from "../Sidebar/ui/Sidebar";
@@ -8,6 +8,8 @@ import MobileMenu from "../Sidebar/ui/MobileMenu";
 
 const DashboardLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  const isBranchDashboard = location.pathname === "/branch-dashboard";
 
   return (
     <div className="flex h-screen font-sans text-main dark:bg-primarydark transition-colors duration-300 relative overflow-hidden">
@@ -21,7 +23,11 @@ const DashboardLayout = () => {
         <Header onMenuClick={() => setIsMenuOpen(true)} />
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 custom-scrollbar pb-24 md:pb-6 border rounded-[1.75rem] sm:rounded-4xl">
+        <main
+          className={`flex-1 p-3 sm:p-4 md:p-6 custom-scrollbar pb-24 md:pb-6 border rounded-[1.75rem] sm:rounded-4xl ${
+            isBranchDashboard ? "overflow-y-auto xl:overflow-hidden" : "overflow-y-auto"
+          }`}
+        >
           <Outlet />
         </main>
 

@@ -13,7 +13,6 @@ import { useCreateBranch } from "../api/useCreateBranch";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import FormPopup, { popupLabelClassName } from "../../../shared/ui/FormPopup";
-import Select from "../../../shared/ui/Select";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import PhoneInput from "../../../shared/ui/PhoneInput";
 import { GlobalSearchInput } from "../../search";
@@ -173,17 +172,20 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
             control={control}
             name="type"
             render={({ field }) => (
-              <Select
+              <SearchableSelect
+                label={t("fields.type")}
                 name={field.name}
                 value={field.value}
-                options={branchTypeOptions}
-                placeholder={t("placeholders.type")}
-                onChange={(event) => {
-                  field.onChange(event.target.value);
-                  if (event.target.value === "HQ") {
+                onChange={(value) => {
+                  field.onChange(value);
+                  if (value === "HQ") {
                     setValue("parent_id", "");
                   }
                 }}
+                options={branchTypeOptions}
+                placeholder={t("placeholders.type")}
+                icon={Building2}
+                hideLabel
               />
             )}
           />
@@ -249,15 +251,18 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
             control={control}
             name="region_id"
             render={({ field }) => (
-              <Select
+              <SearchableSelect
+                label={t("fields.region")}
                 name={field.name}
                 value={field.value}
-                options={regionOptions}
-                placeholder={t("placeholders.region")}
-                onChange={(event) => {
-                  field.onChange(event.target.value);
+                onChange={(value) => {
+                  field.onChange(value);
                   setValue("district_id", "");
                 }}
+                options={regionOptions}
+                placeholder={t("placeholders.region")}
+                icon={Building2}
+                hideLabel
               />
             )}
           />
@@ -267,13 +272,16 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
             control={control}
             name="district_id"
             render={({ field }) => (
-              <Select
+              <SearchableSelect
+                label={t("fields.district")}
                 name={field.name}
                 value={field.value}
                 disabled={!selectedRegionId}
+                onChange={field.onChange}
                 options={districtOptions}
                 placeholder={t("placeholders.district")}
-                onChange={(event) => field.onChange(event.target.value)}
+                icon={Building2}
+                hideLabel
               />
             )}
           />
@@ -296,12 +304,15 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
             control={control}
             name="status"
             render={({ field }) => (
-              <Select
+              <SearchableSelect
+                label={t("fields.status")}
                 name={field.name}
                 value={field.value}
+                onChange={field.onChange}
                 options={statusOptions}
                 placeholder={t("placeholders.status")}
-                onChange={(event) => field.onChange(event.target.value)}
+                icon={Building2}
+                hideLabel
               />
             )}
           />
@@ -311,12 +322,15 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
             control={control}
             name="manager_id"
             render={({ field }) => (
-              <Select
+              <SearchableSelect
+                label={t("fields.manager")}
                 name={field.name}
                 value={field.value}
+                onChange={field.onChange}
                 options={managerOptions}
                 placeholder={t("placeholders.manager")}
-                onChange={(event) => field.onChange(event.target.value)}
+                icon={Building2}
+                hideLabel
               />
             )}
           />

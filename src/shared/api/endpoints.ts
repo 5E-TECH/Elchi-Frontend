@@ -71,6 +71,11 @@ export const API_ENDPOINTS = {
     QR_CODE: (token: string | number) => `packages/qr-code/${token}`,
     RECEIVE: (id: string | number) => `packages/receive/${id}`,
   },
+  BATCHES: {
+    BASE: "transfer-batches",
+    BY_ID: (id: string | number) => `transfer-batches/${id}`,
+    QR_CODE: (token: string | number) => `packages/qr-code/${token}`,
+  },
   CASHBOX: {
     PAYMENT_COURIER: "finance/cashbox/payment/courier",
     PAYMENT_MARKET: "finance/cashbox/payment/market",

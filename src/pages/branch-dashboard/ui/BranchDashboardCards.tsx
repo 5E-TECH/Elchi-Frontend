@@ -1,4 +1,5 @@
 import { memo, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Activity,
   ArrowRight,
@@ -18,35 +19,51 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslation } from "react-i18next";
-import type { BranchDashboardSnapshot } from "./branchDashboardMock";
+import type { BranchDashboardSnapshot } from "./branchDashboardAdapter";
 
 const formatMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
+const formatCompactMoney = (value: number) => {
+  if (value >= 1_000_000) {
+    const amount = value / 1_000_000;
+    return `${Number.isInteger(amount) ? amount : amount.toFixed(1)} mln`;
+  }
+
+  if (value >= 1_000) {
+    return `${Math.round(value / 1_000)} ming`;
+  }
+
+  return String(value);
+};
 
 const shellClassName =
-  "overflow-hidden rounded-[30px] border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_94%,white_6%)_0%,color-mix(in_srgb,var(--color-sidebar)_93%,white_7%)_100%)] p-5 shadow-[0_22px_50px_rgba(15,23,42,0.08)] dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primarydark)_92%,var(--color-maindark)_8%)_0%,color-mix(in_srgb,var(--color-maindark)_96%,var(--color-primarydark)_4%)_100%)]";
+  "flex flex-col overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_94%,white_6%)_0%,color-mix(in_srgb,var(--color-sidebar)_93%,white_7%)_100%)] p-3.5 shadow-[0_14px_34px_rgba(15,23,42,0.07)] xl:h-full xl:min-h-0 dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primarydark)_92%,var(--color-maindark)_8%)_0%,color-mix(in_srgb,var(--color-maindark)_96%,var(--color-primarydark)_4%)_100%)]";
+const compactShellClassName =
+  "flex flex-col overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_94%,white_6%)_0%,color-mix(in_srgb,var(--color-sidebar)_93%,white_7%)_100%)] p-3 shadow-sm xl:h-full xl:min-h-0 dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primarydark)_92%,var(--color-maindark)_8%)_0%,color-mix(in_srgb,var(--color-maindark)_96%,var(--color-primarydark)_4%)_100%)]";
 
 const CardShell = memo(({
   title,
   eyebrow,
   icon,
   children,
+  compact = false,
 }: {
   title: string;
   eyebrow: string;
   icon: ReactNode;
   children: ReactNode;
+  compact?: boolean;
 }) => (
-  <section className={shellClassName}>
-    <div className="mb-5 flex items-start justify-between gap-4">
+  <section className={compact ? compactShellClassName : shellClassName}>
+    <div className={`${compact ? "mb-2" : "mb-3"} flex items-start justify-between gap-3`}>
       <div>
-        <p className="m-0 text-xs font-bold uppercase tracking-[0.24em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+        <p className={`${compact ? "text-[10px]" : "text-[11px]"} m-0 font-bold uppercase tracking-[0.2em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]`}>
           {eyebrow}
         </p>
-        <h3 className="m-0 mt-2 text-2xl font-black tracking-tight text-maindark dark:text-white">
+        <h3 className={`${compact ? "text-lg" : "text-xl"} m-0 mt-1 font-black tracking-tight text-maindark dark:text-white`}>
           {title}
         </h3>
       </div>
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-main text-white shadow-lg shadow-main/25">
+      <div className={`${compact ? "h-9 w-9" : "h-10 w-10"} flex shrink-0 items-center justify-center rounded-xl bg-main text-white shadow-md shadow-main/20`}>
         {icon}
       </div>
     </div>
@@ -61,18 +78,18 @@ export const OrdersOverviewCard = memo(({ summary }: { summary: BranchDashboardS
 
   return (
     <CardShell title={t("todayOrders")} eyebrow={t("ordersEyebrow")} icon={<Activity size={22} />}>
-      <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
-        <div className="rounded-[28px] border border-main/15 bg-[linear-gradient(135deg,var(--color-main)_0%,color-mix(in_srgb,var(--color-main)_75%,#ffffff_25%)_100%)] px-5 py-6 text-white shadow-[0_24px_45px_rgba(87,106,219,0.24)]">
-          <p className="m-0 text-sm font-semibold text-white/80">{t("todayLoad")}</p>
-          <div className="mt-4 flex items-end justify-between gap-3">
-            <div className="text-6xl font-black leading-none">{summary.total}</div>
-            <div className="rounded-2xl bg-white/15 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em]">
+      <div className="grid gap-2.5 xl:min-h-0 xl:flex-1 xl:grid-cols-[1.03fr_1fr]">
+        <div className="rounded-2xl border border-main/15 bg-[linear-gradient(135deg,var(--color-main)_0%,color-mix(in_srgb,var(--color-main)_75%,#ffffff_25%)_100%)] px-4 py-3 text-white shadow-[0_14px_30px_rgba(87,106,219,0.18)]">
+          <p className="m-0 text-xs font-semibold text-white/80">{t("todayLoad")}</p>
+          <div className="mt-2.5 flex items-end justify-between gap-3">
+            <div className="text-[2.35rem] font-black leading-none">{summary.total}</div>
+            <div className="rounded-xl bg-white/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em]">
               {t("ordersUnit")}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {[
             { label: t("new"), value: summary.new },
             { label: t("onTheRoad"), value: summary.onTheRoad },
@@ -81,12 +98,12 @@ export const OrdersOverviewCard = memo(({ summary }: { summary: BranchDashboardS
           ].map((item) => (
             <div
               key={item.label}
-              className="rounded-[24px] border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-4 dark:border-white/10 dark:bg-white/[0.05]"
+              className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-3 py-2.5 dark:border-white/10 dark:bg-white/[0.05]"
             >
-              <p className="m-0 text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+              <p className="m-0 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 {item.label}
               </p>
-              <p className="m-0 mt-3 text-3xl font-black text-maindark dark:text-white">
+              <p className="m-0 mt-1.5 text-xl font-black text-maindark dark:text-white">
                 {item.value}
               </p>
             </div>
@@ -102,21 +119,31 @@ OrdersOverviewCard.displayName = "OrdersOverviewCard";
 export const MarketsPerformanceCard = memo(({ markets }: { markets: BranchDashboardSnapshot["markets"] }) => {
   const { t } = useTranslation("branchDashboard");
 
+  if (!markets.length) {
+    return (
+      <CardShell title={t("markets")} eyebrow={t("marketsEyebrow")} icon={<Building2 size={22} />}>
+        <div className="flex min-h-[205px] items-center justify-center rounded-2xl border border-dashed border-[color:var(--color-border-soft)] bg-white/55 px-6 text-center text-sm font-semibold text-[color:var(--color-text-muted)] xl:min-h-0 xl:flex-1 dark:border-white/10 dark:bg-white/[0.04] dark:text-[color:var(--color-text-muted-dark)]">
+          {t("emptyMarkets")}
+        </div>
+      </CardShell>
+    );
+  }
+
   return (
     <CardShell title={t("markets")} eyebrow={t("marketsEyebrow")} icon={<Building2 size={22} />}>
-      <div className="rounded-[28px] border border-[color:var(--color-border-soft)] bg-white/55 p-4 dark:border-white/10 dark:bg-white/[0.04]">
-        <div className="h-[280px]">
+      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/55 p-3 xl:min-h-0 xl:flex-1 dark:border-white/10 dark:bg-white/[0.04]">
+        <div className="min-h-[160px] xl:h-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={markets} margin={{ top: 24, right: 12, left: 0, bottom: 8 }}>
+            <BarChart data={markets} margin={{ top: 34, right: 8, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.16)" />
               <XAxis
                 dataKey="name"
-                tick={{ fill: "var(--color-text-muted)", fontSize: 12 }}
+                tick={{ fill: "var(--color-text-muted)", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fill: "var(--color-text-muted)", fontSize: 12 }}
+                tick={{ fill: "var(--color-text-muted)", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -131,11 +158,12 @@ export const MarketsPerformanceCard = memo(({ markets }: { markets: BranchDashbo
                   key === "amount" ? formatMoney(Number(value)) : Number(value)
                 }
               />
-              <Bar dataKey="orders" radius={[14, 14, 0, 0]} maxBarSize={56}>
+              <Bar dataKey="orders" radius={[10, 10, 0, 0]} maxBarSize={44}>
                 <LabelList
                   dataKey="amount"
                   position="top"
-                  formatter={(value) => formatMoney(Number(value) || 0)}
+                  offset={8}
+                  formatter={(value) => formatCompactMoney(Number(value) || 0)}
                   className="fill-[color:var(--color-maindark)] dark:fill-white"
                   fontSize={11}
                   fontWeight={700}
@@ -159,31 +187,36 @@ MarketsPerformanceCard.displayName = "MarketsPerformanceCard";
 
 export const ActivePackagesCard = memo(({ packages }: { packages: BranchDashboardSnapshot["packages"] }) => {
   const { t } = useTranslation("branchDashboard");
+  const navigate = useNavigate();
 
   return (
-    <CardShell title={t("activePackages")} eyebrow={t("packagesEyebrow")} icon={<PackageCheck size={22} />}>
-      <div className="grid gap-4 sm:grid-cols-2">
+    <CardShell title={t("activePackages")} eyebrow={t("packagesEyebrow")} icon={<PackageCheck size={19} />} compact>
+      <div className="grid gap-2 sm:grid-cols-2">
         {[
           { label: t("onTheWayPackages"), value: packages.onTheWay },
           { label: t("waitingPackages"), value: packages.waiting },
         ].map((item) => (
           <div
             key={item.label}
-            className="rounded-[26px] border border-[color:var(--color-border-soft)] bg-white/70 px-5 py-5 dark:border-white/10 dark:bg-white/[0.05]"
+            className="rounded-xl border border-[color:var(--color-border-soft)] bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.05]"
           >
-            <p className="m-0 text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+            <p className="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
               {item.label}
             </p>
-            <p className="m-0 mt-4 text-4xl font-black text-maindark dark:text-white">
+            <p className="m-0 mt-1 text-xl font-black text-maindark dark:text-white">
               {item.value}
             </p>
           </div>
         ))}
       </div>
-      <div className="mt-4 flex items-center justify-between rounded-[26px] border border-dashed border-[color:var(--color-border-soft)] bg-white/55 px-4 py-4 text-sm font-semibold text-[color:var(--color-text-muted)] dark:border-white/10 dark:bg-white/[0.03] dark:text-[color:var(--color-text-muted-dark)]">
+      <button
+        type="button"
+        onClick={() => navigate("/batches")}
+        className="mt-2.5 flex w-full cursor-pointer items-center justify-between rounded-xl border border-dashed border-[color:var(--color-border-soft)] bg-white/55 px-3 py-2 text-left text-xs font-semibold text-[color:var(--color-text-muted)] transition xl:mt-auto hover:border-main/35 hover:bg-main/5 hover:text-main dark:border-white/10 dark:bg-white/[0.03] dark:text-[color:var(--color-text-muted-dark)] dark:hover:bg-white/[0.06] dark:hover:text-white"
+      >
         <span>{t("packagePlaceholder")}</span>
         <ArrowRight size={16} className="shrink-0" />
-      </div>
+      </button>
     </CardShell>
   );
 });
@@ -193,21 +226,31 @@ ActivePackagesCard.displayName = "ActivePackagesCard";
 export const CourierActivityCard = memo(({ couriers }: { couriers: BranchDashboardSnapshot["couriers"] }) => {
   const { t } = useTranslation("branchDashboard");
 
+  if (!couriers.total && !couriers.active) {
+    return (
+      <CardShell title={t("couriers")} eyebrow={t("couriersEyebrow")} icon={<Truck size={19} />} compact>
+        <div className="flex min-h-[118px] items-center justify-center rounded-xl border border-dashed border-[color:var(--color-border-soft)] bg-white/55 px-5 text-center text-sm font-semibold text-[color:var(--color-text-muted)] xl:min-h-0 xl:flex-1 dark:border-white/10 dark:bg-white/[0.04] dark:text-[color:var(--color-text-muted-dark)]">
+          {t("emptyCouriers")}
+        </div>
+      </CardShell>
+    );
+  }
+
   return (
-    <CardShell title={t("couriers")} eyebrow={t("couriersEyebrow")} icon={<Truck size={22} />}>
-      <div className="grid gap-4 sm:grid-cols-2">
+    <CardShell title={t("couriers")} eyebrow={t("couriersEyebrow")} icon={<Truck size={19} />} compact>
+      <div className="grid gap-2 sm:grid-cols-2">
         {[
           { label: t("totalCouriers"), value: couriers.total },
           { label: t("activeCouriers"), value: couriers.active },
         ].map((item) => (
           <div
             key={item.label}
-            className="rounded-[26px] border border-[color:var(--color-border-soft)] bg-white/70 px-5 py-5 dark:border-white/10 dark:bg-white/[0.05]"
+            className="rounded-xl border border-[color:var(--color-border-soft)] bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-white/[0.05]"
           >
-            <p className="m-0 text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+            <p className="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
               {item.label}
             </p>
-            <p className="m-0 mt-4 text-4xl font-black text-maindark dark:text-white">
+            <p className="m-0 mt-1 text-xl font-black text-maindark dark:text-white">
               {item.value}
             </p>
           </div>

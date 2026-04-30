@@ -13,6 +13,58 @@ export interface DashboardOrdersSummary {
   to?: number;
 }
 
+export interface BranchDashboardOrdersCard {
+  total: number;
+  new: number;
+  on_the_road: number;
+  delivered: number;
+  returned: number;
+}
+
+export interface BranchDashboardMarketCard {
+  id?: string | number;
+  name?: string;
+  title?: string;
+  orders?: number;
+  orders_count?: number;
+  total?: number;
+  amount?: number;
+  total_amount?: number;
+  price?: number;
+}
+
+export interface BranchDashboardPackagesCard {
+  on_the_way: number;
+  waiting_for_acceptance: number;
+}
+
+export interface BranchDashboardCouriersCard {
+  total?: number;
+  active?: number;
+  active_today?: number;
+  active_count?: number;
+}
+
+export interface BranchDashboardPayload {
+  today_orders_count: number;
+  week_orders_count: number;
+  active_batches_count: number;
+  couriers_count: number;
+  role?: string;
+  cards: {
+    orders: BranchDashboardOrdersCard | null;
+    markets: BranchDashboardMarketCard[] | null;
+    packages: BranchDashboardPackagesCard | null;
+    couriers: BranchDashboardCouriersCard | null;
+  };
+  visibility?: {
+    orders?: boolean;
+    markets?: boolean;
+    packages?: boolean;
+    couriers?: boolean;
+  };
+}
+
 export interface DashboardResponse {
   statusCode: number;
   message: string;
@@ -22,6 +74,7 @@ export interface DashboardResponse {
     couriers?: unknown[];
     topMarkets?: unknown[];
     topCouriers?: unknown[];
+    branchDashboard?: BranchDashboardPayload | null;
   };
 }
 
