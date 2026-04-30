@@ -2,15 +2,15 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ChevronDown, Filter, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import FilterSelect from '../../../../shared/ui/FilterSelect';
-import { GlobalSearchInput } from '../../../search';
 import { resetFilters } from '../../../Select/model/FilterSlice';
-import { clearAllSearch } from '../../../search/model/searchSlice';
+import { clearAllSearch, setSearchValue } from '../../../search/model/searchSlice';
 import { useQueryParams } from '../../../../shared/lib/useQueryParams';
 import { useTranslation } from 'react-i18next';
 import FilterClearButton from '../../../../shared/ui/FilterClearButton';
 import type { UserRole } from '../../../../entities/user/types/user';
 import { getUserRoleLabelKey } from '../../../../entities/user/lib/role';
 import type { RootState } from '../../../../app/config/store';
+import FilterSearch from '../../../../shared/ui/FilterSearch';
 
 const defaultRoles: UserRole[] = [
     "admin",
@@ -40,7 +40,7 @@ interface UserFiltersProps {
 export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
     const { t } = useTranslation("users");
     const dispatch = useDispatch();
-    const { clearAllParams } = useQueryParams();
+    const { clearAllParams, setParam, removeParam } = useQueryParams();
     const filters = useSelector((state: RootState) => state.filter);
     const search = useSelector((state: RootState) => state.search);
     const [isMobile, setIsMobile] = useState(
@@ -101,6 +101,15 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
         clearAllParams();
     };
 
+    const updateSearch = (value: string) => {
+        dispatch(setSearchValue({ key: "userSearch", value }));
+        if (value) {
+            setParam("search", value);
+        } else {
+            removeParam("search");
+        }
+    };
+
     return (
         <section className="relative mb-6 overflow-visible rounded-[28px] border border-white/55 bg-white/75 p-4 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045] dark:shadow-black/10">
             <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-main/20 blur-3xl dark:bg-main/25" />
@@ -150,6 +159,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                                             hideLabel
                                             useRedux={true}
                                             reduxKey="userRole"
+                                            urlKey="role"
                                             onChange={() => setIsMobilePanelOpen(false)}
                                         />
 
@@ -161,20 +171,19 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                                             hideLabel
                                             useRedux={true}
                                             reduxKey="userStatus"
+                                            urlKey="status"
                                             onChange={() => setIsMobilePanelOpen(false)}
                                         />
 
-                                        <GlobalSearchInput
-                                            searchKey="userSearch"
+                                        <FilterSearch
+                                            value={String(search.userSearch ?? "")}
+                                            onChange={updateSearch}
                                             placeholder={t("searchPlaceholder")}
-                                            onBlur={() => {
-                                                if (isMobile) setIsMobilePanelOpen(false);
-                                            }}
                                         />
 
                                         <FilterClearButton
                                             onClick={handleReset}
-                                            className="h-12 rounded-2xl px-5"
+                                            className="h-12 w-full rounded-2xl px-5"
                                             responsiveIconOnly
                                         />
                                     </div>
@@ -184,7 +193,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                     </div>
                 )}
 
-                <div className="hidden sm:flex sm:flex-col sm:gap-4 xl:flex-row xl:items-end">
+                <div className="hidden sm:flex sm:flex-col sm:gap-4">
                     <div className="flex min-w-56 items-center gap-3">
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
                             <SlidersHorizontal size={19} />
@@ -202,39 +211,49 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                         </div>
                     </div>
 
-                    <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(180px,0.75fr)_minmax(180px,0.75fr)_minmax(260px,1.35fr)_auto] xl:items-end">
-                        <FilterSelect
-                            label={t("role")}
-                            name="role"
-                            options={roleOptions}
-                            placeholder={t("rolePlaceholder")}
-                            icon={ShieldCheck}
-                            hideLabel
-                            useRedux={true}
-                            reduxKey="userRole"
-                        />
+                    <div className="grid w-full grid-cols-12 items-end gap-3">
+                        <div className="col-span-12 lg:col-span-6 2xl:col-span-3">
+                            <FilterSelect
+                                label={t("role")}
+                                name="role"
+                                options={roleOptions}
+                                placeholder={t("rolePlaceholder")}
+                                icon={ShieldCheck}
+                                hideLabel
+                                useRedux={true}
+                                reduxKey="userRole"
+                                urlKey="role"
+                            />
+                        </div>
 
-                        <FilterSelect
-                            label={t("status")}
-                            name="status"
-                            options={statusOptions}
-                            placeholder={t("statusSelect")}
-                            hideLabel
-                            useRedux={true}
-                            reduxKey="userStatus"
-                        />
+                        <div className="col-span-12 lg:col-span-6 2xl:col-span-3">
+                            <FilterSelect
+                                label={t("status")}
+                                name="status"
+                                options={statusOptions}
+                                placeholder={t("statusSelect")}
+                                hideLabel
+                                useRedux={true}
+                                reduxKey="userStatus"
+                                urlKey="status"
+                            />
+                        </div>
 
-                        <GlobalSearchInput
-                            searchKey="userSearch"
-                            placeholder={t("searchPlaceholder")}
-                            className="md:col-span-2 xl:col-span-1"
-                        />
+                        <div className="col-span-12 lg:col-span-11 2xl:col-span-5">
+                            <FilterSearch
+                                value={String(search.userSearch ?? "")}
+                                onChange={updateSearch}
+                                placeholder={t("searchPlaceholder")}
+                            />
+                        </div>
 
-                        <FilterClearButton
-                            onClick={handleReset}
-                            className="h-12 rounded-2xl px-5 xl:w-auto"
-                            responsiveIconOnly
-                        />
+                        <div className="col-span-12 flex justify-end lg:col-span-1">
+                            <FilterClearButton
+                                onClick={handleReset}
+                                className="h-12 w-12"
+                                responsiveIconOnly
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

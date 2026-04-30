@@ -33,6 +33,7 @@ interface FilterSelectProps {
     hideLabel?: boolean;
     useRedux?: boolean;
     reduxKey?: string;
+    urlKey?: string;
 }
 
 const FilterSelect = memo(({
@@ -49,6 +50,7 @@ const FilterSelect = memo(({
     hideLabel = false,
     useRedux = false,
     reduxKey,
+    urlKey,
 }: FilterSelectProps) => {
     const { t } = useTranslation("common");
     const dispatch = useDispatch();
@@ -111,11 +113,12 @@ const FilterSelect = memo(({
 
         if (useRedux && reduxKey) {
             dispatch(setFilterValue({ key: reduxKey, value: nextValue }));
+            const paramKey = urlKey ?? reduxKey;
 
             if (nextValue) {
-                setParam(reduxKey, nextValue);
+                setParam(paramKey, nextValue);
             } else {
-                removeParam(reduxKey);
+                removeParam(paramKey);
             }
         }
 

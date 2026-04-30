@@ -74,9 +74,6 @@ const Orders = () => {
   const { getAllParams } = useQueryParams();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
 
-  // Redux filterlarni olish (UserListPage patterndek)
-  const filters = useSelector((state: RootState) => state.filter);
-  const searchFilters = useSelector((state: RootState) => state.search);
   const role = useSelector((state: RootState) => state.role.role);
 
 
@@ -88,6 +85,13 @@ const Orders = () => {
 
   // URL params
   const urlParams = getAllParams();
+  const urlMarketId = urlParams[ORDER_FILTER_KEYS.marketId] ?? "";
+  const urlRegionId = urlParams[ORDER_FILTER_KEYS.regionId] ?? "";
+  const urlCourierId = urlParams[ORDER_FILTER_KEYS.courierId] ?? "";
+  const urlStatusRaw = urlParams[ORDER_FILTER_KEYS.status] ?? "";
+  const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams.orderDateFrom ?? "";
+  const urlDateTo = urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams.orderDateTo ?? "";
+  const urlSearch = urlParams[ORDER_FILTER_KEYS.search] ?? "";
 
   // API params qurishda Redux + URL params birga ishlatiladi (UserListPage patterndek)
   const apiParams = useMemo((): OrderListParams => {
@@ -98,62 +102,75 @@ const Orders = () => {
 
     // Market
     if (role !== "market") {
-      const marketId = filters[ORDER_FILTER_KEYS.marketId] ?? urlParams[ORDER_FILTER_KEYS.marketId];
+      const marketId = urlMarketId;
       if (marketId) params.market_id = String(marketId);
     }
 
     // Viloyat / Region
-    const regionId = filters[ORDER_FILTER_KEYS.regionId] ?? urlParams[ORDER_FILTER_KEYS.regionId];
+    const regionId = urlRegionId;
     if (regionId) params.region_id = String(regionId);
 
     // Kuryer
     if (role !== "market") {
-      const courierId = filters[ORDER_FILTER_KEYS.courierId] ?? urlParams[ORDER_FILTER_KEYS.courierId];
+      const courierId = urlCourierId;
       if (courierId) params.courier_id = String(courierId);
     }
 
     // Holat
-    const status = parseStatusFilterValue(
-      filters[ORDER_FILTER_KEYS.status] ?? urlParams[ORDER_FILTER_KEYS.status],
-    );
+    const status = parseStatusFilterValue(urlStatusRaw);
     if (Array.isArray(status) ? status.length > 0 : Boolean(status)) {
       params.status = status;
     }
 
     // Sana oralig'i
-    const dateFrom = filters[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[ORDER_FILTER_KEYS.dateFrom];
+    const dateFrom = urlDateFrom;
     if (dateFrom) params.start_day = String(dateFrom);
 
-    const dateTo = filters[ORDER_FILTER_KEYS.dateTo] ?? urlParams[ORDER_FILTER_KEYS.dateTo];
+    const dateTo = urlDateTo;
     if (dateTo) params.end_day = String(dateTo);
 
     // Qidiruv (searchSlice)
-    const search =
-      searchFilters[ORDER_FILTER_KEYS.search] ?? urlParams[ORDER_FILTER_KEYS.search];
+    const search = urlSearch;
     if (search) params.search = search;
 
     return params;
-  }, [page, limit, urlParams, filters, searchFilters, role]);
+  }, [
+    page,
+    limit,
+    role,
+    urlMarketId,
+    urlRegionId,
+    urlCourierId,
+    urlStatusRaw,
+    urlDateFrom,
+    urlDateTo,
+    urlSearch,
+  ]);
 
   const filtersKey = useMemo(
     () => {
-      const status = parseStatusFilterValue(filters[ORDER_FILTER_KEYS.status]);
+      const status = parseStatusFilterValue(urlStatusRaw);
 
       return JSON.stringify({
         role,
-        marketId: role !== "market" ? filters[ORDER_FILTER_KEYS.marketId] ?? "" : "",
-        regionId: filters[ORDER_FILTER_KEYS.regionId] ?? "",
-        courierId: role !== "market" ? filters[ORDER_FILTER_KEYS.courierId] ?? "" : "",
+        marketId: role !== "market" ? urlMarketId : "",
+        regionId: urlRegionId,
+        courierId: role !== "market" ? urlCourierId : "",
         status: Array.isArray(status) ? status.join(",") : status,
-        dateFrom: filters[ORDER_FILTER_KEYS.dateFrom] ?? "",
-        dateTo: filters[ORDER_FILTER_KEYS.dateTo] ?? "",
-        search: searchFilters[ORDER_FILTER_KEYS.search] ?? "",
+        dateFrom: urlDateFrom,
+        dateTo: urlDateTo,
+        search: urlSearch,
       });
     },
     [
       role,
-      filters,
-      searchFilters,
+      urlMarketId,
+      urlRegionId,
+      urlCourierId,
+      urlStatusRaw,
+      urlDateFrom,
+      urlDateTo,
+      urlSearch,
     ],
   );
 

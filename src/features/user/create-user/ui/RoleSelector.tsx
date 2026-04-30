@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { UserRole } from '../../../../entities/user/types/user';
 import type { LucideIcon } from 'lucide-react';
-import { Shield, Users, Truck, Store, Check, Briefcase, UserCog } from 'lucide-react';
+import { Shield, Users, Truck, Store, Check, Briefcase } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getUserRoleLabelKey } from '../../../../entities/user/lib/role';
 
@@ -31,13 +31,6 @@ const roles: { id: UserRole; label: string; icon: LucideIcon; gradient: string; 
         icon: Users,
         gradient: 'from-blue-500 to-cyan-500',
         shadow: 'shadow-blue-500/20'
-    },
-    {
-        id: 'operator',
-        label: 'Operator',
-        icon: UserCog,
-        gradient: 'from-sky-500 to-blue-500',
-        shadow: 'shadow-sky-500/20'
     },
     {
         id: 'courier',

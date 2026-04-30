@@ -14,7 +14,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
@@ -23,9 +23,11 @@ import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { useNavigate } from "react-router-dom";
 import { GlobalSearchInput } from "../../../features/search";
+import { useGlobalSearch } from "../../../features/search/api/useGlobalSearch";
 import { LANGUAGE_STORAGE_KEY, normalizeLanguage } from "../../../i18n";
 import type { RootState } from "../../../app/config/store";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import HeaderSearchPopup from "./HeaderSearchPopup";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -106,13 +108,33 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const profile = useSelector((state: RootState) => state.user.user);
   const roleState = useSelector((state: RootState) => state.role);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchLimit, setSearchLimit] = useState(10);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const languageMenuRef = useRef<HTMLDivElement | null>(null);
-  const { control } = useForm<HeaderSearchValues>({
+  const mobileSearchContainerRef = useRef<HTMLDivElement | null>(null);
+  const desktopSearchContainerRef = useRef<HTMLDivElement | null>(null);
+  const { control, setValue } = useForm<HeaderSearchValues>({
     defaultValues: { search: "" },
   });
+  const searchValue = useWatch({ control, name: "search" }) ?? "";
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const navigate = useNavigate();
+  const {
+    data: searchData,
+    isFetching: isSearchLoading,
+  } = useGlobalSearch(
+    {
+      q: debouncedSearch,
+      page: 1,
+      limit: searchLimit,
+    },
+    debouncedSearch.trim().length > 0,
+  );
+  const searchItems = searchData?.items ?? [];
+  const totalSearchItems = searchData?.meta.total ?? 0;
+  const hasMoreSearch = searchItems.length < totalSearchItems;
 
   const activeLanguage =
     LANGUAGE_OPTIONS.find(
@@ -136,10 +158,27 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       if (!languageMenuRef.current?.contains(event.target as Node)) {
         setIsLanguageOpen(false);
       }
+      const inDesktop = desktopSearchContainerRef.current?.contains(event.target as Node);
+      const inMobile = mobileSearchContainerRef.current?.contains(event.target as Node);
+      if (!inDesktop && !inMobile) {
+        setIsSearchFocused(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchValue.trim());
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [searchValue]);
+
+  useEffect(() => {
+    setSearchLimit(10);
+  }, [debouncedSearch]);
 
   const handleLanguageChange = async (nextLanguage: string) => {
     const normalizedLanguage = normalizeLanguage(nextLanguage);
@@ -152,29 +191,78 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     setIsLanguageOpen(false);
   };
 
+  const handleSelectSearchItem = (item: (typeof searchItems)[number]) => {
+    const sourceId = item.sourceId ?? String(item.raw.sourceId ?? "");
+    const type = item.type ?? "";
+    const source = item.source ?? "";
+
+    if (
+      source === "identity"
+      || ["manager", "courier", "admin", "registrator", "market", "operator", "user"].includes(type)
+    ) {
+      if (sourceId) navigate(`/all-users/${sourceId}`);
+      setIsSearchFocused(false);
+      return;
+    }
+
+    if (source === "orders" || type === "order") {
+      const orderId = sourceId || String(item.raw.order_id ?? item.raw.id ?? "");
+      if (orderId) navigate(`/orders/edit/${orderId}`);
+      setIsSearchFocused(false);
+      return;
+    }
+
+    setIsSearchFocused(false);
+  };
+
+  const handleLoadMoreSearch = () => {
+    if (!hasMoreSearch || isSearchLoading) return;
+    setSearchLimit((prev) => {
+      const maxLimit = totalSearchItems > 0 ? totalSearchItems : prev + 10;
+      if (prev >= maxLimit) return prev;
+      return Math.min(prev + 10, maxLimit);
+    });
+  };
+
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between dark:bg-maindark px-4 md:px-6 py-3 md:py-4 bg-sidebar backdrop-blur-md transition-colors duration-300 shadow-sm border-b border-black/5 dark:border-white/5 h-17.5 md:h-auto">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 dark:bg-maindark px-3 md:px-4 lg:px-6 py-3 md:py-4 bg-sidebar backdrop-blur-md transition-colors duration-300 shadow-sm border-b border-black/5 dark:border-white/5 h-17.5 md:h-auto">
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
         <div className="absolute inset-0 z-50 bg-sidebar dark:bg-maindark px-4 flex items-center animate-fade-in md:hidden">
-          <Controller
-            control={control}
-            name="search"
-            render={({ field }) => (
-              <GlobalSearchInput
-                name={field.name}
-                value={field.value}
-                onBlur={field.onBlur}
-                autoFocus
-                placeholder="Qidiruv..."
-                className="w-full"
-                inputClassName="bg-white border-primary text-black placeholder:text-black/50 py-2 shadow-lg shadow-main/10"
-                iconClassName="text-black group-focus-within:text-main"
-                clearButtonClassName="text-black/50 hover:text-black"
-                onValueChange={field.onChange}
-              />
-            )}
-          />
+          <div ref={mobileSearchContainerRef} className="relative w-full">
+            <Controller
+              control={control}
+              name="search"
+              render={({ field }) => (
+                <GlobalSearchInput
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  autoFocus
+                  placeholder="Qidiruv..."
+                  className="w-full"
+                  inputClassName="bg-white border-primary text-black placeholder:text-black/50 py-2 shadow-lg shadow-main/10"
+                  iconClassName="text-black group-focus-within:text-main"
+                  clearButtonClassName="text-black/50 hover:text-black"
+                  onFocus={() => setIsSearchFocused(true)}
+                  onValueChange={(nextValue) => {
+                    field.onChange(nextValue);
+                    setValue("search", nextValue, { shouldDirty: true });
+                  }}
+                />
+              )}
+            />
+            <HeaderSearchPopup
+              open={isSearchFocused && searchValue.trim().length > 0}
+              loading={isSearchLoading && searchItems.length === 0}
+              loadingMore={isSearchLoading && searchItems.length > 0}
+              items={searchItems}
+              query={searchValue}
+              onSelect={handleSelectSearchItem}
+              hasMore={hasMoreSearch}
+              onLoadMore={handleLoadMoreSearch}
+            />
+          </div>
           <button
             onClick={() => setIsSearchOpen(false)}
             className="ml-3 p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"
@@ -201,17 +289,31 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         control={control}
         name="search"
         render={({ field }) => (
-          <div className="hidden md:flex flex-1 items-center max-w-lg">
+          <div ref={desktopSearchContainerRef} className="relative hidden min-w-0 md:flex md:flex-1 md:items-center md:max-w-[420px] lg:max-w-[520px]">
             <GlobalSearchInput
               name={field.name}
               value={field.value}
               onBlur={field.onBlur}
               placeholder="Qidiruv..."
-              className="w-full md:w-96"
+              className="w-full"
               inputClassName="bg-white border-primary text-black placeholder:text-black py-2"
               iconClassName="text-black group-focus-within:text-main"
               clearButtonClassName="text-black/50 hover:text-black"
-              onValueChange={field.onChange}
+              onFocus={() => setIsSearchFocused(true)}
+              onValueChange={(nextValue) => {
+                field.onChange(nextValue);
+                setValue("search", nextValue, { shouldDirty: true });
+              }}
+            />
+            <HeaderSearchPopup
+              open={isSearchFocused && searchValue.trim().length > 0}
+              loading={isSearchLoading && searchItems.length === 0}
+              loadingMore={isSearchLoading && searchItems.length > 0}
+              items={searchItems}
+              query={searchValue}
+              onSelect={handleSelectSearchItem}
+              hasMore={hasMoreSearch}
+              onLoadMore={handleLoadMoreSearch}
             />
           </div>
         )}
@@ -219,7 +321,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
       {/* Right Actions */}
       <div
-        className={`flex items-center gap-3 md:gap-4 shrink-0 ${isSearchOpen ? "hidden md:flex" : "flex"}`}
+        className={`flex items-center gap-2 md:gap-3 shrink-0 ${isSearchOpen ? "hidden md:flex" : "flex"}`}
       >
         <div ref={languageMenuRef} className="relative hidden md:block">
           <button
@@ -231,7 +333,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             <span className="flex h-5 w-7 overflow-hidden rounded-lg shrink-0">
               {FLAGS[activeLanguage.key]}
             </span>
-            <div className="hidden items-center gap-1.5 md:flex">
+            <div className="hidden items-center gap-1.5 xl:flex">
               <span className="text-sm font-medium leading-none">
                 {activeLanguage.label}
               </span>
@@ -282,7 +384,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={() => navigate("/scan")}
-          className="group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-main/15 bg-primary text-maindark shadow-sm transition-all duration-300 hover:border-main/35 hover:bg-main/10 dark:border-white/10 dark:bg-maindark dark:text-primary md:flex md:h-11 md:w-11"
+          className="group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-main/15 bg-primary text-maindark shadow-sm transition-all duration-300 hover:border-main/35 hover:bg-main/10 dark:border-white/10 dark:bg-maindark dark:text-primary lg:flex lg:h-11 lg:w-11"
           aria-label={t("scannerTitle")}
           title={t("scannerTitle")}
         >
@@ -309,42 +411,42 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         </button>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-2 md:gap-4 shrink-0">
+        <div className="hidden md:flex items-center gap-1.5 lg:gap-3 shrink-0">
           <button
             onClick={toggleTheme}
-            className="p-2 md:p-2.5 rounded-xl hover:bg-[--main]/10 text-maindark dark:text-primary transition-colors"
+            className="p-2 rounded-xl hover:bg-[--main]/10 text-maindark dark:text-primary transition-colors"
             aria-label="Toggle theme"
           >
             {theme === "light" ? (
-              <Moon className="w-5 h-5 md:w-5.5 md:h-5.5" />
+              <Moon className="w-5 h-5" />
             ) : (
-              <Sun className="w-5 h-5 md:w-5.5 md:h-5.5" />
+              <Sun className="w-5 h-5" />
             )}
           </button>
 
-          <button className="relative p-2 md:p-2.5 rounded-xl hover:bg-[--main]/10 text-maindark dark:text-primary transition-colors">
-            <Bell className="w-5 h-5 md:w-6 md:h-6" />
+          <button className="relative hidden lg:inline-flex p-2 rounded-xl hover:bg-[--main]/10 text-maindark dark:text-primary transition-colors">
+            <Bell className="w-5 h-5" />
             <span className="absolute top-2 right-2 w-2 h-2 md:w-2.5 md:h-2.5 bg-red-500 rounded-full border-2 border-[--bg-default]"></span>
           </button>
 
           <button
             onClick={logout}
-            className="p-2 md:p-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 group"
+            className="p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 group"
             title="Chiqish"
           >
-            <LogOut className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
+            <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
 
-          <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-[--border-default] cursor-pointer hover:opacity-80 transition-opacity">
-            <div className="text-right hidden md:block text-maindark dark:text-primary">
+          <div className="flex items-center gap-2 lg:gap-3 pl-2 lg:pl-3 border-l border-[--border-default] cursor-pointer hover:opacity-80 transition-opacity">
+            <div className="text-right hidden xl:block text-maindark dark:text-primary">
               <h4 className="max-w-36 truncate text-sm font-bold">{profileFullName}</h4>
               <p className="text-xs">{profileRole}</p>
             </div>
             <div
               onClick={() => navigate("profile")}
-              className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20"
+              className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20"
             >
-              <User className="w-4 h-4 text-primary md:w-5 md:h-5" />
+              <User className="w-4 h-4 text-primary lg:w-5 lg:h-5" />
             </div>
           </div>
         </div>

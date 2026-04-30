@@ -5,7 +5,6 @@ import type {
   CreateCourierRequest,
   CreateManagerRequest,
   CreateMarketRequest,
-  CreateOperatorRequest,
   CreateRegistratorRequest,
   UserRole,
 } from "../../../../entities/user/types/user";
@@ -23,7 +22,6 @@ import {
   Shield,
   Store,
   Truck,
-  UserCog,
   User,
   Users,
   Briefcase,
@@ -171,18 +169,17 @@ export const CreateUserForm = memo(() => {
   } = methods;
 
   const role = useWatch({ control, name: "role" });
-  const rolePickerOptions: Array<{ key: UserRole; icon: JSX.Element }> = [
+  const rolePickerOptions: Array<{ key: UserRole; icon: ReactNode }> = [
     { key: "admin", icon: <Shield size={16} /> },
     { key: "manager", icon: <Briefcase size={16} /> },
     { key: "registrator", icon: <Users size={16} /> },
-    { key: "operator", icon: <UserCog size={16} /> },
     { key: "courier", icon: <Truck size={16} /> },
     { key: "marketing", icon: <Store size={16} /> },
   ];
   const activeRoleOption =
     rolePickerOptions.find((option) => option.key === role) ?? rolePickerOptions[0];
 
-  const { createAdmin, createManager, createOperator, createRegistrator, createMarket, createCourier, getRegions } = useUser();
+  const { createAdmin, createManager, createRegistrator, createMarket, createCourier, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
   const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches({
     page: 1,
@@ -224,7 +221,6 @@ export const CreateUserForm = memo(() => {
   const isPending =
     createAdmin.isPending ||
     createManager.isPending ||
-    createOperator.isPending ||
     createRegistrator.isPending ||
     createMarket.isPending ||
     createCourier.isPending;
@@ -269,7 +265,7 @@ export const CreateUserForm = memo(() => {
       }
     }
 
-    if ((role === "manager" || role === "operator") && !values.branchId) {
+    if ((role === "manager" || role === "registrator") && !values.branchId) {
       setError("branchId", { message: t("branchRequired") });
       valid = false;
     }
@@ -317,7 +313,7 @@ export const CreateUserForm = memo(() => {
 
     const rawPhone = `+998${parsePhone(values.phone)}`;
 
-    if (role === "admin" || role === "registrator") {
+    if (role === "admin") {
       const payload: CreateAdminRequest = {
         name: values.fullName,
         phone_number: rawPhone,
@@ -325,13 +321,28 @@ export const CreateUserForm = memo(() => {
         salary: parseAmount(values.salary),
         payment_day: Number(values.paymentDay),
       };
-
-      const mutation = role === "admin" ? createAdmin : createRegistrator;
-      const successMessage = role === "admin" ? t("createAdmin") : t("createRegistrator");
-
       await apiRequest({
-        request: () => mutation.mutateAsync(payload as CreateAdminRequest & CreateRegistratorRequest),
-        successMessage,
+        request: () => createAdmin.mutateAsync(payload),
+        successMessage: t("createAdmin"),
+        errorMessage: t("loadError"),
+        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
+        onSuccess: () => navigate(-1),
+      });
+      return;
+    }
+
+    if (role === "registrator") {
+      const payload: CreateRegistratorRequest = {
+        name: values.fullName,
+        phone_number: rawPhone,
+        password: values.password,
+        salary: parseAmount(values.salary),
+        payment_day: Number(values.paymentDay),
+        branch_id: values.branchId,
+      };
+      await apiRequest({
+        request: () => createRegistrator.mutateAsync(payload),
+        successMessage: t("createRegistrator"),
         errorMessage: t("loadError"),
         onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
@@ -350,24 +361,6 @@ export const CreateUserForm = memo(() => {
       await apiRequest({
         request: () => createManager.mutateAsync(payload),
         successMessage: t("createManager"),
-        errorMessage: t("loadError"),
-        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-        onSuccess: () => navigate(-1),
-      });
-      return;
-    }
-
-    if (role === "operator") {
-      const payload: CreateOperatorRequest = {
-        name: values.fullName,
-        phone_number: rawPhone,
-        password: values.password,
-        branch_id: values.branchId,
-      };
-
-      await apiRequest({
-        request: () => createOperator.mutateAsync(payload),
-        successMessage: t("createOperator"),
         errorMessage: t("loadError"),
         onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
         onSuccess: () => navigate(-1),
@@ -627,7 +620,7 @@ export const CreateUserForm = memo(() => {
               <ShieldIcon role={role} size={20} />
             </div>
             <h1 className="text-base font-bold text-slate-800 dark:text-white sm:text-lg md:text-xl">
-              {t("addUserTitle")}
+              {t("addRoleTitle", { role: getRoleLabel(role) })}
             </h1>
           </div>
 
@@ -669,7 +662,7 @@ export const CreateUserForm = memo(() => {
                   </div>
                 )}
 
-                {(role === "manager" || role === "operator") && (
+                {(role === "manager" || role === "registrator") && (
                   <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
                     <Controller
                       control={control}
@@ -785,7 +778,7 @@ export const CreateUserForm = memo(() => {
                   className={`relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none disabled:opacity-70 sm:w-auto ${
                     role === "admin"
                       ? "bg-linear-to-r from-purple-600 to-indigo-600"
-                      : role === "manager" || role === "registrator" || role === "operator"
+                      : role === "manager" || role === "registrator"
                         ? "bg-linear-to-r from-blue-500 to-cyan-500"
                         : role === "courier"
                           ? "bg-linear-to-r from-orange-500 to-amber-500"

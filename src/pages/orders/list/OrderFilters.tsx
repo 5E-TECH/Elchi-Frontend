@@ -44,8 +44,8 @@ export const ORDER_FILTER_KEYS = {
     regionId: "orderRegionId",
     courierId: "orderCourierId",
     status: "orderStatus",
-    dateFrom: "orderDateFrom",
-    dateTo: "orderDateTo",
+    dateFrom: "startDay",
+    dateTo: "endDay",
     search: "orderSearch",
 } as const;
 
@@ -76,7 +76,7 @@ const getStringFilterValue = (value: unknown, fallback = "") =>
 const OrderFilters = memo(({ onExport }: Props) => {
     const { t } = useTranslation(["orders", "common"]);
     const dispatch = useDispatch();
-    const { setParam, removeParam, getParam } = useQueryParams();
+    const { setParam, removeParam, getParam, setMultipleParams } = useQueryParams();
     const role = useSelector((state: RootState) => state.role.role);
     const filters = useSelector((state: RootState) => state.filter);
     const searchFilters = useSelector((state: RootState) => state.search);
@@ -86,6 +86,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
         typeof window !== "undefined" ? window.innerWidth < 640 : false,
     );
     const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+    const [searchResetKey, setSearchResetKey] = useState(0);
     const mobilePanelRef = useRef<HTMLDivElement | null>(null);
 
     // ─── URL dan joriy qiymatlarni olish ───────────────────────────────────
@@ -93,8 +94,8 @@ const OrderFilters = memo(({ onExport }: Props) => {
     const urlRegionId = getParam(ORDER_FILTER_KEYS.regionId) ?? "";
     const urlCourierId = getParam(ORDER_FILTER_KEYS.courierId) ?? "";
     const urlStatus = getParam(ORDER_FILTER_KEYS.status) ?? "";
-    const urlDateFrom = getParam(ORDER_FILTER_KEYS.dateFrom) ?? "";
-    const urlDateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? "";
+    const urlDateFrom = getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam("orderDateFrom") ?? "";
+    const urlDateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? getParam("orderDateTo") ?? "";
     const urlSearch = getParam(ORDER_FILTER_KEYS.search) ?? "";
 
     const marketId = getStringFilterValue(filters[ORDER_FILTER_KEYS.marketId], urlMarketId);
@@ -216,6 +217,20 @@ const OrderFilters = memo(({ onExport }: Props) => {
         }
     };
 
+    const updateRegionAndResetCourier = (value: string) => {
+        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.regionId, value }));
+        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.courierId, value: "" }));
+
+        setMultipleParams({
+            [ORDER_FILTER_KEYS.regionId]: value,
+            [ORDER_FILTER_KEYS.courierId]: "",
+        });
+
+        if (isMobile) {
+            setIsMobilePanelOpen(false);
+        }
+    };
+
     const updateStatus = (value: string[]) => {
         const normalizedValue = value.filter((item): item is OrderStatus =>
             ALL_STATUSES.some((statusOption) => statusOption.value === item),
@@ -247,8 +262,18 @@ const OrderFilters = memo(({ onExport }: Props) => {
     const handleReset = () => {
         dispatch(resetFilters());
         dispatch(clearAllSearch());
-        // Faqat order filter key-larini tozalash
-        Object.values(ORDER_FILTER_KEYS).forEach((key) => removeParam(key));
+        setMultipleParams({
+            [ORDER_FILTER_KEYS.marketId]: "",
+            [ORDER_FILTER_KEYS.regionId]: "",
+            [ORDER_FILTER_KEYS.courierId]: "",
+            [ORDER_FILTER_KEYS.status]: "",
+            [ORDER_FILTER_KEYS.dateFrom]: "",
+            [ORDER_FILTER_KEYS.dateTo]: "",
+            [ORDER_FILTER_KEYS.search]: "",
+            orderDateFrom: "",
+            orderDateTo: "",
+        });
+        setSearchResetKey((prev) => prev + 1);
 
         if (isMobile) {
             setIsMobilePanelOpen(false);
@@ -315,6 +340,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
 
                                         {/* Search */}
                                         <FilterSearch
+                                            key={`mobile-search-${searchResetKey}`}
                                             value={search}
                                             onChange={updateSearch}
                                             placeholder={t("filterSearchPlaceholder")}
@@ -345,10 +371,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                                             label={t("filterRegion")}
                                             name={ORDER_FILTER_KEYS.regionId}
                                             value={regionId}
-                                            onChange={(value) => {
-                                                update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, value);
-                                                update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "");
-                                            }}
+                                            onChange={updateRegionAndResetCourier}
                                             options={regions}
                                             placeholder={t("filterRegionPlaceholder")}
                                             icon={MapPin}
@@ -506,6 +529,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
 
                 {/* Search */}
                 <FilterSearch
+                    key={`desktop-search-${searchResetKey}`}
                     value={search}
                     onChange={updateSearch}
                     placeholder={t("filterSearchPlaceholder")}
@@ -536,10 +560,7 @@ const OrderFilters = memo(({ onExport }: Props) => {
                     label={t("filterRegion")}
                     name={ORDER_FILTER_KEYS.regionId}
                     value={regionId}
-                    onChange={(value) => {
-                        update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, value);
-                        update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "");
-                    }}
+                    onChange={updateRegionAndResetCourier}
                     options={regions}
                     placeholder={t("filterRegionPlaceholder")}
                     icon={MapPin}
