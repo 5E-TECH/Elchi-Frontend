@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { UserPlus, Users } from "lucide-react";
 import { UserStats } from "../../../widgets/user-list/ui/UserStats";
 import { UserListTable } from "../../../widgets/user-list/ui/UserListTable";
@@ -10,43 +10,15 @@ import type { RootState } from "../../../app/config/store";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
-import type { User } from "../../../entities/user/types/user";
-
-const extractRolesFromUsersResponse = (response: unknown): string[] => {
-  const payload = response as {
-    data?: {
-      roles?: Array<string | { role?: string; value?: string; name?: string }>;
-      roleCounts?: Record<string, unknown> | Array<{ role?: string; value?: string; name?: string }>;
-      items?: User[];
-    };
-  } | undefined;
-
-  const roles = payload?.data?.roles;
-  if (Array.isArray(roles) && roles.length > 0) {
-    return roles
-      .map((role) => (typeof role === "string" ? role : role.role ?? role.value ?? role.name))
-      .filter((role): role is string => Boolean(role));
-  }
-
-  const roleCounts = payload?.data?.roleCounts;
-  if (Array.isArray(roleCounts) && roleCounts.length > 0) {
-    return roleCounts
-      .map((role) => role.role ?? role.value ?? role.name)
-      .filter((role): role is string => Boolean(role));
-  }
-
-  if (roleCounts && !Array.isArray(roleCounts)) {
-    return Object.keys(roleCounts);
-  }
-
-  return (payload?.data?.items ?? [])
-    .map((item) => item.role)
-    .filter(Boolean);
-};
+import { setMultipleFilters } from "../../../features/Select/model/FilterSlice";
+import { setMultipleSearchValues } from "../../../features/search/model/searchSlice";
+import { useQueryParams } from "../../../shared/lib/useQueryParams";
 
 const UserListPage = memo(() => {
   const { t } = useTranslation("users");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { getAllParams, setMultipleParams } = useQueryParams();
 
   const filters = useSelector((state: RootState) => state.filter);
   const searchFilters = useSelector((state: RootState) => state.search);
@@ -56,37 +28,108 @@ const UserListPage = memo(() => {
     defaultLimit: 10,
   });
   const previousFiltersKeyRef = useRef("");
+  const isUrlHydratedRef = useRef(false);
+  const allParams = getAllParams();
+  const roleFromUrl = allParams.role ?? allParams.userRole ?? "";
+  const statusFromUrl = allParams.status ?? allParams.userStatus ?? "";
+  const searchFromUrl = allParams.search ?? allParams.userSearch ?? "";
+
+  useEffect(() => {
+    if (
+      (filters.userRole ?? "") === roleFromUrl &&
+      (filters.userStatus ?? "") === statusFromUrl &&
+      (searchFilters.userSearch ?? "") === searchFromUrl
+    ) {
+      isUrlHydratedRef.current = true;
+      return;
+    }
+
+    isUrlHydratedRef.current = false;
+
+    dispatch(
+      setMultipleFilters({
+        userRole: roleFromUrl,
+        userStatus: statusFromUrl,
+      }),
+    );
+    dispatch(
+      setMultipleSearchValues({
+        userSearch: searchFromUrl,
+      }),
+    );
+  }, [
+    dispatch,
+    filters.userRole,
+    filters.userStatus,
+    searchFilters.userSearch,
+    roleFromUrl,
+    statusFromUrl,
+    searchFromUrl,
+  ]);
+
+  useEffect(() => {
+    if (!isUrlHydratedRef.current) {
+      return;
+    }
+
+    const nextRole = (filters.userRole as string) ?? "";
+    const nextStatus = (filters.userStatus as string) ?? "";
+    const nextSearch = (searchFilters.userSearch as string) ?? "";
+
+    if (
+      roleFromUrl === nextRole &&
+      statusFromUrl === nextStatus &&
+      searchFromUrl === nextSearch &&
+      !allParams.userRole &&
+      !allParams.userStatus &&
+      !allParams.userSearch
+    ) {
+      return;
+    }
+
+    setMultipleParams({
+      role: nextRole,
+      status: nextStatus,
+      search: nextSearch,
+      userRole: "",
+      userStatus: "",
+      userSearch: "",
+    });
+  }, [
+    filters.userRole,
+    filters.userStatus,
+    searchFilters.userSearch,
+    roleFromUrl,
+    statusFromUrl,
+    searchFromUrl,
+    allParams.userRole,
+    allParams.userStatus,
+    allParams.userSearch,
+    setMultipleParams,
+  ]);
 
   const apiParams = useMemo(() => {
     const params: any = { page, limit };
 
-    // Role va status uchun Redux state-dan foydalanamiz (standard pattern)
-    if (filters.userRole) params.role = filters.userRole;
-    if (filters.userStatus) params.status = filters.userStatus;
-    if (searchFilters.userSearch) params.search = searchFilters.userSearch;
+    // Backend so'rovi uchun asosiy manba: URL params
+    if (roleFromUrl) params.role = roleFromUrl;
+    if (statusFromUrl) params.status = statusFromUrl;
+    if (searchFromUrl) params.search = searchFromUrl;
 
     return params;
-  }, [page, limit, filters.userRole, filters.userStatus, searchFilters.userSearch]);
+  }, [page, limit, roleFromUrl, statusFromUrl, searchFromUrl]);
 
   const filtersKey = useMemo(
     () => JSON.stringify({
-      role: filters.userRole ?? "",
-      status: filters.userStatus ?? "",
-      search: searchFilters.userSearch ?? "",
+      role: roleFromUrl,
+      status: statusFromUrl,
+      search: searchFromUrl,
     }),
-    [filters.userRole, filters.userStatus, searchFilters.userSearch],
+    [roleFromUrl, statusFromUrl, searchFromUrl],
   );
 
   const { getUser } = useUser();
   const { data, isLoading, isError, error } = getUser(apiParams);
-  const { data: roleFilterData } = getUser({
-    page: 1,
-    limit: 100,
-  });
-  const availableRoles = useMemo(
-    () => extractRolesFromUsersResponse(roleFilterData),
-    [roleFilterData],
-  );
   const meta = data?.data?.meta;
 
   useEffect(() => {
@@ -153,7 +196,7 @@ const UserListPage = memo(() => {
 
       {/* Filterlar — mobilda to'liq kenglikda */}
       <div className="relative z-20 w-full">
-        <UserFilters availableRoles={availableRoles} />
+        <UserFilters />
       </div>
 
       {/* Jadval */}

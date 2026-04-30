@@ -136,4 +136,7 @@ export const API_ENDPOINTS = {
   IDENTITY: {
     USERS: "identity/users",
   },
+  SEARCH: {
+    BASE: "search",
+  },
 } as const;

@@ -95,7 +95,9 @@ export interface CreateAdminRequest {
     payment_day: number;    // To'lov kuni (1-31)
 }
 
-export interface CreateRegistratorRequest extends CreateAdminRequest {}
+export interface CreateRegistratorRequest extends CreateAdminRequest {
+    branch_id: string;
+}
 
 export interface CreateManagerRequest {
     name: string;

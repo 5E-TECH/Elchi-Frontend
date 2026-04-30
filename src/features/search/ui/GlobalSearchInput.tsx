@@ -23,6 +23,7 @@ type NativeInputProps = Omit<
 
 interface GlobalSearchInputProps extends NativeInputProps {
   searchKey?: string;
+  urlKey?: string;
   name?: string;
   value?: string;
   defaultValue?: string;
@@ -44,6 +45,7 @@ const GlobalSearchInputBase = forwardRef<HTMLInputElement, GlobalSearchInputProp
   (
     {
       searchKey,
+      urlKey,
       name,
       value,
       defaultValue = "",
@@ -83,8 +85,11 @@ const GlobalSearchInputBase = forwardRef<HTMLInputElement, GlobalSearchInputProp
     );
 
     const debouncedSaveToUrl = useDebounce((nextValue: string) => {
-      if (searchKey && syncWithUrl) {
-        setParam(searchKey, nextValue);
+      if (syncWithUrl) {
+        const paramKey = urlKey ?? searchKey;
+        if (paramKey) {
+          setParam(paramKey, nextValue);
+        }
       }
     }, debounceDelay);
 
