@@ -124,6 +124,7 @@ export const API_ENDPOINTS = {
   },
   BRANCHES: {
     BASE: "branches",
+    TRANSFER_BATCHES: "branches/transfer-batches",
     BY_ID: (id: string | number) => `branches/${id}`,
     USERS: (id: string | number) => `branches/${id}/users`,
     EMPLOYEES: (id: string | number) => `branches/${id}/employees`,

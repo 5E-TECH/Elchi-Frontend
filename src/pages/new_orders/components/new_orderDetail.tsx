@@ -23,7 +23,13 @@ const NewOrderDetail = () => {
   const navigate = useNavigate();
   const { marketId } = useParams();
   const roleState = useSelector((state: RootState) => state.role);
+  const currentUser = useSelector((state: RootState) => state.user.user as Record<string, unknown> | null);
   const isMarketRole = roleState.role === "market";
+  const isManagerOrRegistrator =
+    roleState.role === "manager" || roleState.role === "registrator";
+  // Backend payloadlari farq qilgani uchun manager/registratorlarda
+  // qabul qilishni doim transfer-batches endpointiga yo'naltiramiz.
+  const shouldUseBranchTransferReceive = isManagerOrRegistrator && !isMarketRole && !!currentUser;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
@@ -31,7 +37,10 @@ const NewOrderDetail = () => {
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
   const selectedOrdersKeyRef = useRef("");
 
-  const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder } = useOrders();
+  const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } = useOrders();
+  const receiveMutation = shouldUseBranchTransferReceive
+    ? createTransferBatch
+    : createReceiveOrder;
   const { api: notifApi } = useAppNotification();
 
   // Redux dan search qiymatini olish
@@ -97,7 +106,7 @@ const NewOrderDetail = () => {
     }
 
     pendingScanOrderIdsRef.current.add(orderId);
-    createReceiveOrder.mutate(
+    receiveMutation.mutate(
       { order_ids: [orderId] },
       {
         onSuccess: () => {
@@ -136,7 +145,7 @@ const NewOrderDetail = () => {
         },
       },
     );
-  }, [createReceiveOrder, notifApi, refetch, t]);
+  }, [receiveMutation, notifApi, refetch, t]);
 
   useOrderQrScanner({
     orders,
@@ -174,7 +183,7 @@ const NewOrderDetail = () => {
     // lekin closure eski qiymatni ko'radi — shuning uchun oldindan saqlaymiz
     const ids = [...selectedIds];
     const isAll = ids.length === orders.length;
-    createReceiveOrder.mutate({ order_ids: ids }, {
+    receiveMutation.mutate({ order_ids: ids }, {
       onSuccess: () => {
         setReceivedOrderIds((prev) => {
           const next = new Set(prev);
@@ -195,7 +204,7 @@ const NewOrderDetail = () => {
         notifApi.error({ message: t("receiveError"), description: msg, placement: "topRight", duration: 5 });
       },
     });
-  }, [selectedIds, orders.length, createReceiveOrder, navigate, refetch, notifApi, t]);
+  }, [selectedIds, orders.length, receiveMutation, navigate, refetch, notifApi, t]);
 
   const handlePrint = useCallback(async (mode: string) => {
     const printableOrders = selectedIds.size > 0
@@ -350,17 +359,17 @@ const NewOrderDetail = () => {
         <div className="shrink-0 border-t border-gray-100 bg-sidebar px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 dark:bg-maindark sm:px-4 sm:py-4 md:px-6">
           <button
             onClick={() => setIsReceiveConfirmOpen(true)}
-            disabled={createReceiveOrder.isPending || selectedIds.size === 0}
+            disabled={receiveMutation.isPending || selectedIds.size === 0}
             className={`w-full flex items-center justify-center gap-3 rounded-2xl py-3.5 text-sm font-bold text-white sm:py-4 sm:text-base
               bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
               hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer
               disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
               ${selectedIds.size === 0 ? "opacity-40" : "opacity-100"}`}
           >
-            {createReceiveOrder.isPending
+            {receiveMutation.isPending
               ? <Loader2 size={20} className="animate-spin" />
               : <CheckCircle2 size={20} />}
-            {createReceiveOrder.isPending
+            {receiveMutation.isPending
               ? t("receiving")
               : selectedIds.size > 0
                 ? t("receiveOrders", { count: selectedIds.size })
@@ -383,7 +392,7 @@ const NewOrderDetail = () => {
         isOpen={isReceiveConfirmOpen}
         onClose={() => setIsReceiveConfirmOpen(false)}
         onConfirm={handleAccepted}
-        isLoading={createReceiveOrder.isPending}
+        isLoading={receiveMutation.isPending}
         title={t("receiveOrderTitle")}
         message={t("receiveOrderMessage")}
         confirmLabel={t("receiveConfirm")}
