@@ -5,7 +5,7 @@ const Footer = () => {
     const { t } = useTranslation();
 
     return (
-        <footer className="hidden md:block shrink-0 w-full bg-sidebar dark:bg-maindark border-t border-gray-200 dark:border-white/5 py-3 px-6 transition-colors duration-300">
+        <footer className="hidden w-full shrink-0 bg-sidebar px-6 py-3 transition-colors duration-300 md:block dark:bg-maindark">
             <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6">
                 <p className="text-xs" style={{ color: "var(--color-footer-text)" }}>
                     &copy; {new Date().getFullYear()}{" "}

@@ -32,10 +32,10 @@ export interface DashboardStatisticsProps {
 // ─── Color Map ────────────────────────────────────────────────────────────────
 
 const VARIANT_COLOR: Record<ColorVariant, string> = {
-  info: "var(--color-info)",
-  success: "var(--color-success)",
-  error: "var(--color-error)",
-  warning: "var(--color-warning)",
+  info: "#2563eb",
+  success: "#059669",
+  error: "#e11d48",
+  warning: "#d97706",
 };
 
 const formatNumber = (value: number) =>
@@ -52,21 +52,22 @@ const StatCard = memo(
 
     return (
       <div
-        className="relative flex flex-col rounded-xl overflow-hidden cursor-pointer
-        transition-transform duration-200 hover:-translate-y-0.5
-        bg-sidebar dark:bg-maindark
-        border border-black/[0.07] dark:border-primarydark/25"
+        className="el-card group relative flex min-h-[144px] cursor-pointer flex-col overflow-hidden rounded-2xl
+        transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-border-strong)]"
       >
         <span
-          className="absolute top-0 left-0 right-0 h-0.75"
+          className="absolute left-0 right-0 top-0 h-1"
           style={{ background: color }}
         />
 
-        <div className="p-4 pt-5">
-          <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-1 flex-col justify-between p-4 pt-5">
+          <div className="mb-6 flex items-start justify-between">
             <div
-              className="w-10 h-10 rounded-[10px] flex items-center justify-center"
-              style={{ background: color, color: "var(--color-primary)" }}
+              className="flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-white/10"
+              style={{
+                background: color,
+                color: "var(--color-primary)",
+              }}
             >
               {icon}
             </div>
@@ -85,7 +86,7 @@ const StatCard = memo(
             )}
           </div>
 
-          <p className="text-[12px] font-medium mb-1.5 text-maindark/55 dark:text-sidebar/55">
+          <p className="mb-2 text-[12px] font-semibold text-maindark/60 dark:text-primary/70">
             {title}
           </p>
 
@@ -98,7 +99,7 @@ const StatCard = memo(
               {value}
             </span>
             {suffix && (
-              <span className="shrink-0 text-[11px] font-semibold uppercase text-maindark/50 dark:text-sidebar/50">
+              <span className="shrink-0 text-[11px] font-semibold uppercase text-maindark/50 dark:text-primary/50">
                 {suffix}
               </span>
             )}

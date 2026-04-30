@@ -147,10 +147,7 @@ const UserListPage = memo(() => {
   }, [filtersKey, limit, resetPagination]);
 
   return (
-    <div className="relative min-h-full overflow-hidden rounded-[28px] bg-sidebar p-4 md:p-6 dark:bg-maindark">
-      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-main/12 blur-3xl dark:bg-main/18" />
-      <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-emerald-400/8 blur-3xl" />
-
+    <div className="relative min-h-full overflow-hidden">
       {/* Header — mobilda ustma-ust, desktopda yonma-yon */}
       <div className="relative z-10 mb-5 flex items-start justify-between gap-3 sm:items-center">
         <div className="flex min-w-0 items-start gap-3.5 py-2.5 text-maindark">

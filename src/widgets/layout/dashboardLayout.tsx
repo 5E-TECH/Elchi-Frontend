@@ -12,19 +12,19 @@ const DashboardLayout = () => {
   const isBranchDashboard = location.pathname === "/branch-dashboard";
 
   return (
-    <div className="flex h-screen font-sans text-main dark:bg-primarydark transition-colors duration-300 relative overflow-hidden">
+    <div className="relative flex h-screen overflow-hidden bg-sidebar font-sans text-main transition-colors duration-300 dark:bg-maindark">
       {/* Sidebar - Desktop only */}
       <Sidebar />
 
       {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-sidebar dark:bg-maindark">
 
         {/* Header - Sticky */}
         <Header onMenuClick={() => setIsMenuOpen(true)} />
 
         {/* Content */}
         <main
-          className={`flex-1 p-3 sm:p-4 md:p-6 custom-scrollbar pb-24 md:pb-6 border rounded-[1.75rem] sm:rounded-4xl ${
+          className={`el-surface-page mx-3 mb-0 flex-1 rounded-[1.55rem] p-4 pb-24 custom-scrollbar sm:mx-4 sm:mb-0 md:ml-0 md:mr-3 md:mb-0 md:p-6 md:pb-6 ${
             isBranchDashboard ? "overflow-y-auto xl:overflow-hidden" : "overflow-y-auto"
           }`}
         >

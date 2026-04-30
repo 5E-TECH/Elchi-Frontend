@@ -159,7 +159,7 @@ export const Table = memo(<T extends Record<string, any>>({
   return (
     <div
       ref={wrapperRef}
-      className={`overflow-hidden rounded-2xl bg-primary shadow-sm dark:bg-maindark ${bordered ? 'border border-[color:var(--color-border-soft)] dark:border-primarydark/60' : ''}`}
+      className={`overflow-hidden rounded-2xl bg-primary shadow-sm dark:bg-white/[0.025] ${bordered ? 'border border-[color:var(--color-border-soft)] dark:border-white/10' : ''}`}
     >
       <div className={`${isCardMode ? "overflow-visible" : "overflow-x-auto"} custom-scrollbar`}>
         <table className={`w-full min-w-full border-collapse ${isCompactMode ? 'table-fixed' : ''} ${className}`}>
@@ -209,21 +209,21 @@ export const Table = memo(<T extends Record<string, any>>({
                     isCardMode
                       ? mobileRowRender
                         ? `block border-b border-[color:var(--color-border-soft)] px-2 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
-                        } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-maindark ${hoverable
-                          ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.05]'
+                        } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-white/[0.02] ${hoverable
+                          ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.06]'
                           : ''
                         } last:border-b-0`
                         : `block border-b border-[color:var(--color-border-soft)] px-2 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
-                        } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-maindark ${hoverable
-                          ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.05]'
+                        } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-white/[0.02] ${hoverable
+                          ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.06]'
                           : ''
                         } last:border-b-0`
                       : `table-row border-b border-[color:var(--color-border-soft)] dark:border-primarydark/30 ${hoverable ? 'transition-colors duration-200' : ''
                       } ${onRowClick ? 'cursor-pointer' : ''} ${striped && rowIndex % 2 !== 0
-                        ? 'bg-[color:var(--color-table-row-alt)] dark:bg-white/[0.025]'
-                        : 'bg-primary dark:bg-maindark'
+                        ? 'bg-[color:var(--color-table-row-alt)] dark:bg-white/[0.045]'
+                        : 'bg-primary dark:bg-white/[0.02]'
                       } ${hoverable
-                        ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.05]'
+                        ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.065]'
                         : ''
                       }`
                   }

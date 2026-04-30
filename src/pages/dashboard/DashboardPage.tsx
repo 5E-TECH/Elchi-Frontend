@@ -99,7 +99,7 @@ const DashboardPage = () => {
   const orders = data?.data?.orders;
 
   return (
-    <div className="min-h-full rounded-2xl p-5 bg-primary dark:bg-maindark">
+    <div className="min-h-full">
       {/* Page header */}
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <HeaderName
@@ -124,8 +124,8 @@ const DashboardPage = () => {
                   type="button"
                   onClick={() => applyRange(range)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${isActive
-                      ? "bg-(--color-main) text-white"
-                      : "bg-glass text-maindark/70 dark:text-sidebar/80"
+                      ? "bg-(--color-main) text-white shadow-[0_8px_18px_color-mix(in_srgb,var(--color-main)_24%,transparent)]"
+                      : "el-glass-control text-maindark/70 hover:text-main dark:text-primary/70 dark:hover:text-primary"
                     }`}
                 >
                   {t(`quickRanges.${key}`)}
