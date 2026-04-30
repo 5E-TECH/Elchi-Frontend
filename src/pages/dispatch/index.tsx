@@ -293,7 +293,7 @@ const DispatchPage = () => {
               <button
                 type="button"
                 onClick={() => void handleToggleTorch()}
-                className="rounded-2xl border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-semibold text-maindark dark:text-white"
+                className="cursor-pointer rounded-2xl border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-semibold text-maindark transition hover:border-main/40 hover:text-main dark:text-white"
               >
                 {torchEnabled ? "Torch off" : "Torch on"}
               </button>
@@ -381,7 +381,7 @@ const DispatchPage = () => {
                       <button
                         type="button"
                         onClick={() => handleRemoveOrder(order.id)}
-                        className="flex h-10 w-10 items-center justify-center rounded-2xl border border-red-300/20 bg-red-500/10 text-red-500 transition hover:bg-red-500/15 dark:text-red-200"
+                        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-red-300/20 bg-red-500/10 text-red-500 transition hover:bg-red-500/15 dark:text-red-200"
                         aria-label={t("remove")}
                       >
                         <Trash2 size={16} />
@@ -396,7 +396,7 @@ const DispatchPage = () => {
               type="button"
               onClick={() => void handleComplete()}
               disabled={!selectedCourierId || pendingOrders.length === 0 || assignCourier.isPending}
-              className="mt-5 flex w-full items-center justify-center gap-3 rounded-[28px] bg-emerald-500 px-6 py-5 text-base font-extrabold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-5 flex w-full cursor-pointer items-center justify-center gap-3 rounded-[28px] bg-emerald-500 px-6 py-5 text-base font-extrabold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {assignCourier.isPending ? (
                 <>

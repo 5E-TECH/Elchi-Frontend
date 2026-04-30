@@ -9,7 +9,6 @@ import FormPopup, { popupLabelClassName } from "../../../shared/ui/FormPopup";
 import { branchEditSchema } from "../model/schema";
 import type { UpdateBranchDto } from "../model/types";
 import { useUpdateBranch } from "../api/useUpdateBranch";
-import Select from "../../../shared/ui/Select";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import PhoneInput from "../../../shared/ui/PhoneInput";
 import { GlobalSearchInput } from "../../search";
@@ -128,17 +127,20 @@ const BranchEditModal = ({
             control={control}
             name="type"
             render={({ field }) => (
-              <Select
+              <SearchableSelect
+                label={t("fields.type")}
                 name={field.name}
                 value={field.value}
-                options={branchTypeOptions}
-                placeholder={t("placeholders.type")}
-                onChange={(event) => {
-                  field.onChange(event.target.value);
-                  if (event.target.value === "HQ") {
+                onChange={(value) => {
+                  field.onChange(value);
+                  if (value === "HQ") {
                     setValue("parent_id", "");
                   }
                 }}
+                options={branchTypeOptions}
+                placeholder={t("placeholders.type")}
+                icon={Building2}
+                hideLabel
               />
             )}
           />

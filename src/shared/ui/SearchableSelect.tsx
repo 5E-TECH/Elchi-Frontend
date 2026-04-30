@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 export interface SearchableSelectOption {
   value: string;
   label: string;
+  disabled?: boolean;
 }
 
 interface SearchableSelectProps {
@@ -119,6 +120,11 @@ const SearchableSelect = ({
   };
 
   const handleSelect = (optionValue: string) => {
+    const option = options.find((item) => item.value === optionValue);
+    if (option?.disabled) {
+      return;
+    }
+
     onChange(optionValue);
     setSearchValue("");
     setHighlightedIndex(-1);
@@ -292,6 +298,7 @@ const SearchableSelect = ({
               filteredOptions.map((option, optionIndex) => {
                 const isSelected = option.value === value;
                 const isHighlighted = optionIndex === highlightedIndex;
+                const isDisabled = Boolean(option.disabled);
 
                 return (
                   <button
@@ -301,9 +308,16 @@ const SearchableSelect = ({
                     }}
                     type="button"
                     onClick={() => handleSelect(option.value)}
-                    onMouseEnter={() => setHighlightedIndex(optionIndex)}
+                    onMouseEnter={() => {
+                      if (!isDisabled) {
+                        setHighlightedIndex(optionIndex);
+                      }
+                    }}
+                    disabled={isDisabled}
                     className={`flex h-11 w-full items-center rounded-xl px-3 text-left text-sm font-medium transition-colors ${
-                      isHighlighted
+                      isDisabled
+                        ? "cursor-not-allowed text-[color:var(--color-text-muted)] opacity-45 dark:text-[color:var(--color-text-muted-dark)]"
+                        : isHighlighted
                         ? "bg-main text-white shadow-sm shadow-main/25"
                         : isSelected
                         ? "bg-main/20 text-main dark:bg-main/25 dark:text-white"

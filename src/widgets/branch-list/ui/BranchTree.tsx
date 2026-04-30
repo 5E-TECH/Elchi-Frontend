@@ -140,7 +140,7 @@ const BranchTreeNodeCard = ({
       : "border-white/12 bg-[#303663] hover:border-main/60";
 
   return (
-    <div className={`relative mx-auto w-[17rem] rounded-[28px] border p-4 text-left shadow-[0_18px_34px_rgba(6,8,30,0.22)] transition-colors ${cardClass}`}>
+    <div className={`relative mx-auto flex h-[170px] w-full max-w-[17rem] flex-col rounded-[28px] border p-4 text-left shadow-[0_18px_34px_rgba(6,8,30,0.22)] transition-colors ${cardClass}`}>
       {node.type !== "HQ" ? (
         <span className="pointer-events-none absolute -left-4 top-8 hidden h-9 w-9 rotate-[-28deg] items-center justify-center rounded-full border border-emerald-300/20 bg-emerald-400/10 text-emerald-200 md:flex">
           <Leaf size={15} />
@@ -151,7 +151,7 @@ const BranchTreeNodeCard = ({
         onClick={() => {
           if (!disabled) navigate(`/branches/${node.id}`);
         }}
-        className="w-full text-left disabled:cursor-default"
+        className="flex min-h-0 flex-1 flex-col text-left disabled:cursor-default"
         disabled={disabled}
       >
         <div className="flex items-start gap-3">
@@ -160,9 +160,9 @@ const BranchTreeNodeCard = ({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
-              <h3 className="truncate font-extrabold text-white">{node.name}</h3>
+              <h3 className="truncate text-[1.05rem] font-extrabold text-white">{node.name}</h3>
               {node.isPreview ? (
-                <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 text-[11px] font-bold text-emerald-200">
+                <span className="shrink-0 rounded-full bg-emerald-400/12 px-2 py-0.5 text-[11px] font-bold text-emerald-200">
                   Preview
                 </span>
               ) : (
@@ -185,9 +185,9 @@ const BranchTreeNodeCard = ({
           </div>
         </div>
 
-        <div className="mt-3 flex items-start gap-2 text-xs leading-5 text-white/55">
+        <div className="mt-3 flex min-h-0 flex-1 items-start gap-2 text-xs leading-5 text-white/55">
           <MapPin size={13} className="mt-1 shrink-0" />
-          <span className="line-clamp-2">
+          <span className="line-clamp-2 min-h-[2.5rem]">
             {node.address} · {node.region.name}, {node.district.name}
           </span>
         </div>
@@ -224,12 +224,12 @@ const BranchTreeItem = ({
       {node.children.length > 0 && (
         <div className="relative mt-10 flex justify-center">
           <span className="absolute -top-10 left-1/2 h-10 w-[7px] -translate-x-1/2 rounded-full bg-gradient-to-b from-emerald-200/75 via-emerald-500/50 to-main/45 shadow-[0_0_18px_rgba(52,211,153,0.3)]" />
-          <div className="relative flex items-start justify-center gap-8">
+          <div className="relative flex max-w-full flex-wrap items-start justify-center gap-8">
             {node.children.length > 1 && (
-              <span className="absolute -top-5 left-[8.5rem] right-[8.5rem] h-[7px] rounded-full bg-gradient-to-r from-transparent via-emerald-300/50 to-transparent shadow-[0_0_18px_rgba(52,211,153,0.2)]" />
+              <span className="absolute -top-5 left-[12%] right-[12%] h-[7px] rounded-full bg-gradient-to-r from-transparent via-emerald-300/50 to-transparent shadow-[0_0_18px_rgba(52,211,153,0.2)]" />
             )}
             {node.children.map((child) => (
-              <div key={child.id} className="relative pt-6">
+              <div key={child.id} className="relative flex w-full justify-center pt-6 sm:w-auto">
                 <span className="absolute left-1/2 top-[-1px] h-6 w-[6px] -translate-x-1/2 rounded-full bg-emerald-300/45" />
                 <BranchTreeItem node={child} onEdit={onEdit} />
               </div>
@@ -254,11 +254,11 @@ const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
   }
 
   return (
-    <div className="relative overflow-x-auto rounded-2xl border border-emerald-300/10 bg-[radial-gradient(circle_at_top,rgba(63,196,132,0.18),transparent_30%),radial-gradient(circle_at_bottom,rgba(88,111,255,0.12),transparent_38%),linear-gradient(180deg,#242a50_0%,#1f2447_100%)] px-5 py-10">
+    <div className="relative overflow-hidden rounded-2xl border border-emerald-300/10 bg-[radial-gradient(circle_at_top,rgba(63,196,132,0.18),transparent_30%),radial-gradient(circle_at_bottom,rgba(88,111,255,0.12),transparent_38%),linear-gradient(180deg,#242a50_0%,#1f2447_100%)] px-4 py-8 sm:px-5 sm:py-10">
       <div className="pointer-events-none absolute inset-x-8 top-8 h-px bg-gradient-to-r from-transparent via-emerald-200/20 to-transparent" />
       <div className="pointer-events-none absolute bottom-5 left-1/2 h-8 w-[32rem] max-w-[70%] -translate-x-1/2 rounded-[100%] bg-black/10 blur-sm" />
-      <div className="relative z-10 flex min-w-full justify-center">
-        <ul className="flex w-max min-w-max flex-col items-center gap-12 px-6">
+      <div className="relative z-10 flex w-full justify-center">
+        <ul className="flex w-full flex-col items-center gap-12 px-2 sm:px-4">
           {roots.map((node) => (
             <BranchTreeItem key={node.id} node={node} onEdit={onEdit} />
           ))}

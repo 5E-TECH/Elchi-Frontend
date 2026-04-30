@@ -7,6 +7,7 @@ import type { RootState } from "../../../app/config/store";
 const MOBILE_ADMIN_ALLOWED_LABELS = [
     "dashboard",
     "orders",
+    "batches",
     "users",
     "payments",
     "balance",

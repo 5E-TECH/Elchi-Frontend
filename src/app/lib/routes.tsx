@@ -20,6 +20,8 @@ const ScanLayout = lazy(() => import("../../widgets/layout/scanLayout"));
 const DashboardPage = lazy(() => import("../../pages/dashboard/DashboardPage"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
+const BatchesPage = lazy(() => import("../../pages/batches"));
+const BatchDetailPage = lazy(() => import("../../pages/batches/detail"));
 const UserListPage = lazy(() => import("../../pages/users/list/UserListPage"));
 const CreateUserPage = lazy(
   () => import("../../pages/users/create/CreateUserPage"),
@@ -92,6 +94,11 @@ const canViewDispatch = (state: RootState) => {
   return role === "superadmin";
 };
 
+const canViewBatches = (state: RootState) => {
+  const role = state.role.role;
+  return role === "manager" || role === "operator" || role === "admin" || role === "superadmin";
+};
+
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
 
@@ -147,6 +154,27 @@ const AppRouter = () => {
                   <DispatchPage />
                 </ProtectedRoute>
               ),
+            },
+            {
+              path: "batches",
+              children: [
+                {
+                  index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canViewBatches}>
+                      <BatchesPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: ":id",
+                  element: (
+                    <ProtectedRoute canActivate={canViewBatches}>
+                      <BatchDetailPage />
+                    </ProtectedRoute>
+                  ),
+                },
+              ],
             },
             { path: "profile", element: <Profile /> },
             {
