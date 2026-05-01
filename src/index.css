@@ -79,7 +79,7 @@
   --color-region-map-high: #10b84f;
   --color-region-map-xhigh: #087a2f;
   --color-region-map-stroke: #4d6bff;
-  --color-region-map-label: #38507d;
+  --color-region-map-label: #1f3157;
   --color-region-map-tooltip-shadow: rgba(39, 44, 82, 0.18);
   --color-dashboard-chart-axis: rgba(39, 44, 82, 0.78);
   --color-dashboard-chart-grid: rgba(87, 106, 219, 0.14);
@@ -254,6 +254,13 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+.theme-switching,
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
+
 .dark {
   /* Dark mode palette inspired by the reference dashboard */
   --color-main: #7c3aed;
@@ -302,6 +309,12 @@
   --color-success: #0d8f5b;
   --color-error: #d82f48;
   --color-warning: #c97900;
+  --color-region-map-low: #bfecc9;
+  --color-region-map-medium: #6bd184;
+  --color-region-map-high: #18a85b;
+  --color-region-map-xhigh: #087a40;
+  --color-region-map-stroke: rgba(231, 227, 252, 0.72);
+  --color-region-map-label: rgba(255, 255, 255, 0.88);
 }
 
 .dark body {

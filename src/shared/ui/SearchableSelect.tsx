@@ -31,6 +31,25 @@ interface SearchableSelectProps {
   surface?: "default" | "search";
 }
 
+const getNextEnabledIndex = (
+  options: SearchableSelectOption[],
+  startIndex: number,
+  step: 1 | -1 = 1,
+) => {
+  if (!options.length) {
+    return -1;
+  }
+
+  for (let offset = 0; offset < options.length; offset += 1) {
+    const index = (startIndex + offset * step + options.length) % options.length;
+    if (!options[index]?.disabled) {
+      return index;
+    }
+  }
+
+  return -1;
+};
+
 const SearchableSelect = ({
   label,
   name,
@@ -98,7 +117,12 @@ const SearchableSelect = ({
     }
 
     const selectedIndex = filteredOptions.findIndex((option) => option.value === value);
-    setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : filteredOptions.length > 0 ? 0 : -1);
+    if (selectedIndex >= 0 && !filteredOptions[selectedIndex]?.disabled) {
+      setHighlightedIndex(selectedIndex);
+      return;
+    }
+
+    setHighlightedIndex(getNextEnabledIndex(filteredOptions, 0));
   }, [filteredOptions, isOpen, value]);
 
   useEffect(() => {
@@ -170,25 +194,16 @@ const SearchableSelect = ({
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setHighlightedIndex((current) =>
-        filteredOptions.length === 0
-          ? -1
-          : current < filteredOptions.length - 1
-            ? current + 1
-            : 0,
-      );
+      setHighlightedIndex((current) => getNextEnabledIndex(filteredOptions, current + 1, 1));
       return;
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      setHighlightedIndex((current) =>
-        filteredOptions.length === 0
-          ? -1
-          : current > 0
-            ? current - 1
-            : filteredOptions.length - 1,
-      );
+      setHighlightedIndex((current) => {
+        const startIndex = current < 0 ? filteredOptions.length - 1 : current - 1;
+        return getNextEnabledIndex(filteredOptions, startIndex, -1);
+      });
       return;
     }
 

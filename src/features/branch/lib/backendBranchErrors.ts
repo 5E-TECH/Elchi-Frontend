@@ -40,7 +40,13 @@ export const applyBranchBackendErrors = <TFieldValues extends FieldValues>(
 
   const lowerMessage = message.toLowerCase();
 
-  if (lowerMessage.includes("code") || lowerMessage.includes("mavjud")) {
+  if (
+    lowerMessage.includes("code") ||
+    lowerMessage.includes("mavjud") ||
+    lowerMessage.includes("already exists") ||
+    lowerMessage.includes("duplicate") ||
+    lowerMessage.includes("unique")
+  ) {
     setError("code" as Path<TFieldValues>, {
       type: "server",
       message: i18n.t("branches:errors.codeExists"),

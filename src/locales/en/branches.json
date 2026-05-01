@@ -79,7 +79,9 @@
     "actions": "Actions"
   },
   "tree": {
-    "level": "Level {{level}}"
+    "level": "Level {{level}}",
+    "expand": "Expand child branches",
+    "collapse": "Collapse child branches"
   },
   "validation": {
     "minName": "At least 2 characters",

@@ -2,6 +2,7 @@ import { Button } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { ArrowRight } from "lucide-react";
 import { BranchStatusBadge, type Branch } from "../../../entities/branch";
 import { DeleteBranchButton } from "../../../features/branch-delete";
 import { Table } from "../../../shared/components/Table/Table";
@@ -16,6 +17,7 @@ interface BranchTableProps {
 
 const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
   const { t } = useTranslation("branches");
+  const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
   const actionButtonClassName =
     "!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !p-0 !font-medium !text-[var(--color-maindark)] transition-colors hover:!border-[var(--color-main)] hover:!bg-[color:color-mix(in_srgb,var(--color-main)_22%,white)] hover:!text-[var(--color-main)] dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-[var(--color-main)] dark:hover:!bg-primarydark/70 dark:hover:!text-white";
@@ -44,8 +46,8 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
       key: "region",
       label: t("table.area"),
       sortable: true,
-      sortValue: (row) => `${row.region.name} ${row.district.name}`,
-      render: (_, record) => `${record.region.name}, ${record.district.name}`,
+      sortValue: (row) => `${row.region?.name ?? "—"} ${row.district?.name ?? "—"}`,
+      render: (_, record) => `${record.region?.name ?? "—"}, ${record.district?.name ?? "—"}`,
     },
     {
       key: "address",
@@ -68,14 +70,22 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
       key: "created_at",
       label: t("table.date"),
       sortable: true,
-      sortValue: (row) => new Date(row.created_at).getTime(),
-      render: (value: string) => formatDate(value, "DD.MM.YYYY"),
+      sortValue: (row) => new Date(row.created_at ?? 0).getTime(),
+      render: (value: string) => (value ? formatDate(value, "DD.MM.YYYY") : "—"),
     },
     {
       key: "id",
       label: t("table.actions"),
       render: (_, record) => (
         <div className="flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
+          <Button
+            size="small"
+            icon={<ArrowRight size={15} />}
+            className={actionButtonClassName}
+            onClick={() => navigate(`/branches/${record.id}`)}
+            aria-label={tCommon("open")}
+            title={tCommon("open")}
+          />
           <Button
             size="small"
             icon={<EditOutlined />}

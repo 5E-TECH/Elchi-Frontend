@@ -252,7 +252,7 @@ const DispatchPage = () => {
   };
 
   return (
-    <div className="min-h-full rounded-2xl bg-sidebar p-4 md:p-6 dark:bg-maindark">
+    <div className="min-h-full rounded-2xl p-4 md:p-6">
       <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-primarydark">
         <HeaderName
           name={t("title")}

@@ -49,7 +49,7 @@ const LogsPage = () => {
         : "border-[color:var(--color-border-soft)] bg-[color:var(--color-main-soft)] text-[var(--color-main)]";
 
   return (
-    <div className="min-h-full rounded-2xl bg-sidebar p-4 md:p-6 dark:bg-maindark">
+    <div className="min-h-full rounded-2xl p-4 md:p-6">
       <div className="mb-4">
         <HeaderName
           name="Loglar"

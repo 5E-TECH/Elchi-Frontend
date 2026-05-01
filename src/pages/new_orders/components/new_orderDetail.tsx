@@ -269,7 +269,7 @@ const NewOrderDetail = () => {
   );
 
   return (
-    <div className="flex flex-col h-full rounded-2xl bg-sidebar dark:bg-maindark overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl">
 
       {/* Header */}
       <div className="p-3 pb-3 sm:p-4 sm:pb-4 md:p-6 md:pb-4">

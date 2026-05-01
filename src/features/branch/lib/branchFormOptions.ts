@@ -37,13 +37,26 @@ export const getParentBranchOptions = (
 ) =>
   (branches ?? [])
     .filter((branch) => branch.id !== excludeBranchId)
+    .sort((left, right) => {
+      const leftLevel = left.level ?? 0;
+      const rightLevel = right.level ?? 0;
+
+      if (leftLevel !== rightLevel) {
+        return leftLevel - rightLevel;
+      }
+
+      return left.name.localeCompare(right.name);
+    })
     .map((branch) => {
       const indent = getIndent(branch.level);
       const codeLabel = branch.code ? ` (${branch.code})` : "";
       const typeLabel = getTypeLabel(branch, t);
+      const areaLabel = [branch.region?.name, branch.district?.name]
+        .filter((part) => part && part !== "—")
+        .join(" • ");
 
       return {
         value: String(branch.id),
-        label: `${indent}${branch.name}${codeLabel} · ${typeLabel}`,
+        label: `${indent}${branch.name}${codeLabel} · ${typeLabel}${areaLabel ? ` · ${areaLabel}` : ""}`,
       };
     });

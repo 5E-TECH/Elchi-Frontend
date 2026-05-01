@@ -416,15 +416,15 @@ const MapTooltip = ({
   maxOrders: number;
 }) => (
   <div
-    className="pointer-events-none absolute z-20 w-[17rem] rounded-[1.5rem] border border-[var(--color-glass-border)] bg-[var(--color-surface-elevated)]/95 p-4 backdrop-blur-md"
+    className="pointer-events-none absolute z-20 w-[17rem] rounded-[1.5rem] border border-[var(--color-glass-border)] bg-[var(--color-surface-elevated)]/95 p-4 backdrop-blur-md dark:bg-[var(--color-surface-elevated-dark)]/95"
     style={{
       left: tooltip.x,
       top: tooltip.y,
       boxShadow: "0 18px 34px var(--color-region-map-tooltip-shadow)",
     }}
   >
-    <p className="text-base font-black text-[var(--color-maindark)]">{region.nameUz ?? region.name}</p>
-    <div className="mt-3 space-y-2 text-sm text-[var(--color-table-label)]">
+    <p className="text-base font-black text-[var(--color-maindark)] dark:text-[var(--color-primary)]">{region.nameUz ?? region.name}</p>
+    <div className="mt-3 space-y-2 text-sm text-[var(--color-table-label)] dark:text-[var(--color-table-label-dark)]">
       <div className="flex items-center justify-between gap-4">
         <span>Tumanlar</span>
         <strong>{formatNumber(region.districtCount)}</strong>
@@ -447,12 +447,12 @@ const MapTooltip = ({
 
 // --- SECTION: RegionMapSkeleton ---
 const RegionMapSkeleton = () => (
-  <div className="rounded-[2rem] border border-[var(--color-border-soft)] bg-[var(--color-primary)]/85 p-5 dark:bg-[var(--color-surface-dark)]">
+  <div className="rounded-[2rem] border border-[var(--color-border-soft)] bg-[var(--color-primary)]/85 p-5 dark:bg-[var(--color-card-surface-strong)]">
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-      <div className="rounded-[1.75rem] bg-[var(--color-sidebar)] p-6 dark:bg-[var(--color-background-deep)]">
+      <div className="rounded-[1.75rem] bg-[var(--color-sidebar)] p-6 dark:bg-[var(--color-card-surface)]">
         <div className="h-[28rem] animate-pulse rounded-[1.5rem] bg-[var(--color-main-soft)]" />
       </div>
-      <div className="space-y-4 rounded-[1.75rem] bg-[var(--color-sidebar)] p-5 dark:bg-[var(--color-background-deep)]">
+      <div className="space-y-4 rounded-[1.75rem] bg-[var(--color-sidebar)] p-5 dark:bg-[var(--color-card-surface)]">
         <div className="h-10 animate-pulse rounded-2xl bg-[var(--color-main-soft)]" />
         <div className="h-24 animate-pulse rounded-2xl bg-[var(--color-main-soft)]" />
         <div className="h-24 animate-pulse rounded-2xl bg-[var(--color-main-soft)]" />
@@ -629,16 +629,16 @@ const RegionsPage = () => {
 
   if (regionsLoading) {
     return (
-      <div className="flex min-h-full flex-col gap-6 rounded-[2rem] bg-[var(--color-sidebar)] p-4 sm:p-5 lg:p-6 dark:bg-[var(--color-maindark)]">
+      <div className="flex min-h-full flex-col gap-6 rounded-[2rem] bg-[var(--color-sidebar)] p-4 sm:p-5 lg:p-6 dark:bg-[var(--color-page-surface)]">
         <RegionMapSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="relative flex min-h-full flex-col gap-6 rounded-[2rem] bg-[var(--color-sidebar)] p-4 sm:p-5 lg:p-6 dark:bg-[var(--color-maindark)]">
+    <div className="relative flex min-h-full flex-col gap-6 rounded-[2rem] bg-[var(--color-sidebar)] p-4 sm:p-5 lg:p-6 dark:bg-[var(--color-page-surface)]">
       {regionsError ? (
-        <div className="flex items-start justify-between gap-4 rounded-[1.5rem] border border-[var(--color-warning)]/25 bg-[var(--color-primary)]/85 px-5 py-4 dark:bg-[var(--color-surface-dark)]">
+        <div className="flex items-start justify-between gap-4 rounded-[1.5rem] border border-[var(--color-warning)]/25 bg-[var(--color-primary)]/85 px-5 py-4 dark:bg-[var(--color-card-surface-strong)]">
           <div className="flex items-start gap-3">
             <div className="mt-0.5 rounded-2xl bg-[var(--color-warning)]/15 p-2 text-[var(--color-warning)]">
               <AlertCircle size={18} />
@@ -662,7 +662,7 @@ const RegionsPage = () => {
         </div>
       ) : null}
 
-      <section className="rounded-[2rem] border border-[var(--color-border-soft)] bg-[var(--color-primary)]/90 p-5 shadow-[0_24px_48px_var(--color-main-soft)] dark:bg-[var(--color-surface-dark)]">
+      <section className="rounded-[2rem] border border-[var(--color-border-soft)] bg-[var(--color-primary)]/90 p-5 shadow-[0_24px_48px_var(--color-main-soft)] dark:bg-[var(--color-card-surface-strong)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
@@ -704,7 +704,7 @@ const RegionsPage = () => {
           </div>
         </div>
 
-        <div className="mt-6 rounded-[1.8rem] border border-[var(--color-border-soft)] bg-[linear-gradient(135deg,var(--color-primary)_0%,var(--color-sidebar)_48%,var(--color-main-soft)_100%)] p-4 dark:bg-[linear-gradient(135deg,var(--color-surface-dark)_0%,var(--color-background-deep)_56%,var(--color-main-soft)_100%)]">
+        <div className="mt-6 rounded-[1.8rem] border border-[var(--color-border-soft)] bg-[linear-gradient(135deg,var(--color-primary)_0%,var(--color-sidebar)_48%,var(--color-main-soft)_100%)] p-4 dark:bg-[linear-gradient(135deg,var(--color-card-surface-strong)_0%,var(--color-card-surface)_62%,var(--color-main-soft)_100%)]">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-[var(--color-maindark)] dark:text-[var(--color-primary)]">
@@ -734,7 +734,7 @@ const RegionsPage = () => {
 
           <div
             ref={mapViewportRef}
-            className="relative overflow-hidden rounded-[1.6rem] border border-[var(--color-glass-border)] bg-[var(--color-surface)]/65 p-3 dark:bg-[var(--color-background-deep)]/85"
+            className="relative overflow-hidden rounded-[1.6rem] border border-[var(--color-glass-border)] bg-[var(--color-surface)]/65 p-3 dark:bg-white/[0.045]"
           >
             <div className="mx-auto max-w-[56rem]" style={mapTransformStyle}>
               <svg
@@ -841,7 +841,7 @@ const RegionsPage = () => {
           onClick={resetSelection}
         >
           <div
-            className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-[2rem] border border-[var(--color-border-soft)] bg-[var(--color-primary)] shadow-[0_28px_60px_var(--color-main-soft)] dark:bg-[var(--color-surface-dark)]"
+            className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-[2rem] border border-[var(--color-border-soft)] bg-[var(--color-primary)] shadow-[0_28px_60px_var(--color-main-soft)] dark:bg-[var(--color-card-surface-strong)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--color-border-soft)] px-5 py-4 sm:px-6">
@@ -889,14 +889,14 @@ const RegionsPage = () => {
                   ))}
                 </div>
 
-                <div className="rounded-[1.5rem] border border-[var(--color-border-soft)] bg-[var(--color-primary)]/70 p-4 dark:bg-[var(--color-surface-dark)]">
+                <div className="rounded-[1.5rem] border border-[var(--color-border-soft)] bg-[var(--color-primary)]/70 p-4 dark:bg-[var(--color-card-surface)]">
                   <label
                     htmlFor="district-search"
                     className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]"
                   >
                     Tuman qidiruvi
                   </label>
-                  <div className="flex items-center gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-sidebar)] px-3 py-3 dark:bg-[var(--color-background-deep)]">
+                  <div className="flex items-center gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-sidebar)] px-3 py-3 dark:bg-white/[0.055]">
                     <Search size={16} className="text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]" />
                     <input
                       ref={sidebarSearchRef}
@@ -934,7 +934,7 @@ const RegionsPage = () => {
                       {filteredDistricts.map((district) => (
                         <div
                           key={district.id}
-                          className="rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-primary)]/70 p-4 transition hover:shadow-[0_16px_28px_var(--color-main-soft)] dark:bg-[var(--color-surface-dark)]"
+                          className="rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-primary)]/70 p-4 transition hover:shadow-[0_16px_28px_var(--color-main-soft)] dark:bg-white/[0.045]"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>

@@ -7,11 +7,47 @@ interface IState {
   name: string | null
 }
 
+const getStoredAuthField = (key: "region" | "name") => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage.getItem(key) || null;
+  } catch {
+    return null;
+  }
+};
+
+const setStoredAuthField = (key: "region" | "name", value: string) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Ignore storage failures and keep auth state usable.
+  }
+};
+
+const removeStoredAuthField = (key: "region" | "name") => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage failures and keep auth state usable.
+  }
+};
+
 const initialState: IState = {
   id: null,
   role: null,
-  region: localStorage.getItem("region") || null,
-  name: localStorage.getItem("name") || null
+  region: getStoredAuthField("region"),
+  name: getStoredAuthField("name")
 };
 
 export const roleSlice = createSlice({
@@ -23,19 +59,19 @@ export const roleSlice = createSlice({
     },
     setName: (state, action: PayloadAction<string>) => {
       state.name = action.payload;
-      localStorage.setItem("name", action.payload);
+      setStoredAuthField("name", action.payload);
     },
     setRegion: (state, action: PayloadAction<string>) => {
       state.region = action.payload;
-      localStorage.setItem("region", action.payload);
+      setStoredAuthField("region", action.payload);
     },
     removeRole: (state) => {
       state.id = null;
       state.role = null;
       state.region = null;
       state.name = null;
-      localStorage.removeItem("region");
-      localStorage.removeItem("name");
+      removeStoredAuthField("region");
+      removeStoredAuthField("name");
     },
     setId: (state, action: PayloadAction<string>) => {
       state.id = action.payload;

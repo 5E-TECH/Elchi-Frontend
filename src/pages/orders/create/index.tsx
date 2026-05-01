@@ -446,7 +446,7 @@ const OrderCreateFormContent = () => {
           event.preventDefault();
           void handleFinalSubmit();
         }}
-        className="p-3 sm:p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-3 sm:gap-6 min-h-full"
+        className="flex min-h-full flex-col gap-3 rounded-2xl p-3 sm:gap-6 sm:p-6"
       >
         <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 py-3 sm:px-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

@@ -12,6 +12,7 @@ export const branchEditSchema = yup.object({
   type: yup
     .string<"HQ" | "CITY" | "REGIONAL" | "DISTRICT">()
     .oneOf(["HQ", "CITY", "REGIONAL", "DISTRICT"])
+    .notOneOf(["HQ"], i18n.t("branches:validation.hqDisabled"))
     .required(i18n.t("branches:validation.type")),
   code: yup.string().trim().required(i18n.t("branches:validation.code")),
   phone_number: yup

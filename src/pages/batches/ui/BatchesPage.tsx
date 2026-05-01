@@ -4,6 +4,10 @@ import { CalendarDays, PackageSearch } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import { Table } from "../../../shared/components/Table/Table";
 import FilterSelect from "../../../shared/ui/FilterSelect";
+import FilterPanel from "../../../shared/ui/FilterPanel";
+import FilterFieldCard from "../../../shared/ui/FilterFieldCard";
+import FilterDateInput from "../../../shared/ui/FilterDateInput";
+import PageStatBadge from "../../../shared/ui/PageStatBadge";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useBatches, type Batch, type BatchDatePreset, type BatchDirection, type BatchStatus } from "../../../entities/batch";
 import {
@@ -101,72 +105,61 @@ const BatchesPage = () => {
   );
 
   return (
-    <div className="min-h-full rounded-2xl bg-sidebar p-4 md:p-6 dark:bg-maindark">
+    <div className="min-h-full rounded-2xl p-4 md:p-6">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <HeaderName
           name="Paketlar"
           description="Filial va HQ xodimlari yaratgan paketlar ro'yxati"
           icon={<PackageSearch />}
         />
-        <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary px-4 py-3 text-sm font-bold text-[color:var(--color-text-muted)] shadow-sm dark:bg-primarydark dark:text-white/70">
-          <CalendarDays size={17} />
+        <PageStatBadge icon={<CalendarDays size={17} />}>
           {data?.meta.total ?? data?.total ?? 0} paket
-        </div>
+        </PageStatBadge>
       </div>
 
-      <section className="mb-5 rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-primarydark">
-        <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-          <FilterSelect
-            name="batch_status"
-            label="Holat"
-            value={status}
-            onChange={(value) => setStatus(value as BatchStatus | "")}
-            placeholder="Barchasi"
-            options={[...batchStatusOptions]}
-          />
-          <FilterSelect
-            name="batch_direction"
-            label="Yo'nalish"
-            value={direction}
-            onChange={(value) => setDirection(value as BatchDirection | "")}
-            placeholder="Barchasi"
-            options={[...batchDirectionOptions]}
-          />
-          <FilterSelect
-            name="batch_date"
-            label="Sana"
-            value={datePreset}
-            onChange={(value) => setDatePreset(value as BatchDatePreset)}
-            options={[...batchDatePresetOptions]}
-          />
-          {datePreset === "custom" ? (
-            <>
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-white/60">
-                  Dan
-                </span>
-                <input
-                  type="date"
-                  value={customFrom}
-                  onChange={(event) => setCustomFrom(event.target.value)}
-                  className="h-12 w-full cursor-pointer rounded-xl border-2 border-gray-200 bg-white px-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:border-primarydark/30 dark:bg-maindark dark:text-white"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-white/60">
-                  Gacha
-                </span>
-                <input
-                  type="date"
-                  value={customTo}
-                  onChange={(event) => setCustomTo(event.target.value)}
-                  className="h-12 w-full cursor-pointer rounded-xl border-2 border-gray-200 bg-white px-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:border-primarydark/30 dark:bg-maindark dark:text-white"
-                />
-              </label>
-            </>
-          ) : null}
-        </div>
-      </section>
+      <FilterPanel gridClassName="md:grid-cols-3 xl:grid-cols-5">
+        <FilterSelect
+          name="batch_status"
+          label="Holat"
+          value={status}
+          onChange={(value) => setStatus(value as BatchStatus | "")}
+          placeholder="Barchasi"
+          options={[...batchStatusOptions]}
+        />
+        <FilterSelect
+          name="batch_direction"
+          label="Yo'nalish"
+          value={direction}
+          onChange={(value) => setDirection(value as BatchDirection | "")}
+          placeholder="Barchasi"
+          options={[...batchDirectionOptions]}
+        />
+        <FilterSelect
+          name="batch_date"
+          label="Sana"
+          value={datePreset}
+          onChange={(value) => setDatePreset(value as BatchDatePreset)}
+          options={[...batchDatePresetOptions]}
+        />
+        {datePreset === "custom" ? (
+          <>
+            <FilterFieldCard>
+              <FilterDateInput
+                label="Dan"
+                value={customFrom}
+                onChange={setCustomFrom}
+              />
+            </FilterFieldCard>
+            <FilterFieldCard>
+              <FilterDateInput
+                label="Gacha"
+                value={customTo}
+                onChange={setCustomTo}
+              />
+            </FilterFieldCard>
+          </>
+        ) : null}
+      </FilterPanel>
 
       {isError ? (
         <div className="rounded-2xl border border-rose-300/30 bg-rose-500/10 p-6 text-center text-sm font-semibold text-rose-700 dark:text-rose-100">

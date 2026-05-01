@@ -8,6 +8,23 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const THEME_SWITCHING_CLASS = 'theme-switching';
+
+const applyTheme = (theme: Theme) => {
+    if (typeof window === 'undefined') return;
+
+    const root = window.document.documentElement;
+    root.classList.add(THEME_SWITCHING_CLASS);
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    window.localStorage.setItem('theme', theme);
+
+    window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+            root.classList.remove(THEME_SWITCHING_CLASS);
+        }, 80);
+    });
+};
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const [theme, setTheme] = useState<Theme>(() => {
@@ -20,10 +37,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     });
 
     useEffect(() => {
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add(theme);
-        localStorage.setItem('theme', theme);
+        applyTheme(theme);
     }, [theme]);
 
     const toggleTheme = () => {

@@ -509,7 +509,7 @@ const MailDetailPage = () => {
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (regularLoading || refusedLoading || transferBatchLoading)
     return (
-      <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
+      <div className="rounded-2xl p-6">
         <MailDetailSkeleton />
       </div>
     );
@@ -517,14 +517,14 @@ const MailDetailPage = () => {
   // ─── Error ────────────────────────────────────────────────────────────────
   if (regularError || refusedError || transferBatchError)
     return (
-      <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
+      <div className="rounded-2xl p-6">
         <ErrorState />
       </div>
     );
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark flex flex-col gap-5">
+    <div className="flex flex-col gap-5 rounded-2xl p-6">
       {/* Sarlavha */}
       <div className="flex items-center justify-between gap-4">
         <div className="max-w-100">

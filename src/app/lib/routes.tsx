@@ -22,6 +22,7 @@ const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
 const BatchDetailPage = lazy(() => import("../../pages/batches/detail"));
+const ReturnsPage = lazy(() => import("../../pages/returns"));
 const UserListPage = lazy(() => import("../../pages/users/list/UserListPage"));
 const CreateUserPage = lazy(
   () => import("../../pages/users/create/CreateUserPage"),
@@ -97,6 +98,11 @@ const canViewDispatch = (state: RootState) => {
 const canViewBatches = (state: RootState) => {
   const role = state.role.role;
   return role === "manager" || role === "operator" || role === "admin" || role === "superadmin" || role === "registrator";
+};
+
+const canViewReturns = (state: RootState) => {
+  const role = state.role.role;
+  return role === "manager" || role === "operator" || role === "admin" || role === "superadmin";
 };
 
 const DashboardEntry = () => {
@@ -175,6 +181,14 @@ const AppRouter = () => {
                   ),
                 },
               ],
+            },
+            {
+              path: "returns",
+              element: (
+                <ProtectedRoute canActivate={canViewReturns}>
+                  <ReturnsPage />
+                </ProtectedRoute>
+              ),
             },
             { path: "profile", element: <Profile /> },
             {

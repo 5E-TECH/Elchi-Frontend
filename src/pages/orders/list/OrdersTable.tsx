@@ -220,13 +220,15 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props
 
     if (!data.length) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 gap-4 text-gray-400">
-                <div className="w-16 h-16 rounded-2xl bg-main/10 flex items-center justify-center">
+            <div className="rounded-2xl border border-[color:var(--color-border-strong)] bg-primary px-6 py-20 shadow-sm dark:border-primarydark/60 dark:bg-white/[0.025]">
+                <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
+                    <div className="w-16 h-16 rounded-2xl border border-[color:var(--color-border-soft)] bg-main/10 flex items-center justify-center dark:border-white/10">
                     <Package size={28} className="text-main/50" />
-                </div>
-                <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-500">{t("ordersNotFound")}</p>
-                    <p className="text-xs mt-0.5">{t("ordersEmptyHint")}</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-500 dark:text-gray-300">{t("ordersNotFound")}</p>
+                        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-400">{t("ordersEmptyHint")}</p>
+                    </div>
                 </div>
             </div>
         );

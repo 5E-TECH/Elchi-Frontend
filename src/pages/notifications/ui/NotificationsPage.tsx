@@ -6,7 +6,7 @@ const NotificationsPage = () => {
   const { t } = useTranslation("common");
 
   return (
-    <div className="relative min-h-full overflow-hidden rounded-[28px] bg-sidebar p-4 md:p-6 dark:bg-maindark">
+    <div className="relative min-h-full overflow-hidden rounded-[28px] p-4 md:p-6">
       <div className="relative z-10">
         <HeaderName
           name={t("notifications")}

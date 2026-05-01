@@ -48,9 +48,17 @@ export const API_ENDPOINTS = {
     PARTLY_SELL: (id: string | number) => `orders/partly-sell/${id}`,
     ROLLBACK: (id: string | number) => `orders/rollback/${id}`,
     CANCEL: (id: string | number) => `orders/cancel/${id}`,
+    RETURNS_PENDING_MARKET: "orders/returns/pending-market",
+    RETURNS_PENDING_MARKET_ALT: "orders/returns",
+    MARK_RETURNED_TO_MARKET: (id: string | number) => `orders/mark-returned-to-market/${id}`,
+    MARK_RETURNED_TO_MARKET_ALT: (id: string | number) => `orders/${id}/mark-returned-to-market`,
     EXTERNAL: "orders/external",
     EXTERNAL_ORDERS: "orders/external-orders",
     EXTERNAL_ORDERS_ALT: "orders/external_orders",
+  },
+  RETURNS: {
+    BASE: "returns",
+    MARK_RETURNED_TO_MARKET: (id: string | number) => `returns/${id}/mark-returned-to-market`,
   },
   POSTS: {
     BASE: "post",
@@ -128,6 +136,7 @@ export const API_ENDPOINTS = {
     BASE: "branches",
     TRANSFER_BATCHES: "branches/transfer-batches",
     BY_ID: (id: string | number) => `branches/${id}`,
+    RETURN_BATCHES: (id: string | number) => `branches/${id}/return-batches`,
     USERS: (id: string | number) => `branches/${id}/users`,
     EMPLOYEES: (id: string | number) => `branches/${id}/employees`,
     USER_BY_ID: (branchId: string | number, userId: string | number) =>

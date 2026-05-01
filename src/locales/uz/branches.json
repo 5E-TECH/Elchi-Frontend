@@ -79,7 +79,9 @@
     "actions": "Amallar"
   },
   "tree": {
-    "level": "{{level}}-daraja"
+    "level": "{{level}}-daraja",
+    "expand": "Ichki filiallarni ochish",
+    "collapse": "Ichki filiallarni yopish"
   },
   "validation": {
     "minName": "Kamida 2 ta belgi",
