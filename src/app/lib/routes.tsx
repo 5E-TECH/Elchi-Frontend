@@ -97,7 +97,7 @@ const canViewDispatch = (state: RootState) => {
 
 const canViewBatches = (state: RootState) => {
   const role = state.role.role;
-  return role === "manager" || role === "operator" || role === "admin" || role === "superadmin";
+  return role === "manager" || role === "operator" || role === "admin" || role === "superadmin" || role === "registrator";
 };
 
 const canViewReturns = (state: RootState) => {

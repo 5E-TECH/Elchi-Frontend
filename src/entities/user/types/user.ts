@@ -103,6 +103,7 @@ export interface CreateManagerRequest {
     name: string;
     phone_number: string;
     password: string;
+    salary: number;
     branch_id: string;
 }
 

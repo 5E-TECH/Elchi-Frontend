@@ -247,12 +247,14 @@ export const CreateUserForm = memo(() => {
       valid = false;
     }
 
-    if (role === "admin" || role === "registrator") {
+    if (role === "admin" || role === "registrator" || role === "manager") {
       if (!values.salary) {
         setError("salary", { message: t("salaryRequired") });
         valid = false;
       }
+    }
 
+    if (role === "admin" || role === "registrator") {
       if (!values.paymentDay) {
         setError("paymentDay", { message: t("dateRequired") });
         valid = false;
@@ -355,6 +357,7 @@ export const CreateUserForm = memo(() => {
         name: values.fullName,
         phone_number: rawPhone,
         password: values.password,
+        salary: parseAmount(values.salary),
         branch_id: values.branchId,
       };
 
@@ -645,20 +648,21 @@ export const CreateUserForm = memo(() => {
 
                 <div className="h-px bg-slate-100 dark:bg-white/5" />
 
-                {(role === "admin" || role === "registrator") && (
+                {(role === "admin" || role === "registrator" || role === "manager") && (
                   <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
                     {renderInput({
                       label: t("salaryWithCurrency"),
                       name: "salary",
                       placeholder: "Masalan: 5 000 000",
                     })}
-                    {renderInput({
-                      label: t("paymentDay"),
-                      name: "paymentDay",
-                      type: "number",
-                      placeholder: "1-30",
-                      icon: <Calendar size={18} />,
-                    })}
+                    {(role === "admin" || role === "registrator") &&
+                      renderInput({
+                        label: t("paymentDay"),
+                        name: "paymentDay",
+                        type: "number",
+                        placeholder: "1-30",
+                        icon: <Calendar size={18} />,
+                      })}
                   </div>
                 )}
 

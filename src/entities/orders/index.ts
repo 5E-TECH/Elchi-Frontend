@@ -16,6 +16,14 @@ export const useOrders = () => {
     },
   });
 
+  const createTransferBatch = useMutation({
+    mutationFn: (data: { orderIds: string[] }) =>
+      api.post(API_ENDPOINTS.BRANCHES.TRANSFER_BATCHES, data).then((res) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [orders] });
+    },
+  });
+
   const getTodayOrders = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [orders, params],
@@ -133,6 +141,7 @@ export const useOrders = () => {
 
   return {
     createReceiveOrder,
+    createTransferBatch,
     getTodayOrders,
     getTodayOrdersByMarket,
     getOrderById,
