@@ -48,6 +48,7 @@ interface CustomDatePickerProps {
     maxDate?: string;
     className?: string;
     size?: "sm" | "md";
+    variant?: "default" | "filter";
 }
 
 const CustomDatePicker = memo(({
@@ -58,6 +59,7 @@ const CustomDatePicker = memo(({
     maxDate,
     className = "",
     size = "md",
+    variant = "default",
 }: CustomDatePickerProps) => {
 
     const today = new Date();
@@ -195,27 +197,53 @@ const CustomDatePicker = memo(({
         };
     }, [open, popupWidth]);
 
+    const triggerClassName = variant === "filter"
+        ? `
+            flex items-center gap-2 w-full
+            rounded-xl border-2 border-[color:var(--color-border-strong)]
+            bg-[color:var(--color-sidebar)] px-3 py-2 text-sm font-semibold
+            transition-all duration-200
+            dark:border-white/10 dark:bg-white/7
+            ${open
+                ? "border-main ring-2 ring-main/10 text-maindark dark:text-white"
+                : "text-maindark dark:text-white hover:border-main/40"
+            }
+        `
+        : `
+            flex items-center gap-2 w-full
+            bg-white dark:bg-primarydark
+            border ${size === "sm" ? "rounded-lg px-3 py-2 text-[13px]" : "rounded-xl px-3 py-2 text-sm"}
+            font-medium transition-all duration-200
+            ${open
+                ? "border-main ring-2 ring-main/20 text-maindark dark:text-white"
+                : "border-gray-200 dark:border-white/15 text-maindark/60 dark:text-sidebar/80 hover:border-main/50"
+            }
+        `;
+
+    const iconClassName = variant === "filter"
+        ? (open ? "text-main" : "text-[color:var(--color-text-muted)] dark:text-white/55")
+        : (open ? "text-main" : "text-maindark/40 dark:text-sidebar/50");
+
+    const valueClassName = variant === "filter"
+        ? (value ? "text-maindark dark:text-white" : "text-[color:var(--color-text-muted)] dark:text-white/55")
+        : (value ? "text-maindark dark:text-white" : "text-maindark/50 dark:text-sidebar/60");
+
+    const clearClassName = variant === "filter"
+        ? "ml-1 cursor-pointer text-[color:var(--color-text-muted)] transition-colors hover:text-red-400 dark:text-white/45 dark:hover:text-red-400"
+        : "ml-1 text-maindark/30 hover:text-red-400 dark:text-sidebar/40 dark:hover:text-red-400 transition-colors cursor-pointer";
+
     return (
         <div ref={containerRef} className={`relative ${className}`}>
             <button
                 type="button"
                 onClick={handleToggle}
-                className={`
-                    flex items-center gap-2 w-full
-                    bg-white dark:bg-primarydark
-                    border ${size === "sm" ? "rounded-lg px-3 py-2 text-[13px]" : "rounded-xl px-3 py-2 text-sm"}
-                    font-medium transition-all duration-200
-                    ${open
-                        ? "border-main ring-2 ring-main/20 text-maindark dark:text-white"
-                        : "border-gray-200 dark:border-white/15 text-maindark/60 dark:text-sidebar/80 hover:border-main/50"
-                    }
-                `}
+                className={triggerClassName}
             >
                 <Calendar
                     size={size === "sm" ? 13 : 14}
-                    className={open ? "text-main" : "text-maindark/40 dark:text-sidebar/50"}
+                    className={iconClassName}
                 />
-                <span className={`flex-1 text-left truncate ${value ? "text-maindark dark:text-white" : "text-maindark/50 dark:text-sidebar/60"}`}>
+                <span className={`flex-1 text-left truncate ${valueClassName}`}>
                     {value ? formatDisplay(value) : placeholder}
                 </span>
 
@@ -226,7 +254,7 @@ const CustomDatePicker = memo(({
                         onClick={handleClear}
                         onKeyDown={handleClearKeyDown}
                         aria-label="Sanani tozalash"
-                        className="ml-1 text-maindark/30 hover:text-red-400 dark:text-sidebar/40 dark:hover:text-red-400 transition-colors cursor-pointer"
+                        className={clearClassName}
                     >
                         <X size={12} />
                     </span>

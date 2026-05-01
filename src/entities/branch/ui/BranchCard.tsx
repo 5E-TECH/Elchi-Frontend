@@ -1,13 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2, MapPin, Users } from "lucide-react";
+import { ArrowRight, Building2, MapPin, Users } from "lucide-react";
 import type { Branch } from "../model/types";
 import BranchStatusBadge from "./BranchStatusBadge";
 
 const BranchCard = ({ branch }: { branch: Branch }) => {
   const { t } = useTranslation("branches");
+  const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
+  const regionName = branch.region?.name ?? "—";
+  const districtName = branch.district?.name ?? "—";
+  const address = branch.address || "—";
+  const employeeCount = Number(branch.employees_count ?? 0);
 
   return (
     <button
@@ -41,10 +46,10 @@ const BranchCard = ({ branch }: { branch: Branch }) => {
               {t("fields.address")}
             </p>
             <p className="mt-1 text-sm leading-6 text-[var(--color-maindark)] dark:text-white/85">
-              {branch.address}
+              {address}
             </p>
             <p className="mt-1 text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-              {branch.region.name}, {branch.district.name}
+              {regionName}, {districtName}
             </p>
           </div>
         </div>
@@ -59,13 +64,21 @@ const BranchCard = ({ branch }: { branch: Branch }) => {
                 {t("table.employees")}
               </p>
               <p className="text-base font-bold text-[var(--color-maindark)] dark:text-white">
-                {t("list.employeeCount", { count: branch.employees_count })}
+                {t("list.employeeCount", { count: employeeCount })}
               </p>
             </div>
           </div>
-          <span className="rounded-full border border-[color:var(--color-border-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-main)] dark:border-primarydark/50 dark:text-white/85">
-            {t("actions.details")}
-          </span>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              navigate(`/branches/${branch.id}`);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-main)] transition-colors hover:border-[var(--color-main)] hover:bg-white/70 dark:border-primarydark/50 dark:text-white/85 dark:hover:bg-white/10"
+          >
+            {tCommon("open")}
+            <ArrowRight size={14} />
+          </button>
         </div>
       </div>
     </button>

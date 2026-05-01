@@ -20,7 +20,9 @@ export const Table = memo(<T extends Record<string, any>>({
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
-  const [viewportWidth, setViewportWidth] = useState<number>(window.innerWidth);
+  const [viewportWidth, setViewportWidth] = useState<number>(
+    typeof window !== "undefined" ? window.innerWidth : 1440,
+  );
 
   useEffect(() => {
     const element = wrapperRef.current;
@@ -44,6 +46,10 @@ export const Table = memo(<T extends Record<string, any>>({
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     const onResize = () => setViewportWidth(window.innerWidth);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -147,7 +153,7 @@ export const Table = memo(<T extends Record<string, any>>({
   if (loading) {
     return (
       <div
-        className="flex items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-12 dark:border-primarydark/60 dark:bg-maindark"
+        className="flex items-center justify-center rounded-2xl border border-[color:var(--color-border-strong)] bg-primary p-12 dark:border-primarydark/60 dark:bg-maindark"
       >
         <p className="text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
           {t("loading")}
@@ -159,7 +165,7 @@ export const Table = memo(<T extends Record<string, any>>({
   return (
     <div
       ref={wrapperRef}
-      className={`overflow-hidden rounded-2xl bg-primary shadow-sm dark:bg-white/[0.025] ${bordered ? 'border border-[color:var(--color-border-soft)] dark:border-white/10' : ''}`}
+      className={`overflow-hidden rounded-2xl bg-primary shadow-sm dark:bg-white/[0.025] ${bordered ? 'border border-[color:var(--color-border-strong)] dark:border-white/10' : ''}`}
     >
       <div className={`${isCardMode ? "overflow-visible" : "overflow-x-auto"} custom-scrollbar`}>
         <table className={`w-full min-w-full border-collapse ${isCompactMode ? 'table-fixed' : ''} ${className}`}>
@@ -208,17 +214,17 @@ export const Table = memo(<T extends Record<string, any>>({
                   className={
                     isCardMode
                       ? mobileRowRender
-                        ? `block border-b border-[color:var(--color-border-soft)] px-2 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
+                        ? `block border-b border-[color:var(--color-border-strong)] px-2 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
                         } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-white/[0.02] ${hoverable
                           ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.06]'
                           : ''
                         } last:border-b-0`
-                        : `block border-b border-[color:var(--color-border-soft)] px-2 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
+                        : `block border-b border-[color:var(--color-border-strong)] px-2 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
                         } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-white/[0.02] ${hoverable
                           ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.06]'
                           : ''
                         } last:border-b-0`
-                      : `table-row border-b border-[color:var(--color-border-soft)] dark:border-primarydark/30 ${hoverable ? 'transition-colors duration-200' : ''
+                      : `table-row border-b border-[color:var(--color-border-strong)] dark:border-primarydark/30 ${hoverable ? 'transition-colors duration-200' : ''
                       } ${onRowClick ? 'cursor-pointer' : ''} ${striped && rowIndex % 2 !== 0
                         ? 'bg-[color:var(--color-table-row-alt)] dark:bg-white/[0.045]'
                         : 'bg-primary dark:bg-white/[0.02]'

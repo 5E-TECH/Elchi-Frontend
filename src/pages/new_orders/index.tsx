@@ -20,7 +20,7 @@ const NewOrders = () => {
   }, [location.pathname]);
 
   return (
-    <div className="rounded-2xl bg-sidebar p-3 dark:bg-maindark sm:p-4 md:p-6">
+    <div className="rounded-2xl p-3 sm:p-4 md:p-6">
       <div className="mb-4">
         <HeaderName
           name={t("pageTitle")}

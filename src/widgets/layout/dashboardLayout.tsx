@@ -17,14 +17,14 @@ const DashboardLayout = () => {
       <Sidebar />
 
       {/* Main Content Wrapper */}
-      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-sidebar dark:bg-maindark">
+      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-[#eef1fb] dark:bg-[#211d34]">
 
         {/* Header - Sticky */}
         <Header onMenuClick={() => setIsMenuOpen(true)} />
 
         {/* Content */}
         <main
-          className={`el-surface-page mx-3 mb-0 flex-1 rounded-[1.55rem] p-4 pb-24 custom-scrollbar sm:mx-4 sm:mb-0 md:ml-0 md:mr-3 md:mb-0 md:p-6 md:pb-6 ${
+          className={`el-surface-page mx-3 mb-0 flex-1 rounded-[1.55rem] bg-[var(--color-page-surface)] p-4 pb-24 custom-scrollbar dark:bg-[#2b2741] sm:mx-4 sm:mb-0 md:ml-0 md:mr-3 md:mb-0 md:border-l-0 md:shadow-none md:p-6 md:pb-6 ${
             isBranchDashboard ? "overflow-y-auto xl:overflow-hidden" : "overflow-y-auto"
           }`}
         >

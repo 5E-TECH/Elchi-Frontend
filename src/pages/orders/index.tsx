@@ -251,7 +251,7 @@ const Orders = () => {
   };
 
   return (
-    <div className="rounded-2xl bg-sidebar p-3 sm:p-4 lg:p-6 dark:bg-maindark flex flex-col gap-4 sm:gap-5 min-h-full">
+    <div className="flex min-h-full flex-col gap-4 rounded-2xl p-3 sm:gap-5 sm:p-4 lg:p-6">
 
       {/* ── Header ── */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-4">

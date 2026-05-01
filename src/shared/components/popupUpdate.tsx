@@ -43,9 +43,9 @@ const UpdatePopup = ({
 
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className={`bg-sidebar dark:bg-maindark w-[92vw] ${widthClassName} rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200 dark:border-white/5`}>
+      <div className={`w-[92vw] ${widthClassName} rounded-3xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(246,248,255,0.99)_100%)] shadow-[0_30px_70px_rgba(46,54,98,0.18)] dark:bg-maindark flex flex-col max-h-[90vh] overflow-hidden`}>
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
+        <div className="flex justify-between items-center p-6 border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(124,92,255,0.08)_0%,rgba(124,92,255,0.02)_100%)] dark:border-white/5">
           <div className="flex items-center gap-3">
             {icon && <div className="text-main">{icon}</div>}
             <h3 className="text-xl font-semibold tracking-wide text-maindark dark:text-primary">{title}</h3>
@@ -57,14 +57,14 @@ const UpdatePopup = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-sidebar dark:bg-maindark">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-transparent dark:bg-maindark">
           {/* Universal Image Update Section */}
           {imageProps && (
             <div className="space-y-2">
               <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">
                 {imageProps.label}
               </label>
-              <label className="relative h-44 rounded-2xl overflow-hidden border border-dashed border-gray-200 dark:border-white/10 group cursor-pointer flex flex-col items-center justify-center bg-gray-50 dark:bg-white/2 hover:bg-gray-100 dark:hover:bg-white/4 transition-all">
+              <label className="relative h-44 rounded-2xl overflow-hidden border border-dashed border-[color:var(--color-border-soft)] dark:border-white/10 group cursor-pointer flex flex-col items-center justify-center bg-[var(--color-main-soft)] dark:bg-white/2 hover:bg-white dark:hover:bg-white/4 transition-all">
                 <input
                   type="file"
                   className="hidden"
@@ -100,11 +100,11 @@ const UpdatePopup = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 flex gap-4 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/2">
+        <div className="p-6 flex gap-4 border-t border-[color:var(--color-border-soft)] dark:border-white/5 bg-[linear-gradient(180deg,rgba(124,92,255,0.04)_0%,rgba(255,255,255,0.82)_100%)] dark:bg-white/2">
           <Button
             label={resolvedCancelLabel}
             onClick={onClose}
-            className="flex-1 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 bg-transparent py-3"
+            className="flex-1 border border-[color:var(--color-border-soft)] dark:border-white/10 text-maindark dark:text-gray-300 hover:bg-[var(--color-main-soft)] dark:hover:bg-white/5 bg-white/75 dark:bg-transparent py-3"
           />
           <Button
             label={isLoading ? t("submitting") : resolvedSaveLabel}

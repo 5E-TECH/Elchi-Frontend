@@ -10,7 +10,7 @@ const CreateUserPage = memo(() => {
     const { t } = useTranslation("users");
 
     return (
-        <div className="rounded-2xl bg-sidebar dark:bg-maindark">
+        <div className="rounded-2xl">
             <div className="cursor-pointer px-3 py-3 sm:px-4 sm:py-4 md:px-5" onClick={() => navigate(-1)}>
                 <HeaderName
                     name={t("createNewUser")}

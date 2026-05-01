@@ -33,7 +33,7 @@ const BatchDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-full rounded-2xl bg-sidebar p-4 md:p-6 dark:bg-maindark">
+      <div className="min-h-full rounded-2xl p-4 md:p-6">
         <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
           Yuklanmoqda...
         </div>
@@ -43,7 +43,7 @@ const BatchDetailPage = () => {
 
   if (isError || !batch) {
     return (
-      <div className="min-h-full rounded-2xl bg-sidebar p-4 md:p-6 dark:bg-maindark">
+      <div className="min-h-full rounded-2xl p-4 md:p-6">
         <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
           Paket topilmadi
         </div>
@@ -52,7 +52,7 @@ const BatchDetailPage = () => {
   }
 
   return (
-    <div className="min-h-full rounded-2xl bg-sidebar p-4 md:p-6 dark:bg-maindark">
+    <div className="min-h-full rounded-2xl p-4 md:p-6">
       <BatchPrintSheet batch={batch} />
 
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

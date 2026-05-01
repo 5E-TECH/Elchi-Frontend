@@ -1,11 +1,33 @@
 // src/store/sidebarSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-// localStorage'dan holatni o'qib olish
-const storedSidebar = localStorage.getItem("sidebarIsOpen");
+const getStoredSidebarState = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    const storedSidebar = window.localStorage.getItem("sidebarIsOpen");
+    return storedSidebar ? JSON.parse(storedSidebar) : false;
+  } catch {
+    return false;
+  }
+};
+
+const persistSidebarState = (value: boolean) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem("sidebarIsOpen", JSON.stringify(value));
+  } catch {
+    // Ignore storage failures and keep sidebar usable.
+  }
+};
 
 const initialState = {
-  isOpen: storedSidebar ? JSON.parse(storedSidebar) : false,
+  isOpen: getStoredSidebarState(),
 };
 
 const sidebarSlice = createSlice({
@@ -14,20 +36,20 @@ const sidebarSlice = createSlice({
   reducers: {
     openSidebar(state) {
       state.isOpen = true;
-      localStorage.setItem("sidebarIsOpen", JSON.stringify(true));
+      persistSidebarState(true);
     },
     closeSidebar(state) {
       state.isOpen = false;
-      localStorage.setItem("sidebarIsOpen", JSON.stringify(false));
+      persistSidebarState(false);
     },
     toggleSidebar(state) {
       state.isOpen = !state.isOpen;
-      localStorage.setItem("sidebarIsOpen", JSON.stringify(state.isOpen));
+      persistSidebarState(state.isOpen);
     },
     setSidebar(state, action) {
       const value = !!action.payload;
       state.isOpen = value;
-      localStorage.setItem("sidebarIsOpen", JSON.stringify(value));
+      persistSidebarState(value);
     },
   },
 });

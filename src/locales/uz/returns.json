@@ -1,0 +1,25 @@
+{
+  "title": "Return batchlar",
+  "description": "Filial bo'yicha qaytish oqimidagi paketlar ro'yxati",
+  "totalBatches": "{{count}} paket",
+  "empty": "Qaytarish paketlari topilmadi",
+  "columns": {
+    "id": "ID",
+    "from": "Filialdan",
+    "to": "Qayerga",
+    "ordersCount": "Nechta order",
+    "totalPrice": "Umumiy narx",
+    "status": "Holat",
+    "createdAt": "Yaratilgan vaqt"
+  },
+  "filters": {
+    "status": "Holat",
+    "allStatuses": "Barchasi",
+    "from": "Dan",
+    "to": "Gacha"
+  },
+  "messages": {
+    "branchMissing": "Joriy foydalanuvchiga filial biriktirilmagan",
+    "loadFailed": "Return batchlar ro'yxatini yuklab bo'lmadi"
+  }
+}

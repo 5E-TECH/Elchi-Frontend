@@ -35,6 +35,35 @@ const authClient = axios.create({
 });
 
 let initPromise: Promise<void> | null = null;
+const LOGOUT_SKIP_REFRESH_KEY = "elchi_skip_refresh_once";
+
+const markLogoutSkipRefresh = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(LOGOUT_SKIP_REFRESH_KEY, "1");
+  } catch {
+    // Ignore storage failures and continue logout flow.
+  }
+};
+
+const consumeLogoutSkipRefresh = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    const shouldSkip = window.sessionStorage.getItem(LOGOUT_SKIP_REFRESH_KEY) === "1";
+    if (shouldSkip) {
+      window.sessionStorage.removeItem(LOGOUT_SKIP_REFRESH_KEY);
+    }
+    return shouldSkip;
+  } catch {
+    return false;
+  }
+};
 
 const syncUserContext = (user: AuthenticatedUser) => {
   store.dispatch(setProfile(user));
@@ -117,8 +146,17 @@ export const login = async (credentials: LoginCredentials) => {
 };
 
 export const logout = async () => {
+  markLogoutSkipRefresh();
+  const accessToken = tokenStorage.getAccessToken();
+
   try {
-    await authClient.post(API_ENDPOINTS.AUTH.LOGOUT, {});
+    await authClient.post(API_ENDPOINTS.AUTH.LOGOUT, {}, {
+      headers: accessToken
+        ? {
+            Authorization: `Bearer ${accessToken}`,
+          }
+        : undefined,
+    });
   } catch {
     // Backend logout endpoint may be unavailable in some environments.
   } finally {
@@ -141,6 +179,11 @@ export const initAuth = async () => {
     store.dispatch(setAppInitializing(true));
 
     try {
+      if (consumeLogoutSkipRefresh()) {
+        resetClientAuthState();
+        return;
+      }
+
       let accessToken = tokenStorage.getAccessToken();
 
       if (!accessToken) {

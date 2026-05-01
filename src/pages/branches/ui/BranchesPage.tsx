@@ -11,21 +11,38 @@ import { BranchListWidget } from "../../../widgets/branch-list";
 type ViewMode = "table" | "card" | "tree";
 
 const STORAGE_KEY = "branches-view-mode";
+const getStoredViewMode = (): ViewMode => {
+  if (typeof window === "undefined") {
+    return "tree";
+  }
+
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    return saved === "table" || saved === "card" || saved === "tree" ? saved : "tree";
+  } catch {
+    return "tree";
+  }
+};
 
 const BranchesPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved === "table" || saved === "card" || saved === "tree" ? saved : "tree";
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, viewMode);
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(STORAGE_KEY, viewMode);
+    } catch {
+      // Ignore storage failures and keep UI usable.
+    }
   }, [viewMode]);
 
   return (
-    <div className="min-h-full rounded-2xl bg-sidebar p-4 md:p-6 dark:bg-maindark">
+    <div className="min-h-full rounded-2xl p-4 md:p-6">
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderName
           name="Filiallar"
@@ -46,12 +63,14 @@ const BranchesPage = () => {
         onEdit={(branch) => setEditingBranch(branch)}
       />
 
-      <BranchFormModal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
-      <BranchEditModal
-        open={Boolean(editingBranch)}
-        initialData={editingBranch}
-        onClose={() => setEditingBranch(null)}
-      />
+      {isCreateOpen ? <BranchFormModal open onClose={() => setIsCreateOpen(false)} /> : null}
+      {editingBranch ? (
+        <BranchEditModal
+          open
+          initialData={editingBranch}
+          onClose={() => setEditingBranch(null)}
+        />
+      ) : null}
     </div>
   );
 };

@@ -1,0 +1,25 @@
+{
+  "title": "Return batches",
+  "description": "List of return-flow packages for the current branch",
+  "totalBatches": "{{count}} batch",
+  "empty": "No return batches found",
+  "columns": {
+    "id": "ID",
+    "from": "From branch",
+    "to": "Destination",
+    "ordersCount": "Orders count",
+    "totalPrice": "Total price",
+    "status": "Status",
+    "createdAt": "Created time"
+  },
+  "filters": {
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "from": "From",
+    "to": "To"
+  },
+  "messages": {
+    "branchMissing": "No branch is assigned to the current user",
+    "loadFailed": "Could not load return batches"
+  }
+}
