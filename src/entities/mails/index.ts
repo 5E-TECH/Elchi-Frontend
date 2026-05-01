@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../app/config/store";
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 const MAILS_KEY = "mails";
@@ -161,6 +163,16 @@ interface GetOldMailsParams {
   limit?: number;
 }
 
+export const BRANCH_TRANSFER_BATCH_STATUS = {
+  PENDING: "PENDING",
+  SENT: "SENT",
+  RECEIVED: "RECEIVED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type BranchTransferBatchStatus =
+  (typeof BRANCH_TRANSFER_BATCH_STATUS)[keyof typeof BRANCH_TRANSFER_BATCH_STATUS];
+
 // ─── Mail list item (post/new, post/old, post/rejected) ───────────────────────
 export interface MailItem {
   id: string;
@@ -175,12 +187,143 @@ export interface MailItem {
   status: string;
 }
 
+interface TransferBatchListResponse {
+  data: {
+    data?: any[];
+    items?: any[];
+    total?: number;
+    page?: number;
+    totalPages?: number;
+    limit?: number;
+    meta?: {
+      total?: number;
+      page?: number;
+      totalPages?: number;
+      limit?: number;
+    };
+  };
+}
+
+const isBranchMailRole = (role?: string | null) =>
+  role === "manager" || role === "registrator";
+
+const toText = (value: unknown, fallback = ""): string => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number") return String(value);
+  return fallback;
+};
+
+const toNumber = (value: unknown, fallback = 0): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const mapTransferBatchToMailItem = (batch: any): MailItem => {
+  const sourceBranch = batch?.source_branch ?? batch?.from_branch ?? batch?.sourceBranch ?? batch?.fromBranch;
+  const destinationBranch = batch?.destination_branch ?? batch?.to_branch ?? batch?.destinationBranch ?? batch?.toBranch;
+  const region = batch?.region;
+  const regionName = toText(
+    region?.name ??
+      destinationBranch?.name ??
+      destinationBranch?.title ??
+      sourceBranch?.name ??
+      sourceBranch?.title,
+    "Filial",
+  );
+  const regionId = toText(region?.id ?? batch?.target_region_id ?? destinationBranch?.id ?? sourceBranch?.id ?? "branch");
+
+  return {
+    id: toText(batch?.id ?? batch?._id),
+    createdAt: toText(batch?.createdAt ?? batch?.created_at, new Date().toISOString()),
+    updatedAt: toText(batch?.updatedAt ?? batch?.updated_at ?? batch?.createdAt, new Date().toISOString()),
+    courier_id: "",
+    post_total_price: toNumber(batch?.total_price ?? batch?.totalPrice ?? batch?.amount),
+    order_quantity: toNumber(
+      batch?.order_count ??
+        batch?.orders_count ??
+        batch?.ordersCount ??
+        batch?.items?.length ??
+        batch?.orders?.length,
+    ),
+    qr_code_token: toText(batch?.qr_code_token ?? batch?.qrCodeToken ?? batch?.token),
+    region_id: regionId,
+    region: {
+      id: regionId,
+      name: regionName,
+      sato_code: toText(region?.sato_code),
+    },
+    status: toText(batch?.status),
+  };
+};
+
+const toPaginatedMailResponse = (
+  payload: TransferBatchListResponse | any,
+): PaginatedPostsResponse => {
+  const container = payload?.data ?? payload;
+  const rawItems = container?.data ?? container?.items ?? [];
+  const items = Array.isArray(rawItems) ? rawItems.map(mapTransferBatchToMailItem) : [];
+  const total = toNumber(container?.meta?.total ?? container?.total, items.length);
+  const page = toNumber(container?.meta?.page ?? container?.page, 1);
+  const totalPages = toNumber(container?.meta?.totalPages ?? container?.totalPages, 1);
+  const limit = toNumber(container?.meta?.limit ?? container?.limit, 8);
+
+  return {
+    statusCode: 200,
+    message: "ok",
+    data: {
+      data: items,
+      total,
+      page,
+      totalPages,
+      limit,
+    },
+  };
+};
+
+const createEmptyPaginatedMailResponse = (): PaginatedPostsResponse => ({
+  statusCode: 200,
+  message: "ok",
+  data: {
+    data: [],
+    total: 0,
+    page: 1,
+    totalPages: 1,
+    limit: 8,
+  },
+});
+
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 export const useMails = () => {
+  const role = useSelector((state: RootState) => state.role.role);
+  const branchId = useSelector((state: RootState) => state.user.user?.branch_id);
+  const branchRole = isBranchMailRole(role);
+
+  const getBranchTransferBatches = (
+    status: BranchTransferBatchStatus,
+    queryParams?: GetOldMailsParams,
+  ) =>
+    api
+      .get(API_ENDPOINTS.BATCHES.BASE, {
+        params: {
+          status,
+          page: queryParams?.page ?? 1,
+          limit: queryParams?.limit ?? 8,
+          ...(branchId
+            ? status === BRANCH_TRANSFER_BATCH_STATUS.RECEIVED
+              ? { destination_branch_id: branchId }
+              : { source_branch_id: branchId }
+            : {}),
+        },
+      })
+      .then((res) => toPaginatedMailResponse(res.data));
+
   const getNewMails = () =>
     useQuery({
-      queryKey: [MAILS_KEY, "new"],
-      queryFn: () => api.get(API_ENDPOINTS.POSTS.NEW).then((res) => res.data),
+      queryKey: [MAILS_KEY, "new", role, branchId],
+      queryFn: () =>
+        branchRole
+          ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.PENDING)
+          : api.get(API_ENDPOINTS.POSTS.NEW).then((res) => res.data),
     });
 
   const getNewMailsCourier = () =>
@@ -205,8 +348,20 @@ export const useMails = () => {
 
   const getRefusedMails = () =>
     useQuery({
-      queryKey: [MAILS_KEY, "refused"],
-      queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
+      queryKey: [MAILS_KEY, "refused", role, branchId],
+      queryFn: () =>
+        branchRole
+          ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.CANCELLED)
+          : api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
+    });
+
+  const getReturnMails = () =>
+    useQuery<PaginatedPostsResponse>({
+      queryKey: [MAILS_KEY, "return", role, branchId],
+      queryFn: () =>
+        branchRole
+          ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.SENT)
+          : Promise.resolve(createEmptyPaginatedMailResponse()),
     });
 
   const getRefusedMailsCourier = () =>
@@ -220,24 +375,29 @@ export const useMails = () => {
       queryKey: [
         MAILS_KEY,
         "old",
+        role,
+        branchId,
         isCourier ? "courier" : "default",
         params?.page ?? 1,
         params?.limit ?? 8,
       ],
       queryFn: () =>
-        api
-          .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
-            params: {
-              page: params?.page ?? 1,
-              limit: params?.limit ?? 8,
-            },
-          })
-          .then((res) => res.data),
+        branchRole
+          ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.RECEIVED, params)
+          : api
+            .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
+              params: {
+                page: params?.page ?? 1,
+                limit: params?.limit ?? 8,
+              },
+            })
+            .then((res) => res.data),
     });
 
   return {
     getNewMails,
     getRefusedMails,
+    getReturnMails,
     getOldMails,
     getNewMailsCourier,
     getTodayMailsCourier,

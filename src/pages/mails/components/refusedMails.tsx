@@ -42,15 +42,16 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
   const { role } = useSelector((state: RootState) => state.role);
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const courierName = item.courier?.name;
+  const openDetail = () =>
+    navigate(`/mails/${item.id}`, { state: { fromTab: "refused", type: "refused" } });
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}`, { state: { fromTab: "refused", type: "refused" } })}
+      onClick={openDetail}
       onKeyDown={(e) =>
-        e.key === "Enter" &&
-        navigate(`/mails/${item.id}`, { state: { fromTab: "refused", type: "refused" } })
+        e.key === "Enter" && openDetail()
       }
       className="group relative overflow-hidden rounded-2xl cursor-pointer"
       style={{

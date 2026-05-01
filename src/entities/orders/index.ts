@@ -17,7 +17,7 @@ export const useOrders = () => {
   });
 
   const createTransferBatch = useMutation({
-    mutationFn: (data: { order_ids: string[] }) =>
+    mutationFn: (data: { orderIds: string[] }) =>
       api.post(API_ENDPOINTS.BRANCHES.TRANSFER_BATCHES, data).then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [orders] });

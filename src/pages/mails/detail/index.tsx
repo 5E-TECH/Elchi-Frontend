@@ -11,6 +11,7 @@ import {
   useReceivePost,
   useSendPost,
 } from "../../../entities/mails";
+import { useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
 import HeaderName from "../../../shared/components/headerName";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
 
@@ -83,6 +84,7 @@ const MailDetailPage = () => {
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
   const isSuperAdmin = role === "superadmin";
+  const isBranchTransferRole = role === "manager" || role === "registrator";
   const navState = location.state as {
     fromTab?: string;
     type?: string;
@@ -106,12 +108,19 @@ const MailDetailPage = () => {
     isLoading: regularLoading,
     isError: regularError,
     refetch: refetchRegularDetail,
-  } = useMailDetail(isRefusedDetail ? "" : postId ?? "");
+  } = useMailDetail(!isBranchTransferRole && !isRefusedDetail ? postId ?? "" : "");
   const {
     data: refusedResponse,
     isLoading: refusedLoading,
     isError: refusedError,
   } = getRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
+  const {
+    data: transferBatchResponse,
+    isLoading: transferBatchLoading,
+    isError: transferBatchError,
+    refetch: refetchTransferBatchDetail,
+  } = useBatchRemainingDetail(isBranchTransferRole ? postId : undefined);
+  const sendTransferBatch = useSendTransferBatch();
   const { apiRequest, api: notifApi } = useAppNotification();
 
   // URL ni tozalash: /mails/:id?from=... -> /mails/:id (state orqali saqlab qolamiz)
@@ -125,13 +134,77 @@ const MailDetailPage = () => {
   }, []);
 
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
-  const rawOrders = useMemo<PostOrder[]>(
-    () =>
-      isRefusedDetail
-        ? refusedResponse?.data ?? []
-        : regularResponse?.data?.allOrdersByPostId ?? [],
-    [isRefusedDetail, refusedResponse, regularResponse],
-  );
+  const rawOrders = useMemo<PostOrder[]>(() => {
+    if (isBranchTransferRole) {
+      const batchOrders = transferBatchResponse?.orders ?? [];
+
+      return batchOrders.map((order) => ({
+        id: order.id,
+        createdAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
+        updatedAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
+        isDeleted: false,
+        market_id: "batch-market",
+        customer_id: `batch-customer-${order.id}`,
+        product_quantity: 0,
+        where_deliver: "address",
+        total_price: order.price,
+        to_be_paid: order.price,
+        paid_amount: 0,
+        status: "new",
+        comment: null,
+        operator: null,
+        post_id: null,
+        canceled_post_id: null,
+        sold_at: null,
+        district_id: "batch-district",
+        region_id: transferBatchResponse?.to_branch?.id ?? "batch-region",
+        address: order.address,
+        qr_code_token: transferBatchResponse?.token ?? null,
+        external_id: null,
+        deleted: false,
+        items: [],
+        customer: {
+          id: `batch-customer-${order.id}`,
+          name: order.receiver,
+          phone_number: order.phone,
+          extra_number: null,
+          username: "",
+          salary: 0,
+          payment_day: null,
+          role: "customer",
+          status: "active",
+          tariff_home: null,
+          tariff_center: null,
+          add_order: false,
+          default_tariff: null,
+          createdAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
+          updatedAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
+          is_deleted: false,
+        },
+        district: {
+          id: "batch-district",
+          name: transferBatchResponse?.to_branch?.name ?? "Filial",
+          sato_code: "",
+          region_id: transferBatchResponse?.to_branch?.id ?? "batch-region",
+          assigned_region: transferBatchResponse?.to_branch?.name ?? "Filial",
+          createdAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
+          updatedAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
+        },
+        region: {
+          id: transferBatchResponse?.to_branch?.id ?? "batch-region",
+          name: transferBatchResponse?.to_branch?.name ?? "Filial",
+          sato_code: "",
+          districts: [],
+          createdAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
+          updatedAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
+        },
+      }));
+    }
+
+    return isRefusedDetail
+      ? refusedResponse?.data ?? []
+      : regularResponse?.data?.allOrdersByPostId ?? [];
+  }, [isBranchTransferRole, transferBatchResponse, isRefusedDetail, refusedResponse, regularResponse]);
   const orders = useMemo(
     () => rawOrders.filter((order) => !sentOrderIds.has(order.id)),
     [rawOrders, sentOrderIds],
@@ -180,12 +253,15 @@ const MailDetailPage = () => {
   // ─── Region nomi ──────────────────────────────────────────────────────────
   const regionName = useMemo(
     () =>
+      (isBranchTransferRole
+        ? transferBatchResponse?.to_branch?.name
+        : null) ??
       orders[0]?.district?.region?.name ??
       orders[0]?.region?.name ??
       (isRefusedDetail
         ? t("refusedMailNumber", { id: postId })
         : t("mailNumberWithId", { id: postId })),
-    [orders, postId, isRefusedDetail, t],
+    [isBranchTransferRole, transferBatchResponse, orders, postId, isRefusedDetail, t],
   );
 
   // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
@@ -283,6 +359,25 @@ const MailDetailPage = () => {
 
   // ─── Modal ochish (Send — courier bo'lmaganlar uchun) ─────────────────────
   const handleSend = useCallback(() => {
+    if (isBranchTransferRole) {
+      if (selectedIds.size === 0 || !postId || sendTransferBatch.isPending) return;
+
+      apiRequest({
+        request: () =>
+          sendTransferBatch.mutateAsync({
+            batchId: postId,
+            orderIds: Array.from(selectedIds),
+          }),
+        successMessage: "Batch asosiy filialga yuborildi",
+        errorMessage: "Batch yuborishda xatolik bo'ldi",
+        onSuccess: async () => {
+          clearSelection();
+          await refetchTransferBatchDetail();
+        },
+      });
+      return;
+    }
+
     if (selectedIds.size === 0 || !postId || !regionId || isCheckingCouriers) return;
 
     setIsCheckingCouriers(true);
@@ -330,7 +425,19 @@ const MailDetailPage = () => {
       .finally(() => {
         setIsCheckingCouriers(false);
       });
-  }, [selectedIds, postId, regionId, isCheckingCouriers, apiRequest, sendPost, handleSendSuccess]);
+  }, [
+    isBranchTransferRole,
+    selectedIds,
+    postId,
+    sendTransferBatch,
+    apiRequest,
+    clearSelection,
+    refetchTransferBatchDetail,
+    regionId,
+    isCheckingCouriers,
+    sendPost,
+    handleSendSuccess,
+  ]);
 
   const selectedOrders = useMemo(
     () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
@@ -400,7 +507,7 @@ const MailDetailPage = () => {
   }, [deleteTargetIds, apiRequest, SendToPost, t, clearSelection, refetchRegularDetail, navigate]);
 
   // ─── Loading ──────────────────────────────────────────────────────────────
-  if (regularLoading || refusedLoading)
+  if (regularLoading || refusedLoading || transferBatchLoading)
     return (
       <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
         <MailDetailSkeleton />
@@ -408,7 +515,7 @@ const MailDetailPage = () => {
     );
 
   // ─── Error ────────────────────────────────────────────────────────────────
-  if (regularError || refusedError)
+  if (regularError || refusedError || transferBatchError)
     return (
       <div className="p-6 rounded-2xl bg-sidebar dark:bg-maindark">
         <ErrorState />
@@ -484,13 +591,17 @@ const MailDetailPage = () => {
             mode={isRefusedDetail ? "receive" : "send"}
             onSend={handleSend}
             onReceive={handleReceive}
-            isBusy={!isCourier && !isRefusedDetail && isCheckingCouriers}
+            isBusy={
+              !isCourier &&
+              !isRefusedDetail &&
+              (isBranchTransferRole ? sendTransferBatch.isPending : isCheckingCouriers)
+            }
           />
         </div>
       )}
 
       {/* Pochta jo'natish modali — faqat courier bo'lmaganlar uchun */}
-      {!isCourier && !isRefusedDetail && !isOldDetail && (
+      {!isCourier && !isRefusedDetail && !isOldDetail && !isBranchTransferRole && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

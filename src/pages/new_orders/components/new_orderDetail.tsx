@@ -107,7 +107,7 @@ const NewOrderDetail = () => {
 
     pendingScanOrderIdsRef.current.add(orderId);
     receiveMutation.mutate(
-      { order_ids: [orderId] },
+      { orderIds: [orderId] },
       {
         onSuccess: () => {
           setReceivedOrderIds((prev) => {
@@ -183,7 +183,7 @@ const NewOrderDetail = () => {
     // lekin closure eski qiymatni ko'radi — shuning uchun oldindan saqlaymiz
     const ids = [...selectedIds];
     const isAll = ids.length === orders.length;
-    receiveMutation.mutate({ order_ids: ids }, {
+    receiveMutation.mutate({ orderIds: ids }, {
       onSuccess: () => {
         setReceivedOrderIds((prev) => {
           const next = new Set(prev);

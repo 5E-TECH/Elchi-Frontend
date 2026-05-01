@@ -72,19 +72,18 @@ const OldMailCard = memo(({ item }: { item: MailItem }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const status = getStatusMeta(item.status);
+  const openDetail = () =>
+    navigate(`/mails/${item.id}`, {
+      state: { fromTab: "old", view: "old", fromSearch: location.search },
+    });
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}`, {
-        state: { fromTab: "old", view: "old", fromSearch: location.search },
-      })}
+      onClick={openDetail}
       onKeyDown={(e) =>
-        e.key === "Enter" &&
-        navigate(`/mails/${item.id}`, {
-          state: { fromTab: "old", view: "old", fromSearch: location.search },
-        })
+        e.key === "Enter" && openDetail()
       }
       className="group relative overflow-hidden rounded-[22px] border border-slate-500/20 cursor-pointer"
       style={{
