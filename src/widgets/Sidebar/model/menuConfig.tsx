@@ -83,7 +83,6 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
-    { to: "/batches", icon: PackageCheck, label: "batches" },
   ],
   operator: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },

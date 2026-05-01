@@ -42,15 +42,16 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
   // API dan to'g'ridan-to'g'ri region.name olamiz
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const { role } = useSelector((state: RootState) => state.role);
+  const openDetail = () => navigate(`/mails/${item.id}`, { state: { fromTab: "today" } });
   // console.log(role, region);
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/mails/${item.id}`, { state: { fromTab: "today" } })}
+      onClick={openDetail}
       onKeyDown={(e) =>
-        e.key === "Enter" && navigate(`/mails/${item.id}`, { state: { fromTab: "today" } })
+        e.key === "Enter" && openDetail()
       }
       className="mail-card group relative overflow-hidden rounded-2xl cursor-pointer"
     >

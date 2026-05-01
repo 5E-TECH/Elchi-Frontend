@@ -74,6 +74,8 @@ export const API_ENDPOINTS = {
   BATCHES: {
     BASE: "transfer-batches",
     BY_ID: (id: string | number) => `transfer-batches/${id}`,
+    REMAINING: (id: string | number) => `transfer-batches/${id}/remaining`,
+    SEND: (id: string | number) => `transfer-batches/${id}/send`,
     QR_CODE: (token: string | number) => `packages/qr-code/${token}`,
   },
   CASHBOX: {
@@ -124,6 +126,7 @@ export const API_ENDPOINTS = {
   },
   BRANCHES: {
     BASE: "branches",
+    TRANSFER_BATCHES: "branches/transfer-batches",
     BY_ID: (id: string | number) => `branches/${id}`,
     USERS: (id: string | number) => `branches/${id}/users`,
     EMPLOYEES: (id: string | number) => `branches/${id}/employees`,

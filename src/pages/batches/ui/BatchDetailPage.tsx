@@ -1,11 +1,11 @@
 import { memo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, MapPin, PackageCheck, Printer, QrCode, Truck } from "lucide-react";
+import { ArrowLeft, CheckSquare, MapPin, PackageCheck, Printer, QrCode, Square, Truck } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import { useBatchDetail, type BatchOrder } from "../../../entities/batch";
+import { useBatchDetail, useSendTransferBatch, type BatchOrder } from "../../../entities/batch";
 import {
   batchDirectionLabel,
   batchStatusClass,
@@ -15,6 +15,10 @@ import {
   getBatchQrUrl,
 } from "../lib/batchFormat";
 import BatchPrintSheet from "./BatchPrintSheet";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
+import { useBranchDetail } from "../../../entities/branch";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 
 const orderColumns: ColumnConfig<BatchOrder>[] = [
   { key: "id", label: "Order ID", render: (value) => <span className="font-black">{String(value)}</span> },
@@ -29,7 +33,20 @@ const BatchDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: batch, isLoading, isError } = useBatchDetail(id);
+  const sendBatch = useSendTransferBatch();
+  const { apiRequest } = useAppNotification();
+  const role = useSelector((state: RootState) => state.role.role);
+  const branchId = useSelector((state: RootState) => state.user.user?.branch_id);
+  const { data: branch } = useBranchDetail(branchId ?? undefined);
   const [qrFailed, setQrFailed] = useState(false);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+
+  const isBranchManager = role === "manager";
+  const isBranchRegistrator = role === "registrator" && branch?.type !== "HQ";
+  const canSendToMainBranch = batch?.status === "new" && (isBranchManager || isBranchRegistrator);
+  const isAllSelected = batch?.orders.length
+    ? selectedOrderIds.size === (batch?.orders.length ?? 0)
+    : false;
 
   if (isLoading) {
     return (
@@ -50,6 +67,65 @@ const BatchDetailPage = () => {
       </div>
     );
   }
+
+  const toggleOne = (orderId: string) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (isAllSelected) {
+      setSelectedOrderIds(new Set());
+      return;
+    }
+
+    setSelectedOrderIds(new Set(batch.orders.map((order) => order.id)));
+  };
+
+  const handleSend = () => {
+    if (!id || selectedOrderIds.size === 0 || sendBatch.isPending) return;
+
+    apiRequest({
+      request: () =>
+        sendBatch.mutateAsync({
+          batchId: id,
+          orderIds: Array.from(selectedOrderIds),
+        }),
+      successMessage: "Batch asosiy filialga yuborildi",
+      errorMessage: "Batch yuborishda xatolik bo'ldi",
+      onSuccess: () => {
+        setSelectedOrderIds(new Set());
+      },
+    });
+  };
+
+  const selectedCount = selectedOrderIds.size;
+  const selectableOrderColumns: ColumnConfig<BatchOrder>[] = canSendToMainBranch
+    ? [
+        {
+          key: "id",
+          label: "",
+          render: (_, row) => (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                toggleOne(row.id);
+              }}
+              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-[color:var(--color-border-soft)] bg-primary text-main"
+              aria-label="Order tanlash"
+            >
+              {selectedOrderIds.has(row.id) ? <CheckSquare size={14} /> : <Square size={14} />}
+            </button>
+          ),
+        },
+        ...orderColumns,
+      ]
+    : orderColumns;
 
   return (
     <div className="min-h-full rounded-2xl bg-sidebar p-4 md:p-6 dark:bg-maindark">
@@ -115,13 +191,44 @@ const BatchDetailPage = () => {
           </section>
 
           <section>
-            <h3 className="mb-3 text-lg font-black text-maindark dark:text-white">Ichidagi orderlar</h3>
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-lg font-black text-maindark dark:text-white">Ichidagi orderlar</h3>
+              {canSendToMainBranch ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleAll}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[color:var(--color-border-soft)] bg-primary px-3 py-2 text-xs font-semibold text-[color:var(--color-text-muted)]"
+                  >
+                    {isAllSelected ? <CheckSquare size={14} /> : <Square size={14} />}
+                    Barchasini tanlash
+                  </button>
+                  {selectedCount > 0 ? (
+                    <span className="text-xs font-semibold text-main">{selectedCount} ta tanlandi</span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
             <Table
               data={batch.orders}
-              columns={orderColumns}
+              columns={selectableOrderColumns}
               keyExtractor={(row) => row.id}
               emptyMessage="Order topilmadi"
             />
+            {canSendToMainBranch ? (
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={selectedCount === 0 || sendBatch.isPending}
+                className={`mt-4 flex w-full items-center justify-center gap-2.5 rounded-2xl px-6 py-4 text-base font-semibold transition-all duration-200 ${
+                  selectedCount > 0 && !sendBatch.isPending
+                    ? "cursor-pointer bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-600"
+                    : "cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-white/10 dark:text-white/30"
+                }`}
+              >
+                {sendBatch.isPending ? "Yuborilmoqda..." : "Asosiy filialga jo'natish"}
+              </button>
+            ) : null}
           </section>
 
           <section className="rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-sm dark:bg-primarydark">

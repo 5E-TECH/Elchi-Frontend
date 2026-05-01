@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type {
@@ -62,17 +62,42 @@ const normalizeBranch = (value: any, fallback = "—"): BatchBranch => ({
 });
 
 const normalizeOrder = (order: any, index: number): BatchOrder => ({
-  id: toText(order?.id ?? order?._id ?? order?.order_id, `ORD-${index + 1}`),
+  id: toText(
+    order?.order?.id ??
+      order?.id ??
+      order?._id ??
+      order?.order_id,
+    `ORD-${index + 1}`,
+  ),
   receiver: toText(
+    order?.order?.customer?.name ??
+      order?.order?.receiver ??
     order?.receiver ??
       order?.customer?.name ??
       order?.customer?.fullName ??
       order?.customer_name,
   ),
-  phone: toText(order?.phone ?? order?.customer?.phone_number ?? order?.customer?.phone, ""),
-  address: toText(order?.address ?? order?.delivery_address ?? order?.location),
-  price: toNumber(order?.price ?? order?.total_price ?? order?.amount),
-  status: toText(order?.status),
+  phone: toText(
+    order?.order?.customer?.phone_number ??
+      order?.phone ??
+      order?.customer?.phone_number ??
+      order?.customer?.phone,
+    "",
+  ),
+  address: toText(
+    order?.order?.address ??
+      order?.address ??
+      order?.delivery_address ??
+      order?.location,
+  ),
+  price: toNumber(
+    order?.order?.total_price ??
+      order?.snapshot_price ??
+      order?.price ??
+      order?.total_price ??
+      order?.amount,
+  ),
+  status: toText(order?.order?.status ?? order?.status),
 });
 
 const normalizeHistoryItem = (
@@ -93,7 +118,15 @@ const normalizeBatch = (raw: any): Batch => ({
     raw?.from_branch ?? raw?.fromBranch ?? raw?.source_branch ?? raw?.from,
   ),
   to_branch: normalizeBranch(
-    raw?.to_branch ?? raw?.toBranch ?? raw?.destination_branch ?? raw?.to,
+    raw?.to_branch ??
+      raw?.toBranch ??
+      raw?.destination_branch ??
+      raw?.to ??
+      {
+        id: raw?.target_region_id ?? raw?.region?.id,
+        name: raw?.region?.name,
+        region: raw?.region?.name,
+      },
   ),
   direction: normalizeDirection(raw?.direction),
   orders_count: toNumber(raw?.orders_count ?? raw?.ordersCount ?? raw?.order_count ?? raw?.orders?.length),
@@ -112,7 +145,13 @@ const normalizeBatch = (raw: any): Batch => ({
 const normalizeBatchDetail = (raw: any): BatchDetail => {
   const source = raw?.data ?? raw?.item ?? raw;
   const batch = normalizeBatch(source);
-  const orders = Array.isArray(source?.orders) ? source.orders : Array.isArray(source?.order_list) ? source.order_list : [];
+  const orders = Array.isArray(source?.orders)
+    ? source.orders
+    : Array.isArray(source?.order_list)
+      ? source.order_list
+      : Array.isArray(source?.items)
+        ? source.items
+        : [];
   const history = Array.isArray(source?.history) ? source.history : Array.isArray(source?.logs) ? source.logs : [];
 
   return {
@@ -196,3 +235,35 @@ export const useBatchDetail = (id?: string) =>
       return normalizeBatchDetail(response.data);
     },
   });
+
+export const useBatchRemainingDetail = (id?: string) =>
+  useQuery<BatchDetail>({
+    queryKey: [BATCH_KEY, "remaining", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const response = await api.get(API_ENDPOINTS.BATCHES.REMAINING(id || ""));
+      return normalizeBatchDetail(response.data);
+    },
+  });
+
+export const useSendTransferBatch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      batchId,
+      orderIds,
+    }: {
+      batchId: string;
+      orderIds: string[];
+    }) =>
+      api.patch(API_ENDPOINTS.BATCHES.SEND(batchId), {
+        orderIds,
+      }),
+    onSuccess: (_response, variables) => {
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, variables.batchId] });
+      void queryClient.invalidateQueries({ queryKey: ["mails"] });
+    },
+  });
+};
