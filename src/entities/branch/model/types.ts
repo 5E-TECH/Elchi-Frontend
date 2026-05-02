@@ -36,3 +36,16 @@ export interface BranchParams {
   search?: string;
   status?: "active" | "inactive" | "";
 }
+
+export interface SentBatchBranchRow {
+  branch_id: string;
+  name: string;
+  phone_number: string;
+  batches_count: number;
+  total_price_sum: number;
+}
+
+export interface SentBatchBranchParams {
+  side?: "source" | "destination";
+  direction?: "FORWARD" | "RETURN";
+}

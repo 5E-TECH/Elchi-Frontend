@@ -30,10 +30,11 @@ const toText = (value: unknown, fallback = "—") => {
 const normalizeStatus = (value: unknown): BatchStatus => {
   const normalized = String(value ?? "").trim().toLowerCase();
 
-  if (["new", "created", "yangi"].includes(normalized)) return "new";
+  if (["new", "created", "yangi", "pending"].includes(normalized)) return "new";
   if (["on_the_way", "on-way", "in_transit", "yo'lda", "yolda"].includes(normalized)) {
     return "on_the_way";
   }
+  if (["sent"].includes(normalized)) return "on_the_way";
   if (["received", "accepted", "qabul_qilindi", "received_at_branch"].includes(normalized)) {
     return "received";
   }
@@ -197,8 +198,14 @@ const buildListParams = (params?: BatchListParams) => {
 
   const requestParams: Record<string, string> = {};
 
-  if (params.status) requestParams.status = params.status;
-  if (params.direction) requestParams.direction = params.direction;
+  if (params.statusRaw) requestParams.status = params.statusRaw;
+  else if (params.status) requestParams.status = params.status;
+
+  if (params.directionRaw) requestParams.direction = params.directionRaw;
+  else if (params.direction) requestParams.direction = params.direction;
+
+  if (params.sourceBranchId) requestParams.source_branch_id = params.sourceBranchId;
+  if (params.destinationBranchId) requestParams.destination_branch_id = params.destinationBranchId;
   if (params.from) requestParams.from = params.from;
   if (params.to) requestParams.to = params.to;
   if (params.page) requestParams.page = String(params.page);
@@ -264,6 +271,20 @@ export const useSendTransferBatch = () => {
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, variables.batchId] });
       void queryClient.invalidateQueries({ queryKey: ["mails"] });
+    },
+  });
+};
+
+export const useReceiveTransferBatch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (batchId: string) => api.post(API_ENDPOINTS.BATCHES.RECEIVE(batchId)),
+    onSuccess: (_response, batchId) => {
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, batchId] });
+      void queryClient.invalidateQueries({ queryKey: ["mails"] });
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
 };
