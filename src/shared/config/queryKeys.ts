@@ -7,6 +7,7 @@ export const queryKeys = {
   branches: {
     all: ["branches"] as const,
     list: (params: object) => ["branches", "list", params] as const,
+    withSentBatches: (params: object) => ["branches", "with-sent-batches", params] as const,
     detail: (id: string) => ["branches", "detail", id] as const,
     employees: (id: string) => ["branches", id, "employees"] as const,
     settings: (id: string) => ["branches", id, "settings"] as const,

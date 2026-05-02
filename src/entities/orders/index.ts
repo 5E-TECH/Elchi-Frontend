@@ -8,8 +8,17 @@ export const useOrders = () => {
   const client = useQueryClient();
 
   const createReceiveOrder = useMutation({
-    mutationFn: (data: any) =>
-      api.post(API_ENDPOINTS.ORDERS.RECEIVE, data).then((res) => res.data),
+    mutationFn: (data: { orderIds?: string[]; order_ids?: string[] }) => {
+      const normalizedOrderIds = Array.isArray(data?.order_ids)
+        ? data.order_ids
+        : Array.isArray(data?.orderIds)
+          ? data.orderIds
+          : [];
+
+      return api
+        .post(API_ENDPOINTS.ORDERS.RECEIVE, { order_ids: normalizedOrderIds })
+        .then((res) => res.data);
+    },
     onSuccess: () => {
       // Barcha orders cache ni yangilash
       client.invalidateQueries({ queryKey: [orders] });

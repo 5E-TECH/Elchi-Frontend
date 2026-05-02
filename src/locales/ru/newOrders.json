@@ -119,5 +119,12 @@
     "products": "Товары",
     "amount": "Сумма",
     "status": "Статус"
-  }
+  },
+  "branchesTab": "Филиальные батчи",
+  "branchNameOrPhoneSearch": "Поиск по названию филиала или телефону...",
+  "branchesCount": "Филиалы",
+  "totalBatches": "Всего батчей",
+  "branchName": "Название филиала",
+  "batches": "Батчи",
+  "noBranchBatchesToday": "Сегодня нет батчей от филиалов"
 }

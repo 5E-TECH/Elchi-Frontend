@@ -119,5 +119,12 @@
     "products": "Products",
     "amount": "Amount",
     "status": "Status"
-  }
+  },
+  "branchesTab": "Branch batches",
+  "branchNameOrPhoneSearch": "Search branch name or phone...",
+  "branchesCount": "Branches",
+  "totalBatches": "Total batches",
+  "branchName": "Branch name",
+  "batches": "Batches",
+  "noBranchBatchesToday": "No branch batches today"
 }
