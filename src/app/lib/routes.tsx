@@ -3,6 +3,7 @@ import { Navigate, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
+import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -119,6 +120,8 @@ const DashboardEntry = () => {
 };
 
 const AppRouter = () => {
+  useResetInputsOnPathChange();
+
   return useRoutes([
     { path: "/login", element: <Login /> },
     { path: "/403", element: <ForbiddenPage /> },
