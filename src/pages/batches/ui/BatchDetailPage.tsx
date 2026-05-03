@@ -216,18 +216,20 @@ const BatchDetailPage = () => {
               emptyMessage="Order topilmadi"
             />
             {canSendToMainBranch ? (
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={selectedCount === 0 || sendBatch.isPending}
-                className={`mt-4 flex w-full items-center justify-center gap-2.5 rounded-2xl px-6 py-4 text-base font-semibold transition-all duration-200 ${
-                  selectedCount > 0 && !sendBatch.isPending
-                    ? "cursor-pointer bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-600"
-                    : "cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-white/10 dark:text-white/30"
-                }`}
-              >
-                {sendBatch.isPending ? "Yuborilmoqda..." : "Asosiy filialga jo'natish"}
-              </button>
+              <div className="fixed bottom-22 right-6 z-40 sm:bottom-24 sm:right-8 md:bottom-14 md:right-12">
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={selectedCount === 0 || sendBatch.isPending}
+                  className={`inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200 ${
+                    selectedCount > 0 && !sendBatch.isPending
+                      ? "cursor-pointer bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-600"
+                      : "cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-white/10 dark:text-white/30"
+                  }`}
+                >
+                  {sendBatch.isPending ? "Yuborilmoqda..." : "Asosiy filialga jo'natish"}
+                </button>
+              </div>
             ) : null}
           </section>
 
