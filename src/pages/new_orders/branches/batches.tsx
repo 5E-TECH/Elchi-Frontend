@@ -1,12 +1,13 @@
 import { memo, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CheckSquare, PackageCheck, Square } from "lucide-react";
+import { PackageCheck } from "lucide-react";
 import { useBatches, useReceiveTransferBatch, type Batch } from "../../../entities/batch";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import HeaderName from "../../../shared/components/headerName";
 import { batchStatusClass, batchStatusLabel, formatBatchDateTime, formatBatchMoney } from "../../batches/lib/batchFormat";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import { Checkbox } from "../components/OrderCard";
 
 const BranchSentBatchesPage = () => {
   const { branchId } = useParams<{ branchId: string }>();
@@ -75,17 +76,10 @@ const BranchSentBatchesPage = () => {
         key: "id",
         label: "",
         render: (_, row) => (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              toggleBatch(row.id);
-            }}
-            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-[color:var(--color-border-soft)] bg-primary text-main"
-            aria-label="Batch tanlash"
-          >
-            {selectedBatchIds.has(row.id) ? <CheckSquare size={14} /> : <Square size={14} />}
-          </button>
+          <Checkbox
+            checked={selectedBatchIds.has(row.id)}
+            onChange={() => toggleBatch(row.id)}
+          />
         ),
       },
       {
@@ -137,29 +131,14 @@ const BranchSentBatchesPage = () => {
       />
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
-        <button
-          type="button"
+        <div
           onClick={toggleAll}
           className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[color:var(--color-border-soft)] bg-primary px-3 py-2 text-xs font-semibold text-[color:var(--color-text-muted)]"
         >
-          {isAllSelected ? <CheckSquare size={14} /> : <Square size={14} />}
+          <Checkbox checked={isAllSelected} onChange={toggleAll} />
           Barchasini tanlash
-        </button>
+        </div>
 
-        <button
-          type="button"
-          disabled={selectedBatchIds.size === 0 || receiveTransferBatch.isPending}
-          onClick={handleAcceptSelectedBatches}
-          className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold text-white transition-all
-            bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
-            hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0
-            disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
-            ${selectedBatchIds.size > 0 ? "cursor-pointer opacity-100" : "opacity-40"}`}
-        >
-          {receiveTransferBatch.isPending
-            ? "Qabul qilinmoqda..."
-            : `Tanlangan batchlarni qabul qilish (${selectedBatchIds.size})`}
-        </button>
       </div>
 
       {isError ? (
@@ -176,6 +155,23 @@ const BranchSentBatchesPage = () => {
         emptyMessage="Batch topilmadi"
         onRowClick={(row) => navigate(`/new-orders/branches/${branchId}/${row.id}`)}
       />
+
+      <div className="fixed bottom-22 right-6 z-40 sm:bottom-24 sm:right-8 md:bottom-14 md:right-12">
+        <button
+          type="button"
+          disabled={selectedBatchIds.size === 0 || receiveTransferBatch.isPending}
+          onClick={handleAcceptSelectedBatches}
+          className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold text-white transition-all
+            bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
+            hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0
+            disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
+            ${selectedBatchIds.size > 0 ? "cursor-pointer opacity-100" : "opacity-40"}`}
+        >
+          {receiveTransferBatch.isPending
+            ? "Qabul qilinmoqda..."
+            : `Batchlarni qabul qilish (${selectedBatchIds.size})`}
+        </button>
+      </div>
     </div>
   );
 };
