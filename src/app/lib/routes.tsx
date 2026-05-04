@@ -3,6 +3,7 @@ import { Navigate, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
+import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -36,6 +37,9 @@ const ProductCreate = lazy(() => import("../../pages/products/create"));
 
 const NewOrders = lazy(() => import("../../pages/new_orders"));
 const NewOrdersMarkets = lazy(() => import("../../pages/new_orders/markets"));
+const NewOrdersBranches = lazy(() => import("../../pages/new_orders/branches"));
+const NewOrdersBranchBatches = lazy(() => import("../../pages/new_orders/branches/batches"));
+const NewOrdersBranchBatchDetail = lazy(() => import("../../pages/new_orders/branches/batchDetail"));
 const NewOrdersExternalList = lazy(() => import("../../pages/new_orders/external_orders"));
 const ExternalIntegrationDetail = lazy(
   () => import("../../pages/new_orders/external_orders/detail"),
@@ -116,6 +120,8 @@ const DashboardEntry = () => {
 };
 
 const AppRouter = () => {
+  useResetInputsOnPathChange();
+
   return useRoutes([
     { path: "/login", element: <Login /> },
     { path: "/403", element: <ForbiddenPage /> },
@@ -242,6 +248,9 @@ const AppRouter = () => {
                 { path: "external", element: <Navigate replace to="/new-orders/integrations" /> },
                 { path: "external/:id", element: <Navigate replace to="/new-orders/integrations" /> },
                 { path: "integrations", element: <NewOrdersExternalList /> },
+                { path: "branches", element: <NewOrdersBranches /> },
+                { path: "branches/:branchId", element: <NewOrdersBranchBatches /> },
+                { path: "branches/:branchId/:batchId", element: <NewOrdersBranchBatchDetail /> },
                 { path: "integrations/:id", element: <ExternalIntegrationDetail /> },
                 { path: ":marketId", element: <NewOrderDetail /> },
                 { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },

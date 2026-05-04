@@ -1,7 +1,15 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type { PaginatedResponse } from "../../../shared/types/pagination";
-import type { Branch, BranchParams, BranchSetting, BranchType, Employee } from "../model/types";
+import type {
+  Branch,
+  BranchParams,
+  BranchSetting,
+  BranchType,
+  Employee,
+  SentBatchBranchParams,
+  SentBatchBranchRow,
+} from "../model/types";
 
 const normalizeBranchType = (value: unknown): BranchType | undefined => {
   const normalized = String(value ?? "").toUpperCase();
@@ -85,6 +93,23 @@ const normalizeSetting = (value: unknown): BranchSetting => {
   };
 };
 
+const normalizeSentBatchBranchRow = (value: unknown): SentBatchBranchRow => {
+  const item = value as Record<string, any>;
+  const branch = item.branch ?? item.source_branch ?? item.destination_branch ?? item;
+
+  return {
+    branch_id: String(branch?.id ?? item.branch_id ?? item.source_branch_id ?? ""),
+    name: branch?.name ?? item.branch_name ?? "—",
+    phone_number: branch?.phone_number ?? branch?.phone ?? item.phone_number ?? "—",
+    batches_count: Number(
+      item.sent_batches_count ?? item.batches_count ?? item.batch_count ?? item.count ?? 0,
+    ),
+    total_price_sum: Number(
+      item.sent_total_price ?? item.total_price_sum ?? item.total_price ?? item.sum ?? 0,
+    ),
+  };
+};
+
 const extractArray = <T,>(value: unknown): T[] => {
   const response = value as { data?: T[] | { items?: T[] }; items?: T[] };
   if (Array.isArray(response?.data)) return response.data;
@@ -132,4 +157,21 @@ export const getBranchEmployees = async (id: string): Promise<Employee[]> => {
 export const getBranchSettings = async (id: string): Promise<BranchSetting[]> => {
   const response = await api.get(API_ENDPOINTS.BRANCHES.SETTINGS(id));
   return extractArray<BranchSetting>(response.data).map(normalizeSetting);
+};
+
+export const getBranchesWithSentBatches = async (
+  params: SentBatchBranchParams = { side: "source", direction: "FORWARD" },
+): Promise<SentBatchBranchRow[]> => {
+  const response = await api.get(API_ENDPOINTS.BRANCHES.WITH_SENT_BATCHES, { params });
+  const payload = response.data as unknown;
+  const payloadObject = payload as Record<string, any>;
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payloadObject?.data?.items)
+      ? payloadObject.data.items
+      : Array.isArray(payloadObject?.items)
+        ? payloadObject.items
+        : [];
+
+  return list.map(normalizeSentBatchBranchRow);
 };

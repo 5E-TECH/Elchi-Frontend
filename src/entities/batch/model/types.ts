@@ -47,7 +47,12 @@ export interface BatchDetail extends Batch {
 
 export interface BatchListParams {
   status?: BatchStatus | "";
+  statusRaw?: "PENDING" | "SENT" | "RECEIVED" | "CANCELLED" | "";
   direction?: BatchDirection | "";
+  directionRaw?: "FORWARD" | "RETURN" | "";
+  sourceBranchId?: string;
+  destinationBranchId?: string;
+  datePreset?: BatchDatePreset;
   from?: string;
   to?: string;
   page?: number;

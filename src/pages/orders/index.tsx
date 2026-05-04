@@ -86,6 +86,7 @@ const Orders = () => {
   // URL params
   const urlParams = getAllParams();
   const urlMarketId = urlParams[ORDER_FILTER_KEYS.marketId] ?? "";
+  const urlBranchId = urlParams[ORDER_FILTER_KEYS.branchId] ?? "";
   const urlRegionId = urlParams[ORDER_FILTER_KEYS.regionId] ?? "";
   const urlCourierId = urlParams[ORDER_FILTER_KEYS.courierId] ?? "";
   const urlStatusRaw = urlParams[ORDER_FILTER_KEYS.status] ?? "";
@@ -104,6 +105,9 @@ const Orders = () => {
     if (role !== "market") {
       const marketId = urlMarketId;
       if (marketId) params.market_id = String(marketId);
+
+      const branchId = urlBranchId;
+      if (branchId) params.branch_id = String(branchId);
     }
 
     // Viloyat / Region
@@ -140,6 +144,7 @@ const Orders = () => {
     role,
     urlMarketId,
     urlRegionId,
+    urlBranchId,
     urlCourierId,
     urlStatusRaw,
     urlDateFrom,
@@ -154,6 +159,7 @@ const Orders = () => {
       return JSON.stringify({
         role,
         marketId: role !== "market" ? urlMarketId : "",
+        branchId: role !== "market" ? urlBranchId : "",
         regionId: urlRegionId,
         courierId: role !== "market" ? urlCourierId : "",
         status: Array.isArray(status) ? status.join(",") : status,
@@ -166,6 +172,7 @@ const Orders = () => {
       role,
       urlMarketId,
       urlRegionId,
+      urlBranchId,
       urlCourierId,
       urlStatusRaw,
       urlDateFrom,

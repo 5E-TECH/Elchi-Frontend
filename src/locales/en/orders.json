@@ -110,7 +110,7 @@
   "partialSell": "Partial sale",
   "maxQuantity": "Max: {{count}} pcs",
   "minimumSelectionError": "You cannot reduce more. At least 1 product must remain, otherwise use cancel.",
-  "currency": "so'm",
+  "currency": "sum",
   "extraPayment": "Additional payment",
   "writeNote": "Write a note...",
   "selectLabel": "Select",
@@ -165,5 +165,9 @@
       "closed": "Closed",
       "rollback": "Rolled back"
     }
-  }
+  },
+  "branch": "Branch",
+  "filterBranch": "Branch",
+  "filterBranchPlaceholder": "Select branch",
+  "chipBranch": "Branch"
 }

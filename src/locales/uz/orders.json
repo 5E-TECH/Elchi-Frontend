@@ -165,5 +165,9 @@
       "closed": "Yopildi",
       "rollback": "Qaytarildi"
     }
-  }
+  },
+  "branch": "Filial",
+  "filterBranch": "Filial",
+  "filterBranchPlaceholder": "Filialni tanlang",
+  "chipBranch": "Filial"
 }

@@ -119,5 +119,12 @@
     "products": "Mahsulotlar",
     "amount": "Summa",
     "status": "Holat"
-  }
+  },
+  "branchesTab": "Filial batchlari",
+  "branchNameOrPhoneSearch": "Filial nomi yoki telefon qidirish...",
+  "branchesCount": "Filiallar",
+  "totalBatches": "Jami batchlar",
+  "branchName": "Filial nomi",
+  "batches": "Batchlar",
+  "noBranchBatchesToday": "Bugun filial batchlari yo'q"
 }

@@ -3,6 +3,7 @@ import {
     Package,
     MapPin,
     Store,
+    Building2,
     Calendar,
     Banknote,
     Phone,
@@ -40,16 +41,13 @@ const formatPhoneNumber = (phone: string | null | undefined) => {
     return phone;
 };
 
-const formatPrice = (num: number) =>
-    (num ?? 0).toLocaleString("uz-UZ") + " so'm";
-
 const getDeliveryBadgeClassName = (value: OrderListItem["where_deliver"]) =>
     value === "center"
         ? "bg-linear-to-r from-blue-500 to-sky-500 text-white shadow-blue-500/25"
         : "bg-linear-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/25";
 
 const DeliveryBadge = ({ value, label }: { value: OrderListItem["where_deliver"]; label: string }) => (
-    <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-[12px] font-extrabold shadow-lg ring-1 ring-white/12 ${getDeliveryBadgeClassName(value)}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-extrabold shadow-lg ring-1 ring-white/12 whitespace-nowrap ${getDeliveryBadgeClassName(value)}`}>
         {label}
     </span>
 );
@@ -65,7 +63,7 @@ const formatDate = (iso: string) => {
     });
 };
 
-const createColumns = (rowNumberOffset: number) => [
+const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => string) => [
     {
         key: "id" as const,
         label: "#",
@@ -80,20 +78,13 @@ const createColumns = (rowNumberOffset: number) => [
         sortable: true as const,
         sortValue: (row: OrderListItem) => row.customer?.name?.trim().toLocaleLowerCase() ?? "",
         render: (customer: OrderListItem["customer"]) => (
-            <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-main/10 flex items-center justify-center shrink-0">
-                    <span className="text-main text-xs font-bold">
-                        {customer?.name?.[0]?.toUpperCase() ?? "?"}
-                    </span>
-                </div>
-                <div className="min-w-0">
-                    <p className="text-sm font-semibold text-maindark dark:text-primary truncate">
-                        {customer?.name ?? "—"}
-                    </p>
-                    <p className="text-xs text-gray-400 font-mono">
-                        {formatPhoneNumber(customer?.phone_number)}
-                    </p>
-                </div>
+            <div className="min-w-0">
+                <p className="text-sm font-semibold text-maindark dark:text-primary truncate">
+                    {customer?.name ?? "—"}
+                </p>
+                <p className="text-xs text-gray-400 font-mono">
+                    {formatPhoneNumber(customer?.phone_number)}
+                </p>
             </div>
         ),
     },
@@ -129,6 +120,18 @@ const createColumns = (rowNumberOffset: number) => [
         ),
     },
     {
+        key: "branch" as const,
+        label: "Filial",
+        render: (branch: OrderListItem["branch"]) => (
+            <div className="flex items-center gap-1.5">
+                <Building2 size={13} className="text-main/60 shrink-0" />
+                <span className="text-sm font-medium text-maindark dark:text-primary">
+                    {branch?.name ?? "—"}
+                </span>
+            </div>
+        ),
+    },
+    {
         key: "status" as const,
         label: "Holat",
         render: (status: OrderListItem["status"]) => (
@@ -138,6 +141,8 @@ const createColumns = (rowNumberOffset: number) => [
     {
         key: "where_deliver" as const,
         label: "Yetkazish",
+        width: "120px",
+        className: "whitespace-nowrap",
         render: (val: OrderListItem["where_deliver"]) => (
             <DeliveryBadge value={val} label={val === "center" ? "Markaz" : "Uy"} />
         ),
@@ -145,6 +150,8 @@ const createColumns = (rowNumberOffset: number) => [
     {
         key: "total_price" as const,
         label: "Summa",
+        width: "150px",
+        className: "whitespace-nowrap",
         sortable: true as const,
         sortValue: (row: OrderListItem) => row.total_price ?? 0,
         render: (val: number) => (
@@ -159,6 +166,8 @@ const createColumns = (rowNumberOffset: number) => [
     {
         key: "createdAt" as const,
         label: "Sana",
+        width: "170px",
+        className: "whitespace-nowrap",
         sortable: true as const,
         sortValue: (row: OrderListItem) => new Date(row.createdAt).getTime(),
         render: (val: string) => (
@@ -173,13 +182,17 @@ const createColumns = (rowNumberOffset: number) => [
 ];
 
 const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props) => {
-    const { t } = useTranslation("orders");
+    const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
+    const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+    const formatPrice = (num: number) =>
+        `${(num ?? 0).toLocaleString(locale)} ${t("currency")}`;
     const tableColumns = useMemo(() => {
-        const translatedColumns = createColumns(rowNumberOffset).map((column) => {
+        const translatedColumns = createColumns(rowNumberOffset, formatPrice).map((column) => {
             if (column.key === "customer") return { ...column, label: t("customer") };
             if (column.key === "district") return { ...column, label: t("filterRegion") + " / " + t("district") };
             if (column.key === "market") return { ...column, label: t("market") };
+            if (column.key === "branch") return { ...column, label: t("branch") };
             if (column.key === "status") return { ...column, label: t("orderStatus") };
             if (column.key === "where_deliver") {
                 return {
@@ -202,7 +215,7 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props
         }
 
         return translatedColumns;
-    }, [role, rowNumberOffset, t]);
+    }, [locale, role, rowNumberOffset, t]);
 
     if (isLoading) {
         return (
@@ -273,6 +286,10 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props
                         <span className="truncate">{order.market?.name ?? "—"}</span>
                     </div>
                 )}
+                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                    <Building2 size={14} className="shrink-0 text-main/70" />
+                    <span className="truncate">{order.branch?.name ?? "—"}</span>
+                </div>
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
                     <Calendar size={14} className="shrink-0 text-main/70" />
                     <span className="truncate">{formatDate(order.createdAt)}</span>
