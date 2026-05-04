@@ -64,6 +64,10 @@ export interface OrderListItem {
         name: string;
         phone_number?: string;
     };
+    branch?: {
+        id: string;
+        name: string;
+    };
     district?: {
         id: string;
         name: string;
