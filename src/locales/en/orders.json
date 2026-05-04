@@ -165,5 +165,6 @@
       "closed": "Closed",
       "rollback": "Rolled back"
     }
-  }
+  },
+  "branch": "Branch"
 }
