@@ -273,6 +273,10 @@ export const CreateUserForm = memo(() => {
     }
 
     if (role === "courier") {
+      if (!values.branchId) {
+        setError("branchId", { message: t("branchRequired") });
+        valid = false;
+      }
       if (!values.region) {
         setError("region", { message: t("regionRequired") });
         valid = false;
@@ -374,6 +378,7 @@ export const CreateUserForm = memo(() => {
     if (role === "courier") {
       const payload: CreateCourierRequest = {
         region_id: values.region,
+        branch_id: values.branchId,
         name: values.fullName,
         phone_number: rawPhone,
         password: values.password,
@@ -690,6 +695,23 @@ export const CreateUserForm = memo(() => {
 
                 {role === "courier" && (
                   <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 xl:grid-cols-3 md:gap-6">
+                    <Controller
+                      control={control}
+                      name="branchId"
+                      render={({ field, fieldState }) => (
+                        <Select
+                          label={t("branchLabel")}
+                          name={field.name}
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={branchOptions}
+                          placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
+                          error={fieldState.error?.message}
+                          loading={isBranchesLoading}
+                          required
+                        />
+                      )}
+                    />
                     <Controller
                       control={control}
                       name="region"
