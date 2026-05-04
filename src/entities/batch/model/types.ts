@@ -1,6 +1,5 @@
 export type BatchStatus = "new" | "on_the_way" | "received" | "cancelled";
 export type BatchDirection = "forward" | "return";
-export type BatchDatePreset = "today" | "week" | "month" | "custom";
 
 export interface BatchBranch {
   id: string;
@@ -35,6 +34,9 @@ export interface Batch {
   total_price: number;
   status: BatchStatus;
   driver?: string;
+  driver_phone?: string;
+  vehicle_plate?: string;
+  request_key?: string;
   created_at: string;
 }
 
@@ -50,7 +52,6 @@ export interface BatchListParams {
   directionRaw?: "FORWARD" | "RETURN" | "";
   sourceBranchId?: string;
   destinationBranchId?: string;
-  datePreset?: BatchDatePreset;
   from?: string;
   to?: string;
   page?: number;

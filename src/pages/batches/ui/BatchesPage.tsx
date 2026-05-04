@@ -5,23 +5,24 @@ import HeaderName from "../../../shared/components/headerName";
 import { Table } from "../../../shared/components/Table/Table";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import FilterPanel from "../../../shared/ui/FilterPanel";
-import FilterFieldCard from "../../../shared/ui/FilterFieldCard";
-import FilterDateInput from "../../../shared/ui/FilterDateInput";
+import QuickDateRangeFilter from "../../../shared/ui/QuickDateRangeFilter";
 import PageStatBadge from "../../../shared/ui/PageStatBadge";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import { useBatches, type Batch, type BatchDatePreset, type BatchDirection, type BatchStatus } from "../../../entities/batch";
+import { useBatches, type Batch, type BatchDirection, type BatchStatus } from "../../../entities/batch";
 import {
-  batchDatePresetOptions,
   batchDirectionOptions,
-  getBatchDateRange,
   batchStatusClass,
   batchStatusLabel,
   batchStatusOptions,
   formatBatchDateTime,
-  formatBatchMoney,
+  formatBatchCompactMoney,
+  formatBatchDisplayId,
 } from "../lib/batchFormat";
 import Pagination from "../../../shared/components/pagination";
+import { getTodayRange, toApiDateTimeRange } from "../../../shared/lib/dateRange";
 import { usePagination } from "../../../shared/lib/usePagination";
+
+const initialBatchDateRange = getTodayRange();
 
 const BatchesPage = () => {
   const navigate = useNavigate();
@@ -31,27 +32,18 @@ const BatchesPage = () => {
   });
   const [status, setStatus] = useState<BatchStatus | "">("");
   const [direction, setDirection] = useState<BatchDirection | "">("");
-  const [datePreset, setDatePreset] = useState<BatchDatePreset>("today");
-  const [customFrom, setCustomFrom] = useState("");
-  const [customTo, setCustomTo] = useState("");
+  const [fromDate, setFromDate] = useState(initialBatchDateRange.from);
+  const [toDate, setToDate] = useState(initialBatchDateRange.to);
 
   const params = useMemo(() => {
-    const range = datePreset === "custom"
-      ? {
-          from: customFrom ? `${customFrom}T00:00:00` : undefined,
-          to: customTo ? `${customTo}T23:59:59` : undefined,
-        }
-      : getBatchDateRange(datePreset);
-
     return {
       status,
       direction,
-      datePreset,
       page,
       limit,
-      ...range,
+      ...toApiDateTimeRange({ from: fromDate, to: toDate }),
     };
-  }, [customFrom, customTo, datePreset, direction, limit, page, status]);
+  }, [direction, fromDate, limit, page, status, toDate]);
 
   const { data, isLoading, isError } = useBatches(params);
 
@@ -61,7 +53,11 @@ const BatchesPage = () => {
         key: "id",
         label: "ID",
         sortable: true,
-        render: (value) => <span className="font-black text-maindark dark:text-white">{String(value)}</span>,
+        render: (value) => (
+          <span className="font-black text-maindark dark:text-white">
+            {formatBatchDisplayId(String(value))}
+          </span>
+        ),
       },
       {
         key: "from_branch",
@@ -83,13 +79,14 @@ const BatchesPage = () => {
         key: "total_price",
         label: "Umumiy narx",
         sortable: true,
-        render: (value) => formatBatchMoney(Number(value)),
+        render: (value) => formatBatchCompactMoney(Number(value)),
       },
       {
         key: "status",
         label: "Holat",
         render: (_, row) => (
-          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-extrabold ${batchStatusClass[row.status]}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-extrabold ${batchStatusClass[row.status]}`}>
+            <span className="h-2 w-2 rounded-full bg-current" />
             {batchStatusLabel[row.status]}
           </span>
         ),
@@ -117,7 +114,7 @@ const BatchesPage = () => {
         </PageStatBadge>
       </div>
 
-      <FilterPanel gridClassName="md:grid-cols-3 xl:grid-cols-5">
+      <FilterPanel gridClassName="md:grid-cols-3">
         <FilterSelect
           name="batch_status"
           label="Holat"
@@ -134,31 +131,29 @@ const BatchesPage = () => {
           placeholder="Barchasi"
           options={[...batchDirectionOptions]}
         />
-        <FilterSelect
-          name="batch_date"
-          label="Sana"
-          value={datePreset}
-          onChange={(value) => setDatePreset(value as BatchDatePreset)}
-          options={[...batchDatePresetOptions]}
-        />
-        {datePreset === "custom" ? (
-          <>
-            <FilterFieldCard>
-              <FilterDateInput
-                label="Dan"
-                value={customFrom}
-                onChange={setCustomFrom}
-              />
-            </FilterFieldCard>
-            <FilterFieldCard>
-              <FilterDateInput
-                label="Gacha"
-                value={customTo}
-                onChange={setCustomTo}
-              />
-            </FilterFieldCard>
-          </>
-        ) : null}
+        <div className="relative flex flex-col gap-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/50">
+            Sana
+          </span>
+          <QuickDateRangeFilter
+            fromDate={fromDate}
+            toDate={toDate}
+            onChange={({ from, to }) => {
+              setFromDate(from);
+              setToDate(to);
+            }}
+            onClear={() => {
+              setFromDate("");
+              setToDate("");
+            }}
+            placeholder="Dan → Gacha"
+            pickerClassName="w-full"
+            clearClassName="sm:w-auto"
+            size="sm"
+            showPicker={false}
+            className="rounded-xl border-2 border-white/70 bg-white/85 px-3.5 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/7"
+          />
+        </div>
       </FilterPanel>
 
       {isError ? (

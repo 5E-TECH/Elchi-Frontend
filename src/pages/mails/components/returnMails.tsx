@@ -3,8 +3,8 @@ import { RotateCcw, Package, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useMails } from "../../../entities/mails";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../../app/config/store";
+import Pagination from "../../../shared/components/pagination";
+import { usePagination } from "../../../shared/lib/usePagination";
 
 interface Region {
   id: string;
@@ -92,35 +92,27 @@ ReturnCard.displayName = "ReturnCard";
 
 const ReturnMails = () => {
   const { t } = useTranslation("mails");
-  const { role } = useSelector((state: RootState) => state.role);
-  const isBranchRole = role === "manager" || role === "registrator";
   const { getReturnMails } = useMails();
-  const { data: response, isLoading, isError } = getReturnMails();
-
-  if (!isBranchRole) {
-    return (
-      <div className="rounded-[1.75rem] border border-[color:var(--color-border-soft)] bg-primary px-6 py-14 text-center shadow-sm dark:bg-maindark">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[color:var(--color-warning-soft)] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            <RotateCcw size={42} strokeWidth={1.75} />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-semibold text-maindark dark:text-primary">
-              {t("returnEmptyTitle")}
-            </h3>
-            <p className="text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("returnEmptyDescription")}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const { page, limit, setPage, setLimit } = usePagination({
+    key: "mails",
+    defaultLimit: 8,
+  });
+  const { data: response, isLoading, isError } = getReturnMails({ page, limit });
 
   const mails: MailItem[] = response?.data?.data ?? [];
+  const pagination = response?.data;
 
   if (isLoading) {
-    return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" />;
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: limit }).map((_, index) => (
+          <div
+            key={index}
+            className="h-43 animate-pulse rounded-2xl bg-[color:var(--color-warning-soft)]"
+          />
+        ))}
+      </div>
+    );
   }
 
   if (isError || mails.length === 0) {
@@ -135,10 +127,23 @@ const ReturnMails = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-      {mails.map((mail) => (
-        <ReturnCard key={mail.id} item={mail} />
-      ))}
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {mails.map((mail) => (
+          <ReturnCard key={mail.id} item={mail} />
+        ))}
+      </div>
+
+      {pagination ? (
+        <Pagination
+          totalItems={pagination.total}
+          itemsPerPage={pagination.limit}
+          currentPage={pagination.page}
+          onPageChange={setPage}
+          onItemsPerPageChange={setLimit}
+          pageSizeOptions={[8, 16, 32, 64]}
+        />
+      ) : null}
     </div>
   );
 };

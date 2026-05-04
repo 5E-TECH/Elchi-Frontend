@@ -256,12 +256,52 @@ const mapTransferBatchToMailItem = (batch: any): MailItem => {
   };
 };
 
+const mapReturnRequestToMailItem = (request: any): MailItem => {
+  const post = request?.post ?? request?.mail ?? request?.batch ?? request;
+  const region = post?.region ?? request?.region;
+  const orders = post?.orders ?? request?.orders ?? post?.allOrdersByPostId ?? request?.allOrdersByPostId;
+  const orderCount =
+    request?.order_quantity ??
+    request?.order_count ??
+    request?.orders_count ??
+    post?.order_quantity ??
+    post?.order_count ??
+    post?.orders_count ??
+    (Array.isArray(orders) ? orders.length : undefined);
+  const totalPrice =
+    request?.post_total_price ??
+    request?.total_price ??
+    request?.totalPrice ??
+    post?.post_total_price ??
+    post?.total_price ??
+    post?.totalPrice;
+  const regionId = toText(region?.id ?? post?.region_id ?? request?.region_id, "return-region");
+
+  return {
+    id: toText(post?.id ?? request?.post_id ?? request?.postId ?? request?.id ?? request?._id),
+    createdAt: toText(post?.createdAt ?? post?.created_at ?? request?.createdAt ?? request?.created_at, new Date().toISOString()),
+    updatedAt: toText(post?.updatedAt ?? post?.updated_at ?? request?.updatedAt ?? request?.updated_at, new Date().toISOString()),
+    courier_id: toText(post?.courier_id ?? request?.courier_id),
+    post_total_price: toNumber(totalPrice),
+    order_quantity: toNumber(orderCount),
+    qr_code_token: toText(post?.qr_code_token ?? post?.qrCodeToken ?? request?.qr_code_token ?? request?.qrCodeToken),
+    region_id: regionId,
+    region: {
+      id: regionId,
+      name: toText(region?.name ?? region?.title, "Qaytarish"),
+      sato_code: toText(region?.sato_code),
+    },
+    status: toText(request?.status ?? post?.status, "return"),
+  };
+};
+
 const toPaginatedMailResponse = (
   payload: TransferBatchListResponse | any,
+  mapItem: (item: any) => MailItem = mapTransferBatchToMailItem,
 ): PaginatedPostsResponse => {
   const container = payload?.data ?? payload;
   const rawItems = container?.data ?? container?.items ?? [];
-  const items = Array.isArray(rawItems) ? rawItems.map(mapTransferBatchToMailItem) : [];
+  const items = Array.isArray(rawItems) ? rawItems.map(mapItem).filter((item) => item.id) : [];
   const total = toNumber(container?.meta?.total ?? container?.total, items.length);
   const page = toNumber(container?.meta?.page ?? container?.page, 1);
   const totalPages = toNumber(container?.meta?.totalPages ?? container?.totalPages, 1);
@@ -279,18 +319,6 @@ const toPaginatedMailResponse = (
     },
   };
 };
-
-const createEmptyPaginatedMailResponse = (): PaginatedPostsResponse => ({
-  statusCode: 200,
-  message: "ok",
-  data: {
-    data: [],
-    total: 0,
-    page: 1,
-    totalPages: 1,
-    limit: 8,
-  },
-});
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 export const useMails = () => {
@@ -355,13 +383,18 @@ export const useMails = () => {
           : api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
     });
 
-  const getReturnMails = () =>
+  const getReturnMails = (params?: GetOldMailsParams) =>
     useQuery<PaginatedPostsResponse>({
-      queryKey: [MAILS_KEY, "return", role, branchId],
+      queryKey: [MAILS_KEY, "return", role, branchId, params?.page ?? 1, params?.limit ?? 8],
       queryFn: () =>
-        branchRole
-          ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.SENT)
-          : Promise.resolve(createEmptyPaginatedMailResponse()),
+        api
+          .get(API_ENDPOINTS.POSTS.RETURN_REQUESTS_LIST, {
+            params: {
+              page: params?.page ?? 1,
+              limit: params?.limit ?? 8,
+            },
+          })
+          .then((res) => toPaginatedMailResponse(res.data, mapReturnRequestToMailItem)),
     });
 
   const getRefusedMailsCourier = () =>

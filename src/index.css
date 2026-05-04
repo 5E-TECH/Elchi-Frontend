@@ -321,6 +321,34 @@
   background: var(--color-dark-bg-py);
 }
 
+/* ─── Global Cursor Defaults ───────────────────────────────────────────────── */
+:where(
+  a[href],
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label[for],
+  select:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="submit"]:not(:disabled)
+) {
+  cursor: pointer;
+}
+
+:where(
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  textarea:disabled,
+  [aria-disabled="true"]
+) {
+  cursor: not-allowed;
+}
+
 /* ─── Global Dark Mode overrides ──────────────────────────────────────────── */
 /* input / select / textarea – Tailwind bg class YO'Q bo'lsa dark fonda matn ko'rinadigan bo'lsin */
 .dark input:not([class*="bg-"]),
