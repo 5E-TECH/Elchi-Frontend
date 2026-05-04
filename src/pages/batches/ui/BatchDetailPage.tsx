@@ -12,12 +12,11 @@ import {
   batchStatusLabel,
   formatBatchDateTime,
   formatBatchMoney,
-  getBatchQrUrl,
 } from "../lib/batchFormat";
 import BatchPrintSheet from "./BatchPrintSheet";
+import BatchQrCode from "./BatchQrCode";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
-import { useBranchDetail } from "../../../entities/branch";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 
 const orderColumns: ColumnConfig<BatchOrder>[] = [
@@ -36,13 +35,10 @@ const BatchDetailPage = () => {
   const sendBatch = useSendTransferBatch();
   const { apiRequest } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
-  const branchId = useSelector((state: RootState) => state.user.user?.branch_id);
-  const { data: branch } = useBranchDetail(branchId ?? undefined);
-  const [qrFailed, setQrFailed] = useState(false);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
 
   const isBranchManager = role === "manager";
-  const isBranchRegistrator = role === "registrator" && branch?.type !== "HQ";
+  const isBranchRegistrator = role === "registrator";
   const canSendToMainBranch = batch?.status === "new" && (isBranchManager || isBranchRegistrator);
   const isAllSelected = batch?.orders.length
     ? selectedOrderIds.size === (batch?.orders.length ?? 0)
@@ -156,6 +152,11 @@ const BatchDetailPage = () => {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {[
                 {
+                  label: "Paket ID",
+                  value: batch.request_key ?? batch.id,
+                  icon: <PackageCheck size={16} />,
+                },
+                {
                   label: "Filial",
                   value: `${batch.from_branch.code ?? batch.from_branch.id} • ${batch.from_branch.name}`,
                   icon: <MapPin size={16} />,
@@ -163,9 +164,12 @@ const BatchDetailPage = () => {
                 { label: "Qayerga", value: batch.to_branch.name, icon: <MapPin size={16} /> },
                 { label: "Viloyat", value: batch.to_branch.region ?? batch.to_branch.name ?? "—", icon: <MapPin size={16} /> },
                 { label: "Haydovchi", value: batch.driver ?? "—", icon: <Truck size={16} /> },
+                { label: "Telefon", value: batch.driver_phone ?? "—", icon: <Truck size={16} /> },
+                { label: "Mashina", value: batch.vehicle_plate ?? "—", icon: <Truck size={16} /> },
                 { label: "Yo'nalish", value: batchDirectionLabel[batch.direction], icon: <Truck size={16} /> },
                 { label: "Order", value: `${batch.orders_count} ta`, icon: <PackageCheck size={16} /> },
                 { label: "Narx", value: formatBatchMoney(batch.total_price), icon: <PackageCheck size={16} /> },
+                { label: "Yaratilgan", value: formatBatchDateTime(batch.created_at), icon: <PackageCheck size={16} /> },
                 {
                   label: "Holat",
                   value: (
@@ -259,18 +263,13 @@ const BatchDetailPage = () => {
             QR kod
           </div>
           <div className="rounded-[26px] border border-dashed border-[color:var(--color-border-soft)] bg-white p-5 dark:bg-white">
-            {!qrFailed && batch.token ? (
-              <img
-                src={getBatchQrUrl(batch.token)}
-                alt={`QR ${batch.id}`}
-                onError={() => setQrFailed(true)}
-                className="mx-auto aspect-square w-full max-w-[230px] object-contain"
-              />
-            ) : (
-              <div className="mx-auto flex aspect-square w-full max-w-[230px] items-center justify-center rounded-2xl border-2 border-maindark text-xl font-black text-maindark">
-                QR KOD
-              </div>
-            )}
+            <BatchQrCode
+              token={batch.token}
+              fallbackLabel={batch.id}
+              alt={`QR ${batch.id}`}
+              className="mx-auto aspect-square w-full max-w-[230px] object-contain"
+              fallbackClassName="mx-auto flex aspect-square w-full max-w-[230px] flex-col items-center justify-center rounded-2xl border-2 border-maindark text-xl font-black text-maindark"
+            />
           </div>
           <Button
             label="Chop etish"

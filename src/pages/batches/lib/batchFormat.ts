@@ -1,8 +1,20 @@
-import { API_ENDPOINTS } from "../../../shared/api";
-import { BASE_URL } from "../../../shared/const";
-import type { BatchDatePreset, BatchDirection, BatchStatus } from "../../../entities/batch";
+import type { BatchDirection, BatchStatus } from "../../../entities/batch";
 
 export const formatBatchMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
+
+export const formatBatchCompactMoney = (value: number) => {
+  if (Math.abs(value) >= 1_000_000) {
+    const amount = value / 1_000_000;
+    return `${amount.toLocaleString("uz-UZ", { maximumFractionDigits: 1 })}M so'm`;
+  }
+
+  return formatBatchMoney(value);
+};
+
+export const formatBatchDisplayId = (value: string | number) => {
+  const id = String(value);
+  return id.startsWith("B-") ? id : `B-${id}`;
+};
 
 export const formatBatchDateTime = (value: string) =>
   new Intl.DateTimeFormat("uz-UZ", {
@@ -50,48 +62,7 @@ export const batchDirectionOptions = [
   { value: "return", label: batchDirectionLabel.return },
 ] as const;
 
-export const batchDatePresetOptions: Array<{ value: BatchDatePreset; label: string }> = [
-  { value: "today", label: "Bugun" },
-  { value: "week", label: "Shu hafta" },
-  { value: "month", label: "Shu oy" },
-  { value: "custom", label: "Maxsus sana" },
-];
-
-export const toLocalApiDateTime = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const seconds = String(date.getSeconds()).padStart(2, "0");
-
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-};
-
-export const getBatchDateRange = (preset: BatchDatePreset) => {
-  const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-
-  if (preset === "today") {
-    return { from: toLocalApiDateTime(start), to: toLocalApiDateTime(now) };
-  }
-
-  if (preset === "week") {
-    const day = start.getDay() || 7;
-    start.setDate(start.getDate() - day + 1);
-    return { from: toLocalApiDateTime(start), to: toLocalApiDateTime(now) };
-  }
-
-  if (preset === "month") {
-    start.setDate(1);
-    return { from: toLocalApiDateTime(start), to: toLocalApiDateTime(now) };
-  }
-
-  return {};
-};
-
 export const getBatchQrUrl = (token: string) => {
-  const base = BASE_URL.replace(/\/+$/, "");
-  return `${base}/${API_ENDPOINTS.BATCHES.QR_CODE(token).replace(/^\/+/, "")}`;
+  const normalizedToken = token.trim();
+  return `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=0&data=${encodeURIComponent(normalizedToken)}`;
 };

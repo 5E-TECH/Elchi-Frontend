@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
+  LockKeyhole,
   PackagePlus,
   QrCode,
   Trash2,
@@ -28,6 +29,15 @@ type PendingOrder = {
   amount: number;
 };
 
+type BackendOrderError = {
+  order_id?: string | number;
+  orderId?: string | number;
+  id?: string | number;
+  token?: string;
+  message?: string;
+  error?: string;
+};
+
 const safe = (value: unknown, fallback = "—") => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
@@ -47,6 +57,23 @@ const normalizeOrder = (payload: unknown, token: string, t: (key: string) => str
     market: safe(order?.market?.name ?? order?.sender?.name, t("marketFallback")),
     amount: Number(order?.total_price ?? 0) || 0,
   };
+};
+
+const getDispatchErrorMessage = (error: unknown, fallback: string) => {
+  const responseData = (error as { response?: { data?: any } } | null)?.response?.data;
+  const errors = responseData?.errors ?? responseData?.failed ?? responseData?.items;
+
+  if (Array.isArray(errors) && errors.length) {
+    return errors
+      .map((item: BackendOrderError) => {
+        const orderLabel = item.order_id ?? item.orderId ?? item.id ?? item.token ?? "order";
+        const message = item.message ?? item.error ?? fallback;
+        return `${orderLabel}: ${message}`;
+      })
+      .join("; ");
+  }
+
+  return getBackendErrorMessage(error) ?? fallback;
 };
 
 const DispatchPage = () => {
@@ -81,8 +108,16 @@ const DispatchPage = () => {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<QrScanner | null>(null);
+  const pendingTokensRef = useRef<Set<string>>(new Set());
+  const lookupTokensRef = useRef<Set<string>>(new Set());
 
   const selectedCourierName = selectedCourierId ? (courierMap.get(selectedCourierId) ?? "#") : "";
+
+  useEffect(() => {
+    pendingTokensRef.current = new Set(
+      pendingOrders.map((order) => order.token.trim().toLowerCase()),
+    );
+  }, [pendingOrders]);
 
   const handleRemoveOrder = useCallback((orderId: string) => {
     setPendingOrders((prev) => prev.filter((order) => order.id !== orderId));
@@ -101,18 +136,21 @@ const DispatchPage = () => {
       return false;
     }
 
+    const tokenKey = normalizedToken.toLowerCase();
+
     if (getScanResourceType(normalizedToken) !== "order") {
       setScanError(t("wrongType"));
       void playScanFeedback("error");
       return true;
     }
 
-    if (pendingOrders.some((order) => order.token.toLowerCase() === normalizedToken.toLowerCase())) {
+    if (pendingTokensRef.current.has(tokenKey) || lookupTokensRef.current.has(tokenKey)) {
       setScanError(t("duplicateOrder"));
       void playScanFeedback("error");
       return true;
     }
 
+    lookupTokensRef.current.add(tokenKey);
     setIsLookingUpOrder(true);
     setScanError("");
 
@@ -123,7 +161,13 @@ const DispatchPage = () => {
       }
 
       const nextOrder = normalizeOrder(detail.data, normalizedToken, t);
-      setPendingOrders((prev) => [...prev, nextOrder]);
+      setPendingOrders((prev) => {
+        if (prev.some((order) => order.id === nextOrder.id || order.token.toLowerCase() === tokenKey)) {
+          return prev;
+        }
+
+        return [...prev, nextOrder];
+      });
       void playScanFeedback("success");
       return true;
     } catch (error) {
@@ -131,9 +175,10 @@ const DispatchPage = () => {
       void playScanFeedback("error");
       return true;
     } finally {
+      lookupTokensRef.current.delete(tokenKey);
       setIsLookingUpOrder(false);
     }
-  }, [pendingOrders, selectedCourierId, t]);
+  }, [selectedCourierId, t]);
 
   useKeyboardScanner({
     enabled: Boolean(selectedCourierId),
@@ -165,7 +210,7 @@ const DispatchPage = () => {
 
     const startScanner = async () => {
       try {
-        if (!videoRef.current) return;
+        if (!selectedCourierId || !videoRef.current) return;
 
         const supportError = await QrScanner.getSupportError();
         if (supportError) {
@@ -208,7 +253,7 @@ const DispatchPage = () => {
       cancelled = true;
       stopScanner();
     };
-  }, [handleScanValue, t]);
+  }, [handleScanValue, selectedCourierId, t]);
 
   const handleToggleTorch = async () => {
     const scanner = scannerRef.current;
@@ -241,10 +286,11 @@ const DispatchPage = () => {
       setPendingOrders([]);
       setSelectedCourierId("");
       setScanError("");
+      lookupTokensRef.current.clear();
     } catch (error) {
       notificationApi.error({
         message: t("error"),
-        description: getBackendErrorMessage(error) ?? t("orderLookupError"),
+        description: getDispatchErrorMessage(error, t("orderLookupError")),
         placement: "topRight",
         duration: 5,
       });
@@ -278,6 +324,7 @@ const DispatchPage = () => {
         </div>
       </div>
 
+      {selectedCourierId ? (
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark">
           <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4">
@@ -416,6 +463,19 @@ const DispatchPage = () => {
           </div>
         </section>
       </div>
+      ) : (
+        <div className="mt-6 rounded-[28px] border border-dashed border-[color:var(--color-border-soft)] bg-primary p-10 text-center shadow-sm dark:border-white/10 dark:bg-primarydark">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-main/10 text-main dark:text-white">
+            <LockKeyhole size={26} />
+          </div>
+          <h3 className="m-0 mt-5 text-xl font-black text-maindark dark:text-white">
+            {t("lockedTitle")}
+          </h3>
+          <p className="mx-auto mt-2 max-w-xl text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+            {t("lockedHint")}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

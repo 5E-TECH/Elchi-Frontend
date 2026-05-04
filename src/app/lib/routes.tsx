@@ -92,7 +92,7 @@ const canViewBranchDashboard = (state: RootState) => {
 
 const canViewDispatch = (state: RootState) => {
   const role = state.role.role;
-  return role === "superadmin";
+  return role === "manager" || role === "operator";
 };
 
 const canViewBatches = (state: RootState) => {

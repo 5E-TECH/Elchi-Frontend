@@ -16,6 +16,9 @@ import type {
 
 export const BATCH_KEY = "batches";
 
+type ApiBatchStatus = "PENDING" | "SENT" | "RECEIVED" | "CANCELLED";
+type ApiBatchDirection = "FORWARD" | "RETURN";
+
 const toNumber = (value: unknown, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -30,8 +33,8 @@ const toText = (value: unknown, fallback = "—") => {
 const normalizeStatus = (value: unknown): BatchStatus => {
   const normalized = String(value ?? "").trim().toLowerCase();
 
-  if (["new", "created", "yangi"].includes(normalized)) return "new";
-  if (["on_the_way", "on-way", "in_transit", "yo'lda", "yolda"].includes(normalized)) {
+  if (["new", "created", "yangi", "pending"].includes(normalized)) return "new";
+  if (["on_the_way", "on-way", "in_transit", "yo'lda", "yolda", "sent"].includes(normalized)) {
     return "on_the_way";
   }
   if (["received", "accepted", "qabul_qilindi", "received_at_branch"].includes(normalized)) {
@@ -48,18 +51,46 @@ const normalizeDirection = (value: unknown): BatchDirection => {
   return "forward";
 };
 
-const normalizeBranch = (value: any, fallback = "—"): BatchBranch => ({
-  id: toText(value?.id ?? value?._id ?? value?.branch_id, fallback),
-  name: toText(value?.name ?? value?.title ?? value?.branch_name, fallback),
-  code: value?.code ? toText(value.code, fallback) : undefined,
-  region: value?.region?.name
-    ? toText(value.region.name, fallback)
-    : value?.region
-      ? toText(value.region, fallback)
-      : value?.region_name
-        ? toText(value.region_name, fallback)
-        : undefined,
-});
+const toApiBatchStatus = (status: BatchStatus): ApiBatchStatus => {
+  const statusMap: Record<BatchStatus, ApiBatchStatus> = {
+    new: "PENDING",
+    on_the_way: "SENT",
+    received: "RECEIVED",
+    cancelled: "CANCELLED",
+  };
+
+  return statusMap[status];
+};
+
+const toApiBatchDirection = (direction: BatchDirection): ApiBatchDirection => {
+  const directionMap: Record<BatchDirection, ApiBatchDirection> = {
+    forward: "FORWARD",
+    return: "RETURN",
+  };
+
+  return directionMap[direction];
+};
+
+const normalizeBranch = (value: any, fallback = "—"): BatchBranch => {
+  const id = toText(value?.id ?? value?._id ?? value?.branch_id, fallback);
+  const name = toText(
+    value?.name ?? value?.title ?? value?.branch_name,
+    id !== fallback ? `Filial #${id}` : fallback,
+  );
+
+  return {
+    id,
+    name,
+    code: value?.code ? toText(value.code, fallback) : undefined,
+    region: value?.region?.name
+      ? toText(value.region.name, fallback)
+      : value?.region
+        ? toText(value.region, fallback)
+        : value?.region_name
+          ? toText(value.region_name, fallback)
+          : undefined,
+  };
+};
 
 const normalizeOrder = (order: any, index: number): BatchOrder => ({
   id: toText(
@@ -113,15 +144,28 @@ const normalizeHistoryItem = (
 
 const normalizeBatch = (raw: any): Batch => ({
   id: toText(raw?.id ?? raw?._id ?? raw?.batch_id),
-  token: toText(raw?.token ?? raw?.qr_token ?? raw?.qrCodeToken, ""),
+  token: toText(raw?.qr_code_token ?? raw?.token ?? raw?.qr_token ?? raw?.qrCodeToken, ""),
   from_branch: normalizeBranch(
-    raw?.from_branch ?? raw?.fromBranch ?? raw?.source_branch ?? raw?.from,
+    raw?.from_branch ??
+      raw?.fromBranch ??
+      raw?.source_branch ??
+      raw?.from ??
+      {
+        id: raw?.source_branch_id ?? raw?.from_branch_id,
+        name: raw?.source_branch_name ?? raw?.from_branch_name,
+      },
   ),
   to_branch: normalizeBranch(
     raw?.to_branch ??
       raw?.toBranch ??
       raw?.destination_branch ??
       raw?.to ??
+      (raw?.destination_branch_id || raw?.destination_branch_name
+        ? {
+            id: raw?.destination_branch_id,
+            name: raw?.destination_branch_name,
+          }
+        : null) ??
       {
         id: raw?.target_region_id ?? raw?.region?.id,
         name: raw?.region?.name,
@@ -139,6 +183,9 @@ const normalizeBatch = (raw: any): Batch => ({
       : raw?.driver
         ? toText(raw.driver)
         : undefined,
+  driver_phone: raw?.driver_phone ? toText(raw.driver_phone, "") : undefined,
+  vehicle_plate: raw?.vehicle_plate ? toText(raw.vehicle_plate, "") : undefined,
+  request_key: raw?.request_key ? toText(raw.request_key, "") : undefined,
   created_at: toText(raw?.created_at ?? raw?.createdAt, new Date().toISOString()),
 });
 
@@ -197,8 +244,8 @@ const buildListParams = (params?: BatchListParams) => {
 
   const requestParams: Record<string, string> = {};
 
-  if (params.status) requestParams.status = params.status;
-  if (params.direction) requestParams.direction = params.direction;
+  if (params.status) requestParams.status = toApiBatchStatus(params.status);
+  if (params.direction) requestParams.direction = toApiBatchDirection(params.direction);
   if (params.from) requestParams.from = params.from;
   if (params.to) requestParams.to = params.to;
   if (params.page) requestParams.page = String(params.page);

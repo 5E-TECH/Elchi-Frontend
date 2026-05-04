@@ -1,17 +1,16 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import type { BatchDetail } from "../../../entities/batch";
 import {
   formatBatchMoney,
   formatBatchPrintDate,
-  getBatchQrUrl,
 } from "../lib/batchFormat";
+import BatchQrCode from "./BatchQrCode";
 
 interface BatchPrintSheetProps {
   batch: BatchDetail;
 }
 
 const BatchPrintSheet = ({ batch }: BatchPrintSheetProps) => {
-  const [qrFailed, setQrFailed] = useState(false);
   const branchLabel = `${batch.from_branch.code ?? batch.from_branch.id} (${batch.from_branch.name})`;
   const regionLabel = batch.to_branch.region ?? batch.to_branch.name;
 
@@ -42,18 +41,12 @@ const BatchPrintSheet = ({ batch }: BatchPrintSheetProps) => {
         </div>
 
         <div className="batch-print-qr">
-          {!qrFailed && batch.token ? (
-            <img
-              src={getBatchQrUrl(batch.token)}
-              alt={`QR ${batch.id}`}
-              onError={() => setQrFailed(true)}
-            />
-          ) : (
-            <div className="batch-print-qr-fallback">
-              <span>QR KOD</span>
-              <small>{batch.id}</small>
-            </div>
-          )}
+          <BatchQrCode
+            token={batch.token}
+            fallbackLabel={batch.id}
+            alt={`QR ${batch.id}`}
+            fallbackClassName="batch-print-qr-fallback"
+          />
         </div>
       </section>
     </div>
