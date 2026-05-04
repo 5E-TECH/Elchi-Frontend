@@ -32,11 +32,11 @@ const NewOrders = () => {
       </div>
 
       {!isMarketRole && (
-        <div className="mb-5 mt-4 flex flex-col gap-3 sm:mb-6 sm:gap-4 lg:flex-row lg:items-center">
+        <div className="mb-5 mt-4 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
           {/* Markets tab */}
           <div
             onClick={() => navigate("/new-orders")}
-            className={`flex w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
+            className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
               ${activeTab === "markets"
                 ? "bg-main text-white border-main shadow-lg shadow-main/25"
                 : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
@@ -57,7 +57,7 @@ const NewOrders = () => {
           {/* Tashqi Buyurtmalar tab */}
           <div
             onClick={() => navigate("/new-orders/integrations")}
-            className={`flex w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
+            className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
               ${activeTab === "integrations"
                 ? "bg-main text-white border-main shadow-lg shadow-main/25"
                 : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
@@ -70,7 +70,7 @@ const NewOrders = () => {
           {isAdminRole && (
             <div
               onClick={() => navigate("/new-orders/branches")}
-              className={`flex w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
+              className={`sm:col-span-2 xl:col-span-1 flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
               ${activeTab === "branches"
                 ? "bg-main text-white border-main shadow-lg shadow-main/25"
                 : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
