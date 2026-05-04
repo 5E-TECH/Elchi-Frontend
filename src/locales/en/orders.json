@@ -166,5 +166,8 @@
       "rollback": "Rolled back"
     }
   },
-  "branch": "Branch"
+  "branch": "Branch",
+  "filterBranch": "Branch",
+  "filterBranchPlaceholder": "Select branch",
+  "chipBranch": "Branch"
 }

@@ -87,6 +87,7 @@ export interface OrderListParams {
     limit?: number;
     status?: OrderStatus | OrderStatus[] | "";
     market_id?: string;
+    branch_id?: string;
     customer_id?: string;
     region_id?: string;
     courier_id?: string;

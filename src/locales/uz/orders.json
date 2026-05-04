@@ -166,5 +166,8 @@
       "rollback": "Qaytarildi"
     }
   },
-  "branch": "Filial"
+  "branch": "Filial",
+  "filterBranch": "Filial",
+  "filterBranchPlaceholder": "Filialni tanlang",
+  "chipBranch": "Filial"
 }
