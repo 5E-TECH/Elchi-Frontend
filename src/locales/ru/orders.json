@@ -166,5 +166,8 @@
       "rollback": "Возвращен"
     }
   },
-  "branch": "Филиал"
+  "branch": "Филиал",
+  "filterBranch": "Филиал",
+  "filterBranchPlaceholder": "Выберите филиал",
+  "chipBranch": "Филиал"
 }
