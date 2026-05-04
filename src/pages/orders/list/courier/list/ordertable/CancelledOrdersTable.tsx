@@ -21,7 +21,9 @@ const CancelledOrdersTable = ({
   onSelectChange,
   onSelectAll,
 }: Props) => {
-  const { t } = useTranslation("orders");
+  const { t, i18n } = useTranslation("orders");
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+  const formatMoney = (value: number) => `${value.toLocaleString(locale)} ${t("currency")}`;
   const allChecked = orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
   const someChecked = orders.some((o) => selectedIds.has(o.id));
   const formatDate = (value: string) =>
@@ -118,7 +120,7 @@ const CancelledOrdersTable = ({
         sortable: true,
         render: (val) => (
           <span className="font-bold text-sm">
-            {Number(val).toLocaleString("uz-UZ")} so'm
+            {formatMoney(Number(val))}
           </span>
         ),
       },
@@ -151,7 +153,7 @@ const CancelledOrdersTable = ({
         ),
       },
     ],
-    [selectedIds, allChecked, someChecked, onSelectChange, onSelectAll, t]
+    [selectedIds, allChecked, someChecked, onSelectChange, onSelectAll, t, locale]
   );
 
   return (
@@ -221,7 +223,7 @@ const CancelledOrdersTable = ({
 
             <div className="mt-2 flex items-center justify-between gap-2">
               <span className="text-base font-bold text-slate-900 dark:text-white">
-                {Number(row.total_price).toLocaleString("uz-UZ")} so'm
+                {formatMoney(Number(row.total_price))}
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-white/65">
                 <Calendar size={11} className="shrink-0" />

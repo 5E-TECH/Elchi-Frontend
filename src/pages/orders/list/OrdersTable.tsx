@@ -41,9 +41,6 @@ const formatPhoneNumber = (phone: string | null | undefined) => {
     return phone;
 };
 
-const formatPrice = (num: number) =>
-    (num ?? 0).toLocaleString("uz-UZ") + " so'm";
-
 const getDeliveryBadgeClassName = (value: OrderListItem["where_deliver"]) =>
     value === "center"
         ? "bg-linear-to-r from-blue-500 to-sky-500 text-white shadow-blue-500/25"
@@ -66,7 +63,7 @@ const formatDate = (iso: string) => {
     });
 };
 
-const createColumns = (rowNumberOffset: number) => [
+const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => string) => [
     {
         key: "id" as const,
         label: "#",
@@ -185,10 +182,13 @@ const createColumns = (rowNumberOffset: number) => [
 ];
 
 const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props) => {
-    const { t } = useTranslation("orders");
+    const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
+    const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+    const formatPrice = (num: number) =>
+        `${(num ?? 0).toLocaleString(locale)} ${t("currency")}`;
     const tableColumns = useMemo(() => {
-        const translatedColumns = createColumns(rowNumberOffset).map((column) => {
+        const translatedColumns = createColumns(rowNumberOffset, formatPrice).map((column) => {
             if (column.key === "customer") return { ...column, label: t("customer") };
             if (column.key === "district") return { ...column, label: t("filterRegion") + " / " + t("district") };
             if (column.key === "market") return { ...column, label: t("market") };
@@ -215,7 +215,7 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props
         }
 
         return translatedColumns;
-    }, [role, rowNumberOffset, t]);
+    }, [locale, role, rowNumberOffset, t]);
 
     if (isLoading) {
         return (

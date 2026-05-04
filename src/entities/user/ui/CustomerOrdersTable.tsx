@@ -10,9 +10,6 @@ interface CustomerOrdersTableProps {
     orders: Order[];
 }
 
-const formatMoney = (n: number) =>
-    n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm";
-
 const formatDate = (d: string) => {
     try {
         return new Date(d).toLocaleDateString('uz-UZ', {
@@ -33,8 +30,10 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 };
 
 export const CustomerOrdersTable = memo(({ orders }: CustomerOrdersTableProps) => {
-    const { t } = useTranslation("users");
+    const { t, i18n } = useTranslation(["users", "orders"]);
     const navigate = useNavigate();
+    const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+    const formatMoney = (n: number) => `${n.toLocaleString(locale)} ${t("orders:currency")}`;
 
     const columns: ColumnConfig<Order>[] = [
         {
