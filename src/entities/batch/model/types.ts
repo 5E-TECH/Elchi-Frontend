@@ -52,7 +52,6 @@ export interface BatchListParams {
   directionRaw?: "FORWARD" | "RETURN" | "";
   sourceBranchId?: string;
   destinationBranchId?: string;
-  datePreset?: BatchDatePreset;
   from?: string;
   to?: string;
   page?: number;

@@ -35,10 +35,8 @@ const normalizeStatus = (value: unknown): BatchStatus => {
 
   if (["new", "created", "yangi", "pending"].includes(normalized)) return "new";
   if (["on_the_way", "on-way", "in_transit", "yo'lda", "yolda", "sent"].includes(normalized)) {
-  if (["on_the_way", "on-way", "in_transit", "yo'lda", "yolda"].includes(normalized)) {
     return "on_the_way";
   }
-  if (["sent"].includes(normalized)) return "on_the_way";
   if (["received", "accepted", "qabul_qilindi", "received_at_branch"].includes(normalized)) {
     return "received";
   }
