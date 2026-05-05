@@ -164,15 +164,16 @@ const OldMails = () => {
 
   const mails: MailItem[] = useMemo(() => data?.data?.data ?? [], [data]);
   const pagination = data?.data;
+
   const regionOptions = useMemo(
     () => buildRegionFilterOptions(mails, t("oldRegionFilterPlaceholder")),
     [mails, t],
   );
   const filteredMails = useMemo(
-    () =>
-      selectedRegionId
-        ? mails.filter((mail) => mail.region?.id === selectedRegionId)
-        : mails,
+    () => mails.filter((mail) => {
+      const regionMatched = selectedRegionId ? mail.region?.id === selectedRegionId : true;
+      return regionMatched;
+    }),
     [mails, selectedRegionId],
   );
 
@@ -245,7 +246,7 @@ const OldMails = () => {
             <Inbox size={28} className="text-main" />
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            {t("oldRegionFilterEmpty")}
+            {t("oldFiltersEmpty")}
           </p>
         </div>
       ) : (

@@ -70,6 +70,7 @@ const Mails = () => {
     typeof window !== "undefined" ? window.innerWidth < 1280 : false,
   );
   const [isCompactTabsOpen, setIsCompactTabsOpen] = useState(false);
+  const [isOldBatchMenuOpen, setIsOldBatchMenuOpen] = useState(false);
   const tabParam = new URLSearchParams(location.search).get("tab");
 
   useEffect(() => {
@@ -97,9 +98,24 @@ const Mails = () => {
     location.pathname.split("/").filter(Boolean).at(-1),
   );
   const activeTabData = tabs.find((tab) => tab.key === activeTab) ?? tabs[0];
+  const selectedBatchId = new URLSearchParams(location.search).get("batch_mode") ?? "";
+
+  const batchOptions = [
+    { value: "", label: t("oldTab") },
+    { value: "all", label: t("oldBatchFilterPlaceholder") },
+  ];
+
+  const handleBatchChange = (value: string) => {
+    const params = new URLSearchParams(location.search);
+    if (value) params.set("batch_mode", value);
+    else params.delete("batch_mode");
+    navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ""}`, { replace: true });
+    setIsOldBatchMenuOpen(false);
+  };
 
   const handleTabChange = (tab: MailTab) => {
     navigate(getMailTabPath(tab));
+    setIsOldBatchMenuOpen(false);
     if (isCompactTabs) {
       setIsCompactTabsOpen(false);
     }
@@ -119,7 +135,15 @@ const Mails = () => {
         <div className="mb-6 mt-5">
           <button
             type="button"
-            onClick={() => setIsCompactTabsOpen((prev) => !prev)}
+            onClick={() => {
+              if (activeTab === "old") {
+                setIsOldBatchMenuOpen((prev) => !prev);
+                setIsCompactTabsOpen(false);
+                return;
+              }
+              setIsCompactTabsOpen((prev) => !prev);
+              setIsOldBatchMenuOpen(false);
+            }}
             style={activeTabData.activeWrapperStyle}
             className={`flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 ${activeTabData.activeWrapperClassName}`}
           >
@@ -128,15 +152,43 @@ const Mails = () => {
                 {activeTabData.icon}
               </span>
               <span className="truncate text-left text-sm font-semibold leading-snug">
-                {t(activeTabData.labelKey)}
+                {activeTab === "old" && selectedBatchId === "all"
+                  ? t("oldBatchFilterPlaceholder")
+                  : t(activeTabData.labelKey)}
               </span>
             </div>
 
             <ChevronDown
               size={18}
-              className={`shrink-0 transition-transform duration-200 ${isCompactTabsOpen ? "rotate-180" : ""}`}
+              className={`shrink-0 transition-transform duration-200 ${
+                activeTab === "old"
+                  ? (isOldBatchMenuOpen ? "rotate-180" : "")
+                  : (isCompactTabsOpen ? "rotate-180" : "")
+              }`}
             />
           </button>
+
+          {activeTab === "old" && isOldBatchMenuOpen && (
+            <div className="mt-3 grid grid-cols-1 gap-3">
+              {batchOptions.map((option) => {
+                const isActive = selectedBatchId === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleBatchChange(option.value)}
+                    className={`flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all duration-200 ${
+                      isActive
+                        ? "border-main bg-main text-primary shadow-lg shadow-main/25"
+                        : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-primarydark dark:text-gray-300"
+                    }`}
+                  >
+                    <span className="truncate">{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {isCompactTabsOpen && (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -195,9 +247,62 @@ const Mails = () => {
                 >
                   {tab.icon}
                 </span>
-                <span className="text-left text-sm font-semibold leading-snug">
-                  {t(tab.labelKey)}
-                </span>
+                {tab.key === "old" && isActive ? (
+                  <div className="relative w-full min-w-0">
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setIsOldBatchMenuOpen((prev) => !prev);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setIsOldBatchMenuOpen((prev) => !prev);
+                        }
+                      }}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg bg-primary/10 px-2.5 py-1.5 text-sm font-semibold text-white"
+                    >
+                      <span className="truncate">
+                        {selectedBatchId === "all" ? t("oldBatchFilterPlaceholder") : t("oldTab")}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className={`shrink-0 transition-transform duration-200 ${isOldBatchMenuOpen ? "rotate-180" : ""}`}
+                      />
+                    </div>
+
+                    {isOldBatchMenuOpen && (
+                      <div className="absolute top-[calc(100%+8px)] left-0 z-50 w-full min-w-52 overflow-hidden rounded-xl border border-white/20 bg-white p-1 shadow-xl">
+                        {batchOptions.map((option) => {
+                          const isActive = selectedBatchId === option.value;
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleBatchChange(option.value);
+                              }}
+                              className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                                isActive
+                                  ? "bg-main text-white"
+                                  : "text-maindark hover:bg-main/10"
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-left text-sm font-semibold leading-snug">
+                    {t(tab.labelKey)}
+                  </span>
+                )}
               </button>
             );
           })}
