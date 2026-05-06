@@ -100,6 +100,13 @@ const normalizeOrder = (order: any, index: number): BatchOrder => ({
       order?.order_id,
     `ORD-${index + 1}`,
   ),
+  qr_code_token: toText(
+    order?.order?.qr_code_token ??
+      order?.qr_code_token ??
+      order?.qrCodeToken ??
+      order?.token,
+    "",
+  ) || null,
   receiver: toText(
     order?.order?.customer?.name ??
       order?.order?.receiver ??
@@ -247,10 +254,8 @@ const buildListParams = (params?: BatchListParams) => {
   if (params.status) requestParams.status = toApiBatchStatus(params.status);
   if (params.direction) requestParams.direction = toApiBatchDirection(params.direction);
   if (params.statusRaw) requestParams.status = params.statusRaw;
-  else if (params.status) requestParams.status = params.status;
 
   if (params.directionRaw) requestParams.direction = params.directionRaw;
-  else if (params.direction) requestParams.direction = params.direction;
 
   if (params.sourceBranchId) requestParams.source_branch_id = params.sourceBranchId;
   if (params.destinationBranchId) requestParams.destination_branch_id = params.destinationBranchId;

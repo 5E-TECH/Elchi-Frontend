@@ -1,8 +1,11 @@
 {
   "title": "Order biriktirish",
   "subtitle": "Courier tanlang va order QR larini birma-bir skan qiling",
+  "pagePurpose": "Bu sahifa 10-20 ta order QR kodini skan qilib, hammasini bitta courierga biriktirish uchun.",
   "courierLabel": "Courier tanlang",
   "courierPlaceholder": "Courier tanlang",
+  "couriersEmptyTitle": "Courier topilmadi",
+  "couriersEmptyDescription": "Bu filial uchun courier ro'yxati bo'sh keldi. Courier qo'shilsa yoki backend /couriers ro'yxat qaytarsa, shu yerdan tanlab orderlarni biriktirasiz.",
   "scannerTitle": "Skan paneli",
   "scannerSubtitle": "Faqat order QR kodi qabul qilinadi",
   "scannerWaiting": "Courier tanlang va order QR kodlarini skan qiling",

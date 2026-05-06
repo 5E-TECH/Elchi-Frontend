@@ -12,6 +12,7 @@ import {
   useSendPost,
 } from "../../../entities/mails";
 import { useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
+import { mapBatchOrdersToPostOrders } from "../../batches/lib/batchOrderMailAdapter";
 import HeaderName from "../../../shared/components/headerName";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
 
@@ -136,69 +137,7 @@ const MailDetailPage = () => {
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
   const rawOrders = useMemo<PostOrder[]>(() => {
     if (isBranchTransferRole) {
-      const batchOrders = transferBatchResponse?.orders ?? [];
-
-      return batchOrders.map((order) => ({
-        id: order.id,
-        createdAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
-        updatedAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
-        isDeleted: false,
-        market_id: "batch-market",
-        customer_id: `batch-customer-${order.id}`,
-        product_quantity: 0,
-        where_deliver: "address",
-        total_price: order.price,
-        to_be_paid: order.price,
-        paid_amount: 0,
-        status: "new",
-        comment: null,
-        operator: null,
-        post_id: null,
-        canceled_post_id: null,
-        sold_at: null,
-        district_id: "batch-district",
-        region_id: transferBatchResponse?.to_branch?.id ?? "batch-region",
-        address: order.address,
-        qr_code_token: transferBatchResponse?.token ?? null,
-        external_id: null,
-        deleted: false,
-        items: [],
-        customer: {
-          id: `batch-customer-${order.id}`,
-          name: order.receiver,
-          phone_number: order.phone,
-          extra_number: null,
-          username: "",
-          salary: 0,
-          payment_day: null,
-          role: "customer",
-          status: "active",
-          tariff_home: null,
-          tariff_center: null,
-          add_order: false,
-          default_tariff: null,
-          createdAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
-          updatedAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
-          is_deleted: false,
-        },
-        district: {
-          id: "batch-district",
-          name: transferBatchResponse?.to_branch?.name ?? "Filial",
-          sato_code: "",
-          region_id: transferBatchResponse?.to_branch?.id ?? "batch-region",
-          assigned_region: transferBatchResponse?.to_branch?.name ?? "Filial",
-          createdAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
-          updatedAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
-        },
-        region: {
-          id: transferBatchResponse?.to_branch?.id ?? "batch-region",
-          name: transferBatchResponse?.to_branch?.name ?? "Filial",
-          sato_code: "",
-          districts: [],
-          createdAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
-          updatedAt: transferBatchResponse?.created_at ?? new Date().toISOString(),
-        },
-      }));
+      return mapBatchOrdersToPostOrders(transferBatchResponse);
     }
 
     return isRefusedDetail

@@ -96,7 +96,7 @@ const canViewBranchDashboard = (state: RootState) => {
 
 const canViewDispatch = (state: RootState) => {
   const role = state.role.role;
-  return role === "manager" || role === "operator";
+  return role === "manager" || role === "registrator" || role === "branch";
 };
 
 const canViewBatches = (state: RootState) => {

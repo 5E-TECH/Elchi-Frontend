@@ -11,12 +11,27 @@ interface SendButtonProps {
     onReceive: () => void;
     isBusy?: boolean;
     className?: string;
+    sendLabel?: string;
+    receiveLabel?: string;
+    busyLabel?: string;
 }
 
-const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onReceive, isBusy = false, className = "" }: SendButtonProps) => {
+const SendButton = memo(({
+    selectedCount,
+    isCourier,
+    mode = "send",
+    onSend,
+    onReceive,
+    isBusy = false,
+    className = "",
+    sendLabel,
+    receiveLabel,
+    busyLabel,
+}: SendButtonProps) => {
     const { t } = useTranslation("mails");
     const isDisabled = selectedCount === 0 || isBusy;
     const shouldReceive = isCourier || mode === "receive";
+    const loadingText = busyLabel ?? t("checking");
 
     if (shouldReceive) {
         return (
@@ -31,7 +46,7 @@ const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onRe
                         }`}
                 >
                     <Inbox size={16} />
-                    {isBusy ? t("checking") : t("receiveMail")}
+                    {isBusy ? loadingText : receiveLabel ?? t("receiveMail")}
                     {!isDisabled && (
                         <span className="ml-1 px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
                             {selectedCount}
@@ -54,7 +69,7 @@ const SendButton = memo(({ selectedCount, isCourier, mode = "send", onSend, onRe
                     }`}
             >
                 <Send size={16} />
-                {isBusy ? t("checking") : t("sendMail")}
+                {isBusy ? loadingText : sendLabel ?? t("sendMail")}
                 {!isDisabled && (
                     <span className="ml-1 px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
                         {selectedCount}

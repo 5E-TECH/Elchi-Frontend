@@ -14,6 +14,7 @@ import FilterPanel from "../../shared/ui/FilterPanel";
 import FilterFieldCard from "../../shared/ui/FilterFieldCard";
 import FilterDateInput from "../../shared/ui/FilterDateInput";
 import PageStatBadge from "../../shared/ui/PageStatBadge";
+import EmptyState from "../../shared/ui/EmptyState";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { getCurrentBranchId } from "../../shared/lib/currentBranch";
@@ -320,6 +321,14 @@ const ReturnsPage = () => {
         loading={isLoading}
         keyExtractor={(row) => row.id}
         emptyMessage={t("empty")}
+        emptyState={(
+          <EmptyState
+            icon="↩"
+            title={t("empty")}
+            description="Hozircha qaytarilgan orderlar topilmadi."
+            className="border-0 bg-transparent shadow-none"
+          />
+        )}
         onRowClick={(row) => navigate(`/batches/${row.id}`)}
       />
 

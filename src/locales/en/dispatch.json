@@ -1,8 +1,11 @@
 {
   "title": "Dispatch orders",
   "subtitle": "Select a courier and scan order QR codes one by one",
+  "pagePurpose": "This page is for scanning 10-20 order QR codes and assigning them all to one courier.",
   "courierLabel": "Select courier",
   "courierPlaceholder": "Select courier",
+  "couriersEmptyTitle": "No couriers found",
+  "couriersEmptyDescription": "The courier list for this branch came back empty. Once /couriers returns couriers, select one here and assign scanned orders.",
   "scannerTitle": "Scanner panel",
   "scannerSubtitle": "Only order QR codes are accepted",
   "scannerWaiting": "Select a courier and scan order QR codes",

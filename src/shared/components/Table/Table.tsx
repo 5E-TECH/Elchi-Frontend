@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, memo, type ReactElement } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { TableProps, ColumnConfig, SortConfig } from './Table.types';
+import EmptyState from '../../ui/EmptyState';
+import TableSkeleton from '../../ui/TableSkeleton';
 
 export const Table = memo(<T extends Record<string, any>>({
   data,
@@ -8,6 +9,8 @@ export const Table = memo(<T extends Record<string, any>>({
   keyExtractor = (_, index) => index,
   loading = false,
   emptyMessage = "Ma'lumot topilmadi",
+  emptyState,
+  loadingRows = 6,
   onRowClick,
   mobileRowRender,
   className = '',
@@ -16,7 +19,6 @@ export const Table = memo(<T extends Record<string, any>>({
   bordered = true,
   hoverable = true,
 }: TableProps<T>) => {
-  const { t } = useTranslation("common");
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -151,15 +153,7 @@ export const Table = memo(<T extends Record<string, any>>({
   };
 
   if (loading) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-2xl border border-[color:var(--color-border-strong)] bg-primary p-12 dark:border-primarydark/60 dark:bg-maindark"
-      >
-        <p className="text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-          {t("loading")}
-        </p>
-      </div>
-    );
+    return <TableSkeleton rows={loadingRows} columns={Math.min(columns.length || 5, 7)} />;
   }
 
   return (
@@ -201,9 +195,9 @@ export const Table = memo(<T extends Record<string, any>>({
               <tr className={isCardMode ? 'block' : 'table-row'}>
                 <td
                   colSpan={isCardMode ? cardColumns.length : columns.length}
-                  className={`${dense ? 'px-3 py-10' : 'px-6 py-12'} ${isCardMode ? 'block' : 'table-cell'} text-center text-maindark/50 dark:text-sidebar/50`}
+                  className={`${dense ? 'px-3 py-8' : 'px-6 py-10'} ${isCardMode ? 'block' : 'table-cell'} text-center text-maindark/50 dark:text-sidebar/50`}
                 >
-                  <p>{emptyMessage}</p>
+                  {emptyState ?? <EmptyState title={emptyMessage} className="border-0 bg-transparent shadow-none" />}
                 </td>
               </tr>
             ) : (

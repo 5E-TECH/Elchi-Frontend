@@ -1,10 +1,7 @@
 import { memo } from "react";
-import { AlertTriangle, House, RefreshCw, ShieldAlert } from "lucide-react";
+import { House, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ErrorActions from "./error-page/ErrorActions";
-import ErrorCode from "./error-page/ErrorCode";
-import ErrorInfoCard from "./error-page/ErrorInfoCard";
-import ErrorPageLayout from "./error-page/ErrorPageLayout";
+import EmptyState from "./EmptyState";
 
 export interface RuntimeErrorPayload {
   message?: string;
@@ -30,26 +27,43 @@ const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
   const errorStack = [runtimeError?.stack, runtimeError?.componentStack].filter(Boolean).join("\n\n");
 
   return (
-    <ErrorPageLayout>
-      <ErrorCode leftDigit="5" rightDigit="0" subtitle="SOMETHING WENT WRONG" />
+    <main className="flex min-h-screen items-center justify-center bg-background p-4 dark:bg-background">
+      <div className="w-full max-w-3xl">
+        <EmptyState
+          icon="😵"
+          title="Ups, nimadir noto'g'ri bo'ldi"
+          description={errorMessage ? <>Texnik ma'lumot: <span className="font-mono">{errorMessage}</span></> : "Ilovada kutilmagan xato yuz berdi."}
+          className="border-white/10 bg-primary/95 py-14 dark:bg-maindark"
+          action={(
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => {
+                  sessionStorage.removeItem("elchi_runtime_error");
+                  window.location.reload();
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition hover:bg-main/90"
+              >
+                <RefreshCw size={16} />
+                Qayta yuklash
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  sessionStorage.removeItem("elchi_runtime_error");
+                  navigate("/");
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-5 py-3 text-sm font-bold text-maindark transition hover:border-main/50 hover:text-main dark:border-white/10 dark:bg-white/5 dark:text-white"
+              >
+                <House size={16} />
+                Bosh sahifa
+              </button>
+            </div>
+          )}
+        />
 
-      <div className="mt-10 text-center">
-        <h1 className="text-4xl font-black text-primary sm:text-5xl">
-          Kutilmagan xato
-        </h1>
-        <p className="error-page-muted mx-auto mt-5 max-w-3xl text-sm leading-7 sm:text-base">
-          Ilovada xato yuz berdi. Sahifani yangilang yoki biz bilan bog'laning.
-        </p>
-      </div>
-
-      <div className="mt-10 grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
-        <ErrorInfoCard icon={<AlertTriangle size={22} />} label="HOLAT" value="Komponent xatosi" />
-        <ErrorInfoCard icon={<ShieldAlert size={22} />} label="KOD" value="Runtime Error" />
-        <ErrorInfoCard icon={<RefreshCw size={22} />} label="TAVSIYA" value="Sahifani yangilang" />
-      </div>
-
-      {errorMessage && (
-        <details className="error-page-card mt-8 w-full max-w-4xl rounded-3xl p-5 text-left">
+        {errorMessage && (
+        <details className="mt-5 w-full rounded-3xl border border-[color:var(--color-border-soft)] bg-primary p-5 text-left shadow-sm dark:border-white/10 dark:bg-maindark">
           <summary className="cursor-pointer text-sm font-semibold text-primary">
             Xato tafsilotlari
           </summary>
@@ -64,27 +78,9 @@ const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
             )}
           </div>
         </details>
-      )}
-
-      <ErrorActions
-        primary={{
-          label: "Sahifani yangilash",
-          icon: <RefreshCw size={17} />,
-          onClick: () => {
-            sessionStorage.removeItem("elchi_runtime_error");
-            window.location.reload();
-          },
-        }}
-        secondary={{
-          label: "Asosiy sahifaga qaytish",
-          icon: <House size={17} />,
-          onClick: () => {
-            sessionStorage.removeItem("elchi_runtime_error");
-            navigate("/");
-          },
-        }}
-      />
-    </ErrorPageLayout>
+        )}
+      </div>
+    </main>
   );
 };
 

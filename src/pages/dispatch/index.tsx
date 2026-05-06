@@ -9,18 +9,18 @@ import {
   Truck,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import HeaderName from "../../shared/components/headerName";
-import { getCurrentBranchId } from "../../shared/lib/currentBranch";
-import { useBranchEmployees } from "../../entities/branch";
 import SearchableSelect from "../../shared/ui/SearchableSelect";
 import QrScanner from "../../shared/lib/qrScanner";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
+import { useScannerGate } from "../../shared/lib/useScannerGate";
 import { extractScannerToken } from "../../shared/lib/scanToken";
 import { fetchScanDetail, getScanResourceType, getBackendErrorMessage } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../scan/lib/scanShared";
 import { useAppNotification } from "../../app/providers/notification/NotificationProvider";
 import { useOrders } from "../../entities/order/api/orderApi";
+import EmptyState from "../../shared/ui/EmptyState";
+import { useUser } from "../../entities/user/api/userApi";
 
 type PendingOrder = {
   id: string;
@@ -45,6 +45,56 @@ const safe = (value: unknown, fallback = "—") => {
 };
 
 const formatMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
+
+const extractList = (payload: unknown): any[] => {
+  const source = payload as Record<string, any>;
+  if (Array.isArray(source)) return source;
+  if (Array.isArray(source?.data?.data)) return source.data.data;
+  if (Array.isArray(source?.data)) return source.data;
+  if (Array.isArray(source?.data?.items)) return source.data.items;
+  if (Array.isArray(source?.data?.couriers)) return source.data.couriers;
+  if (Array.isArray(source?.data?.rows)) return source.data.rows;
+  if (Array.isArray(source?.data?.results)) return source.data.results;
+  if (Array.isArray(source?.items)) return source.items;
+  if (Array.isArray(source?.couriers)) return source.couriers;
+  if (Array.isArray(source?.rows)) return source.rows;
+  if (Array.isArray(source?.results)) return source.results;
+  return [];
+};
+
+const normalizeCourierOption = (value: unknown) => {
+  const item = value as Record<string, any>;
+  const user = (
+    item.user ??
+    item.employee ??
+    item.courier ??
+    item.identity_user ??
+    item.identityUser ??
+    item.profile ??
+    item
+  ) as Record<string, any>;
+  const id = safe(user.id ?? item.user_id ?? item.userId ?? item.courier_id ?? item.courierId ?? item.id, "");
+  const label = safe(
+    user.fullName ??
+      user.full_name ??
+      user.name ??
+      user.username ??
+      item.fullName ??
+      item.full_name ??
+      item.name ??
+      item.username ??
+      item.phone_number ??
+      item.phone,
+    "",
+  );
+
+  if (!id || !label) return null;
+
+  return {
+    value: id,
+    label,
+  };
+};
 
 const normalizeOrder = (payload: unknown, token: string, t: (key: string) => string): PendingOrder => {
   const source = payload as Record<string, any>;
@@ -78,20 +128,29 @@ const getDispatchErrorMessage = (error: unknown, fallback: string) => {
 
 const DispatchPage = () => {
   const { t } = useTranslation("dispatch");
-  const branchId = useSelector(getCurrentBranchId);
-  const { data: employees } = useBranchEmployees(branchId || undefined);
   const { api: notificationApi } = useAppNotification();
   const { assignCourier } = useOrders();
+  const { getCouriers } = useUser();
+  const courierParams = useMemo(
+    () => ({
+      page: 1,
+      limit: 200,
+    }),
+    [],
+  );
+  const {
+    data: couriersResponse,
+    isLoading: isCouriersLoading,
+    isError: isCouriersError,
+    refetch: refetchCouriers,
+  } = getCouriers(courierParams);
 
   const couriers = useMemo(
     () =>
-      (employees ?? [])
-        .filter((employee) => employee.position.toLowerCase().includes("courier") || employee.position.toLowerCase().includes("kuryer"))
-        .map((employee) => ({
-          value: employee.user.id,
-          label: employee.user.fullName,
-        })),
-    [employees],
+      extractList(couriersResponse)
+        .map(normalizeCourierOption)
+        .filter((courier): courier is { value: string; label: string } => Boolean(courier)),
+    [couriersResponse],
   );
 
   const courierMap = useMemo(
@@ -110,8 +169,19 @@ const DispatchPage = () => {
   const scannerRef = useRef<QrScanner | null>(null);
   const pendingTokensRef = useRef<Set<string>>(new Set());
   const lookupTokensRef = useRef<Set<string>>(new Set());
+  const { canAcceptScan, blockScans, resetScannerGate } = useScannerGate({
+    cooldownMs: 1000,
+    duplicateCooldownMs: 2600,
+  });
 
   const selectedCourierName = selectedCourierId ? (courierMap.get(selectedCourierId) ?? "#") : "";
+
+  useEffect(() => {
+    if (selectedCourierId && !isCouriersLoading && !courierMap.has(selectedCourierId)) {
+      setSelectedCourierId("");
+      setPendingOrders([]);
+    }
+  }, [courierMap, isCouriersLoading, selectedCourierId]);
 
   useEffect(() => {
     pendingTokensRef.current = new Set(
@@ -124,6 +194,8 @@ const DispatchPage = () => {
   }, []);
 
   const handleScanValue = useCallback(async (rawValue: string) => {
+    if (!canAcceptScan(rawValue)) return true;
+
     const normalizedToken = extractScannerToken(rawValue, window.location.origin) ?? rawValue.trim();
 
     if (!selectedCourierId) {
@@ -146,7 +218,7 @@ const DispatchPage = () => {
 
     if (pendingTokensRef.current.has(tokenKey) || lookupTokensRef.current.has(tokenKey)) {
       setScanError(t("duplicateOrder"));
-      void playScanFeedback("error");
+      blockScans(1800);
       return true;
     }
 
@@ -169,16 +241,18 @@ const DispatchPage = () => {
         return [...prev, nextOrder];
       });
       void playScanFeedback("success");
+      blockScans(1400);
       return true;
     } catch (error) {
       setScanError(getBackendErrorMessage(error) ?? t("orderLookupError"));
       void playScanFeedback("error");
+      blockScans(1800);
       return true;
     } finally {
       lookupTokensRef.current.delete(tokenKey);
       setIsLookingUpOrder(false);
     }
-  }, [selectedCourierId, t]);
+  }, [blockScans, canAcceptScan, selectedCourierId, t]);
 
   useKeyboardScanner({
     enabled: Boolean(selectedCourierId),
@@ -287,6 +361,7 @@ const DispatchPage = () => {
       setSelectedCourierId("");
       setScanError("");
       lookupTokensRef.current.clear();
+      resetScannerGate();
     } catch (error) {
       notificationApi.error({
         message: t("error"),
@@ -299,6 +374,23 @@ const DispatchPage = () => {
 
   return (
     <div className="min-h-full rounded-2xl p-4 md:p-6">
+      <style>{`
+        @keyframes dispatch-scan-line-y {
+          0% {
+            top: 14%;
+            opacity: 0.45;
+          }
+          50% {
+            top: 50%;
+            opacity: 1;
+          }
+          100% {
+            top: 86%;
+            opacity: 0.45;
+          }
+        }
+      `}</style>
+
       <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-primarydark">
         <HeaderName
           name={t("title")}
@@ -315,14 +407,49 @@ const DispatchPage = () => {
             value={selectedCourierId}
             onChange={(value) => {
               setSelectedCourierId(value);
+              setPendingOrders([]);
               setScanError("");
             }}
             options={couriers}
             placeholder={t("courierPlaceholder")}
             icon={Truck}
+            loading={isCouriersLoading}
+            disabled={isCouriersLoading || isCouriersError || couriers.length === 0}
           />
+          <p className="m-0 mt-3 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+            {t("pagePurpose")}
+          </p>
         </div>
       </div>
+
+      {isCouriersError ? (
+        <div className="mt-6">
+          <EmptyState
+            icon="❌"
+            title="Courierlarni yuklab bo'lmadi"
+            description="Server javobini tekshirib, qayta urinib ko'ring."
+            action={
+              <button
+                type="button"
+                onClick={() => void refetchCouriers()}
+                className="rounded-2xl bg-main px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-main/90"
+              >
+                Qayta urinib ko'rish
+              </button>
+            }
+          />
+        </div>
+      ) : null}
+
+      {!isCouriersLoading && !isCouriersError && couriers.length === 0 ? (
+        <div className="mt-6">
+          <EmptyState
+            icon="🚚"
+            title={t("couriersEmptyTitle")}
+            description={t("couriersEmptyDescription")}
+          />
+        </div>
+      ) : null}
 
       {selectedCourierId ? (
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
@@ -358,7 +485,20 @@ const DispatchPage = () => {
                   className="h-full w-full object-cover opacity-95"
                 />
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="h-[56%] w-[66%] rounded-[32px] border-2 border-main/80 bg-white/[0.04] shadow-[0_0_0_9999px_rgba(7,10,24,0.34)]" />
+                  <div className="relative h-[58%] w-[68%] max-w-[340px] rounded-[34px] border border-white/10 bg-white/[0.04] shadow-[0_0_0_9999px_rgba(7,10,24,0.34)]">
+                    <div className="absolute left-0 top-0 h-12 w-12 rounded-tl-[30px] border-l-4 border-t-4 border-[#7c8cff]" />
+                    <div className="absolute right-0 top-0 h-12 w-12 rounded-tr-[30px] border-r-4 border-t-4 border-[#7c8cff]" />
+                    <div className="absolute bottom-0 left-0 h-12 w-12 rounded-bl-[30px] border-b-4 border-l-4 border-[#7c8cff]" />
+                    <div className="absolute bottom-0 right-0 h-12 w-12 rounded-br-[30px] border-b-4 border-r-4 border-[#7c8cff]" />
+                    <div
+                      className="absolute left-[8%] right-[8%] h-[2px] -translate-y-1/2 bg-[linear-gradient(90deg,transparent,rgba(124,140,255,0.98),transparent)] shadow-[0_0_24px_rgba(124,140,255,0.78)]"
+                      style={{ animation: "dispatch-scan-line-y 2.2s ease-in-out infinite alternate" }}
+                    />
+                    <div
+                      className="absolute left-[14%] right-[14%] h-10 -translate-y-1/2 bg-[radial-gradient(circle,rgba(124,140,255,0.18),transparent_72%)] blur-md"
+                      style={{ animation: "dispatch-scan-line-y 2.2s ease-in-out infinite alternate" }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -463,7 +603,7 @@ const DispatchPage = () => {
           </div>
         </section>
       </div>
-      ) : (
+      ) : couriers.length > 0 ? (
         <div className="mt-6 rounded-[28px] border border-dashed border-[color:var(--color-border-soft)] bg-primary p-10 text-center shadow-sm dark:border-white/10 dark:bg-primarydark">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-main/10 text-main dark:text-white">
             <LockKeyhole size={26} />
@@ -475,7 +615,7 @@ const DispatchPage = () => {
             {t("lockedHint")}
           </p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

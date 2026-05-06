@@ -1,46 +1,30 @@
 import { memo } from "react";
-import { ArrowLeft, House, LockKeyhole, ShieldAlert } from "lucide-react";
+import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ErrorActions from "./error-page/ErrorActions";
-import ErrorCode from "./error-page/ErrorCode";
-import ErrorInfoCard from "./error-page/ErrorInfoCard";
-import ErrorPageLayout from "./error-page/ErrorPageLayout";
+import EmptyState from "./EmptyState";
 
 const ForbiddenPage = () => {
   const navigate = useNavigate();
 
   return (
-    <ErrorPageLayout>
-      <ErrorCode leftDigit="4" rightDigit="3" subtitle="ACCESS DENIED" />
-
-      <div className="mt-10 text-center">
-        <h1 className="text-4xl font-black text-primary sm:text-5xl">
-          Kirish taqiqlangan
-        </h1>
-        <p className="error-page-muted mx-auto mt-5 max-w-3xl text-sm leading-7 sm:text-base">
-          Sizda bu sahifaga kirish huquqi yo'q. Administrator bilan bog'laning.
-        </p>
-      </div>
-
-      <div className="mt-10 grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
-        <ErrorInfoCard icon={<LockKeyhole size={22} />} label="HOLAT" value="Ruxsat yo'q" />
-        <ErrorInfoCard icon={<ShieldAlert size={22} />} label="KOD" value="403 Forbidden" />
-        <ErrorInfoCard icon={<House size={22} />} label="TAVSIYA" value="Dashboardga qayting" />
-      </div>
-
-      <ErrorActions
-        primary={{
-          label: "Asosiy sahifaga qaytish",
-          icon: <House size={17} />,
-          onClick: () => navigate("/"),
-        }}
-        secondary={{
-          label: "Orqaga qaytish",
-          icon: <ArrowLeft size={17} />,
-          onClick: () => navigate(-1),
-        }}
+    <main className="flex min-h-screen items-center justify-center bg-background p-4 dark:bg-background">
+      <EmptyState
+        icon={<LockKeyhole size={30} />}
+        title="Bu sahifaga ruxsatingiz yo'q"
+        description="Siz bu ma'lumotni ko'rish uchun tegishli ruxsatga ega emassiz."
+        className="w-full max-w-xl border-white/10 bg-primary/95 py-16 dark:bg-maindark"
+        action={(
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition hover:bg-main/90"
+          >
+            <ArrowLeft size={16} />
+            Orqaga qaytish
+          </button>
+        )}
       />
-    </ErrorPageLayout>
+    </main>
   );
 };
 

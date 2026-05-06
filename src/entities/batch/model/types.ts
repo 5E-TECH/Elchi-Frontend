@@ -10,6 +10,7 @@ export interface BatchBranch {
 
 export interface BatchOrder {
   id: string;
+  qr_code_token?: string | null;
   receiver: string;
   phone: string;
   address: string;

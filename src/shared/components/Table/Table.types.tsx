@@ -19,6 +19,8 @@ export interface TableProps<T> {
   keyExtractor?: (item: T, index: number) => string | number;
   loading?: boolean;
   emptyMessage?: string;
+  emptyState?: React.ReactNode;
+  loadingRows?: number;
   onRowClick?: (row: T, index: number) => void;
   mobileRowRender?: (row: T, index: number) => React.ReactNode;
   className?: string;

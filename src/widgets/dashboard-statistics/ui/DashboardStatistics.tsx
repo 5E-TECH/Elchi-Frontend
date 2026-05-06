@@ -27,6 +27,7 @@ export interface DashboardStatisticsProps {
   sold: number;
   cancelled: number;
   profit: number;
+  loading?: boolean;
 }
 
 // ─── Color Map ────────────────────────────────────────────────────────────────
@@ -115,8 +116,26 @@ StatCard.displayName = "StatCard";
 // ─── DashboardStatistics ──────────────────────────────────────────────────────
 
 const DashboardStatistics = memo(
-  ({ totalOrders, sold, cancelled, profit }: DashboardStatisticsProps) => {
+  ({ totalOrders, sold, cancelled, profit, loading = false }: DashboardStatisticsProps) => {
     const { t } = useTranslation("dashboard");
+
+    if (loading) {
+      return (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="el-card min-h-[144px] rounded-2xl p-4"
+              style={{ opacity: 1 - index * 0.08 }}
+            >
+              <div className="mb-7 h-10 w-10 animate-pulse rounded-xl bg-slate-200 dark:bg-white/12" />
+              <div className="mb-4 h-3 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-white/12" />
+              <div className="h-7 w-28 animate-pulse rounded-full bg-slate-200 dark:bg-white/12" />
+            </div>
+          ))}
+        </div>
+      );
+    }
 
     const stats: StatCardProps[] = [
       {

@@ -23,6 +23,7 @@ export interface IUserFilter {
   status?: string;
   role?: string;
   region_id?: string;
+  branch_id?: string;
   fromDate?: string;
   toDate?: string;
   page?: number;

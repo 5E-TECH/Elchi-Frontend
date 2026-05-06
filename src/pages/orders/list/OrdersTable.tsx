@@ -1,6 +1,5 @@
 import { memo, useMemo } from "react";
 import {
-    Package,
     MapPin,
     Store,
     Building2,
@@ -14,6 +13,8 @@ import {
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Table } from "../../../shared/components/Table/Table";
+import EmptyState from "../../../shared/ui/EmptyState";
+import TableSkeleton from "../../../shared/ui/TableSkeleton";
 import OrderStatusBadge from "./OrderStatusBadge";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import type { RootState } from "../../../app/config/store";
@@ -23,6 +24,7 @@ interface Props {
     isLoading: boolean;
     onRowClick?: (order: OrderListItem) => void;
     rowNumberOffset?: number;
+    onCreateOrder?: () => void;
 }
 
 const formatPhoneNumber = (phone: string | null | undefined) => {
@@ -181,7 +183,7 @@ const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => st
     },
 ];
 
-const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props) => {
+const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0, onCreateOrder }: Props) => {
     const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
     const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
@@ -218,32 +220,30 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0 }: Props
     }, [locale, role, rowNumberOffset, t]);
 
     if (isLoading) {
-        return (
-            <div className="flex flex-col gap-2">
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <div
-                        key={i}
-                        className="h-16 rounded-xl bg-gray-100 dark:bg-primarydark animate-pulse"
-                        style={{ opacity: 1 - i * 0.1 }}
-                    />
-                ))}
-            </div>
-        );
+        return <TableSkeleton rows={8} columns={8} />;
     }
 
     if (!data.length) {
         return (
-            <div className="rounded-2xl border border-[color:var(--color-border-strong)] bg-primary px-6 py-20 shadow-sm dark:border-primarydark/60 dark:bg-white/[0.025]">
-                <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
-                    <div className="w-16 h-16 rounded-2xl border border-[color:var(--color-border-soft)] bg-main/10 flex items-center justify-center dark:border-white/10">
-                    <Package size={28} className="text-main/50" />
-                    </div>
-                    <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-500 dark:text-gray-300">{t("ordersNotFound")}</p>
-                        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-400">{t("ordersEmptyHint")}</p>
-                    </div>
-                </div>
-            </div>
+            <EmptyState
+                icon="📭"
+                title={t("ordersNotFound")}
+                description={
+                    <>
+                        Birinchi orderni yaratish uchun<br />
+                        "Yangi order" tugmasini bosing.
+                    </>
+                }
+                action={onCreateOrder ? (
+                    <button
+                        type="button"
+                        onClick={onCreateOrder}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition hover:bg-main/90"
+                    >
+                        + {t("newOrders")}
+                    </button>
+                ) : null}
+            />
         );
     }
 

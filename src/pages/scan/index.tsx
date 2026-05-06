@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import QrScanner from "../../shared/lib/qrScanner";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
+import { useScannerGate } from "../../shared/lib/useScannerGate";
 import {
   extractScannerToken,
   playScanFeedback,
@@ -32,8 +33,11 @@ const ScanPage = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<QrScanner | null>(null);
   const stopScannerRef = useRef<() => void>(() => undefined);
-  const nextAllowedScanAtRef = useRef(0);
   const redirectTimeoutRef = useRef<number | null>(null);
+  const { canAcceptScan, blockScans, resetScannerGate } = useScannerGate({
+    cooldownMs: 1800,
+    duplicateCooldownMs: 1800,
+  });
 
   const [scannerSession, setScannerSession] = useState(0);
   const [isStarting, setIsStarting] = useState(false);
@@ -46,7 +50,7 @@ const ScanPage = () => {
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
 
   const handleDecodedValue = useCallback((rawValue: string) => {
-    if (Date.now() < nextAllowedScanAtRef.current) return true;
+    if (!canAcceptScan(rawValue)) return true;
 
     const nextToken = extractScannerToken(rawValue, window.location.origin);
 
@@ -71,9 +75,9 @@ const ScanPage = () => {
     setScanResult(rawValue);
     setError(t("scannerInvalidQr"));
     void playScanFeedback("error");
-    nextAllowedScanAtRef.current = Date.now() + 1800;
+    blockScans(1800);
     return true;
-  }, [navigate, queryClient, t]);
+  }, [blockScans, canAcceptScan, navigate, queryClient, t]);
 
   useKeyboardScanner({
     enabled: true,
@@ -109,7 +113,7 @@ const ScanPage = () => {
       setScanResult("");
       setScannedId("");
       setScanState("idle");
-      nextAllowedScanAtRef.current = 0;
+      resetScannerGate();
 
       try {
         if (!videoRef.current) {
@@ -188,7 +192,7 @@ const ScanPage = () => {
         redirectTimeoutRef.current = null;
       }
     };
-  }, [handleDecodedValue, navigate, queryClient, scannerSession, t]);
+  }, [handleDecodedValue, navigate, queryClient, resetScannerGate, scannerSession, t]);
 
   const handleToggleTorch = async () => {
     const scanner = scannerRef.current;
