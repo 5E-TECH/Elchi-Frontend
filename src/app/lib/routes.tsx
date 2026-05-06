@@ -70,6 +70,9 @@ const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
 
 const Region = lazy(() => import("../../pages/region/index"));
+const RegionDistrictsPage = lazy(() => import("../../pages/region/pages/districts"));
+const RegionSatoManagementPage = lazy(() => import("../../pages/region/pages/sato-management"));
+const RegionLogistAssignmentPage = lazy(() => import("../../pages/region/pages/logist-assignment"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
 const BranchesPage = lazy(() => import("../../pages/branches"));
 const BranchDetailPage = lazy(() => import("../../pages/branches/ui/BranchDetailPage"));
@@ -324,6 +327,11 @@ const AppRouter = () => {
             {
               path: "regions",
               element: <Region />,
+              children: [
+                { path: "districts", element: <RegionDistrictsPage /> },
+                { path: "sato-management", element: <RegionSatoManagementPage /> },
+                { path: "logist-assignment", element: <RegionLogistAssignmentPage /> },
+              ],
             },
             {
               path: "notifications",
