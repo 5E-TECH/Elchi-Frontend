@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Package } from "lucide-react";
-import { useBatchDetail, useBatchRemainingDetail, type BatchDetail, type BatchOrder } from "../../../entities/batch";
+import { useBatchDetail, type BatchOrder } from "../../../entities/batch";
 import { useOrders } from "../../../entities/orders";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
@@ -16,19 +16,11 @@ const BranchBatchDetailPage = () => {
   const { api } = useAppNotification();
   const { createReceiveOrder } = useOrders();
   const detailQuery = useBatchDetail(batchId);
-  const remainingQuery = useBatchRemainingDetail(batchId);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const data = detailQuery.data;
 
-  const data = useMemo<BatchDetail | undefined>(() => {
-    const detailOrders = detailQuery.data?.orders?.length ?? 0;
-    const remainingOrders = remainingQuery.data?.orders?.length ?? 0;
-
-    if (remainingOrders > detailOrders) return remainingQuery.data;
-    return detailQuery.data ?? remainingQuery.data;
-  }, [detailQuery.data, remainingQuery.data]);
-
-  const isLoading = detailQuery.isLoading || remainingQuery.isLoading;
-  const isError = detailQuery.isError && remainingQuery.isError;
+  const isLoading = detailQuery.isLoading;
+  const isError = detailQuery.isError;
 
   const orders = data?.orders ?? [];
   const isAllSelected = orders.length > 0 && selectedOrderIds.size === orders.length;
@@ -64,7 +56,7 @@ const BranchBatchDetailPage = () => {
             placement: "topRight",
           });
           setSelectedOrderIds(new Set());
-          await Promise.all([detailQuery.refetch(), remainingQuery.refetch()]);
+          await detailQuery.refetch();
         },
         onError: (error: any) => {
           const msg = error?.response?.data?.message ?? error?.message ?? "Qabul qilishda xatolik yuz berdi";
@@ -90,8 +82,7 @@ const BranchBatchDetailPage = () => {
           />
         ),
       },
-      { key: "id", label: "Order ID", render: (value) => <span className="font-black">{String(value)}</span> },
-      { key: "receiver", label: "Qabul qiluvchi" },
+      { key: "receiver", label: "Mijoz", render: (value) => <span className="font-black">{String(value || "—")}</span> },
       { key: "phone", label: "Telefon" },
       { key: "address", label: "Manzil" },
       { key: "price", label: "Narx", render: (value) => formatBatchMoney(Number(value)) },
@@ -153,6 +144,7 @@ const BranchBatchDetailPage = () => {
         keyExtractor={(row) => row.id}
         emptyMessage="Order topilmadi"
         onRowClick={(row) => toggleOne(row.id)}
+        preserveTableOnDesktop
       />
 
       <div className="fixed bottom-22 right-6 z-40 sm:bottom-24 sm:right-8 md:bottom-14 md:right-12">

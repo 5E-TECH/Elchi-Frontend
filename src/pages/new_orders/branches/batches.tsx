@@ -86,13 +86,10 @@ const BranchSentBatchesPage = () => {
         key: "id",
         label: "Viloyat",
         render: (_, row) => (
-          <span className="font-black text-maindark dark:text-white">{row.to_branch.region ?? row.to_branch.name}</span>
+          <span className="font-black text-maindark dark:text-white">
+            {row.to_branch.region ?? row.to_branch.name}
+          </span>
         ),
-      },
-      {
-        key: "to_branch",
-        label: "Qayerga",
-        render: (_, row) => row.to_branch.name,
       },
       {
         key: "orders_count",
@@ -154,6 +151,7 @@ const BranchSentBatchesPage = () => {
         keyExtractor={(row) => row.id}
         emptyMessage="Batch topilmadi"
         onRowClick={(row) => navigate(`/new-orders/branches/${branchId}/${row.id}`)}
+        preserveTableOnDesktop
       />
 
       <div className="fixed bottom-22 right-6 z-40 sm:bottom-24 sm:right-8 md:bottom-14 md:right-12">
