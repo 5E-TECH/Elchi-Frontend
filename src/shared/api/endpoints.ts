@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   },
   REGIONS: {
     BASE: "region",
+    STATS_ALL: "region/stats/all",
     BY_ID: (regionId: string | number) => `region/${regionId}`,
   },
   ORDERS: {
