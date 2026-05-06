@@ -196,6 +196,23 @@ const normalizeBatch = (raw: any): Batch => ({
   created_at: toText(raw?.created_at ?? raw?.createdAt, new Date().toISOString()),
 });
 
+const normalizeBatchWithRegion = (raw: any): Batch => {
+  const normalized = normalizeBatch(raw);
+  const regionName = toText(raw?.region?.name ?? raw?.target_region_name, "");
+
+  if (!normalized.to_branch.region && regionName) {
+    return {
+      ...normalized,
+      to_branch: {
+        ...normalized.to_branch,
+        region: regionName,
+      },
+    };
+  }
+
+  return normalized;
+};
+
 const normalizeBatchDetail = (raw: any): BatchDetail => {
   const source = raw?.data ?? raw?.item ?? raw;
   const batch = normalizeBatch(source);
@@ -227,7 +244,7 @@ const extractBatchList = (payload: any): Batch[] => {
 
   if (!Array.isArray(source)) return [];
 
-  return source.map(normalizeBatch);
+  return source.map(normalizeBatchWithRegion);
 };
 
 const extractTotal = (payload: any, fallback: number) =>

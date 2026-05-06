@@ -28,6 +28,7 @@ export interface TableProps<T> {
   striped?: boolean;
   bordered?: boolean;
   hoverable?: boolean;
+  preserveTableOnDesktop?: boolean;
 }
 
 export interface SortConfig {
