@@ -25,6 +25,8 @@ interface PaginationProps {
   summary?: ReactNode;
   className?: string;
   pageSizeOptions?: number[];
+  hideSinglePageControls?: boolean;
+  compact?: boolean;
 }
 
 const buildPageItems = (page: number, totalPages: number) => {
@@ -59,6 +61,8 @@ const Pagination = ({
   summary,
   className = "",
   pageSizeOptions: customPageSizeOptions,
+  hideSinglePageControls = false,
+  compact = false,
 }: PaginationProps) => {
   const { t } = useTranslation("common");
   const [isLimitOpen, setIsLimitOpen] = useState(false);
@@ -86,6 +90,7 @@ const Pagination = ({
   );
 
   const pages = buildPageItems(currentPage, totalPages);
+  const shouldShowPageControls = !(hideSinglePageControls && totalPages <= 1);
 
   const updateLimitDropdownPosition = useCallback(() => {
     const rect = limitRef.current?.getBoundingClientRect();
@@ -149,11 +154,13 @@ const Pagination = ({
         {resolvedSummary}
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+      <div className={`flex flex-wrap items-center justify-center sm:justify-end ${compact ? "gap-1.5" : "gap-2"}`}>
         {onItemsPerPageChange && (
           <div
             ref={limitRef}
-            className="relative flex items-center gap-2 rounded-full border border-main/15 bg-white px-2.5 py-1.5 text-xs font-semibold text-maindark/70 shadow-sm shadow-main/5 dark:border-white/10 dark:bg-white/[0.08] dark:text-primary/75"
+            className={`relative flex items-center gap-2 border border-main/15 bg-white text-xs font-semibold text-maindark/70 shadow-sm shadow-main/5 dark:border-white/10 dark:bg-white/[0.08] dark:text-primary/75 ${
+              compact ? "rounded-xl px-2 py-1" : "rounded-full px-2.5 py-1.5"
+            }`}
           >
             <span className="whitespace-nowrap">{t("itemsPerPage")}</span>
             <button
@@ -162,7 +169,9 @@ const Pagination = ({
                 updateLimitDropdownPosition();
                 setIsLimitOpen((current) => !current);
               }}
-              className="flex h-8 min-w-[4.5rem] items-center justify-between gap-2 rounded-full border border-main/20 bg-main/8 px-3 text-xs font-extrabold text-main transition hover:border-main/40 hover:bg-main/12 dark:border-white/12 dark:bg-primary/10 dark:text-primary dark:hover:bg-primary/15"
+              className={`flex items-center justify-between gap-2 border border-main/20 bg-main/8 text-xs font-extrabold text-main transition hover:border-main/40 hover:bg-main/12 dark:border-white/12 dark:bg-primary/10 dark:text-primary dark:hover:bg-primary/15 ${
+                compact ? "h-7 min-w-[3.6rem] rounded-lg px-2.5" : "h-8 min-w-[4.5rem] rounded-full px-3"
+              }`}
               aria-expanded={isLimitOpen}
             >
               {safeItemsPerPage}
@@ -210,55 +219,59 @@ const Pagination = ({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage <= 1}
-          aria-label={t("previous")}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-all duration-200 hover:border-main/50 hover:text-main disabled:cursor-not-allowed disabled:opacity-40 dark:border-primarydark dark:text-gray-400"
-        >
-          <ChevronLeft size={15} />
-        </button>
-
-        {pages.map((item) => {
-          if (typeof item !== "number") {
-            return (
-              <span
-                key={item}
-                className="flex h-9 min-w-9 items-center justify-center text-xs font-semibold text-gray-400"
-              >
-                ...
-              </span>
-            );
-          }
-
-          const isActive = item === currentPage;
-
-          return (
+        {shouldShowPageControls ? (
+          <>
             <button
-              key={item}
               type="button"
-              onClick={() => onPageChange(item)}
-              disabled={item === currentPage && totalPages === 1}
-              className={`h-9 min-w-9 rounded-xl px-2 text-xs font-semibold transition-all duration-200 ${isActive
-                  ? "bg-main text-primary shadow-md shadow-main/20"
-                  : "border border-gray-200 text-gray-500 hover:border-main/50 hover:text-main dark:border-primarydark dark:text-gray-400"
-                } ${item === currentPage && totalPages === 1 ? "cursor-not-allowed opacity-70" : ""}`}
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              aria-label={t("previous")}
+              className={`${compact ? "h-8 w-8 rounded-lg" : "h-9 w-9 rounded-xl"} flex items-center justify-center border border-gray-200 text-gray-500 transition-all duration-200 hover:border-main/50 hover:text-main disabled:cursor-not-allowed disabled:opacity-40 dark:border-primarydark dark:text-gray-400`}
             >
-              {item}
+              <ChevronLeft size={15} />
             </button>
-          );
-        })}
 
-        <button
-          type="button"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage >= totalPages}
-          aria-label={t("next")}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition-all duration-200 hover:border-main/50 hover:text-main disabled:cursor-not-allowed disabled:opacity-40 dark:border-primarydark dark:text-gray-400"
-        >
-          <ChevronRight size={15} />
-        </button>
+            {pages.map((item) => {
+              if (typeof item !== "number") {
+                return (
+                  <span
+                    key={item}
+                    className={`${compact ? "h-8 min-w-8" : "h-9 min-w-9"} flex items-center justify-center text-xs font-semibold text-gray-400`}
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              const isActive = item === currentPage;
+
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => onPageChange(item)}
+                  disabled={item === currentPage && totalPages === 1}
+                  className={`${compact ? "h-8 min-w-8 rounded-lg" : "h-9 min-w-9 rounded-xl"} px-2 text-xs font-semibold transition-all duration-200 ${isActive
+                      ? "bg-main text-primary shadow-md shadow-main/20"
+                      : "border border-gray-200 text-gray-500 hover:border-main/50 hover:text-main dark:border-primarydark dark:text-gray-400"
+                    } ${item === currentPage && totalPages === 1 ? "cursor-not-allowed opacity-70" : ""}`}
+                >
+                  {item}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              aria-label={t("next")}
+              className={`${compact ? "h-8 w-8 rounded-lg" : "h-9 w-9 rounded-xl"} flex items-center justify-center border border-gray-200 text-gray-500 transition-all duration-200 hover:border-main/50 hover:text-main disabled:cursor-not-allowed disabled:opacity-40 dark:border-primarydark dark:text-gray-400`}
+            >
+              <ChevronRight size={15} />
+            </button>
+          </>
+        ) : null}
       </div>
     </div>
   );

@@ -70,6 +70,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   ],
   registrator: [
     { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/dispatch", icon: Truck, label: "dispatch" },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
@@ -86,7 +87,6 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/dispatch", icon: Truck, label: "dispatch" },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-    { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/batches", icon: PackageCheck, label: "batches" },
     { to: "/returns", icon: RotateCcw, label: "returns" },
   ],

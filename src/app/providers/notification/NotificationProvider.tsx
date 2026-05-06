@@ -1,4 +1,5 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { Button } from 'antd';
+import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { notification } from 'antd';
 import type { NotificationInstance } from 'antd/es/notification/interface';
 
@@ -32,6 +33,32 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const [api, contextHolder] = notification.useNotification();
+    const lastNetworkToastAtRef = useRef(0);
+
+    useEffect(() => {
+        const handleNetworkError = () => {
+            const now = Date.now();
+            if (now - lastNetworkToastAtRef.current < 4000) {
+                return;
+            }
+
+            lastNetworkToastAtRef.current = now;
+            api.error({
+                message: "Tarmoq xatosi",
+                description: "Internet aloqangizni tekshiring",
+                placement: "bottomRight",
+                duration: 8,
+                btn: (
+                    <Button size="small" danger onClick={() => window.location.reload()}>
+                        Qayta urinib ko'rish
+                    </Button>
+                ),
+            });
+        };
+
+        window.addEventListener("elchi:network-error", handleNetworkError);
+        return () => window.removeEventListener("elchi:network-error", handleNetworkError);
+    }, [api]);
 
     /**
      * Universal API request wrapper.

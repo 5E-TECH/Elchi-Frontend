@@ -45,7 +45,7 @@ const DashboardPage = () => {
   }, []);
 
   const { getDashboard } = useDashboard();
-  const { data } = getDashboard({
+  const { data, isLoading } = getDashboard({
     start_day: fromDate,
     end_day: toDate,
   });
@@ -92,6 +92,7 @@ const DashboardPage = () => {
           sold={orders?.soldAndPaid ?? 0}
           cancelled={orders?.cancelled ?? 0}
           profit={orders?.profit ?? 0}
+          loading={isLoading}
         />
       </div>
 

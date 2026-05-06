@@ -294,6 +294,7 @@ const Orders = () => {
           isLoading={isLoading}
           rowNumberOffset={(currentPage - 1) * itemsPerPage}
           onRowClick={(order) => navigate(`edit/${order.id}`)}
+          onCreateOrder={handleOpenNewOrder}
         />
 
         {/* Pagination */}

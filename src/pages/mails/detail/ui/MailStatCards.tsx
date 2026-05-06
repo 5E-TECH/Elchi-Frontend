@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Package, Home, Building2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { formatPrice } from "../lib/helpers";
 
 interface HomeOrderStats {
@@ -18,6 +19,7 @@ interface MailStatCardsProps {
   homeStats?: HomeOrderStats;
   centerStats?: CenterOrderStats;
   showSelectionCard?: boolean;
+  variant?: "cards" | "compact";
 }
 
 // ─── Yagona stat kard ─────────────────────────────────────────────────────────
@@ -85,66 +87,149 @@ const MailStatCards = memo(
     homeStats,
     centerStats,
     showSelectionCard = true,
-  }: MailStatCardsProps) => (
-    <div className={`grid grid-cols-1 gap-4 ${showSelectionCard ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
-      {/* Tanlangan */}
-      {showSelectionCard && (
+    variant = "cards",
+  }: MailStatCardsProps) => {
+    const { t } = useTranslation(["mails", "orders"]);
+
+    if (variant === "compact") {
+      const isFullySelected = totalOrders > 0 && selectedCount === totalOrders;
+      const compactItems = [
+        showSelectionCard
+          ? {
+              key: "selected",
+              icon: <Package size={15} />,
+              label: t("mails:selected"),
+              value: `${selectedCount}/${totalOrders}`,
+              hint: selectedCount > 0 ? t("mails:selectedCountLabel", { count: selectedCount }) : t("mails:noneSelected"),
+              completed: isFullySelected,
+            }
+          : null,
+        {
+          key: "home",
+          icon: <Home size={15} />,
+          label: t("orders:deliveryToHome"),
+          value: `${homeStats?.homeOrders ?? 0} ${t("mails:piece")}`,
+          hint: homeStats ? formatPrice(homeStats.homeOrdersTotalPrice) : "—",
+          completed: false,
+        },
+        {
+          key: "center",
+          icon: <Building2 size={15} />,
+          label: t("orders:deliveryToCenter"),
+          value: `${centerStats?.centerOrders ?? 0} ${t("mails:piece")}`,
+          hint: centerStats ? formatPrice(centerStats.centerOrdersTotalPrice) : "—",
+          completed: false,
+        },
+      ].filter(Boolean) as Array<{
+        key: string;
+        icon: React.ReactNode;
+        label: string;
+        value: string;
+        hint: string;
+        completed: boolean;
+      }>;
+
+      return (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 p-2.5 dark:border-white/10 dark:bg-white/[0.04]">
+          {compactItems.map((item) => (
+            <div
+              key={item.key}
+              className={`flex min-w-[180px] flex-1 items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
+                item.completed
+                  ? "border-emerald-300/50 bg-emerald-500/15 dark:border-emerald-300/30 dark:bg-emerald-500/18"
+                  : "border-[color:var(--color-border-soft)] bg-primary dark:border-white/10 dark:bg-primarydark"
+              }`}
+            >
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                  item.completed
+                    ? "bg-emerald-500 text-white"
+                    : "bg-main/12 text-main dark:bg-main/20 dark:text-white"
+                }`}
+              >
+                {item.icon}
+              </span>
+              <span className="min-w-0">
+                <span
+                  className={`block truncate text-[11px] font-bold uppercase tracking-[0.12em] ${
+                    item.completed ? "text-emerald-700 dark:text-emerald-100" : "text-[color:var(--color-text-muted)] dark:text-white/55"
+                  }`}
+                >
+                  {item.label}
+                </span>
+                <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                  <span className={`text-base font-black ${item.completed ? "text-emerald-700 dark:text-emerald-100" : "text-maindark dark:text-white"}`}>
+                    {item.value}
+                  </span>
+                  <span className={`text-xs font-semibold ${item.completed ? "text-emerald-700/80 dark:text-emerald-100/75" : "text-[color:var(--color-text-muted)] dark:text-white/60"}`}>
+                    {item.hint}
+                  </span>
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className={`grid grid-cols-1 gap-4 ${showSelectionCard ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+        {showSelectionCard && (
+          <StatCard
+            highlighted
+            tone={selectedCount === totalOrders && totalOrders > 0 ? "success" : "danger"}
+            icon={<Package size={18} />}
+            label={t("mails:selected")}
+            main={
+              <span>
+                {selectedCount}{" "}
+                <span className="text-white/60 font-normal text-base">
+                  / {totalOrders}
+                </span>
+              </span>
+            }
+            sub={
+              selectedCount > 0
+                ? t("mails:selectedCountLabel", { count: selectedCount })
+                : t("mails:noneSelected")
+            }
+          />
+        )}
+
         <StatCard
           highlighted
-          tone={selectedCount === totalOrders && totalOrders > 0 ? "success" : "danger"}
-          icon={<Package size={18} />}
-          label="Tanlangan"
+          icon={<Home size={18} />}
+          label={t("orders:deliveryToHome")}
           main={
             <span>
-              {selectedCount}{" "}
-              <span className="text-white/60 font-normal text-base">
-                / {totalOrders}
+              {homeStats?.homeOrders ?? 0}{" "}
+              <span className="text-gray-400 dark:text-white font-normal text-sm">
+                {t("mails:piece")}
+              </span>
+            </span>
+          }
+          sub={homeStats ? formatPrice(homeStats.homeOrdersTotalPrice) : "—"}
+        />
+
+        <StatCard
+          highlighted
+          icon={<Building2 size={18} />}
+          label={t("orders:deliveryToCenter")}
+          main={
+            <span>
+              {centerStats?.centerOrders ?? 0}{" "}
+              <span className="text-gray-400 dark:text-white font-normal text-sm">
+                {t("mails:piece")}
               </span>
             </span>
           }
           sub={
-            selectedCount > 0
-              ? `${selectedCount} ta tanlandi`
-              : "Hech biri tanlanmagan"
+            centerStats ? formatPrice(centerStats.centerOrdersTotalPrice) : "—"
           }
         />
-      )}
-
-      {/* Uyga yetkazish */}
-      <StatCard
-        highlighted
-        icon={<Home size={18} />}
-        label="Uyga yetkazish"
-        main={
-          <span>
-            {homeStats?.homeOrders ?? 0}{" "}
-            <span className="text-gray-400 dark:text-white font-normal text-sm">
-              ta
-            </span>
-          </span>
-        }
-        sub={homeStats ? formatPrice(homeStats.homeOrdersTotalPrice) : "—"}
-      />
-
-      {/* Markazga */}
-      <StatCard
-        highlighted
-        icon={<Building2 size={18} />}
-        label="Markazga"
-        main={
-          <span>
-            {centerStats?.centerOrders ?? 0}{" "}
-            <span className="text-gray-400 dark:text-white font-normal text-sm">
-              ta
-            </span>
-          </span>
-        }
-        sub={
-          centerStats ? formatPrice(centerStats.centerOrdersTotalPrice) : "—"
-        }
-      />
-    </div>
-  ),
+      </div>
+    );
+  },
 );
 MailStatCards.displayName = "MailStatCards";
 

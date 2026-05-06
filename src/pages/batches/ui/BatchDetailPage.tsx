@@ -1,11 +1,10 @@
-import { memo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckSquare, MapPin, PackageCheck, Printer, QrCode, Square, Truck } from "lucide-react";
+import { ArrowLeft, MapPin, PackageCheck, Printer, QrCode, Truck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import { useBatchDetail, useSendTransferBatch, type BatchOrder } from "../../../entities/batch";
+import { useBatchDetail, useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
 import {
   batchDirectionLabel,
   batchStatusClass,
@@ -18,33 +17,112 @@ import BatchQrCode from "./BatchQrCode";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
-
-const orderColumns: ColumnConfig<BatchOrder>[] = [
-  { key: "id", label: "Order ID", render: (value) => <span className="font-black">{String(value)}</span> },
-  { key: "receiver", label: "Qabul qiluvchi" },
-  { key: "phone", label: "Telefon" },
-  { key: "address", label: "Manzil", mobileFullWidth: true },
-  { key: "price", label: "Narx", render: (value) => formatBatchMoney(Number(value)) },
-  { key: "status", label: "Holat" },
-];
+import OrdersTable from "../../mails/detail/ui/OrdersTable";
+import SendButton from "../../mails/detail/ui/SendButton";
+import MailStatCards from "../../mails/detail/ui/MailStatCards";
+import { useMailDetailState } from "../../mails/detail/model/useMailDetailState";
+import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
 
 const BatchDetailPage = () => {
+  const { t } = useTranslation("mails");
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: batch, isLoading, isError } = useBatchDetail(id);
+  const { data: batchDetail, isLoading: isDetailLoading, isError: isDetailError } = useBatchDetail(id);
+  const {
+    data: remainingBatch,
+    isLoading: isRemainingLoading,
+    isError: isRemainingError,
+    refetch: refetchRemainingBatch,
+  } = useBatchRemainingDetail(id);
   const sendBatch = useSendTransferBatch();
-  const { apiRequest } = useAppNotification();
+  const { apiRequest, api: notifApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
-  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
 
   const isBranchManager = role === "manager";
   const isBranchRegistrator = role === "registrator";
+  const batch = batchDetail ?? remainingBatch;
   const canSendToMainBranch = batch?.status === "new" && (isBranchManager || isBranchRegistrator);
-  const isAllSelected = batch?.orders.length
-    ? selectedOrderIds.size === (batch?.orders.length ?? 0)
-    : false;
+  const rawOrders = useMemo(() => mapBatchOrdersToPostOrders(remainingBatch ?? batch), [batch, remainingBatch]);
+  const orders = useMemo(
+    () => rawOrders.filter((order) => !sentOrderIds.has(order.id)),
+    [rawOrders, sentOrderIds],
+  );
+  const homeStats = useMemo(() => {
+    const homeOrders = orders.filter((order) => order.where_deliver === "address");
+    return {
+      homeOrders: homeOrders.length,
+      homeOrdersTotalPrice: homeOrders.reduce((sum, order) => sum + order.total_price, 0),
+    };
+  }, [orders]);
+  const centerStats = useMemo(() => {
+    const centerOrders = orders.filter((order) => order.where_deliver === "center");
+    return {
+      centerOrders: centerOrders.length,
+      centerOrdersTotalPrice: centerOrders.reduce((sum, order) => sum + order.total_price, 0),
+    };
+  }, [orders]);
+  const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, clearSelection } =
+    useMailDetailState(orders);
 
-  if (isLoading) {
+  const handleMissingScannedOrder = useCallback(() => {
+    notifApi.warning({
+      message: t("qrNotFound"),
+      description: t("batchScanMissing"),
+      placement: "topRight",
+      duration: 3,
+    });
+    playMissingOrderFeedback();
+  }, [notifApi, t]);
+
+  const selectScannedOrder = useCallback((order: (typeof orders)[number]) => {
+    if (!canSendToMainBranch) return;
+    if (selectedIds.has(order.id)) return;
+
+    selectOne(order.id);
+    notifApi.success({
+      message: t("orderSelected"),
+      description: `#${order.id}`,
+      placement: "topRight",
+      duration: 2,
+    });
+    void playScanFeedback("success");
+  }, [canSendToMainBranch, notifApi, selectOne, selectedIds, t]);
+
+  useOrderQrScanner({
+    orders,
+    enabled: canSendToMainBranch && orders.length > 0,
+    onMatch: selectScannedOrder,
+    onMissing: handleMissingScannedOrder,
+  });
+
+  const handleSend = useCallback(() => {
+    if (!id || selectedIds.size === 0 || sendBatch.isPending) return;
+    const sentIds = Array.from(selectedIds);
+
+    apiRequest({
+      request: () =>
+        sendBatch.mutateAsync({
+          batchId: id,
+          orderIds: sentIds,
+        }),
+      successMessage: t("batchSendMainSuccess"),
+      errorMessage: t("batchSendMainError"),
+      onSuccess: async () => {
+        setSentOrderIds((prev) => {
+          const next = new Set(prev);
+          sentIds.forEach((orderId) => next.add(orderId));
+          return next;
+        });
+        clearSelection();
+        await refetchRemainingBatch();
+      },
+    });
+  }, [apiRequest, clearSelection, id, refetchRemainingBatch, selectedIds, sendBatch, t]);
+
+  if (isDetailLoading || isRemainingLoading) {
     return (
       <div className="min-h-full rounded-2xl p-4 md:p-6">
         <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
@@ -54,7 +132,7 @@ const BatchDetailPage = () => {
     );
   }
 
-  if (isError || !batch) {
+  if ((isDetailError && isRemainingError) || !batch) {
     return (
       <div className="min-h-full rounded-2xl p-4 md:p-6">
         <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
@@ -64,75 +142,16 @@ const BatchDetailPage = () => {
     );
   }
 
-  const toggleOne = (orderId: string) => {
-    setSelectedOrderIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(orderId)) next.delete(orderId);
-      else next.add(orderId);
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (isAllSelected) {
-      setSelectedOrderIds(new Set());
-      return;
-    }
-
-    setSelectedOrderIds(new Set(batch.orders.map((order) => order.id)));
-  };
-
-  const handleSend = () => {
-    if (!id || selectedOrderIds.size === 0 || sendBatch.isPending) return;
-
-    apiRequest({
-      request: () =>
-        sendBatch.mutateAsync({
-          batchId: id,
-          orderIds: Array.from(selectedOrderIds),
-        }),
-      successMessage: "Batch asosiy filialga yuborildi",
-      errorMessage: "Batch yuborishda xatolik bo'ldi",
-      onSuccess: () => {
-        setSelectedOrderIds(new Set());
-      },
-    });
-  };
-
-  const selectedCount = selectedOrderIds.size;
-  const selectableOrderColumns: ColumnConfig<BatchOrder>[] = canSendToMainBranch
-    ? [
-        {
-          key: "id",
-          label: "",
-          render: (_, row) => (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                toggleOne(row.id);
-              }}
-              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-[color:var(--color-border-soft)] bg-primary text-main"
-              aria-label="Order tanlash"
-            >
-              {selectedOrderIds.has(row.id) ? <CheckSquare size={14} /> : <Square size={14} />}
-            </button>
-          ),
-        },
-        ...orderColumns,
-      ]
-    : orderColumns;
-
   return (
-    <div className="min-h-full rounded-2xl p-4 md:p-6">
+    <div className="min-h-full rounded-2xl p-4 md:p-5">
       <BatchPrintSheet batch={batch} />
 
-      <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
           <button
             type="button"
             onClick={() => navigate("/batches")}
-            className="mt-1 flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-primary text-maindark transition hover:border-main/40 hover:text-main dark:bg-primarydark dark:text-white"
+            className="mt-1 flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] bg-primary text-maindark transition hover:border-main/40 hover:text-main dark:bg-primarydark dark:text-white"
             aria-label="Orqaga"
           >
             <ArrowLeft size={18} />
@@ -146,49 +165,49 @@ const BatchDetailPage = () => {
         <Button label="Chop etish" icon={<Printer size={17} />} onClick={() => window.print()} />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
-        <div className="space-y-5">
-          <section className="rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-sm dark:bg-primarydark">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
+        <div className="space-y-4">
+          <section className="rounded-[22px] border border-[color:var(--color-border-soft)] bg-primary p-3.5 shadow-sm dark:bg-primarydark">
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {[
                 {
                   label: "Paket ID",
                   value: batch.request_key ?? batch.id,
-                  icon: <PackageCheck size={16} />,
+                  icon: <PackageCheck size={14} />,
                 },
                 {
                   label: "Filial",
                   value: `${batch.from_branch.code ?? batch.from_branch.id} • ${batch.from_branch.name}`,
-                  icon: <MapPin size={16} />,
+                  icon: <MapPin size={14} />,
                 },
-                { label: "Qayerga", value: batch.to_branch.name, icon: <MapPin size={16} /> },
-                { label: "Viloyat", value: batch.to_branch.region ?? batch.to_branch.name ?? "—", icon: <MapPin size={16} /> },
-                { label: "Haydovchi", value: batch.driver ?? "—", icon: <Truck size={16} /> },
-                { label: "Telefon", value: batch.driver_phone ?? "—", icon: <Truck size={16} /> },
-                { label: "Mashina", value: batch.vehicle_plate ?? "—", icon: <Truck size={16} /> },
-                { label: "Yo'nalish", value: batchDirectionLabel[batch.direction], icon: <Truck size={16} /> },
-                { label: "Order", value: `${batch.orders_count} ta`, icon: <PackageCheck size={16} /> },
-                { label: "Narx", value: formatBatchMoney(batch.total_price), icon: <PackageCheck size={16} /> },
-                { label: "Yaratilgan", value: formatBatchDateTime(batch.created_at), icon: <PackageCheck size={16} /> },
+                { label: "Qayerga", value: batch.to_branch.name, icon: <MapPin size={14} /> },
+                { label: "Viloyat", value: batch.to_branch.region ?? batch.to_branch.name ?? "—", icon: <MapPin size={14} /> },
+                { label: "Haydovchi", value: batch.driver ?? "—", icon: <Truck size={14} /> },
+                { label: "Telefon", value: batch.driver_phone ?? "—", icon: <Truck size={14} /> },
+                { label: "Mashina", value: batch.vehicle_plate ?? "—", icon: <Truck size={14} /> },
+                { label: "Yo'nalish", value: batchDirectionLabel[batch.direction], icon: <Truck size={14} /> },
+                { label: "Order", value: `${batch.orders_count} ta`, icon: <PackageCheck size={14} /> },
+                { label: "Narx", value: formatBatchMoney(batch.total_price), icon: <PackageCheck size={14} /> },
+                { label: "Yaratilgan", value: formatBatchDateTime(batch.created_at), icon: <PackageCheck size={14} /> },
                 {
                   label: "Holat",
                   value: (
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-extrabold ${batchStatusClass[batch.status]}`}>
+                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold ${batchStatusClass[batch.status]}`}>
                       {batchStatusLabel[batch.status]}
                     </span>
                   ),
-                  icon: <PackageCheck size={16} />,
+                  icon: <PackageCheck size={14} />,
                 },
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/65 p-4 dark:border-white/10 dark:bg-white/[0.04]"
+                  className="min-w-0 rounded-xl border border-[color:var(--color-border-soft)] bg-white/60 px-3 py-2.5 dark:border-white/10 dark:bg-white/[0.04]"
                 >
-                  <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--color-text-muted)] dark:text-white/55">
+                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-white/55">
                     {item.icon}
                     {item.label}
                   </div>
-                  <div className="text-base font-black text-maindark dark:text-white">{item.value}</div>
+                  <div className="truncate text-sm font-black text-maindark dark:text-white">{item.value}</div>
                 </div>
               ))}
             </div>
@@ -196,43 +215,39 @@ const BatchDetailPage = () => {
 
           <section>
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-lg font-black text-maindark dark:text-white">Ichidagi orderlar</h3>
-              {canSendToMainBranch ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={toggleAll}
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[color:var(--color-border-soft)] bg-primary px-3 py-2 text-xs font-semibold text-[color:var(--color-text-muted)]"
-                  >
-                    {isAllSelected ? <CheckSquare size={14} /> : <Square size={14} />}
-                    Barchasini tanlash
-                  </button>
-                  {selectedCount > 0 ? (
-                    <span className="text-xs font-semibold text-main">{selectedCount} ta tanlandi</span>
-                  ) : null}
-                </div>
-              ) : null}
+              <h3 className="text-xl font-black text-maindark dark:text-white md:text-2xl">Ichidagi orderlar</h3>
             </div>
-            <Table
-              data={batch.orders}
-              columns={selectableOrderColumns}
-              keyExtractor={(row) => row.id}
-              emptyMessage="Order topilmadi"
+            <MailStatCards
+              totalOrders={orders.length}
+              selectedCount={selectedIds.size}
+              homeStats={homeStats}
+              centerStats={centerStats}
+              showSelectionCard={canSendToMainBranch}
+              variant="compact"
             />
-            {canSendToMainBranch ? (
-              <div className="fixed bottom-22 right-6 z-40 sm:bottom-24 sm:right-8 md:bottom-14 md:right-12">
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={selectedCount === 0 || sendBatch.isPending}
-                  className={`inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200 ${
-                    selectedCount > 0 && !sendBatch.isPending
-                      ? "cursor-pointer bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-600"
-                      : "cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-white/10 dark:text-white/30"
-                  }`}
-                >
-                  {sendBatch.isPending ? "Yuborilmoqda..." : "Asosiy filialga jo'natish"}
-                </button>
+            <div className="mt-4">
+              <OrdersTable
+                orders={orders}
+                selectedIds={selectedIds}
+                allSelected={allSelected}
+                someSelected={someSelected}
+                onToggleAll={toggleAll}
+                onToggleOne={toggleOne}
+                readOnly={!canSendToMainBranch}
+              />
+            </div>
+            {canSendToMainBranch && orders.length > 0 ? (
+              <div className="mt-4">
+                <SendButton
+                  selectedCount={selectedIds.size}
+                  isCourier={false}
+                  mode="send"
+                  onSend={handleSend}
+                  onReceive={handleSend}
+                  isBusy={sendBatch.isPending}
+                  sendLabel={t("sendToMainBranch")}
+                  busyLabel={t("sendingToMainBranch")}
+                />
               </div>
             ) : null}
           </section>
@@ -259,18 +274,18 @@ const BatchDetailPage = () => {
           </section>
         </div>
 
-        <aside className="h-max rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-sm dark:bg-primarydark">
-          <div className="mb-4 flex items-center gap-2 text-lg font-black text-maindark dark:text-white">
-            <QrCode size={20} />
+        <aside className="h-max rounded-[22px] border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-primarydark">
+          <div className="mb-3 flex items-center gap-2 text-base font-black text-maindark dark:text-white">
+            <QrCode size={17} />
             QR kod
           </div>
-          <div className="rounded-[26px] border border-dashed border-[color:var(--color-border-soft)] bg-white p-5 dark:bg-white">
+          <div className="rounded-[20px] border border-dashed border-[color:var(--color-border-soft)] bg-white p-3.5 dark:bg-white">
             <BatchQrCode
               token={batch.token}
               fallbackLabel={batch.id}
               alt={`QR ${batch.id}`}
-              className="mx-auto aspect-square w-full max-w-[230px] object-contain"
-              fallbackClassName="mx-auto flex aspect-square w-full max-w-[230px] flex-col items-center justify-center rounded-2xl border-2 border-maindark text-xl font-black text-maindark"
+              className="mx-auto aspect-square w-full max-w-[190px] object-contain"
+              fallbackClassName="mx-auto flex aspect-square w-full max-w-[190px] flex-col items-center justify-center rounded-xl border-2 border-maindark text-lg font-black text-maindark"
             />
           </div>
           <Button
