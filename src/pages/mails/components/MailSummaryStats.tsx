@@ -41,7 +41,7 @@ const StatChip = ({ icon, value, label, tone = "main" }: StatChipProps) => {
         <span className={`truncate text-[0.96rem] font-bold leading-none ${toneClassName}`}>
           {value}
         </span>
-        <span className="truncate text-[11px] font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+        <span className="truncate text-[11px] font-medium text-(--color-text-muted) dark:text-text-muted-dark">
           {label}
         </span>
       </div>
@@ -65,13 +65,13 @@ const MailSummaryStats = ({
         value={totalRegions}
         label={isCourier ? t("mailCountLabel") : t("regionCountLabel")}
       />
-      <div className="hidden h-6 w-px bg-[color:var(--color-border-soft)] sm:block" />
+      <div className="hidden h-6 w-px bg-(--color-border-soft) sm:block" />
       <StatChip
         icon={<BarChart3 size={14} />}
         value={totalOrders}
         label={t("orderCountLabel")}
       />
-      <div className="hidden h-6 w-px bg-[color:var(--color-border-soft)] sm:block" />
+      <div className="hidden h-6 w-px bg-(--color-border-soft) sm:block" />
       <StatChip
         icon={<Wallet size={14} />}
         value={totalPrice}
