@@ -23,7 +23,7 @@
   "error": "Error",
   "loading": "Checking order...",
   "assignButton": "Assign {{count}} orders to {{courier}}",
-  "assignSuccess": "✓ {{count}} orders assigned",
+  "assignSuccess": "✓ {{count}} orders assigned to {{courier}}",
   "assignLoading": "Assigning...",
   "sessionReset": "New session started",
   "marketFallback": "Market not specified",

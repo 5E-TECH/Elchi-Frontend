@@ -126,5 +126,30 @@
   "totalBatches": "Всего батчей",
   "branchName": "Название филиала",
   "batches": "Батчи",
-  "noBranchBatchesToday": "Сегодня нет батчей от филиалов"
+  "noBranchBatchesToday": "Сегодня нет батчей от филиалов",
+  "branchBatchOrdersTitle": "Заказы батча #{{id}}",
+  "branchBatchOrdersDescription": "Заказы к приемке из батча филиала #{{id}}",
+  "branchOrdersEmpty": "Заказы не найдены",
+  "qrNotFound": "QR не найден",
+  "branchOrderScanMissing": "Этот QR-код не совпадает с заказами внутри этого батча.",
+  "branchOrderReceiveSuccess": "Заказ принят",
+  "branchOrderReceiveOneDescription": "#{{id}} принят главным филиалом.",
+  "branchOrderReceiveManyDescription": "{{count}} заказов успешно принято.",
+  "receiveOrdersShort": "Принять заказы ({{count}})",
+  "receiver": "Получатель",
+  "branchInfoDirection": "Направление",
+  "branchInfoOrders": "Заказы",
+  "branchInfoOrderCount": "{{count}} шт.",
+  "branchInfoAmount": "Сумма",
+  "branchBatchLoadError": "Не удалось загрузить детали батча",
+  "batchStatus": {
+    "new": "Новый",
+    "on_the_way": "В пути",
+    "received": "Принят",
+    "cancelled": "Отменен"
+  },
+  "batchDirection": {
+    "forward": "Вперед",
+    "return": "Возврат"
+  }
 }

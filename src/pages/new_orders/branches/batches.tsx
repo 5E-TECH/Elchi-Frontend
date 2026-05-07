@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PackageCheck } from "lucide-react";
 import { useBatches, useReceiveTransferBatch, type Batch } from "../../../entities/batch";
@@ -8,12 +8,19 @@ import HeaderName from "../../../shared/components/headerName";
 import { batchStatusClass, batchStatusLabel, formatBatchDateTime, formatBatchMoney } from "../../batches/lib/batchFormat";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { Checkbox } from "../components/OrderCard";
+import BackButton from "../../../shared/ui/BackButton";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+
+type ScannableBatch = Batch & { qr_code_token?: string | null };
 
 const BranchSentBatchesPage = () => {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
   const { api } = useAppNotification();
   const [selectedBatchIds, setSelectedBatchIds] = useState<Set<string>>(new Set());
+  const [receivedBatchIds, setReceivedBatchIds] = useState<Set<string>>(new Set());
+  const pendingScanBatchIdsRef = useRef<Set<string>>(new Set());
   const receiveTransferBatch = useReceiveTransferBatch();
 
   const { data, isLoading, isError } = useBatches({
@@ -24,7 +31,14 @@ const BranchSentBatchesPage = () => {
     limit: 100,
   });
 
-  const rows = data?.data ?? [];
+  const rows = useMemo(
+    () => (data?.data ?? []).filter((row) => !receivedBatchIds.has(row.id)),
+    [data?.data, receivedBatchIds],
+  );
+  const scannableRows = useMemo<ScannableBatch[]>(
+    () => rows.map((row) => ({ ...row, qr_code_token: row.token })),
+    [rows],
+  );
   const isAllSelected = rows.length > 0 && selectedBatchIds.size === rows.length;
 
   const toggleBatch = (id: string) => {
@@ -44,16 +58,30 @@ const BranchSentBatchesPage = () => {
     setSelectedBatchIds(new Set(rows.map((row) => row.id)));
   };
 
+  const markBatchesReceived = useCallback((ids: string[]) => {
+    setReceivedBatchIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+    setSelectedBatchIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+  }, []);
+
   const handleAcceptSelectedBatches = async () => {
     const ids = Array.from(selectedBatchIds);
     if (ids.length === 0 || receiveTransferBatch.isPending) return;
 
     const results = await Promise.allSettled(ids.map((id) => receiveTransferBatch.mutateAsync(id)));
-    const successCount = results.filter((result) => result.status === "fulfilled").length;
+    const successIds = ids.filter((_, index) => results[index].status === "fulfilled");
+    const successCount = successIds.length;
     const failedCount = results.length - successCount;
 
     if (successCount > 0) {
-      setSelectedBatchIds(new Set());
+      markBatchesReceived(successIds);
       api.success({
         message: "Batchlar qabul qilindi",
         description: `${successCount} ta batch muvaffaqiyatli qabul qilindi.`,
@@ -69,6 +97,54 @@ const BranchSentBatchesPage = () => {
       });
     }
   };
+
+  const handleMissingScannedBatch = useCallback(() => {
+    api.warning({
+      message: "QR topilmadi",
+      description: "Bu QR kod ushbu filial batchlariga mos kelmadi.",
+      placement: "topRight",
+      duration: 3,
+    });
+    playMissingOrderFeedback();
+  }, [api]);
+
+  const receiveScannedBatch = useCallback((batch: ScannableBatch) => {
+    if (receiveTransferBatch.isPending || pendingScanBatchIdsRef.current.has(batch.id)) return;
+
+    pendingScanBatchIdsRef.current.add(batch.id);
+    receiveTransferBatch.mutate(batch.id, {
+      onSuccess: () => {
+        markBatchesReceived([batch.id]);
+        api.success({
+          message: "Batch qabul qilindi",
+          description: `#${batch.id} asosiy filialga qabul qilindi.`,
+          placement: "topRight",
+          duration: 2,
+        });
+        void playScanFeedback("success");
+      },
+      onError: (error: any) => {
+        const msg = error?.response?.data?.message ?? error?.message ?? "Batchni qabul qilishda xatolik yuz berdi";
+        api.error({
+          message: "Batch qabul qilinmadi",
+          description: msg,
+          placement: "topRight",
+          duration: 5,
+        });
+        playMissingOrderFeedback();
+      },
+      onSettled: () => {
+        pendingScanBatchIdsRef.current.delete(batch.id);
+      },
+    });
+  }, [api, markBatchesReceived, receiveTransferBatch]);
+
+  useOrderQrScanner({
+    orders: scannableRows,
+    enabled: scannableRows.length > 0 && !receiveTransferBatch.isPending,
+    onMatch: receiveScannedBatch,
+    onMissing: handleMissingScannedBatch,
+  });
 
   const columns: ColumnConfig<Batch>[] = useMemo(
     () => [
@@ -124,11 +200,14 @@ const BranchSentBatchesPage = () => {
 
   return (
     <div className="space-y-4 pb-20 sm:space-y-6 sm:pb-24 md:pb-4">
-      <HeaderName
-        name="Jo'natilgan batchlar"
-        description="Filialdan asosiy filialga jo'natilgan batchlar"
-        icon={<PackageCheck />}
-      />
+      <div className="flex items-start gap-3">
+        <BackButton to="/new-orders/branches" />
+        <HeaderName
+          name={`Filial #${branchId} batchlari`}
+          description="Filialdan asosiy filialga jo'natilgan batchlar"
+          icon={<PackageCheck />}
+        />
+      </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
         <div
@@ -153,7 +232,7 @@ const BranchSentBatchesPage = () => {
         loading={isLoading}
         keyExtractor={(row) => row.id}
         emptyMessage="Batch topilmadi"
-        onRowClick={(row) => navigate(`/new-orders/branches/${branchId}/${row.id}`)}
+        onRowClick={(row) => navigate(`/new-orders/branches/${branchId}/batches/${row.id}`)}
       />
 
       <div className="fixed bottom-22 right-6 z-40 sm:bottom-24 sm:right-8 md:bottom-14 md:right-12">

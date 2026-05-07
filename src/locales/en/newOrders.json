@@ -126,5 +126,30 @@
   "totalBatches": "Total batches",
   "branchName": "Branch name",
   "batches": "Batches",
-  "noBranchBatchesToday": "No branch batches today"
+  "noBranchBatchesToday": "No branch batches today",
+  "branchBatchOrdersTitle": "Batch #{{id}} orders",
+  "branchBatchOrdersDescription": "Orders to receive from branch #{{id}} batch",
+  "branchOrdersEmpty": "No orders found",
+  "qrNotFound": "QR not found",
+  "branchOrderScanMissing": "This QR code does not match orders inside this batch.",
+  "branchOrderReceiveSuccess": "Order received",
+  "branchOrderReceiveOneDescription": "#{{id}} was received by the main branch.",
+  "branchOrderReceiveManyDescription": "{{count}} orders were received successfully.",
+  "receiveOrdersShort": "Receive orders ({{count}})",
+  "receiver": "Receiver",
+  "branchInfoDirection": "Direction",
+  "branchInfoOrders": "Orders",
+  "branchInfoOrderCount": "{{count}} pcs",
+  "branchInfoAmount": "Amount",
+  "branchBatchLoadError": "Failed to load batch details",
+  "batchStatus": {
+    "new": "New",
+    "on_the_way": "On the way",
+    "received": "Received",
+    "cancelled": "Cancelled"
+  },
+  "batchDirection": {
+    "forward": "Forward",
+    "return": "Return"
+  }
 }

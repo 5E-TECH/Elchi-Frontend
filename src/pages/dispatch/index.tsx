@@ -352,7 +352,10 @@ const DispatchPage = () => {
 
       notificationApi.success({
         message: t("success"),
-        description: t("assignSuccess", { count: pendingOrders.length }),
+        description: t("assignSuccess", {
+          count: pendingOrders.length,
+          courier: selectedCourierName,
+        }),
         placement: "topRight",
         duration: 3,
       });

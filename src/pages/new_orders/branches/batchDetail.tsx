@@ -1,36 +1,48 @@
-import { memo, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Package } from "lucide-react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Package } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useBatchDetail, useBatchRemainingDetail, type BatchDetail, type BatchOrder } from "../../../entities/batch";
 import { useOrders } from "../../../entities/orders";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import HeaderName from "../../../shared/components/headerName";
-import { batchDirectionLabel, batchStatusClass, batchStatusLabel, formatBatchMoney } from "../../batches/lib/batchFormat";
+import { batchStatusClass, formatBatchMoney } from "../../batches/lib/batchFormat";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { Checkbox } from "../components/OrderCard";
+import BackButton from "../../../shared/ui/BackButton";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
 
 const BranchBatchDetailPage = () => {
   const { branchId, batchId } = useParams<{ branchId: string; batchId: string }>();
-  const navigate = useNavigate();
+  const { t } = useTranslation("newOrders");
   const { api } = useAppNotification();
   const { createReceiveOrder } = useOrders();
   const detailQuery = useBatchDetail(batchId);
   const remainingQuery = useBatchRemainingDetail(batchId);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
+  const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
 
   const data = useMemo<BatchDetail | undefined>(() => {
-    const detailOrders = detailQuery.data?.orders?.length ?? 0;
     const remainingOrders = remainingQuery.data?.orders?.length ?? 0;
+    const detailOrders = detailQuery.data?.orders?.length ?? 0;
 
-    if (remainingOrders > detailOrders) return remainingQuery.data;
+    if (remainingQuery.data && (remainingOrders > 0 || detailOrders === 0)) {
+      return remainingQuery.data;
+    }
+
     return detailQuery.data ?? remainingQuery.data;
   }, [detailQuery.data, remainingQuery.data]);
 
   const isLoading = detailQuery.isLoading || remainingQuery.isLoading;
   const isError = detailQuery.isError && remainingQuery.isError;
 
-  const orders = data?.orders ?? [];
+  const orders = useMemo(
+    () => (data?.orders ?? []).filter((order) => !receivedOrderIds.has(order.id)),
+    [data?.orders, receivedOrderIds],
+  );
   const isAllSelected = orders.length > 0 && selectedOrderIds.size === orders.length;
 
   const toggleOne = (orderId: string) => {
@@ -50,6 +62,23 @@ const BranchBatchDetailPage = () => {
     setSelectedOrderIds(new Set(orders.map((order) => order.id)));
   };
 
+  const markOrdersReceived = useCallback((ids: string[]) => {
+    setReceivedOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+  }, []);
+
+  const refetchBatchData = useCallback(async () => {
+    await Promise.all([detailQuery.refetch(), remainingQuery.refetch()]);
+  }, [detailQuery, remainingQuery]);
+
   const handleAcceptSelectedOrders = () => {
     const ids = Array.from(selectedOrderIds);
     if (ids.length === 0 || createReceiveOrder.isPending) return;
@@ -58,18 +87,18 @@ const BranchBatchDetailPage = () => {
       { orderIds: ids },
       {
         onSuccess: async () => {
+          markOrdersReceived(ids);
           api.success({
-            message: "Order qabul qilindi",
-            description: `${ids.length} ta order muvaffaqiyatli qabul qilindi.`,
+            message: t("branchOrderReceiveSuccess"),
+            description: t("branchOrderReceiveManyDescription", { count: ids.length }),
             placement: "topRight",
           });
-          setSelectedOrderIds(new Set());
-          await Promise.all([detailQuery.refetch(), remainingQuery.refetch()]);
+          await refetchBatchData();
         },
         onError: (error: any) => {
-          const msg = error?.response?.data?.message ?? error?.message ?? "Qabul qilishda xatolik yuz berdi";
+          const msg = error?.response?.data?.message ?? error?.message ?? t("receiveError");
           api.error({
-            message: "Qabul qilishda xatolik",
+            message: t("receiveError"),
             description: msg,
             placement: "topRight",
           });
@@ -77,6 +106,61 @@ const BranchBatchDetailPage = () => {
       },
     );
   };
+
+  const handleMissingScannedOrder = useCallback(() => {
+    api.warning({
+      message: t("qrNotFound"),
+      description: t("branchOrderScanMissing"),
+      placement: "topRight",
+      duration: 3,
+    });
+    playMissingOrderFeedback();
+  }, [api, t]);
+
+  const receiveScannedOrder = useCallback((order: BatchOrder) => {
+    if (createReceiveOrder.isPending || pendingScanOrderIdsRef.current.has(order.id)) return;
+
+    pendingScanOrderIdsRef.current.add(order.id);
+    createReceiveOrder.mutate(
+      { orderIds: [order.id] },
+      {
+        onSuccess: async () => {
+          markOrdersReceived([order.id]);
+          api.success({
+            message: t("branchOrderReceiveSuccess"),
+            description: t("branchOrderReceiveOneDescription", { id: order.id }),
+            placement: "topRight",
+            duration: 2,
+          });
+          void playScanFeedback("success");
+          await refetchBatchData();
+        },
+        onError: (error: any) => {
+          const msg = error?.response?.data?.message ?? error?.message ?? t("receiveError");
+          api.error({
+            message: t("receiveError"),
+            description: msg,
+            placement: "topRight",
+            duration: 5,
+          });
+          playMissingOrderFeedback();
+        },
+        onSettled: () => {
+          pendingScanOrderIdsRef.current.delete(order.id);
+        },
+      },
+    );
+  }, [api, createReceiveOrder, markOrdersReceived, refetchBatchData, t]);
+
+  const translatedBatchStatus = data ? t(`batchStatus.${data.status}`) : "";
+  const translatedBatchDirection = data ? t(`batchDirection.${data.direction}`) : "";
+
+  useOrderQrScanner({
+    orders,
+    enabled: orders.length > 0 && !createReceiveOrder.isPending,
+    onMatch: receiveScannedOrder,
+    onMissing: handleMissingScannedOrder,
+  });
 
   const columns: ColumnConfig<BatchOrder>[] = useMemo(
     () => [
@@ -91,42 +175,37 @@ const BranchBatchDetailPage = () => {
         ),
       },
       { key: "id", label: "Order ID", render: (value) => <span className="font-black">{String(value)}</span> },
-      { key: "receiver", label: "Qabul qiluvchi" },
-      { key: "phone", label: "Telefon" },
-      { key: "address", label: "Manzil" },
-      { key: "price", label: "Narx", render: (value) => formatBatchMoney(Number(value)) },
-      { key: "status", label: "Holat" },
+      { key: "receiver", label: t("receiver") },
+      { key: "phone", label: t("phone") },
+      { key: "address", label: t("address") },
+      { key: "price", label: t("price"), render: (value) => formatBatchMoney(Number(value)) },
+      { key: "status", label: t("status") },
     ],
-    [selectedOrderIds],
+    [selectedOrderIds, t],
   );
 
   return (
     <div className="space-y-4 pb-20 sm:space-y-6 sm:pb-24 md:pb-4">
       <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={() => navigate(`/new-orders/branches/${branchId}`)}
-          className="mt-1 flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-primary text-maindark transition hover:border-main/40 hover:text-main dark:bg-primarydark dark:text-white"
-          aria-label="Orqaga"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <HeaderName
-          name={`Batch #${batchId}`}
-          description="Ichidagi orderlar ro'yxati"
-          icon={<Package />}
-        />
+        <div className="flex flex-col gap-3">
+          <BackButton to={`/new-orders/branches/${branchId}`} className="w-fit" />
+          <HeaderName
+            name={t("branchBatchOrdersTitle", { id: batchId })}
+            description={t("branchBatchOrdersDescription", { id: branchId })}
+            icon={<Package />}
+          />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
         {data ? (
           <div className="mr-auto flex flex-wrap items-center gap-2 text-xs font-semibold text-[color:var(--color-text-muted)]">
             <span className={`inline-flex rounded-full border px-3 py-1 ${batchStatusClass[data.status]}`}>
-              {batchStatusLabel[data.status]}
+              {translatedBatchStatus}
             </span>
-            <span>Yo'nalish: {batchDirectionLabel[data.direction]}</span>
-            <span>Order: {data.orders_count} ta</span>
-            <span>Summa: {formatBatchMoney(data.total_price)}</span>
+            <span>{t("branchInfoDirection")}: {translatedBatchDirection}</span>
+            <span>{t("branchInfoOrders")}: {t("branchInfoOrderCount", { count: data.orders_count })}</span>
+            <span>{t("branchInfoAmount")}: {formatBatchMoney(data.total_price)}</span>
           </div>
         ) : null}
 
@@ -135,14 +214,14 @@ const BranchBatchDetailPage = () => {
           className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[color:var(--color-border-soft)] bg-primary px-3 py-2 text-xs font-semibold text-[color:var(--color-text-muted)]"
         >
           <Checkbox checked={isAllSelected} onChange={toggleAll} />
-          Barchasini tanlash
+          {t("selectAll")}
         </div>
 
       </div>
 
       {isError ? (
         <div className="rounded-2xl border border-rose-300/30 bg-rose-500/10 p-6 text-center text-sm font-semibold text-rose-700 dark:text-rose-100">
-          Batch detailini yuklab bo'lmadi
+          {t("branchBatchLoadError")}
         </div>
       ) : null}
 
@@ -151,7 +230,7 @@ const BranchBatchDetailPage = () => {
         columns={columns}
         loading={isLoading}
         keyExtractor={(row) => row.id}
-        emptyMessage="Order topilmadi"
+        emptyMessage={t("branchOrdersEmpty")}
         onRowClick={(row) => toggleOne(row.id)}
       />
 
@@ -167,8 +246,8 @@ const BranchBatchDetailPage = () => {
             ${selectedOrderIds.size > 0 ? "cursor-pointer opacity-100" : "opacity-40"}`}
         >
           {createReceiveOrder.isPending
-            ? "Qabul qilinmoqda..."
-            : `Orderlarni qabul qilish (${selectedOrderIds.size})`}
+            ? t("receiving")
+            : t("receiveOrdersShort", { count: selectedOrderIds.size })}
         </button>
       </div>
     </div>
