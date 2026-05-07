@@ -3,10 +3,6 @@ import { useParams } from "react-router-dom";
 import { Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useBatchDetail, useBatchRemainingDetail, type BatchDetail, type BatchOrder } from "../../../entities/batch";
-import { memo, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Package } from "lucide-react";
-import { useBatchDetail, type BatchOrder } from "../../../entities/batch";
 import { useOrders } from "../../../entities/orders";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
@@ -24,6 +20,7 @@ const BranchBatchDetailPage = () => {
   const { api } = useAppNotification();
   const { createReceiveOrder } = useOrders();
   const detailQuery = useBatchDetail(batchId);
+  const remainingQuery = useBatchRemainingDetail(batchId);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
@@ -41,10 +38,6 @@ const BranchBatchDetailPage = () => {
 
   const isLoading = detailQuery.isLoading || remainingQuery.isLoading;
   const isError = detailQuery.isError && remainingQuery.isError;
-  const data = detailQuery.data;
-
-  const isLoading = detailQuery.isLoading;
-  const isError = detailQuery.isError;
 
   const orders = useMemo(
     () => (data?.orders ?? []).filter((order) => !receivedOrderIds.has(order.id)),
@@ -101,8 +94,6 @@ const BranchBatchDetailPage = () => {
             placement: "topRight",
           });
           await refetchBatchData();
-          setSelectedOrderIds(new Set());
-          await detailQuery.refetch();
         },
         onError: (error: any) => {
           const msg = error?.response?.data?.message ?? error?.message ?? t("receiveError");

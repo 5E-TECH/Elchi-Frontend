@@ -230,7 +230,6 @@ const BranchSentBatchesPage = () => {
         keyExtractor={(row) => row.id}
         emptyMessage="Batch topilmadi"
         onRowClick={(row) => navigate(`/new-orders/branches/${branchId}/batches/${row.id}`)}
-        onRowClick={(row) => navigate(`/new-orders/branches/${branchId}/${row.id}`)}
         preserveTableOnDesktop
       />
 
