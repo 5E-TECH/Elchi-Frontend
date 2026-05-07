@@ -17,6 +17,18 @@ type RegionItem = {
   districtCount: number;
   activeCouriers: number;
   ordersCount: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  pendingOrders: number;
+  totalRevenue: number;
+  successRate: number;
+};
+
+type RegionSummary = {
+  totalOrders: number;
+  totalDelivered: number;
+  totalCancelled: number;
+  totalRevenue: number;
 };
 
 const toNumber = (value: unknown, fallback = 0) => {
@@ -27,35 +39,88 @@ const toNumber = (value: unknown, fallback = 0) => {
 const normalizeRegionItem = (raw: unknown): RegionItem | null => {
   const item = raw as {
     id?: string | number;
+    regionId?: string | number;
+    region_id?: string | number;
     name?: string;
+    regionName?: string;
+    region_name?: string;
     districtCount?: number | string;
     district_count?: number | string;
     activeCouriers?: number | string;
     active_couriers?: number | string;
     ordersCount?: number | string;
     orders_count?: number | string;
+    orderCount?: number | string;
+    order_count?: number | string;
+    totalOrders?: number | string;
+    total_orders?: number | string;
+    totalOrderCount?: number | string;
+    total_order_count?: number | string;
+    allOrders?: number | string;
+    all_orders?: number | string;
+    deliveredOrders?: number | string;
+    delivered_orders?: number | string;
+    cancelledOrders?: number | string;
+    cancelled_orders?: number | string;
+    pendingOrders?: number | string;
+    pending_orders?: number | string;
+    totalRevenue?: number | string;
+    total_revenue?: number | string;
+    revenue?: number | string;
+    successRate?: number | string;
+    success_rate?: number | string;
   };
 
-  if (!item?.id || !item?.name) return null;
+  const id = item?.id ?? item?.regionId ?? item?.region_id;
+  const name = item?.name ?? item?.regionName ?? item?.region_name;
+  if (!id || !name) return null;
 
   return {
-    id: String(item.id),
-    name: item.name,
+    id: String(id),
+    name,
     districtCount: toNumber(item.districtCount ?? item.district_count, 0),
     activeCouriers: toNumber(item.activeCouriers ?? item.active_couriers, 0),
-    ordersCount: toNumber(item.ordersCount ?? item.orders_count, 0),
+    ordersCount: toNumber(
+      item.ordersCount ??
+        item.orders_count ??
+        item.orderCount ??
+        item.order_count ??
+        item.totalOrders ??
+        item.total_orders ??
+        item.totalOrderCount ??
+        item.total_order_count ??
+        item.allOrders ??
+        item.all_orders,
+      0,
+    ),
+    deliveredOrders: toNumber(item.deliveredOrders ?? item.delivered_orders, 0),
+    cancelledOrders: toNumber(item.cancelledOrders ?? item.cancelled_orders, 0),
+    pendingOrders: toNumber(item.pendingOrders ?? item.pending_orders, 0),
+    totalRevenue: toNumber(item.totalRevenue ?? item.total_revenue ?? item.revenue, 0),
+    successRate: toNumber(item.successRate ?? item.success_rate, 0),
   };
 };
 
 const unwrapRegions = (payload: unknown): RegionItem[] => {
   const data = payload as {
-    data?: unknown[] | { data?: unknown[]; items?: unknown[] };
+    data?:
+      | unknown[]
+      | {
+          data?: unknown[];
+          items?: unknown[];
+          regions?: unknown[];
+        };
     items?: unknown[];
+    regions?: unknown[];
   };
   const arrayCandidate = Array.isArray(data?.data)
     ? data.data
     : Array.isArray(data?.items)
       ? data.items
+      : Array.isArray(data?.regions)
+        ? data.regions
+        : Array.isArray((data?.data as { regions?: unknown[] })?.regions)
+          ? (data.data as { regions: unknown[] }).regions
       : Array.isArray((data?.data as { items?: unknown[] })?.items)
         ? (data.data as { items: unknown[] }).items
         : Array.isArray((data?.data as { data?: unknown[] })?.data)
@@ -67,6 +132,47 @@ const unwrapRegions = (payload: unknown): RegionItem[] => {
     .filter((region): region is RegionItem => Boolean(region));
 };
 
+const normalizeSummary = (payload: unknown): RegionSummary => {
+  const data = payload as {
+    summary?: unknown;
+    data?: { summary?: unknown };
+  };
+
+  const summary = (data?.summary ?? data?.data?.summary ?? {}) as {
+    totalOrders?: number | string;
+    total_orders?: number | string;
+    ordersCount?: number | string;
+    orders_count?: number | string;
+    totalDelivered?: number | string;
+    total_delivered?: number | string;
+    deliveredOrders?: number | string;
+    delivered_orders?: number | string;
+    totalCancelled?: number | string;
+    total_cancelled?: number | string;
+    cancelledOrders?: number | string;
+    cancelled_orders?: number | string;
+    totalRevenue?: number | string;
+    total_revenue?: number | string;
+    revenue?: number | string;
+  };
+
+  return {
+    totalOrders: toNumber(
+      summary.totalOrders ?? summary.total_orders ?? summary.ordersCount ?? summary.orders_count,
+      0,
+    ),
+    totalDelivered: toNumber(
+      summary.totalDelivered ?? summary.total_delivered ?? summary.deliveredOrders ?? summary.delivered_orders,
+      0,
+    ),
+    totalCancelled: toNumber(
+      summary.totalCancelled ?? summary.total_cancelled ?? summary.cancelledOrders ?? summary.cancelled_orders,
+      0,
+    ),
+    totalRevenue: toNumber(summary.totalRevenue ?? summary.total_revenue ?? summary.revenue, 0),
+  };
+};
+
 const RegionPage = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -74,6 +180,7 @@ const RegionPage = () => {
   const userRegionName = useSelector((state: RootState) => state.role.region);
 
   const [regions, setRegions] = useState<RegionItem[]>([]);
+  const [summary, setSummary] = useState<RegionSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState<"today" | "week" | "month" | "all" | "custom">("today");
   const [customRange, setCustomRange] = useState<{ start: string; end: string } | null>(null);
@@ -95,12 +202,31 @@ const RegionPage = () => {
     const fetchRegions = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get(API_ENDPOINTS.REGIONS.BASE);
+        const params: Record<string, string> = {};
+        const now = dayjs();
+
+        if (dateRange === "today") {
+          params.startDate = now.startOf("day").format("YYYY-MM-DD");
+          params.endDate = now.endOf("day").format("YYYY-MM-DD");
+        } else if (dateRange === "week") {
+          params.startDate = now.startOf("week").format("YYYY-MM-DD");
+          params.endDate = now.endOf("week").format("YYYY-MM-DD");
+        } else if (dateRange === "month") {
+          params.startDate = now.startOf("month").format("YYYY-MM-DD");
+          params.endDate = now.endOf("month").format("YYYY-MM-DD");
+        } else if (dateRange === "custom" && customRange) {
+          params.startDate = customRange.start;
+          params.endDate = customRange.end;
+        }
+
+        const response = await api.get(API_ENDPOINTS.REGIONS.STATS_ALL, { params });
         if (!active) return;
         setRegions(unwrapRegions(response.data));
+        setSummary(normalizeSummary(response.data));
       } catch {
         if (!active) return;
         setRegions([]);
+        setSummary(null);
       } finally {
         if (active) setIsLoading(false);
       }
@@ -176,7 +302,11 @@ const RegionPage = () => {
                           start: dates[0].format("YYYY-MM-DD"),
                           end: dates[1].format("YYYY-MM-DD"),
                         });
+                        return;
                       }
+
+                      setCustomRange(null);
+                      setDateRange("all");
                     }}
                     defaultValue={[dayjs(today), dayjs(today)]}
                     className="border-0! bg-transparent! shadow-none!"
@@ -235,8 +365,14 @@ const RegionPage = () => {
                 districtCount: region.districtCount,
                 activeCouriers: region.activeCouriers,
                 orderCount: region.ordersCount,
+                deliveredOrders: region.deliveredOrders,
+                cancelledOrders: region.cancelledOrders,
+                pendingOrders: region.pendingOrders,
+                totalRevenue: region.totalRevenue,
+                successRate: region.successRate,
               },
             }))}
+            summary={summary}
           />
         )}
 

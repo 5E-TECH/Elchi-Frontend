@@ -18,6 +18,7 @@ export const Table = memo(<T extends Record<string, any>>({
   striped = true,
   bordered = true,
   hoverable = true,
+  preserveTableOnDesktop = false,
 }: TableProps<T>) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -58,6 +59,13 @@ export const Table = memo(<T extends Record<string, any>>({
   }, []);
 
   const responsiveMode = useMemo(() => {
+    if (preserveTableOnDesktop && viewportWidth > 768) {
+      if (containerWidth > 0 && containerWidth < 1220) {
+        return "compact" as const;
+      }
+      return "table" as const;
+    }
+
     if (viewportWidth <= 900 || (containerWidth > 0 && containerWidth < 860)) {
       return 'cards' as const;
     }
@@ -67,7 +75,7 @@ export const Table = memo(<T extends Record<string, any>>({
     }
 
     return 'table' as const;
-  }, [containerWidth, viewportWidth]);
+  }, [containerWidth, viewportWidth, preserveTableOnDesktop]);
 
   const isCardMode = responsiveMode === 'cards';
   const isCompactMode = responsiveMode === 'compact';
