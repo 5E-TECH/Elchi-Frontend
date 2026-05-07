@@ -1,6 +1,6 @@
 import { memo } from "react";
-import { ArrowLeft, MapPin } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { MapPin } from "lucide-react";
+import BackButton from "../../../../shared/ui/BackButton";
 
 interface MailDetailHeaderProps {
     regionName: string;
@@ -8,17 +8,9 @@ interface MailDetailHeaderProps {
 }
 
 const MailDetailHeader = memo(({ regionName, orderCount }: MailDetailHeaderProps) => {
-    const navigate = useNavigate();
-
     return (
         <div className="flex items-center gap-4">
-            <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-primarydark border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:border-main/40 hover:text-main dark:hover:text-main transition-all duration-200 cursor-pointer shrink-0"
-            >
-                <ArrowLeft size={18} />
-            </button>
+            <BackButton className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
 
             <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-2">

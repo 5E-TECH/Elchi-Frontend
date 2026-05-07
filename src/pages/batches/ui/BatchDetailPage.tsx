@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, MapPin, PackageCheck, Printer, QrCode, Truck } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { MapPin, PackageCheck, Printer, QrCode, Truck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
@@ -24,11 +24,11 @@ import { useMailDetailState } from "../../mails/detail/model/useMailDetailState"
 import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import BackButton from "../../../shared/ui/BackButton";
 
 const BatchDetailPage = () => {
   const { t } = useTranslation("mails");
   const { id } = useParams();
-  const navigate = useNavigate();
   const { data: batchDetail, isLoading: isDetailLoading, isError: isDetailError } = useBatchDetail(id);
   const {
     data: remainingBatch,
@@ -148,14 +148,7 @@ const BatchDetailPage = () => {
 
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/batches")}
-            className="mt-1 flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] bg-primary text-maindark transition hover:border-main/40 hover:text-main dark:bg-primarydark dark:text-white"
-            aria-label="Orqaga"
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <BackButton to="/batches" className="mt-1 h-10 min-w-10 rounded-xl px-2" label="" />
           <HeaderName
             name={`Paket ${batch.id}`}
             description={`${batch.from_branch.name} -> ${batch.to_branch.name}`}

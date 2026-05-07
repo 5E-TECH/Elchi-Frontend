@@ -23,7 +23,7 @@
   "error": "Ошибка",
   "loading": "Проверка заказа...",
   "assignButton": "Назначить {{count}} заказов курьеру {{courier}}",
-  "assignSuccess": "✓ Назначено {{count}} заказов",
+  "assignSuccess": "✓ {{count}} заказов назначено курьеру {{courier}}",
   "assignLoading": "Назначение...",
   "sessionReset": "Начата новая сессия",
   "marketFallback": "Маркет не указан",

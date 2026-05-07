@@ -23,7 +23,7 @@
   "error": "Xatolik",
   "loading": "Order tekshirilmoqda...",
   "assignButton": "{{count}} ta orderni {{courier}}ga biriktirish",
-  "assignSuccess": "✓ {{count}} ta order biriktirildi",
+  "assignSuccess": "✓ {{count}} ta order {{courier}}ga biriktirildi",
   "assignLoading": "Biriktirilmoqda...",
   "sessionReset": "Yangi sessiya boshlandi",
   "marketFallback": "Market ko'rsatilmagan",

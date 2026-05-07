@@ -126,5 +126,30 @@
   "totalBatches": "Jami batchlar",
   "branchName": "Filial nomi",
   "batches": "Batchlar",
-  "noBranchBatchesToday": "Bugun filial batchlari yo'q"
+  "noBranchBatchesToday": "Bugun filial batchlari yo'q",
+  "branchBatchOrdersTitle": "Batch #{{id}} orderlari",
+  "branchBatchOrdersDescription": "Filial #{{id}} batchidagi qabul qilinadigan orderlar",
+  "branchOrdersEmpty": "Order topilmadi",
+  "qrNotFound": "QR topilmadi",
+  "branchOrderScanMissing": "Bu QR kod ushbu batch ichidagi orderlarga mos kelmadi.",
+  "branchOrderReceiveSuccess": "Order qabul qilindi",
+  "branchOrderReceiveOneDescription": "#{{id}} asosiy filialga qabul qilindi.",
+  "branchOrderReceiveManyDescription": "{{count}} ta order muvaffaqiyatli qabul qilindi.",
+  "receiveOrdersShort": "Orderlarni qabul qilish ({{count}})",
+  "receiver": "Qabul qiluvchi",
+  "branchInfoDirection": "Yo'nalish",
+  "branchInfoOrders": "Order",
+  "branchInfoOrderCount": "{{count}} ta",
+  "branchInfoAmount": "Summa",
+  "branchBatchLoadError": "Batch detailini yuklab bo'lmadi",
+  "batchStatus": {
+    "new": "Yangi",
+    "on_the_way": "Yo'lda",
+    "received": "Qabul qilindi",
+    "cancelled": "Bekor qilindi"
+  },
+  "batchDirection": {
+    "forward": "Oldinga",
+    "return": "Qaytarish"
+  }
 }

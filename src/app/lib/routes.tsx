@@ -1,5 +1,5 @@
 import { lazy, memo } from "react";
-import { Navigate, useRoutes } from "react-router-dom";
+import { Navigate, useParams, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
@@ -120,6 +120,17 @@ const DashboardEntry = () => {
   }
 
   return <DashboardPage />;
+};
+
+const LegacyBranchBatchRedirect = () => {
+  const { branchId, batchId } = useParams();
+
+  return (
+    <Navigate
+      replace
+      to={`/new-orders/branches/${branchId ?? ""}/batches/${batchId ?? ""}`}
+    />
+  );
 };
 
 const AppRouter = () => {
@@ -253,7 +264,8 @@ const AppRouter = () => {
                 { path: "integrations", element: <NewOrdersExternalList /> },
                 { path: "branches", element: <NewOrdersBranches /> },
                 { path: "branches/:branchId", element: <NewOrdersBranchBatches /> },
-                { path: "branches/:branchId/:batchId", element: <NewOrdersBranchBatchDetail /> },
+                { path: "branches/:branchId/batches/:batchId", element: <NewOrdersBranchBatchDetail /> },
+                { path: "branches/:branchId/:batchId", element: <LegacyBranchBatchRedirect /> },
                 { path: "integrations/:id", element: <ExternalIntegrationDetail /> },
                 { path: ":marketId", element: <NewOrderDetail /> },
                 { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
