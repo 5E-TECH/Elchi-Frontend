@@ -126,6 +126,12 @@ const toNum = (value: unknown, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const readCssColor = (name: string, fallback: string) => {
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+};
+
 const UzbekistanRegionMap = ({
   regions,
   summary,
@@ -340,6 +346,15 @@ const UzbekistanRegionMap = ({
   }, []);
 
   useEffect(() => {
+    const palette = {
+      low: readCssColor("--color-region-map-low", "#d1fae5"),
+      medium: readCssColor("--color-region-map-medium", "#86efac"),
+      high: readCssColor("--color-region-map-high", "#22c55e"),
+      xhigh: readCssColor("--color-region-map-xhigh", "#15803d"),
+      stroke: readCssColor("--color-region-map-stroke", "#ffffff"),
+      label: readCssColor("--color-region-map-label", "#374151"),
+    };
+
     const mapData: MapPoint[] = regions
       .map((region) => {
         const normalized = normalizeRegionName(region.name);
@@ -387,25 +402,25 @@ const UzbekistanRegionMap = ({
       {
         from: 0,
         to: q1,
-        color: isDarkMode ? "#334155" : "#d1fae5",
+        color: palette.low,
         name: "Kam",
       },
       {
         from: q1,
         to: q2,
-        color: isDarkMode ? "#14532d" : "#86efac",
+        color: palette.medium,
         name: "O'rtacha",
       },
       {
         from: q2,
         to: q3,
-        color: isDarkMode ? "#15803d" : "#22c55e",
+        color: palette.high,
         name: "Ko'p",
       },
       {
         from: q3,
         to: rangeMax,
-        color: isDarkMode ? "#166534" : "#15803d",
+        color: palette.xhigh,
         name: "Juda ko'p",
       },
     ];
@@ -425,7 +440,7 @@ const UzbekistanRegionMap = ({
         layout: "horizontal",
         symbolRadius: 4,
         itemStyle: {
-          color: isDarkMode ? "#e5e7eb" : "#374151",
+          color: readCssColor("--color-text-muted-dark", "#374151"),
           fontSize: "12px",
           fontWeight: "500",
         },
@@ -489,14 +504,14 @@ const UzbekistanRegionMap = ({
           name: "Buyurtmalar",
           data: mapData,
           joinBy: "hc-key",
-          borderColor: "#ffffff",
+          borderColor: palette.stroke,
           borderWidth: 1,
           dataLabels: {
             enabled: true,
             format: "{point.name}",
             style: {
-              color: "#374151",
-              textOutline: "2px white",
+              color: palette.label,
+              textOutline: `2px ${palette.stroke}`,
               fontWeight: "500",
               fontSize: "11px",
             },

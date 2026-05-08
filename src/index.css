@@ -309,12 +309,12 @@
   --color-success: #0d8f5b;
   --color-error: #d82f48;
   --color-warning: #c97900;
-  --color-region-map-low: #bfecc9;
-  --color-region-map-medium: #6bd184;
-  --color-region-map-high: #18a85b;
-  --color-region-map-xhigh: #087a40;
-  --color-region-map-stroke: rgba(231, 227, 252, 0.72);
-  --color-region-map-label: rgba(255, 255, 255, 0.88);
+  --color-region-map-low: #334a66;
+  --color-region-map-medium: #2f6f7d;
+  --color-region-map-high: #1f9d65;
+  --color-region-map-xhigh: #0f7f4c;
+  --color-region-map-stroke: rgba(241, 238, 255, 0.84);
+  --color-region-map-label: rgba(255, 255, 255, 0.96);
 }
 
 .dark body {

@@ -149,7 +149,7 @@ const FinancialBalance = () => {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4">
+      <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => {
           const colors = colorMap[card.colorClass];
           const maxAbs = Math.max(...cards.map((c) => Math.abs(c.amount)), 1);
@@ -201,7 +201,7 @@ const FinancialBalance = () => {
       </div>
 
       <div className="px-4 pb-4">
-        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-primary p-2 dark:border-primarydark/60 dark:bg-maindark md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-primary p-2 dark:border-primarydark/60 dark:bg-maindark sm:grid-cols-3">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
 
