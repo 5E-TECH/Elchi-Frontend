@@ -92,14 +92,14 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
       {/* Bar Chart */}
       <div className="bg-primary dark:bg-maindark border border-glass-border rounded-2xl p-5">
         <p className="text-white font-semibold text-sm mb-5">
           Moliyaviy ko'rsatkichlar
         </p>
 
-        <div className="space-y-4 mb-5">
+        <div className="mb-5 space-y-4">
           {chartData.map((item) => {
             const pct = (Math.abs(item.amount) / maxAmount) * 100;
             return (
@@ -122,7 +122,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
           })}
         </div>
 
-        <div className="flex items-center gap-4 pt-3 border-t border-[#2E2B3E]">
+        <div className="flex flex-wrap items-center gap-3 border-t border-[#2E2B3E] pt-3">
           {chartData.map((item) => (
             <div key={item.name} className="flex items-center gap-1.5">
               <span
@@ -139,8 +139,8 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
       <div className="bg-primary dark:bg-maindark border border-glass-border rounded-2xl p-5">
         <p className="text-white font-semibold text-sm mb-4">Taqsimot</p>
 
-        <div className="flex items-center gap-6">
-          <div className="w-40 h-40 shrink-0">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
+          <div className="h-40 w-40 shrink-0 self-center sm:self-auto">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -162,7 +162,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
             </ResponsiveContainer>
           </div>
 
-          <div className="flex-1 space-y-3">
+          <div className="w-full flex-1 space-y-3">
             {chartData.map((item) => (
               <div
                 key={item.name}
@@ -173,9 +173,9 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ background: item.color }}
                   />
-                  <span className="text-slate-300 text-xs">{item.name}</span>
+                  <span className="text-xs text-slate-300">{item.name}</span>
                 </div>
-                <span className="text-white text-xs font-semibold tabular-nums">
+                <span className="text-right text-xs font-semibold tabular-nums text-white">
                   {item.amount.toLocaleString('ru-RU').replace(/\s/g, ',')} UZS
                 </span>
               </div>
@@ -187,7 +187,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
 
       {/* Total Balance Bar */}
       <div
-        className="flex items-center justify-between px-5 py-4 rounded-2xl border"
+        className="flex flex-col gap-3 rounded-2xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
         style={{
           background: trendBackground,
           borderColor: trendBorder,
@@ -204,7 +204,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
         </div>
 
         <p
-          className={`text-2xl font-black tabular-nums tracking-wide ${
+          className={`text-right text-xl font-black tabular-nums tracking-wide sm:text-2xl ${
             isNegative ? "text-red-100" : "text-emerald-100"
           }`}
         >
