@@ -224,7 +224,7 @@ const FinancialBalance = () => {
       </div>
 
       <div className="px-4 pb-4">
-        {activeTab === "overview" ? <Statistics /> : activeTab === "history" ? (
+        {activeTab === "overview" ? <Statistics data={data} /> : activeTab === "history" ? (
           <HistoryTab />
         ) : (
           <div className="rounded-2xl border border-gray-200 dark:border-glass-border bg-white dark:bg-maindark px-6 py-10 text-center">
