@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { useQueryParams } from "../../shared/lib/useQueryParams";
 import UzbekistanRegionMap from "./ui/UzbekistanRegionMap";
 
 const { RangePicker } = DatePicker;
@@ -31,6 +32,8 @@ type RegionSummary = {
   totalRevenue: number;
 };
 
+type DateRangeType = "today" | "week" | "month" | "all" | "custom";
+
 const toNumber = (value: unknown, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -46,6 +49,8 @@ const normalizeRegionItem = (raw: unknown): RegionItem | null => {
     region_name?: string;
     districtCount?: number | string;
     district_count?: number | string;
+    districts_count?: number | string;
+    districtsCount?: number | string;
     activeCouriers?: number | string;
     active_couriers?: number | string;
     ordersCount?: number | string;
@@ -78,7 +83,10 @@ const normalizeRegionItem = (raw: unknown): RegionItem | null => {
   return {
     id: String(id),
     name,
-    districtCount: toNumber(item.districtCount ?? item.district_count, 0),
+    districtCount: toNumber(
+      item.districtCount ?? item.district_count ?? item.districtsCount ?? item.districts_count,
+      0,
+    ),
     activeCouriers: toNumber(item.activeCouriers ?? item.active_couriers, 0),
     ordersCount: toNumber(
       item.ordersCount ??
@@ -176,14 +184,31 @@ const normalizeSummary = (payload: unknown): RegionSummary => {
 const RegionPage = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { getParam, setMultipleParams, removeParam } = useQueryParams();
   const role = useSelector((state: RootState) => state.role.role);
   const userRegionName = useSelector((state: RootState) => state.role.region);
 
   const [regions, setRegions] = useState<RegionItem[]>([]);
   const [summary, setSummary] = useState<RegionSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<"today" | "week" | "month" | "all" | "custom">("today");
-  const [customRange, setCustomRange] = useState<{ start: string; end: string } | null>(null);
+  const [customRange, setCustomRange] = useState<{ start: string; end: string } | null>(() => {
+    const start = getParam("startDate");
+    const end = getParam("endDate");
+    if (start && end) return { start, end };
+    return null;
+  });
+  const [dateRange, setDateRange] = useState<DateRangeType>(() => {
+    const period = getParam("period");
+    if (period === "custom") {
+      const start = getParam("startDate");
+      const end = getParam("endDate");
+      return start && end ? "custom" : "today";
+    }
+    if (period === "today" || period === "week" || period === "month" || period === "all") {
+      return period;
+    }
+    return "today";
+  });
 
   const isSuperadmin = role === "superadmin";
   const isAdmin = role === "admin";
@@ -238,7 +263,54 @@ const RegionPage = () => {
     };
   }, [dateRange, customRange]);
 
-  const today = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
+  const detailDateParams = useMemo<{ startDate?: string; endDate?: string }>(() => {
+    const now = dayjs();
+
+    if (dateRange === "today") {
+      return {
+        startDate: now.startOf("day").format("YYYY-MM-DD"),
+        endDate: now.endOf("day").format("YYYY-MM-DD"),
+      };
+    }
+
+    if (dateRange === "week") {
+      return {
+        startDate: now.startOf("week").format("YYYY-MM-DD"),
+        endDate: now.endOf("week").format("YYYY-MM-DD"),
+      };
+    }
+
+    if (dateRange === "month") {
+      return {
+        startDate: now.startOf("month").format("YYYY-MM-DD"),
+        endDate: now.endOf("month").format("YYYY-MM-DD"),
+      };
+    }
+
+    if (dateRange === "custom" && customRange) {
+      return {
+        startDate: customRange.start,
+        endDate: customRange.end,
+      };
+    }
+
+    return {};
+  }, [dateRange, customRange]);
+
+  useEffect(() => {
+    if (dateRange === "custom" && customRange?.start && customRange?.end) {
+      setMultipleParams({
+        period: "custom",
+        startDate: customRange.start,
+        endDate: customRange.end,
+      });
+      return;
+    }
+
+    setMultipleParams({ period: dateRange });
+    removeParam("startDate");
+    removeParam("endDate");
+  }, [dateRange, customRange, setMultipleParams, removeParam]);
 
   if (isChildRoute) {
     return <Outlet />;
@@ -278,7 +350,10 @@ const RegionPage = () => {
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setDateRange(option.value)}
+                      onClick={() => {
+                        setDateRange(option.value);
+                        setCustomRange(null);
+                      }}
                       className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
                         dateRange === option.value
                           ? "bg-main text-primary"
@@ -308,7 +383,6 @@ const RegionPage = () => {
                       setCustomRange(null);
                       setDateRange("all");
                     }}
-                    defaultValue={[dayjs(today), dayjs(today)]}
                     className="border-0! bg-transparent! shadow-none!"
                     style={{ width: 220 }}
                   />
@@ -317,25 +391,27 @@ const RegionPage = () => {
 
               {(isAdmin || isSuperadmin) && (
                 <div className="flex flex-wrap gap-2">
-                  {isSuperadmin && (
+                  {(isAdmin || isSuperadmin) && (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => navigate("districts")}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-main bg-sidebar rounded-xl hover:opacity-85 transition-colors"
-                      >
-                        <MapPin size={16} />
-                        Tumanlar
-                      </button>
                       <button
                         type="button"
                         onClick={() => navigate("sato-management")}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-main bg-sidebar rounded-xl hover:opacity-85 transition-colors"
                       >
                         <Settings size={16} />
-                        SATO kod
+                        Tumanlarni o'tkazish
                       </button>
                     </>
+                  )}
+                  {isSuperadmin && (
+                    <button
+                      type="button"
+                      onClick={() => navigate("districts")}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-main bg-sidebar rounded-xl hover:opacity-85 transition-colors"
+                    >
+                      <MapPin size={16} />
+                      Tumanlar
+                    </button>
                   )}
                   <button
                     type="button"
@@ -373,6 +449,8 @@ const RegionPage = () => {
               },
             }))}
             summary={summary}
+            startDate={detailDateParams.startDate}
+            endDate={detailDateParams.endDate}
           />
         )}
 
