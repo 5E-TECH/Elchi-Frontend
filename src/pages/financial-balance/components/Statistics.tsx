@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   Cell,
   ResponsiveContainer,
@@ -7,12 +7,33 @@ import {
   Pie,
 } from 'recharts';
 import { TrendingDown } from 'lucide-react';
+import type { ReactNode } from "react";
 
-const data = [
-  { name: 'Kassa', amount: 16_470_000, color: '#7C3AED' },
-  { name: 'Kuryerlar', amount: 70_778_846, color: '#10B981' },
-  { name: 'Marketlar', amount: 330_808_849, color: '#E24B4A' },
-];
+interface FinancialBalanceData {
+  currentSituation?: number;
+  main?: {
+    balance?: number;
+  };
+  markets?: {
+    marketsTotalBalans?: number;
+    marketsTotalBalance?: number;
+  };
+  couriers?: {
+    couriersTotalBalanse?: number;
+    couriersTotalBalance?: number;
+  };
+  difference?: number;
+}
+
+interface StatisticsProps {
+  data?: FinancialBalanceData;
+}
+
+interface ChartItem {
+  name: string;
+  amount: number;
+  color: string;
+}
 
 const formatAmount = (val: number) =>
   val.toLocaleString('ru-RU').replace(/\s/g, ',') + ' UZS';
@@ -29,9 +50,45 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const Statistics = () => {
-  const netTotal = -260_030_003;
+const toNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const Statistics = ({ data: financialData }: StatisticsProps) => {
+  const chartData = useMemo<ChartItem[]>(() => {
+    const cashAmount = toNumber(financialData?.main?.balance);
+    const courierAmount = toNumber(
+      financialData?.couriers?.couriersTotalBalanse ??
+      financialData?.couriers?.couriersTotalBalance,
+    );
+    const marketAmount = toNumber(
+      financialData?.markets?.marketsTotalBalans ??
+      financialData?.markets?.marketsTotalBalance,
+    );
+
+    return [
+      { name: 'Kassa', amount: cashAmount, color: '#7C3AED' },
+      { name: 'Kuryerlar', amount: courierAmount, color: '#10B981' },
+      { name: 'Marketlar', amount: marketAmount, color: '#E24B4A' },
+    ];
+  }, [financialData]);
+
+  const maxAmount = useMemo(
+    () => Math.max(...chartData.map((item) => Math.abs(item.amount)), 1),
+    [chartData],
+  );
+
+  const netTotal =
+    toNumber(financialData?.currentSituation) || toNumber(financialData?.difference);
   const isNegative = netTotal < 0;
+  const trendIcon: ReactNode = isNegative
+    ? <TrendingDown size={15} className="text-red-100" />
+    : <TrendingDown size={15} className="rotate-180 text-emerald-100" />;
+  const trendBackground = isNegative
+    ? 'linear-gradient(90deg, #8f1d1d, #9f1d1d)'
+    : 'linear-gradient(90deg, #065f46, #047857)';
+  const trendBorder = isNegative ? '#7f1d1d' : '#14532d';
 
   return (
     <div className="flex flex-col gap-4">
@@ -43,9 +100,8 @@ const Statistics = () => {
         </p>
 
         <div className="space-y-4 mb-5">
-          {data.map((item) => {
-            const max = Math.max(...data.map((d) => d.amount));
-            const pct = (item.amount / max) * 100;
+          {chartData.map((item) => {
+            const pct = (Math.abs(item.amount) / maxAmount) * 100;
             return (
               <div key={item.name} className="flex items-center gap-3">
                 <span className="text-slate-400 text-xs w-20 text-right shrink-0">
@@ -67,7 +123,7 @@ const Statistics = () => {
         </div>
 
         <div className="flex items-center gap-4 pt-3 border-t border-[#2E2B3E]">
-          {data.map((item) => (
+          {chartData.map((item) => (
             <div key={item.name} className="flex items-center gap-1.5">
               <span
                 className="w-2.5 h-2.5 rounded-full"
@@ -88,7 +144,7 @@ const Statistics = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={data}
+                  data={chartData}
                   cx="50%"
                   cy="50%"
                   innerRadius={44}
@@ -97,7 +153,7 @@ const Statistics = () => {
                   dataKey="amount"
                   strokeWidth={0}
                 >
-                  {data.map((entry) => (
+                  {chartData.map((entry) => (
                     <Cell key={entry.name} fill={entry.color} opacity={0.9} />
                   ))}
                 </Pie>
@@ -107,7 +163,7 @@ const Statistics = () => {
           </div>
 
           <div className="flex-1 space-y-3">
-            {data.map((item) => (
+            {chartData.map((item) => (
               <div
                 key={item.name}
                 className="flex items-center justify-between"
@@ -133,13 +189,13 @@ const Statistics = () => {
       <div
         className="flex items-center justify-between px-5 py-4 rounded-2xl border"
         style={{
-          background: 'linear-gradient(90deg, #8f1d1d, #9f1d1d)',
-          borderColor: isNegative ? '#7f1d1d' : '#14532d',
+          background: trendBackground,
+          borderColor: trendBorder,
         }}
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-            <TrendingDown size={15} className="text-red-100" />
+            {trendIcon}
           </div>
           <div>
             <p className="text-white text-sm font-semibold leading-tight">Total Balans</p>
@@ -148,7 +204,9 @@ const Statistics = () => {
         </div>
 
         <p
-          className="text-2xl font-black tabular-nums tracking-wide text-red-100"
+          className={`text-2xl font-black tabular-nums tracking-wide ${
+            isNegative ? "text-red-100" : "text-emerald-100"
+          }`}
         >
           {netTotal.toLocaleString('ru-RU').replace(/\s/g, ',')} UZS
         </p>
