@@ -144,8 +144,11 @@ const RefusedMails = () => {
 
   const { getRefusedMails, getRefusedMailsCourier } = useMails();
 
-  const { data: response, isLoading, isError } =
-    isCourier ? getRefusedMailsCourier() : getRefusedMails();
+  const courierQuery = getRefusedMailsCourier({ enabled: isCourier });
+  const defaultQuery = getRefusedMails({ enabled: !isCourier });
+  const response = isCourier ? courierQuery.data : defaultQuery.data;
+  const isLoading = isCourier ? courierQuery.isLoading : defaultQuery.isLoading;
+  const isError = isCourier ? courierQuery.isError : defaultQuery.isError;
 
   const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
 
