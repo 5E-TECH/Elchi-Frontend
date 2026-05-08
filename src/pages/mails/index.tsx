@@ -2,11 +2,13 @@ import { memo, useEffect, useState, type ReactNode } from "react";
 import { Mail, Package, AlertTriangle, Clock, RotateCcw, ChevronDown } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import TodaysMails from "./components/todaysMails";
 import OldMails from "./components/oldMails";
 import RefusedMails from "./components/refusedMails";
 import ReturnMails from "./components/returnMails";
 import HeaderName from "../../shared/components/headerName";
+import type { RootState } from "../../app/config/store";
 import {
   getMailTabPath,
   normalizeMailTab,
@@ -66,6 +68,8 @@ const Mails = () => {
   const { t } = useTranslation("mails");
   const location = useLocation();
   const navigate = useNavigate();
+  const role = useSelector((state: RootState) => state.role.role);
+  const canUseOldBatchMode = role === "admin" || role === "superadmin";
   const [isCompactTabs, setIsCompactTabs] = useState(
     typeof window !== "undefined" ? window.innerWidth < 1280 : false,
   );
@@ -113,6 +117,13 @@ const Mails = () => {
     setIsOldBatchMenuOpen(false);
   };
 
+  useEffect(() => {
+    if (canUseOldBatchMode || !selectedBatchId) return;
+    const params = new URLSearchParams(location.search);
+    params.delete("batch_mode");
+    navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ""}`, { replace: true });
+  }, [canUseOldBatchMode, selectedBatchId, location.pathname, location.search, navigate]);
+
   const handleTabChange = (tab: MailTab) => {
     navigate(getMailTabPath(tab));
     setIsOldBatchMenuOpen(false);
@@ -136,13 +147,7 @@ const Mails = () => {
           <button
             type="button"
             onClick={() => {
-              if (activeTab === "old") {
-                setIsOldBatchMenuOpen((prev) => !prev);
-                setIsCompactTabsOpen(false);
-                return;
-              }
               setIsCompactTabsOpen((prev) => !prev);
-              setIsOldBatchMenuOpen(false);
             }}
             style={activeTabData.activeWrapperStyle}
             className={`flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 ${activeTabData.activeWrapperClassName}`}
@@ -161,14 +166,30 @@ const Mails = () => {
             <ChevronDown
               size={18}
               className={`shrink-0 transition-transform duration-200 ${
-                activeTab === "old"
-                  ? (isOldBatchMenuOpen ? "rotate-180" : "")
-                  : (isCompactTabsOpen ? "rotate-180" : "")
+                isCompactTabsOpen ? "rotate-180" : ""
               }`}
             />
           </button>
 
-          {activeTab === "old" && isOldBatchMenuOpen && (
+          {activeTab === "old" && canUseOldBatchMode && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setIsOldBatchMenuOpen((prev) => !prev)}
+                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border border-main/20 bg-primary px-4 py-3 text-left text-sm font-semibold text-main shadow-sm dark:border-white/10 dark:bg-primarydark dark:text-primary"
+              >
+                <span className="truncate">
+                  {selectedBatchId === "all" ? t("oldBatchFilterPlaceholder") : t("oldTab")}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`shrink-0 transition-transform duration-200 ${isOldBatchMenuOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+            </div>
+          )}
+
+          {activeTab === "old" && canUseOldBatchMode && isOldBatchMenuOpen && (
             <div className="mt-3 grid grid-cols-1 gap-3">
               {batchOptions.map((option) => {
                 const isActive = selectedBatchId === option.value;
@@ -234,7 +255,7 @@ const Mails = () => {
                 type="button"
                 onClick={() => handleTabChange(tab.key)}
                 style={isActive ? tab.activeWrapperStyle : undefined}
-                className={`flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 ${
+                className={`relative flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 ${
                   isActive
                     ? tab.activeWrapperClassName
                     : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-primarydark dark:text-gray-300"
@@ -247,8 +268,8 @@ const Mails = () => {
                 >
                   {tab.icon}
                 </span>
-                {tab.key === "old" && isActive ? (
-                  <div className="relative w-full min-w-0">
+                {tab.key === "old" && isActive && canUseOldBatchMode ? (
+                  <div className="w-full min-w-0">
                     <div
                       role="button"
                       tabIndex={0}
@@ -262,7 +283,7 @@ const Mails = () => {
                           setIsOldBatchMenuOpen((prev) => !prev);
                         }
                       }}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg bg-primary/10 px-2.5 py-1.5 text-sm font-semibold text-white"
+                      className="flex w-full items-center justify-between gap-2 rounded-lg px-0 py-0 text-sm font-semibold text-white"
                     >
                       <span className="truncate">
                         {selectedBatchId === "all" ? t("oldBatchFilterPlaceholder") : t("oldTab")}
@@ -272,36 +293,36 @@ const Mails = () => {
                         className={`shrink-0 transition-transform duration-200 ${isOldBatchMenuOpen ? "rotate-180" : ""}`}
                       />
                     </div>
-
-                    {isOldBatchMenuOpen && (
-                      <div className="absolute top-[calc(100%+8px)] left-0 z-50 w-full min-w-52 overflow-hidden rounded-xl border border-white/20 bg-white p-1 shadow-xl">
-                        {batchOptions.map((option) => {
-                          const isActive = selectedBatchId === option.value;
-                          return (
-                            <button
-                              key={option.value}
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleBatchChange(option.value);
-                              }}
-                              className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                                isActive
-                                  ? "bg-main text-white"
-                                  : "text-maindark hover:bg-main/10"
-                              }`}
-                            >
-                              {option.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <span className="text-left text-sm font-semibold leading-snug">
                     {t(tab.labelKey)}
                   </span>
+                )}
+
+                {tab.key === "old" && isActive && canUseOldBatchMode && isOldBatchMenuOpen && (
+                  <div className="absolute top-[calc(100%+8px)] left-0 z-50 w-full overflow-hidden rounded-xl border border-white/20 bg-white p-1 shadow-xl">
+                    {batchOptions.map((option) => {
+                      const isActiveOption = selectedBatchId === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleBatchChange(option.value);
+                          }}
+                          className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                            isActiveOption
+                              ? "bg-main text-white"
+                              : "text-maindark hover:bg-main/10"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </button>
             );

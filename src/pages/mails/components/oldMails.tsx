@@ -12,6 +12,7 @@ import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
+import { useBatches, type Batch } from "../../../entities/batch";
 import type { RootState } from "../../../app/config/store";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
@@ -37,6 +38,17 @@ interface MailItem {
   status: string;
 }
 
+interface BatchMailItem {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  post_total_price: number;
+  order_quantity: number;
+  region_id: string;
+  region: Region;
+  status: string;
+}
+
 const formatPrice = (price: number): string =>
   price.toLocaleString("uz-UZ") + " so'm";
 
@@ -50,7 +62,7 @@ const formatDate = (dateStr: string): string =>
   });
 
 const getStatusMeta = (status: string) => {
-  if (status === "canceled_received") {
+  if (status === "canceled_received" || status === "cancelled") {
     return {
       labelKey: "statusReturned",
       badge:
@@ -67,14 +79,18 @@ const getStatusMeta = (status: string) => {
   };
 };
 
-const OldMailCard = memo(({ item }: { item: MailItem }) => {
+const OldMailCard = memo(({ item, mode }: { item: MailItem | BatchMailItem; mode: "mail" | "batch" }) => {
   const { t } = useTranslation("mails");
   const navigate = useNavigate();
   const location = useLocation();
   const status = getStatusMeta(item.status);
   const openDetail = () =>
     navigate(`/mails/${item.id}`, {
-      state: { fromTab: "old", view: "old", fromSearch: location.search },
+      state: {
+        fromTab: "old",
+        view: mode === "batch" ? "old-all-batches" : "old",
+        fromSearch: location.search,
+      },
     });
 
   return (
@@ -154,30 +170,68 @@ const OldMails = () => {
   const { t } = useTranslation("mails");
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
+  const canUseBatchMode = role === "admin" || role === "superadmin";
+  const location = useLocation();
+  const selectedBatchId = new URLSearchParams(location.search).get("batch_mode") ?? "";
+  const isAllBatchMode = canUseBatchMode && selectedBatchId === "all";
   const { getOldMails } = useMails();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "mails",
     defaultLimit: 8,
   });
-  const { data, isLoading, isError } = getOldMails(isCourier, { page, limit });
+  const { data, isLoading, isError } = getOldMails(
+    isCourier,
+    { page, limit },
+    { enabled: !isAllBatchMode },
+  );
+  const {
+    data: batchData,
+    isLoading: isBatchLoading,
+    isError: isBatchError,
+  } = useBatches(
+    isAllBatchMode ? { page, limit } : undefined,
+    { enabled: isAllBatchMode },
+  );
   const [selectedRegionId, setSelectedRegionId] = useState("");
 
   const mails: MailItem[] = useMemo(() => data?.data?.data ?? [], [data]);
   const pagination = data?.data;
+  const batchItems: BatchMailItem[] = useMemo(
+    () =>
+      (batchData?.data ?? []).map((batch: Batch) => ({
+        id: batch.id,
+        createdAt: batch.created_at,
+        updatedAt: batch.created_at,
+        post_total_price: batch.total_price,
+        order_quantity: batch.orders_count,
+        region_id: batch.to_branch.id,
+        region: {
+          id: batch.to_branch.id,
+          name: batch.to_branch.region ?? batch.to_branch.name,
+        },
+        status: batch.status,
+      })),
+    [batchData],
+  );
+  const batchPagination = batchData?.meta;
 
   const regionOptions = useMemo(
-    () => buildRegionFilterOptions(mails, t("oldRegionFilterPlaceholder")),
-    [mails, t],
+    () =>
+      isAllBatchMode
+        ? buildRegionFilterOptions(batchItems, t("oldRegionFilterPlaceholder"))
+        : buildRegionFilterOptions(mails, t("oldRegionFilterPlaceholder")),
+    [isAllBatchMode, batchItems, mails, t],
   );
   const filteredMails = useMemo(
-    () => mails.filter((mail) => {
+    () =>
+      (isAllBatchMode ? batchItems : mails).filter((mail) => {
       const regionMatched = selectedRegionId ? mail.region?.id === selectedRegionId : true;
       return regionMatched;
-    }),
-    [mails, selectedRegionId],
+      }),
+    [isAllBatchMode, batchItems, mails, selectedRegionId],
   );
 
-  if (isLoading) {
+  if (isLoading || (isAllBatchMode && isBatchLoading)) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 8 }).map((_, index) => (
@@ -187,7 +241,7 @@ const OldMails = () => {
     );
   }
 
-  if (isError) {
+  if (isError || (isAllBatchMode && isBatchError)) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
@@ -200,7 +254,7 @@ const OldMails = () => {
     );
   }
 
-  if (mails.length === 0) {
+  if ((isAllBatchMode ? batchItems.length : mails.length) === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
@@ -253,15 +307,15 @@ const OldMails = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {filteredMails.map((mail) => (
-              <OldMailCard key={mail.id} item={mail} />
+              <OldMailCard key={mail.id} item={mail} mode={isAllBatchMode ? "batch" : "mail"} />
             ))}
           </div>
 
-          {!selectedRegionId && pagination ? (
+          {!selectedRegionId && (isAllBatchMode ? batchPagination : pagination) ? (
             <Pagination
-              totalItems={pagination.total}
-              itemsPerPage={pagination.limit}
-              currentPage={pagination.page}
+              totalItems={(isAllBatchMode ? batchPagination?.total : pagination?.total) ?? 0}
+              itemsPerPage={(isAllBatchMode ? batchPagination?.limit : pagination?.limit) ?? limit}
+              currentPage={(isAllBatchMode ? batchPagination?.page : pagination?.page) ?? page}
               onPageChange={setPage}
               onItemsPerPageChange={setLimit}
               pageSizeOptions={[8, 16, 32, 64]}
