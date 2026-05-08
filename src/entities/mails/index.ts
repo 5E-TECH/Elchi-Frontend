@@ -403,7 +403,11 @@ export const useMails = () => {
       queryFn: () => api.get(API_ENDPOINTS.POSTS.COURIER_REJECTED).then((res) => res.data),
     });
 
-  const getOldMails = (isCourier = false, params?: GetOldMailsParams) =>
+  const getOldMails = (
+    isCourier = false,
+    params?: GetOldMailsParams,
+    options?: { enabled?: boolean },
+  ) =>
     useQuery<PaginatedPostsResponse>({
       queryKey: [
         MAILS_KEY,
@@ -425,6 +429,7 @@ export const useMails = () => {
               },
             })
             .then((res) => res.data),
+      enabled: options?.enabled ?? true,
     });
 
   return {

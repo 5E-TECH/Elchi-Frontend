@@ -11,7 +11,7 @@ import {
   useReceivePost,
   useSendPost,
 } from "../../../entities/mails";
-import { useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
+import { useBatchDetail, useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
 import { mapBatchOrdersToPostOrders } from "../../batches/lib/batchOrderMailAdapter";
 import HeaderName from "../../../shared/components/headerName";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
@@ -100,7 +100,8 @@ const MailDetailPage = () => {
   const fromSearch = navState?.fromSearch ?? "";
 
   const isRefusedDetail = typeRaw === "refused";
-  const isOldDetail = viewRaw === "old";
+  const isAllBatchesDetail = viewRaw === "old-all-batches";
+  const isOldDetail = viewRaw === "old" || isAllBatchesDetail;
   const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
   const fromTab = fromTabRaw;
   const { getRefusedMailsCourierByPostId } = useMails();
@@ -121,6 +122,11 @@ const MailDetailPage = () => {
     isError: transferBatchError,
     refetch: refetchTransferBatchDetail,
   } = useBatchRemainingDetail(isBranchTransferRole ? postId : undefined);
+  const {
+    data: transferBatchByIdResponse,
+    isLoading: transferBatchByIdLoading,
+    isError: transferBatchByIdError,
+  } = useBatchDetail(isAllBatchesDetail ? postId : undefined);
   const sendTransferBatch = useSendTransferBatch();
   const { apiRequest, api: notifApi } = useAppNotification();
 
@@ -136,6 +142,10 @@ const MailDetailPage = () => {
 
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
   const rawOrders = useMemo<PostOrder[]>(() => {
+    if (isAllBatchesDetail) {
+      return mapBatchOrdersToPostOrders(transferBatchByIdResponse);
+    }
+
     if (isBranchTransferRole) {
       return mapBatchOrdersToPostOrders(transferBatchResponse);
     }
@@ -143,7 +153,15 @@ const MailDetailPage = () => {
     return isRefusedDetail
       ? refusedResponse?.data ?? []
       : regularResponse?.data?.allOrdersByPostId ?? [];
-  }, [isBranchTransferRole, transferBatchResponse, isRefusedDetail, refusedResponse, regularResponse]);
+  }, [
+    isAllBatchesDetail,
+    transferBatchByIdResponse,
+    isBranchTransferRole,
+    transferBatchResponse,
+    isRefusedDetail,
+    refusedResponse,
+    regularResponse,
+  ]);
   const orders = useMemo(
     () => rawOrders.filter((order) => !sentOrderIds.has(order.id)),
     [rawOrders, sentOrderIds],
@@ -194,13 +212,25 @@ const MailDetailPage = () => {
     () =>
       (isBranchTransferRole
         ? transferBatchResponse?.to_branch?.name
+        : isAllBatchesDetail
+          ? transferBatchByIdResponse?.to_branch?.region ??
+            transferBatchByIdResponse?.to_branch?.name
         : null) ??
       orders[0]?.district?.region?.name ??
       orders[0]?.region?.name ??
       (isRefusedDetail
         ? t("refusedMailNumber", { id: postId })
         : t("mailNumberWithId", { id: postId })),
-    [isBranchTransferRole, transferBatchResponse, orders, postId, isRefusedDetail, t],
+    [
+      isBranchTransferRole,
+      transferBatchResponse,
+      isAllBatchesDetail,
+      transferBatchByIdResponse,
+      orders,
+      postId,
+      isRefusedDetail,
+      t,
+    ],
   );
 
   // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
@@ -446,7 +476,7 @@ const MailDetailPage = () => {
   }, [deleteTargetIds, apiRequest, SendToPost, t, clearSelection, refetchRegularDetail, navigate]);
 
   // ─── Loading ──────────────────────────────────────────────────────────────
-  if (regularLoading || refusedLoading || transferBatchLoading)
+  if (regularLoading || refusedLoading || transferBatchLoading || transferBatchByIdLoading)
     return (
       <div className="rounded-2xl p-6">
         <MailDetailSkeleton />
@@ -454,7 +484,7 @@ const MailDetailPage = () => {
     );
 
   // ─── Error ────────────────────────────────────────────────────────────────
-  if (regularError || refusedError || transferBatchError)
+  if (regularError || refusedError || transferBatchError || transferBatchByIdError)
     return (
       <div className="rounded-2xl p-6">
         <ErrorState />

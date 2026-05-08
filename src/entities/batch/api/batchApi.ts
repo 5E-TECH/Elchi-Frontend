@@ -284,7 +284,7 @@ const buildListParams = (params?: BatchListParams) => {
   return requestParams;
 };
 
-export const useBatches = (params?: BatchListParams) =>
+export const useBatches = (params?: BatchListParams, options?: { enabled?: boolean }) =>
   useQuery<BatchListResponse>({
     queryKey: [BATCH_KEY, params],
     queryFn: async () => {
@@ -300,6 +300,7 @@ export const useBatches = (params?: BatchListParams) =>
         meta,
       };
     },
+    enabled: options?.enabled ?? true,
     placeholderData: (prev) => prev,
   });
 
