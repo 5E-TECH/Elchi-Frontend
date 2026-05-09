@@ -85,7 +85,7 @@ const Pagination = ({
   const to = totalItems === 0 ? 0 : Math.min(currentPage * safeItemsPerPage, totalItems);
   const resolvedSummary = summary ?? (
     <span>
-      Showing {from}-{to} of {totalItems}
+      {t("paginationSummary", { from, to, total: totalItems })}
     </span>
   );
 

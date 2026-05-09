@@ -54,6 +54,8 @@ interface ReturnBatchesResponse {
 interface ReturnBatchesParams {
   page: number;
   limit: number;
+  direction: "RETURN";
+  source_branch_id?: string;
   status?: BatchStatus | "";
   from?: string;
   to?: string;
@@ -165,19 +167,20 @@ const ReturnsPage = () => {
     () => ({
       page,
       limit,
+      direction: "RETURN",
+      ...(branchId ? { source_branch_id: branchId } : {}),
       status: status || undefined,
       from: fromDate ? `${fromDate}T00:00:00` : undefined,
       to: toDate ? `${toDate}T23:59:59` : undefined,
     }),
-    [fromDate, limit, page, status, toDate],
+    [branchId, fromDate, limit, page, status, toDate],
   );
 
   const { data, isError, isLoading } = useQuery({
     queryKey: [RETURNS_KEY, branchId, params],
-    enabled: Boolean(branchId),
     queryFn: async (): Promise<ReturnBatchesResponse> => {
       const response = await api
-        .get(API_ENDPOINTS.BRANCHES.RETURN_BATCHES(branchId), { params })
+        .get(API_ENDPOINTS.BATCHES.BASE, { params })
         .then((res) => res.data);
       const list = unwrapList(response).map(normalizeReturnBatch).filter((item) => item.id);
 
@@ -302,12 +305,6 @@ const ReturnsPage = () => {
           />
         </FilterFieldCard>
       </FilterPanel>
-
-      {!branchId ? (
-        <div className="mb-4 rounded-2xl border border-amber-300/30 bg-amber-500/10 p-5 text-center text-sm font-semibold text-amber-700 dark:text-amber-100">
-          {t("messages.branchMissing")}
-        </div>
-      ) : null}
 
       {isError ? (
         <div className="mb-4 rounded-2xl border border-rose-300/30 bg-rose-500/10 p-5 text-center text-sm font-semibold text-rose-700 dark:text-rose-100">

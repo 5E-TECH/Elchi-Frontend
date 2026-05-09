@@ -158,5 +158,6 @@
   "systemWorking": "Translation system is working",
   "optional": "Optional",
   "uploadImage": "Upload image",
+  "paginationSummary": "Showing {{from}}-{{to}} of {{total}}",
   "itemsPerPage": "Per page"
 }

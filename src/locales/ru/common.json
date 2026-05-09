@@ -158,5 +158,6 @@
   "systemWorking": "Система переводов работает",
   "optional": "Необязательно",
   "uploadImage": "Загрузить изображение",
+  "paginationSummary": "Показано {{from}}-{{to}} из {{total}}",
   "itemsPerPage": "На странице"
 }
