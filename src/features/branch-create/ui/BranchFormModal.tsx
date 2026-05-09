@@ -4,7 +4,6 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { useEffect, useMemo } from "react";
 import { Building2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useUsers } from "../../../entities/user";
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { branchSchema } from "../model/schema";
@@ -44,13 +43,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
   const createBranch = useCreateBranch();
   const { data: regions = [] } = useRegionOptions();
   const { data: parentBranches, isLoading: parentBranchesLoading } = useParentBranchOptions(open);
-  const { data: managers = [] } = useUsers({
-    status: "active",
-    role: ["admin", "operator"],
-    page: 1,
-    limit: 100,
-    enabled: open,
-  });
   const {
     control,
     handleSubmit,
@@ -69,8 +61,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
       region_id: "",
       district_id: "",
       address: "",
-      status: "active",
-      manager_id: "",
     },
   });
 
@@ -88,25 +78,10 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     () => districts.map((district) => ({ value: String(district.id), label: district.name })),
     [districts],
   );
-  const statusOptions = useMemo(
-    () => [
-      { value: "active", label: t("status.active") },
-      { value: "inactive", label: t("status.inactive") },
-    ],
-    [t],
-  );
   const branchTypeOptions = useMemo(() => getBranchTypeOptions(t), [t]);
   const parentOptions = useMemo(
     () => getParentBranchOptions(parentBranches?.data, t),
     [parentBranches?.data, t],
-  );
-  const managerOptions = useMemo(
-    () =>
-      managers.map((user) => ({
-        value: String(user.id),
-        label: `${user.fullName} (${user.username})`,
-      })),
-    [managers],
   );
 
   useEffect(() => {
@@ -295,42 +270,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 {...field}
                 rows={3}
                 placeholder={t("placeholders.address")}
-              />
-            )}
-          />
-        </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>{t("fields.status")}</span>} validateStatus={errors.status ? "error" : ""} help={errors.status?.message}>
-          <Controller
-            control={control}
-            name="status"
-            render={({ field }) => (
-              <SearchableSelect
-                label={t("fields.status")}
-                name={field.name}
-                value={field.value}
-                onChange={field.onChange}
-                options={statusOptions}
-                placeholder={t("placeholders.status")}
-                icon={Building2}
-                hideLabel
-              />
-            )}
-          />
-        </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>{t("fields.manager")}</span>} validateStatus={errors.manager_id ? "error" : ""} help={errors.manager_id?.message}>
-          <Controller
-            control={control}
-            name="manager_id"
-            render={({ field }) => (
-              <SearchableSelect
-                label={t("fields.manager")}
-                name={field.name}
-                value={field.value}
-                onChange={field.onChange}
-                options={managerOptions}
-                placeholder={t("placeholders.manager")}
-                icon={Building2}
-                hideLabel
               />
             )}
           />
