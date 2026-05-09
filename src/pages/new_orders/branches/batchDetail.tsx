@@ -2,8 +2,13 @@ import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useBatchDetail, useBatchRemainingDetail, type BatchDetail, type BatchOrder } from "../../../entities/batch";
-import { useOrders } from "../../../entities/orders";
+import {
+  useBatchDetail,
+  useBatchRemainingDetail,
+  useReceiveTransferBatchOrders,
+  type BatchDetail,
+  type BatchOrder,
+} from "../../../entities/batch";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import HeaderName from "../../../shared/components/headerName";
@@ -18,7 +23,7 @@ const BranchBatchDetailPage = () => {
   const { branchId, batchId } = useParams<{ branchId: string; batchId: string }>();
   const { t } = useTranslation("newOrders");
   const { api } = useAppNotification();
-  const { createReceiveOrder } = useOrders();
+  const receiveBatchOrders = useReceiveTransferBatchOrders();
   const detailQuery = useBatchDetail(batchId);
   const remainingQuery = useBatchRemainingDetail(batchId);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
@@ -81,10 +86,10 @@ const BranchBatchDetailPage = () => {
 
   const handleAcceptSelectedOrders = () => {
     const ids = Array.from(selectedOrderIds);
-    if (ids.length === 0 || createReceiveOrder.isPending) return;
+    if (ids.length === 0 || receiveBatchOrders.isPending || !batchId) return;
 
-    createReceiveOrder.mutate(
-      { orderIds: ids },
+    receiveBatchOrders.mutate(
+      { batchId, orderIds: ids },
       {
         onSuccess: async () => {
           markOrdersReceived(ids);
@@ -118,11 +123,11 @@ const BranchBatchDetailPage = () => {
   }, [api, t]);
 
   const receiveScannedOrder = useCallback((order: BatchOrder) => {
-    if (createReceiveOrder.isPending || pendingScanOrderIdsRef.current.has(order.id)) return;
+    if (!batchId || receiveBatchOrders.isPending || pendingScanOrderIdsRef.current.has(order.id)) return;
 
     pendingScanOrderIdsRef.current.add(order.id);
-    createReceiveOrder.mutate(
-      { orderIds: [order.id] },
+    receiveBatchOrders.mutate(
+      { batchId, orderIds: [order.id] },
       {
         onSuccess: async () => {
           markOrdersReceived([order.id]);
@@ -150,14 +155,14 @@ const BranchBatchDetailPage = () => {
         },
       },
     );
-  }, [api, createReceiveOrder, markOrdersReceived, refetchBatchData, t]);
+  }, [api, batchId, receiveBatchOrders, markOrdersReceived, refetchBatchData, t]);
 
   const translatedBatchStatus = data ? t(`batchStatus.${data.status}`) : "";
   const translatedBatchDirection = data ? t(`batchDirection.${data.direction}`) : "";
 
   useOrderQrScanner({
     orders,
-    enabled: orders.length > 0 && !createReceiveOrder.isPending,
+    enabled: orders.length > 0 && !receiveBatchOrders.isPending,
     onMatch: receiveScannedOrder,
     onMissing: handleMissingScannedOrder,
   });
@@ -174,17 +179,12 @@ const BranchBatchDetailPage = () => {
           />
         ),
       },
-      { key: "id", label: "Order ID", render: (value) => <span className="font-black">{String(value)}</span> },
+      { key: "id", label: "#", render: (_, __, index) => <span className="font-black">{index + 1}</span> },
       { key: "receiver", label: t("receiver") },
       { key: "phone", label: t("phone") },
       { key: "address", label: t("address") },
       { key: "price", label: t("price"), render: (value) => formatBatchMoney(Number(value)) },
       { key: "status", label: t("status") },
-      { key: "receiver", label: "Mijoz", render: (value) => <span className="font-black">{String(value || "—")}</span> },
-      { key: "phone", label: "Telefon" },
-      { key: "address", label: "Manzil" },
-      { key: "price", label: "Narx", render: (value) => formatBatchMoney(Number(value)) },
-      { key: "status", label: "Holat" },
     ],
     [selectedOrderIds, t],
   );
@@ -243,7 +243,7 @@ const BranchBatchDetailPage = () => {
       <div className="fixed bottom-22 right-6 z-40 sm:bottom-24 sm:right-8 md:bottom-14 md:right-12">
         <button
           type="button"
-          disabled={selectedOrderIds.size === 0 || createReceiveOrder.isPending}
+          disabled={selectedOrderIds.size === 0 || receiveBatchOrders.isPending}
           onClick={handleAcceptSelectedOrders}
           className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold text-white transition-all
             bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
@@ -251,7 +251,7 @@ const BranchBatchDetailPage = () => {
             disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
             ${selectedOrderIds.size > 0 ? "cursor-pointer opacity-100" : "opacity-40"}`}
         >
-          {createReceiveOrder.isPending
+          {receiveBatchOrders.isPending
             ? t("receiving")
             : t("receiveOrdersShort", { count: selectedOrderIds.size })}
         </button>

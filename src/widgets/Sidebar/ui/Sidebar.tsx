@@ -41,7 +41,7 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`sticky left-0 top-0 z-50 hidden h-screen flex-col bg-sidebar text-maindark transition-all duration-300 ease-in-out md:flex dark:bg-maindark dark:text-primary ${!sidebarRedux.isOpen ? "w-20" : "w-72"
+      className={`sticky left-0 top-0 z-50 hidden h-screen flex-col bg-sidebar text-maindark transition-all duration-300 ease-in-out lg:flex dark:bg-maindark dark:text-primary ${!sidebarRedux.isOpen ? "w-20" : "w-72"
         }`}
     >
       {/* Header with Logo */}

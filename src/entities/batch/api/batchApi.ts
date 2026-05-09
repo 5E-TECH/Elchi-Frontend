@@ -359,3 +359,27 @@ export const useReceiveTransferBatch = () => {
     },
   });
 };
+
+export const useReceiveTransferBatchOrders = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      batchId,
+      orderIds,
+    }: {
+      batchId: string;
+      orderIds: string[];
+    }) =>
+      api.post(API_ENDPOINTS.BATCHES.RECEIVE_ORDERS(batchId), {
+        orderIds,
+      }),
+    onSuccess: (_response, variables) => {
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, variables.batchId] });
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, "remaining", variables.batchId] });
+      void queryClient.invalidateQueries({ queryKey: ["mails"] });
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+};

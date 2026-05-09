@@ -38,7 +38,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-60 overflow-hidden md:hidden">
+        <div className="fixed inset-0 z-60 overflow-hidden lg:hidden">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-md animate-loader-in"
