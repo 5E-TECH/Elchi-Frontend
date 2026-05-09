@@ -179,6 +179,17 @@ export const useUser = () => {
     },
   });
 
+  const updateMarketAddOrder = useMutation({
+    mutationFn: ({ id, add_order }: { id: string; add_order: boolean }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.ADD_ORDER(id), { add_order })
+        .then((res: any) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
+    },
+  });
+
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
       api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
@@ -200,6 +211,7 @@ export const useUser = () => {
     getMyProfile,
     updateUserStatus,
     updateUser,
+    updateMarketAddOrder,
     deleteUser,
   };
 };

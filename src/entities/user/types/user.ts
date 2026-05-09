@@ -53,6 +53,7 @@ export interface User {
     is_deleted: boolean;
     tariff_home: number | null;
     tariff_center: number | null;
+    add_order?: boolean;
     default_tariff: 'home' | 'center';
     region_id?: string | null;
     region?: Region | null;
