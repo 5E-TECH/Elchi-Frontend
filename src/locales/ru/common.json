@@ -170,5 +170,6 @@
   "shortcutOrders": "Перейти к заказам",
   "shortcutBatches": "Перейти к пакетам",
   "shortcutEscape": "Закрыть открытое окно",
+  "paginationSummary": "Показано {{from}}-{{to}} из {{total}}",
   "itemsPerPage": "На странице"
 }

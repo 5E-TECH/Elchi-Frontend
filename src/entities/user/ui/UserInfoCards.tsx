@@ -16,6 +16,8 @@ import { getUserRoleLabelKey } from '../lib/role';
 
 interface UserInfoCardsProps {
     user: User;
+    onToggleMarketAddOrder?: () => void;
+    isMarketAddOrderPending?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ const Divider = ({ title }: { title: string }) => (
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
+export const UserInfoCards = memo(({ user, onToggleMarketAddOrder, isMarketAddOrderPending = false }: UserInfoCardsProps) => {
     const { t } = useTranslation("users");
     const hasPaymentInfo = user.role === 'admin' || user.role === 'manager' || user.role === 'registrator';
     const isCourier = user.role === 'courier';
@@ -217,6 +219,39 @@ export const UserInfoCards = memo(({ user }: UserInfoCardsProps) => {
                             iconColor="text-cyan-500"
                             label={t("mainTariff")}
                             value={user.default_tariff === 'center' ? t("centerOnlyTariff") : t("doorTariff")}
+                        />
+
+                        <InfoChip
+                            icon={Package}
+                            iconBg="bg-indigo-50 dark:bg-indigo-500/10"
+                            iconColor="text-indigo-500"
+                            label={t("marketAddOrderPermission", { defaultValue: "Buyurtma qo'shish" })}
+                            value={
+                                <button
+                                    type="button"
+                                    onClick={onToggleMarketAddOrder}
+                                    disabled={!onToggleMarketAddOrder || isMarketAddOrderPending}
+                                    className={`relative inline-flex h-8 w-16 items-center rounded-full border px-1 transition-all ${
+                                        user.add_order
+                                            ? "border-emerald-500/50 bg-emerald-500/20"
+                                            : "border-slate-300 bg-slate-200/70 dark:border-white/15 dark:bg-white/10"
+                                    } ${
+                                        !onToggleMarketAddOrder || isMarketAddOrderPending
+                                            ? "cursor-not-allowed opacity-70"
+                                            : "cursor-pointer"
+                                    }`}
+                                    aria-label={t("marketAddOrderPermission", { defaultValue: "Buyurtma qo'shish" })}
+                                >
+                                    <span
+                                        className={`h-6 w-6 rounded-full bg-white shadow-sm transition-transform dark:bg-slate-100 ${
+                                            user.add_order ? "translate-x-8" : "translate-x-0"
+                                        }`}
+                                    />
+                                    <span className="sr-only">
+                                        {user.add_order ? t("enabled", { defaultValue: "Yoqilgan" }) : t("disabled", { defaultValue: "O'chirilgan" })}
+                                    </span>
+                                </button>
+                            }
                         />
                     </>
                 )}

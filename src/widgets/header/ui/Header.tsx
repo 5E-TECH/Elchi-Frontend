@@ -318,7 +318,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     <header className="sticky top-0 z-30 flex h-17.5 items-center justify-between gap-2 bg-sidebar px-3 py-3 transition-colors duration-300 md:h-auto md:px-4 md:py-4 lg:px-6 dark:bg-maindark">
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
-        <div className="absolute inset-0 z-50 bg-sidebar dark:bg-maindark px-4 flex items-center animate-fade-in md:hidden">
+        <div className="absolute inset-0 z-50 bg-sidebar px-4 flex items-center animate-fade-in dark:bg-maindark lg:hidden">
           <div ref={mobileSearchContainerRef} className="relative w-full">
             <Controller
               control={control}
@@ -368,7 +368,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
       {/* Mobile Logo */}
       <div
-        className={`md:hidden ${isSearchOpen ? "hidden" : "block animate-fade-in"}`}
+        className={`lg:hidden ${isSearchOpen ? "hidden" : "block animate-fade-in"}`}
       >
         <img
           src={theme === "dark" ? LogoTextdark : LogoText}
@@ -383,7 +383,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         control={control}
         name="search"
         render={({ field }) => (
-          <div ref={desktopSearchContainerRef} className="relative hidden min-w-0 md:flex md:flex-1 md:items-center md:max-w-[420px] lg:max-w-[520px]">
+          <div ref={desktopSearchContainerRef} className="relative hidden min-w-0 lg:flex lg:flex-1 lg:items-center lg:max-w-[520px]">
             <GlobalSearchInput
               ref={desktopSearchInputRef}
               name={field.name}
@@ -419,7 +419,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       <div
         className={`flex items-center gap-2 md:gap-3 shrink-0 ${isSearchOpen ? "hidden md:flex" : "flex"}`}
       >
-        <div ref={languageMenuRef} className="relative hidden md:block">
+        <div ref={languageMenuRef} className="relative hidden lg:block">
           <button
             type="button"
             onClick={() => setIsLanguageOpen((prev) => !prev)}
@@ -505,6 +505,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           onClick={() => setIsSearchOpen(true)}
           className="md:hidden p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"
           aria-label={t("openSearch")}
+          className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
+          aria-label="Open search"
         >
           <Search className="w-5.5 h-5.5" />
         </button>
@@ -515,6 +517,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           onClick={onMenuClick}
           className="md:hidden p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"
           aria-label={t("openMenu")}
+          className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
         >
           <Menu className="w-7 h-7" />
         </button>

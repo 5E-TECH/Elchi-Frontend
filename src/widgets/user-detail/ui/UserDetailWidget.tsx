@@ -7,6 +7,8 @@ import { UserStatsCard } from '../../../entities/user/ui/UserStatsCard';
 import { CustomerOrdersTable } from '../../../entities/user/ui/CustomerOrdersTable';
 import { UpdateUserModal } from '../../../features/user/update-user/ui/UpdateUserModal';
 import { useTranslation } from 'react-i18next';
+import { useUser } from '../../../entities/user/api/userApi';
+import { useAppNotification } from '../../../app/providers/notification/NotificationProvider';
 
 interface UserDetailWidgetProps {
   user?: User;
@@ -25,6 +27,9 @@ export const UserDetailWidget = memo(({
 }: UserDetailWidgetProps) => {
   const { t } = useTranslation("users");
   const [showEdit, setShowEdit] = useState(false);
+  const { updateMarketAddOrder } = useUser();
+  const { apiRequest } = useAppNotification();
+  const isMarket = user?.role === "market" || user?.role === "marketing";
 
   // ── Loading ──
   if (isLoading) {
@@ -77,6 +82,24 @@ export const UserDetailWidget = memo(({
   }
 
   // ── Success ──
+  const handleToggleMarketAddOrder = async () => {
+    if (!user || !isMarket) return;
+
+    const nextValue = !Boolean(user.add_order);
+
+    await apiRequest({
+      request: () =>
+        updateMarketAddOrder.mutateAsync({
+          id: user.id,
+          add_order: nextValue,
+        }),
+      successMessage: nextValue
+        ? t("marketAddOrderEnabled", { defaultValue: "Market uchun buyurtma qo'shish yoqildi" })
+        : t("marketAddOrderDisabled", { defaultValue: "Market uchun buyurtma qo'shish o'chirildi" }),
+      errorMessage: t("editUserError"),
+    });
+  };
+
   return (
     <>
       <div className="flex flex-col items-start gap-4 lg:flex-row lg:gap-6">
@@ -103,7 +126,11 @@ export const UserDetailWidget = memo(({
             </button>
           </div>
 
-          <UserInfoCards user={user} />
+          <UserInfoCards
+            user={user}
+            onToggleMarketAddOrder={isMarket ? handleToggleMarketAddOrder : undefined}
+            isMarketAddOrderPending={updateMarketAddOrder.isPending}
+          />
           {user.role === 'customer' ? (
             <CustomerOrdersTable orders={user.orders || []} />
           ) : (

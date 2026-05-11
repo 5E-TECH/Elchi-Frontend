@@ -170,5 +170,6 @@
   "shortcutOrders": "Go to orders",
   "shortcutBatches": "Go to batches",
   "shortcutEscape": "Close open dialog",
+  "paginationSummary": "Showing {{from}}-{{to}} of {{total}}",
   "itemsPerPage": "Per page"
 }

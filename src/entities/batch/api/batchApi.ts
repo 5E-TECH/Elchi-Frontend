@@ -284,7 +284,7 @@ const buildListParams = (params?: BatchListParams) => {
   return requestParams;
 };
 
-export const useBatches = (params?: BatchListParams) =>
+export const useBatches = (params?: BatchListParams, options?: { enabled?: boolean }) =>
   useQuery<BatchListResponse>({
     queryKey: [BATCH_KEY, params],
     queryFn: async () => {
@@ -300,6 +300,7 @@ export const useBatches = (params?: BatchListParams) =>
         meta,
       };
     },
+    enabled: options?.enabled ?? true,
     placeholderData: (prev) => prev,
   });
 
@@ -353,6 +354,30 @@ export const useReceiveTransferBatch = () => {
     onSuccess: (_response, batchId) => {
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
       void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, batchId] });
+      void queryClient.invalidateQueries({ queryKey: ["mails"] });
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+};
+
+export const useReceiveTransferBatchOrders = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      batchId,
+      orderIds,
+    }: {
+      batchId: string;
+      orderIds: string[];
+    }) =>
+      api.post(API_ENDPOINTS.BATCHES.RECEIVE_ORDERS(batchId), {
+        orderIds,
+      }),
+    onSuccess: (_response, variables) => {
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, variables.batchId] });
+      void queryClient.invalidateQueries({ queryKey: [BATCH_KEY, "remaining", variables.batchId] });
       void queryClient.invalidateQueries({ queryKey: ["mails"] });
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
     },

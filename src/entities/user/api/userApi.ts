@@ -203,6 +203,14 @@ export const useUser = () => {
       store.dispatch(setProfile(updatedProfile as any));
       store.dispatch(setName(updatedProfile.name));
       store.dispatch(setRole(updatedProfile.role));
+  const updateMarketAddOrder = useMutation({
+    mutationFn: ({ id, add_order }: { id: string; add_order: boolean }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.ADD_ORDER(id), { add_order })
+        .then((res: any) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
     },
   });
 
@@ -228,6 +236,7 @@ export const useUser = () => {
     updateUserStatus,
     updateUser,
     updateMyProfile,
+    updateMarketAddOrder,
     deleteUser,
   };
 };

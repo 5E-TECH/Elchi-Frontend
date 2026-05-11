@@ -34,7 +34,7 @@ const BottomNav = () => {
                 : sourceItems;
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up md:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up lg:hidden">
             <div
                 className="mx-4 mb-3 grid gap-1 overflow-hidden rounded-2xl border border-white/60 bg-[rgba(255,255,255,0.55)] p-2 shadow-[0_10px_30px_rgba(56,37,135,0.18)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/15 dark:bg-[rgba(33,25,73,0.52)] dark:shadow-[0_12px_34px_rgba(0,0,0,0.42)]"
                 style={{ gridTemplateColumns: `repeat(${Math.max(navItems.length, 1)}, minmax(0, 1fr))` }}

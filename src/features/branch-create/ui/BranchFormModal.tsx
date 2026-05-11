@@ -61,8 +61,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
       region_id: "",
       district_id: "",
       address: "",
-      status: "active",
-      manager_id: "",
     },
   });
 
@@ -80,18 +78,12 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     () => districts.map((district) => ({ value: String(district.id), label: district.name })),
     [districts],
   );
-  const statusOptions = useMemo(
-    () => [
-      { value: "active", label: t("status.active") },
-      { value: "inactive", label: t("status.inactive") },
-    ],
-    [t],
-  );
   const branchTypeOptions = useMemo(() => getBranchTypeOptions(t), [t]);
   const parentOptions = useMemo(
     () => getParentBranchOptions(parentBranches?.data, t),
     [parentBranches?.data, t],
   );
+
   useEffect(() => {
     if (!open) {
       reset();

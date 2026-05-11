@@ -345,19 +345,21 @@ export const useMails = () => {
       })
       .then((res) => toPaginatedMailResponse(res.data));
 
-  const getNewMails = () =>
+  const getNewMails = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "new", role, branchId],
       queryFn: () =>
         branchRole
           ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.PENDING)
           : api.get(API_ENDPOINTS.POSTS.NEW).then((res) => res.data),
+      enabled: options?.enabled ?? true,
     });
 
-  const getNewMailsCourier = () =>
+  const getNewMailsCourier = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "new"],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.ON_THE_ROAD).then((res) => res.data),
+      enabled: options?.enabled ?? true,
     });
 
   const getTodayMailsCourier = (id: string) =>
@@ -374,13 +376,14 @@ export const useMails = () => {
       enabled: !!id,
     });
 
-  const getRefusedMails = () =>
+  const getRefusedMails = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused", role, branchId],
       queryFn: () =>
         branchRole
           ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.CANCELLED)
           : api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
+      enabled: options?.enabled ?? true,
     });
 
   const getReturnMails = (params?: GetOldMailsParams) =>
@@ -397,13 +400,18 @@ export const useMails = () => {
           .then((res) => toPaginatedMailResponse(res.data, mapReturnRequestToMailItem)),
     });
 
-  const getRefusedMailsCourier = () =>
+  const getRefusedMailsCourier = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-courier"],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.COURIER_REJECTED).then((res) => res.data),
+      enabled: options?.enabled ?? true,
     });
 
-  const getOldMails = (isCourier = false, params?: GetOldMailsParams) =>
+  const getOldMails = (
+    isCourier = false,
+    params?: GetOldMailsParams,
+    options?: { enabled?: boolean },
+  ) =>
     useQuery<PaginatedPostsResponse>({
       queryKey: [
         MAILS_KEY,
@@ -425,6 +433,7 @@ export const useMails = () => {
               },
             })
             .then((res) => res.data),
+      enabled: options?.enabled ?? true,
     });
 
   return {

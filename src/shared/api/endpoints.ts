@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
   MARKETS: {
     BASE: "markets",
     BY_ID: (id: string | number) => `markets/${id}`,
+    ADD_ORDER: (id: string | number) => `markets/${id}/add-order`,
   },
   COURIERS: {
     BASE: "couriers",
@@ -33,7 +34,14 @@ export const API_ENDPOINTS = {
   REGIONS: {
     BASE: "region",
     STATS_ALL: "region/stats/all",
+    STATS_BY_ID: (regionId: string | number) => `region/stats/${regionId}`,
     BY_ID: (regionId: string | number) => `region/${regionId}`,
+    UPDATE_NAME: (regionId: string | number) => `region/name/${regionId}`,
+  },
+  DISTRICTS: {
+    BASE: "district",
+    BY_ID: (districtId: string | number) => `district/${districtId}`,
+    UPDATE_NAME: (districtId: string | number) => `district/name/${districtId}`,
   },
   ORDERS: {
     BASE: "orders",
@@ -87,6 +95,7 @@ export const API_ENDPOINTS = {
     REMAINING: (id: string | number) => `transfer-batches/${id}/remaining`,
     SEND: (id: string | number) => `transfer-batches/${id}/send`,
     RECEIVE: (id: string | number) => `transfer-batches/${id}/receive`,
+    RECEIVE_ORDERS: (id: string | number) => `transfer-batches/${id}/receive-orders`,
     QR_CODE: (token: string | number) => `packages/qr-code/${token}`,
   },
   CASHBOX: {
