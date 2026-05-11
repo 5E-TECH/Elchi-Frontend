@@ -503,10 +503,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="md:hidden p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"
-          aria-label={t("openSearch")}
           className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
-          aria-label="Open search"
+          aria-label={t("openSearch")}
         >
           <Search className="w-5.5 h-5.5" />
         </button>
@@ -515,9 +513,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={onMenuClick}
-          className="md:hidden p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"
-          aria-label={t("openMenu")}
           className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
+          aria-label={t("openMenu")}
         >
           <Menu className="w-7 h-7" />
         </button>

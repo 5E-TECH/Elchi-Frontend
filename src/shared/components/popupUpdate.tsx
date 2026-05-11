@@ -43,9 +43,6 @@ const UpdatePopup = ({
 
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className={`w-[92vw] ${widthClassName} rounded-3xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(246,248,255,0.99)_100%)] shadow-[0_30px_70px_rgba(46,54,98,0.18)] dark:border-white/10 dark:bg-none dark:bg-primarydark dark:shadow-[0_30px_80px_rgba(0,0,0,0.45)] flex flex-col max-h-[90vh] overflow-hidden`}>
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(124,92,255,0.08)_0%,rgba(124,92,255,0.02)_100%)] dark:border-white/10 dark:bg-none dark:bg-white/[0.03]">
       <div className={`w-[92vw] ${widthClassName} flex max-h-[90vh] flex-col overflow-hidden rounded-3xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(246,248,255,0.99)_100%)] shadow-[0_30px_70px_rgba(46,54,98,0.18)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:bg-none dark:shadow-[0_30px_70px_rgba(0,0,0,0.34)]`}>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(124,92,255,0.08)_0%,rgba(124,92,255,0.02)_100%)] p-6 dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:bg-none">
@@ -103,7 +100,6 @@ const UpdatePopup = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 flex gap-4 border-t border-[color:var(--color-border-soft)] dark:border-white/10 bg-[linear-gradient(180deg,rgba(124,92,255,0.04)_0%,rgba(255,255,255,0.82)_100%)] dark:bg-none dark:bg-white/[0.03]">
         <div className="grid grid-cols-2 gap-3 border-t border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(124,92,255,0.04)_0%,rgba(255,255,255,0.82)_100%)] p-4 dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:bg-none sm:p-5">
           <Button
             label={resolvedCancelLabel}

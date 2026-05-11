@@ -61,6 +61,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
       region_id: "",
       district_id: "",
       address: "",
+      status: "active",
     },
   });
 
@@ -79,6 +80,13 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     [districts],
   );
   const branchTypeOptions = useMemo(() => getBranchTypeOptions(t), [t]);
+  const statusOptions = useMemo(
+    () => [
+      { value: "active", label: t("status.active") },
+      { value: "inactive", label: t("status.inactive") },
+    ],
+    [t],
+  );
   const parentOptions = useMemo(
     () => getParentBranchOptions(parentBranches?.data, t),
     [parentBranches?.data, t],
@@ -92,7 +100,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      const { manager_id: _managerId, ...payload } = {
+      const payload: Omit<CreateBranchDto, "manager_id"> = {
         ...values,
         code: values.code.trim(),
         parent_id: values.type === "HQ" ? "" : values.parent_id,
