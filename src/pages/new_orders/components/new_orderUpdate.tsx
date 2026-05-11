@@ -434,7 +434,10 @@ const NewOrderUpdate = () => {
 
   const handleNavigateBack = useCallback(() => navigate(-1), [navigate]);
   const handleNavigateToCustomer = useCallback(
-    () => navigate(`/new-orders/userDetail/${userId}`),
+    () => {
+      if (!userId) return;
+      navigate(`/all-users/${userId}`);
+    },
     [navigate, userId],
   );
 
