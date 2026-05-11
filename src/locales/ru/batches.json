@@ -1,0 +1,34 @@
+{
+  "title": "Пакеты",
+  "description": "Список пакетов, созданных сотрудниками филиалов и HQ",
+  "statBadge": "{{count}} пакетов",
+  "tabs": {
+    "new": "Новые",
+    "old": "Старые",
+    "return": "Возвраты"
+  },
+  "filter": {
+    "status": "Статус",
+    "direction": "Направление",
+    "date": "Дата"
+  },
+  "status": {
+    "new": "Новый",
+    "onTheWay": "В пути",
+    "received": "Получено",
+    "cancelled": "Отменено"
+  },
+  "direction": {
+    "forward": "Вперед",
+    "return": "Возврат"
+  },
+  "card": {
+    "orders": "Заказы",
+    "piece": "шт",
+    "amount": "Сумма",
+    "direction": "Направление"
+  },
+  "loadError": "Не удалось загрузить список пакетов",
+  "emptyTitle": "Пакетов нет",
+  "emptyDescription": "По этим фильтрам пакеты пока не найдены."
+}

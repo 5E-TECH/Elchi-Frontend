@@ -17,7 +17,7 @@ const DashboardLayout = () => {
       <Sidebar />
 
       {/* Main Content Wrapper */}
-      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-[#eef1fb] dark:bg-[#211d34]">
+      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-sidebar dark:bg-maindark">
 
         {/* Header - Sticky */}
         <Header onMenuClick={() => setIsMenuOpen(true)} />

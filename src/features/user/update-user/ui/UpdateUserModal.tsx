@@ -11,11 +11,11 @@ import {
   User,
 } from "lucide-react";
 import UpdatePopup from "../../../../shared/components/popupUpdate";
-import Select from "../../../../shared/ui/Select";
+import SearchableSelect from "../../../../shared/ui/SearchableSelect";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import { UserRoleBadge } from "../../../../entities/user/ui/UserRoleBadge";
-import type { UpdateUserRequest } from "../../../../entities/user/types/user";
+import type { UpdateUserRequest, User as UserType } from "../../../../entities/user/types/user";
 import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
@@ -48,9 +48,23 @@ const formatPhone = (value: string): string => {
 
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
 
+type RegionOption = {
+  id: string | number;
+  name: string;
+  sato_code?: string | null;
+};
+
+const getRegionOptionLabel = (region: RegionOption) => {
+  const satoCode = region.sato_code ? ` • ${region.sato_code}` : "";
+
+  return `${region.name}${satoCode}`;
+};
+
 interface UpdateUserModalProps {
   userId: string | null;
   onClose: () => void;
+  initialUser?: UserType | null;
+  isOwnProfile?: boolean;
 }
 
 interface UpdateUserFormValues {
@@ -98,12 +112,18 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<UpdateUserFormValues>> = {
   default_tariff: "default_tariff",
 };
 
-export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) => {
+export const UpdateUserModal = memo(({
+  userId,
+  onClose,
+  initialUser = null,
+  isOwnProfile = false,
+}: UpdateUserModalProps) => {
   const { t } = useTranslation("users");
-  const { getUserById, updateUser, getRegions } = useUser();
+  const { getUserById, updateUser, updateMyProfile, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
 
-  const { data: rawUser, isLoading } = getUserById(userId ?? "");
+  const shouldFetchUser = Boolean(userId && !initialUser);
+  const { data: rawUser, isLoading: isUserLoading } = getUserById(shouldFetchUser ? userId ?? "" : "");
 
   const methods = useForm<UpdateUserFormValues>({
     defaultValues: INITIAL_VALUES,
@@ -118,10 +138,11 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
     clearErrors,
   } = methods;
 
-  const userData = unwrapUserResponse(rawUser) ?? null;
+  const userData = initialUser ?? unwrapUserResponse(rawUser) ?? null;
+  const isLoading = shouldFetchUser ? isUserLoading : false;
 
   const { data: regionsData } = getRegions();
-  const regionList: { id: string; name: string }[] = (() => {
+  const regionList: RegionOption[] = (() => {
     const data = regionsData as any;
     if (Array.isArray(data)) return data;
     if (data?.data?.items && Array.isArray(data.data.items)) return data.data.items;
@@ -131,10 +152,10 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
   })();
 
   const role = userData?.role ?? "";
-  const isAdmin = role === "admin" || role === "manager" || role === "registrator";
+  const isAdmin = !isOwnProfile && (role === "admin" || role === "manager" || role === "registrator");
   const isSuperAdmin = role === "superadmin";
-  const isCourier = role === "courier";
-  const isMarket = role === "market" || role === "marketing";
+  const isCourier = !isOwnProfile && role === "courier";
+  const isMarket = !isOwnProfile && (role === "market" || role === "marketing");
   const isCustomer = role === "customer";
 
   useEffect(() => {
@@ -203,7 +224,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
     }
 
     if (values.password.trim()) payload.password = values.password.trim();
-    if (values.status && values.status !== userData.status) {
+    if (!isOwnProfile && values.status && values.status !== userData.status) {
       payload.status = values.status as any;
     }
 
@@ -263,7 +284,10 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
     }
 
     await apiRequest({
-      request: () => updateUser.mutateAsync({ id: userId, data: payload }),
+      request: () =>
+        isOwnProfile
+          ? updateMyProfile.mutateAsync(payload)
+          : updateUser.mutateAsync({ id: userId, data: payload }),
       successMessage: t("userUpdatedSuccess", { name: userData.name }),
       errorMessage: t("editUserError"),
       onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
@@ -359,7 +383,7 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
     />
   );
 
-  const isPending = updateUser.isPending;
+  const isPending = isOwnProfile ? updateMyProfile.isPending : updateUser.isPending;
 
   return (
     <UpdatePopup
@@ -433,22 +457,24 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       placeholder: "••••••",
                     })}
 
-                    {!isSuperAdmin && (
+                    {!isOwnProfile && !isSuperAdmin && (
                       <Controller
                         control={control}
                         name="status"
                         render={({ field }) => (
-                          <Select
+                          <SearchableSelect
                             label={t("status")}
                             name={field.name}
                             value={field.value}
-                            onChange={(event) => field.onChange(event.target.value)}
+                            onChange={field.onChange}
                             options={[
                               { value: "active", label: t("statusActive") },
                               { value: "inactive", label: t("statusInactive") },
                               { value: "blocked", label: t("statusBlocked") },
                             ]}
                             placeholder={t("statusPlaceholder")}
+                            icon={User}
+                            surface="search"
                           />
                         )}
                       />
@@ -509,16 +535,18 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                         control={control}
                         name="region_id"
                         render={({ field }) => (
-                          <Select
+                          <SearchableSelect
                             label={t("regionLabel")}
                             name={field.name}
                             value={field.value}
-                            onChange={(event) => field.onChange(event.target.value)}
+                            onChange={field.onChange}
                             options={regionList.map((region) => ({
                               value: String(region.id),
-                              label: region.name,
+                              label: getRegionOptionLabel(region),
                             }))}
                             placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
+                            icon={Building}
+                            surface="search"
                           />
                         )}
                       />
@@ -536,16 +564,18 @@ export const UpdateUserModal = memo(({ userId, onClose }: UpdateUserModalProps) 
                       control={control}
                       name="default_tariff"
                       render={({ field }) => (
-                        <Select
+                        <SearchableSelect
                           label={t("mainTariff")}
                           name={field.name}
                           value={field.value}
-                          onChange={(event) => field.onChange(event.target.value)}
+                          onChange={field.onChange}
                           options={[
                             { value: "center", label: t("centerOnlyTariff") },
                             { value: "address", label: t("doorTariff") },
                           ]}
                           placeholder={t("defaultTariffPlaceholder")}
+                          icon={Store}
+                          surface="search"
                         />
                       )}
                     />

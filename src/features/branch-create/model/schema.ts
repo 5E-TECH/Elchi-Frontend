@@ -22,4 +22,5 @@ export const branchSchema = yup.object({
   region_id: yup.string().required(i18n.t("branches:validation.region")),
   district_id: yup.string().required(i18n.t("branches:validation.district")),
   address: yup.string().required(i18n.t("branches:validation.address")),
+  status: yup.string<"active" | "inactive">().oneOf(["active", "inactive"]).required(i18n.t("branches:validation.status")),
 });

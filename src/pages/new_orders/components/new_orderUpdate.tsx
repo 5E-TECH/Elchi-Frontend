@@ -443,7 +443,7 @@ const NewOrderUpdate = () => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-full space-y-4 rounded-2xl p-3 pb-20 sm:space-y-5 sm:p-4 sm:pb-24 md:space-y-6 md:p-6 md:pb-4">
+    <div className="min-h-full space-y-4 rounded-2xl py-3 pb-20 sm:space-y-5 sm:py-4 sm:pb-24 md:space-y-6 md:py-6 md:pb-4">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div onClick={handleNavigateBack} className="cursor-pointer min-w-0">

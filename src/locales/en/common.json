@@ -158,6 +158,18 @@
   "systemWorking": "Translation system is working",
   "optional": "Optional",
   "uploadImage": "Upload image",
+  "openSearch": "Open search",
+  "closeSearch": "Close search",
+  "openMenu": "Open menu",
+  "toggleTheme": "Toggle theme",
+  "logout": "Log out",
+  "globalSearchAria": "Global search",
+  "keyboardShortcuts": "Keyboard shortcuts",
+  "keyboardShortcutsHint": "Use these shortcuts to move faster.",
+  "shortcutSearch": "Focus search",
+  "shortcutOrders": "Go to orders",
+  "shortcutBatches": "Go to batches",
+  "shortcutEscape": "Close open dialog",
   "paginationSummary": "Showing {{from}}-{{to}} of {{total}}",
   "itemsPerPage": "Per page"
 }

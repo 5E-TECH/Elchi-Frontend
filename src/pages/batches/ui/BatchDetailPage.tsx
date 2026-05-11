@@ -164,20 +164,12 @@ const BatchDetailPage = () => {
             <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {[
                 {
-                  label: "Paket ID",
-                  value: batch.request_key ?? batch.id,
-                  icon: <PackageCheck size={14} />,
-                },
-                {
                   label: "Filial",
                   value: `${batch.from_branch.code ?? batch.from_branch.id} • ${batch.from_branch.name}`,
                   icon: <MapPin size={14} />,
                 },
                 { label: "Qayerga", value: batch.to_branch.name, icon: <MapPin size={14} /> },
                 { label: "Viloyat", value: batch.to_branch.region ?? batch.to_branch.name ?? "—", icon: <MapPin size={14} /> },
-                { label: "Haydovchi", value: batch.driver ?? "—", icon: <Truck size={14} /> },
-                { label: "Telefon", value: batch.driver_phone ?? "—", icon: <Truck size={14} /> },
-                { label: "Mashina", value: batch.vehicle_plate ?? "—", icon: <Truck size={14} /> },
                 { label: "Yo'nalish", value: batchDirectionLabel[batch.direction], icon: <Truck size={14} /> },
                 { label: "Order", value: `${batch.orders_count} ta`, icon: <PackageCheck size={14} /> },
                 { label: "Narx", value: formatBatchMoney(batch.total_price), icon: <PackageCheck size={14} /> },

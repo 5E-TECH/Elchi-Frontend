@@ -158,6 +158,18 @@
   "systemWorking": "Tarjima tizimi ishlayapti",
   "optional": "ixtiyoriy",
   "uploadImage": "Rasm yuklash",
-  "paginationSummary": "{{from}}-{{to}} dan {{total}} tasi ko'rsatilmoqda"
-  ,"itemsPerPage": "Sahifada"
+  "paginationSummary": "{{from}}-{{to}} dan {{total}} tasi ko'rsatilmoqda",
+  "openSearch": "Qidiruvni ochish",
+  "closeSearch": "Qidiruvni yopish",
+  "openMenu": "Menyuni ochish",
+  "toggleTheme": "Temani almashtirish",
+  "logout": "Chiqish",
+  "globalSearchAria": "Global qidiruv",
+  "keyboardShortcuts": "Klaviatura shortcutlari",
+  "keyboardShortcutsHint": "Tezroq ishlash uchun shu tugmalardan foydalaning.",
+  "shortcutSearch": "Qidiruvga o'tish",
+  "shortcutOrders": "Orderlarga o'tish",
+  "shortcutBatches": "Paketlarga o'tish",
+  "shortcutEscape": "Ochiq oynani yopish",
+  "itemsPerPage": "Sahifada"
 }

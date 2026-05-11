@@ -27,6 +27,7 @@ const ProfilePage = () => {
         isLoading={isLoading}
         isError={isError}
         error={error}
+        isOwnProfile
       />
     </div>
   );

@@ -1,8 +1,9 @@
 import { memo, useEffect, type ReactNode } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { Home, MapPin, Phone, User } from "lucide-react";
+import { Building2, Home, MapPin, Phone, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
+import SearchableSelect from "../../../../shared/ui/SearchableSelect";
 import {
   formatPhone,
   stripPhone,
@@ -10,10 +11,7 @@ import {
 } from "../model/orderCreateForm";
 import {
   FormFieldError,
-  getDisabledFieldClassName,
   getFieldClassName,
-  getSelectFieldClassName,
-  SelectFieldShell,
 } from "./formFieldStyles";
 
 const inputClass = `
@@ -45,6 +43,12 @@ const Field = ({ label, required, icon, children, error }: FieldProps) => (
     <FormFieldError message={error} />
   </div>
 );
+
+const getAreaOptionLabel = (item: any) => {
+  const satoCode = item?.sato_code ? ` • ${item.sato_code}` : "";
+
+  return `${item?.name ?? "—"}${satoCode}`;
+};
 
 const Step2Customer = () => {
   const { t } = useTranslation("orders");
@@ -200,28 +204,22 @@ const Step2Customer = () => {
               icon={<MapPin size={12} />}
               error={errors.customer?.region_id?.message}
             >
-              <SelectFieldShell
-                hasError={!!errors.customer?.region_id?.message}
+              <SearchableSelect
+                label={t("filterRegion")}
+                name={field.name}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                options={regionList.map((region: any) => ({
+                  value: String(region.id),
+                  label: getAreaOptionLabel(region),
+                }))}
+                placeholder={regLoading ? t("createSubmitting") : t("selectRegion")}
+                icon={MapPin}
+                loading={regLoading}
                 disabled={regLoading}
-              >
-                <select
-                  {...field}
-                  disabled={regLoading}
-                  className={getSelectFieldClassName(
-                    getDisabledFieldClassName(`${inputClass} cursor-pointer`),
-                    !!errors.customer?.region_id?.message,
-                  )}
-                >
-                  <option value="">
-                    {regLoading ? t("createSubmitting") : t("selectRegion")}
-                  </option>
-                  {regionList.map((region: any) => (
-                    <option key={region.id} value={region.id}>
-                      {region.name}
-                    </option>
-                  ))}
-                </select>
-              </SelectFieldShell>
+                hideLabel
+                surface="search"
+              />
             </Field>
           )}
         />
@@ -236,32 +234,28 @@ const Step2Customer = () => {
               icon={<MapPin size={12} />}
               error={errors.customer?.district_id?.message}
             >
-              <SelectFieldShell
-                hasError={!!errors.customer?.district_id?.message}
+              <SearchableSelect
+                label={t("district")}
+                name={field.name}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                options={districtList.map((district: any) => ({
+                  value: String(district.id),
+                  label: getAreaOptionLabel(district),
+                }))}
+                placeholder={
+                  !regionId
+                    ? t("selectRegionFirst")
+                    : distLoading
+                      ? t("createSubmitting")
+                      : t("selectDistrict")
+                }
+                icon={Building2}
+                loading={distLoading}
                 disabled={!regionId || distLoading}
-              >
-                <select
-                  {...field}
-                  disabled={!regionId || distLoading}
-                  className={getSelectFieldClassName(
-                    getDisabledFieldClassName(`${inputClass} cursor-pointer`),
-                    !!errors.customer?.district_id?.message,
-                  )}
-                >
-                  <option value="">
-                    {!regionId
-                      ? t("selectRegionFirst")
-                      : distLoading
-                        ? t("createSubmitting")
-                        : t("selectDistrict")}
-                  </option>
-                  {districtList.map((district: any) => (
-                    <option key={district.id} value={district.id}>
-                      {district.name}
-                    </option>
-                  ))}
-                </select>
-              </SelectFieldShell>
+                hideLabel
+                surface="search"
+              />
             </Field>
           )}
         />

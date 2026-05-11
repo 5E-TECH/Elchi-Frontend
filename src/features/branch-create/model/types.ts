@@ -9,4 +9,6 @@ export interface CreateBranchDto {
   region_id: string;
   district_id: string;
   address: string;
+  status: "active" | "inactive";
+  manager_id?: string;
 }

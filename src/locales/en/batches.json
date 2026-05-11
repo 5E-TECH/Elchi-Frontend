@@ -1,0 +1,34 @@
+{
+  "title": "Batches",
+  "description": "List of batches created by branch and HQ staff",
+  "statBadge": "{{count}} batches",
+  "tabs": {
+    "new": "New",
+    "old": "Old",
+    "return": "Returned"
+  },
+  "filter": {
+    "status": "Status",
+    "direction": "Direction",
+    "date": "Date"
+  },
+  "status": {
+    "new": "New",
+    "onTheWay": "On the way",
+    "received": "Received",
+    "cancelled": "Cancelled"
+  },
+  "direction": {
+    "forward": "Forward",
+    "return": "Return"
+  },
+  "card": {
+    "orders": "Orders",
+    "piece": "pcs",
+    "amount": "Amount",
+    "direction": "Direction"
+  },
+  "loadError": "Could not load batches",
+  "emptyTitle": "No batches",
+  "emptyDescription": "No batches found for these filters yet."
+}

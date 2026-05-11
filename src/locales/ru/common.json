@@ -158,6 +158,18 @@
   "systemWorking": "Система переводов работает",
   "optional": "Необязательно",
   "uploadImage": "Загрузить изображение",
+  "openSearch": "Открыть поиск",
+  "closeSearch": "Закрыть поиск",
+  "openMenu": "Открыть меню",
+  "toggleTheme": "Переключить тему",
+  "logout": "Выйти",
+  "globalSearchAria": "Глобальный поиск",
+  "keyboardShortcuts": "Горячие клавиши",
+  "keyboardShortcutsHint": "Используйте эти клавиши для быстрой работы.",
+  "shortcutSearch": "Перейти к поиску",
+  "shortcutOrders": "Перейти к заказам",
+  "shortcutBatches": "Перейти к пакетам",
+  "shortcutEscape": "Закрыть открытое окно",
   "paginationSummary": "Показано {{from}}-{{to}} из {{total}}",
   "itemsPerPage": "На странице"
 }

@@ -120,12 +120,49 @@ const extractArray = <T,>(value: unknown): T[] => {
   return [];
 };
 
+const BRANCH_CHILD_KEYS = ["children", "child_branches", "branches"] as const;
+
+const getBranchChildren = (branch: Record<string, any>) => {
+  for (const key of BRANCH_CHILD_KEYS) {
+    if (Array.isArray(branch[key])) {
+      return branch[key] as Record<string, any>[];
+    }
+  }
+
+  return [];
+};
+
+const flattenBranchItems = (
+  items: Record<string, any>[],
+  parent?: Record<string, any>,
+): Record<string, any>[] =>
+  items.flatMap((item) => {
+    const parentId = parent?.id;
+    const parentName = parent?.name;
+    const parentLevel = Number(parent?.level ?? 0);
+    const branchWithParent =
+      parentId && !item.parent_id && !item.parent?.id && !item.parent_branch?.id
+        ? {
+            ...item,
+            parent_id: parentId,
+            parent: { id: parentId, name: parentName ?? "—" },
+            level: item.level ?? parentLevel + 1,
+          }
+        : item;
+    const children = getBranchChildren(item);
+
+    return [
+      branchWithParent,
+      ...flattenBranchItems(children, branchWithParent),
+    ];
+  });
+
 const normalizeBranchList = (value: unknown, params?: BranchParams): PaginatedResponse<Branch> => {
   const response = value as
     | PaginatedResponse<Branch>
     | { data?: Branch[] | { items?: Branch[]; total?: number; page?: number; limit?: number }; total?: number; page?: number; limit?: number };
 
-  const list = extractArray<Branch>(response);
+  const list = flattenBranchItems(extractArray<Record<string, any>>(response));
 
   return {
     data: list.map(normalizeBranch),

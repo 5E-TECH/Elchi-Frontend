@@ -37,7 +37,7 @@ const BranchesPage = () => {
     try {
       window.localStorage.setItem(STORAGE_KEY, viewMode);
     } catch {
-      // Ignore storage failures and keep UI usable.
+      // Storage ishlamasa ham sahifa ishlashda davom etadi.
     }
   }, [viewMode]);
 

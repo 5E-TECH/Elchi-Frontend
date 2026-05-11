@@ -57,7 +57,7 @@ const UpdatePopup = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-transparent dark:bg-maindark">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-transparent dark:bg-primarydark">
           {/* Universal Image Update Section */}
           {imageProps && (
             <div className="space-y-2">

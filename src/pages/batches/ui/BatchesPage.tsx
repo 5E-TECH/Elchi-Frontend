@@ -1,26 +1,60 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, ChevronRight, MapPin, Package, PackageSearch, TrendingUp } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock, MapPin, Package, PackageSearch, RotateCcw, TrendingUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
-import FilterSelect from "../../../shared/ui/FilterSelect";
-import FilterPanel from "../../../shared/ui/FilterPanel";
-import QuickDateRangeFilter from "../../../shared/ui/QuickDateRangeFilter";
 import PageStatBadge from "../../../shared/ui/PageStatBadge";
 import EmptyState from "../../../shared/ui/EmptyState";
 import { useBatches, type Batch, type BatchDirection, type BatchStatus } from "../../../entities/batch";
 import {
-  batchDirectionOptions,
-  batchStatusLabel,
-  batchStatusOptions,
   formatBatchDateTime,
   formatBatchCompactMoney,
   formatBatchDisplayId,
 } from "../lib/batchFormat";
 import Pagination from "../../../shared/components/pagination";
-import { getTodayRange, toApiDateTimeRange } from "../../../shared/lib/dateRange";
 import { usePagination } from "../../../shared/lib/usePagination";
 
-const initialBatchDateRange = getTodayRange();
+type BatchTabKey = "new" | "old" | "return";
+
+interface BatchTabItem {
+  key: BatchTabKey;
+  labelKey: "tabs.new" | "tabs.old" | "tabs.return";
+  icon: ReactNode;
+  status: BatchStatus | "";
+  direction: BatchDirection | "";
+  activeClassName: string;
+  inactiveIconClassName: string;
+}
+
+const batchTabs: BatchTabItem[] = [
+  {
+    key: "new",
+    labelKey: "tabs.new",
+    icon: <Package size={18} />,
+    status: "new",
+    direction: "forward",
+    activeClassName: "border-success bg-success text-primary shadow-lg shadow-success/25",
+    inactiveIconClassName: "bg-success/10 text-success",
+  },
+  {
+    key: "old",
+    labelKey: "tabs.old",
+    icon: <Clock size={18} />,
+    status: "received",
+    direction: "forward",
+    activeClassName: "border-main bg-main text-primary shadow-lg shadow-main/25",
+    inactiveIconClassName: "bg-main/10 text-main",
+  },
+  {
+    key: "return",
+    labelKey: "tabs.return",
+    icon: <RotateCcw size={18} />,
+    status: "",
+    direction: "return",
+    activeClassName: "border-amber-400 bg-amber-500 text-white shadow-lg shadow-amber-500/25",
+    inactiveIconClassName: "bg-amber-500/10 text-amber-600 dark:text-amber-300",
+  },
+];
 
 const batchCardStatusClass: Record<BatchStatus, string> = {
   new: "border-sky-100/70 bg-sky-50 text-sky-700 shadow-sky-950/10",
@@ -29,7 +63,24 @@ const batchCardStatusClass: Record<BatchStatus, string> = {
   cancelled: "border-rose-100/80 bg-rose-50 text-rose-800 shadow-rose-950/10",
 };
 
-const BatchCard = memo(({ batch, onOpen }: { batch: Batch; onOpen: () => void }) => (
+const BatchCard = memo(({
+  batch,
+  onOpen,
+  statusLabel,
+  directionLabel,
+  labels,
+}: {
+  batch: Batch;
+  onOpen: () => void;
+  statusLabel: string;
+  directionLabel: string;
+  labels: {
+    orders: string;
+    piece: string;
+    amount: string;
+    direction: string;
+  };
+}) => (
   <div
     role="button"
     tabIndex={0}
@@ -48,7 +99,7 @@ const BatchCard = memo(({ batch, onOpen }: { batch: Batch; onOpen: () => void })
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-extrabold shadow-sm backdrop-blur ${batchCardStatusClass[batch.status]}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            {batchStatusLabel[batch.status]}
+            {statusLabel}
           </span>
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/20 bg-white/12 transition-colors group-hover:bg-white/22">
             <ChevronRight size={14} className="text-white" />
@@ -69,20 +120,20 @@ const BatchCard = memo(({ batch, onOpen }: { batch: Batch; onOpen: () => void })
         <div className="flex items-center gap-1.5">
           <span className="flex min-w-0 items-center gap-1 text-xs text-white/70">
             <Package size={12} className="text-white/50" />
-            Orderlar:
+            {labels.orders}:
           </span>
-          <span className="text-xs font-bold text-white">{batch.orders_count} ta</span>
+          <span className="text-xs font-bold text-white">{batch.orders_count} {labels.piece}</span>
         </div>
         <div className="flex items-center justify-end gap-1.5">
-          <span className="text-xs text-white/70">Summa:</span>
+          <span className="text-xs text-white/70">{labels.amount}:</span>
           <span className="text-xs font-bold text-white">{formatBatchCompactMoney(batch.total_price)}</span>
         </div>
         <div className="col-span-2 flex items-center justify-between gap-2">
           <span className="flex items-center gap-1 text-xs text-white/70">
             <MapPin size={12} className="text-white/50" />
-            Yo'nalish:
+            {labels.direction}:
           </span>
-          <span className="truncate text-xs font-bold text-white">{batchDirectionOptions.find((item) => item.value === batch.direction)?.label ?? batch.direction}</span>
+          <span className="truncate text-xs font-bold text-white">{directionLabel}</span>
         </div>
       </div>
 
@@ -103,15 +154,27 @@ const BatchCardSkeleton = memo(() => (
 BatchCardSkeleton.displayName = "BatchCardSkeleton";
 
 const BatchesPage = () => {
+  const { t } = useTranslation(["batches", "common"]);
   const navigate = useNavigate();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "batches",
     defaultLimit: 10,
   });
-  const [status, setStatus] = useState<BatchStatus | "">("");
-  const [direction, setDirection] = useState<BatchDirection | "">("");
-  const [fromDate, setFromDate] = useState(initialBatchDateRange.from);
-  const [toDate, setToDate] = useState(initialBatchDateRange.to);
+  const [status, setStatus] = useState<BatchStatus | "">("new");
+  const [direction, setDirection] = useState<BatchDirection | "">("forward");
+
+  const activeTab = useMemo(() => {
+    if (direction === "return") return "return";
+    if (status === "received" && direction === "forward") return "old";
+    if (status === "new" && direction === "forward") return "new";
+    return "";
+  }, [direction, status]);
+
+  const handleTabChange = (tab: BatchTabItem) => {
+    setStatus(tab.status);
+    setDirection(tab.direction);
+    setPage(1);
+  };
 
   const params = useMemo(() => {
     return {
@@ -119,78 +182,81 @@ const BatchesPage = () => {
       direction,
       page,
       limit,
-      ...toApiDateTimeRange({ from: fromDate, to: toDate }),
     };
-  }, [direction, fromDate, limit, page, status, toDate]);
+  }, [direction, limit, page, status]);
 
   const { data, isLoading, isError } = useBatches(params);
+  const statusLabels = useMemo<Record<BatchStatus, string>>(
+    () => ({
+      new: t("status.new"),
+      on_the_way: t("status.onTheWay"),
+      received: t("status.received"),
+      cancelled: t("status.cancelled"),
+    }),
+    [t],
+  );
+  const directionLabels = useMemo<Record<BatchDirection, string>>(
+    () => ({
+      forward: t("direction.forward"),
+      return: t("direction.return"),
+    }),
+    [t],
+  );
+  const cardLabels = useMemo(
+    () => ({
+      orders: t("card.orders"),
+      piece: t("card.piece"),
+      amount: t("card.amount"),
+      direction: t("card.direction"),
+    }),
+    [t],
+  );
 
   return (
     <div className="min-h-full rounded-2xl p-4 md:p-6">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <HeaderName
-          name="Paketlar"
-          description="Filial va HQ xodimlari yaratgan paketlar ro'yxati"
+          name={t("title")}
+          description={t("description")}
           icon={<PackageSearch />}
         />
         <PageStatBadge icon={<CalendarDays size={17} />}>
-          {data?.meta.total ?? data?.total ?? 0} paket
+          {t("statBadge", { count: data?.meta.total ?? data?.total ?? 0 })}
         </PageStatBadge>
       </div>
 
-      <FilterPanel gridClassName="md:grid-cols-3">
-        <FilterSelect
-          name="batch_status"
-          label="Holat"
-          value={status}
-          onChange={(value) => {
-            setStatus(value as BatchStatus | "");
-            setPage(1);
-          }}
-          placeholder="Barchasi"
-          options={[...batchStatusOptions]}
-        />
-        <FilterSelect
-          name="batch_direction"
-          label="Yo'nalish"
-          value={direction}
-          onChange={(value) => {
-            setDirection(value as BatchDirection | "");
-            setPage(1);
-          }}
-          placeholder="Barchasi"
-          options={[...batchDirectionOptions]}
-        />
-        <div className="relative flex flex-col gap-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/50">
-            Sana
-          </span>
-          <QuickDateRangeFilter
-            fromDate={fromDate}
-            toDate={toDate}
-            onChange={({ from, to }) => {
-              setFromDate(from);
-              setToDate(to);
-              setPage(1);
-            }}
-            onClear={() => {
-              setFromDate("");
-              setToDate("");
-              setPage(1);
-            }}
-            placeholder="Dan → Gacha"
-            pickerClassName="w-full"
-            clearClassName="sm:w-auto"
-            size="sm"
-            showPicker={false}
-            className="rounded-xl border-2 border-white/70 bg-white/85 px-3.5 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/7"
-          />
-        </div>
-      </FilterPanel>
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {batchTabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => handleTabChange(tab)}
+              className={`flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all duration-200 ${
+                isActive
+                  ? tab.activeClassName
+                  : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-primarydark dark:text-gray-300"
+              }`}
+              aria-pressed={isActive}
+            >
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                  isActive ? "bg-primary/15 text-primary" : tab.inactiveIconClassName
+                }`}
+              >
+                {tab.icon}
+              </span>
+              <span className="text-sm font-semibold leading-snug">{t(tab.labelKey)}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {isError ? (
         <div className="rounded-2xl border border-rose-300/30 bg-rose-500/10 p-6 text-center text-sm font-semibold text-rose-700 dark:text-rose-100">
-          Paketlar ro'yxatini yuklab bo'lmadi
+          {t("loadError")}
         </div>
       ) : null}
 
@@ -204,8 +270,8 @@ const BatchesPage = () => {
         <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-6 dark:bg-primarydark">
           <EmptyState
             icon="📦"
-            title="Paketlar yo'q"
-            description="Hozircha bu filterlar bo'yicha paketlar topilmadi."
+            title={t("emptyTitle")}
+            description={t("emptyDescription")}
             className="border-0 bg-transparent shadow-none"
           />
         </div>
@@ -216,6 +282,9 @@ const BatchesPage = () => {
               key={batch.id}
               batch={batch}
               onOpen={() => navigate(`/batches/${batch.id}`)}
+              statusLabel={statusLabels[batch.status]}
+              directionLabel={directionLabels[batch.direction]}
+              labels={cardLabels}
             />
           ))}
         </div>

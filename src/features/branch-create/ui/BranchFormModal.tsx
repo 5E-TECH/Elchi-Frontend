@@ -61,6 +61,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
       region_id: "",
       district_id: "",
       address: "",
+      status: "active",
     },
   });
 
@@ -79,6 +80,13 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     [districts],
   );
   const branchTypeOptions = useMemo(() => getBranchTypeOptions(t), [t]);
+  const statusOptions = useMemo(
+    () => [
+      { value: "active", label: t("status.active") },
+      { value: "inactive", label: t("status.inactive") },
+    ],
+    [t],
+  );
   const parentOptions = useMemo(
     () => getParentBranchOptions(parentBranches?.data, t),
     [parentBranches?.data, t],
@@ -92,7 +100,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      const payload: CreateBranchDto = {
+      const payload: Omit<CreateBranchDto, "manager_id"> = {
         ...values,
         code: values.code.trim(),
         parent_id: values.type === "HQ" ? "" : values.parent_id,
@@ -270,6 +278,24 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 {...field}
                 rows={3}
                 placeholder={t("placeholders.address")}
+              />
+            )}
+          />
+        </Form.Item>
+        <Form.Item label={<span className={popupLabelClassName}>{t("fields.status")}</span>} validateStatus={errors.status ? "error" : ""} help={errors.status?.message}>
+          <Controller
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <SearchableSelect
+                label={t("fields.status")}
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                options={statusOptions}
+                placeholder={t("placeholders.status")}
+                icon={Building2}
+                hideLabel
               />
             )}
           />

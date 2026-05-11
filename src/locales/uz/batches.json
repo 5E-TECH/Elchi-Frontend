@@ -1,0 +1,34 @@
+{
+  "title": "Paketlar",
+  "description": "Filial va HQ xodimlari yaratgan paketlar ro'yxati",
+  "statBadge": "{{count}} paket",
+  "tabs": {
+    "new": "Yangi",
+    "old": "Eski",
+    "return": "Qaytarilgan"
+  },
+  "filter": {
+    "status": "Holat",
+    "direction": "Yo'nalish",
+    "date": "Sana"
+  },
+  "status": {
+    "new": "Yangi",
+    "onTheWay": "Yo'lda",
+    "received": "Qabul qilindi",
+    "cancelled": "Bekor qilindi"
+  },
+  "direction": {
+    "forward": "Oldinga",
+    "return": "Qaytarish"
+  },
+  "card": {
+    "orders": "Orderlar",
+    "piece": "ta",
+    "amount": "Summa",
+    "direction": "Yo'nalish"
+  },
+  "loadError": "Paketlar ro'yxatini yuklab bo'lmadi",
+  "emptyTitle": "Paketlar yo'q",
+  "emptyDescription": "Hozircha bu filterlar bo'yicha paketlar topilmadi."
+}

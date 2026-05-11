@@ -5,6 +5,7 @@ import {
   ScanQrCode,
   Check,
   ChevronDown,
+  CircleHelp,
   Globe,
   LogOut,
   Menu,
@@ -109,11 +110,15 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const roleState = useSelector((state: RootState) => state.role);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [searchLimit, setSearchLimit] = useState(10);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const languageMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileSearchContainerRef = useRef<HTMLDivElement | null>(null);
   const desktopSearchContainerRef = useRef<HTMLDivElement | null>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const desktopSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const goShortcutRef = useRef<number>(0);
   const { control, setValue } = useForm<HeaderSearchValues>({
     defaultValues: { search: "" },
   });
@@ -152,6 +157,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     roleState.name ||
     t("profile");
   const profileRole = tUsers(getUserRoleLabelKey(profileRecord?.role || roleState.role));
+  const canOpenBatchesShortcut = roleState.role === "manager";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -167,6 +173,90 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null) => {
+      const element = target as HTMLElement | null;
+      if (!element) return false;
+      return (
+        element.tagName === "INPUT" ||
+        element.tagName === "TEXTAREA" ||
+        element.tagName === "SELECT" ||
+        element.isContentEditable
+      );
+    };
+
+    const focusSearch = () => {
+      if (window.matchMedia("(min-width: 768px)").matches) {
+        desktopSearchInputRef.current?.focus();
+        setIsSearchFocused(true);
+        return;
+      }
+
+      setIsSearchOpen(true);
+      window.setTimeout(() => {
+        mobileSearchInputRef.current?.focus();
+        setIsSearchFocused(true);
+      }, 0);
+    };
+
+    const handleShortcutKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+
+      if ((event.ctrlKey || event.metaKey) && key === "k") {
+        event.preventDefault();
+        focusSearch();
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setIsShortcutsOpen(false);
+        setIsLanguageOpen(false);
+        setIsSearchFocused(false);
+        setIsSearchOpen(false);
+        return;
+      }
+
+      if (isEditableTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+
+      const now = Date.now();
+      if (key === "?") {
+        event.preventDefault();
+        setIsShortcutsOpen(true);
+        return;
+      }
+
+      if (key === "g") {
+        goShortcutRef.current = now;
+        return;
+      }
+
+      if (goShortcutRef.current && now - goShortcutRef.current <= 900) {
+        if (key === "o") {
+          event.preventDefault();
+          goShortcutRef.current = 0;
+          navigate("/orders");
+          return;
+        }
+
+        if (key === "b" && canOpenBatchesShortcut) {
+          event.preventDefault();
+          goShortcutRef.current = 0;
+          navigate("/batches");
+          return;
+        }
+      }
+
+      if (goShortcutRef.current && now - goShortcutRef.current > 900) {
+        goShortcutRef.current = 0;
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcutKeyDown);
+    return () => window.removeEventListener("keydown", handleShortcutKeyDown);
+  }, [canOpenBatchesShortcut, navigate]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -235,11 +325,13 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               name="search"
               render={({ field }) => (
                 <GlobalSearchInput
+                  ref={mobileSearchInputRef}
                   name={field.name}
                   value={field.value}
                   onBlur={field.onBlur}
                   autoFocus
-                  placeholder="Qidiruv..."
+                  placeholder={t("searchPlaceholder")}
+                  aria-label={t("globalSearchAria")}
                   className="w-full"
                   inputClassName="border border-main/10 bg-white py-2 text-maindark placeholder:text-maindark/45 shadow-lg shadow-main/10 dark:border-white/10 dark:bg-[var(--color-card-surface-strong)] dark:text-primary dark:placeholder:text-primary/45"
                   iconClassName="text-maindark/50 group-focus-within:text-main dark:text-primary/45"
@@ -264,7 +356,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             />
           </div>
           <button
+            type="button"
             onClick={() => setIsSearchOpen(false)}
+            aria-label={t("closeSearch")}
             className="ml-3 p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"
           >
             <X className="w-6 h-6" />
@@ -291,10 +385,12 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         render={({ field }) => (
           <div ref={desktopSearchContainerRef} className="relative hidden min-w-0 lg:flex lg:flex-1 lg:items-center lg:max-w-[520px]">
             <GlobalSearchInput
+              ref={desktopSearchInputRef}
               name={field.name}
               value={field.value}
               onBlur={field.onBlur}
-              placeholder="Qidiruv..."
+              placeholder={t("searchPlaceholder")}
+              aria-label={t("globalSearchAria")}
               className="w-full"
               inputClassName="border border-main/10 bg-white py-2 text-maindark placeholder:text-maindark/45 dark:border-white/10 dark:bg-[var(--color-card-surface-strong)] dark:text-primary dark:placeholder:text-primary/45"
               iconClassName="text-maindark/50 group-focus-within:text-main dark:text-primary/45"
@@ -383,6 +479,16 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
         <button
           type="button"
+          onClick={() => setIsShortcutsOpen(true)}
+          className="el-glass-control group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition-all duration-300 hover:border-[var(--color-border-strong)] hover:bg-main/10 dark:text-primary md:flex lg:h-11 lg:w-11"
+          aria-label={t("keyboardShortcuts")}
+          title={t("keyboardShortcuts")}
+        >
+          <CircleHelp className="h-5 w-5" />
+        </button>
+
+        <button
+          type="button"
           onClick={() => navigate("/scan")}
           className="el-glass-control group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition-all duration-300 hover:border-[var(--color-border-strong)] hover:bg-main/10 dark:text-primary lg:flex lg:h-11 lg:w-11"
           aria-label={t("scannerTitle")}
@@ -395,17 +501,20 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         </button>
 
         <button
+          type="button"
           onClick={() => setIsSearchOpen(true)}
           className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
-          aria-label="Open search"
+          aria-label={t("openSearch")}
         >
           <Search className="w-5.5 h-5.5" />
         </button>
 
         {/* Mobile Hamburger */}
         <button
+          type="button"
           onClick={onMenuClick}
           className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
+          aria-label={t("openMenu")}
         >
           <Menu className="w-7 h-7" />
         </button>
@@ -413,9 +522,10 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-1.5 lg:gap-3 shrink-0">
           <button
+            type="button"
             onClick={toggleTheme}
             className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary"
-            aria-label="Toggle theme"
+            aria-label={t("toggleTheme")}
           >
             {theme === "light" ? (
               <Moon className="w-5 h-5" />
@@ -424,15 +534,21 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             )}
           </button>
 
-          <button className="relative hidden rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 lg:inline-flex dark:text-primary">
+          <button
+            type="button"
+            className="relative hidden rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 lg:inline-flex dark:text-primary"
+            aria-label={t("notifications")}
+          >
             <Bell className="w-5 h-5" />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-[var(--color-card-surface-strong)] bg-red-500 md:h-2.5 md:w-2.5"></span>
           </button>
 
           <button
+            type="button"
             onClick={logout}
             className="p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 group"
             title="Chiqish"
+            aria-label={t("logout")}
           >
             <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
@@ -444,6 +560,15 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             </div>
             <div
               onClick={() => navigate("profile")}
+              role="button"
+              tabIndex={0}
+              aria-label={t("profile")}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  navigate("profile");
+                }
+              }}
               className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20"
             >
               <User className="w-4 h-4 text-primary lg:w-5 lg:h-5" />
@@ -451,6 +576,53 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           </div>
         </div>
       </div>
+      {isShortcutsOpen && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="keyboard-shortcuts-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setIsShortcutsOpen(false);
+          }}
+        >
+          <div className="w-full max-w-md rounded-3xl border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-2xl dark:bg-primarydark">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="keyboard-shortcuts-title" className="m-0 text-xl font-black text-maindark dark:text-white">
+                  {t("keyboardShortcuts")}
+                </h2>
+                <p className="m-0 mt-1 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                  {t("keyboardShortcutsHint")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsShortcutsOpen(false)}
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition hover:bg-main/10 dark:text-white"
+                aria-label={t("close")}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mt-5 space-y-3">
+              {[
+                { keys: "Ctrl + K", description: t("shortcutSearch") },
+                { keys: "G → O", description: t("shortcutOrders") },
+                ...(canOpenBatchesShortcut ? [{ keys: "G → B", description: t("shortcutBatches") }] : []),
+                { keys: "Esc", description: t("shortcutEscape") },
+              ].map((shortcut) => (
+                <div key={shortcut.keys} className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-3 dark:bg-white/[0.04]">
+                  <span className="text-sm font-bold text-maindark dark:text-white">{shortcut.description}</span>
+                  <kbd className="rounded-xl border border-[color:var(--color-border-soft)] bg-maindark px-3 py-1.5 text-xs font-black text-white dark:bg-white dark:text-maindark">
+                    {shortcut.keys}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
