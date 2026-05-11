@@ -9,7 +9,7 @@ import type {
   UserRole,
 } from "../../../../entities/user/types/user";
 import { RoleSelector } from "./RoleSelector";
-import Select from "../../../../shared/ui/Select";
+import SearchableSelect from "../../../../shared/ui/SearchableSelect";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import {
@@ -30,7 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
-import { useBranches } from "../../../../entities/branch";
+import { useBranches, type Branch } from "../../../../entities/branch";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -59,6 +59,12 @@ const formatPhone = (value: string): string => {
 };
 
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
+
+type RegionOption = {
+  id: string | number;
+  name: string;
+  sato_code?: string | null;
+};
 
 interface CreateUserFormValues {
   role: UserRole;
@@ -144,6 +150,20 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
   deliveryType: "deliveryType",
 };
 
+const getBranchOptionLabel = (branch: Branch) => {
+  const code = branch.code ? `${branch.code} • ` : "";
+  const type = branch.type ? `${branch.type} • ` : "";
+  const region = branch.region?.name && branch.region.name !== "—" ? ` • ${branch.region.name}` : "";
+
+  return `${code}${type}${branch.name}${region}`;
+};
+
+const getRegionOptionLabel = (region: RegionOption) => {
+  const satoCode = region.sato_code ? ` • ${region.sato_code}` : "";
+
+  return `${region.name}${satoCode}`;
+};
+
 export const CreateUserForm = memo(() => {
   const { t } = useTranslation("users");
   const navigate = useNavigate();
@@ -183,12 +203,11 @@ export const CreateUserForm = memo(() => {
   const { apiRequest } = useAppNotification();
   const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches({
     page: 1,
-    limit: 200,
-    status: "active",
+    limit: 500,
   });
 
   const { data: regionsData } = getRegions();
-  const regionList: { id: string; name: string }[] = (() => {
+  const regionList: RegionOption[] = (() => {
     const data = regionsData;
     if (Array.isArray(data)) return data;
     if (data?.data?.items && Array.isArray(data.data.items)) return data.data.items;
@@ -196,10 +215,19 @@ export const CreateUserForm = memo(() => {
     if (data?.items && Array.isArray(data.items)) return data.items;
     return [];
   })();
-  const branchOptions = (branchesResponse?.data ?? []).map((branch) => ({
-    value: branch.id,
-    label: branch.name,
-  }));
+  const branchOptions = (branchesResponse?.data ?? [])
+    .filter((branch) => branch.status !== "inactive")
+    .sort((left, right) => {
+      const leftLevel = left.level ?? 0;
+      const rightLevel = right.level ?? 0;
+
+      if (leftLevel !== rightLevel) return leftLevel - rightLevel;
+      return left.name.localeCompare(right.name);
+    })
+    .map((branch) => ({
+      value: branch.id,
+      label: getBranchOptionLabel(branch),
+    }));
 
   useEffect(() => {
     reset({ ...INITIAL_FORM, role });
@@ -677,17 +705,20 @@ export const CreateUserForm = memo(() => {
                       control={control}
                       name="branchId"
                       render={({ field, fieldState }) => (
-                        <Select
-                          label={t("branchLabel")}
-                          name={field.name}
-                          value={field.value}
-                          onChange={(event) => field.onChange(event.target.value)}
-                          options={branchOptions}
-                          placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
-                          error={fieldState.error?.message}
-                          loading={isBranchesLoading}
-                          required
-                        />
+                        <div className="relative">
+                          <SearchableSelect
+                            label={t("branchLabel")}
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={branchOptions}
+                            placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
+                            loading={isBranchesLoading}
+                            icon={Building}
+                            surface="search"
+                          />
+                          <FieldError message={fieldState.error?.message} />
+                        </div>
                       )}
                     />
                   </div>
@@ -699,36 +730,42 @@ export const CreateUserForm = memo(() => {
                       control={control}
                       name="branchId"
                       render={({ field, fieldState }) => (
-                        <Select
-                          label={t("branchLabel")}
-                          name={field.name}
-                          value={field.value}
-                          onChange={(event) => field.onChange(event.target.value)}
-                          options={branchOptions}
-                          placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
-                          error={fieldState.error?.message}
-                          loading={isBranchesLoading}
-                          required
-                        />
+                        <div className="relative">
+                          <SearchableSelect
+                            label={t("branchLabel")}
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={branchOptions}
+                            placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
+                            loading={isBranchesLoading}
+                            icon={Building}
+                            surface="search"
+                          />
+                          <FieldError message={fieldState.error?.message} />
+                        </div>
                       )}
                     />
                     <Controller
                       control={control}
                       name="region"
                       render={({ field, fieldState }) => (
-                        <Select
-                          label={t("regionLabel")}
-                          name={field.name}
-                          value={field.value}
-                          onChange={(event) => field.onChange(event.target.value)}
-                          options={regionList.map((region) => ({
-                            value: String(region.id),
-                            label: region.name,
-                          }))}
-                          placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
-                          error={fieldState.error?.message}
-                          required
-                        />
+                        <div className="relative">
+                          <SearchableSelect
+                            label={t("regionLabel")}
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={regionList.map((region) => ({
+                              value: String(region.id),
+                              label: getRegionOptionLabel(region),
+                            }))}
+                            placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
+                            icon={Building}
+                            surface="search"
+                          />
+                          <FieldError message={fieldState.error?.message} />
+                        </div>
                       )}
                     />
                     {renderInput({
@@ -758,19 +795,22 @@ export const CreateUserForm = memo(() => {
                       control={control}
                       name="deliveryType"
                       render={({ field, fieldState }) => (
-                        <Select
-                          label={t("mainTariff")}
-                          name={field.name}
-                          value={field.value}
-                          onChange={(event) => field.onChange(event.target.value)}
-                          options={[
-                            { value: "center", label: t("centerOnlyTariff") },
-                            { value: "address", label: t("doorTariff") },
-                          ]}
-                          placeholder={t("defaultTariffPlaceholder")}
-                          error={fieldState.error?.message}
-                          required
-                        />
+                        <div className="relative">
+                          <SearchableSelect
+                            label={t("mainTariff")}
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={[
+                              { value: "center", label: t("centerOnlyTariff") },
+                              { value: "address", label: t("doorTariff") },
+                            ]}
+                            placeholder={t("defaultTariffPlaceholder")}
+                            icon={Store}
+                            surface="search"
+                          />
+                          <FieldError message={fieldState.error?.message} />
+                        </div>
                       )}
                     />
                     {renderInput({

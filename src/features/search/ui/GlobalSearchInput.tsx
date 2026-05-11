@@ -146,7 +146,7 @@ const GlobalSearchInputBase = forwardRef<HTMLInputElement, GlobalSearchInputProp
     return (
       <div className={`relative group ${className}`}>
         {showIcon && (
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
             <InputIcon
               className={`text-slate-400 dark:text-white/40 group-focus-within:text-main dark:group-focus-within:text-main transition-colors ${iconClassName}`}
               size={18}
@@ -159,11 +159,12 @@ const GlobalSearchInputBase = forwardRef<HTMLInputElement, GlobalSearchInputProp
           ref={ref}
           type="text"
           name={resolvedName}
+          aria-label={inputProps["aria-label"] ?? (typeof placeholder === "string" ? placeholder : "Search")}
           value={currentValue}
           onChange={handleChange}
           onBlur={onBlur}
           placeholder={placeholder}
-          className={`w-full bg-primary dark:bg-maindark border-2 rounded-xl ${showIcon ? "pl-11" : "pl-4"} pr-4 py-3 text-maindark dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-white/40 outline-none transition-all hover:shadow-sm focus:shadow-md shadow-sm ${error
+          className={`w-full bg-primary dark:bg-maindark border-2 rounded-xl ${showIcon ? "pl-12" : "pl-4"} pr-4 py-3 text-maindark dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-white/40 outline-none transition-all hover:shadow-sm focus:shadow-md shadow-sm ${error
             ? "border-red-400 dark:border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-400/20"
             : "border-gray-200 dark:border-primarydark/30 focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/20 hover:border-main/50 dark:hover:border-main/50"
             } ${showClearButton ? "pr-11" : ""} ${inputClassName}`}
@@ -173,6 +174,7 @@ const GlobalSearchInputBase = forwardRef<HTMLInputElement, GlobalSearchInputProp
           <button
             type="button"
             onClick={handleClear}
+            aria-label="Clear search"
             className={`absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-white/40 dark:hover:text-white transition-colors ${clearButtonClassName}`}
           >
             <X size={14} />

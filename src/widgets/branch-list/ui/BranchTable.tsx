@@ -109,6 +109,8 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
       data={data}
       emptyMessage={t("list.notFound")}
       onRowClick={(branch) => navigate(`/branches/${branch.id}`)}
+      preserveTableOnDesktop
+      dense
     />
   );
 };

@@ -1,6 +1,7 @@
 import { ApartmentOutlined, AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import { Empty, Spin } from "antd";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useBranches, type Branch, type BranchParams } from "../../../entities/branch";
 import Pagination from "../../../shared/components/pagination";

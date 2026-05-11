@@ -23,5 +23,5 @@ export const branchSchema = yup.object({
   district_id: yup.string().required(i18n.t("branches:validation.district")),
   address: yup.string().required(i18n.t("branches:validation.address")),
   status: yup.string<"active" | "inactive">().oneOf(["active", "inactive"]).required(i18n.t("branches:validation.status")),
-  manager_id: yup.string().required(i18n.t("branches:validation.manager")),
+  manager_id: yup.string().optional().default(""),
 });

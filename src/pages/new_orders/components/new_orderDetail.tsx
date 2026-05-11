@@ -272,7 +272,7 @@ const NewOrderDetail = () => {
     <div className="flex h-full flex-col overflow-hidden rounded-2xl">
 
       {/* Header */}
-      <div className="p-3 pb-3 sm:p-4 sm:pb-4 md:p-6 md:pb-4">
+      <div className="py-3 pb-3 sm:py-4 sm:pb-4 md:py-6 md:pb-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div
             onClick={() => navigate(-1)}
@@ -333,7 +333,7 @@ const NewOrderDetail = () => {
       </div>
 
       {/* Orders List */}
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-24 sm:px-4 sm:pb-28 md:px-6 md:pb-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pb-24 sm:pb-28 md:pb-4">
         {isLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="w-8 h-8 rounded-full border-2 border-main/20 border-t-main animate-spin" />
@@ -356,7 +356,7 @@ const NewOrderDetail = () => {
 
       {/* Sticky Footer — doim pastda qotib turadi */}
       {!isMarketRole && (
-        <div className="shrink-0 border-t border-gray-100 bg-sidebar px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 dark:bg-maindark sm:px-4 sm:py-4 md:px-6">
+        <div className="shrink-0 border-t border-gray-100 bg-transparent py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 sm:py-4">
           <button
             onClick={() => setIsReceiveConfirmOpen(true)}
             disabled={receiveMutation.isPending || selectedIds.size === 0}

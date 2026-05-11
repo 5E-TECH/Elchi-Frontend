@@ -13,9 +13,16 @@ interface UserDetailWidgetProps {
   isLoading: boolean;
   isError: boolean;
   error?: any;
+  isOwnProfile?: boolean;
 }
 
-export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserDetailWidgetProps) => {
+export const UserDetailWidget = memo(({
+  user,
+  isLoading,
+  isError,
+  error,
+  isOwnProfile = false,
+}: UserDetailWidgetProps) => {
   const { t } = useTranslation("users");
   const [showEdit, setShowEdit] = useState(false);
 
@@ -108,6 +115,8 @@ export const UserDetailWidget = memo(({ user, isLoading, isError, error }: UserD
       {/* Update Modal */}
       <UpdateUserModal
         userId={showEdit ? user.id : null}
+        initialUser={showEdit ? user : null}
+        isOwnProfile={isOwnProfile}
         onClose={() => setShowEdit(false)}
       />
     </>

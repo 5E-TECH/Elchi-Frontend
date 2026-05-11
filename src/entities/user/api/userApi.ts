@@ -179,6 +179,33 @@ export const useUser = () => {
     },
   });
 
+  const updateMyProfile = useMutation({
+    mutationFn: (data: UpdateUserRequest) =>
+      api.patch(API_ENDPOINTS.AUTH.MY_PROFILE, data).then((res: any) => res.data),
+    onSuccess: (response, variables) => {
+      client.invalidateQueries({ queryKey: [user, "profile"] });
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+
+      const currentProfile = store.getState().user.user;
+      if (!currentProfile) {
+        return;
+      }
+
+      const updatedProfile =
+        unwrapUserResponse(response) ??
+        ({
+          ...currentProfile,
+          ...variables,
+          name: variables.name ?? currentProfile.name,
+          role: currentProfile.role,
+        } as any);
+
+      store.dispatch(setProfile(updatedProfile as any));
+      store.dispatch(setName(updatedProfile.name));
+      store.dispatch(setRole(updatedProfile.role));
+    },
+  });
+
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
       api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
@@ -200,6 +227,7 @@ export const useUser = () => {
     getMyProfile,
     updateUserStatus,
     updateUser,
+    updateMyProfile,
     deleteUser,
   };
 };

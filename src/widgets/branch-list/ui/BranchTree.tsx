@@ -9,7 +9,6 @@ import { DeleteBranchButton } from "../../../features/branch-delete";
 
 type BranchTreeNode = Branch & {
   children: BranchTreeNode[];
-  isPreview?: boolean;
 };
 
 interface BranchTreeProps {
@@ -19,10 +18,10 @@ interface BranchTreeProps {
 }
 
 const typeToneMap: Record<string, string> = {
-  HQ: "border-amber-400/45 bg-amber-400/14 text-amber-100",
-  CITY: "border-sky-400/40 bg-sky-400/13 text-sky-100",
-  REGIONAL: "border-violet-400/42 bg-violet-400/14 text-violet-100",
-  DISTRICT: "border-emerald-400/38 bg-emerald-400/13 text-emerald-100",
+  HQ: "border-amber-400/45 bg-amber-400/12 text-amber-700 dark:text-amber-100",
+  CITY: "border-sky-400/40 bg-sky-400/12 text-sky-700 dark:text-sky-100",
+  REGIONAL: "border-violet-400/42 bg-violet-400/12 text-violet-700 dark:text-violet-100",
+  DISTRICT: "border-emerald-400/38 bg-emerald-400/12 text-emerald-700 dark:text-emerald-100",
 };
 
 const buildBranchTree = (branches: Branch[]) => {
@@ -74,52 +73,6 @@ const buildBranchTree = (branches: Branch[]) => {
   return [hqRoot];
 };
 
-const createPreviewBranch = (
-  root: BranchTreeNode,
-  id: string,
-  name: string,
-  type: BranchTreeNode["type"],
-  code: string,
-  level: number,
-  parentId: string,
-): BranchTreeNode => ({
-  ...root,
-  id,
-  name,
-  type,
-  code,
-  level,
-  parent_id: parentId,
-  parent: { id: parentId, name: root.name },
-  address: root.address,
-  employees_count: 0,
-  isPreview: true,
-  children: [],
-});
-
-const withPreviewBranches = (roots: BranchTreeNode[]) => {
-  if (roots.length !== 1) return roots;
-
-  const root = roots[0];
-  if ((root.type !== "HQ" && root.level !== 0) || root.children.length > 0) return roots;
-
-  const samarqand = createPreviewBranch(root, "preview-sam", "Samarqand", "REGIONAL", "SAM", 1, root.id);
-  const chilonzor = createPreviewBranch(root, "preview-tsh-chl", "Toshkent Chilonzor", "CITY", "TSH-CHL", 1, root.id);
-  const kattaqorgon = createPreviewBranch(
-    root,
-    "preview-sam-ktq",
-    "Kattaqo'rg'on",
-    "DISTRICT",
-    "SAM-KTQ",
-    2,
-    samarqand.id,
-  );
-
-  samarqand.children.push(kattaqorgon);
-
-  return [{ ...root, children: [samarqand, chilonzor] }];
-};
-
 const BranchTreeNodeCard = ({
   node,
   onEdit,
@@ -139,18 +92,17 @@ const BranchTreeNodeCard = ({
   const regionName = node.region?.name ?? "—";
   const districtName = node.district?.name ?? "—";
   const address = node.address || "—";
-  const toneClass = typeToneMap[node.type ?? ""] ?? "border-white/15 bg-white/8 text-white/80";
-  const disabled = Boolean(node.isPreview);
-  const cardClass = node.isPreview
-    ? "border-dashed border-teal-300/28 bg-[#343057]/82 opacity-85"
-    : node.type === "HQ"
-      ? "border-amber-300/45 bg-[#3d3b67] ring-4 ring-amber-300/10 hover:border-amber-300/70"
-      : "border-white/14 bg-[#363960] hover:border-main/60";
+  const toneClass =
+    typeToneMap[node.type ?? ""] ??
+    "border-[color:var(--color-border-soft)] bg-[color:var(--color-main-soft)] text-[color:var(--color-text-muted)] dark:text-white/80";
+  const cardClass = node.type === "HQ"
+    ? "border-amber-300/45 bg-[color:var(--color-surface-elevated)] ring-4 ring-amber-300/10 hover:border-amber-300/70 dark:bg-[color:var(--color-surface-elevated-dark)]"
+    : "border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)] hover:border-main/60 dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]";
 
   return (
-    <div className={`relative mx-auto flex h-[170px] w-full max-w-[17rem] flex-col rounded-[28px] border p-4 text-left shadow-[0_16px_28px_rgba(8,10,28,0.2)] transition-colors ${cardClass}`}>
+    <div className={`relative mx-auto flex min-h-[136px] w-full max-w-[15.5rem] flex-col rounded-2xl border p-3.5 text-left shadow-[0_12px_26px_rgba(39,44,82,0.10)] transition-colors dark:shadow-[0_14px_28px_rgba(8,10,28,0.20)] ${cardClass}`}>
       {node.type !== "HQ" ? (
-        <span className="pointer-events-none absolute -left-4 top-8 hidden h-9 w-9 rotate-[-28deg] items-center justify-center rounded-full border border-teal-300/22 bg-teal-400/12 text-teal-100 md:flex">
+        <span className="pointer-events-none absolute -left-4 top-7 hidden h-8 w-8 rotate-[-28deg] items-center justify-center rounded-full border border-teal-400/25 bg-teal-400/10 text-teal-600 dark:text-teal-100 md:flex">
           <Leaf size={15} />
         </span>
       ) : null}
@@ -163,7 +115,7 @@ const BranchTreeNodeCard = ({
           }}
           aria-label={isExpanded ? t("tree.collapse") : t("tree.expand")}
           title={isExpanded ? t("tree.collapse") : t("tree.expand")}
-          className="absolute -left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-teal-300/25 bg-[#2e365e] text-teal-100 shadow-[0_10px_20px_rgba(8,10,28,0.24)] transition-colors hover:border-teal-200/40 hover:bg-[#33406f]"
+          className="absolute -left-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-teal-400/25 bg-[color:var(--color-surface-elevated)] text-teal-600 shadow-[0_10px_20px_rgba(39,44,82,0.16)] transition-colors hover:border-teal-400/45 hover:bg-[color:var(--color-main-soft)] dark:bg-primarydark dark:text-teal-100 dark:shadow-[0_10px_20px_rgba(8,10,28,0.24)] dark:hover:bg-primarydark/80"
         >
           <ChevronRight
             size={16}
@@ -173,72 +125,61 @@ const BranchTreeNodeCard = ({
       ) : null}
       <button
         type="button"
-        onClick={() => {
-          if (!disabled) navigate(`/branches/${node.id}`);
-        }}
-        className="flex min-h-0 flex-1 flex-col text-left disabled:cursor-default"
-        disabled={disabled}
+        onClick={() => navigate(`/branches/${node.id}`)}
+        className="flex min-h-0 flex-1 flex-col text-left"
       >
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-main/15 text-main">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main/15 text-main dark:text-white">
             {node.type === "HQ" ? <Building2 size={18} /> : <GitBranch size={18} />}
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
-              <h3 className="truncate text-[1.05rem] font-extrabold text-white">{node.name}</h3>
-              {node.isPreview ? (
-                <span className="shrink-0 rounded-full bg-emerald-400/12 px-2 py-0.5 text-[11px] font-bold text-emerald-200">
-                  Preview
-                </span>
-              ) : (
-                <BranchStatusBadge status={node.status} />
-              )}
+              <h3 className="truncate text-[0.98rem] font-extrabold text-[color:var(--color-maindark)] dark:text-white">{node.name}</h3>
+              <BranchStatusBadge status={node.status} />
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {node.code ? (
-                <span className="rounded-full border border-white/10 bg-white/8 px-2 py-0.5 text-[11px] font-bold text-white/75">
+                <span className="rounded-full border border-[color:var(--color-border-soft)] bg-[color:var(--color-main-soft)] px-2 py-0.5 text-[11px] font-bold text-[color:var(--color-text-muted)] dark:border-white/10 dark:bg-white/8 dark:text-white/75">
                   {node.code}
                 </span>
               ) : null}
               <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${toneClass}`}>
                 {typeLabel}
               </span>
-              <span className="rounded-full border border-white/10 bg-white/8 px-2 py-0.5 text-[11px] font-semibold text-white/65">
+              <span className="rounded-full border border-[color:var(--color-border-soft)] bg-[color:var(--color-main-soft)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-text-muted)] dark:border-white/10 dark:bg-white/8 dark:text-white/65">
                 {t("tree.level", { level })}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="mt-3 flex min-h-0 flex-1 items-start gap-2 text-xs leading-5 text-white/55">
+        <div className="mt-2.5 flex min-h-0 flex-1 items-start gap-2 text-xs leading-5 text-[color:var(--color-text-muted)] dark:text-white/55">
           <MapPin size={13} className="mt-1 shrink-0" />
-          <span className="line-clamp-2 min-h-[2.5rem]">
+          <span className="line-clamp-2 min-h-[2.25rem]">
             {address} · {regionName}, {districtName}
           </span>
         </div>
       </button>
 
-      {!node.isPreview ? (
-        <div className="mt-4 flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
-          <Button
-            size="small"
-            icon={<ArrowRight size={15} />}
-            className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-white/10 !bg-white/8 !p-0 !text-white hover:!border-main hover:!text-main"
-            onClick={() => navigate(`/branches/${node.id}`)}
-            aria-label={tCommon("open")}
-            title={tCommon("open")}
-          />
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-white/10 !bg-white/8 !p-0 !text-white hover:!border-main hover:!text-main"
-            onClick={() => onEdit(node)}
-            aria-label={t("actions.edit")}
-            title={t("actions.edit")}
-          />
-          <DeleteBranchButton id={node.id} className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-rose-500/30 !bg-rose-500/12 !p-0 !text-rose-300 hover:!border-rose-400/60 hover:!bg-rose-500/18" />
-        </div>
-      ) : null}
+      <div className="mt-3 flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+        <Button
+          size="small"
+          icon={<ArrowRight size={15} />}
+          className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !p-0 !text-[color:var(--color-maindark)] hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
+          onClick={() => navigate(`/branches/${node.id}`)}
+          aria-label={tCommon("open")}
+          title={tCommon("open")}
+        />
+        <Button
+          size="small"
+          icon={<EditOutlined />}
+          className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !p-0 !text-[color:var(--color-maindark)] hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
+          onClick={() => onEdit(node)}
+          aria-label={t("actions.edit")}
+          title={t("actions.edit")}
+        />
+        <DeleteBranchButton id={node.id} className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-rose-300/60 !bg-rose-50 !p-0 !text-rose-600 hover:!border-rose-400/70 hover:!bg-rose-100 dark:!border-rose-500/30 dark:!bg-rose-500/12 dark:!text-rose-300 dark:hover:!border-rose-400/60 dark:hover:!bg-rose-500/18" />
+      </div>
     </div>
   );
 };
@@ -293,7 +234,7 @@ const BranchTreeItem = ({
 
 const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
   const { t } = useTranslation("branches");
-  const roots = useMemo(() => withPreviewBranches(buildBranchTree(data)), [data]);
+  const roots = useMemo(() => buildBranchTree(data), [data]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -323,11 +264,10 @@ const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(45,212,191,0.13),transparent_28%),radial-gradient(circle_at_bottom,rgba(124,58,237,0.12),transparent_40%),linear-gradient(180deg,#2f3155_0%,#292544_100%)] px-4 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:px-5 sm:py-10">
-      <div className="pointer-events-none absolute inset-x-8 top-8 h-px bg-gradient-to-r from-transparent via-teal-100/18 to-transparent" />
-      <div className="pointer-events-none absolute bottom-5 left-1/2 h-8 w-[32rem] max-w-[70%] -translate-x-1/2 rounded-[100%] bg-black/8 blur-sm" />
+    <div className="relative overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary px-4 py-6 shadow-sm dark:bg-primarydark sm:px-5 sm:py-8">
+      <div className="pointer-events-none absolute inset-x-8 top-8 h-px bg-gradient-to-r from-transparent via-main/20 to-transparent dark:via-teal-100/18" />
       <div className="relative z-10 flex w-full justify-center">
-        <ul className="flex w-full flex-col items-center gap-12 px-2 sm:px-4">
+        <ul className="flex w-full flex-col items-center gap-10 px-2 sm:px-4">
           {roots.map((node) => (
             <BranchTreeItem
               key={node.id}

@@ -4,7 +4,6 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { useEffect, useMemo } from "react";
 import { Building2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useUsers } from "../../../entities/user";
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { branchSchema } from "../model/schema";
@@ -44,13 +43,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
   const createBranch = useCreateBranch();
   const { data: regions = [] } = useRegionOptions();
   const { data: parentBranches, isLoading: parentBranchesLoading } = useParentBranchOptions(open);
-  const { data: managers = [] } = useUsers({
-    status: "active",
-    role: ["admin", "operator"],
-    page: 1,
-    limit: 100,
-    enabled: open,
-  });
   const {
     control,
     handleSubmit,
@@ -100,15 +92,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     () => getParentBranchOptions(parentBranches?.data, t),
     [parentBranches?.data, t],
   );
-  const managerOptions = useMemo(
-    () =>
-      managers.map((user) => ({
-        value: String(user.id),
-        label: `${user.fullName} (${user.username})`,
-      })),
-    [managers],
-  );
-
   useEffect(() => {
     if (!open) {
       reset();
@@ -117,7 +100,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      const payload: CreateBranchDto = {
+      const { manager_id: _managerId, ...payload } = {
         ...values,
         code: values.code.trim(),
         parent_id: values.type === "HQ" ? "" : values.parent_id,
@@ -311,24 +294,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 onChange={field.onChange}
                 options={statusOptions}
                 placeholder={t("placeholders.status")}
-                icon={Building2}
-                hideLabel
-              />
-            )}
-          />
-        </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>{t("fields.manager")}</span>} validateStatus={errors.manager_id ? "error" : ""} help={errors.manager_id?.message}>
-          <Controller
-            control={control}
-            name="manager_id"
-            render={({ field }) => (
-              <SearchableSelect
-                label={t("fields.manager")}
-                name={field.name}
-                value={field.value}
-                onChange={field.onChange}
-                options={managerOptions}
-                placeholder={t("placeholders.manager")}
                 icon={Building2}
                 hideLabel
               />

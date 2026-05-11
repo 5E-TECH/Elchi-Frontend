@@ -1,4 +1,4 @@
-import { memo, useState, type ReactNode, useMemo } from 'react';
+import { memo, useEffect, useState, type ReactNode, useMemo } from 'react';
 import HeaderName from './headerName';
 import { X } from 'lucide-react';
 import Button from './button';
@@ -74,9 +74,28 @@ const PopupSelect = <T extends Record<string, any>>({
     }
   }
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => document.removeEventListener("keydown", handleKeyDown, true);
+  }, [isOpen, onClose]);
+
   return (
     <Popup isShow={isOpen} onClose={onClose}>
-      <div className={`flex max-h-[90vh] w-[92vw] max-w-140 flex-col rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(246,248,255,0.99)_100%)] px-5 py-7 text-maindark shadow-[0_30px_70px_rgba(46,54,98,0.18)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:bg-none dark:text-primary dark:shadow-[0_30px_70px_rgba(0,0,0,0.34)] md:px-8 md:py-10 ${className}`}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        className={`flex max-h-[90vh] w-[92vw] max-w-140 flex-col rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(246,248,255,0.99)_100%)] px-5 py-7 text-maindark shadow-[0_30px_70px_rgba(46,54,98,0.18)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:bg-none dark:text-primary dark:shadow-[0_30px_70px_rgba(0,0,0,0.34)] md:px-8 md:py-10 ${className}`}
+      >
         <div className="flex justify-between items-center mb-6">
           <HeaderName
             name={title}
@@ -86,6 +105,7 @@ const PopupSelect = <T extends Record<string, any>>({
           <X
             className="absolute top-6 right-6 cursor-pointer text-[color:var(--color-text-muted)] hover:text-error dark:hover:text-primary"
             onClick={onClose}
+            aria-label={cancelLabel}
           />
         </div>
 

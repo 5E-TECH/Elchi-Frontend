@@ -146,13 +146,18 @@ const Step2Combined = () => {
 
   const regionList = toArray(regions);
   const districtList = toArray(districts);
+  const getAreaOptionLabel = (item: any) => {
+    const satoCode = item?.sato_code ? ` • ${item.sato_code}` : "";
+
+    return `${item?.name ?? "—"}${satoCode}`;
+  };
   const regionOptions = regionList.map((region: any) => ({
     value: String(region.id),
-    label: region.name,
+    label: getAreaOptionLabel(region),
   }));
   const districtOptions = districtList.map((district: any) => ({
     value: String(district.id),
-    label: district.name,
+    label: getAreaOptionLabel(district),
   }));
   const allProducts = toArray(productsData);
   const filteredProducts = allProducts.filter((product: any) =>
