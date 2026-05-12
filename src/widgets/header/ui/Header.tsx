@@ -28,6 +28,7 @@ import { useGlobalSearch } from "../../../features/search/api/useGlobalSearch";
 import { LANGUAGE_STORAGE_KEY, normalizeLanguage } from "../../../i18n";
 import type { RootState } from "../../../app/config/store";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import Popup from "../../../shared/ui/Popup";
 import HeaderSearchPopup from "./HeaderSearchPopup";
 
 interface HeaderProps {
@@ -576,53 +577,48 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           </div>
         </div>
       </div>
-      {isShortcutsOpen && (
+      <Popup isShow={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)}>
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
+          className="w-[92vw] max-w-md rounded-3xl border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-2xl dark:bg-primarydark"
           role="dialog"
           aria-modal="true"
           aria-labelledby="keyboard-shortcuts-title"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setIsShortcutsOpen(false);
-          }}
         >
-          <div className="w-full max-w-md rounded-3xl border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-2xl dark:bg-primarydark">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 id="keyboard-shortcuts-title" className="m-0 text-xl font-black text-maindark dark:text-white">
-                  {t("keyboardShortcuts")}
-                </h2>
-                <p className="m-0 mt-1 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("keyboardShortcutsHint")}
-                </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="keyboard-shortcuts-title" className="m-0 text-xl font-black text-maindark dark:text-white">
+                {t("keyboardShortcuts")}
+              </h2>
+              <p className="m-0 mt-1 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                {t("keyboardShortcutsHint")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsShortcutsOpen(false)}
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition hover:bg-main/10 dark:text-white"
+              aria-label={t("close")}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="mt-5 space-y-3">
+            {[
+              { keys: "Ctrl + K", description: t("shortcutSearch") },
+              { keys: "G → O", description: t("shortcutOrders") },
+              ...(canOpenBatchesShortcut ? [{ keys: "G → B", description: t("shortcutBatches") }] : []),
+              { keys: "Esc", description: t("shortcutEscape") },
+            ].map((shortcut) => (
+              <div key={shortcut.keys} className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-3 dark:bg-white/[0.04]">
+                <span className="text-sm font-bold text-maindark dark:text-white">{shortcut.description}</span>
+                <kbd className="rounded-xl border border-[color:var(--color-border-soft)] bg-maindark px-3 py-1.5 text-xs font-black text-white dark:bg-white dark:text-maindark">
+                  {shortcut.keys}
+                </kbd>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsShortcutsOpen(false)}
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition hover:bg-main/10 dark:text-white"
-                aria-label={t("close")}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="mt-5 space-y-3">
-              {[
-                { keys: "Ctrl + K", description: t("shortcutSearch") },
-                { keys: "G → O", description: t("shortcutOrders") },
-                ...(canOpenBatchesShortcut ? [{ keys: "G → B", description: t("shortcutBatches") }] : []),
-                { keys: "Esc", description: t("shortcutEscape") },
-              ].map((shortcut) => (
-                <div key={shortcut.keys} className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-3 dark:bg-white/[0.04]">
-                  <span className="text-sm font-bold text-maindark dark:text-white">{shortcut.description}</span>
-                  <kbd className="rounded-xl border border-[color:var(--color-border-soft)] bg-maindark px-3 py-1.5 text-xs font-black text-white dark:bg-white dark:text-maindark">
-                    {shortcut.keys}
-                  </kbd>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </Popup>
     </header>
   );
 };

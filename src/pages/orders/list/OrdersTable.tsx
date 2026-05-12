@@ -230,8 +230,8 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0, onCreat
                 title={t("ordersNotFound")}
                 description={
                     <>
-                        Birinchi orderni yaratish uchun<br />
-                        "Yangi order" tugmasini bosing.
+                        {t("ordersEmptyCreateHintLine1")}<br />
+                        {t("ordersEmptyCreateHintLine2")}
                     </>
                 }
                 action={onCreateOrder ? (

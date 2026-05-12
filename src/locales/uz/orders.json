@@ -24,6 +24,8 @@
   "productNotFound": "Mahsulot topilmadi",
   "selectProductHint": "Chap tomondagi mahsulotlardan tanlang",
   "selectProductShort": "Mahsulot tanlang",
+  "selectedProducts": "Tanlangan mahsulotlar",
+  "productIdFallback": "Mahsulot #{{id}}",
   "quantity": "Soni",
   "unitPrice": "Birlik narxi",
   "totalPrice": "Umumiy summa",
@@ -102,6 +104,8 @@
   "totalOrdersSummary": "Jami {{count}} ta buyurtma",
   "ordersNotFound": "Buyurtmalar topilmadi",
   "ordersEmptyHint": "Filtrlarni o'zgartiring yoki yangi buyurtma qo'shing",
+  "ordersEmptyCreateHintLine1": "Birinchi orderni yaratish uchun",
+  "ordersEmptyCreateHintLine2": "\"Yangi order\" tugmasini bosing.",
   "paginationSummary": "{{from}}–{{to}} / {{total}} ta buyurtma",
   "sendSelectedToPost": "{{count}} ta buyurtmani pochtaga yuborish",
   "rollbackConfirmMessage": "Ushbu buyurtmani kutilayotgan holatga qaytarmoqchimisiz?",
@@ -169,5 +173,23 @@
   "branch": "Filial",
   "filterBranch": "Filial",
   "filterBranchPlaceholder": "Filialni tanlang",
-  "chipBranch": "Filial"
+  "chipBranch": "Filial",
+  "exportEmpty": "Export qilish uchun order topilmadi",
+  "exportSuccess": "{{count}} ta order Excelga saqlandi",
+  "exportError": "Orderlarni Excelga saqlashda xatolik yuz berdi",
+  "excel": {
+    "fileName": "barcha_buyurtmalar",
+    "headers": {
+      "number": "N",
+      "region": "Viloyat",
+      "district": "Tuman",
+      "company": "Firma",
+      "product": "Mahsulot",
+      "phone": "Telefon raqam",
+      "price": "Narxi",
+      "courier": "Kuryer",
+      "status": "Holati",
+      "date": "Sana"
+    }
+  }
 }

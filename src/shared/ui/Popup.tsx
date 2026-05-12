@@ -1,4 +1,5 @@
 import { memo, type FC, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface Props {
   children: ReactNode;
@@ -9,18 +10,20 @@ interface Props {
 
 const Popup: FC<Props> = ({ children, onClose, isShow = false }) => {
   if (!isShow) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <>
       <div
         onClick={onClose}
-        className="fixed top-0 left-0 w-full h-screen bg-black/50 z-100"
-      ></div>
+        className="fixed inset-0 z-[9998] h-screen w-full bg-black/65 backdrop-blur-md"
+      />
 
-      <div className="z-101 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2">
         {children}
       </div>
-    </>
+    </>,
+    document.body,
   );
 };
 

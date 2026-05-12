@@ -55,6 +55,7 @@ export const ORDER_FILTER_KEYS = {
 // ── Props ─────────────────────────────────────────────────────────────────
 interface Props {
     onExport?: () => void;
+    isExporting?: boolean;
 }
 
 const parseStatusValues = (value: unknown): OrderStatus[] => {
@@ -76,7 +77,7 @@ const getStringFilterValue = (value: unknown, fallback = "") =>
     typeof value === "string" ? value : fallback;
 
 // ── Komponent ─────────────────────────────────────────────────────────────
-const OrderFilters = memo(({ onExport }: Props) => {
+const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const { t } = useTranslation(["orders", "common"]);
     const dispatch = useDispatch();
     const { setParam, removeParam, getParam, setMultipleParams } = useQueryParams();
@@ -519,17 +520,23 @@ const OrderFilters = memo(({ onExport }: Props) => {
                                         {/* Export Excel */}
                                         {onExport && (
                                             <button
+                                                type="button"
                                                 onClick={onExport}
+                                                disabled={isExporting}
+                                                aria-label={t("export", { ns: "common" })}
                                                 className="
                                                     flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 sm:ml-auto sm:w-auto
                                                     bg-emerald-500 hover:bg-emerald-600
                                                     text-white text-xs font-semibold
                                                     transition-all duration-200
                                                     shadow-sm hover:shadow-md hover:shadow-emerald-500/25
+                                                    disabled:cursor-not-allowed disabled:bg-emerald-500/55 disabled:hover:bg-emerald-500/55 disabled:hover:shadow-sm
                                                 "
                                             >
                                                 <Download size={14} />
-                                                {t("export", { ns: "common" })}
+                                                {isExporting
+                                                    ? t("exporting", { ns: "common", defaultValue: "Export..." })
+                                                    : t("export", { ns: "common" })}
                                             </button>
                                         )}
                                     </div>
@@ -731,17 +738,23 @@ const OrderFilters = memo(({ onExport }: Props) => {
                 {/* Export Excel */}
                 {onExport && (
                     <button
+                        type="button"
                         onClick={onExport}
+                        disabled={isExporting}
+                        aria-label={t("export", { ns: "common" })}
                         className="
                             flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 sm:ml-auto sm:w-auto
                             bg-emerald-500 hover:bg-emerald-600
                             text-white text-xs font-semibold
                             transition-all duration-200
                             shadow-sm hover:shadow-md hover:shadow-emerald-500/25
+                            disabled:cursor-not-allowed disabled:bg-emerald-500/55 disabled:hover:bg-emerald-500/55 disabled:hover:shadow-sm
                         "
                     >
                         <Download size={14} />
-                        {t("export", { ns: "common" })}
+                        {isExporting
+                            ? t("exporting", { ns: "common", defaultValue: "Export..." })
+                            : t("export", { ns: "common" })}
                     </button>
                 )}
             </div>

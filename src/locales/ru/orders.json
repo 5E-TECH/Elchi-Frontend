@@ -24,6 +24,8 @@
   "productNotFound": "Товар не найден",
   "selectProductHint": "Выберите товары слева",
   "selectProductShort": "Выберите товар",
+  "selectedProducts": "Выбранные товары",
+  "productIdFallback": "Товар #{{id}}",
   "quantity": "Количество",
   "unitPrice": "Цена за единицу",
   "totalPrice": "Общая сумма",
@@ -102,6 +104,8 @@
   "totalOrdersSummary": "Всего {{count}} заказов",
   "ordersNotFound": "Заказы не найдены",
   "ordersEmptyHint": "Измените фильтры или добавьте новый заказ",
+  "ordersEmptyCreateHintLine1": "Чтобы создать первый заказ",
+  "ordersEmptyCreateHintLine2": "нажмите кнопку \"Новые заказы\".",
   "paginationSummary": "{{from}}–{{to}} / {{total}} заказов",
   "sendSelectedToPost": "Отправить {{count}} заказов на почту",
   "rollbackConfirmMessage": "Хотите вернуть этот заказ в статус ожидания?",
@@ -169,5 +173,23 @@
   "branch": "Филиал",
   "filterBranch": "Филиал",
   "filterBranchPlaceholder": "Выберите филиал",
-  "chipBranch": "Филиал"
+  "chipBranch": "Филиал",
+  "exportEmpty": "Заказы для экспорта не найдены",
+  "exportSuccess": "{{count}} заказов сохранено в Excel",
+  "exportError": "Произошла ошибка при сохранении заказов в Excel",
+  "excel": {
+    "fileName": "vse_zakazy",
+    "headers": {
+      "number": "№",
+      "region": "Область",
+      "district": "Район",
+      "company": "Фирма",
+      "product": "Товар",
+      "phone": "Номер телефона",
+      "price": "Цена",
+      "courier": "Курьер",
+      "status": "Статус",
+      "date": "Дата"
+    }
+  }
 }

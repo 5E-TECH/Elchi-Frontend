@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Building2, Home, Minus, Plus, ShoppingBag, Trash2, User } from "lucide-react";
 import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useProducts } from "../../../../entities/product";
 import type { DeliveryType } from "../../../../entities/order/types/order";
 import { GlobalSearchInput } from "../../../../features/search";
@@ -12,6 +13,8 @@ import {
 import { FormFieldError, getFieldClassName } from "./formFieldStyles";
 
 const Step3Details = () => {
+  const { t, i18n } = useTranslation("orders");
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const { control: searchControl, watch: watchSearch } = useForm({
     defaultValues: { productSearch: "" },
   });
@@ -115,10 +118,10 @@ const Step3Details = () => {
         </div>
         <div>
           <h3 className="font-semibold text-maindark dark:text-primary text-base">
-            Buyurtma tafsilotlari
+            {t("details")}
           </h3>
           <p className="text-xs text-gray-400">
-            {details.items.length} ta mahsulot tanlangan
+            {t("selectedProductsSummary", { count: details.items.length })}
           </p>
         </div>
       </div>
@@ -126,7 +129,7 @@ const Step3Details = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Mahsulot qo'shish
+            {t("addProduct")}
           </p>
 
           <Controller
@@ -138,7 +141,7 @@ const Step3Details = () => {
                 value={field.value}
                 onBlur={field.onBlur}
                 onValueChange={field.onChange}
-                placeholder="Mahsulot qidiring..."
+                placeholder={t("searchProduct")}
                 className="w-full"
                 inputClassName="
                   bg-primary dark:bg-primarydark
@@ -163,7 +166,7 @@ const Step3Details = () => {
             ) : filtered.length === 0 ? (
               <div className="py-8 flex flex-col items-center gap-2 text-gray-400">
                 <ShoppingBag size={30} strokeWidth={1} />
-                <p className="text-xs">Mahsulot topilmadi</p>
+                <p className="text-xs">{t("productNotFound")}</p>
               </div>
             ) : (
               filtered.map((product: any) => {
@@ -200,7 +203,7 @@ const Step3Details = () => {
                         {product.name}
                       </p>
                       <p className="text-xs text-main font-mono">
-                        {product.price?.toLocaleString()} so'm
+                        {product.price?.toLocaleString(locale)} {t("currency")}
                       </p>
                     </div>
                     <div
@@ -223,13 +226,13 @@ const Step3Details = () => {
 
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Tanlangan mahsulotlar
+            {t("selectedProducts")}
           </p>
 
           {details.items.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-10 gap-2 text-gray-400 border-2 border-dashed border-gray-200 dark:border-primarydark rounded-xl">
               <ShoppingBag size={32} strokeWidth={1} />
-              <p className="text-xs text-center">Chap tomondagi mahsulotlardan tanlang</p>
+              <p className="text-xs text-center">{t("selectProductHint")}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
@@ -246,10 +249,10 @@ const Step3Details = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-maindark dark:text-primary truncate">
-                        {product?.name ?? `Mahsulot #${item.product_id}`}
+                        {product?.name ?? t("productIdFallback", { id: item.product_id })}
                       </p>
                       <p className="text-xs text-main font-mono">
-                        {product?.price?.toLocaleString()} so'm
+                        {product?.price?.toLocaleString(locale)} {t("currency")}
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -293,12 +296,12 @@ const Step3Details = () => {
           render={({ field }) => (
             <div className="sm:col-span-2 flex flex-col gap-2">
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Yetkazib berish
+                {t("deliveryType")}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: "center" as DeliveryType, label: "Markaz", icon: Building2 },
-                  { value: "address" as DeliveryType, label: "Uy", icon: Home },
+                  { value: "center" as DeliveryType, label: t("deliveryCenter"), icon: Building2 },
+                  { value: "address" as DeliveryType, label: t("deliveryHome"), icon: Home },
                 ].map(({ value, label, icon: Icon }) => (
                   <button
                     key={value}
@@ -327,7 +330,7 @@ const Step3Details = () => {
           render={({ field }) => (
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Umumiy summa
+                {t("totalPrice")}
               </label>
               <input
                 type="text"
@@ -354,12 +357,12 @@ const Step3Details = () => {
           render={({ field }) => (
             <div className="flex flex-col gap-1.5">
               <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                <User size={12} /> Operator
+                <User size={12} /> {t("operator")}
               </label>
               <input
                 {...field}
                 type="text"
-                placeholder="Operator ismi"
+                placeholder={t("operatorPlaceholder")}
                 className={getFieldClassName(`
                   w-full px-3.5 py-2.5 rounded-xl text-sm
                   bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark
@@ -378,12 +381,12 @@ const Step3Details = () => {
           render={({ field }) => (
             <div className="sm:col-span-2 flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Izoh
+                {t("note")}
               </label>
               <textarea
                 {...field}
                 rows={2}
-                placeholder="Izoh..."
+                placeholder={t("notePlaceholder")}
                 className={getFieldClassName(`
                   w-full px-3.5 py-2.5 rounded-xl text-sm resize-none
                   bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark

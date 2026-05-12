@@ -346,13 +346,37 @@ const UzbekistanRegionMap = ({
   }, []);
 
   useEffect(() => {
+    const mapTheme = isDarkMode
+      ? {
+          low: "#334155",
+          medium: "#256d4f",
+          high: "#10b981",
+          xhigh: "#34d399",
+          stroke: "rgba(226, 232, 240, 0.72)",
+          tooltipBg: "#312b48",
+          tooltipBorder: "rgba(255, 255, 255, 0.14)",
+          tooltipText: "#ffffff",
+          tooltipMuted: "rgba(255, 255, 255, 0.68)",
+          tooltipShadow: "0 18px 40px rgba(0,0,0,.38)",
+        }
+      : {
+          low: "#dbeafe",
+          medium: "#93c5fd",
+          high: "#3b82f6",
+          xhigh: "#1d4ed8",
+          stroke: "#ffffff",
+          tooltipBg: "#ffffff",
+          tooltipBorder: "#e5e7eb",
+          tooltipText: "#111827",
+          tooltipMuted: "#6b7280",
+          tooltipShadow: "0 14px 34px rgba(15,23,42,.18)",
+        };
     const palette = {
-      low: readCssColor("--color-region-map-low", "#d1fae5"),
-      medium: readCssColor("--color-region-map-medium", "#86efac"),
-      high: readCssColor("--color-region-map-high", "#22c55e"),
-      xhigh: readCssColor("--color-region-map-xhigh", "#15803d"),
-      stroke: readCssColor("--color-region-map-stroke", "#ffffff"),
-      label: readCssColor("--color-region-map-label", "#374151"),
+      low: isDarkMode ? mapTheme.low : readCssColor("--color-region-map-low", mapTheme.low),
+      medium: isDarkMode ? mapTheme.medium : readCssColor("--color-region-map-medium", mapTheme.medium),
+      high: isDarkMode ? mapTheme.high : readCssColor("--color-region-map-high", mapTheme.high),
+      xhigh: isDarkMode ? mapTheme.xhigh : readCssColor("--color-region-map-xhigh", mapTheme.xhigh),
+      stroke: mapTheme.stroke,
     };
 
     const mapData: MapPoint[] = regions
@@ -470,28 +494,28 @@ const UzbekistanRegionMap = ({
           return `<div style="
             min-width:220px;
             border-radius:14px;
-            border:1px solid #e5e7eb;
-            background:#ffffff;
-            box-shadow:0 14px 34px rgba(15,23,42,.18);
+            border:1px solid ${mapTheme.tooltipBorder};
+            background:${mapTheme.tooltipBg};
+            box-shadow:${mapTheme.tooltipShadow};
             padding:12px;
-            color:#111827;
+            color:${mapTheme.tooltipText};
           ">
-            <div style="font-size:18px;font-weight:800;line-height:1.15;margin-bottom:10px;color:#111827;">${p.regionName || p.name}</div>
+            <div style="font-size:18px;font-weight:800;line-height:1.15;margin-bottom:10px;color:${mapTheme.tooltipText};">${p.regionName || p.name}</div>
             <div style="display:grid;row-gap:5px;font-size:14px;line-height:1.3;">
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:#6b7280;">Buyurtmalar:</span><b style="color:#1d4ed8;">${totalOrders}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:#6b7280;">Yetkazilgan:</span><b style="color:#059669;">${delivered}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:#6b7280;">Bekor qilingan:</span><b style="color:#dc2626;">${cancelled}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:#6b7280;">Muvaffaqiyat:</span><b style="color:#e11d48;">${successRate}%</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:#6b7280;">Jarayonda:</span><b style="color:#d97706;">${pending}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:#6b7280;">Tushum:</span><b style="color:#9333ea;">${revenue} so'm</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:#6b7280;">Tumanlar:</span><b>${districts}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:#6b7280;">Kuryerlar:</span><b>${couriers}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Buyurtmalar:</span><b style="color:#60a5fa;">${totalOrders}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Yetkazilgan:</span><b style="color:#34d399;">${delivered}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Bekor qilingan:</span><b style="color:#fb7185;">${cancelled}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Muvaffaqiyat:</span><b style="color:#f472b6;">${successRate}%</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Jarayonda:</span><b style="color:#fbbf24;">${pending}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Tushum:</span><b style="color:#c084fc;">${revenue} so'm</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Tumanlar:</span><b>${districts}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Kuryerlar:</span><b>${couriers}</b></div>
             </div>
             <div style="
               margin-top:10px;
               padding-top:8px;
-              border-top:1px solid #e5e7eb;
-              color:#9ca3af;
+              border-top:1px solid ${mapTheme.tooltipBorder};
+              color:${mapTheme.tooltipMuted};
               font-size:11px;
               font-weight:600;
             ">Batafsil ko'rish uchun bosing</div>
@@ -508,12 +532,22 @@ const UzbekistanRegionMap = ({
           borderWidth: 1,
           dataLabels: {
             enabled: true,
-            format: "{point.name}",
+            allowOverlap: true,
+            backgroundColor: "transparent",
+            borderWidth: 0,
+            color: "#ffffff",
+            crop: false,
+            formatter: function (this: any) {
+              return this.point?.regionName || this.point?.name || "";
+            },
+            padding: 0,
+            shadow: false,
             style: {
-              color: palette.label,
-              textOutline: `2px ${palette.stroke}`,
-              fontWeight: "500",
-              fontSize: "11px",
+              color: "#ffffff",
+              fontSize: "12px",
+              fontWeight: "900",
+              lineHeight: "14px",
+              textOutline: "none",
             },
           },
           states: {
