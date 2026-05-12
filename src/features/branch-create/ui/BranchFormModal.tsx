@@ -65,7 +65,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     },
   });
 
-  const selectedType = useWatch({ control, name: "type" });
   const selectedRegionId = useWatch({ control, name: "region_id" });
   const districts = useMemo(
     () => regions.find((region) => String(region.id) === selectedRegionId)?.districts ?? [],
