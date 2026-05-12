@@ -228,8 +228,8 @@ const SearchableSelect = ({
     size === "sm" ? "h-11 rounded-xl px-3.5" : "h-12 rounded-xl px-4";
   const controlSurfaceClass =
     surface === "search"
-      ? "bg-primary dark:bg-maindark border-gray-200 dark:border-primarydark/30"
-      : "bg-white/85 dark:bg-white/7 border-white/70 dark:border-white/10";
+      ? "bg-[color:var(--color-card-surface-strong)] dark:bg-[color:var(--color-primarydark)] border-[color:var(--color-border-strong)] dark:border-white/15"
+      : "bg-[color:var(--color-card-surface-strong)]/90 dark:bg-[color:var(--color-primarydark)]/90 border-[color:var(--color-border-strong)]/80 dark:border-white/12";
 
   return (
     <div ref={containerRef} className="relative space-y-0">
@@ -248,8 +248,8 @@ const SearchableSelect = ({
       <div
         className={`group relative flex w-full items-center border-2 text-left shadow-sm transition-all duration-200 outline-none ${controlSizeClass} ${controlSurfaceClass} ${
           isOpen
-            ? "border-main ring-2 ring-main/10"
-            : "hover:border-main/50"
+            ? "border-main ring-2 ring-main/15"
+            : "hover:border-main/60"
         } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-text"}`}
       >
         {Icon && (
@@ -271,7 +271,7 @@ const SearchableSelect = ({
             aria-expanded={isOpen}
             aria-haspopup="listbox"
             placeholder={selectedOption?.label ?? placeholder}
-            className={`min-w-0 flex-1 bg-transparent text-sm font-medium text-[color:var(--color-maindark)] outline-none placeholder:text-[color:var(--color-text-muted)] dark:text-[color:var(--color-primary)] dark:placeholder:text-[color:var(--color-text-muted-dark)] ${Icon ? "pl-7" : ""}`}
+            className={`min-w-0 flex-1 bg-transparent text-sm font-semibold text-[color:var(--color-maindark)] outline-none placeholder:text-[color:var(--color-text-muted)] dark:text-[color:var(--color-primary)] dark:placeholder:text-white/55 ${Icon ? "pl-7" : ""}`}
           />
         ) : (
           <button
@@ -282,10 +282,10 @@ const SearchableSelect = ({
             disabled={disabled}
             aria-expanded={isOpen}
             aria-haspopup="listbox"
-            className={`min-w-0 flex-1 truncate bg-transparent text-left text-sm font-medium outline-none ${
+            className={`min-w-0 flex-1 truncate bg-transparent text-left text-sm font-semibold outline-none ${
               selectedOption
                 ? "text-[color:var(--color-maindark)] dark:text-[color:var(--color-primary)]"
-                : "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
+                : "text-[color:var(--color-text-muted)] dark:text-white/55"
             } ${Icon ? "pl-7" : ""}`}
           >
             {selectedOption?.label ?? placeholder}

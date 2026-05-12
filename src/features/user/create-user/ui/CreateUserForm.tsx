@@ -90,16 +90,16 @@ const INITIAL_FORM: CreateUserFormValues = {
 };
 
 const inputClasses = (hasError: boolean, hasPrefix: boolean) => `
-  w-full bg-slate-50 dark:bg-[#1a1f3a] border
+  w-full border-2 bg-[color:var(--color-card-surface-strong)] dark:bg-[color:var(--color-primarydark)]
   ${
     hasError
       ? "border-red-400 dark:border-red-500 focus:ring-red-400/20"
-      : "border-slate-200 dark:border-[#4c5798]/20 focus:border-main dark:focus:border-main focus:ring-main/10"
+      : "border-[color:var(--color-border-strong)] dark:border-white/15 focus:border-main dark:focus:border-main focus:ring-main/15"
   }
   rounded-xl ${hasPrefix ? "pl-10" : "px-4"} pr-4 py-3
-  text-slate-800 dark:text-white text-sm font-medium
-  placeholder:text-slate-400 dark:placeholder:text-white/30
-  focus:outline-none focus:ring-2 transition-all duration-200 shadow-sm
+  text-maindark dark:text-white text-sm font-semibold
+  placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-white/55
+  focus:outline-none focus:ring-2 transition-all duration-200 shadow-sm hover:border-main/60
 `;
 
 const labelClasses =
@@ -330,10 +330,6 @@ export const CreateUserForm = memo(() => {
     }
 
     if (role === "courier") {
-      if (!isRegionalManagerCreator && !values.branchId) {
-        setError("branchId", { message: t("branchRequired") });
-        valid = false;
-      }
       if (!isRegionalManagerCreator && !values.region) {
         setError("region", { message: t("regionRequired") });
         valid = false;
@@ -443,9 +439,6 @@ export const CreateUserForm = memo(() => {
       if (!isRegionalManagerCreator) {
         payload.region_id = values.region;
       }
-      if (!isRegionalManagerCreator) {
-        payload.branch_id = values.branchId;
-      }
 
       await apiRequest({
         request: () => createCourier.mutateAsync(payload),
@@ -503,12 +496,12 @@ export const CreateUserForm = memo(() => {
           </label>
           <div className="relative group">
             {icon && (
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 group-focus-within:text-main transition-colors">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] dark:text-white/55 group-focus-within:text-main transition-colors">
                 {icon}
               </div>
             )}
             {name === "phone" && (
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/50 font-medium z-10 text-sm select-none">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-maindark dark:text-white font-semibold z-10 text-sm select-none">
                 +998
               </div>
             )}
@@ -566,7 +559,7 @@ export const CreateUserForm = memo(() => {
             {t("passwordPlaceholder")} <span className="text-red-500">*</span>
           </label>
           <div className="relative group">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 group-focus-within:text-main transition-colors">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] dark:text-white/55 group-focus-within:text-main transition-colors">
               <Shield size={18} />
             </div>
             <input
@@ -581,7 +574,7 @@ export const CreateUserForm = memo(() => {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-white/40 dark:hover:text-white transition-colors p-1"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] hover:text-maindark dark:text-white/55 dark:hover:text-white transition-colors p-1"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -767,28 +760,6 @@ export const CreateUserForm = memo(() => {
 
                 {role === "courier" && (
                   <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 xl:grid-cols-3 md:gap-6">
-                    {!isRegionalManagerCreator && (
-                      <Controller
-                        control={control}
-                        name="branchId"
-                        render={({ field, fieldState }) => (
-                          <div className="relative">
-                            <SearchableSelect
-                              label={t("branchLabel")}
-                              name={field.name}
-                              value={field.value}
-                              onChange={field.onChange}
-                              options={branchOptions}
-                              placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
-                              loading={isBranchesLoading}
-                              icon={Building}
-                              surface="search"
-                            />
-                            <FieldError message={fieldState.error?.message} />
-                          </div>
-                        )}
-                      />
-                    )}
                     {!isRegionalManagerCreator && (
                       <Controller
                         control={control}

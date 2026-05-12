@@ -30,10 +30,10 @@ const PhoneInput = ({
 
   return (
     <div className="relative group">
-      <div className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-main dark:text-white/40 dark:group-focus-within:text-main">
+      <div className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-[color:var(--color-text-muted)] transition-colors group-focus-within:text-main dark:text-white/55 dark:group-focus-within:text-main">
         <Phone size={18} />
       </div>
-      <div className="pointer-events-none absolute left-10 top-1/2 z-10 -translate-y-1/2 text-sm font-bold text-maindark/80 dark:text-white/80">
+      <div className="pointer-events-none absolute left-10 top-1/2 z-10 -translate-y-1/2 text-sm font-semibold text-maindark dark:text-white">
         {UZBEKISTAN_PHONE_PREFIX}
       </div>
       <input
@@ -51,10 +51,10 @@ const PhoneInput = ({
         onBlur={onBlur}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-full rounded-xl border-2 bg-primary py-3 pl-[5.25rem] pr-4 text-sm font-medium text-maindark shadow-sm outline-none transition-all placeholder:text-slate-400 hover:shadow-sm focus:shadow-md dark:bg-maindark dark:text-white dark:placeholder:text-white/40 ${
+        className={`w-full rounded-xl border-2 bg-[color:var(--color-card-surface-strong)] py-3 pl-[5.25rem] pr-4 text-sm font-semibold text-maindark shadow-sm outline-none transition-all placeholder:text-[color:var(--color-text-muted)] hover:shadow-sm focus:shadow-md dark:bg-[color:var(--color-primarydark)] dark:text-white dark:placeholder:text-white/55 ${
           error
             ? "border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-400/20 dark:border-red-500"
-            : "border-gray-200 hover:border-main/50 focus:border-main focus:ring-2 focus:ring-main/20 dark:border-primarydark/30 dark:hover:border-main/50 dark:focus:border-main"
+            : "border-[color:var(--color-border-strong)] hover:border-main/60 focus:border-main focus:ring-2 focus:ring-main/15 dark:border-white/15 dark:hover:border-main/60 dark:focus:border-main"
         } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
       />
     </div>
