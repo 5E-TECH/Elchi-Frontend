@@ -133,6 +133,7 @@
   "orderCreatedForMarket": "Заказ создан. Вы можете добавить еще один заказ для этого маркета.",
   "orderCreateErrorTitle": "Заказ не создан",
   "orderCreateErrorFallback": "Проверьте данные и попробуйте еще раз",
+  "inactiveMarketOrderBlocked": "Этот маркет неактивен. Нельзя создавать новые заказы для неактивного маркета.",
   "createPageDescription": "Выполните шаги для создания заказа",
   "selectMarketTitle": "Выберите маркет",
   "selectedMarket": "Выбранный маркет",

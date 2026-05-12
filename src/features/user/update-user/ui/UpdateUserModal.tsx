@@ -19,6 +19,7 @@ import type { UpdateUserRequest, User as UserType } from "../../../../entities/u
 import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
+import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -35,16 +36,6 @@ const formatAmount = (value: string): string => {
 
 const parseAmount = (value: string): number =>
   Number(value.replace(/\s/g, ""));
-
-const formatPhone = (value: string): string => {
-  const digits = value.replace(/\D/g, "").slice(0, 9);
-  const parts: string[] = [];
-  if (digits.length > 0) parts.push(digits.slice(0, 2));
-  if (digits.length > 2) parts.push(digits.slice(2, 5));
-  if (digits.length > 5) parts.push(digits.slice(5, 7));
-  if (digits.length > 7) parts.push(digits.slice(7, 9));
-  return parts.join(" ");
-};
 
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
 
@@ -164,7 +155,7 @@ export const UpdateUserModal = memo(({
 
     reset({
       name: userData.name ?? "",
-      phone: formatPhone(phone),
+      phone: formatUzbekistanPhoneLocal(phone),
       password: "",
       status: userData.status ?? "",
       username: userData.username ?? "",
@@ -358,7 +349,9 @@ export const UpdateUserModal = memo(({
                 }
 
                 if (name === "phone") {
-                  field.onChange(formatPhone(value));
+                  const nextValue = formatUzbekistanPhoneLocal(value);
+                  field.onChange(nextValue);
+                  keepPhoneCaretAfterChange(event.target, nextValue);
                   return;
                 }
 

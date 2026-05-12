@@ -22,6 +22,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
 import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
+import { isInactiveMarketStatus } from "../../shared/lib/marketStatus";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
@@ -239,7 +240,7 @@ const Orders = () => {
 
   const { data, isLoading } = getOrders(apiParams);
   const { data: marketsResponse, isLoading: isMarketsLoading } = getMarkets(
-    { limit: 100 },
+    { status: "active", limit: 100 },
     showMarketSelect,
   );
 
@@ -251,15 +252,15 @@ const Orders = () => {
       | undefined;
 
     if (Array.isArray(payload)) {
-      return payload;
+      return payload.filter((market) => !isInactiveMarketStatus(market.status));
     }
 
     if (Array.isArray(payload?.data)) {
-      return payload.data;
+      return payload.data.filter((market) => !isInactiveMarketStatus(market.status));
     }
 
     if (Array.isArray(payload?.data?.items)) {
-      return payload.data.items;
+      return payload.data.items.filter((market) => !isInactiveMarketStatus(market.status));
     }
 
     return [];

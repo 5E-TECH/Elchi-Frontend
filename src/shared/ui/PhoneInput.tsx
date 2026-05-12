@@ -2,6 +2,7 @@ import { memo, type FocusEventHandler } from "react";
 import { Phone } from "lucide-react";
 import {
   formatUzbekistanPhoneLocal,
+  keepPhoneCaretAfterChange,
   toUzbekistanPhoneValue,
   UZBEKISTAN_PHONE_PREFIX,
 } from "../lib/phone";
@@ -38,10 +39,15 @@ const PhoneInput = ({
       <input
         type="tel"
         inputMode="numeric"
-        autoComplete="tel"
+        autoComplete="off"
         name={name}
         value={displayValue}
-        onChange={(event) => onChange(toUzbekistanPhoneValue(event.target.value))}
+        onChange={(event) => {
+          const nextValue = toUzbekistanPhoneValue(event.target.value);
+          const nextDisplayValue = formatUzbekistanPhoneLocal(nextValue);
+          onChange(nextValue);
+          keepPhoneCaretAfterChange(event.target, nextDisplayValue);
+        }}
         onBlur={onBlur}
         placeholder={placeholder}
         disabled={disabled}

@@ -26,13 +26,14 @@ import { useMarkets } from "../../../entities/markets";
 import { GlobalSearchInput } from "../../../features/search";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
-import { BASE_URL } from "../../../shared/const";
 import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
 import Pagination from "../../../shared/components/pagination";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
+import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
+import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
 
 interface Product {
   id: number;
@@ -56,6 +57,7 @@ interface Market {
   name: string;
   phone: string;
   index: number;
+  status?: string | null;
 }
 
 interface ProductFilterFormValues {
@@ -210,35 +212,9 @@ const ProductTable = () => {
   });
   const filterValue = watchFilter("market_id");
 
-  const resolveImageUrl = useCallback((raw?: string | null): string | undefined => {
-    if (!raw) return undefined;
-    const trimmed = String(raw).trim();
-    if (!trimmed) return undefined;
-    if (
-      trimmed.startsWith("http://")
-      || trimmed.startsWith("https://")
-      || trimmed.startsWith("data:")
-      || trimmed.startsWith("blob:")
-    ) {
-      return trimmed;
-    }
-
-    try {
-      if (BASE_URL.startsWith("/")) {
-        if (trimmed.startsWith("/")) return trimmed;
-        return `${BASE_URL.replace(/\/+$/, "")}/${trimmed.replace(/^\/+/, "")}`;
-      }
-
-      const base = new URL(`${BASE_URL.replace(/\/+$/, "")}/`);
-      return new URL(trimmed.replace(/^\/+/, ""), base).toString();
-    } catch {
-      return trimmed;
-    }
-  }, []);
-
   const getProductImageUrl = useCallback((product?: Product | null): string | undefined => {
     if (!product) return undefined;
-    return resolveImageUrl(
+    return resolveAssetUrl(
       product.image_url
         ?? product.imageUrl
         ?? product.image
@@ -247,25 +223,30 @@ const ProductTable = () => {
         ?? product.file
         ?? product.url,
     );
-  }, [resolveImageUrl]);
+  }, []);
 
   // ─── Data Fetching ──────────────────────────────────────────────────────
 
   const { getMarkets } = useMarkets();
-  const { data } = getMarkets(undefined, isRoleResolved && !isMarketRole);
+  const { data } = getMarkets(
+    { status: "active", limit: 100 },
+    isRoleResolved && !isMarketRole,
+  );
 
   const markets: Market[] = useMemo(() => {
     const itemsRaw = (data as { data?: { items?: unknown } } | undefined)?.data?.items;
     const items = Array.isArray(itemsRaw) ? itemsRaw : [];
 
     return items
-      .filter((item): item is { id: number; name: string; phone_number?: string } =>
+      .filter((item): item is { id: number; name: string; phone_number?: string; status?: string | null } =>
         typeof item === "object" && item !== null && "id" in item && "name" in item,
       )
+      .filter((item) => !isInactiveMarketStatus(item.status))
       .map((item, index) => ({
         id: item.id,
         name: item.name,
         phone: item.phone_number ?? "",
+        status: item.status,
         index: index + 1,
       }));
   }, [data]);

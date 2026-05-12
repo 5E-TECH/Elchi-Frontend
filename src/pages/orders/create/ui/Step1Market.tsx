@@ -59,7 +59,7 @@ const Step1Market = ({
   }, [search]);
 
   const { getMarkets } = useMarkets();
-  const { data, isLoading } = getMarkets({ search: debouncedSearch, limit: 20 });
+  const { data, isLoading } = getMarkets({ search: debouncedSearch, status: "active", limit: 20 });
 
   const toArray = (value: unknown): MarketOption[] => {
     if (Array.isArray(value)) return value as MarketOption[];
@@ -90,7 +90,7 @@ const Step1Market = ({
     return [];
   };
 
-  const markets = toArray(data);
+  const markets = toArray(data).filter((market) => market.status !== "inactive" && market.status !== "blocked");
   const selectedMarket = field.value;
   const selectedPhone = getMarketPhone(selectedMarket);
 
@@ -104,6 +104,9 @@ const Step1Market = ({
 
   const visibleMarkets = useMemo(() => {
     if (!selectedMarket) return markets;
+
+    const selectedIsActive = selectedMarket.status !== "inactive" && selectedMarket.status !== "blocked";
+    if (!selectedIsActive) return markets;
 
     return [
       selectedMarket,

@@ -18,9 +18,12 @@ import Button from "../../../shared/components/button";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { useProducts } from "../../../entities/product";
+import { useMarkets } from "../../../entities/markets";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import i18n from "../../../i18n";
 import type { RootState } from "../../../app/config/store";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
 
 interface ExistingProduct {
   id: number;
@@ -62,6 +65,7 @@ ProductNameCell.displayName = "ProductNameCell";
 
 const CreateProductPage = () => {
   const { t } = useTranslation("products");
+  const { api: notificationApi } = useAppNotification();
   const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
   const isMarketRole = roleState.role === "market";
@@ -102,6 +106,14 @@ const CreateProductPage = () => {
   }, [isMarketRole, marketD?.data, profile?.name, roleState.name]);
 
   const navigate = useNavigate();
+  const { getMarketById } = useMarkets();
+  const { data: selectedMarketData, isLoading: isMarketStatusLoading } = getMarketById(
+    Number(effectiveMarketId),
+    !isMarketRole && Boolean(effectiveMarketId),
+  );
+  const selectedMarket = unwrapMarketPayload(selectedMarketData);
+  const selectedMarketStatus = isMarketRole ? profile?.status : selectedMarket?.status;
+  const isInactiveMarket = isInactiveMarketStatus(selectedMarketStatus);
   const {
     control,
     register,
@@ -238,7 +250,15 @@ const CreateProductPage = () => {
 
   const onSubmit = useCallback(
     async (values: CreateProductFormValues) => {
-      if (isPending) return;
+      if (isPending || isMarketStatusLoading) return;
+
+      if (isInactiveMarket) {
+        notificationApi.warning({
+          message: t("inactiveMarketCreateBlocked"),
+          placement: "topRight",
+        });
+        return;
+      }
 
       const formData = new FormData();
       formData.append("name", values.name.trim());
@@ -253,7 +273,7 @@ const CreateProductPage = () => {
         },
       });
     },
-    [isPending, effectiveMarketId, createProduct, resetForm],
+    [createProduct, effectiveMarketId, isInactiveMarket, isMarketStatusLoading, isPending, notificationApi, resetForm, t],
   );
 
   return (
@@ -284,6 +304,11 @@ const CreateProductPage = () => {
 
         {/* Form content */}
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+          {isInactiveMarket && (
+            <div className="md:col-span-2 rounded-xl border border-amber-400/30 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 dark:bg-amber-400/10 dark:text-amber-200">
+              {t("inactiveMarketCreateBlocked")}
+            </div>
+          )}
           {/* Product Name Input */}
           <div className="space-y-2">
             <label className="text-gray-700 dark:text-gray-300 font-medium text-sm">
@@ -296,7 +321,7 @@ const CreateProductPage = () => {
               />
               <input
                 id="product-name"
-                disabled={isPending}
+                disabled={isPending || isMarketStatusLoading || isInactiveMarket}
                 placeholder={t("namePlaceholder")}
                 {...register("name")}
                 className="w-full bg-gray-50 dark:bg-primarydark text-gray-900 dark:text-white pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-main transition-colors disabled:opacity-50"
@@ -346,7 +371,7 @@ const CreateProductPage = () => {
                         className="hidden"
                         onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
                         ref={fileInputRef}
-                        disabled={isPending}
+                        disabled={isPending || isMarketStatusLoading || isInactiveMarket}
                       />
                     </label>
                   )}
@@ -369,7 +394,7 @@ const CreateProductPage = () => {
             label={isPending ? t("saving") : t("save")}
             icon={<Box size={18} />}
             type="submit"
-            disabled={isPending}
+            disabled={isPending || isMarketStatusLoading || isInactiveMarket}
           />
         </div>
       </form>

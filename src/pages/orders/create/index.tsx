@@ -31,6 +31,7 @@ import { useOrders as useIncomingOrders } from "../../../entities/orders";
 import type { ApiOrder } from "../../new_orders/components/OrderCard";
 import OrdersTable from "../list/OrdersTable";
 import type { OrderListItem } from "../../../entities/order/types/order";
+import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
 
 type BackendErrorPayload = {
   message?: unknown;
@@ -317,6 +318,7 @@ const OrderCreateFormContent = () => {
   const { createOrder } = useOrders();
   const { api } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
+  const profile = useSelector((state: RootState) => state.user.user);
   const isMarketRole = role === "market";
   const navigationState = location.state as { selectedMarket?: MarketOption } | null;
   const selectedMarketFromState = navigationState?.selectedMarket ?? null;
@@ -343,14 +345,18 @@ const OrderCreateFormContent = () => {
   const details = useWatch({ control, name: "details" });
   const selectedMarketId = market?.id ?? selectedMarketFromState?.id;
   const selectedMarketName = market?.name ?? selectedMarketFromState?.name;
+  const isInactiveSelectedMarket = isMarketRole
+    ? isInactiveMarketStatus(profile?.status)
+    : isInactiveMarketStatus(market?.status ?? selectedMarketFromState?.status);
 
   const canNext = useMemo(() => {
     if (step === 1) {
       return isMarketRole || !!market;
     }
 
-    return Boolean(
+      return Boolean(
       (isMarketRole || market) &&
+        !isInactiveSelectedMarket &&
         customer?.phone?.trim() &&
         customer?.name?.trim() &&
         customer?.region_id &&
@@ -358,7 +364,7 @@ const OrderCreateFormContent = () => {
         details?.items?.length &&
         details?.total_price?.trim(),
     );
-  }, [customer, details, isMarketRole, market, step]);
+  }, [customer, details, isInactiveSelectedMarket, isMarketRole, market, step]);
 
   const handleBack = () => {
     if (step === 1 || isMarketRole) {
@@ -373,7 +379,16 @@ const OrderCreateFormContent = () => {
     setServerError("");
 
     if (isMarketRole) {
+      if (isInactiveSelectedMarket) {
+        setServerError(t("inactiveMarketOrderBlocked"));
+        return;
+      }
       setStep(2);
+      return;
+    }
+
+    if (isInactiveSelectedMarket) {
+      setServerError(t("inactiveMarketOrderBlocked"));
       return;
     }
 
@@ -385,6 +400,15 @@ const OrderCreateFormContent = () => {
 
   const onSubmit = (values: OrderCreateFormValues) => {
     setServerError("");
+
+    if (isInactiveSelectedMarket) {
+      setServerError(t("inactiveMarketOrderBlocked"));
+      api.warning({
+        message: t("inactiveMarketOrderBlocked"),
+        placement: "topRight",
+      });
+      return;
+    }
 
     createOrder.mutate(buildCreateOrderPayload(values, { includeMarketId: !isMarketRole }), {
       onSuccess: () => {
@@ -435,6 +459,15 @@ const OrderCreateFormContent = () => {
     ]);
 
     if (!isValid) return;
+
+    if (isInactiveSelectedMarket) {
+      setServerError(t("inactiveMarketOrderBlocked"));
+      api.warning({
+        message: t("inactiveMarketOrderBlocked"),
+        placement: "topRight",
+      });
+      return;
+    }
 
     await handleSubmit(onSubmit)();
   };

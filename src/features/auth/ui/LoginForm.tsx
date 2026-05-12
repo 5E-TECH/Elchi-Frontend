@@ -16,6 +16,10 @@ import {
 import type { RootState, AppDispatch } from "../../../app/config/store";
 import { useLogin } from "../api/login";
 import type { AxiosError } from "axios";
+import {
+  formatUzbekistanPhoneFull,
+  keepPhoneCaretAfterChange,
+} from "../../../shared/lib/phone";
 
 interface LoginFormValues {
   phone_number: string;
@@ -25,37 +29,6 @@ interface LoginFormValues {
 interface ApiErrorResponse {
   message?: string;
 }
-
-const formatPhoneNumber = (value: string) => {
-  let normalizedValue = value;
-
-  if (!normalizedValue.startsWith("+998")) {
-    normalizedValue = "+998" + normalizedValue.replace(/\+998/g, "");
-  }
-
-  const numbers = normalizedValue.replace(/[^\d]/g, "");
-
-  let formattedValue = "+998";
-
-  if (numbers.length > 3) {
-    formattedValue += " " + numbers.slice(3, 5);
-  }
-  if (numbers.length > 5) {
-    formattedValue += " " + numbers.slice(5, 8);
-  }
-  if (numbers.length > 8) {
-    formattedValue += " " + numbers.slice(8, 10);
-  }
-  if (numbers.length > 10) {
-    formattedValue += " " + numbers.slice(10, 12);
-  }
-
-  if (formattedValue.length > 17) {
-    formattedValue = formattedValue.slice(0, 17);
-  }
-
-  return formattedValue;
-};
 
 const LoginForm = () => {
   const [show, setShow] = useState(false);
@@ -76,7 +49,7 @@ const LoginForm = () => {
     resolver: yupResolver(createLoginSchema(t)) as Resolver<LoginFormValues>,
     mode: "onTouched",
     defaultValues: {
-      phone_number: "+998 ",
+      phone_number: formatUzbekistanPhoneFull(),
       password: "",
     },
   });
@@ -139,10 +112,14 @@ const LoginForm = () => {
                     name={field.name}
                     value={field.value}
                     onBlur={field.onBlur}
-                    onChange={(event) =>
-                      field.onChange(formatPhoneNumber(event.target.value))
-                    }
-                    type="text"
+                    onChange={(event) => {
+                      const nextValue = formatUzbekistanPhoneFull(event.target.value);
+                      field.onChange(nextValue);
+                      keepPhoneCaretAfterChange(event.target, nextValue, true);
+                    }}
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
                     disabled={loading}
                     className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phone_number ? "border-red-500" : "border-gray-200"
                       } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
