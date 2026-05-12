@@ -8,6 +8,7 @@ import { getUserRoleLabelKey } from '../../../../entities/user/lib/role';
 interface RoleSelectorProps {
     selectedRole: UserRole;
     onSelect: (role: UserRole) => void;
+    allowedRoles?: UserRole[];
 }
 
 const roles: { id: UserRole; label: string; icon: LucideIcon; gradient: string; shadow: string }[] = [
@@ -48,11 +49,15 @@ const roles: { id: UserRole; label: string; icon: LucideIcon; gradient: string; 
     },
 ];
 
-export const RoleSelector = memo(({ selectedRole, onSelect }: RoleSelectorProps) => {
+export const RoleSelector = memo(({ selectedRole, onSelect, allowedRoles }: RoleSelectorProps) => {
     const { t } = useTranslation("users");
+    const visibleRoles = Array.isArray(allowedRoles) && allowedRoles.length > 0
+        ? roles.filter((role) => allowedRoles.includes(role.id))
+        : roles;
+
     return (
         <div className="flex flex-col gap-3">
-            {roles.map((role) => {
+            {visibleRoles.map((role) => {
                 const isSelected = selectedRole === role.id;
                 return (
                     <button

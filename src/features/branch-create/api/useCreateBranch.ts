@@ -11,8 +11,8 @@ export const useCreateBranch = () => {
 
   return useMutation({
     mutationFn: (payload: CreateBranchPayload) => api.post(API_ENDPOINTS.BRANCHES.BASE, payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.branches.all });
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.branches.all });
     },
   });
 };

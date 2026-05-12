@@ -21,6 +21,7 @@ import type { MarketOption } from "./create/model/orderCreateForm";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
+import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
@@ -112,6 +113,9 @@ const Orders = () => {
   const [isExporting, setIsExporting] = useState(false);
 
   const role = useSelector((state: RootState) => state.role.role);
+  const currentUser = useSelector((state: RootState) => state.user.user);
+  const branchType = getUserBranchType(currentUser);
+  const canCreateOrder = !(role === "manager" && branchType === "REGIONAL");
 
 
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
@@ -278,6 +282,8 @@ const Orders = () => {
   }
 
   const handleOpenNewOrder = () => {
+    if (!canCreateOrder) return;
+
     if (role === "market") {
       navigate("add");
       return;
@@ -385,12 +391,14 @@ const Orders = () => {
             description={t("totalOrdersSummary", { count: total })}
             icon={<ListOrdered />}
           />
-          <Button
-            label={t("newOrders")}
-            icon={<Plus size={16} />}
-            onClick={handleOpenNewOrder}
-            className="w-full rounded-2xl py-3 text-sm shadow-lg shadow-main/20 sm:w-auto sm:rounded-xl sm:py-2.5"
-          />
+          {canCreateOrder && (
+            <Button
+              label={t("newOrders")}
+              icon={<Plus size={16} />}
+              onClick={handleOpenNewOrder}
+              className="w-full rounded-2xl py-3 text-sm shadow-lg shadow-main/20 sm:w-auto sm:rounded-xl sm:py-2.5"
+            />
+          )}
         </div>
       </div>
 
@@ -412,7 +420,7 @@ const Orders = () => {
           isLoading={isLoading}
           rowNumberOffset={(currentPage - 1) * itemsPerPage}
           onRowClick={(order) => navigate(`edit/${order.id}`)}
-          onCreateOrder={handleOpenNewOrder}
+          onCreateOrder={canCreateOrder ? handleOpenNewOrder : undefined}
         />
 
         {/* Pagination */}

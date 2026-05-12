@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { SIDEBAR_CONFIG, type SidebarUserRole } from "../model/menuConfig";
+import { getSidebarConfigForUser, type SidebarUserRole } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -21,11 +21,12 @@ const Sidebar = () => {
 
   // ─── User role'ni Redux dan oling ────────────────────────────────────────
   const { role } = useSelector((state: RootState) => state.role);
+  const user = useSelector((state: RootState) => state.user.user);
   const userRole = (role as SidebarUserRole) || "admin";
 
   // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
   const links = useMemo(() => {
-    const navItems = SIDEBAR_CONFIG[userRole] ?? SIDEBAR_CONFIG.admin;
+    const navItems = getSidebarConfigForUser(userRole, user);
 
     return navItems.map((item) => ({
       to: item.to,
@@ -33,7 +34,7 @@ const Sidebar = () => {
       label: t(item.label),
       end: item.end,
     }));
-  }, [userRole, t]);
+  }, [userRole, user, t]);
 
   // ─── Logo rasmlarini tanlash ──────────────────────────────────────────────
   const currentLogoText = isDarkMode ? LogoTextdark : LogoText;

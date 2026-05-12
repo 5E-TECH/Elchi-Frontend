@@ -143,8 +143,8 @@ export interface CreateMarketResponse {
 // ==================== CREATE COURIER ====================
 
 export interface CreateCourierRequest {
-    region_id: string;     // Viloyat ID (backenddan olinadi)
-    branch_id: string;
+    region_id?: string;    // Viloyat ID (ba'zi rollarda backend o'zi aniqlaydi)
+    branch_id?: string;
     name: string;          // Kuryer ismi
     phone_number: string;  // Telefon (+998...)
     password: string;      // Parol
