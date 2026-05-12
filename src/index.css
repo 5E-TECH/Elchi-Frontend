@@ -522,6 +522,71 @@
   background: var(--color-primarydark) !important;
 }
 
+.region-range-picker.ant-picker {
+  color: var(--color-maindark);
+}
+
+.region-range-picker.ant-picker,
+.region-range-picker.ant-picker:hover,
+.region-range-picker.ant-picker-focused {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.region-range-picker .ant-picker-input > input {
+  color: var(--color-maindark) !important;
+  font-weight: 600;
+}
+
+.region-range-picker .ant-picker-input > input::placeholder,
+.region-range-picker .ant-picker-separator,
+.region-range-picker .ant-picker-suffix,
+.region-range-picker .ant-picker-clear {
+  color: var(--color-text-muted) !important;
+}
+
+.dark .region-range-picker.ant-picker {
+  color: var(--color-primary);
+}
+
+.dark .region-range-picker .ant-picker-input > input {
+  color: var(--color-primary) !important;
+  background: transparent !important;
+}
+
+.dark .region-range-picker .ant-picker-input > input::placeholder,
+.dark .region-range-picker .ant-picker-separator,
+.dark .region-range-picker .ant-picker-suffix,
+.dark .region-range-picker .ant-picker-clear {
+  color: var(--color-text-muted-dark) !important;
+}
+
+.dark .region-range-picker-popup .ant-picker-panel-container {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--color-primarydark);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.35);
+}
+
+.dark .region-range-picker-popup .ant-picker-header,
+.dark .region-range-picker-popup .ant-picker-panel,
+.dark .region-range-picker-popup .ant-picker-content th,
+.dark .region-range-picker-popup .ant-picker-cell,
+.dark .region-range-picker-popup .ant-picker-header button {
+  color: rgba(255, 255, 255, 0.78);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .region-range-picker-popup .ant-picker-cell-in-view {
+  color: var(--color-primary);
+}
+
+.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
+.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
+.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
+  background: rgba(87, 106, 219, 0.28);
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;

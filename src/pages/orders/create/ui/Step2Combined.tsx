@@ -84,7 +84,8 @@ const SectionHeader = ({
 );
 
 const Step2Combined = () => {
-  const { t } = useTranslation(["orders", "common"]);
+  const { t, i18n } = useTranslation(["orders", "common"]);
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const { control: searchControl, watch: watchSearch } = useForm({
     defaultValues: { productSearch: "" },
   });
@@ -454,7 +455,7 @@ const Step2Combined = () => {
                           {product.name}
                         </p>
                         <p className="text-xs text-main font-mono">
-                          {product.price?.toLocaleString()} so'm
+                          {product.price?.toLocaleString(locale)} {t("currency")}
                         </p>
                       </div>
                       <div
@@ -494,7 +495,7 @@ const Step2Combined = () => {
                           {product?.name ?? `#${item.product_id}`}
                         </p>
                         <p className="text-xs text-main font-mono">
-                          {product?.price?.toLocaleString()} so'm
+                          {product?.price?.toLocaleString(locale)} {t("currency")}
                         </p>
                       </div>
                       <div className="flex items-center justify-end gap-1 sm:ml-auto">

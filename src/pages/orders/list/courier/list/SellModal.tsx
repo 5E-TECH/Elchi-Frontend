@@ -55,7 +55,8 @@ const formatAmountInput = (value: string) => {
 const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
 
 const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: SellModalProps) => {
-  const { t } = useTranslation(["orders", "common"]);
+  const { t, i18n } = useTranslation(["orders", "common"]);
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const [isPartial, setIsPartial] = useState(false);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [totalPrice, setTotalPrice] = useState("");
@@ -160,7 +161,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
             <div className="text-right">
               <p className="text-white/70 text-xs">{t("sumLabel")}</p>
               <p className="text-white font-bold text-base">
-                {Number(order.total_price).toLocaleString("uz-UZ")} so'm
+                {Number(order.total_price).toLocaleString(locale)} {t("currency")}
               </p>
             </div>
           </div>

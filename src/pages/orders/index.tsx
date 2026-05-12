@@ -3,6 +3,7 @@ import { BookMarked, ListOrdered, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { message } from "antd";
 import Button from "../../shared/components/button";
 import HeaderName from "../../shared/components/headerName";
 import { useOrders } from "../../entities/order/api/orderApi";
@@ -17,8 +18,12 @@ import { usePagination } from "../../shared/lib/usePagination";
 import Pagination from "../../shared/components/pagination";
 import PopupSelect from "../../shared/components/popupSelect";
 import type { MarketOption } from "./create/model/orderCreateForm";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
+import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
 
 const LIMIT = 10;
+const EXPORT_PAGE_SIZE = 100;
 const isOrderStatus = (value: string): value is OrderStatus =>
   [
     "created",
@@ -64,6 +69,37 @@ const toPositiveNumber = (value: unknown): number | null => {
   return Math.floor(parsed);
 };
 
+const extractOrderItems = (payload: unknown): OrderListItem[] => {
+  const response = payload as any;
+
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.items)) return response.data.items;
+  if (Array.isArray(response?.items)) return response.items;
+
+  return [];
+};
+
+const extractOrderTotal = (payload: unknown): number | null => {
+  const response = payload as
+    | {
+      total?: unknown;
+      meta?: { total?: unknown };
+      pagination?: { total?: unknown };
+      data?: { total?: unknown; meta?: { total?: unknown }; pagination?: { total?: unknown } };
+    }
+    | undefined;
+
+  return toPositiveNumber(
+    response?.total ??
+    response?.meta?.total ??
+    response?.pagination?.total ??
+    response?.data?.total ??
+    response?.data?.meta?.total ??
+    response?.data?.pagination?.total,
+  );
+};
+
 
 // ── Main component ─────────────────────────────────────────────────────────
 const Orders = () => {
@@ -73,6 +109,7 @@ const Orders = () => {
   const { getMarkets } = useMarkets();
   const { getAllParams } = useQueryParams();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const role = useSelector((state: RootState) => state.role.role);
 
@@ -257,6 +294,86 @@ const Orders = () => {
     });
   };
 
+  const handleExportOrders = async () => {
+    if (isExporting) return;
+
+    setIsExporting(true);
+
+    try {
+      const { page: _page, limit: _limit, ...filters } = apiParams;
+      const exportedOrders: OrderListItem[] = [];
+      let exportPage = 1;
+      let expectedTotal = total;
+
+      while (true) {
+        const response = await api.get(API_ENDPOINTS.ORDERS.BASE, {
+          params: {
+            ...filters,
+            page: exportPage,
+            limit: EXPORT_PAGE_SIZE,
+          },
+        });
+        const pageItems = extractOrderItems(response.data);
+        const responseTotal = extractOrderTotal(response.data);
+
+        if (responseTotal !== null) {
+          expectedTotal = responseTotal;
+        }
+
+        exportedOrders.push(...pageItems);
+
+        if (
+          pageItems.length < EXPORT_PAGE_SIZE ||
+          exportedOrders.length >= expectedTotal ||
+          exportPage >= 100
+        ) {
+          break;
+        }
+
+        exportPage += 1;
+      }
+
+      if (exportedOrders.length === 0) {
+        message.warning(t("exportEmpty"));
+        return;
+      }
+
+      exportOrdersToExcel(exportedOrders, {
+        fileName: t("excel.fileName"),
+        headers: [
+          t("excel.headers.number"),
+          t("excel.headers.region"),
+          t("excel.headers.district"),
+          t("excel.headers.company"),
+          t("excel.headers.product"),
+          t("excel.headers.phone"),
+          t("excel.headers.price"),
+          t("excel.headers.courier"),
+          t("excel.headers.status"),
+          t("excel.headers.date"),
+        ],
+        statuses: {
+          created: t("statusCreated"),
+          new: t("statusNew"),
+          received: t("statusReceived"),
+          "on the road": t("statusOnTheRoad"),
+          waiting: t("statusWaiting"),
+          sold: t("statusSold"),
+          cancelled: t("statusCancelled"),
+          paid: t("statusPaid"),
+          partly_paid: t("statusPartlyPaid"),
+          closed: t("statusClosed"),
+        },
+      });
+      message.success(t("exportSuccess", { count: exportedOrders.length }));
+    } catch (error) {
+      console.error("Orders export failed:", error);
+      message.error(t("exportError"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="flex min-h-full flex-col gap-4 rounded-2xl p-3 sm:gap-5 sm:p-4 lg:p-6">
 
@@ -282,7 +399,8 @@ const Orders = () => {
 
         {/* Filters */}
         <OrderFilters
-          onExport={() => console.log("Export Excel:", apiParams)}
+          onExport={handleExportOrders}
+          isExporting={isExporting}
         />
 
         {/* Divider */}

@@ -55,6 +55,7 @@
   "download": "Download",
   "print": "Print",
   "export": "Export",
+  "exporting": "Exporting...",
   "active": "Active",
   "inactive": "Inactive",
   "blocked": "Blocked",

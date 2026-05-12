@@ -169,14 +169,15 @@ const PopupSelect = <T extends Record<string, any>>({
         <div className="flex justify-end gap-3 pt-4 border-t border-[color:var(--color-border-soft)] dark:border-white/10">
           <Button
             label={cancelLabel}
-            className="border border-[color:var(--color-border-soft)] bg-white/80 text-maindark hover:bg-[var(--color-main-soft)] dark:border-white/10 dark:bg-white/5 dark:text-primary dark:hover:bg-white/10"
+            className="!border !border-[color:var(--color-border-soft)] !bg-white !text-maindark !shadow-sm hover:!bg-[var(--color-main-soft)] dark:!border-white/10 dark:!bg-white/8 dark:!text-primary dark:hover:!bg-white/14"
             onClick={onClose}
           />
           <Button
             label={selectLabel}
+            disabled={!selectedItem}
             className={`px-8 ${!selectedItem
-              ? "opacity-50 cursor-not-allowed"
-              : "bg-main hover:bg-main"
+              ? "!cursor-not-allowed !border !border-[color:var(--color-border-soft)] !bg-slate-200 !text-slate-500 !shadow-none opacity-100 dark:!border-white/10 dark:!bg-white/10 dark:!text-white/45"
+              : "!bg-main !text-white hover:!bg-primarydark"
               }`}
             onClick={handleSelect}
           />

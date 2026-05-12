@@ -24,6 +24,8 @@
   "productNotFound": "Product not found",
   "selectProductHint": "Select products from the left side",
   "selectProductShort": "Select product",
+  "selectedProducts": "Selected products",
+  "productIdFallback": "Product #{{id}}",
   "quantity": "Quantity",
   "unitPrice": "Unit price",
   "totalPrice": "Total amount",
@@ -102,6 +104,8 @@
   "totalOrdersSummary": "Total {{count}} orders",
   "ordersNotFound": "Orders not found",
   "ordersEmptyHint": "Try changing filters or add a new order",
+  "ordersEmptyCreateHintLine1": "To create the first order",
+  "ordersEmptyCreateHintLine2": "click the \"New orders\" button.",
   "paginationSummary": "{{from}}–{{to}} / {{total}} orders",
   "sendSelectedToPost": "Send {{count}} orders to post",
   "rollbackConfirmMessage": "Do you want to return this order to waiting status?",
@@ -169,5 +173,23 @@
   "branch": "Branch",
   "filterBranch": "Branch",
   "filterBranchPlaceholder": "Select branch",
-  "chipBranch": "Branch"
+  "chipBranch": "Branch",
+  "exportEmpty": "No orders found for export",
+  "exportSuccess": "{{count}} orders saved to Excel",
+  "exportError": "An error occurred while saving orders to Excel",
+  "excel": {
+    "fileName": "all_orders",
+    "headers": {
+      "number": "No.",
+      "region": "Region",
+      "district": "District",
+      "company": "Company",
+      "product": "Product",
+      "phone": "Phone number",
+      "price": "Price",
+      "courier": "Courier",
+      "status": "Status",
+      "date": "Date"
+    }
+  }
 }

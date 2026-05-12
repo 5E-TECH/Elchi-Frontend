@@ -339,8 +339,8 @@ const RegionPage = () => {
 
             <div className="flex flex-wrap items-center gap-3">
               {canViewStats && (
-                <div className="flex items-center gap-1 bg-primary rounded-xl p-1 shadow-sm border border-primarydark/20">
-                  <Calendar className="w-4 h-4 text-main/55 ml-2 dark:text-primary/65" />
+                <div className="flex items-center gap-1 rounded-xl border border-primarydark/20 bg-primary p-1 shadow-sm dark:border-white/10 dark:bg-primarydark/55">
+                  <Calendar className="ml-2 h-4 w-4 text-main/55 dark:text-primary/70" />
                   {[
                     { value: "today" as const, label: "Bugun" },
                     { value: "week" as const, label: "Hafta" },
@@ -354,16 +354,16 @@ const RegionPage = () => {
                         setDateRange(option.value);
                         setCustomRange(null);
                       }}
-                      className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
+                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-all ${
                         dateRange === option.value
                           ? "bg-main text-primary"
-                          : "text-maindark dark:text-primary hover:bg-sidebar"
+                          : "text-maindark/70 hover:bg-sidebar dark:text-primary/75 dark:hover:bg-white/10"
                       }`}
                     >
                       {option.label}
                     </button>
                   ))}
-                  <div className="mx-1 h-6 w-px bg-primarydark/30" />
+                  <div className="mx-1 h-6 w-px bg-primarydark/30 dark:bg-white/15" />
                   <RangePicker
                     value={
                       dateRange === "custom" && customRange
@@ -383,7 +383,8 @@ const RegionPage = () => {
                       setCustomRange(null);
                       setDateRange("all");
                     }}
-                    className="border-0! bg-transparent! shadow-none!"
+                    className="region-range-picker border-0! bg-transparent! shadow-none!"
+                    popupClassName="region-range-picker-popup"
                     style={{ width: 220 }}
                   />
                 </div>
@@ -396,7 +397,7 @@ const RegionPage = () => {
                       <button
                         type="button"
                         onClick={() => navigate("sato-management")}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-main bg-sidebar rounded-xl hover:opacity-85 transition-colors"
+                        className="flex items-center gap-2 rounded-xl border border-primarydark/10 bg-sidebar px-4 py-2 text-sm font-semibold text-main transition-colors hover:bg-main/10 dark:border-white/10 dark:bg-primarydark/45 dark:text-primary dark:hover:bg-white/10"
                       >
                         <Settings size={16} />
                         Tumanlarni o'tkazish
@@ -407,7 +408,7 @@ const RegionPage = () => {
                     <button
                       type="button"
                       onClick={() => navigate("districts")}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-main bg-sidebar rounded-xl hover:opacity-85 transition-colors"
+                      className="flex items-center gap-2 rounded-xl border border-primarydark/10 bg-sidebar px-4 py-2 text-sm font-semibold text-main transition-colors hover:bg-main/10 dark:border-white/10 dark:bg-primarydark/45 dark:text-primary dark:hover:bg-white/10"
                     >
                       <MapPin size={16} />
                       Tumanlar
@@ -416,7 +417,7 @@ const RegionPage = () => {
                   <button
                     type="button"
                     onClick={() => navigate("logist-assignment")}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-main bg-sidebar rounded-xl hover:opacity-85 transition-colors"
+                    className="flex items-center gap-2 rounded-xl border border-primarydark/10 bg-sidebar px-4 py-2 text-sm font-semibold text-main transition-colors hover:bg-main/10 dark:border-white/10 dark:bg-primarydark/45 dark:text-primary dark:hover:bg-white/10"
                   >
                     <HeadphonesIcon size={16} />
                     Logist biriktirish
@@ -428,7 +429,7 @@ const RegionPage = () => {
         </div>
 
         {isCourier ? (
-          <div className="rounded-2xl border border-primarydark/20 bg-primary p-5">
+          <div className="rounded-2xl border border-primarydark/20 bg-primary p-5 dark:border-white/10 dark:bg-primarydark/45">
             <p className="text-sm text-main/70 dark:text-primary/70 mb-2">Siz biriktirilgan hudud</p>
             <h3 className="text-2xl font-bold text-main dark:text-primary">{userRegionName || "—"}</h3>
           </div>
