@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
+import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -89,7 +90,7 @@ const isPaymentsManager = (state: RootState) => {
 
 const hasSelfCashboxAccess = (state: RootState) => {
   const role = state.role.role;
-  return role === "courier" || role === "market";
+  return role === "courier" || role === "market" || role === "manager";
 };
 
 const canViewBranchDashboard = (state: RootState) => {
@@ -99,7 +100,12 @@ const canViewBranchDashboard = (state: RootState) => {
 
 const canViewDispatch = (state: RootState) => {
   const role = state.role.role;
-  return role === "manager" || role === "registrator" || role === "branch";
+  if (role === "manager") {
+    const branchType = getUserBranchType(state.user.user);
+    return branchType !== "PICKUP";
+  }
+
+  return role === "registrator" || role === "branch";
 };
 
 const canViewBatches = (state: RootState) => {
@@ -110,6 +116,14 @@ const canViewBatches = (state: RootState) => {
 const canViewReturns = (state: RootState) => {
   const role = state.role.role;
   return role === "manager" || role === "operator" || role === "admin" || role === "superadmin";
+};
+
+const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
+  const role = state.role.role;
+  if (role !== "manager") return true;
+
+  const branchType = getUserBranchType(state.user.user);
+  return branchType !== "REGIONAL";
 };
 
 const DashboardEntry = () => {
@@ -229,7 +243,8 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute
                       canActivate={(state) =>
-                        state.role.role !== "market" || Boolean(state.user.user?.add_order)
+                        (state.role.role !== "market" || Boolean(state.user.user?.add_order)) &&
+                        canCreateOrdersByRoleAndBranchType(state)
                       }
                     >
                       <OrderCreate />
@@ -256,7 +271,11 @@ const AppRouter = () => {
             },
             {
               path: "new-orders",
-              element: <NewOrders />,
+              element: (
+                <ProtectedRoute canActivate={canCreateOrdersByRoleAndBranchType}>
+                  <NewOrders />
+                </ProtectedRoute>
+              ),
               children: [
                 { index: true, element: <NewOrdersMarkets /> },
                 { path: "external", element: <Navigate replace to="/new-orders/integrations" /> },

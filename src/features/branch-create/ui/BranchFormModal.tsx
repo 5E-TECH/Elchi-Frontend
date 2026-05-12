@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Form, Input, message } from "antd";
+import { Form, Input } from "antd";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useEffect, useMemo } from "react";
 import { Building2 } from "lucide-react";
@@ -16,8 +16,8 @@ import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import PhoneInput from "../../../shared/ui/PhoneInput";
 import { GlobalSearchInput } from "../../search";
 import { applyBranchBackendErrors } from "../../branch/lib/backendBranchErrors";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import {
-  getBranchTypeOptions,
   getParentBranchOptions,
   useParentBranchOptions,
 } from "../../branch/lib/branchFormOptions";
@@ -40,6 +40,7 @@ const useRegionOptions = () =>
 
 const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { t } = useTranslation("branches");
+  const { api: apiNotification } = useAppNotification();
   const createBranch = useCreateBranch();
   const { data: regions = [] } = useRegionOptions();
   const { data: parentBranches, isLoading: parentBranchesLoading } = useParentBranchOptions(open);
@@ -55,13 +56,12 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     defaultValues: {
       name: "",
       parent_id: "",
-      type: "CITY",
+      type: "REGIONAL",
       code: "",
       phone_number: "+998",
       region_id: "",
       district_id: "",
       address: "",
-      status: "active",
     },
   });
 
@@ -79,13 +79,13 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     () => districts.map((district) => ({ value: String(district.id), label: district.name })),
     [districts],
   );
-  const branchTypeOptions = useMemo(() => getBranchTypeOptions(t), [t]);
-  const statusOptions = useMemo(
+  const branchTypeOptions = useMemo(
     () => [
-      { value: "active", label: t("status.active") },
-      { value: "inactive", label: t("status.inactive") },
+      { value: "PICKUP", label: "Pickup" },
+      { value: "REGIONAL", label: "Regional" },
+      { value: "HYBRID", label: "Hybrid" },
     ],
-    [t],
+    [],
   );
   const parentOptions = useMemo(
     () => getParentBranchOptions(parentBranches?.data, t),
@@ -98,21 +98,41 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     }
   }, [open, reset]);
 
-  const onSubmit = handleSubmit(async (values) => {
-    try {
-      const payload: Omit<CreateBranchDto, "manager_id"> = {
-        ...values,
-        code: values.code.trim(),
-        parent_id: values.type === "HQ" ? "" : values.parent_id,
-      };
-      await createBranch.mutateAsync(payload);
-      message.success(t("messages.created"));
-      onClose();
-      reset();
-    } catch (error) {
-      applyBranchBackendErrors(error, setError);
-    }
-  });
+  const onSubmit = handleSubmit(
+    async (values) => {
+      try {
+        const normalizedType = String(values.type).toUpperCase() as CreateBranchDto["type"];
+        const payload: Omit<CreateBranchDto, "manager_id"> = {
+          ...values,
+          type: normalizedType,
+          code: values.code.trim(),
+        };
+        await createBranch.mutateAsync(payload);
+        apiNotification.success({
+          message: t("messages.created"),
+          placement: "topRight",
+        });
+        onClose();
+        reset();
+      } catch (error) {
+        applyBranchBackendErrors(error, setError);
+        const backendMessage =
+          (error as { response?: { data?: { message?: string | string[] } } })?.response?.data
+            ?.message ?? "Xatolik yuz berdi";
+        apiNotification.error({
+          message: Array.isArray(backendMessage) ? backendMessage.join(", ") : backendMessage,
+          placement: "topRight",
+        });
+      }
+    },
+    (invalidErrors) => {
+      const firstError = Object.values(invalidErrors)[0];
+      apiNotification.error({
+        message: firstError?.message || "Formani to'liq to'ldiring",
+        placement: "topRight",
+      });
+    },
+  );
 
   return (
     <FormPopup
@@ -159,12 +179,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 label={t("fields.type")}
                 name={field.name}
                 value={field.value}
-                onChange={(value) => {
-                  field.onChange(value);
-                  if (value === "HQ") {
-                    setValue("parent_id", "");
-                  }
-                }}
+                onChange={field.onChange}
                 options={branchTypeOptions}
                 placeholder={t("placeholders.type")}
                 icon={Building2}
@@ -183,10 +198,9 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 name={field.name}
                 value={field.value}
                 onChange={field.onChange}
-                disabled={selectedType === "HQ"}
                 options={parentOptions}
                 loading={parentBranchesLoading}
-                placeholder={selectedType === "HQ" ? t("placeholders.parentForHq") : t("placeholders.parent")}
+                placeholder={t("placeholders.parent")}
                 icon={Building2}
                 hideLabel
                 surface="search"
@@ -278,24 +292,6 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
                 {...field}
                 rows={3}
                 placeholder={t("placeholders.address")}
-              />
-            )}
-          />
-        </Form.Item>
-        <Form.Item label={<span className={popupLabelClassName}>{t("fields.status")}</span>} validateStatus={errors.status ? "error" : ""} help={errors.status?.message}>
-          <Controller
-            control={control}
-            name="status"
-            render={({ field }) => (
-              <SearchableSelect
-                label={t("fields.status")}
-                name={field.name}
-                value={field.value}
-                onChange={field.onChange}
-                options={statusOptions}
-                placeholder={t("placeholders.status")}
-                icon={Building2}
-                hideLabel
               />
             )}
           />

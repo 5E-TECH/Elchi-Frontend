@@ -27,10 +27,12 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { useBranches, type Branch } from "../../../../entities/branch";
+import type { RootState } from "../../../../app/config/store";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -167,6 +169,32 @@ const getRegionOptionLabel = (region: RegionOption) => {
 export const CreateUserForm = memo(() => {
   const { t } = useTranslation("users");
   const navigate = useNavigate();
+  const authRole = useSelector((state: RootState) => state.role.role);
+  const authUser = useSelector((state: RootState) => state.user.user) as
+    | {
+        branch_type?: string | null;
+        branch?: {
+          type?: string | null;
+          branch_type?: string | null;
+          branch?: { type?: string | null; branch_type?: string | null } | null;
+        } | null;
+      }
+    | null;
+
+  const currentBranchType =
+    (
+      authUser?.branch?.branch?.type ??
+      authUser?.branch?.branch?.branch_type ??
+      authUser?.branch?.type ??
+      authUser?.branch?.branch_type ??
+      authUser?.branch_type ??
+      ""
+    )
+      .toString()
+      .toUpperCase() || null;
+  const isRegionalManagerCreator =
+    authRole === "manager" && currentBranchType === "REGIONAL";
+
   const [showPassword, setShowPassword] = useState(false);
   const [isCompactRolePicker, setIsCompactRolePicker] = useState(
     typeof window !== "undefined" ? window.innerWidth < 1280 : false,
@@ -196,8 +224,12 @@ export const CreateUserForm = memo(() => {
     { key: "courier", icon: <Truck size={16} /> },
     { key: "marketing", icon: <Store size={16} /> },
   ];
+  const visibleRoleOptions = isRegionalManagerCreator
+    ? rolePickerOptions.filter((option) => option.key === "courier")
+    : rolePickerOptions;
+
   const activeRoleOption =
-    rolePickerOptions.find((option) => option.key === role) ?? rolePickerOptions[0];
+    visibleRoleOptions.find((option) => option.key === role) ?? visibleRoleOptions[0];
 
   const { createAdmin, createManager, createRegistrator, createMarket, createCourier, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
@@ -232,6 +264,12 @@ export const CreateUserForm = memo(() => {
   useEffect(() => {
     reset({ ...INITIAL_FORM, role });
   }, [role, reset]);
+
+  useEffect(() => {
+    if (isRegionalManagerCreator && role !== "courier") {
+      setValue("role", "courier");
+    }
+  }, [isRegionalManagerCreator, role, setValue]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -301,11 +339,11 @@ export const CreateUserForm = memo(() => {
     }
 
     if (role === "courier") {
-      if (!values.branchId) {
+      if (!isRegionalManagerCreator && !values.branchId) {
         setError("branchId", { message: t("branchRequired") });
         valid = false;
       }
-      if (!values.region) {
+      if (!isRegionalManagerCreator && !values.region) {
         setError("region", { message: t("regionRequired") });
         valid = false;
       }
@@ -405,14 +443,18 @@ export const CreateUserForm = memo(() => {
 
     if (role === "courier") {
       const payload: CreateCourierRequest = {
-        region_id: values.region,
-        branch_id: values.branchId,
         name: values.fullName,
         phone_number: rawPhone,
         password: values.password,
         tariff_home: parseAmount(values.homeRate),
         tariff_center: parseAmount(values.centerRate),
       };
+      if (!isRegionalManagerCreator) {
+        payload.region_id = values.region;
+      }
+      if (!isRegionalManagerCreator) {
+        payload.branch_id = values.branchId;
+      }
 
       await apiRequest({
         request: () => createCourier.mutateAsync(payload),
@@ -569,76 +611,82 @@ export const CreateUserForm = memo(() => {
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-visible px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:items-start lg:gap-6 lg:overflow-hidden lg:px-6 lg:py-6">
-        <div className="w-full shrink-0 lg:w-72">
-          <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-primarydark/20 dark:bg-maindark sm:p-4">
-            <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
-              {t("roleSelect")}
-            </h3>
-            {isCompactRolePicker ? (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setIsCompactRolePickerOpen((prev) => !prev)}
-                  className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-main bg-main px-3 py-2.5 text-primary shadow-sm shadow-main/20 dark:text-white"
-                >
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary dark:bg-white/15 dark:text-white">
-                      {activeRoleOption.icon}
-                    </span>
-                    <span className="truncate text-left text-sm font-semibold">
-                      {getRoleLabel(activeRoleOption.key)}
-                    </span>
-                  </div>
-                  <ChevronDown
-                    size={16}
-                    className={`shrink-0 transition-transform duration-200 ${
-                      isCompactRolePickerOpen ? "rotate-180" : ""
-                    }`}
+        {!isRegionalManagerCreator && (
+          <div className="w-full shrink-0 lg:w-72">
+            <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-primarydark/20 dark:bg-maindark sm:p-4">
+              <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
+                {t("roleSelect")}
+              </h3>
+              {isCompactRolePicker ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCompactRolePickerOpen((prev) => !prev)}
+                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-main bg-main px-3 py-2.5 text-primary shadow-sm shadow-main/20 dark:text-white"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary dark:bg-white/15 dark:text-white">
+                        {activeRoleOption.icon}
+                      </span>
+                      <span className="truncate text-left text-sm font-semibold">
+                        {getRoleLabel(activeRoleOption.key)}
+                      </span>
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`shrink-0 transition-transform duration-200 ${
+                        isCompactRolePickerOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {isCompactRolePickerOpen && (
+                    <div className="mt-3 flex flex-col gap-2">
+                      {rolePickerOptions
+                        .filter((option) =>
+                          isRegionalManagerCreator ? option.key === "courier" : true,
+                        )
+                        .filter((option) => option.key !== role)
+                        .map((option) => (
+                          <button
+                            key={option.key}
+                            type="button"
+                            onClick={() => {
+                              setValue("role", option.key);
+                              setIsCompactRolePickerOpen(false);
+                            }}
+                            className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700 transition-colors hover:border-main/30 hover:bg-main/5 dark:border-white/10 dark:bg-primarydark dark:text-white/80"
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-main/10 text-main dark:bg-white/15 dark:text-white">
+                              {option.icon}
+                            </span>
+                            <span className="text-left text-sm font-semibold">
+                              {getRoleLabel(option.key)}
+                            </span>
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar lg:max-h-none lg:overflow-visible lg:pr-0">
+                  <RoleSelector
+                    selectedRole={role}
+                    onSelect={(nextRole) => setValue("role", nextRole)}
+                    allowedRoles={isRegionalManagerCreator ? ["courier"] : undefined}
                   />
-                </button>
+                </div>
+              )}
+            </div>
 
-                {isCompactRolePickerOpen && (
-                  <div className="mt-3 flex flex-col gap-2">
-                    {rolePickerOptions
-                      .filter((option) => option.key !== role)
-                      .map((option) => (
-                        <button
-                          key={option.key}
-                          type="button"
-                          onClick={() => {
-                            setValue("role", option.key);
-                            setIsCompactRolePickerOpen(false);
-                          }}
-                          className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700 transition-colors hover:border-main/30 hover:bg-main/5 dark:border-white/10 dark:bg-primarydark dark:text-white/80"
-                        >
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-main/10 text-main dark:bg-white/15 dark:text-white">
-                            {option.icon}
-                          </span>
-                          <span className="text-left text-sm font-semibold">
-                            {getRoleLabel(option.key)}
-                          </span>
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar lg:max-h-none lg:overflow-visible lg:pr-0">
-                <RoleSelector
-                  selectedRole={role}
-                  onSelect={(nextRole) => setValue("role", nextRole)}
-                />
-              </div>
-            )}
+            <div className="mt-4 rounded-2xl bg-linear-to-br from-main to-indigo-600 p-4 text-white shadow-lg shadow-main/20 sm:p-5">
+              <h3 className="text-base font-bold mb-2">{getRoleLabel(role)}</h3>
+              <p className="text-white/80 text-xs leading-relaxed">
+                {t("roleMarketCardHint")}
+              </p>
+            </div>
           </div>
-
-          <div className="mt-4 rounded-2xl bg-linear-to-br from-main to-indigo-600 p-4 text-white shadow-lg shadow-main/20 sm:p-5">
-            <h3 className="text-base font-bold mb-2">{getRoleLabel(role)}</h3>
-            <p className="text-white/80 text-xs leading-relaxed">
-              {t("roleMarketCardHint")}
-            </p>
-          </div>
-        </div>
+        )}
 
         <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 dark:border-primarydark/20 dark:bg-maindark dark:shadow-black/20">
           <div className="flex shrink-0 items-center gap-3 border-b border-slate-100 bg-slate-50/50 px-3 py-3 dark:border-white/5 dark:bg-main sm:gap-4 sm:px-4 md:px-6">
@@ -726,48 +774,52 @@ export const CreateUserForm = memo(() => {
 
                 {role === "courier" && (
                   <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 xl:grid-cols-3 md:gap-6">
-                    <Controller
-                      control={control}
-                      name="branchId"
-                      render={({ field, fieldState }) => (
-                        <div className="relative">
-                          <SearchableSelect
-                            label={t("branchLabel")}
-                            name={field.name}
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={branchOptions}
-                            placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
-                            loading={isBranchesLoading}
-                            icon={Building}
-                            surface="search"
-                          />
-                          <FieldError message={fieldState.error?.message} />
-                        </div>
-                      )}
-                    />
-                    <Controller
-                      control={control}
-                      name="region"
-                      render={({ field, fieldState }) => (
-                        <div className="relative">
-                          <SearchableSelect
-                            label={t("regionLabel")}
-                            name={field.name}
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={regionList.map((region) => ({
-                              value: String(region.id),
-                              label: getRegionOptionLabel(region),
-                            }))}
-                            placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
-                            icon={Building}
-                            surface="search"
-                          />
-                          <FieldError message={fieldState.error?.message} />
-                        </div>
-                      )}
-                    />
+                    {!isRegionalManagerCreator && (
+                      <Controller
+                        control={control}
+                        name="branchId"
+                        render={({ field, fieldState }) => (
+                          <div className="relative">
+                            <SearchableSelect
+                              label={t("branchLabel")}
+                              name={field.name}
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={branchOptions}
+                              placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
+                              loading={isBranchesLoading}
+                              icon={Building}
+                              surface="search"
+                            />
+                            <FieldError message={fieldState.error?.message} />
+                          </div>
+                        )}
+                      />
+                    )}
+                    {!isRegionalManagerCreator && (
+                      <Controller
+                        control={control}
+                        name="region"
+                        render={({ field, fieldState }) => (
+                          <div className="relative">
+                            <SearchableSelect
+                              label={t("regionLabel")}
+                              name={field.name}
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={regionList.map((region) => ({
+                                value: String(region.id),
+                                label: getRegionOptionLabel(region),
+                              }))}
+                              placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
+                              icon={Building}
+                              surface="search"
+                            />
+                            <FieldError message={fieldState.error?.message} />
+                          </div>
+                        )}
+                      />
+                    )}
                     {renderInput({
                       label: t("homeTariffWithCurrency"),
                       name: "homeRate",
