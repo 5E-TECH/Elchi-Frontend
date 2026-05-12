@@ -30,6 +30,7 @@ import {
   FormFieldError,
   getFieldClassName,
 } from "./formFieldStyles";
+import { keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
 
 const inputCls = `
   w-full min-h-12 px-3 py-2.5 rounded-xl text-sm
@@ -239,11 +240,17 @@ const Step2Combined = () => {
                     +998
                   </span>
                   <input
-                    type="text"
+                    type="tel"
                     inputMode="numeric"
+                    autoComplete="off"
                     placeholder="XX XXX XX XX"
                     value={formatPhone(field.value)}
-                    onChange={(event) => field.onChange(stripPhone(event.target.value))}
+                    onChange={(event) => {
+                      const nextValue = stripPhone(event.target.value);
+                      const nextDisplayValue = formatPhone(nextValue);
+                      field.onChange(nextValue);
+                      keepPhoneCaretAfterChange(event.target, nextDisplayValue);
+                    }}
                     className={getFieldClassName(
                       `${inputCls} pl-14 font-mono tracking-wider`,
                       !!errors.customer?.phone?.message,
@@ -268,11 +275,17 @@ const Step2Combined = () => {
                     +998
                   </span>
                   <input
-                    type="text"
+                    type="tel"
                     inputMode="numeric"
+                    autoComplete="off"
                     placeholder="XX XXX XX XX"
                     value={formatPhone(field.value)}
-                    onChange={(event) => field.onChange(stripPhone(event.target.value))}
+                    onChange={(event) => {
+                      const nextValue = stripPhone(event.target.value);
+                      const nextDisplayValue = formatPhone(nextValue);
+                      field.onChange(nextValue);
+                      keepPhoneCaretAfterChange(event.target, nextDisplayValue);
+                    }}
                     className={getFieldClassName(
                       `${inputCls} pl-14 font-mono tracking-wider`,
                       !!errors.customer?.extra_phone?.message,

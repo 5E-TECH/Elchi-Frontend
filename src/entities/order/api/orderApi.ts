@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
+import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
 import type {
     CreateOrderRequest,
     ExternalOrdersParams,
@@ -20,8 +21,20 @@ export const useOrders = () => {
     const client = useQueryClient();
 
     const createOrder = useMutation({
-        mutationFn: (data: CreateOrderRequest) =>
-            api.post(API_ENDPOINTS.ORDERS.BASE, data).then((res) => res.data),
+        mutationFn: async (data: CreateOrderRequest) => {
+            if (data.market_id) {
+                const marketResponse = await api
+                    .get(API_ENDPOINTS.MARKETS.BY_ID(data.market_id))
+                    .then((res) => res.data);
+                const market = unwrapMarketPayload(marketResponse);
+
+                if (isInactiveMarketStatus(market?.status)) {
+                    throw new Error("Faol emas market uchun yangi buyurtma yaratib bo'lmaydi.");
+                }
+            }
+
+            return api.post(API_ENDPOINTS.ORDERS.BASE, data).then((res) => res.data);
+        },
         onSuccess: () =>
             client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
     });

@@ -26,6 +26,7 @@
   "updateSuccess": "Product updated successfully",
   "deleteSuccess": "Product deleted successfully",
   "createError": "An error occurred while creating the product",
+  "inactiveMarketCreateBlocked": "This market is inactive. New products cannot be created for inactive markets.",
   "updateError": "An error occurred while updating the product",
   "deleteError": "An error occurred while deleting the product",
   "empty": "No products available",

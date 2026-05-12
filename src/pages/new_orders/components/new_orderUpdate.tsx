@@ -29,6 +29,11 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
+import {
+  formatUzbekistanPhoneFull,
+  keepPhoneCaretAfterChange,
+  toUzbekistanPhoneValue,
+} from "../../../shared/lib/phone";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -230,13 +235,14 @@ const SelectField = memo(({
 ));
 
 const InputField = memo(({
-  label, icon: Icon, value, onChange, placeholder,
+  label, icon: Icon, value, onChange, placeholder, isPhone = false,
 }: {
   label: string;
   icon: LucideIcon;
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  isPhone?: boolean;
 }) => (
   <div className="space-y-1.5">
     <label className="text-sm text-gray-500 dark:text-white ml-1">{label}</label>
@@ -245,9 +251,21 @@ const InputField = memo(({
         <Icon size={16} />
       </div>
       <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        type={isPhone ? "tel" : "text"}
+        inputMode={isPhone ? "numeric" : undefined}
+        autoComplete={isPhone ? "off" : undefined}
+        value={isPhone ? formatUzbekistanPhoneFull(value) : value}
+        onChange={(event) => {
+          if (!isPhone) {
+            onChange(event.target.value);
+            return;
+          }
+
+          const nextValue = toUzbekistanPhoneValue(event.target.value);
+          const nextDisplayValue = formatUzbekistanPhoneFull(nextValue);
+          onChange(nextValue);
+          keepPhoneCaretAfterChange(event.target, nextDisplayValue, true);
+        }}
         placeholder={placeholder}
         className={`${FIELD_CLS} pl-10 pr-4 placeholder:text-gray-400 dark:placeholder:text-white/80`}
       />
@@ -702,6 +720,7 @@ const NewOrderUpdate = () => {
           value={customerForm.phone}
           onChange={handleCustomerPhoneChange}
           placeholder={t("phonePlaceholder")}
+          isPhone
         />
       </UpdatePopup>
 

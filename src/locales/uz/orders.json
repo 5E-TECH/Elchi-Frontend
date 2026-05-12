@@ -133,6 +133,7 @@
   "orderCreatedForMarket": "Buyurtma yaratildi. Shu market uchun yangi buyurtma kiritishingiz mumkin.",
   "orderCreateErrorTitle": "Buyurtma yaratilmadi",
   "orderCreateErrorFallback": "Ma'lumotlarni tekshirib qayta urinib ko'ring",
+  "inactiveMarketOrderBlocked": "Bu market faol emas. Faol emas market uchun yangi buyurtma yaratib bo'lmaydi.",
   "createPageDescription": "Buyurtma yaratish uchun qadamlarni bajaring",
   "selectMarketTitle": "Market tanlang",
   "selectedMarket": "Tanlangan market",

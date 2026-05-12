@@ -7,6 +7,7 @@ export interface MarketOption {
   name: string;
   phone_number?: string;
   phone?: string;
+  status?: "active" | "inactive" | "blocked" | string;
 }
 
 export interface OrderCreateFormValues {

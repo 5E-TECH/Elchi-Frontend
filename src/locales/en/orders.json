@@ -133,6 +133,7 @@
   "orderCreatedForMarket": "Order created. You can add another order for this market.",
   "orderCreateErrorTitle": "Order was not created",
   "orderCreateErrorFallback": "Check the details and try again",
+  "inactiveMarketOrderBlocked": "This market is inactive. New orders cannot be created for inactive markets.",
   "createPageDescription": "Complete the steps to create an order",
   "selectMarketTitle": "Select market",
   "selectedMarket": "Selected market",
