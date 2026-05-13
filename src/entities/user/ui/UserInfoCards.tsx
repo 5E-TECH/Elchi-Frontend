@@ -155,23 +155,9 @@ export const UserInfoCards = memo(({ user, onToggleMarketAddOrder, isMarketAddOr
                 )}
 
 
-                {/* ── Courier: Viloyat + Tarif ── */}
+                {/* ── Courier: Tarif ── */}
                 {isCourier && (
                     <>
-                        <Divider title={t("workArea")} />
-
-                        <InfoChip
-                            icon={MapPin}
-                            iconBg="bg-green-50 dark:bg-green-500/10"
-                            iconColor="text-green-500"
-                            label={t("workRegion")}
-                            value={
-                                user.region?.name
-                                    ? <span className="text-green-600 dark:text-green-400 font-bold">{user.region.name}</span>
-                                    : <span className="text-slate-400 italic">-</span>
-                            }
-                        />
-
                         <Divider title={t("tariff")} />
 
                         <InfoChip
