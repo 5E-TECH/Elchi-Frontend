@@ -18,6 +18,27 @@ import { unwrapUserResponse } from "../lib/normalizeUser";
 
 export const user = "user";
 
+const getBackendMessageText = (error: unknown): string => {
+  const data = (error as { response?: { data?: unknown } })?.response?.data;
+  const collect = (value: unknown): string => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (Array.isArray(value)) return value.map(collect).filter(Boolean).join(" ");
+    if (typeof value === "object") {
+      return Object.values(value).map(collect).filter(Boolean).join(" ");
+    }
+    return String(value);
+  };
+
+  return collect(data).toLowerCase();
+};
+
+const shouldRetryCourierWithoutRegion = (error: unknown) => {
+  const message = getBackendMessageText(error);
+
+  return message.includes("region_id") && message.includes("should not exist");
+};
+
 export interface IUserFilter {
   search?: string;
   status?: string;
@@ -82,7 +103,18 @@ export const useUser = () => {
   });
 
   const createCourier = useMutation({
-    mutationFn: (data: CreateCourierRequest) => api.post(API_ENDPOINTS.COURIERS.BASE, data),
+    mutationFn: async (data: CreateCourierRequest) => {
+      try {
+        return await api.post(API_ENDPOINTS.COURIERS.BASE, data);
+      } catch (error) {
+        if (!data.region_id || !shouldRetryCourierWithoutRegion(error)) {
+          throw error;
+        }
+
+        const { region_id: _regionId, ...payloadWithoutRegion } = data;
+        return api.post(API_ENDPOINTS.COURIERS.BASE, payloadWithoutRegion);
+      }
+    },
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });

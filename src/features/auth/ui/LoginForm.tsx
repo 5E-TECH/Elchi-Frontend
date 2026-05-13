@@ -49,7 +49,7 @@ const LoginForm = () => {
     resolver: yupResolver(createLoginSchema(t)) as Resolver<LoginFormValues>,
     mode: "onTouched",
     defaultValues: {
-      phone_number: formatUzbekistanPhoneFull(),
+      phone_number: "",
       password: "",
     },
   });
@@ -113,9 +113,17 @@ const LoginForm = () => {
                     value={field.value}
                     onBlur={field.onBlur}
                     onChange={(event) => {
-                      const nextValue = formatUzbekistanPhoneFull(event.target.value);
+                      const hasPhoneDigits = event.target.value
+                        .replace(/\D/g, "")
+                        .replace(/^998/, "")
+                        .length > 0;
+                      const nextValue = hasPhoneDigits
+                        ? formatUzbekistanPhoneFull(event.target.value)
+                        : "";
                       field.onChange(nextValue);
-                      keepPhoneCaretAfterChange(event.target, nextValue, true);
+                      if (nextValue) {
+                        keepPhoneCaretAfterChange(event.target, nextValue, true);
+                      }
                     }}
                     type="tel"
                     inputMode="numeric"
