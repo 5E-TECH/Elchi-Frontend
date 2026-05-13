@@ -76,8 +76,13 @@
   "receiveRefusedSuccess": "Rad etilgan pochta muvaffaqiyatli qabul qilindi.",
   "receiveRefusedError": "Rad etilgan pochtani qabul qilishda xatolik yuz berdi.",
   "noActiveCourierInRegion": "Bu viloyatda aktiv courier mavjud emas.",
+  "noActiveBranchInRegion": "Bu viloyatda aktiv filial mavjud emas.",
   "sendCourierSuccess": "Pochta {{name}} ga muvaffaqiyatli jo'natildi.",
+  "sendBranchSuccess": "Pochta {{name}} filialiga muvaffaqiyatli jo'natildi.",
   "couriersLoadError": "Courierlarni yuklab bo'lmadi.",
+  "branchesLoadError": "Filiallarni yuklab bo'lmadi.",
+  "selectBranch": "Filialni tanlang",
+  "branchRequired": "Filial tanlanishi shart",
   "regionOrdersTitle": "{{region}} buyurtmalari",
   "ordersCount": "{{count}} ta buyurtma mavjud",
   "oldOrdersCount": "{{count}} ta eski buyurtma mavjud",
@@ -85,6 +90,7 @@
   "selectedOrdersWillBeSent": "{{count}} ta buyurtma jo'natiladi",
   "couriersLoading": "Courierlar yuklanmoqda...",
   "chooseOneCourier": "Quyidagi courierlardan birini tanlang:",
+  "chooseOneBranch": "Quyidagi filiallardan birini tanlang:",
   "sending": "Jo'natilmoqda...",
   "checking": "Tekshirilmoqda...",
   "receiveMail": "Pochta qabul qilish",
@@ -128,5 +134,7 @@
       "label": "Termal printer (80mm)",
       "hint": "Receipt format"
     }
-  }
+  },
+  "sourceBranchNotFound": "Jo'natish uchun manba filial topilmadi.",
+  "multipleSourceBranchesError": "Tanlangan orderlar turli manba filiallarga tegishli. Iltimos, bir xil manba filialdagi orderlarni tanlang."
 }

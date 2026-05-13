@@ -6,10 +6,8 @@ import {
   useMails,
   useMailDetail,
   type PostOrder,
-  fetchCouriersByRegion,
   useReceiveCanceledPost,
   useReceivePost,
-  useSendPost,
 } from "../../../entities/mails";
 import { useBatchDetail, useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
 import { mapBatchOrdersToPostOrders } from "../../batches/lib/batchOrderMailAdapter";
@@ -31,6 +29,8 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import { useOrders } from "../../../entities/orders";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
+import { getBranches, type Branch } from "../../../entities/branch";
 import {
   playMissingOrderFeedback,
   playScanFeedback,
@@ -83,9 +83,10 @@ const MailDetailPage = () => {
   const navigate = useNavigate();
   const postId = id;
   const { role } = useSelector((state: RootState) => state.role);
+  const sourceBranchId = useSelector(getCurrentBranchId);
   const isCourier = role === "courier";
   const isSuperAdmin = role === "superadmin";
-  const isBranchTransferRole = role === "manager" || role === "registrator";
+  const isBranchTransferRole = role === "manager";
   const navState = location.state as {
     fromTab?: string;
     type?: string;
@@ -198,11 +199,11 @@ const MailDetailPage = () => {
   // ─── Modal state (faqat courier bo'lmaganlar uchun) ────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCheckingCouriers, setIsCheckingCouriers] = useState(false);
+  const [branchRecipients, setBranchRecipients] = useState<Branch[]>([]);
 
   // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
   const receivePost = useReceivePost();
   const receiveCanceledPost = useReceiveCanceledPost();
-  const sendPost = useSendPost();
   const { SendToPost } = useOrders();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
@@ -234,7 +235,38 @@ const MailDetailPage = () => {
   );
 
   // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
-  const regionId = useMemo(() => orders[0]?.region_id ?? "", [orders]);
+  const regionId = useMemo(
+    () => orders[0]?.region_id ?? orders[0]?.district?.region_id ?? "",
+    [orders],
+  );
+  const sourceBranchIdFromOrders = useMemo(
+    () =>
+      ((
+        orders[0] as PostOrder & {
+          branch_id?: string;
+          branch?: { id?: string };
+        }
+      )?.branch_id ??
+        ((orders[0] as PostOrder & { branch?: { id?: string } })?.branch?.id ??
+          "")),
+    [orders],
+  );
+  const selectedSourceBranchIds = useMemo(() => {
+    const ids = new Set<string>();
+    orders.forEach((order) => {
+      if (!selectedIds.has(order.id)) return;
+      const branchId =
+        ((order as PostOrder & { branch_id?: string }).branch_id ??
+          (order as PostOrder & { branch?: { id?: string } }).branch?.id ??
+          "") || "";
+      if (branchId) ids.add(branchId);
+    });
+    return Array.from(ids);
+  }, [orders, selectedIds]);
+  const effectiveSourceBranchId =
+    selectedSourceBranchIds.length === 1
+      ? selectedSourceBranchIds[0]
+      : sourceBranchIdFromOrders || sourceBranchId;
 
   const handleMissingScannedOrder = useCallback(() => {
     notifApi.warning({
@@ -348,46 +380,39 @@ const MailDetailPage = () => {
     }
 
     if (selectedIds.size === 0 || !postId || !regionId || isCheckingCouriers) return;
+    if (selectedSourceBranchIds.length > 1) {
+      apiRequest({
+        request: () => Promise.reject(new Error("multiple_source_branches")),
+        errorMessage: t("multipleSourceBranchesError"),
+        successMessage: "",
+      });
+      return;
+    }
 
     setIsCheckingCouriers(true);
 
-    fetchCouriersByRegion(regionId)
+    getBranches({ page: 1, limit: 500, status: "active" })
       .then((response) => {
-        const couriers = response?.data?.items ?? [];
+        const branches = (response?.data ?? []).filter(
+          (branch) => branch.region?.id === regionId && branch.status === "active",
+        );
 
-        if (couriers.length === 0) {
+        if (branches.length === 0) {
           apiRequest({
-            request: () => Promise.reject(new Error("no_courier")),
-            errorMessage: t("noActiveCourierInRegion"),
+            request: () => Promise.reject(new Error("no_branch")),
+            errorMessage: t("noActiveBranchInRegion"),
             successMessage: "",
           });
           return;
         }
 
-        if (couriers.length === 1) {
-          const courier = couriers[0];
-
-          apiRequest({
-            request: () =>
-              sendPost.mutateAsync({
-                postId,
-                payload: { orderIds: Array.from(selectedIds), courierId: courier.id },
-              }),
-            successMessage: t("sendCourierSuccess", { name: courier.name }),
-            errorMessage: t("sendError"),
-            onSuccess: () => {
-              void handleSendSuccess(Array.from(selectedIds));
-            },
-          });
-          return;
-        }
-
+        setBranchRecipients(branches);
         setIsModalOpen(true);
       })
       .catch(() => {
         apiRequest({
-          request: () => Promise.reject(new Error("couriers_fetch_failed")),
-          errorMessage: t("couriersLoadError"),
+          request: () => Promise.reject(new Error("branches_fetch_failed")),
+          errorMessage: t("branchesLoadError"),
           successMessage: "",
         });
       })
@@ -404,8 +429,8 @@ const MailDetailPage = () => {
     refetchTransferBatchDetail,
     regionId,
     isCheckingCouriers,
-    sendPost,
-    handleSendSuccess,
+    selectedSourceBranchIds,
+    t,
   ]);
 
   const selectedOrders = useMemo(
@@ -569,13 +594,14 @@ const MailDetailPage = () => {
         </div>
       )}
 
-      {/* Pochta jo'natish modali — faqat courier bo'lmaganlar uchun */}
+      {/* Pochta jo'natish modali — filial tanlash */}
       {!isCourier && !isRefusedDetail && !isOldDetail && !isBranchTransferRole && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           postId={postId ?? ""}
-          regionId={regionId}
+          sourceBranchId={effectiveSourceBranchId}
+          branches={branchRecipients}
           selectedIds={selectedIds}
           onSuccess={handleSendSuccess}
         />

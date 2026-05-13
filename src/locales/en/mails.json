@@ -76,8 +76,13 @@
   "receiveRefusedSuccess": "Rejected mail received successfully.",
   "receiveRefusedError": "An error occurred while receiving rejected mail.",
   "noActiveCourierInRegion": "There is no active courier in this region.",
+  "noActiveBranchInRegion": "There is no active branch in this region.",
   "sendCourierSuccess": "Mail was successfully sent to courier {{name}}.",
+  "sendBranchSuccess": "Mail was successfully sent to branch {{name}}.",
   "couriersLoadError": "Failed to load couriers.",
+  "branchesLoadError": "Failed to load branches.",
+  "selectBranch": "Select branch",
+  "branchRequired": "Branch must be selected",
   "regionOrdersTitle": "{{region}} orders",
   "ordersCount": "{{count}} orders available",
   "oldOrdersCount": "{{count}} old orders available",
@@ -85,6 +90,7 @@
   "selectedOrdersWillBeSent": "{{count}} orders will be sent",
   "couriersLoading": "Loading couriers...",
   "chooseOneCourier": "Choose one of the couriers below:",
+  "chooseOneBranch": "Choose one of the branches below:",
   "sending": "Sending...",
   "checking": "Checking...",
   "receiveMail": "Receive mail",
@@ -124,5 +130,7 @@
       "label": "Thermal printer (80mm)",
       "hint": "Receipt format"
     }
-  }
+  },
+  "sourceBranchNotFound": "Source branch was not found for dispatch.",
+  "multipleSourceBranchesError": "Selected orders belong to different source branches. Please select orders from a single source branch."
 }
