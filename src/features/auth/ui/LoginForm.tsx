@@ -119,7 +119,7 @@ const LoginForm = () => {
                     }}
                     type="tel"
                     inputMode="numeric"
-                    autoComplete="tel"
+                    autoComplete="off"
                     disabled={loading}
                     className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phone_number ? "border-red-500" : "border-gray-200"
                       } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
