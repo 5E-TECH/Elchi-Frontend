@@ -10,6 +10,7 @@ import {
   OrdersOverviewCard,
 } from "./BranchDashboardCards";
 import { adaptBranchDashboard } from "./branchDashboardAdapter";
+import PageContainer from "../../../shared/ui/PageContainer";
 
 const statCardClassName =
   "rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.05]";
@@ -27,7 +28,7 @@ const BranchDashboardPage = () => {
   const isManager = branchDashboard.role === "MANAGER";
 
   return (
-    <div className="flex flex-col rounded-2xl p-3 md:p-4 xl:h-full xl:min-h-0 xl:overflow-hidden">
+    <PageContainer className="flex flex-col xl:h-full xl:min-h-0 xl:overflow-hidden">
       <section className="mb-3 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-main)_18%,var(--color-primary)_82%)_0%,color-mix(in_srgb,var(--color-sidebar)_92%,white_8%)_100%)] p-3.5 shadow-[0_18px_40px_rgba(87,106,219,0.12)] xl:shrink-0 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-main)_22%,var(--color-primarydark)_78%)_0%,color-mix(in_srgb,var(--color-maindark)_95%,var(--color-primarydark)_5%)_100%)]">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-3">
@@ -95,7 +96,7 @@ const BranchDashboardPage = () => {
           <CourierActivityCard couriers={branchDashboard.couriers} />
         ) : null}
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

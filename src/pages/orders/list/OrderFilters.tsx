@@ -85,7 +85,11 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const filters = useSelector((state: RootState) => state.filter);
     const searchFilters = useSelector((state: RootState) => state.search);
     const isMarketRole = role === "market";
+    const canUseBranchFilter = role === "admin" || role === "superadmin";
     const canLoadRoleDependentOptions = role !== null && !isMarketRole;
+    const selectGridClassName = canUseBranchFilter
+        ? "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
+        : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4";
     const [isMobile, setIsMobile] = useState(
         typeof window !== "undefined" ? window.innerWidth < 640 : false,
     );
@@ -117,7 +121,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
 
     const hasFilter = !!(
         (!isMarketRole && marketId) ||
-        (!isMarketRole && branchId) ||
+        (canUseBranchFilter && branchId) ||
         regionId ||
         (!isMarketRole && courierId) ||
         statusValues.length > 0 ||
@@ -127,7 +131,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     );
     const activeFilterCount =
         Number(Boolean(!isMarketRole && marketId))
-        + Number(Boolean(!isMarketRole && branchId))
+        + Number(Boolean(canUseBranchFilter && branchId))
         + Number(Boolean(regionId))
         + Number(Boolean(!isMarketRole && courierId))
         + Number(statusValues.length > 0)
@@ -193,8 +197,12 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         status: "active",
         limit: 100,
         page: 1,
+    }, {
+        enabled: canUseBranchFilter,
     });
-    const branches = (branchesData?.data ?? []).map((b) => ({ value: String(b.id), label: b.name }));
+    const branches = canUseBranchFilter
+        ? (branchesData?.data ?? []).map((b) => ({ value: String(b.id), label: b.name }))
+        : [];
 
     const { data: couriersData, isLoading: couriersLoading } = getCouriers(
         {
@@ -364,9 +372,9 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                     </div>
 
                                     {/* ── 2-qator: selectlar ── */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                                    <div className={selectGridClassName}>
                                         {/* MARKET */}
-                                        {!isMarketRole && (
+                                        {canUseBranchFilter && (
                                             <SearchableSelect
                                                 label={t("filterMarket")}
                                                 name={ORDER_FILTER_KEYS.marketId}
@@ -457,7 +465,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                                         }
                                                     />
                                                 )}
-                                                {!isMarketRole && branchId && (
+                                                {canUseBranchFilter && branchId && (
                                                     <FilterChip
                                                         label={`${t("chipBranch")}: ${branches.find((b) => b.value === branchId)?.label ?? `#${branchId}`}`}
                                                         onRemove={() =>
@@ -582,9 +590,9 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
             </div>
 
             {/* ── 2-qator: selectlar ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className={selectGridClassName}>
                 {/* MARKET */}
-                {!isMarketRole && (
+                {canUseBranchFilter && (
                     <SearchableSelect
                         label={t("filterMarket")}
                         name={ORDER_FILTER_KEYS.marketId}
@@ -675,7 +683,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                 }
                             />
                         )}
-                        {!isMarketRole && branchId && (
+                        {canUseBranchFilter && branchId && (
                             <FilterChip
                                 label={`${t("chipBranch")}: ${branches.find((b) => b.value === branchId)?.label ?? `#${branchId}`}`}
                                 onRemove={() =>

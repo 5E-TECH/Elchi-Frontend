@@ -61,7 +61,7 @@ const BranchListWidget = ({
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-sm dark:border-primarydark/60 dark:bg-maindark">
       <div className="border-b border-gray-200 p-4 dark:border-primarydark/60 sm:p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 xl:flex-1">
             <FilterSearch
               value={params.search ?? ""}
               placeholder={t("list.searchPlaceholder")}
@@ -69,7 +69,7 @@ const BranchListWidget = ({
               debounceDelay={400}
             />
           </div>
-          <div className="w-full xl:w-[180px]">
+          <div className="w-full xl:w-[280px]">
             <FilterSelect
               name="branch_status"
               label={t("fields.status")}

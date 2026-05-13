@@ -25,6 +25,7 @@ const getIndent = (level?: number) => {
 
 const getTypeLabel = (branch: Branch, t: TFunction) => {
   if (!branch.type) return t("branchTypes.unknown");
+  if (branch.type === "HQ") return "HQ";
 
   const branchTypeKey = branch.type.toLowerCase();
   return t(`branchTypes.${branchTypeKey}`);

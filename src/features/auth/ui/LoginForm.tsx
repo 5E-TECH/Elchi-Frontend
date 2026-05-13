@@ -109,7 +109,7 @@ const LoginForm = () => {
                 render={({ field }) => (
                   <input
                     ref={field.ref}
-                    name={field.name}
+                    name="elchi-login-phone"
                     value={field.value}
                     onBlur={field.onBlur}
                     onChange={(event) => {
@@ -117,9 +117,12 @@ const LoginForm = () => {
                       field.onChange(nextValue);
                       keepPhoneCaretAfterChange(event.target, nextValue, true);
                     }}
-                    type="tel"
+                    type="text"
                     inputMode="numeric"
                     autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-label={t("phoneLabel")}
                     disabled={loading}
                     className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phone_number ? "border-red-500" : "border-gray-200"
                       } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}

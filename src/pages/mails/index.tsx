@@ -14,6 +14,7 @@ import {
   normalizeMailTab,
   type MailTab,
 } from "./lib/navigation";
+import PageContainer from "../../shared/ui/PageContainer";
 
 interface TabItem {
   key: MailTab;
@@ -135,7 +136,7 @@ const Mails = () => {
   };
 
   return (
-    <div className="rounded-2xl p-3 sm:p-4 lg:p-6">
+    <PageContainer>
       <div className="rounded-2xl border border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-4">
         <HeaderName
           name={t("title")}
@@ -337,7 +338,7 @@ const Mails = () => {
       {activeTab === "return" && <ReturnMails />}
       {activeTab === "refused" && <RefusedMails />}
       {activeTab === "old" && <OldMails />}
-    </div>
+    </PageContainer>
   );
 };
 

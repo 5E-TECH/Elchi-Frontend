@@ -123,7 +123,11 @@ const CourierOrders = () => {
   const handleSelectChange = (id: string, checked: boolean) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      checked ? next.add(id) : next.delete(id);
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
       return next;
     });
   };
@@ -142,7 +146,7 @@ const CourierOrders = () => {
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="relative">
-      <div className="rounded-2xl p-3 sm:p-4">
+      <div>
         <div className="rounded-2xl border border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-4">
           <HeaderName
             name={t("list")}

@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ArrowLeft } from "lucide-react";
 import type { RootState } from "../../../../app/config/store";
+import PageContainer from "../../../../shared/ui/PageContainer";
 
 const RegionLogistAssignmentPage = () => {
   const navigate = useNavigate();
@@ -14,8 +15,7 @@ const RegionLogistAssignmentPage = () => {
   }
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <PageContainer>
         <button
           type="button"
           onClick={() => navigate("/regions")}
@@ -30,8 +30,7 @@ const RegionLogistAssignmentPage = () => {
             Bu bo‘lim post_control_system dagi region moduliga mos route bilan ulandi.
           </p>
         </div>
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

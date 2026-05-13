@@ -5,6 +5,7 @@ import { UserDetailWidget } from '../../../widgets/user-detail/ui/UserDetailWidg
 import HeaderName from '../../../shared/components/headerName';
 import { useTranslation } from 'react-i18next';
 import { unwrapUserResponse } from '../../../entities/user/lib/normalizeUser';
+import PageContainer from '../../../shared/ui/PageContainer';
 
 export const UserDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +16,7 @@ export const UserDetailPage = () => {
   const user = unwrapUserResponse(data);
 
   return (
-    <div className="min-h-full rounded-2xl p-3 sm:p-4 lg:p-6">
+    <PageContainer>
       {/* Page Header */}
       <div className="mb-4 sm:mb-6" onClick={() => navigate(-1)}>
         <HeaderName
@@ -32,7 +33,7 @@ export const UserDetailPage = () => {
         isError={isError}
         error={error}
       />
-    </div>
+    </PageContainer>
   );
 };
 

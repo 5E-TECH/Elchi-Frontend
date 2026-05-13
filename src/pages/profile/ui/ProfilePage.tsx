@@ -5,6 +5,7 @@ import { useUser } from '../../../entities/user/api/userApi';
 import { unwrapUserResponse } from '../../../entities/user/lib/normalizeUser';
 import HeaderName from '../../../shared/components/headerName';
 import { UserDetailWidget } from '../../../widgets/user-detail/ui/UserDetailWidget';
+import PageContainer from '../../../shared/ui/PageContainer';
 
 const ProfilePage = () => {
   const { t } = useTranslation("users");
@@ -13,7 +14,7 @@ const ProfilePage = () => {
   const user = unwrapUserResponse(data);
 
   return (
-    <div className="p-6 bg-sidebar dark:bg-maindark min-h-full rounded-2xl">
+    <PageContainer>
       <div className="mb-6">
         <HeaderName
           name={t("profile")}
@@ -29,7 +30,7 @@ const ProfilePage = () => {
         error={error}
         isOwnProfile
       />
-    </div>
+    </PageContainer>
   );
 };
 

@@ -6,6 +6,7 @@ import { BranchFormModal } from "../../../features/branch-create";
 import { BranchEditModal } from "../../../features/branch-edit";
 import Button from "../../../shared/components/button";
 import HeaderName from "../../../shared/components/headerName";
+import PageContainer from "../../../shared/ui/PageContainer";
 import { BranchListWidget } from "../../../widgets/branch-list";
 
 type ViewMode = "table" | "card" | "tree";
@@ -42,7 +43,7 @@ const BranchesPage = () => {
   }, [viewMode]);
 
   return (
-    <div className="min-h-full rounded-2xl p-4 md:p-6">
+    <PageContainer>
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderName
           name="Filiallar"
@@ -71,7 +72,7 @@ const BranchesPage = () => {
           onClose={() => setEditingBranch(null)}
         />
       ) : null}
-    </div>
+    </PageContainer>
   );
 };
 
