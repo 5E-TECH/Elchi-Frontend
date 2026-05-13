@@ -205,7 +205,7 @@ interface TransferBatchListResponse {
 }
 
 const isBranchMailRole = (role?: string | null) =>
-  role === "manager" || role === "registrator";
+  role === "manager";
 
 const toText = (value: unknown, fallback = ""): string => {
   if (typeof value === "string" && value.trim()) return value.trim();
@@ -494,6 +494,12 @@ export interface SendPostPayload {
   courierId: string;
 }
 
+export interface DispatchPostToBranchPayload {
+  sourceBranchId: string;
+  destinationBranchId: string;
+  orderIds: string[];
+}
+
 export const fetchCouriersByRegion = (regionId: string) =>
   api
     .get(API_ENDPOINTS.COURIERS.BY_REGION(regionId), {
@@ -522,6 +528,35 @@ export const useSendPost = () => {
       postId: string;
       payload: SendPostPayload;
     }) => api.patch(API_ENDPOINTS.POSTS.BY_ID(postId), payload).then((res) => res.data),
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [MAILS_KEY, "detail", postId],
+      });
+    },
+  });
+};
+
+export const useDispatchPostToBranch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      postId,
+      payload,
+    }: {
+      postId: string;
+      payload: DispatchPostToBranchPayload;
+    }) =>
+      api
+        .post(
+          API_ENDPOINTS.BRANCHES.POST_DISPATCH(
+            payload.sourceBranchId,
+            postId,
+            payload.destinationBranchId,
+          ),
+          { orderIds: payload.orderIds },
+        )
+        .then((res) => res.data),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "detail", postId],

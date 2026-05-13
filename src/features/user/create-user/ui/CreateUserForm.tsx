@@ -151,11 +151,18 @@ export const CreateUserForm = memo(() => {
   const authRole = useSelector((state: RootState) => state.role.role);
   const authUser = useSelector((state: RootState) => state.user.user) as
     | {
+        id?: string | null;
+        branch_id?: string | null;
         branch_type?: string | null;
         branch?: {
+          id?: string | null;
           type?: string | null;
           branch_type?: string | null;
-          branch?: { type?: string | null; branch_type?: string | null } | null;
+          branch?: {
+            id?: string | null;
+            type?: string | null;
+            branch_type?: string | null;
+          } | null;
         } | null;
       }
     | null;
@@ -171,10 +178,20 @@ export const CreateUserForm = memo(() => {
     )
       .toString()
       .toUpperCase() || null;
-  const isRegionalOrHybridManagerCreator =
-    authRole === "manager" &&
-    (currentBranchType === "REGIONAL" || currentBranchType === "HYBRID");
-  const managerAllowedRoles: UserRole[] = ["admin", "courier"];
+  const currentBranchId =
+    authUser?.branch?.branch?.id ??
+    authUser?.branch?.id ??
+    authUser?.branch_id ??
+    "";
+  const isManagerRegionalCreator =
+    authRole === "manager" && currentBranchType === "REGIONAL";
+  const isManagerHybridCreator =
+    authRole === "manager" && currentBranchType === "HYBRID";
+  const managerAllowedRoles: UserRole[] | null = isManagerRegionalCreator
+    ? ["courier"]
+    : isManagerHybridCreator
+      ? ["courier", "registrator", "marketing"]
+      : null;
 
   const [showPassword, setShowPassword] = useState(false);
   const [isCompactRolePicker, setIsCompactRolePicker] = useState(
@@ -205,9 +222,10 @@ export const CreateUserForm = memo(() => {
     { key: "courier", icon: <Truck size={16} /> },
     { key: "marketing", icon: <Store size={16} /> },
   ];
-  const visibleRoleOptions = isRegionalOrHybridManagerCreator
+  const visibleRoleOptions = managerAllowedRoles
     ? rolePickerOptions.filter((option) => managerAllowedRoles.includes(option.key))
     : rolePickerOptions;
+  const shouldShowRolePanel = visibleRoleOptions.length > 1;
 
   const activeRoleOption =
     visibleRoleOptions.find((option) => option.key === role) ?? visibleRoleOptions[0];
@@ -238,10 +256,10 @@ export const CreateUserForm = memo(() => {
   }, [role, reset]);
 
   useEffect(() => {
-    if (isRegionalOrHybridManagerCreator && !managerAllowedRoles.includes(role)) {
+    if (managerAllowedRoles && !managerAllowedRoles.includes(role)) {
       setValue("role", managerAllowedRoles[0]);
     }
-  }, [isRegionalOrHybridManagerCreator, managerAllowedRoles, role, setValue]);
+  }, [managerAllowedRoles, role, setValue]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -305,7 +323,13 @@ export const CreateUserForm = memo(() => {
       }
     }
 
-    if ((role === "manager" || role === "registrator") && !values.branchId) {
+    const isHybridManagerRegistrator =
+      isManagerHybridCreator && role === "registrator";
+    const resolvedBranchId = isHybridManagerRegistrator
+      ? currentBranchId
+      : values.branchId;
+
+    if ((role === "manager" || role === "registrator") && !resolvedBranchId) {
       setError("branchId", { message: t("branchRequired") });
       valid = false;
     }
@@ -371,13 +395,16 @@ export const CreateUserForm = memo(() => {
     }
 
     if (role === "registrator") {
+      const branchId =
+        isManagerHybridCreator && currentBranchId ? currentBranchId : values.branchId;
+
       const payload: CreateRegistratorRequest = {
         name: values.fullName,
         phone_number: rawPhone,
         password: values.password,
         salary: parseAmount(values.salary),
         payment_day: Number(values.paymentDay),
-        branch_id: values.branchId,
+        branch_id: branchId,
       };
       await apiRequest({
         request: () => createRegistrator.mutateAsync(payload),
@@ -579,7 +606,8 @@ export const CreateUserForm = memo(() => {
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-visible px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:items-start lg:gap-6 lg:overflow-hidden lg:px-6 lg:py-6">
-        <div className="w-full shrink-0 lg:w-72">
+        {shouldShowRolePanel && (
+          <div className="w-full shrink-0 lg:w-72">
             <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-primarydark/20 dark:bg-maindark sm:p-4">
               <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
                 {t("roleSelect")}
@@ -611,7 +639,7 @@ export const CreateUserForm = memo(() => {
                     <div className="mt-3 flex flex-col gap-2">
                       {rolePickerOptions
                         .filter((option) =>
-                          isRegionalOrHybridManagerCreator
+                          managerAllowedRoles
                             ? managerAllowedRoles.includes(option.key)
                             : true,
                         )
@@ -643,7 +671,7 @@ export const CreateUserForm = memo(() => {
                     selectedRole={role}
                     onSelect={(nextRole) => setValue("role", nextRole)}
                     allowedRoles={
-                      isRegionalOrHybridManagerCreator ? managerAllowedRoles : undefined
+                      managerAllowedRoles ?? undefined
                     }
                   />
                 </div>
@@ -657,6 +685,7 @@ export const CreateUserForm = memo(() => {
               </p>
             </div>
           </div>
+        )}
 
         <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 dark:border-primarydark/20 dark:bg-maindark dark:shadow-black/20">
           <div className="flex shrink-0 items-center gap-3 border-b border-slate-100 bg-slate-50/50 px-3 py-3 dark:border-white/5 dark:bg-main sm:gap-4 sm:px-4 md:px-6">
@@ -717,7 +746,9 @@ export const CreateUserForm = memo(() => {
                   </div>
                 )}
 
-                {(role === "manager" || role === "registrator") && (
+                {(role === "manager" ||
+                  (role === "registrator" &&
+                    !(isManagerHybridCreator && Boolean(currentBranchId)))) && (
                   <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
                     <Controller
                       control={control}

@@ -1,331 +1,237 @@
-// Migrated to React Hook Form
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { X, Send, User, Phone, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { X, Send, User, Phone, CheckCircle2, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../shared/ui/Popup";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
-import {
-    useGetCouriersByRegion,
-    useSendPost,
-    type CourierItem,
-} from "../../../../entities/mails";
+import { useDispatchPostToBranch } from "../../../../entities/mails";
+import type { Branch } from "../../../../entities/branch";
 
-// ─── Props ────────────────────────────────────────────────────────────────────
 interface SendPostModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    postId: string;
-    regionId: string;
-    selectedIds: Set<string>;
-    onSuccess: (sentIds?: string[]) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  postId: string;
+  sourceBranchId: string;
+  branches: Branch[];
+  selectedIds: Set<string>;
+  onSuccess: (sentIds?: string[]) => void;
 }
 
 interface SendPostFormValues {
-    courierId: string;
+  branchId: string;
 }
 
 const createSendPostSchema = (requiredMessage: string): yup.ObjectSchema<SendPostFormValues> =>
-    yup.object({
-        courierId: yup.string().required(requiredMessage),
+  yup.object({
+    branchId: yup.string().required(requiredMessage),
+  });
+
+const BranchCard = memo(
+  ({
+    branch,
+    selected,
+    onSelect,
+  }: {
+    branch: Branch;
+    selected: boolean;
+    onSelect: (id: string) => void;
+  }) => (
+    <button
+      type="button"
+      onClick={() => onSelect(branch.id)}
+      className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer text-left ${
+        selected
+          ? "border-main bg-main/10 dark:bg-main/15"
+          : "border-gray-100 dark:border-white/10 bg-white dark:bg-white/4 hover:border-main/40 hover:bg-gray-50 dark:hover:bg-white/6"
+      }`}
+    >
+      <div
+        className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all duration-200 ${
+          selected ? "bg-main text-white" : "bg-main/10 dark:bg-main/20 text-main"
+        }`}
+      >
+        <User size={18} />
+      </div>
+
+      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+        <span
+          className={`text-sm font-semibold truncate ${
+            selected ? "text-main" : "text-gray-800 dark:text-white"
+          }`}
+        >
+          {branch.name}
+        </span>
+        <div className="flex items-center gap-1">
+          <Phone size={11} className="text-gray-400 dark:text-white/40 shrink-0" />
+          <span className="text-xs text-gray-400 dark:text-white/50 truncate">
+            {branch.phone_number || "—"}
+          </span>
+        </div>
+      </div>
+
+      {selected && <CheckCircle2 size={20} className="text-main shrink-0" />}
+    </button>
+  ),
+);
+
+BranchCard.displayName = "BranchCard";
+
+const SendPostModal = memo(
+  ({ isOpen, onClose, postId, sourceBranchId, branches, selectedIds, onSuccess }: SendPostModalProps) => {
+    const { t } = useTranslation("mails");
+    const { apiRequest } = useAppNotification();
+
+    const {
+      control,
+      handleSubmit,
+      reset,
+      setValue,
+      watch,
+    } = useForm<SendPostFormValues>({
+      defaultValues: {
+        branchId: "",
+      },
+      resolver: yupResolver(createSendPostSchema(t("branchRequired"))) as Resolver<SendPostFormValues>,
     });
 
-// ─── Courier karta ────────────────────────────────────────────────────────────
-const CourierCard = memo(
-    ({
-        courier,
-        selected,
-        onSelect,
-    }: {
-        courier: CourierItem;
-        selected: boolean;
-        onSelect: (id: string) => void;
-    }) => (
-        <button
-            type="button"
-            onClick={() => onSelect(courier.id)}
-            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer text-left ${selected
-                    ? "border-main bg-main/10 dark:bg-main/15"
-                    : "border-gray-100 dark:border-white/10 bg-white dark:bg-white/4 hover:border-main/40 hover:bg-gray-50 dark:hover:bg-white/6"
-                }`}
-        >
-            <div
-                className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all duration-200 ${selected
-                        ? "bg-main text-white"
-                        : "bg-main/10 dark:bg-main/20 text-main"
-                    }`}
-            >
-                <User size={18} />
-            </div>
+    const dispatchPostToBranch = useDispatchPostToBranch();
+    const orderIds = Array.from(selectedIds);
+    const selectedBranchId = watch("branchId");
 
-            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                <span
-                    className={`text-sm font-semibold truncate ${selected ? "text-main" : "text-gray-800 dark:text-white"
-                        }`}
-                >
-                    {courier.name}
-                </span>
-                <div className="flex items-center gap-1">
-                    <Phone size={11} className="text-gray-400 dark:text-white/40 shrink-0" />
-                    <span className="text-xs text-gray-400 dark:text-white/50 truncate">
-                        {courier.phone_number}
-                    </span>
-                </div>
-            </div>
+    const resetState = () => {
+      reset({ branchId: "" });
+      dispatchPostToBranch.reset();
+    };
 
-            {selected && (
-                <CheckCircle2 size={20} className="text-main shrink-0" />
-            )}
-        </button>
-    ),
-);
-CourierCard.displayName = "CourierCard";
+    const handleClose = () => {
+      if (dispatchPostToBranch.isPending) return;
+      resetState();
+      onClose();
+    };
 
-// ─── Asosiy modal ─────────────────────────────────────────────────────────────
-const SendPostModal = memo(
-    ({
-        isOpen,
-        onClose,
-        postId,
-        regionId,
-        selectedIds,
-        onSuccess,
-    }: SendPostModalProps) => {
-        const { t } = useTranslation("mails");
-        // ✅ apiRequest — CreateUserForm dagi kabi
-        const { apiRequest } = useAppNotification();
-
-        const [autoHandled, setAutoHandled] = useState(false);
-        const {
-            control,
-            handleSubmit,
-            reset,
-            setValue,
-            watch,
-        } = useForm<SendPostFormValues>({
-            defaultValues: {
-                courierId: "",
-            },
-            resolver: yupResolver(createSendPostSchema(t("courierRequired"))) as Resolver<SendPostFormValues>,
+    const submitForm = ({ branchId }: SendPostFormValues) => {
+      if (!branchId || dispatchPostToBranch.isPending) return;
+      if (!sourceBranchId) {
+        apiRequest({
+          request: () => Promise.reject(new Error("source_branch_missing")),
+          errorMessage: t("sourceBranchNotFound"),
+          successMessage: "",
         });
+        return;
+      }
 
-        const {
-            data: couriersResp,
-            isLoading,
-            isError,
-        } = useGetCouriersByRegion(regionId, isOpen);
+      const branch = branches.find((item) => item.id === branchId);
 
-        const sendPost = useSendPost();
+      apiRequest({
+        request: () =>
+          dispatchPostToBranch.mutateAsync({
+            postId,
+            payload: {
+              sourceBranchId,
+              destinationBranchId: branchId,
+              orderIds,
+            },
+          }),
+        successMessage: t("sendBranchSuccess", { name: branch?.name ?? "" }),
+        errorMessage: t("sendError"),
+        onSuccess: () => {
+          resetState();
+          onSuccess(orderIds);
+          onClose();
+        },
+      });
+    };
 
-        const couriers = couriersResp?.data?.items ?? [];
-        const orderIds = Array.from(selectedIds);
-        const selectedCourierId = watch("courierId");
+    const showPopup = isOpen && branches.length > 0;
 
-        // ─── Reset on close ────────────────────────────────────────────────
-        const resetState = () => {
-            reset({ courierId: "" });
-            setAutoHandled(false);
-            sendPost.reset();
-        };
+    return (
+      <Popup isShow={showPopup} onClose={handleClose}>
+        <div className="w-[90vw] max-w-md bg-white dark:bg-maindark rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-main flex items-center justify-center">
+                <Send size={16} className="text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-800 dark:text-white">
+                  {t("selectBranch")}
+                </p>
+                <p className="text-xs text-gray-400 dark:text-white/50">
+                  {t("selectedOrdersWillBeSent", { count: orderIds.length })}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={dispatchPostToBranch.isPending}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/8 text-gray-400 dark:text-white/50 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 disabled:opacity-40 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-        const handleClose = () => {
-            if (sendPost.isPending) return;
-            resetState();
-            onClose();
-        };
-
-        // ─── Auto-handle: 0 yoki 1 courier ────────────────────────────────
-        useEffect(() => {
-            if (!isOpen || isLoading || isError || autoHandled) return;
-
-            // 0 courier — notification, yop
-            if (couriers.length === 0) {
-                setAutoHandled(true);
-                // apiRequest error sifatida ko'rsatish
-                apiRequest({
-                    request: () => Promise.reject(new Error("no_courier")),
-                    errorMessage: t("noActiveCourierInRegion"),
-                    successMessage: "",
-                });
-                onClose();
-                return;
-            }
-
-            // ✅ 1 courier — popup ochilmaydi, to'g'ridan-to'g'ri yuborish
-            if (couriers.length === 1) {
-                setAutoHandled(true);
-                const courier = couriers[0];
-
-                apiRequest({
-                    request: () =>
-                        sendPost.mutateAsync({
-                            postId,
-                            payload: { orderIds, courierId: courier.id },
-                        }),
-                    successMessage: t("sendCourierSuccess", { name: courier.name }),
-                    errorMessage: t("sendError"),
-                    onSuccess: () => {
-                        resetState();
-                        onSuccess(orderIds);
-                        onClose();
-                    },
-                    onError: () => {
-                        resetState();
-                        onClose();
-                    },
-                });
-                return;
-            }
-
-            // 2+ courier — popup ko'rsatiladi
-        }, [isOpen, isLoading, isError, couriers, autoHandled]);
-
-        // ─── 2+ courier: yuborish ──────────────────────────────────────────
-        const submitForm = ({ courierId }: SendPostFormValues) => {
-            if (!courierId || sendPost.isPending) return;
-
-            const courier = couriers.find((c) => c.id === courierId);
-
-            apiRequest({
-                request: () =>
-                    sendPost.mutateAsync({
-                        postId,
-                        payload: { orderIds, courierId },
-                    }),
-                successMessage: t("sendCourierSuccess", { name: courier?.name ?? "" }),
-                errorMessage: t("sendError"),
-                onSuccess: () => {
-                    resetState();
-                    onSuccess(orderIds);
-                    onClose();
-                },
-            });
-        };
-
-        // ✅ Faqat 2+ courier da popup ko'rsatiladi
-        const showPopup = isOpen && (isLoading || isError || couriers.length >= 2);
-
-        return (
-            <Popup isShow={showPopup} onClose={handleClose}>
-                <div className="w-[90vw] max-w-md bg-white dark:bg-maindark rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-main flex items-center justify-center">
-                                <Send size={16} className="text-white" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold text-gray-800 dark:text-white">
-                                    {t("selectCourier")}
-                                </p>
-                                <p className="text-xs text-gray-400 dark:text-white/50">
-                                    {t("selectedOrdersWillBeSent", { count: orderIds.length })}
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleClose}
-                            disabled={sendPost.isPending}
-                            className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/8 text-gray-400 dark:text-white/50 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 disabled:opacity-40 cursor-pointer"
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
-
-                    {/* Content */}
-                    <div className="px-5 py-4">
-                        {isLoading && (
-                            <div className="flex flex-col items-center justify-center py-10 gap-4">
-                                <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
-                                    <Loader2 size={28} className="text-main animate-spin" />
-                                </div>
-                                <p className="text-sm font-medium text-gray-600 dark:text-white/70">
-                                    {t("couriersLoading")}
-                                </p>
-                            </div>
-                        )}
-
-                        {isError && !isLoading && (
-                            <div className="flex flex-col items-center justify-center py-10 gap-3">
-                                <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center">
-                                    <AlertTriangle size={28} className="text-red-400" />
-                                </div>
-                                <p className="text-sm font-semibold text-gray-700 dark:text-white text-center">
-                                    {t("couriersLoadError")}
-                                </p>
-                                <p className="text-xs text-gray-400 dark:text-white/50 text-center">
-                                    {t("retryHint")}
-                                </p>
-                            </div>
-                        )}
-
-                        {!isLoading && !isError && couriers.length >= 2 && (
-                            <>
-                                <p className="text-xs text-gray-400 dark:text-white/50 mb-3">
-                                    {t("chooseOneCourier")}
-                                </p>
-                                <Controller
-                                    control={control}
-                                    name="courierId"
-                                    render={() => (
-                                        <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
-                                            {couriers.map((courier) => (
-                                                <CourierCard
-                                                    key={courier.id}
-                                                    courier={courier}
-                                                    selected={selectedCourierId === courier.id}
-                                                    onSelect={(id) =>
-                                                        setValue("courierId", id, {
-                                                            shouldDirty: true,
-                                                            shouldTouch: true,
-                                                            shouldValidate: true,
-                                                        })
-                                                    }
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                />
-                            </>
-                        )}
-                    </div>
-
-                    {/* Footer */}
-                    {!isLoading && !isError && couriers.length >= 2 && (
-                        <div className="px-5 pb-5">
-                            <button
-                                type="button"
-                                disabled={!selectedCourierId || sendPost.isPending}
-                                onClick={handleSubmit(submitForm)}
-                                className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed enabled:cursor-pointer enabled:bg-main enabled:text-white enabled:hover:bg-primarydark enabled:hover:shadow-lg enabled:hover:shadow-main/30 enabled:hover:scale-[1.01]"
-                            >
-                                {sendPost.isPending ? (
-                                    <>
-                                        <Loader2 size={16} className="animate-spin" />
-                                        {t("sending")}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Send size={16} />
-                                        {t("send")}
-                                        {selectedCourierId && (
-                                            <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
-                                                {orderIds.length}
-                                            </span>
-                                        )}
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    )}
+          <div className="px-5 py-4">
+            <p className="text-xs text-gray-400 dark:text-white/50 mb-3">
+              {t("chooseOneBranch")}
+            </p>
+            <Controller
+              control={control}
+              name="branchId"
+              render={() => (
+                <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
+                  {branches.map((branch) => (
+                    <BranchCard
+                      key={branch.id}
+                      branch={branch}
+                      selected={selectedBranchId === branch.id}
+                      onSelect={(id) =>
+                        setValue("branchId", id, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                          shouldValidate: true,
+                        })
+                      }
+                    />
+                  ))}
                 </div>
-            </Popup>
-        );
-    },
+              )}
+            />
+          </div>
+
+          <div className="px-5 pb-5">
+            <button
+              type="button"
+              disabled={!selectedBranchId || dispatchPostToBranch.isPending}
+              onClick={handleSubmit(submitForm)}
+              className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed enabled:cursor-pointer enabled:bg-main enabled:text-white enabled:hover:bg-primarydark enabled:hover:shadow-lg enabled:hover:shadow-main/30 enabled:hover:scale-[1.01]"
+            >
+              {dispatchPostToBranch.isPending ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  {t("sending")}
+                </>
+              ) : (
+                <>
+                  <Send size={16} />
+                  {t("send")}
+                  {selectedBranchId && (
+                    <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
+                      {orderIds.length}
+                    </span>
+                  )}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Popup>
+    );
+  },
 );
+
 SendPostModal.displayName = "SendPostModal";
 
 export default SendPostModal;

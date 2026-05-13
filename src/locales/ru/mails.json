@@ -76,8 +76,13 @@
   "receiveRefusedSuccess": "Отклоненная почта успешно принята.",
   "receiveRefusedError": "Произошла ошибка при приеме отклоненной почты.",
   "noActiveCourierInRegion": "В этой области нет активного курьера.",
+  "noActiveBranchInRegion": "В этой области нет активного филиала.",
   "sendCourierSuccess": "Почта успешно отправлена курьеру {{name}}.",
+  "sendBranchSuccess": "Почта успешно отправлена в филиал {{name}}.",
   "couriersLoadError": "Не удалось загрузить курьеров.",
+  "branchesLoadError": "Не удалось загрузить филиалы.",
+  "selectBranch": "Выберите филиал",
+  "branchRequired": "Необходимо выбрать филиал",
   "regionOrdersTitle": "Заказы региона {{region}}",
   "ordersCount": "Доступно заказов: {{count}}",
   "oldOrdersCount": "Доступно старых заказов: {{count}}",
@@ -85,6 +90,7 @@
   "selectedOrdersWillBeSent": "Будет отправлено заказов: {{count}}",
   "couriersLoading": "Загрузка курьеров...",
   "chooseOneCourier": "Выберите одного из курьеров ниже:",
+  "chooseOneBranch": "Выберите один из филиалов ниже:",
   "sending": "Отправка...",
   "checking": "Проверка...",
   "receiveMail": "Принять почту",
@@ -128,5 +134,7 @@
       "label": "Термопринтер (80мм)",
       "hint": "Формат чека"
     }
-  }
+  },
+  "sourceBranchNotFound": "Не найден исходный филиал для отправки.",
+  "multipleSourceBranchesError": "Выбранные заказы относятся к разным исходным филиалам. Выберите заказы из одного исходного филиала."
 }

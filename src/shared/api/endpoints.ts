@@ -146,6 +146,11 @@ export const API_ENDPOINTS = {
   },
   BRANCHES: {
     BASE: "branches",
+    POST_DISPATCH: (
+      sourceBranchId: string | number,
+      postId: string | number,
+      destinationBranchId: string | number,
+    ) => `branches/${sourceBranchId}/posts/${postId}/dispatch/${destinationBranchId}`,
     TRANSFER_BATCHES: "branches/transfer-batches",
     WITH_SENT_BATCHES: "branches/with-sent-batches",
     BY_ID: (id: string | number) => `branches/${id}`,
