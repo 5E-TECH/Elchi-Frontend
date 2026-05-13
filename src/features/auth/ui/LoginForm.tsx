@@ -49,7 +49,7 @@ const LoginForm = () => {
     resolver: yupResolver(createLoginSchema(t)) as Resolver<LoginFormValues>,
     mode: "onTouched",
     defaultValues: {
-      phone_number: "",
+      phone_number: formatUzbekistanPhoneFull(),
       password: "",
     },
   });
@@ -113,21 +113,13 @@ const LoginForm = () => {
                     value={field.value}
                     onBlur={field.onBlur}
                     onChange={(event) => {
-                      const hasPhoneDigits = event.target.value
-                        .replace(/\D/g, "")
-                        .replace(/^998/, "")
-                        .length > 0;
-                      const nextValue = hasPhoneDigits
-                        ? formatUzbekistanPhoneFull(event.target.value)
-                        : "";
+                      const nextValue = formatUzbekistanPhoneFull(event.target.value);
                       field.onChange(nextValue);
-                      if (nextValue) {
-                        keepPhoneCaretAfterChange(event.target, nextValue, true);
-                      }
+                      keepPhoneCaretAfterChange(event.target, nextValue, true);
                     }}
                     type="tel"
                     inputMode="numeric"
-                    autoComplete="tel"
+                    autoComplete="off"
                     disabled={loading}
                     className={`w-full h-12 px-4 text-maindark bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-maindark focus:border-transparent transition-all duration-200 ${errors.phone_number ? "border-red-500" : "border-gray-200"
                       } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
