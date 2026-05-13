@@ -367,12 +367,7 @@ const OrderCreateFormContent = () => {
   }, [customer, details, isInactiveSelectedMarket, isMarketRole, market, step]);
 
   const handleBack = () => {
-    if (step === 1 || isMarketRole) {
-      navigate("/orders");
-      return;
-    }
-
-    setStep((current) => current - 1);
+    navigate("/orders");
   };
 
   const handleNext = async () => {

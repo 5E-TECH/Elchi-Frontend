@@ -148,8 +148,9 @@ export interface CreateCourierRequest {
     name: string;          // Kuryer ismi
     phone_number: string;  // Telefon (+998...)
     password: string;      // Parol
-    tariff_home: number;   // Uyga tarif (so'm)
-    tariff_center: number; // Markazga tarif (so'm)
+    salary?: number;
+    tariff_home?: number;   // Uyga tarif (so'm)
+    tariff_center?: number; // Markazga tarif (so'm)
 }
 
 // ==================== USER DETAIL ====================

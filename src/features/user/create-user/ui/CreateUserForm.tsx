@@ -53,12 +53,6 @@ const parseAmount = (value: string): number =>
 
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
 
-type RegionOption = {
-  id: string | number;
-  name: string;
-  sato_code?: string | null;
-};
-
 interface CreateUserFormValues {
   role: UserRole;
   fullName: string;
@@ -151,12 +145,6 @@ const getBranchOptionLabel = (branch: Branch) => {
   return `${code}${type}${branch.name}${region}`;
 };
 
-const getRegionOptionLabel = (region: RegionOption) => {
-  const satoCode = region.sato_code ? ` • ${region.sato_code}` : "";
-
-  return `${region.name}${satoCode}`;
-};
-
 export const CreateUserForm = memo(() => {
   const { t } = useTranslation("users");
   const navigate = useNavigate();
@@ -183,8 +171,10 @@ export const CreateUserForm = memo(() => {
     )
       .toString()
       .toUpperCase() || null;
-  const isRegionalManagerCreator =
-    authRole === "manager" && currentBranchType === "REGIONAL";
+  const isRegionalOrHybridManagerCreator =
+    authRole === "manager" &&
+    (currentBranchType === "REGIONAL" || currentBranchType === "HYBRID");
+  const managerAllowedRoles: UserRole[] = ["admin", "courier"];
 
   const [showPassword, setShowPassword] = useState(false);
   const [isCompactRolePicker, setIsCompactRolePicker] = useState(
@@ -215,29 +205,20 @@ export const CreateUserForm = memo(() => {
     { key: "courier", icon: <Truck size={16} /> },
     { key: "marketing", icon: <Store size={16} /> },
   ];
-  const visibleRoleOptions = isRegionalManagerCreator
-    ? rolePickerOptions.filter((option) => option.key === "courier")
+  const visibleRoleOptions = isRegionalOrHybridManagerCreator
+    ? rolePickerOptions.filter((option) => managerAllowedRoles.includes(option.key))
     : rolePickerOptions;
 
   const activeRoleOption =
     visibleRoleOptions.find((option) => option.key === role) ?? visibleRoleOptions[0];
 
-  const { createAdmin, createManager, createRegistrator, createMarket, createCourier, getRegions } = useUser();
+  const { createAdmin, createManager, createRegistrator, createMarket, createCourier } = useUser();
   const { apiRequest } = useAppNotification();
   const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches({
     page: 1,
     limit: 500,
   });
 
-  const { data: regionsData } = getRegions();
-  const regionList: RegionOption[] = (() => {
-    const data = regionsData;
-    if (Array.isArray(data)) return data;
-    if (data?.data?.items && Array.isArray(data.data.items)) return data.data.items;
-    if (data?.data && Array.isArray(data.data)) return data.data;
-    if (data?.items && Array.isArray(data.items)) return data.items;
-    return [];
-  })();
   const branchOptions = (branchesResponse?.data ?? [])
     .filter((branch) => branch.status !== "inactive")
     .sort((left, right) => {
@@ -257,10 +238,10 @@ export const CreateUserForm = memo(() => {
   }, [role, reset]);
 
   useEffect(() => {
-    if (isRegionalManagerCreator && role !== "courier") {
-      setValue("role", "courier");
+    if (isRegionalOrHybridManagerCreator && !managerAllowedRoles.includes(role)) {
+      setValue("role", managerAllowedRoles[0]);
     }
-  }, [isRegionalManagerCreator, role, setValue]);
+  }, [isRegionalOrHybridManagerCreator, managerAllowedRoles, role, setValue]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -330,16 +311,15 @@ export const CreateUserForm = memo(() => {
     }
 
     if (role === "courier") {
-      if (!isRegionalManagerCreator && !values.region) {
-        setError("region", { message: t("regionRequired") });
-        valid = false;
-      }
-      if (!values.homeRate) {
-        setError("homeRate", { message: t("homeTariffRequired") });
-        valid = false;
-      }
-      if (!values.centerRate) {
-        setError("centerRate", { message: t("centerTariffRequired") });
+      const hasHomeRate = Boolean(values.homeRate.trim());
+      const hasCenterRate = Boolean(values.centerRate.trim());
+      if (hasHomeRate !== hasCenterRate) {
+        if (!hasHomeRate) {
+          setError("homeRate", { message: t("homeTariffRequired") });
+        }
+        if (!hasCenterRate) {
+          setError("centerRate", { message: t("centerTariffRequired") });
+        }
         valid = false;
       }
     }
@@ -433,11 +413,13 @@ export const CreateUserForm = memo(() => {
         name: values.fullName,
         phone_number: rawPhone,
         password: values.password,
-        tariff_home: parseAmount(values.homeRate),
-        tariff_center: parseAmount(values.centerRate),
       };
-      if (!isRegionalManagerCreator) {
-        payload.region_id = values.region;
+      if (values.salary.trim()) {
+        payload.salary = parseAmount(values.salary);
+      }
+      if (values.homeRate.trim() && values.centerRate.trim()) {
+        payload.tariff_home = parseAmount(values.homeRate);
+        payload.tariff_center = parseAmount(values.centerRate);
       }
 
       await apiRequest({
@@ -597,8 +579,7 @@ export const CreateUserForm = memo(() => {
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-visible px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:items-start lg:gap-6 lg:overflow-hidden lg:px-6 lg:py-6">
-        {!isRegionalManagerCreator && (
-          <div className="w-full shrink-0 lg:w-72">
+        <div className="w-full shrink-0 lg:w-72">
             <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-primarydark/20 dark:bg-maindark sm:p-4">
               <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
                 {t("roleSelect")}
@@ -630,7 +611,9 @@ export const CreateUserForm = memo(() => {
                     <div className="mt-3 flex flex-col gap-2">
                       {rolePickerOptions
                         .filter((option) =>
-                          isRegionalManagerCreator ? option.key === "courier" : true,
+                          isRegionalOrHybridManagerCreator
+                            ? managerAllowedRoles.includes(option.key)
+                            : true,
                         )
                         .filter((option) => option.key !== role)
                         .map((option) => (
@@ -659,7 +642,9 @@ export const CreateUserForm = memo(() => {
                   <RoleSelector
                     selectedRole={role}
                     onSelect={(nextRole) => setValue("role", nextRole)}
-                    allowedRoles={isRegionalManagerCreator ? ["courier"] : undefined}
+                    allowedRoles={
+                      isRegionalOrHybridManagerCreator ? managerAllowedRoles : undefined
+                    }
                   />
                 </div>
               )}
@@ -672,7 +657,6 @@ export const CreateUserForm = memo(() => {
               </p>
             </div>
           </div>
-        )}
 
         <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 dark:border-primarydark/20 dark:bg-maindark dark:shadow-black/20">
           <div className="flex shrink-0 items-center gap-3 border-b border-slate-100 bg-slate-50/50 px-3 py-3 dark:border-white/5 dark:bg-main sm:gap-4 sm:px-4 md:px-6">
@@ -760,41 +744,25 @@ export const CreateUserForm = memo(() => {
 
                 {role === "courier" && (
                   <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 xl:grid-cols-3 md:gap-6">
-                    {!isRegionalManagerCreator && (
-                      <Controller
-                        control={control}
-                        name="region"
-                        render={({ field, fieldState }) => (
-                          <div className="relative">
-                            <SearchableSelect
-                              label={t("regionLabel")}
-                              name={field.name}
-                              value={field.value}
-                              onChange={field.onChange}
-                              options={regionList.map((region) => ({
-                                value: String(region.id),
-                                label: getRegionOptionLabel(region),
-                              }))}
-                              placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
-                              icon={Building}
-                              surface="search"
-                            />
-                            <FieldError message={fieldState.error?.message} />
-                          </div>
-                        )}
-                      />
-                    )}
+                    {renderInput({
+                      label: t("salaryWithCurrency"),
+                      name: "salary",
+                      placeholder: "Masalan: 5 000 000",
+                      required: false,
+                    })}
                     {renderInput({
                       label: t("homeTariffWithCurrency"),
                       name: "homeRate",
                       placeholder: "Masalan: 10 000",
                       icon: <Building size={18} />,
+                      required: false,
                     })}
                     {renderInput({
                       label: t("centerTariffWithCurrency"),
                       name: "centerRate",
                       placeholder: "Masalan: 8 000",
                       icon: <Store size={18} />,
+                      required: false,
                     })}
                   </div>
                 )}
