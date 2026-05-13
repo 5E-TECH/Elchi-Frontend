@@ -36,6 +36,7 @@ import {
   playScanFeedback,
 } from "../../scan/lib/scanShared";
 import { getMailTabPath, normalizeMailTab } from "../lib/navigation";
+import PageContainer from "../../../shared/ui/PageContainer";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const MailDetailSkeleton = memo(() => (
@@ -503,22 +504,22 @@ const MailDetailPage = () => {
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (regularLoading || refusedLoading || transferBatchLoading || transferBatchByIdLoading)
     return (
-      <div className="rounded-2xl p-6">
+      <PageContainer>
         <MailDetailSkeleton />
-      </div>
+      </PageContainer>
     );
 
   // ─── Error ────────────────────────────────────────────────────────────────
   if (regularError || refusedError || transferBatchError || transferBatchByIdError)
     return (
-      <div className="rounded-2xl p-6">
+      <PageContainer>
         <ErrorState />
-      </div>
+      </PageContainer>
     );
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-5 rounded-2xl p-6">
+    <PageContainer className="flex flex-col gap-5">
       {/* Sarlavha */}
       <div className="flex items-center justify-between gap-4">
         <div className="max-w-100">
@@ -619,7 +620,7 @@ const MailDetailPage = () => {
         confirmLabel={t("delete")}
         variant="danger"
       />
-    </div>
+    </PageContainer>
   );
 };
 

@@ -34,6 +34,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
+import PageContainer from "../../../shared/ui/PageContainer";
 
 interface Product {
   id: number;
@@ -520,16 +521,16 @@ const ProductTable = () => {
   // ─── Render ─────────────────────────────────────────────────────────────
   if (!isRoleResolved) {
     return (
-      <div className="rounded-2xl p-6">
+      <PageContainer>
         <div className="flex h-40 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-main/20 border-t-main" />
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="rounded-2xl p-3 sm:p-4 lg:p-6">
+    <PageContainer>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderName
           name={t("title")}
@@ -687,7 +688,7 @@ const ProductTable = () => {
           )}
         </div>
       </UpdatePopup>
-    </div>
+    </PageContainer>
   );
 };
 

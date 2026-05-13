@@ -14,7 +14,7 @@ const BranchCards = ({ data, loading }: { data: Branch[]; loading?: boolean }) =
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {data.map((branch) => (
         <BranchCard key={branch.id} branch={branch} />
       ))}

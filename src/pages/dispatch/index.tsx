@@ -1,8 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle,
   CheckCircle2,
-  LockKeyhole,
   PackagePlus,
   QrCode,
   Trash2,
@@ -10,8 +8,9 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../shared/components/headerName";
-import SearchableSelect from "../../shared/ui/SearchableSelect";
-import QrScanner from "../../shared/lib/qrScanner";
+import PopupSelect from "../../shared/components/popupSelect";
+import ScannerActionButton from "../../shared/components/ScannerActionButton";
+import ScannerCameraModal from "../../shared/components/ScannerCameraModal";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { useScannerGate } from "../../shared/lib/useScannerGate";
 import { extractScannerToken } from "../../shared/lib/scanToken";
@@ -19,8 +18,8 @@ import { fetchScanDetail, getScanResourceType, getBackendErrorMessage } from "..
 import { playScanFeedback } from "../scan/lib/scanShared";
 import { useAppNotification } from "../../app/providers/notification/NotificationProvider";
 import { useOrders } from "../../entities/order/api/orderApi";
-import EmptyState from "../../shared/ui/EmptyState";
 import { useUser } from "../../entities/user/api/userApi";
+import PageContainer from "../../shared/ui/PageContainer";
 
 type PendingOrder = {
   id: string;
@@ -38,6 +37,11 @@ type BackendOrderError = {
   error?: string;
 };
 
+type UnknownRecord = Record<string, unknown>;
+
+const asRecord = (value: unknown): UnknownRecord =>
+  value && typeof value === "object" ? value as UnknownRecord : {};
+
 const safe = (value: unknown, fallback = "—") => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
@@ -46,33 +50,35 @@ const safe = (value: unknown, fallback = "—") => {
 
 const formatMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
 
-const extractList = (payload: unknown): any[] => {
-  const source = payload as Record<string, any>;
-  if (Array.isArray(source)) return source;
-  if (Array.isArray(source?.data?.data)) return source.data.data;
-  if (Array.isArray(source?.data)) return source.data;
-  if (Array.isArray(source?.data?.items)) return source.data.items;
-  if (Array.isArray(source?.data?.couriers)) return source.data.couriers;
-  if (Array.isArray(source?.data?.rows)) return source.data.rows;
-  if (Array.isArray(source?.data?.results)) return source.data.results;
-  if (Array.isArray(source?.items)) return source.items;
-  if (Array.isArray(source?.couriers)) return source.couriers;
-  if (Array.isArray(source?.rows)) return source.rows;
-  if (Array.isArray(source?.results)) return source.results;
+const extractList = (payload: unknown): unknown[] => {
+  const source = asRecord(payload);
+  const data = asRecord(source.data);
+
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(data.data)) return data.data;
+  if (Array.isArray(source.data)) return source.data;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.couriers)) return data.couriers;
+  if (Array.isArray(data.rows)) return data.rows;
+  if (Array.isArray(data.results)) return data.results;
+  if (Array.isArray(source.items)) return source.items;
+  if (Array.isArray(source.couriers)) return source.couriers;
+  if (Array.isArray(source.rows)) return source.rows;
+  if (Array.isArray(source.results)) return source.results;
   return [];
 };
 
 const normalizeCourierOption = (value: unknown) => {
-  const item = value as Record<string, any>;
-  const user = (
+  const item = asRecord(value);
+  const user = asRecord(
     item.user ??
     item.employee ??
     item.courier ??
     item.identity_user ??
     item.identityUser ??
     item.profile ??
-    item
-  ) as Record<string, any>;
+    item,
+  );
   const id = safe(user.id ?? item.user_id ?? item.userId ?? item.courier_id ?? item.courierId ?? item.id, "");
   const label = safe(
     user.fullName ??
@@ -97,20 +103,22 @@ const normalizeCourierOption = (value: unknown) => {
 };
 
 const normalizeOrder = (payload: unknown, token: string, t: (key: string) => string): PendingOrder => {
-  const source = payload as Record<string, any>;
-  const responseData = source?.data ?? source;
-  const order = responseData?.data ?? responseData?.order ?? responseData;
+  const source = asRecord(payload);
+  const responseData = asRecord(source.data ?? source);
+  const order = asRecord(responseData.data ?? responseData.order ?? responseData);
+  const market = asRecord(order.market);
+  const sender = asRecord(order.sender);
 
   return {
     id: safe(order?.id),
     token,
-    market: safe(order?.market?.name ?? order?.sender?.name, t("marketFallback")),
+    market: safe(market.name ?? sender.name, t("marketFallback")),
     amount: Number(order?.total_price ?? 0) || 0,
   };
 };
 
 const getDispatchErrorMessage = (error: unknown, fallback: string) => {
-  const responseData = (error as { response?: { data?: any } } | null)?.response?.data;
+  const responseData = asRecord((error as { response?: { data?: unknown } } | null)?.response?.data);
   const errors = responseData?.errors ?? responseData?.failed ?? responseData?.items;
 
   if (Array.isArray(errors) && errors.length) {
@@ -134,7 +142,7 @@ const DispatchPage = () => {
   const courierParams = useMemo(
     () => ({
       page: 1,
-      limit: 200,
+      limit: 100,
     }),
     [],
   );
@@ -153,20 +161,13 @@ const DispatchPage = () => {
     [couriersResponse],
   );
 
-  const courierMap = useMemo(
-    () => new Map(couriers.map((courier) => [courier.value, courier.label])),
-    [couriers],
-  );
-
-  const [selectedCourierId, setSelectedCourierId] = useState("");
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const [scanError, setScanError] = useState("");
   const [isLookingUpOrder, setIsLookingUpOrder] = useState(false);
-  const [torchEnabled, setTorchEnabled] = useState(false);
-  const [hasTorch, setHasTorch] = useState(false);
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [isCourierPopupOpen, setIsCourierPopupOpen] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const scannerRef = useRef<QrScanner | null>(null);
+  const isCameraScannerOpenRef = useRef(false);
   const pendingTokensRef = useRef<Set<string>>(new Set());
   const lookupTokensRef = useRef<Set<string>>(new Set());
   const { canAcceptScan, blockScans, resetScannerGate } = useScannerGate({
@@ -174,14 +175,9 @@ const DispatchPage = () => {
     duplicateCooldownMs: 2600,
   });
 
-  const selectedCourierName = selectedCourierId ? (courierMap.get(selectedCourierId) ?? "#") : "";
-
   useEffect(() => {
-    if (selectedCourierId && !isCouriersLoading && !courierMap.has(selectedCourierId)) {
-      setSelectedCourierId("");
-      setPendingOrders([]);
-    }
-  }, [courierMap, isCouriersLoading, selectedCourierId]);
+    isCameraScannerOpenRef.current = isCameraScannerOpen;
+  }, [isCameraScannerOpen]);
 
   useEffect(() => {
     pendingTokensRef.current = new Set(
@@ -197,12 +193,6 @@ const DispatchPage = () => {
     if (!canAcceptScan(rawValue)) return true;
 
     const normalizedToken = extractScannerToken(rawValue, window.location.origin) ?? rawValue.trim();
-
-    if (!selectedCourierId) {
-      setScanError(t("selectCourierFirst"));
-      void playScanFeedback("error");
-      return true;
-    }
 
     if (!normalizedToken) {
       return false;
@@ -241,6 +231,9 @@ const DispatchPage = () => {
         return [...prev, nextOrder];
       });
       void playScanFeedback("success");
+      if (isCameraScannerOpenRef.current) {
+        setIsCameraScannerOpen(false);
+      }
       blockScans(1400);
       return true;
     } catch (error) {
@@ -252,10 +245,10 @@ const DispatchPage = () => {
       lookupTokensRef.current.delete(tokenKey);
       setIsLookingUpOrder(false);
     }
-  }, [blockScans, canAcceptScan, selectedCourierId, t]);
+  }, [blockScans, canAcceptScan, t]);
 
   useKeyboardScanner({
-    enabled: Boolean(selectedCourierId),
+    enabled: true,
     captureEditableTargets: true,
     onScan: (value) => {
       void handleScanValue(value);
@@ -263,90 +256,21 @@ const DispatchPage = () => {
     },
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const stopScanner = () => {
-      const activeScanner = scannerRef.current;
-      const video = videoRef.current;
-      void activeScanner?.pause(true);
-      activeScanner?.stop();
-      activeScanner?.destroy();
-      scannerRef.current = null;
-      if (video) {
-        video.pause();
-        video.srcObject = null;
-        video.load();
-      }
-      setHasTorch(false);
-      setTorchEnabled(false);
-    };
-
-    const startScanner = async () => {
-      try {
-        if (!selectedCourierId || !videoRef.current) return;
-
-        const supportError = await QrScanner.getSupportError();
-        if (supportError) {
-          setScanError(supportError);
-          return;
-        }
-
-        const scanner = new QrScanner(
-          videoRef.current,
-          (result: string | { data: string }) => {
-            const value = typeof result === "string" ? result : result.data;
-            void handleScanValue(value);
-          },
-          {
-            preferredCamera: "environment",
-            returnDetailedScanResult: true,
-            highlightScanRegion: false,
-            highlightCodeOutline: false,
-            onDecodeError: () => undefined,
-          },
-        );
-
-        scannerRef.current = scanner;
-        await scanner.start();
-
-        if (cancelled) {
-          scanner.destroy();
-          return;
-        }
-
-        setHasTorch(await scanner.hasFlash().catch(() => false));
-      } catch (error) {
-        setScanError(getBackendErrorMessage(error) ?? t("invalidQr"));
-      }
-    };
-
-    void startScanner();
-
-    return () => {
-      cancelled = true;
-      stopScanner();
-    };
-  }, [handleScanValue, selectedCourierId, t]);
-
-  const handleToggleTorch = async () => {
-    const scanner = scannerRef.current;
-    if (!scanner || !hasTorch) return;
-
-    try {
-      await scanner.toggleFlash();
-      setTorchEnabled(scanner.isFlashOn());
-    } catch {
-      setScanError(t("invalidQr"));
-    }
+  const handleToggleCameraScanner = () => {
+    setScanError("");
+    setIsCameraScannerOpen((prev) => !prev);
   };
 
-  const handleComplete = async () => {
-    if (!selectedCourierId || pendingOrders.length === 0 || assignCourier.isPending) return;
+  const handleCloseCameraScanner = () => {
+    setIsCameraScannerOpen(false);
+  };
+
+  const handleComplete = async (courierId: string, courierName: string) => {
+    if (!courierId || pendingOrders.length === 0 || assignCourier.isPending) return;
 
     try {
       await assignCourier.mutateAsync({
-        courier_id: selectedCourierId,
+        courier_id: courierId,
         order_ids: pendingOrders.map((order) => order.id),
       });
 
@@ -354,15 +278,16 @@ const DispatchPage = () => {
         message: t("success"),
         description: t("assignSuccess", {
           count: pendingOrders.length,
-          courier: selectedCourierName,
+          courier: courierName,
         }),
         placement: "topRight",
         duration: 3,
       });
 
       setPendingOrders([]);
-      setSelectedCourierId("");
+      setIsCourierPopupOpen(false);
       setScanError("");
+      setIsCameraScannerOpen(false);
       lookupTokensRef.current.clear();
       resetScannerGate();
     } catch (error) {
@@ -376,24 +301,7 @@ const DispatchPage = () => {
   };
 
   return (
-    <div className="min-h-full rounded-2xl p-4 md:p-6">
-      <style>{`
-        @keyframes dispatch-scan-line-y {
-          0% {
-            top: 14%;
-            opacity: 0.45;
-          }
-          50% {
-            top: 50%;
-            opacity: 1;
-          }
-          100% {
-            top: 86%;
-            opacity: 0.45;
-          }
-        }
-      `}</style>
-
+    <PageContainer>
       <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-primarydark">
         <HeaderName
           name={t("title")}
@@ -402,131 +310,32 @@ const DispatchPage = () => {
         />
       </div>
 
-      <div className="mt-6 rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-sm dark:bg-primarydark">
-        <div className="max-w-md">
-          <SearchableSelect
-            label={t("courierLabel")}
-            name="dispatch-courier"
-            value={selectedCourierId}
-            onChange={(value) => {
-              setSelectedCourierId(value);
-              setPendingOrders([]);
-              setScanError("");
-            }}
-            options={couriers}
-            placeholder={t("courierPlaceholder")}
-            icon={Truck}
-            loading={isCouriersLoading}
-            disabled={isCouriersLoading || isCouriersError || couriers.length === 0}
-          />
-          <p className="m-0 mt-3 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            {t("pagePurpose")}
-          </p>
+      {isCouriersError ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-100">
+          <span>{t("couriersLoadError")}</span>
+          <button
+            type="button"
+            onClick={() => void refetchCouriers()}
+            className="rounded-xl bg-red-500 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-red-400"
+          >
+            {t("retry")}
+          </button>
         </div>
+      ) : null}
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary px-5 py-4 shadow-sm dark:bg-primarydark">
+        <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+          {t("keyboardScannerHint")}
+        </p>
+        <ScannerActionButton
+          onClick={handleToggleCameraScanner}
+          label={t("openScanner")}
+          showLabel
+          className="!bg-main !text-white !shadow-lg !shadow-main/20 hover:!bg-main/90 dark:!text-white"
+        />
       </div>
 
-      {isCouriersError ? (
-        <div className="mt-6">
-          <EmptyState
-            icon="❌"
-            title="Courierlarni yuklab bo'lmadi"
-            description="Server javobini tekshirib, qayta urinib ko'ring."
-            action={
-              <button
-                type="button"
-                onClick={() => void refetchCouriers()}
-                className="rounded-2xl bg-main px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-main/90"
-              >
-                Qayta urinib ko'rish
-              </button>
-            }
-          />
-        </div>
-      ) : null}
-
-      {!isCouriersLoading && !isCouriersError && couriers.length === 0 ? (
-        <div className="mt-6">
-          <EmptyState
-            icon="🚚"
-            title={t("couriersEmptyTitle")}
-            description={t("couriersEmptyDescription")}
-          />
-        </div>
-      ) : null}
-
-      {selectedCourierId ? (
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark">
-          <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4">
-            <div>
-              <h3 className="m-0 text-xl font-extrabold text-maindark dark:text-white">
-                {t("scannerTitle")}
-              </h3>
-              <p className="m-0 mt-1 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("scannerSubtitle")}
-              </p>
-            </div>
-            {hasTorch ? (
-              <button
-                type="button"
-                onClick={() => void handleToggleTorch()}
-                className="cursor-pointer rounded-2xl border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-semibold text-maindark transition hover:border-main/40 hover:text-main dark:text-white"
-              >
-                {torchEnabled ? "Torch off" : "Torch on"}
-              </button>
-            ) : null}
-          </div>
-
-          <div className="p-5">
-            <div className="relative overflow-hidden rounded-[28px] border border-[color:var(--color-border-soft)] bg-maindark">
-              <div className="relative aspect-[16/10]">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="h-full w-full object-cover opacity-95"
-                />
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="relative h-[58%] w-[68%] max-w-[340px] rounded-[34px] border border-white/10 bg-white/[0.04] shadow-[0_0_0_9999px_rgba(7,10,24,0.34)]">
-                    <div className="absolute left-0 top-0 h-12 w-12 rounded-tl-[30px] border-l-4 border-t-4 border-[#7c8cff]" />
-                    <div className="absolute right-0 top-0 h-12 w-12 rounded-tr-[30px] border-r-4 border-t-4 border-[#7c8cff]" />
-                    <div className="absolute bottom-0 left-0 h-12 w-12 rounded-bl-[30px] border-b-4 border-l-4 border-[#7c8cff]" />
-                    <div className="absolute bottom-0 right-0 h-12 w-12 rounded-br-[30px] border-b-4 border-r-4 border-[#7c8cff]" />
-                    <div
-                      className="absolute left-[8%] right-[8%] h-[2px] -translate-y-1/2 bg-[linear-gradient(90deg,transparent,rgba(124,140,255,0.98),transparent)] shadow-[0_0_24px_rgba(124,140,255,0.78)]"
-                      style={{ animation: "dispatch-scan-line-y 2.2s ease-in-out infinite alternate" }}
-                    />
-                    <div
-                      className="absolute left-[14%] right-[14%] h-10 -translate-y-1/2 bg-[radial-gradient(circle,rgba(124,140,255,0.18),transparent_72%)] blur-md"
-                      style={{ animation: "dispatch-scan-line-y 2.2s ease-in-out infinite alternate" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-4 text-sm font-semibold text-[color:var(--color-text-muted)] dark:border-white/10 dark:bg-white/[0.04] dark:text-[color:var(--color-text-muted-dark)]">
-              {selectedCourierId ? t("scannerWaiting") : t("selectCourierFirst")}
-            </div>
-
-            {isLookingUpOrder ? (
-              <div className="mt-4 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-sm font-semibold text-main dark:text-white">
-                {t("loading")}
-              </div>
-            ) : null}
-
-            {scanError ? (
-              <div className="mt-4 rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-100">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                  <span>{scanError}</span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </section>
-
+      <div className="mt-6">
         <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark">
           <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4">
             <div>
@@ -544,28 +353,51 @@ const DispatchPage = () => {
 
           <div className="p-5">
             {pendingOrders.length === 0 ? (
-              <div className="flex min-h-[320px] items-center justify-center rounded-[24px] border border-dashed border-[color:var(--color-border-soft)] text-sm font-semibold text-[color:var(--color-text-muted)] dark:border-white/10 dark:text-[color:var(--color-text-muted-dark)]">
-                {t("pendingEmpty")}
+              <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[color:var(--color-border-soft)] px-6 text-center dark:border-white/10">
+                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-main/10 text-main dark:bg-white/10 dark:text-white">
+                  <QrCode size={28} />
+                </div>
+                <h4 className="m-0 mt-4 text-lg font-black text-maindark dark:text-white">
+                  {t("scanOrdersTitle")}
+                </h4>
+                <p className="m-0 mt-2 max-w-md text-sm font-semibold leading-6 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                  {t("scanOrdersHint")}
+                </p>
+                <ScannerActionButton
+                  onClick={handleToggleCameraScanner}
+                  label={t("openScanner")}
+                  showLabel
+                  className="mt-5 !bg-main !text-white !shadow-lg !shadow-main/20 hover:!bg-main/90 dark:!text-white"
+                />
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
                 {pendingOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="rounded-[24px] border border-[color:var(--color-border-soft)] bg-white/75 px-4 py-4 dark:border-white/10 dark:bg-white/[0.04]"
+                    className="rounded-[24px] border border-[color:var(--color-border-soft)] bg-white/75 px-4 py-4 transition hover:border-main/30 dark:border-white/10 dark:bg-white/[0.04]"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-maindark dark:text-white">
-                          <QrCode size={16} />
-                          <p className="m-0 truncate text-sm font-extrabold">{order.token}</p>
+                    <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
+                      <div className="min-w-0 space-y-2">
+                        <div className="flex min-w-0 items-center gap-2 text-maindark dark:text-white">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-main/10 text-main dark:bg-white/10 dark:text-white">
+                            <QrCode size={16} />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="m-0 truncate text-sm font-extrabold">ORD-{order.id}</p>
+                            <p className="m-0 truncate text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                              {order.token}
+                            </p>
+                          </div>
                         </div>
-                        <p className="m-0 mt-2 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                          {order.market}
-                        </p>
-                        <p className="m-0 mt-1 text-base font-extrabold text-maindark dark:text-white">
-                          {formatMoney(order.amount)}
-                        </p>
+                        <div className="grid gap-2 text-sm sm:grid-cols-2">
+                          <p className="m-0 font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                            {t("market")}: <span className="text-maindark dark:text-white">{order.market}</span>
+                          </p>
+                          <p className="m-0 font-extrabold text-maindark dark:text-white">
+                            {formatMoney(order.amount)}
+                          </p>
+                        </div>
                       </div>
 
                       <button
@@ -584,8 +416,8 @@ const DispatchPage = () => {
 
             <button
               type="button"
-              onClick={() => void handleComplete()}
-              disabled={!selectedCourierId || pendingOrders.length === 0 || assignCourier.isPending}
+              onClick={() => setIsCourierPopupOpen(true)}
+              disabled={pendingOrders.length === 0 || assignCourier.isPending || isCouriersLoading || isCouriersError || couriers.length === 0}
               className="mt-5 flex w-full cursor-pointer items-center justify-center gap-3 rounded-[28px] bg-emerald-500 px-6 py-5 text-base font-extrabold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {assignCourier.isPending ? (
@@ -596,30 +428,63 @@ const DispatchPage = () => {
               ) : (
                 <>
                   <CheckCircle2 size={18} />
-                  {t("assignButton", {
-                    count: pendingOrders.length,
-                    courier: selectedCourierName,
-                  })}
+                  {t("openCourierAssign", { count: pendingOrders.length })}
                 </>
               )}
             </button>
           </div>
         </section>
       </div>
-      ) : couriers.length > 0 ? (
-        <div className="mt-6 rounded-[28px] border border-dashed border-[color:var(--color-border-soft)] bg-primary p-10 text-center shadow-sm dark:border-white/10 dark:bg-primarydark">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-main/10 text-main dark:text-white">
-            <LockKeyhole size={26} />
+
+      <ScannerCameraModal
+        isOpen={isCameraScannerOpen}
+        onClose={handleCloseCameraScanner}
+        onDecode={(value) => void handleScanValue(value)}
+        title={t("scannerTitle")}
+        subtitle={t("scannerSubtitle")}
+        waitingText={t("scannerWaiting")}
+        closeLabel={t("closeScanner")}
+        torchOnLabel={t("torchOn")}
+        torchOffLabel={t("torchOff")}
+        invalidQrMessage={t("invalidQr")}
+        loading={isLookingUpOrder}
+        loadingText={t("loading")}
+        error={scanError}
+      />
+
+      <PopupSelect<{ value: string; label: string }>
+        isOpen={isCourierPopupOpen}
+        onClose={() => setIsCourierPopupOpen(false)}
+        data={couriers}
+        onSelect={(courier) => {
+          void handleComplete(courier.value, courier.label);
+        }}
+        keyExtractor={(courier) => courier.value}
+        searchKeys={["label"]}
+        title={t("courierPopupTitle")}
+        description={t("courierPopupDescription", { count: pendingOrders.length })}
+        icon={<Truck />}
+        placeholder={t("courierSearchPlaceholder")}
+        selectLabel={t("assignSelectedCourier")}
+        cancelLabel={t("cancel")}
+        labelKey="label"
+        renderItem={(courier, isSelected) => (
+          <div className="flex items-center gap-3">
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isSelected ? "bg-main text-white" : "bg-main/10 text-main dark:bg-white/10 dark:text-white"}`}>
+              <Truck size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="m-0 truncate text-base font-extrabold text-maindark dark:text-white">
+                {courier.label}
+              </p>
+              <p className="m-0 mt-0.5 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                {t("courierOptionHint")}
+              </p>
+            </div>
           </div>
-          <h3 className="m-0 mt-5 text-xl font-black text-maindark dark:text-white">
-            {t("lockedTitle")}
-          </h3>
-          <p className="mx-auto mt-2 max-w-xl text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            {t("lockedHint")}
-          </p>
-        </div>
-      ) : null}
-    </div>
+        )}
+      />
+    </PageContainer>
   );
 };
 

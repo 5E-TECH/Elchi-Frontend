@@ -25,6 +25,7 @@ import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
 import BackButton from "../../../shared/ui/BackButton";
+import PageContainer from "../../../shared/ui/PageContainer";
 
 const BatchDetailPage = () => {
   const { t } = useTranslation("mails");
@@ -124,26 +125,26 @@ const BatchDetailPage = () => {
 
   if (isDetailLoading || isRemainingLoading) {
     return (
-      <div className="min-h-full rounded-2xl p-4 md:p-6">
+      <PageContainer>
         <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
           Yuklanmoqda...
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   if ((isDetailError && isRemainingError) || !batch) {
     return (
-      <div className="min-h-full rounded-2xl p-4 md:p-6">
+      <PageContainer>
         <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
           Paket topilmadi
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-full rounded-2xl p-4 md:p-5">
+    <PageContainer>
       <BatchPrintSheet batch={batch} />
 
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -281,7 +282,7 @@ const BatchDetailPage = () => {
           />
         </aside>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

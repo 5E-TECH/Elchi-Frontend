@@ -27,8 +27,9 @@ import {
   formatBatchDateTime,
   formatBatchMoney,
 } from "../batches/lib/batchFormat";
+import PageContainer from "../../shared/ui/PageContainer";
 
-type UnknownRecord = Record<string, any>;
+type UnknownRecord = Record<string, unknown>;
 
 interface ReturnBatch {
   id: string;
@@ -257,7 +258,7 @@ const ReturnsPage = () => {
   const total = data?.meta.total ?? 0;
 
   return (
-    <div className="min-h-full rounded-2xl p-4 md:p-6">
+    <PageContainer>
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <HeaderName
           name={t("title")}
@@ -340,7 +341,7 @@ const ReturnsPage = () => {
           pageSizeOptions={[10, 20, 50, 100]}
         />
       ) : null}
-    </div>
+    </PageContainer>
   );
 };
 
