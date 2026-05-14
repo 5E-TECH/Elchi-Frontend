@@ -42,6 +42,7 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
   // API dan to'g'ridan-to'g'ri region.name olamiz
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const { role } = useSelector((state: RootState) => state.role);
+  const isCourierLike = role === "courier";
   const openDetail = () => navigate(`/mails/${item.id}`, { state: { fromTab: "today" } });
   // console.log(role, region);
 
@@ -83,7 +84,7 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
         {/* Viloyat nomi */}
         <div>
           <h3 className="text-white font-bold text-lg leading-tight">
-            {role === "courier"
+            {isCourierLike
               ? new Date(item?.createdAt).toLocaleString("uz-UZ", {
                   year: "numeric",
                   month: "2-digit",
@@ -136,16 +137,16 @@ MailCardSkeleton.displayName = "MailCardSkeleton";
 const TodaysMails = () => {
   const { t } = useTranslation("mails");
   const { role } = useSelector((state: RootState) => state.role);
-  const isCourier = role === "courier";
+  const isCourierLike = role === "courier";
   const [selectedRegionId, setSelectedRegionId] = useState("");
 
   const { getNewMails, getNewMailsCourier } = useMails();
 
-  const courierQuery = getNewMailsCourier({ enabled: isCourier });
-  const defaultQuery = getNewMails({ enabled: !isCourier });
-  const response = isCourier ? courierQuery.data : defaultQuery.data;
-  const isLoading = isCourier ? courierQuery.isLoading : defaultQuery.isLoading;
-  const isError = isCourier ? courierQuery.isError : defaultQuery.isError;
+  const courierQuery = getNewMailsCourier({ enabled: isCourierLike });
+  const defaultQuery = getNewMails({ enabled: !isCourierLike });
+  const response = isCourierLike ? courierQuery.data : defaultQuery.data;
+  const isLoading = isCourierLike ? courierQuery.isLoading : defaultQuery.isLoading;
+  const isError = isCourierLike ? courierQuery.isError : defaultQuery.isError;
 
   const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
   const regionOptions = useMemo(
@@ -216,7 +217,7 @@ const TodaysMails = () => {
           totalRegions={stats.totalRegions}
           totalOrders={stats.totalOrders}
           totalPrice={formatPrice(stats.totalPrice)}
-          isCourier={role === "courier"}
+          isCourier={isCourierLike}
           accent="success"
         />
 
