@@ -1,7 +1,7 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useRef } from "react";
 import { CameraOff } from "lucide-react";
 import Popup from "../ui/Popup";
-import QrScanner from "../lib/qrScanner";
+import { useCameraQrScanner } from "../lib/useCameraQrScanner";
 
 type ScannerCameraModalProps = {
   isOpen: boolean;
@@ -35,97 +35,18 @@ const ScannerCameraModal = ({
   error,
 }: ScannerCameraModalProps) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const scannerRef = useRef<QrScanner | null>(null);
-  const onDecodeRef = useRef(onDecode);
-  const [torchEnabled, setTorchEnabled] = useState(false);
-  const [hasTorch, setHasTorch] = useState(false);
-  const [cameraError, setCameraError] = useState("");
-
-  useEffect(() => {
-    onDecodeRef.current = onDecode;
-  }, [onDecode]);
-
-  const stopScanner = () => {
-    const activeScanner = scannerRef.current;
-    const video = videoRef.current;
-
-    void activeScanner?.pause(true);
-    activeScanner?.stop();
-    activeScanner?.destroy();
-    scannerRef.current = null;
-
-    if (video) {
-      video.pause();
-      video.srcObject = null;
-      video.load();
-    }
-
-    setHasTorch(false);
-    setTorchEnabled(false);
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const startScanner = async () => {
-      try {
-        if (!isOpen || !videoRef.current) return;
-
-        setCameraError("");
-        const supportError = await QrScanner.getSupportError();
-        if (supportError) {
-          setCameraError(supportError);
-          return;
-        }
-
-        const scanner = new QrScanner(
-          videoRef.current,
-          (result: string | { data: string }) => {
-            const value = typeof result === "string" ? result : result.data;
-            onDecodeRef.current(value);
-          },
-          {
-            preferredCamera: "environment",
-            returnDetailedScanResult: true,
-            highlightScanRegion: false,
-            highlightCodeOutline: false,
-            onDecodeError: () => undefined,
-          },
-        );
-
-        scannerRef.current = scanner;
-        await scanner.start();
-
-        if (cancelled) {
-          scanner.destroy();
-          return;
-        }
-
-        setHasTorch(await scanner.hasFlash().catch(() => false));
-      } catch {
-        setCameraError(invalidQrMessage);
-      }
-    };
-
-    void startScanner();
-
-    return () => {
-      cancelled = true;
-      stopScanner();
-    };
-  }, [invalidQrMessage, isOpen]);
-
-  const handleToggleTorch = async () => {
-    const scanner = scannerRef.current;
-    if (!scanner || !hasTorch) return;
-
-    try {
-      await scanner.toggleFlash();
-      setTorchEnabled(scanner.isFlashOn());
-    } catch {
-      setCameraError(invalidQrMessage);
-    }
-  };
+  const {
+    torchEnabled,
+    hasTorch,
+    cameraError,
+    stopScanner,
+    toggleTorch,
+  } = useCameraQrScanner({
+    isActive: isOpen,
+    videoRef,
+    onDecode,
+    startErrorMessage: invalidQrMessage,
+  });
 
   const handleClose = () => {
     stopScanner();
@@ -150,7 +71,7 @@ const ScannerCameraModal = ({
             {hasTorch ? (
               <button
                 type="button"
-                onClick={() => void handleToggleTorch()}
+                onClick={() => void toggleTorch()}
                 className="cursor-pointer rounded-2xl border border-[color:var(--color-border-soft)] px-4 py-2 text-sm font-semibold text-maindark transition hover:border-main/40 hover:text-main dark:border-white/10 dark:text-white"
               >
                 {torchEnabled ? torchOffLabel : torchOnLabel}

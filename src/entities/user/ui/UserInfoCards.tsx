@@ -18,6 +18,7 @@ interface UserInfoCardsProps {
     user: User;
     onToggleMarketAddOrder?: () => void;
     isMarketAddOrderPending?: boolean;
+    headerAction?: React.ReactNode;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -63,7 +64,7 @@ const Divider = ({ title }: { title: string }) => (
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const UserInfoCards = memo(({ user, onToggleMarketAddOrder, isMarketAddOrderPending = false }: UserInfoCardsProps) => {
+export const UserInfoCards = memo(({ user, onToggleMarketAddOrder, isMarketAddOrderPending = false, headerAction }: UserInfoCardsProps) => {
     const { t } = useTranslation("users");
     const hasPaymentInfo = user.role === 'admin' || user.role === 'manager' || user.role === 'registrator';
     const isCourier = user.role === 'courier';
@@ -75,15 +76,18 @@ export const UserInfoCards = memo(({ user, onToggleMarketAddOrder, isMarketAddOr
     return (
         <div className="bg-white dark:bg-maindark rounded-2xl border border-slate-100 dark:border-primarydark/20 shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center gap-2.5 border-b border-slate-100 px-4 py-3.5 dark:border-white/5 sm:px-6 sm:py-4">
-                <div className="w-1 h-5 bg-main rounded-full" />
-                <h3 className="text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white">
-                    {t("profileInfo")}
-                </h3>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 dark:border-white/5 sm:px-5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="h-5 w-1 rounded-full bg-main" />
+                    <h3 className="truncate text-sm font-black uppercase tracking-wider text-slate-600 dark:text-white">
+                        {t("profileInfo")}
+                    </h3>
+                </div>
+                {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 sm:p-5">
+            <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 sm:p-4">
 
                 {/* ── Umumiy ── */}
                 <InfoChip

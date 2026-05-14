@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import QrScanner from "../../shared/lib/qrScanner";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { useScannerGate } from "../../shared/lib/useScannerGate";
+import { useCameraQrScanner } from "../../shared/lib/useCameraQrScanner";
 import {
   extractScannerToken,
   playScanFeedback,
@@ -31,7 +31,6 @@ const ScanPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const scannerRef = useRef<QrScanner | null>(null);
   const stopScannerRef = useRef<() => void>(() => undefined);
   const redirectTimeoutRef = useRef<number | null>(null);
   const { canAcceptScan, blockScans, resetScannerGate } = useScannerGate({
@@ -39,15 +38,10 @@ const ScanPage = () => {
     duplicateCooldownMs: 1800,
   });
 
-  const [scannerSession, setScannerSession] = useState(0);
-  const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState("");
   const [scanResult, setScanResult] = useState("");
   const [scannedId, setScannedId] = useState("");
   const [scanState, setScanState] = useState<"idle" | "success" | "invalid">("idle");
-  const [torchEnabled, setTorchEnabled] = useState(false);
-  const [hasTorch, setHasTorch] = useState(false);
-  const [cameraUnavailable, setCameraUnavailable] = useState(false);
 
   const handleDecodedValue = useCallback((rawValue: string) => {
     if (!canAcceptScan(rawValue)) return true;
@@ -60,11 +54,15 @@ const ScanPage = () => {
       setScanState("success");
       setScanResult(nextToken);
       setScannedId(nextToken);
+      blockScans(1800);
       void playScanFeedback("success");
       void queryClient.prefetchQuery({
         queryKey: getScanDetailQueryKey(nextToken),
         queryFn: () => fetchScanDetail(nextToken),
       });
+      if (redirectTimeoutRef.current) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
       redirectTimeoutRef.current = window.setTimeout(() => {
         navigate(`/scan/${encodeURIComponent(nextToken)}`);
       }, 180);
@@ -85,151 +83,53 @@ const ScanPage = () => {
     onScan: handleDecodedValue,
   });
 
+  const {
+    isStarting,
+    torchEnabled,
+    hasTorch,
+    cameraError,
+    cameraUnavailable,
+    stopScanner,
+    restartScanner,
+    toggleTorch,
+  } = useCameraQrScanner({
+    isActive: true,
+    videoRef,
+    onDecode: handleDecodedValue,
+    startErrorMessage: t("scannerStartError"),
+  });
+
   useEffect(() => {
-    let cancelled = false;
-    let restartTimeout: number | null = null;
-
-    const stopScanner = () => {
-      const video = videoRef.current;
-      const activeScanner = scannerRef.current;
-      void activeScanner?.pause(true);
-      activeScanner?.stop();
-      activeScanner?.destroy();
-      scannerRef.current = null;
-      if (video) {
-        video.pause();
-        video.srcObject = null;
-        video.load();
-      }
-      setTorchEnabled(false);
-      setHasTorch(false);
-    };
-
     stopScannerRef.current = stopScanner;
+  }, [stopScanner]);
 
-    const startScanner = async () => {
-      setIsStarting(true);
-      setError("");
-      setScanResult("");
-      setScannedId("");
-      setScanState("idle");
-      resetScannerGate();
+  useEffect(() => {
+    resetScannerGate();
+  }, [resetScannerGate]);
 
-      try {
-        if (!videoRef.current) {
-          throw new Error(t("scannerStartError"));
-        }
-
-        const supportError = await QrScanner.getSupportError();
-        if (supportError) {
-          setCameraUnavailable(true);
-          throw new Error(supportError);
-        }
-
-        const scanner = new QrScanner(
-          videoRef.current,
-          (result: string | { data: string }) => {
-            const rawValue = typeof result === "string" ? result : result.data;
-            handleDecodedValue(rawValue);
-          },
-          {
-            preferredCamera: "environment",
-            returnDetailedScanResult: true,
-            highlightScanRegion: false,
-            highlightCodeOutline: false,
-            onDecodeError: () => undefined,
-          },
-        );
-
-        scannerRef.current = scanner;
-        await scanner.start();
-        setCameraUnavailable(false);
-
-        if (cancelled) {
-          scanner.destroy();
-          return;
-        }
-
-        setHasTorch(await scanner.hasFlash().catch(() => false));
-      } catch (scannerError) {
-        const messageText =
-          scannerError instanceof Error || typeof scannerError === "string"
-            ? String(scannerError)
-            : t("scannerStartError");
-
-        const isInterruptedStart =
-          messageText.includes("AbortError") ||
-          messageText.includes("interrupted by a new load request");
-
-        if (isInterruptedStart && !cancelled) {
-          restartTimeout = window.setTimeout(() => {
-            setScannerSession((prev) => prev + 1);
-          }, 120);
-          return;
-        }
-
-        const message =
-          messageText;
-        setError(message);
-      } finally {
-        if (!cancelled) {
-          setIsStarting(false);
-        }
-      }
-    };
-
-    void startScanner();
-
+  useEffect(() => {
     return () => {
-      cancelled = true;
-      stopScanner();
-      if (restartTimeout) {
-        window.clearTimeout(restartTimeout);
-        restartTimeout = null;
-      }
       if (redirectTimeoutRef.current) {
         window.clearTimeout(redirectTimeoutRef.current);
         redirectTimeoutRef.current = null;
       }
     };
-  }, [handleDecodedValue, navigate, queryClient, resetScannerGate, scannerSession, t]);
-
-  const handleToggleTorch = async () => {
-    const scanner = scannerRef.current;
-    if (!scanner || !hasTorch) return;
-
-    try {
-      await scanner.toggleFlash();
-      setTorchEnabled(scanner.isFlashOn());
-    } catch {
-      setError(t("scannerTorchError"));
-    }
-  };
+  }, []);
 
   const handleRestart = () => {
     if (cameraUnavailable) return;
-    stopScannerRef.current();
-    setScannerSession((prev) => prev + 1);
+    setError("");
+    setScanResult("");
+    setScannedId("");
+    setScanState("idle");
+    resetScannerGate();
+    restartScanner();
   };
+
+  const shownError = error || cameraError;
 
   return (
     <div className="relative overflow-hidden rounded-[32px] border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-sidebar)_86%,var(--color-main)_14%)_100%)] shadow-sm dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
-      <style>{`
-        @keyframes scan-line-y {
-          0% {
-            top: 14%;
-            opacity: 0.45;
-          }
-          50% {
-            top: 50%;
-            opacity: 1;
-          }
-          100% {
-            top: 86%;
-            opacity: 0.45;
-          }
-        }
-      `}</style>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--color-main)_16%,transparent),transparent_34%),radial-gradient(circle_at_bottom_left,color-mix(in_srgb,var(--color-main)_10%,transparent),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--color-main)_20%,transparent),transparent_34%),radial-gradient(circle_at_bottom_left,color-mix(in_srgb,var(--color-success)_10%,transparent),transparent_28%)]" />
 
       <div className="relative flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4 md:px-7">
@@ -258,7 +158,7 @@ const ScanPage = () => {
         {hasTorch ? (
           <button
             type="button"
-            onClick={() => void handleToggleTorch()}
+            onClick={() => void toggleTorch()}
             className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-white text-[color:var(--color-text-muted)] transition hover:border-main/30 hover:bg-main/5 hover:text-main dark:bg-maindark dark:text-white/80 dark:hover:bg-white/12 dark:hover:text-white"
             aria-label={t("scannerTorch")}
           >
@@ -288,11 +188,11 @@ const ScanPage = () => {
                 <div className="absolute bottom-0 right-0 h-12 w-12 rounded-br-[30px] border-b-4 border-r-4 border-[#7c8cff]" />
                 <div
                   className="absolute left-[8%] right-[8%] h-[2px] -translate-y-1/2 bg-[linear-gradient(90deg,transparent,rgba(124,140,255,0.98),transparent)] shadow-[0_0_24px_rgba(124,140,255,0.78)]"
-                  style={{ animation: "scan-line-y 2.2s ease-in-out infinite alternate" }}
+                  style={{ animation: "scanner-scan-line-y 2.2s ease-in-out infinite alternate" }}
                 />
                 <div
                   className="absolute left-[14%] right-[14%] h-10 -translate-y-1/2 bg-[radial-gradient(circle,rgba(124,140,255,0.18),transparent_72%)] blur-md"
-                  style={{ animation: "scan-line-y 2.2s ease-in-out infinite alternate" }}
+                  style={{ animation: "scanner-scan-line-y 2.2s ease-in-out infinite alternate" }}
                 />
               </div>
             </div>
@@ -367,12 +267,12 @@ const ScanPage = () => {
                   {scannedId || scanResult}
                 </p>
               </div>
-            ) : error ? (
+            ) : shownError ? (
               <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-100">
                 <div className="flex items-start gap-2">
                   <AlertTriangle size={16} className="mt-0.5 shrink-0" />
                   <div>
-                    <p className="m-0">{error}</p>
+                    <p className="m-0">{shownError}</p>
                     {scanState === "invalid" && scanResult ? (
                       <p className="m-0 mt-2 break-all text-xs text-red-500/70 dark:text-red-100/70">
                         {scanResult}

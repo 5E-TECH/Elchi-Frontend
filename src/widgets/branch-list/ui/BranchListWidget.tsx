@@ -111,7 +111,7 @@ const BranchListWidget = ({
           {viewMode === "table" ? (
             <BranchTable data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
           ) : viewMode === "card" ? (
-            <BranchCards data={data?.data ?? []} loading={isLoading} />
+            <BranchCards data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
           ) : (
             <BranchTree data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
           )}

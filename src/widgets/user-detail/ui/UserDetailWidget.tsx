@@ -14,9 +14,22 @@ interface UserDetailWidgetProps {
   user?: User;
   isLoading: boolean;
   isError: boolean;
-  error?: any;
+  error?: unknown;
   isOwnProfile?: boolean;
 }
+
+const getErrorMessage = (error: unknown) => {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const response = (error as { response?: { data?: { message?: unknown } } }).response;
+    return typeof response?.data?.message === "string" ? response.data.message : undefined;
+  }
+
+  return undefined;
+};
 
 export const UserDetailWidget = memo(({
   user,
@@ -56,7 +69,7 @@ export const UserDetailWidget = memo(({
           <div>
             <p className="font-bold text-slate-800 dark:text-white">{t("loadError")}</p>
             <p className="text-sm text-slate-500 dark:text-white/40 mt-1">
-              {error?.response?.data?.message ?? t("loadDataError")}
+              {getErrorMessage(error) ?? t("loadDataError")}
             </p>
           </div>
         </div>
@@ -85,7 +98,7 @@ export const UserDetailWidget = memo(({
   const handleToggleMarketAddOrder = async () => {
     if (!user || !isMarket) return;
 
-    const nextValue = !Boolean(user.add_order);
+    const nextValue = !user.add_order;
 
     await apiRequest({
       request: () =>
@@ -102,34 +115,29 @@ export const UserDetailWidget = memo(({
 
   return (
     <>
-      <div className="flex flex-col items-start gap-4 lg:flex-row lg:gap-6">
+      <div className="flex flex-col items-start gap-4 lg:flex-row lg:gap-5">
         {/* Chap — Profil Sidebar */}
         <div className="w-full shrink-0 lg:w-72">
           <UserDetailHeader user={user} />
         </div>
 
         {/* O'ng — Kontent */}
-        <div className="w-full min-w-0 flex-1 space-y-4 sm:space-y-5">
-          {/* Edit tugmasi — sahifa yuqorisida */}
-          <div className="flex justify-end">
-            <button
-              onClick={() => setShowEdit(true)}
-              className="
-                flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold sm:w-auto sm:px-5
-                bg-main text-white hover:bg-main/90
-                shadow-md shadow-main/20 transition-all duration-200
-                active:scale-95
-              "
-            >
-              <Pencil size={15} strokeWidth={2.5} />
-              <span>{t("edit")}</span>
-            </button>
-          </div>
-
+        <div className="w-full min-w-0 flex-1 space-y-4">
           <UserInfoCards
             user={user}
             onToggleMarketAddOrder={isMarket ? handleToggleMarketAddOrder : undefined}
             isMarketAddOrderPending={updateMarketAddOrder.isPending}
+            headerAction={
+              <button
+                type="button"
+                onClick={() => setShowEdit(true)}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-main px-4 text-sm font-bold text-white shadow-md shadow-main/20 transition-all duration-200 hover:bg-main/90 active:scale-95"
+                aria-label={t("edit")}
+              >
+                <Pencil size={15} strokeWidth={2.5} />
+                <span>{t("edit")}</span>
+              </button>
+            }
           />
           {user.role === 'customer' ? (
             <CustomerOrdersTable orders={user.orders || []} />
