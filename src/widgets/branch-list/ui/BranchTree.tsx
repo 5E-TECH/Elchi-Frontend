@@ -1,6 +1,6 @@
 import { Button, Empty, Spin } from "antd";
 import { EditOutlined } from "@ant-design/icons";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Building2, ChevronRight, GitBranch, Leaf, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -189,42 +189,77 @@ const BranchTreeItem = ({
   onEdit,
   expandedIds,
   onToggle,
+  isRoot = false,
+  depth = 0,
 }: {
   node: BranchTreeNode;
   onEdit: (branch: Branch) => void;
   expandedIds: Set<string>;
   onToggle: (id: string) => void;
+  isRoot?: boolean;
+  depth?: number;
 }) => {
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
+  const isRootChildrenPanel = isRoot && hasChildren && isExpanded;
 
   return (
-    <li className="relative flex flex-col items-center">
-      <BranchTreeNodeCard
-        node={node}
-        onEdit={onEdit}
-        isExpanded={isExpanded}
-        onToggleChildren={hasChildren ? () => onToggle(node.id) : undefined}
-      />
+    <li className={`relative flex flex-col items-center ${isRoot ? "w-full" : depth === 1 ? "w-[15.5rem] shrink-0" : "w-full"}`}>
+      <div
+        className={
+          isRoot
+            ? "relative z-10 flex w-full justify-center rounded-2xl border border-amber-300/25 bg-amber-300/8 px-4 py-4 dark:border-amber-200/15 dark:bg-amber-200/5"
+            : "relative z-10"
+        }
+      >
+        <BranchTreeNodeCard
+          node={node}
+          onEdit={onEdit}
+          isExpanded={isExpanded}
+          onToggleChildren={hasChildren ? () => onToggle(node.id) : undefined}
+        />
+      </div>
 
       {hasChildren && isExpanded && (
-        <div className="relative mt-10 flex justify-center">
-          <span className="absolute -top-10 left-1/2 h-10 w-[7px] -translate-x-1/2 rounded-full bg-gradient-to-b from-teal-200/80 via-teal-400/55 to-main/40 shadow-[0_0_16px_rgba(45,212,191,0.26)]" />
-          <div className="relative flex max-w-full flex-wrap items-start justify-center gap-8">
-            {node.children.length > 1 && (
-              <span className="absolute -top-5 left-[12%] right-[12%] h-[7px] rounded-full bg-gradient-to-r from-transparent via-teal-300/45 to-transparent shadow-[0_0_16px_rgba(45,212,191,0.18)]" />
-            )}
-            {node.children.map((child) => (
-              <div key={child.id} className="relative flex w-full justify-center pt-6 sm:w-auto">
-                <span className="absolute left-1/2 top-[-1px] h-6 w-[6px] -translate-x-1/2 rounded-full bg-teal-300/44" />
-                <BranchTreeItem
-                  node={child}
-                  onEdit={onEdit}
-                  expandedIds={expandedIds}
-                  onToggle={onToggle}
-                />
-              </div>
-            ))}
+        <div className={`relative flex w-full justify-center ${isRoot ? "mt-8" : "mt-10"}`}>
+          <span className={`absolute left-1/2 w-[7px] -translate-x-1/2 rounded-full bg-gradient-to-b from-teal-200/80 via-teal-400/55 to-main/40 shadow-[0_0_16px_rgba(45,212,191,0.26)] ${isRoot ? "-top-8 h-8" : "-top-10 h-10"}`} />
+          <div
+            className={
+              isRootChildrenPanel
+                ? "relative w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)]/70 px-4 py-7 dark:border-white/10 dark:bg-white/5 sm:px-6"
+                : "relative flex w-full justify-center"
+            }
+          >
+            <div
+              className={
+                isRootChildrenPanel
+                  ? "relative grid w-full grid-cols-[repeat(auto-fit,minmax(15.5rem,1fr))] items-start justify-items-center gap-x-8 gap-y-10 px-2"
+                  : "relative flex w-full flex-col items-center gap-8"
+              }
+            >
+              {node.children.length > 1 && isRootChildrenPanel ? (
+                <span className="absolute -top-5 left-10 right-10 h-[7px] rounded-full bg-gradient-to-r from-transparent via-teal-300/45 to-transparent shadow-[0_0_16px_rgba(45,212,191,0.18)]" />
+              ) : null}
+              {node.children.map((child) => (
+                <div
+                  key={child.id}
+                  className={
+                    isRootChildrenPanel
+                      ? "relative flex w-full max-w-[15.5rem] justify-center pt-6"
+                      : "relative flex w-full justify-center pt-6"
+                  }
+                >
+                  <span className="absolute left-1/2 top-[-1px] h-6 w-[6px] -translate-x-1/2 rounded-full bg-teal-300/44" />
+                  <BranchTreeItem
+                    node={child}
+                    onEdit={onEdit}
+                    expandedIds={expandedIds}
+                    onToggle={onToggle}
+                    depth={depth + 1}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -235,11 +270,9 @@ const BranchTreeItem = ({
 const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
   const { t } = useTranslation("branches");
   const roots = useMemo(() => buildBranchTree(data), [data]);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    setExpandedIds(new Set(roots.map((node) => node.id)));
-  }, [roots]);
+  const defaultExpandedIds = useMemo(() => new Set(roots.map((node) => node.id)), [roots]);
+  const [expandedIds, setExpandedIds] = useState<Set<string> | null>(null);
+  const visibleExpandedIds = expandedIds ?? defaultExpandedIds;
 
   if (loading) {
     return <Spin />;
@@ -251,7 +284,7 @@ const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
 
   const toggleNode = (id: string) => {
     setExpandedIds((current) => {
-      const next = new Set(current);
+      const next = new Set(current ?? defaultExpandedIds);
 
       if (next.has(id)) {
         next.delete(id);
@@ -273,8 +306,9 @@ const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
               key={node.id}
               node={node}
               onEdit={onEdit}
-              expandedIds={expandedIds}
+              expandedIds={visibleExpandedIds}
               onToggle={toggleNode}
+              isRoot
             />
           ))}
         </ul>

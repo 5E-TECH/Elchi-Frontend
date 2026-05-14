@@ -1,11 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Building2, MapPin, Users } from "lucide-react";
+import { ArrowRight, Building2, MapPin, Pencil, Users } from "lucide-react";
 import type { Branch } from "../model/types";
 import BranchStatusBadge from "./BranchStatusBadge";
 
-const BranchCard = ({ branch }: { branch: Branch }) => {
+type BranchCardProps = {
+  branch: Branch;
+  onEdit?: (branch: Branch) => void;
+};
+
+const BranchCard = ({ branch, onEdit }: BranchCardProps) => {
   const { t } = useTranslation("branches");
   const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
@@ -74,17 +79,33 @@ const BranchCard = ({ branch }: { branch: Branch }) => {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              navigate(`/branches/${branch.id}`);
-            }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color:var(--color-border-soft)] bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-main)] shadow-sm transition-colors hover:border-[var(--color-main)] hover:bg-[var(--color-main-soft)] dark:border-white/10 dark:bg-white/8 dark:text-white/90 dark:hover:bg-white/12"
-          >
-            {tCommon("open")}
-            <ArrowRight size={13} />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {onEdit ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit(branch);
+                }}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--color-border-soft)] bg-white text-[var(--color-main)] shadow-sm transition-colors hover:border-[var(--color-main)] hover:bg-[var(--color-main-soft)] dark:border-white/10 dark:bg-white/8 dark:text-white/90 dark:hover:bg-white/12"
+                aria-label={tCommon("edit")}
+                title={tCommon("edit")}
+              >
+                <Pencil size={13} />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                navigate(`/branches/${branch.id}`);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border-soft)] bg-white px-3 py-1.5 text-xs font-bold text-[var(--color-main)] shadow-sm transition-colors hover:border-[var(--color-main)] hover:bg-[var(--color-main-soft)] dark:border-white/10 dark:bg-white/8 dark:text-white/90 dark:hover:bg-white/12"
+            >
+              {tCommon("open")}
+              <ArrowRight size={13} />
+            </button>
+          </div>
         </div>
       </div>
     </button>
