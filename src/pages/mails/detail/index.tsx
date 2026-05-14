@@ -29,8 +29,8 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import { useOrders } from "../../../entities/orders";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
-import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import { getBranches, type Branch } from "../../../entities/branch";
+import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 import {
   playMissingOrderFeedback,
   playScanFeedback,
@@ -83,10 +83,15 @@ const MailDetailPage = () => {
   const navigate = useNavigate();
   const postId = id;
   const { role } = useSelector((state: RootState) => state.role);
-  const sourceBranchId = useSelector(getCurrentBranchId);
+  const user = useSelector((state: RootState) => state.user.user);
+  const managerBranchType = getUserBranchType(user);
+  const isRegionalOrHybridManager =
+    role === "manager" &&
+    (managerBranchType === "REGIONAL" || managerBranchType === "HYBRID");
   const isCourier = role === "courier";
+  const isCourierLikeReceiver = isCourier || isRegionalOrHybridManager;
   const isSuperAdmin = role === "superadmin";
-  const isBranchTransferRole = role === "manager";
+  const isBranchTransferRole = false;
   const navState = location.state as {
     fromTab?: string;
     type?: string;
@@ -103,7 +108,7 @@ const MailDetailPage = () => {
   const isRefusedDetail = typeRaw === "refused";
   const isAllBatchesDetail = viewRaw === "old-all-batches";
   const isOldDetail = viewRaw === "old" || isAllBatchesDetail;
-  const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
+  const isReadOnlyRefusedCourier = isCourierLikeReceiver && isRefusedDetail;
   const fromTab = fromTabRaw;
   const { getRefusedMailsCourierByPostId } = useMails();
   const {
@@ -239,34 +244,6 @@ const MailDetailPage = () => {
     () => orders[0]?.region_id ?? orders[0]?.district?.region_id ?? "",
     [orders],
   );
-  const sourceBranchIdFromOrders = useMemo(
-    () =>
-      ((
-        orders[0] as PostOrder & {
-          branch_id?: string;
-          branch?: { id?: string };
-        }
-      )?.branch_id ??
-        ((orders[0] as PostOrder & { branch?: { id?: string } })?.branch?.id ??
-          "")),
-    [orders],
-  );
-  const selectedSourceBranchIds = useMemo(() => {
-    const ids = new Set<string>();
-    orders.forEach((order) => {
-      if (!selectedIds.has(order.id)) return;
-      const branchId =
-        ((order as PostOrder & { branch_id?: string }).branch_id ??
-          (order as PostOrder & { branch?: { id?: string } }).branch?.id ??
-          "") || "";
-      if (branchId) ids.add(branchId);
-    });
-    return Array.from(ids);
-  }, [orders, selectedIds]);
-  const effectiveSourceBranchId =
-    selectedSourceBranchIds.length === 1
-      ? selectedSourceBranchIds[0]
-      : sourceBranchIdFromOrders || sourceBranchId;
 
   const handleMissingScannedOrder = useCallback(() => {
     notifApi.warning({
@@ -380,14 +357,6 @@ const MailDetailPage = () => {
     }
 
     if (selectedIds.size === 0 || !postId || !regionId || isCheckingCouriers) return;
-    if (selectedSourceBranchIds.length > 1) {
-      apiRequest({
-        request: () => Promise.reject(new Error("multiple_source_branches")),
-        errorMessage: t("multipleSourceBranchesError"),
-        successMessage: "",
-      });
-      return;
-    }
 
     setIsCheckingCouriers(true);
 
@@ -429,8 +398,6 @@ const MailDetailPage = () => {
     refetchTransferBatchDetail,
     regionId,
     isCheckingCouriers,
-    selectedSourceBranchIds,
-    t,
   ]);
 
   const selectedOrders = useMemo(
@@ -581,12 +548,12 @@ const MailDetailPage = () => {
         <div className="flex flex-col gap-3">
           <SendButton
             selectedCount={selectedIds.size}
-            isCourier={isCourier}
+            isCourier={isCourierLikeReceiver}
             mode={isRefusedDetail ? "receive" : "send"}
             onSend={handleSend}
             onReceive={handleReceive}
             isBusy={
-              !isCourier &&
+              !isCourierLikeReceiver &&
               !isRefusedDetail &&
               (isBranchTransferRole ? sendTransferBatch.isPending : isCheckingCouriers)
             }
@@ -595,12 +562,11 @@ const MailDetailPage = () => {
       )}
 
       {/* Pochta jo'natish modali — filial tanlash */}
-      {!isCourier && !isRefusedDetail && !isOldDetail && !isBranchTransferRole && (
+      {!isCourierLikeReceiver && !isRefusedDetail && !isOldDetail && !isBranchTransferRole && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           postId={postId ?? ""}
-          sourceBranchId={effectiveSourceBranchId}
           branches={branchRecipients}
           selectedIds={selectedIds}
           onSuccess={handleSendSuccess}

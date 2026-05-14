@@ -40,6 +40,7 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
   const { t } = useTranslation("mails");
   const navigate = useNavigate();
   const { role } = useSelector((state: RootState) => state.role);
+  const isCourierLike = role === "courier";
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const courierName = item.courier?.name;
   const openDetail = () =>
@@ -82,7 +83,7 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
         {/* Sarlavha */}
         <div>
           <h3 className="text-white font-bold text-lg leading-tight">
-            {role === "courier"
+            {isCourierLike
               ? new Date(item.createdAt).toLocaleString("uz-UZ", {
                   year: "numeric",
                   month: "2-digit",
@@ -140,15 +141,15 @@ RefusedMailCardSkeleton.displayName = "RefusedMailCardSkeleton";
 const RefusedMails = () => {
   const { t } = useTranslation("mails");
   const { role } = useSelector((state: RootState) => state.role);
-  const isCourier = role === "courier";
+  const isCourierLike = role === "courier";
 
   const { getRefusedMails, getRefusedMailsCourier } = useMails();
 
-  const courierQuery = getRefusedMailsCourier({ enabled: isCourier });
-  const defaultQuery = getRefusedMails({ enabled: !isCourier });
-  const response = isCourier ? courierQuery.data : defaultQuery.data;
-  const isLoading = isCourier ? courierQuery.isLoading : defaultQuery.isLoading;
-  const isError = isCourier ? courierQuery.isError : defaultQuery.isError;
+  const courierQuery = getRefusedMailsCourier({ enabled: isCourierLike });
+  const defaultQuery = getRefusedMails({ enabled: !isCourierLike });
+  const response = isCourierLike ? courierQuery.data : defaultQuery.data;
+  const isLoading = isCourierLike ? courierQuery.isLoading : defaultQuery.isLoading;
+  const isError = isCourierLike ? courierQuery.isError : defaultQuery.isError;
 
   const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
 
@@ -200,7 +201,7 @@ const RefusedMails = () => {
         totalRegions={stats.totalRegions}
         totalOrders={stats.totalOrders}
         totalPrice={formatPrice(stats.totalPrice)}
-        isCourier={role === "courier"}
+        isCourier={isCourierLike}
         accent="error"
       />
 

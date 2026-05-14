@@ -13,7 +13,6 @@ interface SendPostModalProps {
   isOpen: boolean;
   onClose: () => void;
   postId: string;
-  sourceBranchId: string;
   branches: Branch[];
   selectedIds: Set<string>;
   onSuccess: (sentIds?: string[]) => void;
@@ -79,7 +78,7 @@ const BranchCard = memo(
 BranchCard.displayName = "BranchCard";
 
 const SendPostModal = memo(
-  ({ isOpen, onClose, postId, sourceBranchId, branches, selectedIds, onSuccess }: SendPostModalProps) => {
+  ({ isOpen, onClose, postId, branches, selectedIds, onSuccess }: SendPostModalProps) => {
     const { t } = useTranslation("mails");
     const { apiRequest } = useAppNotification();
 
@@ -113,14 +112,6 @@ const SendPostModal = memo(
 
     const submitForm = ({ branchId }: SendPostFormValues) => {
       if (!branchId || dispatchPostToBranch.isPending) return;
-      if (!sourceBranchId) {
-        apiRequest({
-          request: () => Promise.reject(new Error("source_branch_missing")),
-          errorMessage: t("sourceBranchNotFound"),
-          successMessage: "",
-        });
-        return;
-      }
 
       const branch = branches.find((item) => item.id === branchId);
 
@@ -129,7 +120,6 @@ const SendPostModal = memo(
           dispatchPostToBranch.mutateAsync({
             postId,
             payload: {
-              sourceBranchId,
               destinationBranchId: branchId,
               orderIds,
             },

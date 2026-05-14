@@ -204,9 +204,6 @@ interface TransferBatchListResponse {
   };
 }
 
-const isBranchMailRole = (role?: string | null) =>
-  role === "manager";
-
 const toText = (value: unknown, fallback = ""): string => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
@@ -324,33 +321,28 @@ const toPaginatedMailResponse = (
 export const useMails = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const branchId = useSelector((state: RootState) => state.user.user?.branch_id);
-  const branchRole = isBranchMailRole(role);
+  const isManagerRole = role === "manager";
 
-  const getBranchTransferBatches = (
-    status: BranchTransferBatchStatus,
-    queryParams?: GetOldMailsParams,
+  const getManagerScopedPosts = (
+    status?: "new" | "sent" | "received" | "canceled" | "canceled_received",
+    params?: GetOldMailsParams,
   ) =>
     api
-      .get(API_ENDPOINTS.BATCHES.BASE, {
+      .get(API_ENDPOINTS.POSTS.BASE, {
         params: {
-          status,
-          page: queryParams?.page ?? 1,
-          limit: queryParams?.limit ?? 8,
-          ...(branchId
-            ? status === BRANCH_TRANSFER_BATCH_STATUS.RECEIVED
-              ? { destination_branch_id: branchId }
-              : { source_branch_id: branchId }
-            : {}),
+          page: params?.page ?? 1,
+          limit: params?.limit ?? 8,
+          ...(status ? { status } : {}),
         },
       })
-      .then((res) => toPaginatedMailResponse(res.data));
+      .then((res) => res.data);
 
   const getNewMails = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "new", role, branchId],
       queryFn: () =>
-        branchRole
-          ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.PENDING)
+        isManagerRole
+          ? getManagerScopedPosts("sent")
           : api.get(API_ENDPOINTS.POSTS.NEW).then((res) => res.data),
       enabled: options?.enabled ?? true,
     });
@@ -380,8 +372,8 @@ export const useMails = () => {
     useQuery({
       queryKey: [MAILS_KEY, "refused", role, branchId],
       queryFn: () =>
-        branchRole
-          ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.CANCELLED)
+        isManagerRole
+          ? getManagerScopedPosts("canceled")
           : api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
       enabled: options?.enabled ?? true,
     });
@@ -423,8 +415,8 @@ export const useMails = () => {
         params?.limit ?? 8,
       ],
       queryFn: () =>
-        branchRole
-          ? getBranchTransferBatches(BRANCH_TRANSFER_BATCH_STATUS.RECEIVED, params)
+        isManagerRole
+          ? getManagerScopedPosts("received", params)
           : api
             .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
               params: {
@@ -495,7 +487,6 @@ export interface SendPostPayload {
 }
 
 export interface DispatchPostToBranchPayload {
-  sourceBranchId: string;
   destinationBranchId: string;
   orderIds: string[];
 }
@@ -548,14 +539,10 @@ export const useDispatchPostToBranch = () => {
       payload: DispatchPostToBranchPayload;
     }) =>
       api
-        .post(
-          API_ENDPOINTS.BRANCHES.POST_DISPATCH(
-            payload.sourceBranchId,
-            postId,
-            payload.destinationBranchId,
-          ),
-          { orderIds: payload.orderIds },
-        )
+        .post(API_ENDPOINTS.BRANCHES.POST_DISPATCH(postId), {
+          destination_branch_id: payload.destinationBranchId,
+          order_ids: payload.orderIds,
+        })
         .then((res) => res.data),
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({
