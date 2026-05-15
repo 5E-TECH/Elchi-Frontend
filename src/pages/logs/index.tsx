@@ -2,6 +2,7 @@ import { memo, useState } from "react";
 import { RefreshCcw, ShieldCheck, TriangleAlert } from "lucide-react";
 import HeaderName from "../../shared/components/headerName";
 import { refreshAccessToken } from "../../auth/authService";
+import PageContainer from "../../shared/ui/PageContainer";
 
 type RequestState = "idle" | "success" | "error";
 
@@ -49,7 +50,7 @@ const LogsPage = () => {
         : "border-[color:var(--color-border-soft)] bg-[color:var(--color-main-soft)] text-[var(--color-main)]";
 
   return (
-    <div className="min-h-full rounded-2xl p-4 md:p-6">
+    <PageContainer>
       <div className="mb-4">
         <HeaderName
           name="Loglar"
@@ -88,7 +89,7 @@ const LogsPage = () => {
           <p className="text-sm font-medium">{message}</p>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

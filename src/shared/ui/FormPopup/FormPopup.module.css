@@ -32,7 +32,7 @@
   background:
     radial-gradient(circle at top right, rgba(124, 92, 255, 0.16), transparent 30%),
     radial-gradient(circle at bottom left, rgba(87, 106, 219, 0.1), transparent 32%),
-    linear-gradient(180deg, #272c52 0%, #272c52 100%);
+    linear-gradient(180deg, var(--color-surface-elevated-dark) 0%, var(--color-surface-dark) 100%);
 }
 
 .header {

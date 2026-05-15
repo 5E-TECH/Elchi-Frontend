@@ -2,7 +2,6 @@ import { memo, useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import {
   Bell,
-  ScanQrCode,
   Check,
   ChevronDown,
   CircleHelp,
@@ -30,6 +29,7 @@ import type { RootState } from "../../../app/config/store";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 import Popup from "../../../shared/ui/Popup";
 import HeaderSearchPopup from "./HeaderSearchPopup";
+import ScannerActionButton from "../../../shared/components/ScannerActionButton";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -267,10 +267,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     return () => window.clearTimeout(timer);
   }, [searchValue]);
 
-  useEffect(() => {
-    setSearchLimit(10);
-  }, [debouncedSearch]);
-
   const handleLanguageChange = async (nextLanguage: string) => {
     const normalizedLanguage = normalizeLanguage(nextLanguage);
     if (normalizedLanguage === normalizeLanguage(i18n.language)) {
@@ -339,6 +335,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                   clearButtonClassName="text-maindark/45 hover:text-maindark dark:text-primary/45 dark:hover:text-primary"
                   onFocus={() => setIsSearchFocused(true)}
                   onValueChange={(nextValue) => {
+                    setSearchLimit(10);
                     field.onChange(nextValue);
                     setValue("search", nextValue, { shouldDirty: true });
                   }}
@@ -398,6 +395,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               clearButtonClassName="text-maindark/45 hover:text-maindark dark:text-primary/45 dark:hover:text-primary"
               onFocus={() => setIsSearchFocused(true)}
               onValueChange={(nextValue) => {
+                setSearchLimit(10);
                 field.onChange(nextValue);
                 setValue("search", nextValue, { shouldDirty: true });
               }}
@@ -488,18 +486,11 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           <CircleHelp className="h-5 w-5" />
         </button>
 
-        <button
-          type="button"
+        <ScannerActionButton
           onClick={() => navigate("/scan")}
-          className="el-glass-control group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition-all duration-300 hover:border-[var(--color-border-strong)] hover:bg-main/10 dark:text-primary lg:flex lg:h-11 lg:w-11"
-          aria-label={t("scannerTitle")}
-          title={t("scannerTitle")}
-        >
-          <span className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),transparent_55%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-          <span className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-main/12 text-main dark:bg-primary/10 dark:text-primary">
-            <ScanQrCode className="h-4.5 w-4.5" />
-          </span>
-        </button>
+          label={t("scannerTitle")}
+          className="hidden lg:inline-flex"
+        />
 
         <button
           type="button"

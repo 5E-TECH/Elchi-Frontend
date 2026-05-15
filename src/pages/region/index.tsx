@@ -8,6 +8,7 @@ import type { RootState } from "../../app/config/store";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
+import PageContainer from "../../shared/ui/PageContainer";
 import UzbekistanRegionMap from "./ui/UzbekistanRegionMap";
 
 const { RangePicker } = DatePicker;
@@ -321,8 +322,7 @@ const RegionPage = () => {
   }
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <PageContainer>
         <div className="mb-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
@@ -458,8 +458,7 @@ const RegionPage = () => {
         {isLoading ? (
           <div className="mt-4 text-sm text-main/60 dark:text-primary/60">Yuklanmoqda...</div>
         ) : null}
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

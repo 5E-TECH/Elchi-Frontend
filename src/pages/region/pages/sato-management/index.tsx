@@ -6,6 +6,7 @@ import { ArrowLeft, MoveRight, Search } from "lucide-react";
 import type { RootState } from "../../../../app/config/store";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
+import PageContainer from "../../../../shared/ui/PageContainer";
 
 type District = {
   id: string;
@@ -156,8 +157,7 @@ const RegionSatoManagementPage = () => {
   }
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <PageContainer>
         <button
           type="button"
           onClick={() => navigate("/regions")}
@@ -259,8 +259,7 @@ const RegionSatoManagementPage = () => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

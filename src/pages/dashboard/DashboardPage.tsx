@@ -6,6 +6,7 @@ import DashboardStatistics from "../../widgets/dashboard-statistics/ui/Dashboard
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import { useDashboard } from "../../entities/dashboard";
 import HeaderName from "../../shared/components/headerName";
+import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import type { RootState } from "../../app/config/store";
 import {
@@ -53,7 +54,7 @@ const DashboardPage = () => {
   const orders = data?.data?.orders;
 
   return (
-    <div className="min-h-full">
+    <PageContainer>
       {/* Page header */}
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <HeaderName
@@ -104,7 +105,7 @@ const DashboardPage = () => {
         startDate={fromDate}
         endDate={toDate}
       />
-    </div>
+    </PageContainer>
   );
 };
 

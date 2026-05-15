@@ -150,6 +150,12 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                             <div className="overflow-hidden">
                                 <div className="rounded-2xl border border-white/70 bg-white/95 p-3 shadow-sm dark:border-white/10 dark:bg-primarydark/60">
                                     <div className="flex flex-col gap-3">
+                                        <FilterSearch
+                                            value={String(search.userSearch ?? "")}
+                                            onChange={updateSearch}
+                                            placeholder={t("searchPlaceholder")}
+                                        />
+
                                         <FilterSelect
                                             label={t("role")}
                                             name="role"
@@ -173,12 +179,6 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                                             reduxKey="userStatus"
                                             urlKey="status"
                                             onChange={() => setIsMobilePanelOpen(false)}
-                                        />
-
-                                        <FilterSearch
-                                            value={String(search.userSearch ?? "")}
-                                            onChange={updateSearch}
-                                            placeholder={t("searchPlaceholder")}
                                         />
 
                                         <FilterClearButton
@@ -212,7 +212,23 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                     </div>
 
                     <div className="grid w-full grid-cols-12 items-end gap-3">
-                        <div className="col-span-12 lg:col-span-6 2xl:col-span-3">
+                        <div className="col-span-12 lg:col-span-11">
+                            <FilterSearch
+                                value={String(search.userSearch ?? "")}
+                                onChange={updateSearch}
+                                placeholder={t("searchPlaceholder")}
+                            />
+                        </div>
+
+                        <div className="col-span-12 flex justify-end lg:col-span-1">
+                            <FilterClearButton
+                                onClick={handleReset}
+                                className="h-12 w-12"
+                                responsiveIconOnly
+                            />
+                        </div>
+
+                        <div className="col-span-12 lg:col-span-6">
                             <FilterSelect
                                 label={t("role")}
                                 name="role"
@@ -226,7 +242,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                             />
                         </div>
 
-                        <div className="col-span-12 lg:col-span-6 2xl:col-span-3">
+                        <div className="col-span-12 lg:col-span-6">
                             <FilterSelect
                                 label={t("status")}
                                 name="status"
@@ -236,22 +252,6 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                                 useRedux={true}
                                 reduxKey="userStatus"
                                 urlKey="status"
-                            />
-                        </div>
-
-                        <div className="col-span-12 lg:col-span-11 2xl:col-span-5">
-                            <FilterSearch
-                                value={String(search.userSearch ?? "")}
-                                onChange={updateSearch}
-                                placeholder={t("searchPlaceholder")}
-                            />
-                        </div>
-
-                        <div className="col-span-12 flex justify-end lg:col-span-1">
-                            <FilterClearButton
-                                onClick={handleReset}
-                                className="h-12 w-12"
-                                responsiveIconOnly
                             />
                         </div>
                     </div>

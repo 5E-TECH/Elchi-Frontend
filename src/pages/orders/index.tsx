@@ -23,6 +23,7 @@ import { API_ENDPOINTS } from "../../shared/api";
 import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
 import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
 import { isInactiveMarketStatus } from "../../shared/lib/marketStatus";
+import PageContainer from "../../shared/ui/PageContainer";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
@@ -72,11 +73,18 @@ const toPositiveNumber = (value: unknown): number | null => {
 };
 
 const extractOrderItems = (payload: unknown): OrderListItem[] => {
-  const response = payload as any;
+  const response = payload as
+    | OrderListItem[]
+    | {
+      data?: OrderListItem[] | { items?: OrderListItem[] };
+      items?: OrderListItem[];
+    };
 
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response?.data?.items)) return response.data.items;
+  if (!Array.isArray(response?.data) && Array.isArray(response?.data?.items)) {
+    return response.data.items;
+  }
   if (Array.isArray(response?.items)) return response.items;
 
   return [];
@@ -117,6 +125,7 @@ const Orders = () => {
   const currentUser = useSelector((state: RootState) => state.user.user);
   const branchType = getUserBranchType(currentUser);
   const canCreateOrder = !(role === "manager" && branchType === "REGIONAL");
+  const canFilterByBranch = role === "admin" || role === "superadmin";
 
 
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
@@ -149,8 +158,10 @@ const Orders = () => {
       const marketId = urlMarketId;
       if (marketId) params.market_id = String(marketId);
 
-      const branchId = urlBranchId;
-      if (branchId) params.branch_id = String(branchId);
+      if (canFilterByBranch) {
+        const branchId = urlBranchId;
+        if (branchId) params.branch_id = String(branchId);
+      }
     }
 
     if (role === "manager") {
@@ -190,6 +201,7 @@ const Orders = () => {
     page,
     limit,
     role,
+    canFilterByBranch,
     urlMarketId,
     urlRegionId,
     urlDistrictId,
@@ -211,6 +223,8 @@ const Orders = () => {
         branchId: role !== "market" ? urlBranchId : "",
         regionId: role === "manager" ? "" : urlRegionId,
         districtId: role === "manager" ? urlDistrictId : "",
+        branchId: canFilterByBranch ? urlBranchId : "",
+        regionId: urlRegionId,
         courierId: role !== "market" ? urlCourierId : "",
         status: Array.isArray(status) ? status.join(",") : status,
         dateFrom: urlDateFrom,
@@ -220,6 +234,7 @@ const Orders = () => {
     },
     [
       role,
+      canFilterByBranch,
       urlMarketId,
       urlRegionId,
       urlDistrictId,
@@ -316,7 +331,9 @@ const Orders = () => {
     setIsExporting(true);
 
     try {
-      const { page: _page, limit: _limit, ...filters } = apiParams;
+      const filters = { ...apiParams };
+      delete filters.page;
+      delete filters.limit;
       const exportedOrders: OrderListItem[] = [];
       let exportPage = 1;
       let expectedTotal = total;
@@ -391,7 +408,7 @@ const Orders = () => {
   };
 
   return (
-    <div className="flex min-h-full flex-col gap-4 rounded-2xl p-3 sm:gap-5 sm:p-4 lg:p-6">
+    <PageContainer className="flex flex-col gap-4 sm:gap-5">
 
       {/* ── Header ── */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-4">
@@ -465,7 +482,7 @@ const Orders = () => {
         placeholder={t("searchMarket")}
         className={isMarketsLoading ? "pointer-events-none opacity-90" : ""}
       />
-    </div>
+    </PageContainer>
   );
 };
 

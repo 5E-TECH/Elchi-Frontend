@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { Building2, ClipboardList, QrCode, Store } from "lucide-react";
 import type { RootState } from "../../app/config/store";
 import HeaderName from "../../shared/components/headerName";
+import PageContainer from "../../shared/ui/PageContainer";
 
 type Tab = "markets" | "integrations" | "branches";
 
@@ -22,7 +23,7 @@ const NewOrders = () => {
   }, [location.pathname]);
 
   return (
-    <div className="rounded-2xl p-3 sm:p-4 md:p-6">
+    <PageContainer>
       <div className="mb-4">
         <HeaderName
           name={t("pageTitle")}
@@ -84,7 +85,7 @@ const NewOrders = () => {
       )}
 
       <Outlet />
-    </div>
+    </PageContainer>
   );
 };
 

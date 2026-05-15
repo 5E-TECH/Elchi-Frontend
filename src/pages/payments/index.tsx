@@ -24,9 +24,42 @@ import { useUser } from "../../entities/user/api/userApi";
 import { useMarkets } from "../../entities/markets";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../shared/lib/usePagination";
+import PageContainer from "../../shared/ui/PageContainer";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const DEFAULT_PAYMENTS_LIMIT = 10;
+
+type UnknownRecord = Record<string, unknown>;
+
+type PaymentMarketOption = {
+  id: string;
+  name: string;
+  phone_number: string;
+  role: string;
+  cashbox?: unknown;
+  amount: number;
+};
+
+type PaymentCourierOption = {
+  id: string;
+  name: string;
+  phone_number: string;
+  role: string;
+  region: string;
+  region_id: string;
+  cashbox?: unknown;
+  amount: number;
+};
+
+const asRecord = (value: unknown): UnknownRecord =>
+  value && typeof value === "object" ? (value as UnknownRecord) : {};
+
+const getRecordString = (record: UnknownRecord, key: string, fallback = "") => {
+  const value = record[key];
+  if (typeof value === "string" && value.trim()) return value;
+  if (typeof value === "number") return String(value);
+  return fallback;
+};
 
 const toPositiveNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -154,32 +187,43 @@ const Payments = () => {
   const marketCashboxTotal = cashboxData?.marketCashboxTotal ?? 0;
 
   // ── To be given popup uchun market list ───────────────────────────────────
-  const marketsList = useMemo(
+  const marketsList = useMemo<PaymentMarketOption[]>(
     () =>
-      (marketsData?.data?.items ?? []).map((m: any) => ({
-        id: m.id,
-        name: m.name,
-        phone_number: m.phone_number ?? m.phone ?? "",
-        role: m.role ?? "market",
-        cashbox: m.cashbox,
-        amount: Number(m.cashbox?.balance ?? m.amount ?? 0),
-      })),
+      (marketsData?.data?.items ?? []).map((market: unknown) => {
+        const m = asRecord(market);
+        const cashbox = asRecord(m.cashbox);
+
+        return {
+          id: getRecordString(m, "id"),
+          name: getRecordString(m, "name"),
+          phone_number: getRecordString(m, "phone_number", getRecordString(m, "phone")),
+          role: getRecordString(m, "role", "market"),
+          cashbox: m.cashbox,
+          amount: Number(cashbox.balance ?? m.amount ?? 0),
+        };
+      }),
     [marketsData],
   );
 
   // ── To be received popup uchun kuryerlar list ─────────────────────────────
-  const couriersList = useMemo(
+  const couriersList = useMemo<PaymentCourierOption[]>(
     () =>
-      (couriersData?.data?.items ?? []).map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        phone_number: c.phone_number ?? c.phone ?? "",
-        role: c.role ?? "courier",
-        region: c.region?.name || "Noma'lum",
-        region_id: c.region?.id ?? c.region_id ?? "",
-        cashbox: c.cashbox,
-        amount: Number(c.cashbox?.balance ?? 0),
-      })),
+      (couriersData?.data?.items ?? []).map((courier: unknown) => {
+        const c = asRecord(courier);
+        const region = asRecord(c.region);
+        const cashbox = asRecord(c.cashbox);
+
+        return {
+          id: getRecordString(c, "id"),
+          name: getRecordString(c, "name"),
+          phone_number: getRecordString(c, "phone_number", getRecordString(c, "phone")),
+          role: getRecordString(c, "role", "courier"),
+          region: getRecordString(region, "name", "Noma'lum"),
+          region_id: getRecordString(region, "id", getRecordString(c, "region_id")),
+          cashbox: c.cashbox,
+          amount: Number(cashbox.balance ?? 0),
+        };
+      }),
     [couriersData],
   );
 
@@ -242,7 +286,7 @@ const Payments = () => {
   };
 
   const queryParams = useMemo(() => {
-    const params: Record<string, any> = { page, limit };
+    const params: Record<string, string | number> = { page, limit };
     (Object.entries(filters) as [keyof typeof INIT, string][]).forEach(
       ([key, value]) => {
         if (value) params[key] = value;
@@ -272,10 +316,14 @@ const Payments = () => {
   });
   const creatorOptions = useMemo(
     () =>
-      (creatorsData?.data?.items || []).map((u: any) => ({
-        value: String(u.id),
-        label: u.name,
-      })).filter((u: { value: string; label: string }) => u.value),
+      (creatorsData?.data?.items || []).map((user: unknown) => {
+        const u = asRecord(user);
+
+        return {
+          value: getRecordString(u, "id"),
+          label: getRecordString(u, "name"),
+        };
+      }).filter((u: { value: string; label: string }) => u.value),
     [creatorsData],
   );
 
@@ -322,7 +370,7 @@ const Payments = () => {
   );
 
   return (
-    <div className="flex min-h-full flex-col gap-4 rounded-2xl p-3 sm:gap-6 sm:p-4 md:p-6">
+    <PageContainer className="flex flex-col gap-4 sm:gap-6">
       {/* Header */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border px-4 shadow-sm">
         <HeaderName
@@ -439,24 +487,24 @@ const Payments = () => {
       />
 
       {/* To be given popup — API dan marketlar */}
-      <PopupSelect
+      <PopupSelect<PaymentMarketOption>
         isOpen={isGivenPopupOpen}
         onClose={() => setIsGivenPopupOpen(false)}
         data={marketsList}
         title={t("toBeGiven")}
         description={marketsLoading ? t("loadingLabel") : t("selectMarketDescription")}
         icon={<Store size={20} />}
-        keyExtractor={(m: any) => m.id}
+        keyExtractor={(m) => m.id}
         searchKeys={["name"]}
         labelKey="name"
         secondaryLabelKey="amount"
-        onSelect={(market: any) => {
+        onSelect={(market) => {
           setIsGivenPopupOpen(false);
           navigate(`/payments/cash-detail/${market.id}`, {
             state: { type: "market", entity: market },
           });
         }}
-        renderItem={(market: any, isSelected: boolean) => (
+        renderItem={(market, isSelected) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <div
@@ -480,23 +528,23 @@ const Payments = () => {
       />
 
       {/* To be received popup */}
-      <PopupSelect
+      <PopupSelect<PaymentCourierOption>
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
         data={couriersList}
         title={t("toBeReceived")}
         description={couriersLoading ? t("loadingLabel") : t("selectCourierDescription")}
         icon={<Truck size={20} />}
-        keyExtractor={(c: any) => c.id}
+        keyExtractor={(c) => c.id}
         searchKeys={["name", "region"]}
         labelKey="name"
-        onSelect={(courier: any) => {
+        onSelect={(courier) => {
           setIsReceivedPopupOpen(false);
           navigate(`/payments/cash-detail/${courier.id}`, {
             state: { type: "courier", entity: courier },
           });
         }}
-        renderItem={(courier: any, isSelected: boolean) => (
+        renderItem={(courier, isSelected) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <div
@@ -529,7 +577,7 @@ const Payments = () => {
           </div>
         )}
       />
-    </div>
+    </PageContainer>
   );
 };
 

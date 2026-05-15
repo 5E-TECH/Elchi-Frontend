@@ -5,6 +5,7 @@ import DateRangePicker from "../../../shared/ui/DateRangePicker";
 import PaymentHistoryList from "./PaymentHistoryList";
 import CashboxSummaryCard from "./CashboxSummaryCard";
 import type { PaymentRow } from "./patmentHistoryTable";
+import PageContainer from "../../../shared/ui/PageContainer";
 
 interface CashboxRolePageLayoutProps {
   entityName: string;
@@ -65,7 +66,7 @@ const CashboxRolePageLayout = ({
   actionForm,
 }: CashboxRolePageLayoutProps) => {
   return (
-    <div className="flex min-h-full flex-col gap-3 overflow-x-hidden rounded-2xl p-2.5 sm:p-3 md:p-4 lg:p-5">
+    <PageContainer className="flex flex-col gap-3 overflow-x-hidden">
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(18rem,0.42fr)_minmax(24rem,0.58fr)] lg:gap-4">
         <div className="flex min-h-0 flex-col gap-3">
           <div className="px-1">
@@ -159,7 +160,7 @@ const CashboxRolePageLayout = ({
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

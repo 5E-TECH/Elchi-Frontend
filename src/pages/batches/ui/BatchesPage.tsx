@@ -13,6 +13,7 @@ import {
 } from "../lib/batchFormat";
 import Pagination from "../../../shared/components/pagination";
 import { usePagination } from "../../../shared/lib/usePagination";
+import PageContainer from "../../../shared/ui/PageContainer";
 
 type BatchTabKey = "new" | "old" | "return";
 
@@ -213,7 +214,7 @@ const BatchesPage = () => {
   );
 
   return (
-    <div className="min-h-full rounded-2xl p-4 md:p-6">
+    <PageContainer>
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <HeaderName
           name={t("title")}
@@ -303,7 +304,7 @@ const BatchesPage = () => {
           compact
         />
       ) : null}
-    </div>
+    </PageContainer>
   );
 };
 

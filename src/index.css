@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+@keyframes scanner-scan-line-y {
+  0% {
+    top: 14%;
+    opacity: 0.45;
+  }
+
+  50% {
+    top: 50%;
+    opacity: 1;
+  }
+
+  100% {
+    top: 86%;
+    opacity: 0.45;
+  }
+}
+
 @theme {
   /* Brand and light mode palette */
   --color-main: #576adb;

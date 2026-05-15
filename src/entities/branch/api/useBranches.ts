@@ -8,4 +8,12 @@ export const useBranches = (params: BranchParams, enabled: boolean = true) =>
     queryKey: queryKeys.branches.list(params),
     queryFn: () => getBranches(params),
     enabled,
+export const useBranches = (
+  params: BranchParams,
+  options?: { enabled?: boolean },
+) =>
+  useQuery({
+    queryKey: queryKeys.branches.list(params),
+    queryFn: () => getBranches(params),
+    enabled: options?.enabled ?? true,
   });
