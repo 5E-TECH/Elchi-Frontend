@@ -15,6 +15,7 @@ import {
 import { useUser } from "../../../entities/user/api/userApi";
 import { useMarkets } from "../../../entities/markets";
 import { useBranches } from "../../../entities/branch";
+import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import type { OrderStatus } from "../../../entities/order/types/order";
 import { resetFilters, setFilterValue } from "../../../features/Select/model/FilterSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
@@ -45,6 +46,7 @@ export const ORDER_FILTER_KEYS = {
     marketId: "orderMarketId",
     branchId: "orderBranchId",
     regionId: "orderRegionId",
+    districtId: "orderDistrictId",
     courierId: "orderCourierId",
     status: "orderStatus",
     dateFrom: "startDay",
@@ -82,9 +84,12 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const dispatch = useDispatch();
     const { setParam, removeParam, getParam, setMultipleParams } = useQueryParams();
     const role = useSelector((state: RootState) => state.role.role);
+    const currentUser = useSelector((state: RootState) => state.user.user as Record<string, unknown> | null);
     const filters = useSelector((state: RootState) => state.filter);
     const searchFilters = useSelector((state: RootState) => state.search);
     const isMarketRole = role === "market";
+    const isManagerRole = role === "manager";
+    const shouldShowBranchFilter = !isMarketRole && !isManagerRole;
     const canLoadRoleDependentOptions = role !== null && !isMarketRole;
     const [isMobile, setIsMobile] = useState(
         typeof window !== "undefined" ? window.innerWidth < 640 : false,
@@ -97,6 +102,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const urlMarketId = getParam(ORDER_FILTER_KEYS.marketId) ?? "";
     const urlBranchId = getParam(ORDER_FILTER_KEYS.branchId) ?? "";
     const urlRegionId = getParam(ORDER_FILTER_KEYS.regionId) ?? "";
+    const urlDistrictId = getParam(ORDER_FILTER_KEYS.districtId) ?? "";
     const urlCourierId = getParam(ORDER_FILTER_KEYS.courierId) ?? "";
     const urlStatus = getParam(ORDER_FILTER_KEYS.status) ?? "";
     const urlDateFrom = getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam("orderDateFrom") ?? "";
@@ -106,6 +112,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const marketId = getStringFilterValue(filters[ORDER_FILTER_KEYS.marketId], urlMarketId);
     const branchId = getStringFilterValue(filters[ORDER_FILTER_KEYS.branchId], urlBranchId);
     const regionId = getStringFilterValue(filters[ORDER_FILTER_KEYS.regionId], urlRegionId);
+    const districtId = getStringFilterValue(filters[ORDER_FILTER_KEYS.districtId], urlDistrictId);
     const courierId = getStringFilterValue(filters[ORDER_FILTER_KEYS.courierId], urlCourierId);
     const dateFrom = getStringFilterValue(filters[ORDER_FILTER_KEYS.dateFrom], urlDateFrom);
     const dateTo = getStringFilterValue(filters[ORDER_FILTER_KEYS.dateTo], urlDateTo);
@@ -117,8 +124,8 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
 
     const hasFilter = !!(
         (!isMarketRole && marketId) ||
-        (!isMarketRole && branchId) ||
-        regionId ||
+        (shouldShowBranchFilter && branchId) ||
+        (isManagerRole ? districtId : regionId) ||
         (!isMarketRole && courierId) ||
         statusValues.length > 0 ||
         dateFrom ||
@@ -127,8 +134,8 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     );
     const activeFilterCount =
         Number(Boolean(!isMarketRole && marketId))
-        + Number(Boolean(!isMarketRole && branchId))
-        + Number(Boolean(regionId))
+        + Number(Boolean(shouldShowBranchFilter && branchId))
+        + Number(Boolean(isManagerRole ? districtId : regionId))
         + Number(Boolean(!isMarketRole && courierId))
         + Number(statusValues.length > 0)
         + Number(Boolean(dateFrom || dateTo))
@@ -160,7 +167,8 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     }, [isMobile, isMobilePanelOpen]);
 
     // ─── API lar ───────────────────────────────────────────────────────────
-    const { getRegions, getCouriers } = useUser();
+    const { getRegions, getCouriers, getMyProfile } = useUser();
+    const { getDistricts } = useLogistics();
     const { getMarkets } = useMarkets();
 
     const toItems = (value: unknown): { id: string | number; name: string }[] => {
@@ -193,23 +201,69 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         status: "active",
         limit: 100,
         page: 1,
-    });
+    }, !isManagerRole);
     const branches = (branchesData?.data ?? []).map((b) => ({ value: String(b.id), label: b.name }));
+
+    const { data: myProfileData } = getMyProfile();
+
+    const managerRegionId = useMemo(() => {
+        if (!isManagerRole) return "";
+
+        const profileUser =
+            ((myProfileData as { data?: Record<string, unknown> } | undefined)?.data as Record<string, unknown> | undefined)
+            ?? null;
+        const sourceUser = profileUser ?? currentUser;
+        if (!sourceUser) return "";
+
+        const branchObject =
+            sourceUser.branch && typeof sourceUser.branch === "object"
+                ? (sourceUser.branch as Record<string, unknown>)
+                : null;
+        const nestedBranchObject =
+            branchObject?.branch && typeof branchObject.branch === "object"
+                ? (branchObject.branch as Record<string, unknown>)
+                : null;
+        const branchRegionObject =
+            branchObject?.region && typeof branchObject.region === "object"
+                ? (branchObject.region as Record<string, unknown>)
+                : null;
+        const nestedBranchRegionObject =
+            nestedBranchObject?.region && typeof nestedBranchObject.region === "object"
+                ? (nestedBranchObject.region as Record<string, unknown>)
+                : null;
+
+        const rawValue =
+            nestedBranchObject?.region_id ??
+            nestedBranchObject?.regionId ??
+            nestedBranchRegionObject?.id ??
+            branchObject?.region_id ??
+            branchObject?.regionId ??
+            branchRegionObject?.id;
+
+        if (typeof rawValue === "string" && rawValue.trim()) return rawValue;
+        if (typeof rawValue === "number") return String(rawValue);
+        return "";
+    }, [currentUser, isManagerRole, myProfileData]);
 
     const { data: couriersData, isLoading: couriersLoading } = getCouriers(
         {
             status: "active",
             limit: 100,
-            ...(regionId ? { region_id: regionId } : {}),
+            ...(!isManagerRole && regionId ? { region_id: regionId } : {}),
         },
         canLoadRoleDependentOptions,
     );
     const couriers = toItems(couriersData).map((c) => ({ value: String(c.id), label: c.name }));
 
-    const { data: regionsData, isLoading: regionsLoading } = getRegions();
+    const { data: regionsData, isLoading: regionsLoading } = getRegions(!isManagerRole);
     const regions = ((regionsData?.data ?? regionsData ?? []) as { id: string | number; name: string }[]).map(
         (r) => ({ value: String(r.id), label: r.name })
     );
+    const { data: districtsData, isLoading: districtsLoading } = getDistricts(managerRegionId || undefined);
+    const managerDistricts = ((districtsData ?? []) as { id: string | number; name: string }[]).map((d) => ({
+        value: String(d.id),
+        label: d.name,
+    }));
     const statuses = ALL_STATUSES.map((statusOption) => ({
         ...statusOption,
         label: t(statusOption.label, { ns: "orders" }),
@@ -237,6 +291,20 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
 
         setMultipleParams({
             [ORDER_FILTER_KEYS.regionId]: value,
+            [ORDER_FILTER_KEYS.courierId]: "",
+        });
+
+        if (isMobile) {
+            setIsMobilePanelOpen(false);
+        }
+    };
+
+    const updateDistrictAndResetCourier = (value: string) => {
+        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.districtId, value }));
+        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.courierId, value: "" }));
+
+        setMultipleParams({
+            [ORDER_FILTER_KEYS.districtId]: value,
             [ORDER_FILTER_KEYS.courierId]: "",
         });
 
@@ -280,6 +348,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
             [ORDER_FILTER_KEYS.marketId]: "",
             [ORDER_FILTER_KEYS.branchId]: "",
             [ORDER_FILTER_KEYS.regionId]: "",
+            [ORDER_FILTER_KEYS.districtId]: "",
             [ORDER_FILTER_KEYS.courierId]: "",
             [ORDER_FILTER_KEYS.status]: "",
             [ORDER_FILTER_KEYS.dateFrom]: "",
@@ -381,7 +450,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                             />
                                         )}
                                         {/* FILIAL */}
-                                        {!isMarketRole && (
+                                        {shouldShowBranchFilter && (
                                             <SearchableSelect
                                                 label={t("filterBranch")}
                                                 name={ORDER_FILTER_KEYS.branchId}
@@ -397,16 +466,29 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         )}
 
                                         {/* VILOYAT */}
-                                        <SearchableSelect
-                                            label={t("filterRegion")}
-                                            name={ORDER_FILTER_KEYS.regionId}
-                                            value={regionId}
-                                            onChange={updateRegionAndResetCourier}
-                                            options={regions}
-                                            placeholder={t("filterRegionPlaceholder")}
-                                            icon={MapPin}
-                                            loading={regionsLoading}
-                                        />
+                                        {isManagerRole ? (
+                                            <SearchableSelect
+                                                label={t("district")}
+                                                name={ORDER_FILTER_KEYS.districtId}
+                                                value={districtId}
+                                                onChange={updateDistrictAndResetCourier}
+                                                options={managerDistricts}
+                                                placeholder={t("selectDistrict")}
+                                                icon={MapPin}
+                                                loading={districtsLoading}
+                                            />
+                                        ) : (
+                                            <SearchableSelect
+                                                label={t("filterRegion")}
+                                                name={ORDER_FILTER_KEYS.regionId}
+                                                value={regionId}
+                                                onChange={updateRegionAndResetCourier}
+                                                options={regions}
+                                                placeholder={t("filterRegionPlaceholder")}
+                                                icon={MapPin}
+                                                loading={regionsLoading}
+                                            />
+                                        )}
 
                                         {/* KURYER */}
                                         {!isMarketRole && (
@@ -457,7 +539,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                                         }
                                                     />
                                                 )}
-                                                {!isMarketRole && branchId && (
+                                                {shouldShowBranchFilter && branchId && (
                                                     <FilterChip
                                                         label={`${t("chipBranch")}: ${branches.find((b) => b.value === branchId)?.label ?? `#${branchId}`}`}
                                                         onRemove={() =>
@@ -465,13 +547,24 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                                         }
                                                     />
                                                 )}
-                                                {regionId && (
-                                                    <FilterChip
-                                                        label={`${t("chipRegion")}: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
-                                                        onRemove={() =>
-                                                            update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, "")
-                                                        }
-                                                    />
+                                                {isManagerRole ? (
+                                                    districtId && (
+                                                        <FilterChip
+                                                            label={`${t("district")}: ${managerDistricts.find((d) => d.value === districtId)?.label ?? `#${districtId}`}`}
+                                                            onRemove={() =>
+                                                                update(ORDER_FILTER_KEYS.districtId, ORDER_FILTER_KEYS.districtId, "")
+                                                            }
+                                                        />
+                                                    )
+                                                ) : (
+                                                    regionId && (
+                                                        <FilterChip
+                                                            label={`${t("chipRegion")}: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
+                                                            onRemove={() =>
+                                                                update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, "")
+                                                            }
+                                                        />
+                                                    )
                                                 )}
                                                 {!isMarketRole && courierId && (
                                                     <FilterChip
@@ -599,7 +692,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                     />
                 )}
                 {/* FILIAL */}
-                {!isMarketRole && (
+                {shouldShowBranchFilter && (
                     <SearchableSelect
                         label={t("filterBranch")}
                         name={ORDER_FILTER_KEYS.branchId}
@@ -615,16 +708,29 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 )}
 
                 {/* VILOYAT */}
-                <SearchableSelect
-                    label={t("filterRegion")}
-                    name={ORDER_FILTER_KEYS.regionId}
-                    value={regionId}
-                    onChange={updateRegionAndResetCourier}
-                    options={regions}
-                    placeholder={t("filterRegionPlaceholder")}
-                    icon={MapPin}
-                    loading={regionsLoading}
-                />
+                {isManagerRole ? (
+                    <SearchableSelect
+                        label={t("district")}
+                        name={ORDER_FILTER_KEYS.districtId}
+                        value={districtId}
+                        onChange={updateDistrictAndResetCourier}
+                        options={managerDistricts}
+                        placeholder={t("selectDistrict")}
+                        icon={MapPin}
+                        loading={districtsLoading}
+                    />
+                ) : (
+                    <SearchableSelect
+                        label={t("filterRegion")}
+                        name={ORDER_FILTER_KEYS.regionId}
+                        value={regionId}
+                        onChange={updateRegionAndResetCourier}
+                        options={regions}
+                        placeholder={t("filterRegionPlaceholder")}
+                        icon={MapPin}
+                        loading={regionsLoading}
+                    />
+                )}
 
                 {/* KURYER */}
                 {!isMarketRole && (
@@ -675,7 +781,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                 }
                             />
                         )}
-                        {!isMarketRole && branchId && (
+                        {shouldShowBranchFilter && branchId && (
                             <FilterChip
                                 label={`${t("chipBranch")}: ${branches.find((b) => b.value === branchId)?.label ?? `#${branchId}`}`}
                                 onRemove={() =>
@@ -683,13 +789,24 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                 }
                             />
                         )}
-                        {regionId && (
-                            <FilterChip
-                                label={`${t("chipRegion")}: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
-                                onRemove={() =>
-                                    update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, "")
-                                }
-                            />
+                        {isManagerRole ? (
+                            districtId && (
+                                <FilterChip
+                                    label={`${t("district")}: ${managerDistricts.find((d) => d.value === districtId)?.label ?? `#${districtId}`}`}
+                                    onRemove={() =>
+                                        update(ORDER_FILTER_KEYS.districtId, ORDER_FILTER_KEYS.districtId, "")
+                                    }
+                                />
+                            )
+                        ) : (
+                            regionId && (
+                                <FilterChip
+                                    label={`${t("chipRegion")}: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
+                                    onRemove={() =>
+                                        update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, "")
+                                    }
+                                />
+                            )
                         )}
                         {!isMarketRole && courierId && (
                             <FilterChip

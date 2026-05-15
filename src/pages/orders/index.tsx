@@ -130,6 +130,7 @@ const Orders = () => {
   const urlMarketId = urlParams[ORDER_FILTER_KEYS.marketId] ?? "";
   const urlBranchId = urlParams[ORDER_FILTER_KEYS.branchId] ?? "";
   const urlRegionId = urlParams[ORDER_FILTER_KEYS.regionId] ?? "";
+  const urlDistrictId = urlParams[ORDER_FILTER_KEYS.districtId] ?? "";
   const urlCourierId = urlParams[ORDER_FILTER_KEYS.courierId] ?? "";
   const urlStatusRaw = urlParams[ORDER_FILTER_KEYS.status] ?? "";
   const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams.orderDateFrom ?? "";
@@ -152,9 +153,14 @@ const Orders = () => {
       if (branchId) params.branch_id = String(branchId);
     }
 
-    // Viloyat / Region
-    const regionId = urlRegionId;
-    if (regionId) params.region_id = String(regionId);
+    if (role === "manager") {
+      const districtId = urlDistrictId;
+      if (districtId) params.district_id = String(districtId);
+    } else {
+      // Viloyat / Region
+      const regionId = urlRegionId;
+      if (regionId) params.region_id = String(regionId);
+    }
 
     // Kuryer
     if (role !== "market") {
@@ -186,6 +192,7 @@ const Orders = () => {
     role,
     urlMarketId,
     urlRegionId,
+    urlDistrictId,
     urlBranchId,
     urlCourierId,
     urlStatusRaw,
@@ -202,7 +209,8 @@ const Orders = () => {
         role,
         marketId: role !== "market" ? urlMarketId : "",
         branchId: role !== "market" ? urlBranchId : "",
-        regionId: urlRegionId,
+        regionId: role === "manager" ? "" : urlRegionId,
+        districtId: role === "manager" ? urlDistrictId : "",
         courierId: role !== "market" ? urlCourierId : "",
         status: Array.isArray(status) ? status.join(",") : status,
         dateFrom: urlDateFrom,
@@ -214,6 +222,7 @@ const Orders = () => {
       role,
       urlMarketId,
       urlRegionId,
+      urlDistrictId,
       urlBranchId,
       urlCourierId,
       urlStatusRaw,

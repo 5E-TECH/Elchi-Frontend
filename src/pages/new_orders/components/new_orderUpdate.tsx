@@ -29,6 +29,9 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
+import SellModal from "../../orders/list/courier/list/SellModal";
+import CancelModal from "../../orders/list/courier/list/CancelModal";
+import type { Order as CourierOrder } from "../../orders/list/courier/list/ordertable/pendingOrderTable";
 import {
   formatUzbekistanPhoneFull,
   keepPhoneCaretAfterChange,
@@ -61,6 +64,8 @@ interface OrderItem {
 }
 interface OrderDetail {
   id: string;
+  createdAt?: string;
+  created_at?: string;
   where_deliver: "center" | "address";
   total_price: number;
   to_be_paid: number;
@@ -73,6 +78,7 @@ interface OrderDetail {
   customer: Customer;
   district?: District;
   region?: Region;
+  market?: { name?: string };
 }
 
 interface AddressForm {
@@ -105,17 +111,45 @@ const DELIVER_OPTIONS = [
 ] as const;
 
 const STATUS_CONFIG: Record<string, { labelKey: string; cls: string }> = {
+  created: {
+    labelKey: "orders:statusCreated",
+    cls: "bg-sky-500/20 text-sky-400 border border-sky-500/30",
+  },
   new: {
-    labelKey: "statusNew",
+    labelKey: "orders:statusNew",
     cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
   },
-  processing: {
-    labelKey: "statusProcessing",
-    cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+  received: {
+    labelKey: "orders:statusReceived",
+    cls: "bg-violet-500/20 text-violet-300 border border-violet-500/30",
   },
-  completed: {
-    labelKey: "statusCompleted",
-    cls: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+  "on the road": {
+    labelKey: "orders:statusOnTheRoad",
+    cls: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+  },
+  waiting: {
+    labelKey: "orders:statusWaiting",
+    cls: "bg-orange-500/20 text-orange-300 border border-orange-500/30",
+  },
+  sold: {
+    labelKey: "orders:statusSold",
+    cls: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+  },
+  cancelled: {
+    labelKey: "orders:statusCancelled",
+    cls: "bg-rose-500/20 text-rose-300 border border-rose-500/30",
+  },
+  paid: {
+    labelKey: "orders:statusPaid",
+    cls: "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30",
+  },
+  partly_paid: {
+    labelKey: "orders:statusPartlyPaid",
+    cls: "bg-blue-500/20 text-blue-300 border border-blue-500/30",
+  },
+  closed: {
+    labelKey: "orders:statusClosed",
+    cls: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
   },
 };
 
@@ -275,7 +309,7 @@ const InputField = memo(({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderUpdate = () => {
-  const { t } = useTranslation("newOrders");
+  const { t } = useTranslation(["newOrders", "orders"]);
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const queryClient = useQueryClient();
@@ -293,9 +327,11 @@ const NewOrderUpdate = () => {
   const [orderForm, setOrderForm] = useState<OrderForm>({
     where_deliver: "", total_price: "", comment: "", items: [],
   });
+  const [sellModalOpen, setSellModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   // ─── Data fetching ───────────────────────────────────────────────────────────
-  const { getOrderById, updateNewOrder } = useOrders();
+  const { getOrderById, updateNewOrder, SellOrder, PartlySellOrder, CancelOrder } = useOrders();
   const { updateUser } = useUser();
   const { getRegions, getDistricts } = useLogistics();
 
@@ -327,10 +363,16 @@ const NewOrderUpdate = () => {
     [districtsData],
   );
 
-  const statusCfg = useMemo(
-    () => order ? (STATUS_CONFIG[order.status] ?? STATUS_CONFIG.new) : null,
-    [order],
+  const statusCfg = useMemo(() => {
+    if (!order?.status) return null;
+    const statusKey = order.status.trim().toLowerCase();
+    return STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.new;
+  }, [order?.status]);
+  const normalizedStatus = useMemo(
+    () => order?.status?.trim().toLowerCase() ?? "",
+    [order?.status],
   );
+  const canShowOrderActionButtons = normalizedStatus !== "sold";
 
   const regionName = useMemo(
     () => order?.district?.region?.name ?? order?.region?.name ?? "—",
@@ -338,6 +380,34 @@ const NewOrderUpdate = () => {
   );
   const districtName = useMemo(() => order?.district?.name ?? "—", [order]);
   const addressText = useMemo(() => order?.address ?? "—", [order]);
+  const courierActionOrder = useMemo<CourierOrder | null>(() => {
+    if (!order) return null;
+
+    return {
+      id: order.id,
+      created_at: order.created_at ?? order.createdAt ?? new Date().toISOString(),
+      status: order.status,
+      total_price: order.total_price,
+      where_deliver: order.where_deliver,
+      product_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      market: { name: order.market?.name ?? "—" },
+      customer: {
+        name: order.customer?.name ?? "—",
+        phone_number: order.customer?.phone_number ?? "—",
+      },
+      district: { name: order.district?.name ?? "—" },
+      region: { name: order.region?.name ?? order.district?.region?.name ?? "—" },
+      items: order.items.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        product: {
+          id: item.product?.id ?? item.id,
+          name: item.product?.name ?? "—",
+          image_url: item.product?.image_url ?? null,
+        },
+      })),
+    };
+  }, [order]);
 
   // ─── Handlers — Address popup ─────────────────────────────────────────────
   const handleOpenAddressPopup = useCallback(() => {
@@ -458,24 +528,78 @@ const NewOrderUpdate = () => {
     },
     [navigate, userId],
   );
+  const handleSell = useCallback((
+    targetOrderId: string,
+    payload: { comment: string; extraCost: number },
+  ) => {
+    SellOrder.mutate(
+      { orderId: targetOrderId, data: payload },
+      { onSuccess: () => setSellModalOpen(false) },
+    );
+  }, [SellOrder]);
+
+  const handlePartlySell = useCallback((
+    targetOrderId: string,
+    payload: {
+      order_item_info: { product_id: string; quantity: number }[];
+      totalPrice: number;
+      extraCost: number;
+      comment: string;
+    },
+  ) => {
+    PartlySellOrder.mutate(
+      { orderId: targetOrderId, data: payload },
+      { onSuccess: () => setSellModalOpen(false) },
+    );
+  }, [PartlySellOrder]);
+
+  const handleCancel = useCallback((
+    targetOrderId: string,
+    payload: { comment: string; extraCost: number; paidAmount: number },
+  ) => {
+    CancelOrder.mutate(
+      { orderId: targetOrderId, data: payload },
+      { onSuccess: () => setCancelModalOpen(false) },
+    );
+  }, [CancelOrder]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-full space-y-4 rounded-2xl py-3 pb-20 sm:space-y-5 sm:py-4 sm:pb-24 md:space-y-6 md:py-6 md:pb-4">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div onClick={handleNavigateBack} className="cursor-pointer min-w-0">
-          <HeaderName
-            icon={<MoveLeft />}
-            name={order?.customer?.name ?? t("orders")}
-            description={t("viewOrderDetails")}
-          />
+        <div className="min-w-0 flex items-center gap-3 flex-wrap">
+          <div onClick={handleNavigateBack} className="cursor-pointer min-w-0">
+            <HeaderName
+              icon={<MoveLeft />}
+              name={order?.customer?.name ?? t("orders")}
+              description={t("viewOrderDetails")}
+            />
+          </div>
+          {statusCfg && (
+            <span className={`inline-flex shrink-0 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg.cls}`}>
+              {t(statusCfg.labelKey)}
+            </span>
+          )}
+          {canShowOrderActionButtons && (
+            <>
+              <button
+                onClick={() => setSellModalOpen(true)}
+                disabled={!courierActionOrder}
+                className="inline-flex items-center rounded-lg bg-emerald-500 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("sell", { ns: "orders" })}
+              </button>
+              <button
+                onClick={() => setCancelModalOpen(true)}
+                disabled={!courierActionOrder}
+                className="inline-flex items-center rounded-lg bg-red-500 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("cancelOrderAction", { ns: "orders" })}
+              </button>
+            </>
+          )}
         </div>
-        {statusCfg && (
-          <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg.cls}`}>
-            {t(statusCfg.labelKey)}
-          </span>
-        )}
       </div>
 
       {/* Content */}
@@ -781,6 +905,23 @@ const NewOrderUpdate = () => {
           </div>
         </div>
       </UpdatePopup>
+
+      <SellModal
+        order={courierActionOrder}
+        open={sellModalOpen}
+        onClose={() => setSellModalOpen(false)}
+        onSell={handleSell}
+        onPartlySell={handlePartlySell}
+        isLoading={SellOrder.isPending || PartlySellOrder.isPending}
+      />
+
+      <CancelModal
+        order={courierActionOrder}
+        open={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        onCancel={handleCancel}
+        isLoading={CancelOrder.isPending}
+      />
     </div>
   );
 };
