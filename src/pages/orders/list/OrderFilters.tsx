@@ -205,15 +205,14 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         canLoadRoleDependentOptions,
     );
     const markets = toItems(marketsData).map((m) => ({ value: String(m.id), label: m.name }));
-    const { data: branchesData, isLoading: branchesLoading } = useBranches({
-        status: "active",
-        limit: 100,
-        page: 1,
-    }, !isManagerRole);
-    const branches = (branchesData?.data ?? []).map((b) => ({ value: String(b.id), label: b.name }));
-    }, {
-        enabled: canUseBranchFilter,
-    });
+    const { data: branchesData, isLoading: branchesLoading } = useBranches(
+        {
+            status: "active",
+            limit: 100,
+            page: 1,
+        },
+        canUseBranchFilter,
+    );
     const branches = canUseBranchFilter
         ? (branchesData?.data ?? []).map((b) => ({ value: String(b.id), label: b.name }))
         : [];
@@ -553,7 +552,6 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                                         }
                                                     />
                                                 )}
-                                                {shouldShowBranchFilter && branchId && (
                                                 {canUseBranchFilter && branchId && (
                                                     <FilterChip
                                                         label={`${t("chipBranch")}: ${branches.find((b) => b.value === branchId)?.label ?? `#${branchId}`}`}
@@ -796,7 +794,6 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                 }
                             />
                         )}
-                        {shouldShowBranchFilter && branchId && (
                         {canUseBranchFilter && branchId && (
                             <FilterChip
                                 label={`${t("chipBranch")}: ${branches.find((b) => b.value === branchId)?.label ?? `#${branchId}`}`}

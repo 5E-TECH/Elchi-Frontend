@@ -220,11 +220,9 @@ const Orders = () => {
       return JSON.stringify({
         role,
         marketId: role !== "market" ? urlMarketId : "",
-        branchId: role !== "market" ? urlBranchId : "",
+        branchId: canFilterByBranch ? urlBranchId : "",
         regionId: role === "manager" ? "" : urlRegionId,
         districtId: role === "manager" ? urlDistrictId : "",
-        branchId: canFilterByBranch ? urlBranchId : "",
-        regionId: urlRegionId,
         courierId: role !== "market" ? urlCourierId : "",
         status: Array.isArray(status) ? status.join(",") : status,
         dateFrom: urlDateFrom,
