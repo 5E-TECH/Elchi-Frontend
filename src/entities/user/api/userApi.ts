@@ -119,11 +119,12 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
-  const getRegions = () =>
+  const getRegions = (enabled: boolean = true) =>
     useQuery({
       queryKey: ["regions"],
       queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res: any) => res.data),
       staleTime: 5 * 60 * 1000,
+      enabled,
     });
 
   const getUserById = (id: string, params?: Pick<IUserFilter, "fromDate" | "toDate">) =>

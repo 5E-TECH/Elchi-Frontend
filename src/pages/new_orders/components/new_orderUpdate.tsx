@@ -17,7 +17,7 @@ import {
   Edit2,
   ChevronDown,
   Minus,
-  Plus,
+  Plus, 
   Trash2,
   MessageSquare,
   Truck,
@@ -29,11 +29,6 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
-import {
-  formatUzbekistanPhoneFull,
-  keepPhoneCaretAfterChange,
-  toUzbekistanPhoneValue,
-} from "../../../shared/lib/phone";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -235,14 +230,13 @@ const SelectField = memo(({
 ));
 
 const InputField = memo(({
-  label, icon: Icon, value, onChange, placeholder, isPhone = false,
+  label, icon: Icon, value, onChange, placeholder,
 }: {
   label: string;
   icon: LucideIcon;
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
-  isPhone?: boolean;
 }) => (
   <div className="space-y-1.5">
     <label className="text-sm text-gray-500 dark:text-white ml-1">{label}</label>
@@ -251,21 +245,9 @@ const InputField = memo(({
         <Icon size={16} />
       </div>
       <input
-        type={isPhone ? "tel" : "text"}
-        inputMode={isPhone ? "numeric" : undefined}
-        autoComplete={isPhone ? "off" : undefined}
-        value={isPhone ? formatUzbekistanPhoneFull(value) : value}
-        onChange={(event) => {
-          if (!isPhone) {
-            onChange(event.target.value);
-            return;
-          }
-
-          const nextValue = toUzbekistanPhoneValue(event.target.value);
-          const nextDisplayValue = formatUzbekistanPhoneFull(nextValue);
-          onChange(nextValue);
-          keepPhoneCaretAfterChange(event.target, nextDisplayValue, true);
-        }}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={`${FIELD_CLS} pl-10 pr-4 placeholder:text-gray-400 dark:placeholder:text-white/80`}
       />
@@ -461,7 +443,7 @@ const NewOrderUpdate = () => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-full space-y-4 rounded-2xl py-3 pb-20 sm:space-y-5 sm:py-4 sm:pb-24 md:space-y-6 md:py-6 md:pb-4">
+    <div className="min-h-full space-y-4 rounded-2xl p-3 pb-20 sm:space-y-5 sm:p-4 sm:pb-24 md:space-y-6 md:p-6 md:pb-4">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div onClick={handleNavigateBack} className="cursor-pointer min-w-0">
@@ -720,7 +702,6 @@ const NewOrderUpdate = () => {
           value={customerForm.phone}
           onChange={handleCustomerPhoneChange}
           placeholder={t("phonePlaceholder")}
-          isPhone
         />
       </UpdatePopup>
 
