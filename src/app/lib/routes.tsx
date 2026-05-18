@@ -85,7 +85,14 @@ const ErrorBoundaryPage = lazy(() => import("../../shared/ui/ErrorBoundaryPage")
 
 const isPaymentsManager = (state: RootState) => {
   const role = state.role.role;
-  return role === "admin" || role === "superadmin";
+  if (role === "admin" || role === "superadmin") return true;
+
+  if (role === "manager") {
+    const branchType = getUserBranchType(state.user.user);
+    return branchType === "REGIONAL" || branchType === "HYBRID";
+  }
+
+  return false;
 };
 
 const hasSelfCashboxAccess = (state: RootState) => {
