@@ -6,6 +6,7 @@ import Statistics from "./components/Statistics";
 import HistoryTab from "./components/HistoryTab";
 import { useCashBox } from "../../entities/payments";
 import PageContainer from "../../shared/ui/PageContainer";
+import { formatFinancialAmount, normalizeFinancialBalance } from "./lib/financialBalance";
 
 interface BalanceCard {
   label: string;
@@ -47,14 +48,11 @@ const FinancialBalance = () => {
   const { t } = useTranslation("payments");
   const { getFinancialBalance } = useCashBox();
   const { data: response, isLoading } = getFinancialBalance();
-  const data = response?.data;
+  const data = normalizeFinancialBalance(response);
   const [activeTab, setActiveTab] = useState<"overview" | "history" | "analysis">("overview");
 
-  const total = data?.currentSituation ?? 0;
+  const total = data.currentSituation;
   const isNegative = total < 0;
-
-  const formatAmount = (val: number): string =>
-    val.toLocaleString("ru-RU").replace(/\s/g, " ");
 
   const tabs = [
     {
@@ -79,7 +77,7 @@ const FinancialBalance = () => {
       label: t("cashbox"),
       subLabel: t("financialBalanceCashAvailable"),
       subType: "neutral",
-      amount: data?.main?.balance ?? 0,
+      amount: data.main.balance,
       icon: <Briefcase size={18} />,
       colorClass: "purple",
     },
@@ -87,7 +85,7 @@ const FinancialBalance = () => {
       label: t("financialBalanceMarkets"),
       subLabel: t("financialBalanceMarketsDebt"),
       subType: "negative",
-      amount: data?.markets?.marketsTotalBalans ?? 0,
+      amount: data.markets.marketsTotalBalans,
       icon: <Store size={18} />,
       colorClass: "red",
     },
@@ -95,7 +93,7 @@ const FinancialBalance = () => {
       label: t("financialBalanceCouriers"),
       subLabel: t("financialBalanceCouriersMoney"),
       subType: "positive",
-      amount: data?.couriers?.couriersTotalBalanse ?? 0,
+      amount: data.couriers.couriersTotalBalanse,
       icon: <Truck size={18} />,
       colorClass: "green",
     },
@@ -141,7 +139,7 @@ const FinancialBalance = () => {
                   className={`text-3xl font-black leading-none tracking-wider sm:text-4xl ${isNegative ? "text-red-100" : "text-emerald-100"
                     }`}
                 >
-                  {formatAmount(total)}
+                  {formatFinancialAmount(total)}
                 </p>
               )}
               <p className="text-white/50 text-xs tracking-widest mt-1">UZS</p>
@@ -184,7 +182,7 @@ const FinancialBalance = () => {
                 <p
                   className={`font-black text-2xl tracking-wide leading-none ${colors.amount}`}
                 >
-                  {formatAmount(card.amount)}
+                  {formatFinancialAmount(card.amount)}
                 </p>
               )}
               <p className="text-[11px] text-maindark/40 dark:text-slate-500 tracking-widest mt-1">

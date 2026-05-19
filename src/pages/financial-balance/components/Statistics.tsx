@@ -8,22 +8,12 @@ import {
 } from 'recharts';
 import { TrendingDown } from 'lucide-react';
 import type { ReactNode } from "react";
-
-interface FinancialBalanceData {
-  currentSituation?: number;
-  main?: {
-    balance?: number;
-  };
-  markets?: {
-    marketsTotalBalans?: number;
-    marketsTotalBalance?: number;
-  };
-  couriers?: {
-    couriersTotalBalanse?: number;
-    couriersTotalBalance?: number;
-  };
-  difference?: number;
-}
+import { useTranslation } from 'react-i18next';
+import {
+  formatFinancialAmount,
+  toFinancialNumber,
+  type FinancialBalanceData,
+} from '../lib/financialBalance';
 
 interface StatisticsProps {
   data?: FinancialBalanceData;
@@ -43,44 +33,39 @@ interface CustomTooltipProps {
   }>;
 }
 
-const formatAmount = (val: number) =>
-  val.toLocaleString('ru-RU').replace(/\s/g, ',') + ' UZS';
-
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload?.length) {
     return (
       <div className="bg-[#1C1A28] border border-[#2E2B3E] rounded-xl px-3 py-2 text-xs text-white shadow-lg">
         <p className="font-semibold">{payload[0].payload.name}</p>
-        <p className="text-slate-300 mt-0.5">{formatAmount(payload[0].value)}</p>
+        <p className="text-slate-300 mt-0.5">
+          {formatFinancialAmount(payload[0].value, "comma")} UZS
+        </p>
       </div>
     );
   }
   return null;
 };
 
-const toNumber = (value: unknown): number => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
 const Statistics = ({ data: financialData }: StatisticsProps) => {
+  const { t } = useTranslation("payments");
   const chartData = useMemo<ChartItem[]>(() => {
-    const cashAmount = toNumber(financialData?.main?.balance);
-    const courierAmount = toNumber(
+    const cashAmount = toFinancialNumber(financialData?.main?.balance);
+    const courierAmount = toFinancialNumber(
       financialData?.couriers?.couriersTotalBalanse ??
       financialData?.couriers?.couriersTotalBalance,
     );
-    const marketAmount = toNumber(
+    const marketAmount = toFinancialNumber(
       financialData?.markets?.marketsTotalBalans ??
       financialData?.markets?.marketsTotalBalance,
     );
 
     return [
-      { name: 'Kassa', amount: cashAmount, color: '#7C3AED' },
-      { name: 'Kuryerlar', amount: courierAmount, color: '#10B981' },
-      { name: 'Marketlar', amount: marketAmount, color: '#E24B4A' },
+      { name: t("cashbox"), amount: cashAmount, color: '#7C3AED' },
+      { name: t("financialBalanceCouriers"), amount: courierAmount, color: '#10B981' },
+      { name: t("financialBalanceMarkets"), amount: marketAmount, color: '#E24B4A' },
     ];
-  }, [financialData]);
+  }, [financialData, t]);
 
   const maxAmount = useMemo(
     () => Math.max(...chartData.map((item) => Math.abs(item.amount)), 1),
@@ -88,7 +73,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
   );
 
   const netTotal =
-    toNumber(financialData?.currentSituation) || toNumber(financialData?.difference);
+    toFinancialNumber(financialData?.currentSituation) || toFinancialNumber(financialData?.difference);
   const isNegative = netTotal < 0;
   const trendIcon: ReactNode = isNegative
     ? <TrendingDown size={15} className="text-red-100" />
@@ -104,7 +89,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
         {/* Bar Chart */}
         <div className="rounded-2xl border border-glass-border bg-primary p-4 dark:bg-maindark">
           <p className="mb-4 text-sm font-semibold text-white">
-            Moliyaviy ko'rsatkichlar
+            {t("financialBalanceIndicators")}
           </p>
 
           <div className="mb-4 space-y-3">
@@ -184,7 +169,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
                     <span className="text-xs text-slate-300">{item.name}</span>
                   </div>
                   <span className="text-right text-xs font-semibold tabular-nums text-white">
-                    {item.amount.toLocaleString('ru-RU').replace(/\s/g, ',')} UZS
+                    {formatFinancialAmount(item.amount, "comma")} UZS
                   </span>
                 </div>
               ))}
@@ -206,8 +191,12 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
             {trendIcon}
           </div>
           <div>
-            <p className="text-white text-sm font-semibold leading-tight">Total Balans</p>
-            <p className="text-slate-300 text-xs mt-0.5">Kassa + Kuryerlar + Marketlar</p>
+            <p className="text-white text-sm font-semibold leading-tight">
+              {t("financialBalanceTotal")}
+            </p>
+            <p className="text-slate-300 text-xs mt-0.5">
+              {t("financialBalanceTotalFormula")}
+            </p>
           </div>
         </div>
 
@@ -216,7 +205,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
             isNegative ? "text-red-100" : "text-emerald-100"
           }`}
         >
-          {netTotal.toLocaleString('ru-RU').replace(/\s/g, ',')} UZS
+          {formatFinancialAmount(netTotal, "comma")} UZS
         </p>
       </div>
     </div>
