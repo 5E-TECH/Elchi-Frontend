@@ -5,6 +5,7 @@ import { Scale, Briefcase, Store, Truck, History, ChartColumn } from "lucide-rea
 import Statistics from "./components/Statistics";
 import HistoryTab from "./components/HistoryTab";
 import { useCashBox } from "../../entities/payments";
+import PageContainer from "../../shared/ui/PageContainer";
 
 interface BalanceCard {
   label: string;
@@ -101,10 +102,11 @@ const FinancialBalance = () => {
   ];
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-primary dark:bg-maindark">
+    <PageContainer className="flex flex-col xl:h-full xl:min-h-0 xl:overflow-hidden">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-primary dark:bg-maindark xl:h-full">
       {/* Hero */}
       <div
-        className={`relative px-6 py-5 overflow-hidden transition-colors duration-500 ${isNegative
+        className={`relative shrink-0 overflow-hidden px-5 py-4 transition-colors duration-500 sm:px-6 ${isNegative
           ? "bg-linear-to-br from-red-800 via-red-600 to-red-800"
           : "bg-linear-to-br from-emerald-800 via-emerald-600 to-emerald-800"
           }`}
@@ -123,7 +125,7 @@ const FinancialBalance = () => {
             description={t("financialBalanceMarketsAndCouriers")}
             icon={<Scale />}
           />
-          <div className="flex items-end justify-between mt-3">
+          <div className="mt-2.5 flex items-end justify-between">
             <div className="flex items-center gap-2 text-white/60 text-sm">
               <span
                 className={`inline-block w-2 h-2 rounded-full animate-pulse ${isNegative ? "bg-red-300" : "bg-emerald-300"
@@ -136,7 +138,7 @@ const FinancialBalance = () => {
                 <div className="h-10 w-48 bg-white/10 animate-pulse rounded-lg" />
               ) : (
                 <p
-                  className={`font-black text-4xl tracking-wider leading-none ${isNegative ? "text-red-100" : "text-emerald-100"
+                  className={`text-3xl font-black leading-none tracking-wider sm:text-4xl ${isNegative ? "text-red-100" : "text-emerald-100"
                     }`}
                 >
                   {formatAmount(total)}
@@ -149,7 +151,7 @@ const FinancialBalance = () => {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid shrink-0 grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => {
           const colors = colorMap[card.colorClass];
           const maxAbs = Math.max(...cards.map((c) => Math.abs(c.amount)), 1);
@@ -158,9 +160,9 @@ const FinancialBalance = () => {
           return (
             <div
               key={card.label}
-              className="border border-gray-200 dark:border-glass-border rounded-2xl p-4 hover:border-main/40 dark:hover:border-[#4A476A] hover:-translate-y-0.5 transition-all duration-200 bg-white/60 dark:bg-transparent"
+              className="rounded-2xl border border-gray-200 bg-white/60 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-main/40 dark:border-glass-border dark:bg-transparent dark:hover:border-[#4A476A]"
             >
-              <div className="flex items-center gap-3 mb-3">
+              <div className="mb-2.5 flex items-center gap-3">
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center ${colors.icon}`}
                 >
@@ -189,7 +191,7 @@ const FinancialBalance = () => {
                 UZS
               </p>
 
-              <div className="mt-3 h-0.5 rounded-full bg-gray-200 dark:bg-white/5">
+              <div className="mt-2.5 h-0.5 rounded-full bg-gray-200 dark:bg-white/5">
                 <div
                   className={`h-full rounded-full ${colors.bar}`}
                   style={{ width: `${barWidth}%` }}
@@ -200,7 +202,7 @@ const FinancialBalance = () => {
         })}
       </div>
 
-      <div className="px-4 pb-4">
+      <div className="shrink-0 px-4 pb-3">
         <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-primary p-2 dark:border-primarydark/60 dark:bg-maindark sm:grid-cols-3">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -210,7 +212,7 @@ const FinancialBalance = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${isActive
+                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
                   ? "bg-[var(--color-main-soft)] text-[var(--color-main)] dark:bg-primarydark/70 dark:text-primary"
                   : "text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:bg-[var(--color-table-row-alt)] dark:hover:bg-primarydark/70 hover:text-[var(--color-maindark)] dark:hover:text-[var(--color-primary)]"
                   }`}
@@ -223,7 +225,7 @@ const FinancialBalance = () => {
         </div>
       </div>
 
-      <div className="px-4 pb-4">
+      <div className="min-h-0 flex-1 px-4 pb-4">
         {activeTab === "overview" ? <Statistics data={data} /> : activeTab === "history" ? (
           <HistoryTab />
         ) : (
@@ -237,7 +239,8 @@ const FinancialBalance = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </PageContainer>
   );
 };
 

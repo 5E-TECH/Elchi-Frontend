@@ -5,6 +5,7 @@ import { useDeleteSetting, SettingFormModal } from "../../../features/branch-set
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { ConfirmButton } from "../../../shared/ui/ConfirmButton";
+import { useTranslation } from "react-i18next";
 
 interface BranchSettingsWidgetProps {
   branchId: string;
@@ -17,6 +18,7 @@ const BranchSettingsWidget = ({
   data,
   loading,
 }: BranchSettingsWidgetProps) => {
+  const { t } = useTranslation("branches");
   const [editingSetting, setEditingSetting] = useState<BranchSetting | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const deleteSetting = useDeleteSetting(branchId);
@@ -27,11 +29,11 @@ const BranchSettingsWidget = ({
     `${actionButtonClassName} !border-rose-200/80 !bg-rose-50 !text-rose-600 hover:!border-rose-400 hover:!bg-rose-100 hover:!text-rose-700 dark:!border-rose-500/30 dark:!bg-rose-500/12 dark:!text-rose-300 dark:hover:!border-rose-400/60 dark:hover:!bg-rose-500/18 dark:hover:!text-rose-200`;
 
   const columns: ColumnConfig<BranchSetting>[] = [
-    { key: "key", label: "Kalit", sortable: true },
-    { key: "value", label: "Qiymat", sortable: true },
+    { key: "key", label: t("settings.key"), sortable: true },
+    { key: "value", label: t("settings.value"), sortable: true },
     {
       key: "id",
-      label: "Amallar",
+      label: t("table.actions"),
       render: (_, record) => (
         <div
           className="flex flex-wrap items-center gap-2"
@@ -45,20 +47,20 @@ const BranchSettingsWidget = ({
               setIsModalOpen(true);
             }}
           >
-            Tahrirlash
+            {t("actions.edit")}
           </Button>
           <ConfirmButton
             size="small"
             className={deleteButtonClassName}
-            confirmTitle="Sozlamani o'chirmoqchimisiz?"
+            confirmTitle={t("settings.deleteConfirm")}
             popupTheme="branch"
             loading={deleteSetting.isPending}
             onConfirm={async () => {
               await deleteSetting.mutateAsync(record.id);
-              message.success("Sozlama o'chirildi");
+              message.success(t("settings.deleted"));
             }}
           >
-            O'chirish
+            {t("actions.delete")}
           </ConfirmButton>
         </div>
       ),
@@ -76,7 +78,7 @@ const BranchSettingsWidget = ({
             setIsModalOpen(true);
           }}
         >
-          Sozlama qo'shish
+          {t("settings.add")}
         </Button>
       </div>
 
@@ -85,7 +87,7 @@ const BranchSettingsWidget = ({
         loading={loading}
         columns={columns}
         data={data}
-        emptyMessage="Sozlamalar topilmadi"
+        emptyMessage={t("settings.notFound")}
         className="text-[var(--color-maindark)] dark:text-white/85"
       />
 

@@ -1,5 +1,6 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
+import i18n from "../../../i18n";
 import type { PaginatedResponse } from "../../../shared/types/pagination";
 import type {
   Branch,
@@ -29,7 +30,7 @@ const normalizeBranch = (value: unknown): Branch => {
 
   return {
     id: String(item.id),
-    name: item.name ?? "Noma'lum filial",
+    name: item.name ?? i18n.t("branches:fallback.unknownBranch"),
     parent_id: item.parent_id ? String(item.parent_id) : parent?.id ? String(parent.id) : "",
     parent: parent
       ? {
@@ -71,7 +72,7 @@ const normalizeEmployee = (value: unknown): Employee => {
         item.fullName ??
         item.full_name ??
         item.name ??
-        "Noma'lum",
+        i18n.t("branches:fallback.unknown"),
       phone:
         user.phone ??
         user.phone_number ??
@@ -79,7 +80,7 @@ const normalizeEmployee = (value: unknown): Employee => {
         item.phone_number ??
         "—",
     },
-    position: item.position ?? item.role ?? user.role ?? "Xodim",
+    position: item.position ?? item.role ?? user.role ?? i18n.t("branches:fallback.employee"),
     joined_at: item.joined_at ?? item.created_at ?? item.createdAt ?? new Date().toISOString(),
   };
 };

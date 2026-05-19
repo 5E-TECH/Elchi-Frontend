@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  MoveLeft,
   Package,
   User,
   Phone,
@@ -24,6 +23,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
+import BackButton from "../../../shared/ui/BackButton";
 import { useOrders } from "../../../entities/orders";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
@@ -34,6 +34,7 @@ import {
   keepPhoneCaretAfterChange,
   toUzbekistanPhoneValue,
 } from "../../../shared/lib/phone";
+import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -59,6 +60,36 @@ interface OrderItem {
   quantity: number;
   product: { id: string; name: string; image_url?: string | null } | null;
 }
+
+const getProductImageUrl = (item: OrderItem) =>
+  resolveAssetUrl(item.product?.image_url);
+
+const ProductThumbnail = ({
+  item,
+  alt,
+  className,
+}: {
+  item: OrderItem;
+  alt: string;
+  className: string;
+}) => {
+  const imageUrl = getProductImageUrl(item);
+
+  return (
+    <div className={className}>
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={alt}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <Package size={18} className="text-gray-300 dark:text-white/20" />
+      )}
+    </div>
+  );
+};
 interface OrderDetail {
   id: string;
   where_deliver: "center" | "address";
@@ -450,7 +481,6 @@ const NewOrderUpdate = () => {
   const removeItem = useCallback((itemId: string) =>
     setOrderForm((p) => ({ ...p, items: p.items.filter((i) => i.id !== itemId) })), []);
 
-  const handleNavigateBack = useCallback(() => navigate(-1), [navigate]);
   const handleNavigateToCustomer = useCallback(
     () => {
       if (!userId) return;
@@ -464,9 +494,10 @@ const NewOrderUpdate = () => {
     <div className="min-h-full space-y-4 rounded-2xl py-3 pb-20 sm:space-y-5 sm:py-4 sm:pb-24 md:space-y-6 md:py-6 md:pb-4">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div onClick={handleNavigateBack} className="cursor-pointer min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
+          <BackButton className="h-11 min-w-11 shrink-0 rounded-2xl px-2" label="" />
           <HeaderName
-            icon={<MoveLeft />}
+            icon={<Package />}
             name={order?.customer?.name ?? t("orders")}
             description={t("viewOrderDetails")}
           />
@@ -511,18 +542,11 @@ const NewOrderUpdate = () => {
                       className="grid grid-cols-1 items-center gap-2 border-b border-gray-50 py-2 dark:border-white/4 sm:grid-cols-[1fr_auto] sm:gap-3"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
-                          {item.product?.image_url ? (
-                            <img
-                              src={item.product.image_url}
-                              alt={item.product.name}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <Package size={18} className="text-gray-300 dark:text-white/20" />
-                          )}
-                        </div>
+                        <ProductThumbnail
+                          item={item}
+                          alt={item.product?.name ?? t("productFallback", { id: item.id })}
+                          className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-white/8 dark:bg-white/5"
+                        />
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
                             {item.product?.name ?? t("productFallback", { id: item.id })}
@@ -801,18 +825,11 @@ const OrderItemRow = memo(({
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-      <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
-        {item.product?.image_url ? (
-          <img
-            src={item.product.image_url}
-            alt={item.product.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <Package size={18} className="text-gray-300 dark:text-white/20" />
-        )}
-      </div>
+      <ProductThumbnail
+        item={item}
+        alt={item.product?.name ?? "—"}
+        className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/8"
+      />
       <span className="flex-1 text-sm font-semibold text-gray-900 dark:text-white truncate">
         {item.product?.name ?? "—"}
       </span>

@@ -12,7 +12,7 @@ describe("OrderStatusBadge", () => {
   it("renders cancelled status styles", () => {
     renderWithProviders(<OrderStatusBadge status="cancelled" />);
 
-    expect(screen.getByText("Bekor qilingan")).toHaveClass("text-white");
+    expect(screen.getByText("Bekor qilingan")).toHaveClass("text-red-700");
   });
 
   it("renders paid status label", () => {

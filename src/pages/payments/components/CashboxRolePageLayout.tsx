@@ -6,12 +6,13 @@ import PaymentHistoryList from "./PaymentHistoryList";
 import CashboxSummaryCard from "./CashboxSummaryCard";
 import type { PaymentRow } from "./patmentHistoryTable";
 import PageContainer from "../../../shared/ui/PageContainer";
+import BackButton from "../../../shared/ui/BackButton";
 
 interface CashboxRolePageLayoutProps {
   entityName: string;
   description: string;
   headerIcon: ReactNode;
-  onHeaderIconClick?: () => void;
+  onBack?: () => void;
   accentClass: string;
   accentIcon: ReactNode;
   summarySubtitle: string;
@@ -46,7 +47,7 @@ const CashboxRolePageLayout = ({
   entityName,
   description,
   headerIcon,
-  onHeaderIconClick,
+  onBack,
   accentClass,
   accentIcon,
   summarySubtitle,
@@ -69,12 +70,14 @@ const CashboxRolePageLayout = ({
     <PageContainer className="flex flex-col gap-3 overflow-x-hidden">
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(18rem,0.42fr)_minmax(24rem,0.58fr)] lg:gap-4">
         <div className="flex min-h-0 flex-col gap-3">
-          <div className="px-1">
+          <div className="flex items-start gap-3 px-1">
+            {onBack ? (
+              <BackButton onClick={onBack} className="mt-1 h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
+            ) : null}
             <HeaderName
               name={entityName}
               description={description}
               icon={headerIcon}
-              onIconClick={onHeaderIconClick}
             />
           </div>
 

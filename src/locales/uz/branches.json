@@ -11,7 +11,59 @@
     "save": "Saqlash",
     "update": "Yangilash",
     "edit": "Tahrirlash",
+    "delete": "O'chirish",
     "details": "Batafsil"
+  },
+  "page": {
+    "title": "Filiallar",
+    "description": "Filiallar ro'yxati va holatini boshqarish"
+  },
+  "detail": {
+    "notFound": "Filial topilmadi",
+    "description": "Filial ma'lumotlari, xodimlar va sozlamalarni bitta joydan boshqaring.",
+    "location": "Joylashuv",
+    "employees": "Xodimlar",
+    "assignedUsers": "filialga biriktirilgan foydalanuvchi",
+    "createdDate": "Yaratilgan sana",
+    "createdHint": "filial tizimga qo'shilgan vaqt",
+    "branchAndEmployees": "Filial va xodimlar"
+  },
+  "employee": {
+    "title": "Filial xodimlari",
+    "description": "Biriktirilgan xodimlar ro'yxati va ularning lavozimlari.",
+    "employee": "Xodim",
+    "position": "Lavozim",
+    "joinedDate": "Qo'shilgan sana",
+    "notFound": "Xodimlar topilmadi",
+    "add": "Xodim qo'shish",
+    "addDescription": "Filialga foydalanuvchini biriktiring.",
+    "addAction": "Qo'shish",
+    "added": "Xodim filialga qo'shildi",
+    "user": "Foydalanuvchi",
+    "selectUser": "Foydalanuvchini tanlang",
+    "remove": "Olib tashlash",
+    "removeConfirm": "Xodimni filialdan olib tashlamoqchimisiz?",
+    "removed": "Xodim olib tashlandi"
+  },
+  "settings": {
+    "title": "Filial sozlamalari",
+    "description": "Filialga tegishli kalit-qiymat sozlamalarini shu joydan boshqaring.",
+    "key": "Kalit",
+    "value": "Qiymat",
+    "add": "Sozlama qo'shish",
+    "edit": "Sozlamani tahrirlash",
+    "formDescription": "Filialga tegishli kalit va qiymatni kiriting.",
+    "created": "Sozlama qo'shildi",
+    "updated": "Sozlama yangilandi",
+    "deleted": "Sozlama o'chirildi",
+    "deleteConfirm": "Sozlamani o'chirmoqchimisiz?",
+    "notFound": "Sozlamalar topilmadi",
+    "keyRequired": "Kalit nomini kiriting",
+    "valueRequired": "Qiymatni kiriting"
+  },
+  "delete": {
+    "confirm": "Filialni o'chirmoqchimisiz?",
+    "success": "Filial o'chirildi"
   },
   "fields": {
     "name": "Filial nomi",
@@ -43,9 +95,13 @@
     "CITY": "Shahar",
     "REGIONAL": "Viloyat",
     "DISTRICT": "Tuman",
+    "PICKUP": "Qabul punkti",
+    "HYBRID": "Aralash",
     "city": "Shahar",
     "regional": "Viloyat",
     "district": "Tuman",
+    "pickup": "Qabul punkti",
+    "hybrid": "Aralash",
     "unknown": "Noma'lum"
   },
   "status": {
@@ -58,7 +114,13 @@
   },
   "errors": {
     "codeExists": "Bu code allaqachon mavjud",
-    "circularParent": "Aylanma bog'lanish aniqlandi"
+    "circularParent": "Aylanma bog'lanish aniqlandi",
+    "generic": "Xatolik yuz berdi"
+  },
+  "fallback": {
+    "unknownBranch": "Noma'lum filial",
+    "unknown": "Noma'lum",
+    "employee": "Xodim"
   },
   "list": {
     "searchPlaceholder": "Filial nomi yoki manzil bo'yicha qidirish",
@@ -96,6 +158,7 @@
     "district": "Tumanni tanlang",
     "address": "Manzilni kiriting",
     "status": "Holat tanlang",
-    "manager": "Mas'ul xodimni tanlang"
+    "manager": "Mas'ul xodimni tanlang",
+    "completeForm": "Formani to'liq to'ldiring"
   }
 }

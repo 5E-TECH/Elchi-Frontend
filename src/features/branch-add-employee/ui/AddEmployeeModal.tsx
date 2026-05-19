@@ -3,6 +3,7 @@ import { Form, Select, message } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect } from "react";
 import { UserPlus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useUsers } from "../../../entities/user";
 import FormPopup, { popupLabelClassName } from "../../../shared/ui/FormPopup";
 import { addEmployeeSchema } from "../model/schema";
@@ -17,6 +18,7 @@ const AddEmployeeModal = ({
   open: boolean;
   onClose: () => void;
 }) => {
+  const { t } = useTranslation("branches");
   const { data: users = [] } = useUsers({
     status: "active",
     role: ["admin", "operator"],
@@ -36,7 +38,7 @@ const AddEmployeeModal = ({
 
   const onSubmit = handleSubmit(async (values) => {
     await addEmployee.mutateAsync(values);
-    message.success("Xodim filialga qo'shildi");
+    message.success(t("employee.added"));
     onClose();
     reset();
   });
@@ -49,15 +51,15 @@ const AddEmployeeModal = ({
         event.preventDefault();
         void onSubmit();
       }}
-      title="Xodim qo'shish"
-      description="Filialga foydalanuvchini biriktiring."
+      title={t("employee.add")}
+      description={t("employee.addDescription")}
       icon={<UserPlus size={22} />}
-      submitLabel="Qo'shish"
+      submitLabel={t("employee.addAction")}
       isLoading={addEmployee.isPending}
       theme="branch"
     >
       <Form layout="vertical" component={false}>
-        <Form.Item label={<span className={popupLabelClassName}>Foydalanuvchi</span>} validateStatus={errors.user_id ? "error" : ""} help={errors.user_id?.message}>
+        <Form.Item label={<span className={popupLabelClassName}>{t("employee.user")}</span>} validateStatus={errors.user_id ? "error" : ""} help={errors.user_id?.message}>
           <Controller
             control={control}
             name="user_id"
@@ -70,7 +72,7 @@ const AddEmployeeModal = ({
                   value: user.id,
                   label: `${user.fullName} (${user.username})`,
                 }))}
-                placeholder="Foydalanuvchini tanlang"
+                placeholder={t("employee.selectUser")}
               />
             )}
           />

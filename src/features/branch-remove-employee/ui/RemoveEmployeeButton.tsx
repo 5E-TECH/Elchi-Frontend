@@ -2,6 +2,7 @@ import { message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import { ConfirmButton } from "../../../shared/ui/ConfirmButton";
 import { useRemoveEmployee } from "../api/useRemoveEmployee";
+import { useTranslation } from "react-i18next";
 
 const RemoveEmployeeButton = ({
   branchId,
@@ -12,6 +13,7 @@ const RemoveEmployeeButton = ({
   userId: string;
   className?: string;
 }) => {
+  const { t } = useTranslation("branches");
   const removeEmployee = useRemoveEmployee(branchId);
 
   return (
@@ -19,16 +21,16 @@ const RemoveEmployeeButton = ({
       size="small"
       icon={<DeleteOutlined />}
       className={className}
-      confirmTitle="Xodimni filialdan olib tashlamoqchimisiz?"
+      aria-label={t("employee.remove")}
+      title={t("employee.remove")}
+      confirmTitle={t("employee.removeConfirm")}
       popupTheme="branch"
       onConfirm={async () => {
         await removeEmployee.mutateAsync(userId);
-        message.success("Xodim olib tashlandi");
+        message.success(t("employee.removed"));
       }}
       loading={removeEmployee.isPending}
-    >
-      Olib tashlash
-    </ConfirmButton>
+    />
   );
 };
 

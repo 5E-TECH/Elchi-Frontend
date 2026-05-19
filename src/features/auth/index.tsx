@@ -13,8 +13,8 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex">
-      <div className="flex w-full bg-maindark items-center justify-center p-4 sm:p-12 relative overflow-hidden">
+    <div className="min-h-dvh w-full flex">
+      <div className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-maindark px-4 py-5 sm:p-12">
         <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
           <svg
             className="w-full h-full"

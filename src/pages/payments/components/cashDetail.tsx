@@ -310,7 +310,7 @@ const CashDetail = () => {
       entityName={entityName}
       description={t(cfg.kassaLabelKey)}
       headerIcon={cfg.headerIcon}
-      onHeaderIconClick={() => navigate(-1)}
+      onBack={() => navigate(-1)}
       accentClass={cfg.iconBg}
       accentIcon={cfg.entityIcon}
       summarySubtitle={t(cfg.kassaLabelKey)}

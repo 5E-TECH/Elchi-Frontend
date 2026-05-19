@@ -1,6 +1,7 @@
 import * as yup from "yup";
+import i18n from "../../../i18n";
 
 export const branchSettingSchema = yup.object({
-  key: yup.string().required("Kalit nomini kiriting"),
-  value: yup.string().required("Qiymatni kiriting"),
+  key: yup.string().required(i18n.t("branches:settings.keyRequired")),
+  value: yup.string().required(i18n.t("branches:settings.valueRequired")),
 });

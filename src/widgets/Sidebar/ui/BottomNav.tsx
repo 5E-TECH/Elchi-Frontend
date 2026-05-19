@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { getSidebarConfigForUser, type SidebarUserRole } from "../model/menuConfig";
 import type { RootState } from "../../../app/config/store";
+import { preloadRoute } from "../../../app/lib/routePreload";
 const MOBILE_ADMIN_ALLOWED_LABELS = [
     "dashboard",
     "orders",
@@ -45,6 +46,9 @@ const BottomNav = () => {
                         key={item.to}
                         to={item.to}
                         end={item.end}
+                        onPointerEnter={() => preloadRoute(item.to)}
+                        onFocus={() => preloadRoute(item.to)}
+                        onTouchStart={() => preloadRoute(item.to)}
                         aria-label={t(item.label)}
                         className={({ isActive }) =>
                             `flex items-center justify-center py-2 rounded-xl transition-all duration-300 min-w-0 ${isActive

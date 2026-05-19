@@ -35,10 +35,18 @@ interface ChartItem {
   color: string;
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    payload: ChartItem;
+  }>;
+}
+
 const formatAmount = (val: number) =>
   val.toLocaleString('ru-RU').replace(/\s/g, ',') + ' UZS';
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload?.length) {
     return (
       <div className="bg-[#1C1A28] border border-[#2E2B3E] rounded-xl px-3 py-2 text-xs text-white shadow-lg">
@@ -91,103 +99,103 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
   const trendBorder = isNegative ? '#7f1d1d' : '#14532d';
 
   return (
-    <div className="flex flex-col gap-4">
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-      {/* Bar Chart */}
-      <div className="bg-primary dark:bg-maindark border border-glass-border rounded-2xl p-5">
-        <p className="text-white font-semibold text-sm mb-5">
-          Moliyaviy ko'rsatkichlar
-        </p>
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="grid min-h-0 grid-cols-1 gap-3 xl:flex-1 xl:grid-cols-2">
+        {/* Bar Chart */}
+        <div className="rounded-2xl border border-glass-border bg-primary p-4 dark:bg-maindark">
+          <p className="mb-4 text-sm font-semibold text-white">
+            Moliyaviy ko'rsatkichlar
+          </p>
 
-        <div className="mb-5 space-y-4">
-          {chartData.map((item) => {
-            const pct = (Math.abs(item.amount) / maxAmount) * 100;
-            return (
-              <div key={item.name} className="flex items-center gap-3">
-                <span className="text-slate-400 text-xs w-20 text-right shrink-0">
-                  {item.name}
-                </span>
-                <div className="flex-1 h-7 bg-primary dark:bg-maindark rounded-md overflow-hidden">
-                  <div
-                    className="h-full rounded-md transition-all duration-700"
-                    style={{
-                      width: `${pct}%`,
-                      background: item.color,
-                      opacity: 0.85,
-                    }}
-                  />
+          <div className="mb-4 space-y-3">
+            {chartData.map((item) => {
+              const pct = (Math.abs(item.amount) / maxAmount) * 100;
+              return (
+                <div key={item.name} className="flex items-center gap-3">
+                  <span className="text-slate-400 text-xs w-20 text-right shrink-0">
+                    {item.name}
+                  </span>
+                  <div className="h-6 flex-1 overflow-hidden rounded-md bg-primary dark:bg-maindark">
+                    <div
+                      className="h-full rounded-md transition-all duration-700"
+                      style={{
+                        width: `${pct}%`,
+                        background: item.color,
+                        opacity: 0.85,
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 border-t border-[#2E2B3E] pt-3">
-          {chartData.map((item) => (
-            <div key={item.name} className="flex items-center gap-1.5">
-              <span
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ background: item.color }}
-              />
-              <span className="text-xs text-slate-300">{item.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Donut Chart */}
-      <div className="bg-primary dark:bg-maindark border border-glass-border rounded-2xl p-5">
-        <p className="text-white font-semibold text-sm mb-4">Taqsimot</p>
-
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
-          <div className="h-40 w-40 shrink-0 self-center sm:self-auto">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={44}
-                  outerRadius={68}
-                  paddingAngle={2}
-                  dataKey="amount"
-                  strokeWidth={0}
-                >
-                  {chartData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} opacity={0.9} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
+              );
+            })}
           </div>
 
-          <div className="w-full flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-3 border-t border-[#2E2B3E] pt-3">
             {chartData.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ background: item.color }}
-                  />
-                  <span className="text-xs text-slate-300">{item.name}</span>
-                </div>
-                <span className="text-right text-xs font-semibold tabular-nums text-white">
-                  {item.amount.toLocaleString('ru-RU').replace(/\s/g, ',')} UZS
-                </span>
+              <div key={item.name} className="flex items-center gap-1.5">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ background: item.color }}
+                />
+                <span className="text-xs text-slate-300">{item.name}</span>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Donut Chart */}
+        <div className="rounded-2xl border border-glass-border bg-primary p-4 dark:bg-maindark">
+          <p className="mb-3 text-sm font-semibold text-white">Taqsimot</p>
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
+            <div className="h-32 w-32 shrink-0 self-center sm:self-auto">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={36}
+                    outerRadius={56}
+                    paddingAngle={2}
+                    dataKey="amount"
+                    strokeWidth={0}
+                  >
+                    {chartData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} opacity={0.9} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="w-full flex-1 space-y-2.5">
+              {chartData.map((item) => (
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: item.color }}
+                    />
+                    <span className="text-xs text-slate-300">{item.name}</span>
+                  </div>
+                  <span className="text-right text-xs font-semibold tabular-nums text-white">
+                    {item.amount.toLocaleString('ru-RU').replace(/\s/g, ',')} UZS
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
 
       {/* Total Balance Bar */}
       <div
-        className="flex flex-col gap-3 rounded-2xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+        className="flex shrink-0 flex-col gap-3 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"
         style={{
           background: trendBackground,
           borderColor: trendBorder,
