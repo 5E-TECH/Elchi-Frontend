@@ -417,6 +417,21 @@ select:-webkit-autofill:focus {
 }
 
 @layer components {
+  .login-field:-webkit-autofill,
+  .login-field:-webkit-autofill:hover,
+  .login-field:-webkit-autofill:focus,
+  .login-field:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #f9fafb inset !important;
+    -webkit-text-fill-color: var(--color-maindark) !important;
+    caret-color: var(--color-maindark);
+    transition: background-color 9999s ease-out 0s;
+  }
+
+  .login-field::selection {
+    background: rgba(87, 106, 219, 0.2);
+    color: var(--color-maindark);
+  }
+
   .el-surface-page {
     border: 1px solid var(--color-border-soft);
     background: var(--color-page-surface);

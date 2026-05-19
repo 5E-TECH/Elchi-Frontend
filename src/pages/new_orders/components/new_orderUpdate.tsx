@@ -29,11 +29,6 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
-import {
-  formatUzbekistanPhoneFull,
-  keepPhoneCaretAfterChange,
-  toUzbekistanPhoneValue,
-} from "../../../shared/lib/phone";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

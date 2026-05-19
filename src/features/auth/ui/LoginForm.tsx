@@ -124,7 +124,7 @@ const LoginForm = () => {
                     spellCheck={false}
                     aria-label={t("phoneLabel")}
                     disabled={loading}
-                    className={`h-11 w-full rounded-xl border bg-gray-50 px-4 text-sm text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark sm:h-12 sm:text-base ${errors.phone_number ? "border-red-500" : "border-gray-200"
+                    className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 text-sm text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark sm:text-base ${errors.phone_number ? "border-red-500" : "border-gray-200"
                       } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                     placeholder={t("phonePlaceholder")}
                   />
@@ -145,7 +145,7 @@ const LoginForm = () => {
                 </label>
               </div>
               <div
-                className={`flex h-11 w-full items-center justify-between rounded-xl border bg-gray-50 px-4 text-sm text-maindark transition-all duration-200 focus-within:border-transparent focus-within:ring-2 focus-within:ring-maindark sm:h-12 sm:text-base ${errors.password ? "border-red-500" : "border-gray-200"
+                className={`flex h-12 w-full items-center justify-between rounded-xl border bg-gray-50 px-5 text-sm text-maindark transition-all duration-200 focus-within:border-transparent focus-within:ring-2 focus-within:ring-maindark sm:text-base ${errors.password ? "border-red-500" : "border-gray-200"
                   } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <input
@@ -153,14 +153,14 @@ const LoginForm = () => {
                   type={show ? "text" : "password"}
                   disabled={loading}
                   placeholder={t("passwordPlaceholder")}
-                  className="w-full bg-transparent outline-none"
+                  className="login-field h-full min-w-0 flex-1 rounded-xl bg-transparent pr-3 outline-none"
                 />
                 <button
                   type="button"
                   disabled={loading}
                   onClick={() => setShow(!show)}
                   aria-label={show ? t("hidePassword", { defaultValue: "Hide password" }) : t("showPassword", { defaultValue: "Show password" })}
-                  className="cursor-pointer text-gray-400 transition-colors hover:text-main focus:outline-none disabled:cursor-not-allowed"
+                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:text-main focus:outline-none disabled:cursor-not-allowed"
                 >
                   {show ? <Eye size={18} /> : <EyeClosed size={18} />}
                 </button>
