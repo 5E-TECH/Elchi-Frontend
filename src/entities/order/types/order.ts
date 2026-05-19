@@ -90,6 +90,7 @@ export interface OrderListParams {
     branch_id?: string;
     customer_id?: string;
     region_id?: string;
+    district_id?: string;
     courier_id?: string;
     search?: string;
     start_day?: string;

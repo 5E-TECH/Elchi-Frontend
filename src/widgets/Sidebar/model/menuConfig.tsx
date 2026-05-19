@@ -108,7 +108,7 @@ const MANAGER_REGIONAL_CONFIG: NavItem[] = [
   { to: "/orders", icon: ShoppingBag, label: "orders" },
   { to: "/mails", icon: MailOpen, label: "mails" },
   { to: "/all-users", icon: UserRound, label: "users" },
-  { to: "/cash-box", icon: CreditCard, label: "payments" },
+  { to: "/payments", icon: CreditCard, label: "payments" },
 ];
 
 const MANAGER_PICKUP_CONFIG: NavItem[] = [
@@ -128,7 +128,7 @@ const MANAGER_HYBRID_CONFIG: NavItem[] = [
   { to: "/batches", icon: PackageCheck, label: "batches" },
   { to: "/returns", icon: RotateCcw, label: "returns" },
   { to: "/all-users", icon: UserRound, label: "users" },
-  { to: "/cash-box", icon: CreditCard, label: "payments" },
+  { to: "/payments", icon: CreditCard, label: "payments" },
 ];
 
 const toBranchType = (value: unknown): BranchType | null => {

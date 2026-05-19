@@ -2,7 +2,6 @@ import { memo, useMemo } from "react";
 import {
     MapPin,
     Store,
-    Building2,
     Calendar,
     Banknote,
     Phone,
@@ -122,18 +121,6 @@ const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => st
         ),
     },
     {
-        key: "branch" as const,
-        label: "Filial",
-        render: (branch: OrderListItem["branch"]) => (
-            <div className="flex items-center gap-1.5">
-                <Building2 size={13} className="text-main/60 shrink-0" />
-                <span className="text-sm font-medium text-maindark dark:text-primary">
-                    {branch?.name ?? "—"}
-                </span>
-            </div>
-        ),
-    },
-    {
         key: "status" as const,
         label: "Holat",
         render: (status: OrderListItem["status"]) => (
@@ -194,7 +181,6 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0, onCreat
             if (column.key === "customer") return { ...column, label: t("customer") };
             if (column.key === "district") return { ...column, label: t("filterRegion") + " / " + t("district") };
             if (column.key === "market") return { ...column, label: t("market") };
-            if (column.key === "branch") return { ...column, label: t("branch") };
             if (column.key === "status") return { ...column, label: t("orderStatus") };
             if (column.key === "where_deliver") {
                 return {
@@ -220,7 +206,7 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0, onCreat
     }, [locale, role, rowNumberOffset, t]);
 
     if (isLoading) {
-        return <TableSkeleton rows={8} columns={8} />;
+        return <TableSkeleton rows={8} columns={7} />;
     }
 
     if (!data.length) {
@@ -286,10 +272,6 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0, onCreat
                         <span className="truncate">{order.market?.name ?? "—"}</span>
                     </div>
                 )}
-                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                    <Building2 size={14} className="shrink-0 text-main/70" />
-                    <span className="truncate">{order.branch?.name ?? "—"}</span>
-                </div>
                 <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
                     <Calendar size={14} className="shrink-0 text-main/70" />
                     <span className="truncate">{formatDate(order.createdAt)}</span>
