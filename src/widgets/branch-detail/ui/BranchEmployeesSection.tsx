@@ -26,10 +26,10 @@ const BranchEmployeesSection = ({
       label: t("employee.employee"),
       render: (_, record) => (
         <div className="flex flex-col gap-0.5">
-          <span className="font-semibold text-[var(--color-maindark)] dark:text-white">
+          <span className="font-semibold text-maindark dark:text-white">
             {record.user.fullName}
           </span>
-          <span className="text-xs text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
+          <span className="text-xs text-text-muted dark:text-text-muted-dark">
             {record.user.phone}
           </span>
         </div>
@@ -60,10 +60,10 @@ const BranchEmployeesSection = ({
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-[var(--color-maindark)] dark:text-white">
+          <h2 className="text-lg font-bold text-maindark dark:text-white">
             {t("employee.title")}
           </h2>
-          <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
+          <p className="text-sm text-text-muted dark:text-text-muted-dark">
             {t("employee.description")}
           </p>
         </div>
@@ -75,7 +75,7 @@ const BranchEmployeesSection = ({
         columns={columns}
         data={data}
         emptyMessage={t("employee.notFound")}
-        className="text-[var(--color-maindark)] dark:text-white/85"
+        className="text-maindark dark:text-white/85"
       />
     </div>
   );

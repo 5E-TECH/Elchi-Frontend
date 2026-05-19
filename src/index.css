@@ -504,6 +504,78 @@ select:-webkit-autofill:focus {
   .el-soft-text {
     color: var(--color-dashboard-text-soft);
   }
+
+  .branch-settings-action.ant-btn {
+    height: 2rem;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 0.5rem;
+    background: var(--color-main-soft);
+    padding-inline: 0.75rem;
+    color: var(--color-maindark);
+    font-weight: 500;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .branch-settings-action.ant-btn:hover {
+    border-color: var(--color-main);
+    background: var(--color-main-soft);
+    color: var(--color-main);
+  }
+
+  .branch-settings-action-danger.ant-btn {
+    border-color: rgba(254, 205, 211, 0.8);
+    background: #fff1f2;
+    color: #e11d48;
+  }
+
+  .branch-settings-action-danger.ant-btn:hover {
+    border-color: #fb7185;
+    background: #ffe4e6;
+    color: #be123c;
+  }
+
+  .branch-settings-primary-action.ant-btn {
+    height: 2.5rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: var(--color-main);
+    padding-inline: 1rem;
+    color: #ffffff;
+    font-weight: 500;
+    box-shadow: 0 14px 28px rgba(87, 106, 219, 0.24);
+  }
+
+  .branch-settings-primary-action.ant-btn:hover {
+    background: var(--color-primarydark);
+    color: #ffffff;
+  }
+
+  .dark .branch-settings-action.ant-btn {
+    border-color: rgba(76, 87, 152, 0.6);
+    background: rgba(76, 87, 152, 0.4);
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .dark .branch-settings-action.ant-btn:hover {
+    border-color: var(--color-main);
+    background: rgba(76, 87, 152, 0.7);
+    color: #ffffff;
+  }
+
+  .dark .branch-settings-action-danger.ant-btn {
+    border-color: rgba(244, 63, 94, 0.3);
+    background: rgba(244, 63, 94, 0.12);
+    color: #fda4af;
+  }
+
+  .dark .branch-settings-action-danger.ant-btn:hover {
+    border-color: rgba(251, 113, 133, 0.6);
+    background: rgba(244, 63, 94, 0.18);
+    color: #fecdd3;
+  }
 }
 
 .order-filter-multiselect .ant-select-selector {

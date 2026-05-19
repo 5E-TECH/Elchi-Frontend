@@ -417,7 +417,7 @@ const MailDetailPage = () => {
         id: "pdf_100x60",
         label: t("printOptions.labelPdf.label"),
         hint: t("printOptions.labelPdf.hint"),
-        icon: <FileText size={14} className="text-(--color-error)" />,
+        icon: <FileText size={14} className="text-error" />,
       },
     ],
     [t],
