@@ -1,5 +1,6 @@
 import type { BranchSetting } from "../../../entities/branch";
 import { BranchSettingsWidget } from "../../branch-settings";
+import { useTranslation } from "react-i18next";
 
 interface BranchSettingsSectionProps {
   branchId: string;
@@ -12,14 +13,16 @@ const BranchSettingsSection = ({
   data,
   loading,
 }: BranchSettingsSectionProps) => {
+  const { t } = useTranslation("branches");
+
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-[var(--color-maindark)] dark:text-white">
-          Filial sozlamalari
+        <h2 className="text-lg font-bold text-maindark dark:text-white">
+          {t("settings.title")}
         </h2>
-        <p className="text-sm text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)]">
-          Filialga tegishli kalit-qiymat sozlamalarini shu joydan boshqaring.
+        <p className="text-sm text-maindark/60 dark:text-white/60">
+          {t("settings.description")}
         </p>
       </div>
 

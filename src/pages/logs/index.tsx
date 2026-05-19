@@ -59,12 +59,12 @@ const LogsPage = () => {
         />
       </div>
 
-      <div className="mx-auto max-w-3xl rounded-[1.75rem] border border-(--color-border-soft) bg-primary p-5 shadow-sm dark:bg-primarydark md:p-6">
-        <div className="rounded-3xl border border-(--color-border-soft) bg-main-soft p-5 dark:bg-background-soft">
+      <div className="mx-auto max-w-3xl rounded-[1.75rem] border border-border-soft bg-primary p-5 shadow-sm dark:bg-primarydark md:p-6">
+        <div className="rounded-3xl border border-border-soft bg-main-soft p-5 dark:bg-background-soft">
           <p className="text-sm font-semibold text-maindark dark:text-primary">
             Endpoint
           </p>
-          <p className="mt-2 text-sm text-(--color-text-muted) dark:text-text-muted-dark">
+          <p className="mt-2 text-sm text-text-muted dark:text-text-muted-dark">
             `POST /auth/refresh`
           </p>
 

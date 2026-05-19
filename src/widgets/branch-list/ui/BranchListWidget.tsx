@@ -93,8 +93,8 @@ const BranchListWidget = ({
                     title={option.label}
                     className={`flex h-10 w-10 items-center justify-center self-center rounded-lg text-base transition-all duration-200 ${
                       isActive
-                        ? "bg-[linear-gradient(135deg,var(--color-main)_0%,var(--color-primarydark)_100%)] text-white shadow-[0_10px_25px_rgba(109,72,217,0.28)]"
-                        : "text-[color:var(--color-text-muted)] hover:bg-[color:var(--color-main-soft)] hover:text-[var(--color-main)] dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
+                        ? "bg-main text-white shadow-[0_10px_25px_rgba(109,72,217,0.28)]"
+                        : "text-text-muted hover:bg-main-soft hover:text-main dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
                     }`}
                   >
                     {option.icon}

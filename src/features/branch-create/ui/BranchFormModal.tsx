@@ -80,11 +80,11 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
   );
   const branchTypeOptions = useMemo(
     () => [
-      { value: "PICKUP", label: "Pickup" },
-      { value: "REGIONAL", label: "Regional" },
-      { value: "HYBRID", label: "Hybrid" },
+      { value: "PICKUP", label: t("branchTypes.pickup") },
+      { value: "REGIONAL", label: t("branchTypes.regional") },
+      { value: "HYBRID", label: t("branchTypes.hybrid") },
     ],
-    [],
+    [t],
   );
   const parentOptions = useMemo(
     () => getParentBranchOptions(parentBranches?.data, t),
@@ -117,7 +117,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
         applyBranchBackendErrors(error, setError);
         const backendMessage =
           (error as { response?: { data?: { message?: string | string[] } } })?.response?.data
-            ?.message ?? "Xatolik yuz berdi";
+            ?.message ?? t("errors.generic");
         apiNotification.error({
           message: Array.isArray(backendMessage) ? backendMessage.join(", ") : backendMessage,
           placement: "topRight",
@@ -127,7 +127,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     (invalidErrors) => {
       const firstError = Object.values(invalidErrors)[0];
       apiNotification.error({
-        message: firstError?.message || "Formani to'liq to'ldiring",
+        message: firstError?.message || t("validation.completeForm"),
         placement: "topRight",
       });
     },

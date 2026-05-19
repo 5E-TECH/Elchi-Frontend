@@ -8,6 +8,7 @@ import Button from "../../../shared/components/button";
 import HeaderName from "../../../shared/components/headerName";
 import PageContainer from "../../../shared/ui/PageContainer";
 import { BranchListWidget } from "../../../widgets/branch-list";
+import { useTranslation } from "react-i18next";
 
 type ViewMode = "table" | "card" | "tree";
 
@@ -26,6 +27,7 @@ const getStoredViewMode = (): ViewMode => {
 };
 
 const BranchesPage = () => {
+  const { t } = useTranslation("branches");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode);
@@ -46,12 +48,12 @@ const BranchesPage = () => {
     <PageContainer>
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderName
-          name="Filiallar"
-          description="Filiallar ro'yxati va holatini boshqarish"
+          name={t("page.title")}
+          description={t("page.description")}
           icon={<Building2 size={22} />}
         />
         <Button
-          label="Yangi filial"
+          label={t("create.title")}
           icon={<PlusOutlined />}
           onClick={() => setIsCreateOpen(true)}
           className="w-full sm:w-auto"

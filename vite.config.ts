@@ -14,10 +14,6 @@ export default defineConfig({
             return;
           }
 
-          if (id.includes("react") || id.includes("scheduler")) {
-            return "vendor-react";
-          }
-
           if (id.includes("react-router")) {
             return "vendor-router";
           }
@@ -28,6 +24,14 @@ export default defineConfig({
 
           if (id.includes("@tanstack/react-query")) {
             return "vendor-query";
+          }
+
+          if (
+            id.includes("/react/") ||
+            id.includes("/react-dom/") ||
+            id.includes("scheduler")
+          ) {
+            return "vendor-react";
           }
 
           if (id.includes("antd") || id.includes("@ant-design")) {

@@ -73,7 +73,7 @@ const QuickDateRangeFilter = ({
               onClick={() => onChange(ranges[key])}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                 isActive
-                  ? "bg-(--color-main) text-white shadow-[0_8px_18px_color-mix(in_srgb,var(--color-main)_24%,transparent)]"
+                  ? "bg-main text-white shadow-[0_8px_18px_rgba(87,106,219,0.24)]"
                   : "el-glass-control text-maindark/70 hover:text-main dark:text-primary/70 dark:hover:text-primary"
               }`}
             >

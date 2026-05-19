@@ -249,7 +249,7 @@ const HistoryTab = () => {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="rounded-2xl border border-gray-200 bg-primary p-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark">
         <div className="mb-4 flex items-center gap-2">
           <Funnel size={16} className="text-main" />
@@ -282,15 +282,17 @@ const HistoryTab = () => {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-sm dark:border-primarydark/60 dark:bg-maindark">
-        <Table<HistoryRow>
-          data={rows}
-          columns={columns}
-          loading={isLoading}
-          dense
-          keyExtractor={(row) => row.id}
-          emptyMessage={t("financialBalanceHistoryEmpty")}
-        />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-sm dark:border-primarydark/60 dark:bg-maindark">
+        <div className="min-h-0 flex-1 overflow-auto custom-scrollbar">
+          <Table<HistoryRow>
+            data={rows}
+            columns={columns}
+            loading={isLoading}
+            dense
+            keyExtractor={(row) => row.id}
+            emptyMessage={t("financialBalanceHistoryEmpty")}
+          />
+        </div>
 
         <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 dark:border-primarydark/60 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <span className="text-xs text-gray-500 dark:text-white/45">

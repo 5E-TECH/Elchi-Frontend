@@ -151,7 +151,7 @@ const UserListPage = memo(() => {
       {/* Header — mobilda ustma-ust, desktopda yonma-yon */}
       <div className="relative z-10 mb-5 flex items-start justify-between gap-3 sm:items-center">
         <div className="flex min-w-0 items-start gap-3.5 py-2.5 text-maindark">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg dark:bg-primary/10 dark:text-primary [&_svg]:!h-5 [&_svg]:!w-5 [&_svg]:!text-current">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-main text-primary shadow-lg dark:bg-primary/10 dark:text-primary [&_svg]:h-5! [&_svg]:w-5! [&_svg]:text-current!">
             <Users />
           </div>
           <div className="flex min-w-0 flex-1 flex-col">

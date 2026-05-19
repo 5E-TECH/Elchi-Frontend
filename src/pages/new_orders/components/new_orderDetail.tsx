@@ -1,7 +1,7 @@
 import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
-import { MoveLeft, Globe, FileText, CheckCircle2, Loader2 } from "lucide-react";
+import { Globe, FileText, CheckCircle2, Loader2 } from "lucide-react";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useNavigate, useParams } from "react-router-dom";
 import { GlobalSearchInput, useDebounce } from "../../../features/search";
@@ -16,6 +16,7 @@ import {
   playMissingOrderFeedback,
   playScanFeedback,
 } from "../../scan/lib/scanShared";
+import BackButton from "../../../shared/ui/BackButton";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
@@ -25,11 +26,12 @@ const NewOrderDetail = () => {
   const roleState = useSelector((state: RootState) => state.role);
   const currentUser = useSelector((state: RootState) => state.user.user as Record<string, unknown> | null);
   const isMarketRole = roleState.role === "market";
-  const isManagerOrRegistrator =
-    roleState.role === "manager" || roleState.role === "registrator";
   // Backend payloadlari farq qilgani uchun manager/registratorlarda
   // qabul qilishni doim transfer-batches endpointiga yo'naltiramiz.
-  const shouldUseBranchTransferReceive = isManagerOrRegistrator && !isMarketRole && !!currentUser;
+  const shouldUseBranchTransferReceive =
+    !isMarketRole &&
+    !!currentUser &&
+    (roleState.role === "manager" || roleState.role === "registrator");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
@@ -63,10 +65,7 @@ const NewOrderDetail = () => {
     () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
     [rawOrders, receivedOrderIds],
   );
-  const ordersKey = useMemo(
-    () => orders.map((order) => order.id).join("|"),
-    [orders],
-  );
+  const ordersKey = orders.map((order) => order.id).join("|");
 
   const toggleSelect = useCallback((id: string) => {
     if (isMarketRole) return;
@@ -91,11 +90,11 @@ const NewOrderDetail = () => {
 
   const handleMissingScannedOrder = useCallback(() => {
     notifApi.warning({
-        message: "QR topilmadi",
-        description: "Bu QR kod ushbu ro'yxatdagi orderlarga mos kelmadi.",
-        placement: "topRight",
-        duration: 3,
-      });
+      message: "QR topilmadi",
+      description: "Bu QR kod ushbu ro'yxatdagi orderlarga mos kelmadi.",
+      placement: "topRight",
+      duration: 3,
+    });
     playMissingOrderFeedback();
   }, [notifApi]);
 
@@ -124,14 +123,15 @@ const NewOrderDetail = () => {
           void refetch();
           notifApi.success({
             message: "Order qabul qilindi",
-            description: `#${orderId} mailsga o'tkazildi.`,
+            description: `#${orderId} mailga o'tkazildi.`,
             placement: "topRight",
             duration: 2,
           });
           void playScanFeedback("success");
         },
-        onError: (err: any) => {
-          const msg = err?.response?.data?.message ?? err?.message ?? t("receiveError");
+        onError: (err: unknown) => {
+          const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
+          const msg = apiErr?.response?.data?.message ?? apiErr?.message ?? t("receiveError");
           notifApi.error({
             message: t("receiveError"),
             description: msg,
@@ -198,9 +198,10 @@ const NewOrderDetail = () => {
           refetch();
         }
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         setIsReceiveConfirmOpen(false);
-        const msg = err?.response?.data?.message ?? err?.message ?? t("receiveError");
+        const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
+        const msg = apiErr?.response?.data?.message ?? apiErr?.message ?? t("receiveError");
         notifApi.error({ message: t("receiveError"), description: msg, placement: "topRight", duration: 5 });
       },
     });
@@ -274,24 +275,21 @@ const NewOrderDetail = () => {
       {/* Header */}
       <div className="py-3 pb-3 sm:py-4 sm:pb-4 md:py-6 md:pb-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div
-            onClick={() => navigate(-1)}
-            className="group relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)] p-3 dark:bg-[color:var(--color-surface-elevated-dark)] sm:p-4"
-          >
-            <div className="pointer-events-none absolute -left-6 top-1/2 h-14 w-14 -translate-y-1/2 rounded-full bg-main/12 blur-xl transition-all duration-300 group-hover:bg-main/18" />
-            <div className={`relative flex items-start ${isMarketRole ? "gap-0" : "gap-3"}`}>
-              {!isMarketRole && (
-                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-main/15 text-main transition-all duration-300 group-hover:bg-main group-hover:text-primary dark:bg-main/25">
-                  <MoveLeft size={18} />
+          <div className="flex min-w-0 items-start gap-3">
+            {!isMarketRole ? (
+              <BackButton className="mt-1 h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
+            ) : null}
+            <div className="group relative min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)] p-3 dark:bg-[color:var(--color-surface-elevated-dark)] sm:p-4">
+              <div className="pointer-events-none absolute -left-6 top-1/2 h-14 w-14 -translate-y-1/2 rounded-full bg-main/12 blur-xl transition-all duration-300 group-hover:bg-main/18" />
+              <div className="relative flex items-start">
+                <div className="min-w-0">
+                  <h2 className="truncate text-lg font-extrabold leading-tight text-maindark dark:text-primary">
+                    {t("ordersHeader")}
+                  </h2>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed text-maindark/65 dark:text-primary/70 sm:text-sm">
+                    {t("totalCount", { count: orders.length })} • {fmt(totalSum)} so'm
+                  </p>
                 </div>
-              )}
-              <div className="min-w-0">
-                <h2 className="truncate text-lg font-extrabold leading-tight text-maindark dark:text-primary">
-                  {t("ordersHeader")}
-                </h2>
-                <p className="mt-1 text-xs font-semibold leading-relaxed text-maindark/65 dark:text-primary/70 sm:text-sm">
-                  {t("totalCount", { count: orders.length })} • {fmt(totalSum)} so'm
-                </p>
               </div>
             </div>
           </div>

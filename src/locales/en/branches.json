@@ -11,7 +11,59 @@
     "save": "Save",
     "update": "Update",
     "edit": "Edit",
+    "delete": "Delete",
     "details": "Details"
+  },
+  "page": {
+    "title": "Branches",
+    "description": "Manage the branch list and statuses"
+  },
+  "detail": {
+    "notFound": "Branch not found",
+    "description": "Manage branch information, employees, and settings in one place.",
+    "location": "Location",
+    "employees": "Employees",
+    "assignedUsers": "users assigned to this branch",
+    "createdDate": "Created date",
+    "createdHint": "when the branch was added to the system",
+    "branchAndEmployees": "Branch and employees"
+  },
+  "employee": {
+    "title": "Branch employees",
+    "description": "Assigned employees and their positions.",
+    "employee": "Employee",
+    "position": "Position",
+    "joinedDate": "Joined date",
+    "notFound": "No employees found",
+    "add": "Add employee",
+    "addDescription": "Assign a user to this branch.",
+    "addAction": "Add",
+    "added": "Employee added to branch",
+    "user": "User",
+    "selectUser": "Select user",
+    "remove": "Remove",
+    "removeConfirm": "Remove this employee from the branch?",
+    "removed": "Employee removed"
+  },
+  "settings": {
+    "title": "Branch settings",
+    "description": "Manage branch-specific key-value settings here.",
+    "key": "Key",
+    "value": "Value",
+    "add": "Add setting",
+    "edit": "Edit setting",
+    "formDescription": "Enter the key and value for this branch.",
+    "created": "Setting added",
+    "updated": "Setting updated",
+    "deleted": "Setting deleted",
+    "deleteConfirm": "Delete this setting?",
+    "notFound": "No settings found",
+    "keyRequired": "Enter key name",
+    "valueRequired": "Enter value"
+  },
+  "delete": {
+    "confirm": "Delete this branch?",
+    "success": "Branch deleted"
   },
   "fields": {
     "name": "Branch name",
@@ -43,9 +95,13 @@
     "CITY": "City",
     "REGIONAL": "Regional",
     "DISTRICT": "District",
+    "PICKUP": "Pickup",
+    "HYBRID": "Hybrid",
     "city": "City",
     "regional": "Regional",
     "district": "District",
+    "pickup": "Pickup",
+    "hybrid": "Hybrid",
     "unknown": "Unknown"
   },
   "status": {
@@ -58,7 +114,13 @@
   },
   "errors": {
     "codeExists": "This code already exists",
-    "circularParent": "Circular parent relationship detected"
+    "circularParent": "Circular parent relationship detected",
+    "generic": "Something went wrong"
+  },
+  "fallback": {
+    "unknownBranch": "Unknown branch",
+    "unknown": "Unknown",
+    "employee": "Employee"
   },
   "list": {
     "searchPlaceholder": "Search by branch name or address",
@@ -96,6 +158,7 @@
     "district": "Select district",
     "address": "Enter address",
     "status": "Select status",
-    "manager": "Select responsible employee"
+    "manager": "Select responsible employee",
+    "completeForm": "Complete the form"
   }
 }

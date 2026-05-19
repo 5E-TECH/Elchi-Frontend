@@ -82,7 +82,6 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
   ],
   manager: [
