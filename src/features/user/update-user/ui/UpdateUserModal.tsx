@@ -1,5 +1,6 @@
 import { memo, useEffect } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
+import { useSelector } from "react-redux";
 import {
   Building,
   Building2,
@@ -20,6 +21,7 @@ import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser"
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
 import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
+import type { RootState } from "../../../../app/config/store";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -110,6 +112,7 @@ export const UpdateUserModal = memo(({
   isOwnProfile = false,
 }: UpdateUserModalProps) => {
   const { t } = useTranslation("users");
+  const authRole = useSelector((state: RootState) => state.role.role);
   const { getUserById, updateUser, updateMyProfile, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
 
@@ -148,6 +151,10 @@ export const UpdateUserModal = memo(({
   const isCourier = !isOwnProfile && role === "courier";
   const isMarket = !isOwnProfile && (role === "market" || role === "marketing");
   const isCustomer = role === "customer";
+  const canEditManagerFinancial =
+    !isOwnProfile &&
+    role === "manager" &&
+    (authRole === "admin" || authRole === "superadmin");
 
   useEffect(() => {
     if (!userData) return;
@@ -197,6 +204,20 @@ export const UpdateUserModal = memo(({
       }
     }
 
+    if (canEditManagerFinancial) {
+      const hasHomeTariff = Boolean(values.tariff_home.trim());
+      const hasCenterTariff = Boolean(values.tariff_center.trim());
+      if (hasHomeTariff !== hasCenterTariff) {
+        if (!hasHomeTariff) {
+          setError("tariff_home", { message: t("homeTariffRequired") });
+        }
+        if (!hasCenterTariff) {
+          setError("tariff_center", { message: t("centerTariffRequired") });
+        }
+        valid = false;
+      }
+    }
+
     return valid;
   };
 
@@ -220,10 +241,32 @@ export const UpdateUserModal = memo(({
     }
 
     if (isAdmin) {
+      if (values.salary.trim()) {
+        const salary = parseAmount(values.salary);
+        if (salary !== Number((userData as any).salary ?? 0)) {
+          payload.salary = salary;
+        }
+      }
+
       if (values.payment_day) {
         const paymentDay = Number(values.payment_day);
         if (paymentDay !== Number((userData as any).payment_day)) {
           payload.payment_day = paymentDay;
+        }
+      }
+    }
+
+    if (canEditManagerFinancial) {
+      if (values.tariff_home.trim() && values.tariff_center.trim()) {
+        const tariffHome = parseAmount(values.tariff_home);
+        const tariffCenter = parseAmount(values.tariff_center);
+
+        if (tariffHome !== Number((userData as any).tariff_home ?? 0)) {
+          payload.tariff_home = tariffHome;
+        }
+
+        if (tariffCenter !== Number((userData as any).tariff_center ?? 0)) {
+          payload.tariff_center = tariffCenter;
         }
       }
     }
@@ -482,6 +525,17 @@ export const UpdateUserModal = memo(({
                     </div>
 
                     {renderTextInput({
+                      name: "salary",
+                      label: (
+                        <>
+                          <Building size={11} className="inline mr-1 mb-px" />
+                          {t("salaryWithCurrency")}
+                        </>
+                      ),
+                      placeholder: "2 500 000",
+                    })}
+
+                    {renderTextInput({
                       name: "payment_day",
                       type: "number",
                       label: (
@@ -491,6 +545,32 @@ export const UpdateUserModal = memo(({
                         </>
                       ),
                       placeholder: "1 – 30",
+                    })}
+                  </>
+                )}
+
+                {canEditManagerFinancial && (
+                  <>
+                    {renderTextInput({
+                      name: "tariff_home",
+                      label: (
+                        <>
+                          <Home size={11} className="inline mr-1 mb-px" />
+                          {t("homeTariffWithCurrency")}
+                        </>
+                      ),
+                      placeholder: "10 000",
+                    })}
+
+                    {renderTextInput({
+                      name: "tariff_center",
+                      label: (
+                        <>
+                          <Building2 size={11} className="inline mr-1 mb-px" />
+                          {t("centerTariffWithCurrency")}
+                        </>
+                      ),
+                      placeholder: "8 000",
                     })}
                   </>
                 )}

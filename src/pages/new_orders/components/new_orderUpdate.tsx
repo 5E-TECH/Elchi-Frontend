@@ -2,6 +2,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import {
   MoveLeft,
   Package,
@@ -21,6 +22,7 @@ import {
   Trash2,
   MessageSquare,
   Truck,
+  RotateCcw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
@@ -29,6 +31,10 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
+import type { RootState } from "../../../app/config/store";
+import SellModal from "../../orders/list/courier/list/SellModal";
+import CancelModal from "../../orders/list/courier/list/CancelModal";
+import PopupConfirm from "../../../shared/components/popupConfirm";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -98,19 +104,106 @@ const DELIVER_OPTIONS = [
   { value: "center", labelKey: "deliverCenter" },
   { value: "address", labelKey: "deliverAddress" },
 ] as const;
+const BRANCH_TYPES = new Set(["HQ", "PICKUP", "REGIONAL", "HYBRID"]);
+const ACTIONABLE_STATUSES = new Set(["waiting", "on the road", "new", "received"]);
+const DEFAULT_STATUS_CLS = "bg-slate-500/20 text-slate-300 border border-slate-500/30";
 
-const STATUS_CONFIG: Record<string, { labelKey: string; cls: string }> = {
+const getOrderPageBranchType = (
+  user: RootState["user"]["user"],
+): "HQ" | "PICKUP" | "REGIONAL" | "HYBRID" | null => {
+  const rawUser = user as
+    | (RootState["user"]["user"] & {
+        branch_type?: string | null;
+        branch?: {
+          type?: string | null;
+          branch_type?: string | null;
+          branch?: {
+            type?: string | null;
+            branch_type?: string | null;
+          } | null;
+        } | null;
+      })
+    | null
+    | undefined;
+
+  const normalize = (value: unknown) => {
+    if (typeof value !== "string") return null;
+    const upper = value.toUpperCase();
+    return BRANCH_TYPES.has(upper)
+      ? (upper as "HQ" | "PICKUP" | "REGIONAL" | "HYBRID")
+      : null;
+  };
+
+  return (
+    normalize(rawUser?.branch?.branch?.type) ??
+    normalize(rawUser?.branch?.branch?.branch_type) ??
+    normalize(rawUser?.branch?.type) ??
+    normalize(rawUser?.branch?.branch_type) ??
+    normalize(rawUser?.branch_type) ??
+    null
+  );
+};
+
+const STATUS_CONFIG: Record<string, { labelKey: string; cls: string; ns?: "newOrders" | "orders" }> = {
+  created: {
+    labelKey: "statusCreated",
+    ns: "orders",
+    cls: "bg-sky-500/20 text-sky-400 border border-sky-500/30",
+  },
+  received: {
+    labelKey: "statusReceived",
+    ns: "orders",
+    cls: "bg-violet-500/20 text-violet-400 border border-violet-500/30",
+  },
+  "on the road": {
+    labelKey: "statusOnTheRoad",
+    ns: "orders",
+    cls: "bg-orange-500/20 text-orange-400 border border-orange-500/30",
+  },
+  waiting: {
+    labelKey: "statusWaiting",
+    ns: "orders",
+    cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+  },
   new: {
     labelKey: "statusNew",
+    ns: "newOrders",
     cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
   },
   processing: {
     labelKey: "statusProcessing",
+    ns: "newOrders",
     cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
   },
   completed: {
     labelKey: "statusCompleted",
+    ns: "newOrders",
     cls: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+  },
+  sold: {
+    labelKey: "statusSold",
+    ns: "orders",
+    cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
+  },
+  paid: {
+    labelKey: "statusPaid",
+    ns: "orders",
+    cls: "bg-teal-500/20 text-teal-400 border border-teal-500/30",
+  },
+  partly_paid: {
+    labelKey: "statusPartlyPaid",
+    ns: "orders",
+    cls: "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30",
+  },
+  cancelled: {
+    labelKey: "statusCancelled",
+    ns: "orders",
+    cls: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
+  },
+  closed: {
+    labelKey: "statusClosed",
+    ns: "orders",
+    cls: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
   },
 };
 
@@ -257,10 +350,13 @@ const InputField = memo(({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderUpdate = () => {
-  const { t } = useTranslation("newOrders");
+  const { t } = useTranslation(["newOrders", "orders"]);
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const queryClient = useQueryClient();
+  const role = useSelector((state: RootState) => state.role.role);
+  const user = useSelector((state: RootState) => state.user.user);
+  const branchType = getOrderPageBranchType(user);
 
   // ─── State ──────────────────────────────────────────────────────────────────
   const [addressPopupOpen, setAddressPopupOpen] = useState(false);
@@ -275,9 +371,19 @@ const NewOrderUpdate = () => {
   const [orderForm, setOrderForm] = useState<OrderForm>({
     where_deliver: "", total_price: "", comment: "", items: [],
   });
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isRollbackConfirmOpen, setIsRollbackConfirmOpen] = useState(false);
 
   // ─── Data fetching ───────────────────────────────────────────────────────────
-  const { getOrderById, updateNewOrder } = useOrders();
+  const {
+    getOrderById,
+    updateNewOrder,
+    SellOrder,
+    PartlySellOrder,
+    CancelOrder,
+    RollbackOrder,
+  } = useOrders();
   const { updateUser } = useUser();
   const { getRegions, getDistricts } = useLogistics();
 
@@ -309,9 +415,24 @@ const NewOrderUpdate = () => {
     [districtsData],
   );
 
-  const statusCfg = useMemo(
-    () => order ? (STATUS_CONFIG[order.status] ?? STATUS_CONFIG.new) : null,
-    [order],
+  const statusCfg = useMemo(() => {
+    if (!order) return null;
+    return STATUS_CONFIG[order.status] ?? null;
+  }, [order]);
+  const canUseCourierActions = useMemo(
+    () =>
+      role === "manager" &&
+      (branchType === "REGIONAL" || branchType === "HYBRID") &&
+      Boolean(order?.status) &&
+      ACTIONABLE_STATUSES.has(order?.status ?? ""),
+    [role, branchType, order?.status],
+  );
+  const canRollbackSoldOrder = useMemo(
+    () =>
+      role === "manager" &&
+      (branchType === "REGIONAL" || branchType === "HYBRID") &&
+      order?.status === "sold",
+    [role, branchType, order?.status],
   );
 
   const regionName = useMemo(
@@ -440,6 +561,74 @@ const NewOrderUpdate = () => {
     },
     [navigate, userId],
   );
+  const handleSell = useCallback(
+    (id: string, payload: { comment: string; extraCost: number }) => {
+      SellOrder.mutate(
+        { orderId: id, data: payload },
+        { onSuccess: () => setIsSellModalOpen(false) },
+      );
+    },
+    [SellOrder],
+  );
+
+  const handlePartlySell = useCallback(
+    (
+      id: string,
+      payload: {
+        order_item_info: { product_id: string; quantity: number }[];
+        totalPrice: number;
+        extraCost: number;
+        comment: string;
+      },
+    ) => {
+      PartlySellOrder.mutate(
+        { orderId: id, data: payload },
+        { onSuccess: () => setIsSellModalOpen(false) },
+      );
+    },
+    [PartlySellOrder],
+  );
+
+  const handleCancelOrder = useCallback(
+    (id: string, payload: { comment: string; extraCost: number; paidAmount: number }) => {
+      CancelOrder.mutate(
+        { orderId: id, data: payload },
+        { onSuccess: () => setIsCancelModalOpen(false) },
+      );
+    },
+    [CancelOrder],
+  );
+  const handleRollbackConfirm = useCallback(() => {
+    if (!order?.id) return;
+    RollbackOrder.mutate(order.id, {
+      onSuccess: () => setIsRollbackConfirmOpen(false),
+    });
+  }, [RollbackOrder, order?.id]);
+
+  const sellModalOrder = useMemo(() => {
+    if (!order) return null;
+    return {
+      id: order.id,
+      created_at: "",
+      status: order.status,
+      total_price: order.total_price,
+      where_deliver: order.where_deliver,
+      product_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      market: { name: "-" },
+      customer: { name: order.customer.name, phone_number: order.customer.phone_number },
+      district: { name: districtName },
+      region: { name: regionName },
+      items: order.items.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        product: {
+          id: item.product?.id ?? item.id,
+          name: item.product?.name ?? "",
+          image_url: item.product?.image_url ?? null,
+        },
+      })),
+    };
+  }, [order, districtName, regionName]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -453,10 +642,42 @@ const NewOrderUpdate = () => {
             description={t("viewOrderDetails")}
           />
         </div>
-        {statusCfg && (
-          <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg.cls}`}>
-            {t(statusCfg.labelKey)}
-          </span>
+        {order?.status && (
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg?.cls ?? DEFAULT_STATUS_CLS}`}>
+              {statusCfg
+                ? t(statusCfg.labelKey, { ns: statusCfg.ns ?? "orders", defaultValue: order.status })
+                : order.status}
+            </span>
+            {canUseCourierActions && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsSellModalOpen(true)}
+                  className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                >
+                  {t("sell", { ns: "orders" })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCancelModalOpen(true)}
+                  className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                >
+                  {t("cancelOrderAction", { ns: "orders" })}
+                </button>
+              </>
+            )}
+            {canRollbackSoldOrder && (
+              <button
+                type="button"
+                onClick={() => setIsRollbackConfirmOpen(true)}
+                className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--color-border-strong)] bg-[color:var(--color-card-surface-strong)] px-3 py-1.5 text-xs font-bold text-[color:var(--color-text-muted)] transition-colors hover:text-[color:var(--color-main)]"
+              >
+                <RotateCcw size={13} />
+                {t("restoreOrder", { ns: "orders" })}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -762,6 +983,35 @@ const NewOrderUpdate = () => {
           </div>
         </div>
       </UpdatePopup>
+
+      <SellModal
+        order={sellModalOrder}
+        open={isSellModalOpen}
+        onClose={() => setIsSellModalOpen(false)}
+        onSell={handleSell}
+        onPartlySell={handlePartlySell}
+        isLoading={SellOrder.isPending || PartlySellOrder.isPending}
+      />
+
+      <CancelModal
+        order={sellModalOrder}
+        open={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onCancel={handleCancelOrder}
+        isLoading={CancelOrder.isPending}
+      />
+
+      <PopupConfirm
+        isOpen={isRollbackConfirmOpen}
+        onClose={() => setIsRollbackConfirmOpen(false)}
+        onConfirm={handleRollbackConfirm}
+        title={t("rollbackOrder", { ns: "orders" })}
+        message={t("rollbackConfirmMessage", { ns: "orders", id: order?.id })}
+        confirmLabel={t("rollbackConfirmLabel", { ns: "orders" })}
+        cancelLabel={t("cancelOrderAction", { ns: "orders" })}
+        isLoading={RollbackOrder.isPending}
+        variant="warning"
+      />
     </div>
   );
 };
