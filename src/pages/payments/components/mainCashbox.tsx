@@ -1,5 +1,6 @@
 import { memo, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   Wallet,
   Download,
@@ -28,6 +29,8 @@ import type { PaymentRow } from "./patmentHistoryTable";
 import PaymentHistoryList from "./PaymentHistoryList";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import { useTranslation } from "react-i18next";
+import type { RootState } from "../../../app/config/store";
+import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -154,6 +157,9 @@ const MainCashbox = () => {
   const [draftHistoryFrom, setDraftHistoryFrom] = useState("");
   const [draftHistoryTo, setDraftHistoryTo] = useState("");
   const navigate = useNavigate();
+  const role = useSelector((state: RootState) => state.role.role);
+  const user = useSelector((state: RootState) => state.user.user);
+  const branchType = getUserBranchType(user);
 
   const { getUser, getCouriers } = useUser();
   const { getMarkets } = useMarkets();
@@ -298,6 +304,16 @@ const MainCashbox = () => {
     map[label]?.();
   }, []);
 
+  const visibleActions = useMemo(() => {
+    const shouldHideMarketAction =
+      role === "manager" &&
+      (branchType === "REGIONAL" || branchType === "HYBRID");
+
+    if (!shouldHideMarketAction) return ACTIONS;
+
+    return ACTIONS.filter((action) => action.label !== "payToMarket");
+  }, [role, branchType]);
+
   const handleCourierSelect = useCallback(
     (courier: any) => {
       setIsCourierPopupOpen(false);
@@ -392,7 +408,7 @@ const MainCashbox = () => {
               {t("quickActions")}
             </p>
             <div className="grid grid-cols-5 gap-1.5">
-              {ACTIONS.map(({ icon, label, shortLabelKey, color, bg }) => (
+              {visibleActions.map(({ icon, label, shortLabelKey, color, bg }) => (
                 <button
                   key={label}
                   onClick={() => handleActionClick(label)}

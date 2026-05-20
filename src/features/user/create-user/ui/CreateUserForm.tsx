@@ -303,7 +303,7 @@ export const CreateUserForm = memo(() => {
       valid = false;
     }
 
-    if (role === "admin" || role === "registrator" || role === "manager") {
+    if (role === "admin" || role === "registrator") {
       if (!values.salary) {
         setError("salary", { message: t("salaryRequired") });
         valid = false;
@@ -334,7 +334,7 @@ export const CreateUserForm = memo(() => {
       valid = false;
     }
 
-    if (role === "courier") {
+    if (role === "courier" || role === "manager") {
       const hasHomeRate = Boolean(values.homeRate.trim());
       const hasCenterRate = Boolean(values.centerRate.trim());
       if (hasHomeRate !== hasCenterRate) {
@@ -421,9 +421,16 @@ export const CreateUserForm = memo(() => {
         name: values.fullName,
         phone_number: rawPhone,
         password: values.password,
-        salary: parseAmount(values.salary),
         branch_id: values.branchId,
       };
+
+      if (values.salary.trim()) {
+        payload.salary = parseAmount(values.salary);
+      }
+      if (values.homeRate.trim() && values.centerRate.trim()) {
+        payload.tariff_home = parseAmount(values.homeRate);
+        payload.tariff_center = parseAmount(values.centerRate);
+      }
 
       await apiRequest({
         request: () => createManager.mutateAsync(payload),
@@ -605,9 +612,9 @@ export const CreateUserForm = memo(() => {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-visible px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:items-start lg:gap-6 lg:overflow-hidden lg:px-6 lg:py-6">
+      <div className="flex flex-1 flex-col gap-4 overflow-visible px-3 py-3 sm:px-4 sm:py-4 xl:flex-row xl:items-start xl:gap-6 xl:overflow-hidden xl:px-6 xl:py-6">
         {shouldShowRolePanel && (
-          <div className="w-full shrink-0 lg:w-72">
+          <div className="w-full shrink-0 xl:w-72">
             <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-primarydark/20 dark:bg-maindark sm:p-4">
               <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
                 {t("roleSelect")}
@@ -666,7 +673,7 @@ export const CreateUserForm = memo(() => {
                   )}
                 </div>
               ) : (
-                <div className="max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar lg:max-h-none lg:overflow-visible lg:pr-0">
+                <div className="max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar xl:max-h-none xl:overflow-visible xl:pr-0">
                   <RoleSelector
                     selectedRole={role}
                     onSelect={(nextRole) => setValue("role", nextRole)}
@@ -710,7 +717,7 @@ export const CreateUserForm = memo(() => {
           <div className="overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6">
             <form id="create-user-form" onSubmit={handleSubmit(onSubmit)} className="w-full">
               <div className="space-y-8">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3 xl:gap-6">
                   {renderInput({
                     label: t("fullNameShort"),
                     name: "fullName",
@@ -728,7 +735,7 @@ export const CreateUserForm = memo(() => {
 
                 <div className="h-px bg-slate-100 dark:bg-white/5" />
 
-                {(role === "admin" || role === "registrator" || role === "manager") && (
+                {(role === "admin" || role === "registrator") && (
                   <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
                     {renderInput({
                       label: t("salaryWithCurrency"),
@@ -743,6 +750,31 @@ export const CreateUserForm = memo(() => {
                         placeholder: "1-30",
                         icon: <Calendar size={18} />,
                       })}
+                  </div>
+                )}
+
+                {role === "manager" && (
+                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 2xl:grid-cols-3 md:gap-6">
+                    {renderInput({
+                      label: t("salaryWithCurrency"),
+                      name: "salary",
+                      placeholder: "Masalan: 5 000 000",
+                      required: false,
+                    })}
+                    {renderInput({
+                      label: t("homeTariffWithCurrency"),
+                      name: "homeRate",
+                      placeholder: "Masalan: 10 000",
+                      icon: <Building size={18} />,
+                      required: false,
+                    })}
+                    {renderInput({
+                      label: t("centerTariffWithCurrency"),
+                      name: "centerRate",
+                      placeholder: "Masalan: 8 000",
+                      icon: <Store size={18} />,
+                      required: false,
+                    })}
                   </div>
                 )}
 
@@ -774,7 +806,7 @@ export const CreateUserForm = memo(() => {
                 )}
 
                 {role === "courier" && (
-                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 xl:grid-cols-3 md:gap-6">
+                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 2xl:grid-cols-3 md:gap-6">
                     {renderInput({
                       label: t("salaryWithCurrency"),
                       name: "salary",
