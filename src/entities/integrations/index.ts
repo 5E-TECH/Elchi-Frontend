@@ -39,6 +39,7 @@ export type IntegrationParams = {
 export type CreateIntegrationPayload = {
   name: string;
   slug: string;
+  type: string;
   status: string;
   base_url: string;
   auth_type: string;
@@ -49,6 +50,8 @@ export type CreateIntegrationPayload = {
   status_mapping?: unknown;
   status_sync_config?: unknown;
 };
+
+export type UpdateIntegrationPayload = Partial<CreateIntegrationPayload>;
 
 export type IntegrationsMeta = {
   page: number;
@@ -118,6 +121,31 @@ export const useCreateIntegration = () => {
       api.post(API_ENDPOINTS.INTEGRATIONS.BASE, payload).then((res) => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: integrationKeys.all });
+    },
+  });
+};
+
+export const useDeleteIntegration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string | number) =>
+      api.delete(API_ENDPOINTS.INTEGRATIONS.BY_ID(id)).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: integrationKeys.all });
+    },
+  });
+};
+
+export const useUpdateIntegration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string | number; payload: UpdateIntegrationPayload }) =>
+      api.patch(API_ENDPOINTS.INTEGRATIONS.BY_ID(id), payload).then((res) => res.data),
+    onSuccess: (_response, variables) => {
+      queryClient.invalidateQueries({ queryKey: integrationKeys.all });
+      queryClient.invalidateQueries({ queryKey: integrationKeys.byId(variables.id) });
     },
   });
 };

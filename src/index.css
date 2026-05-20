@@ -715,13 +715,60 @@ select:-webkit-autofill:focus {
   color: var(--color-primary);
 }
 
-.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
-.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
-.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
-  background: rgba(87, 106, 219, 0.28);
-}
+  .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
+  .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
+  .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
+    background: rgba(87, 106, 219, 0.28);
+  }
 
-@layer utilities {
+  .popup-select-option-selected .popup-select-option-content {
+    color: var(--color-maindark);
+  }
+
+  .popup-select-option-selected .popup-select-option-content [class*="text-white"] {
+    color: var(--color-maindark) !important;
+  }
+
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/85"],
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/80"] {
+    color: rgba(39, 44, 82, 0.78) !important;
+  }
+
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/70"],
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/60"],
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/50"] {
+    color: var(--color-text-muted) !important;
+  }
+
+  .popup-select-option-selected .popup-select-option-content [class*="bg-white/20"],
+  .popup-select-option-selected .popup-select-option-content [class*="bg-white/10"] {
+    background-color: rgba(87, 106, 219, 0.14) !important;
+    color: var(--color-main) !important;
+  }
+
+  .dark .popup-select-option-selected .popup-select-option-content,
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white"] {
+    color: var(--color-primary) !important;
+  }
+
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/85"],
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/80"] {
+    color: rgba(255, 255, 255, 0.86) !important;
+  }
+
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/70"],
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/60"],
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/50"] {
+    color: var(--color-text-muted-dark) !important;
+  }
+
+  .dark .popup-select-option-selected .popup-select-option-content [class*="bg-white/20"],
+  .dark .popup-select-option-selected .popup-select-option-content [class*="bg-white/10"] {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    color: var(--color-primary) !important;
+  }
+
+  @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;

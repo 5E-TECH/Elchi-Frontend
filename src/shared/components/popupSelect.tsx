@@ -136,12 +136,14 @@ const PopupSelect = <T extends Record<string, any>>({
                 type="button"
                 key={key}
                 onClick={() => handleItemClick(item)}
-                className={`group flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all duration-200 ${isSelected
-                  ? "border-main bg-main/10 shadow-[0_14px_34px_rgba(124,58,237,0.18)] ring-1 ring-main/25 dark:bg-main/18 dark:shadow-[0_16px_38px_rgba(0,0,0,0.28)]"
-                  : "border-[color:var(--color-border-soft)] bg-white/70 shadow-sm hover:-translate-y-0.5 hover:border-main/45 hover:bg-white hover:shadow-[0_12px_28px_rgba(39,44,82,0.12)] dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-main/55 dark:hover:bg-white/[0.075]"
-                  }`}
+                data-selected={isSelected ? "true" : undefined}
+                className={`group flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all duration-200 ${
+                  isSelected
+                    ? "popup-select-option-selected border-main bg-main/10 shadow-[0_14px_34px_rgba(124,58,237,0.18)] ring-1 ring-main/25 dark:bg-main/18 dark:shadow-[0_16px_38px_rgba(0,0,0,0.28)]"
+                    : "border-[color:var(--color-border-soft)] bg-white/70 shadow-sm hover:-translate-y-0.5 hover:border-main/45 hover:bg-white hover:shadow-[0_12px_28px_rgba(39,44,82,0.12)] dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-main/55 dark:hover:bg-white/[0.075]"
+                }`}
               >
-                <div className="flex-1 min-w-0">
+                <div className="popup-select-option-content flex-1 min-w-0">
                   {renderItem ? (
                     renderItem(item, isSelected)
                   ) : (

@@ -70,9 +70,9 @@ const CashboxRolePageLayout = ({
     <PageContainer className="flex flex-col gap-3 overflow-x-hidden">
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(18rem,0.42fr)_minmax(24rem,0.58fr)] lg:gap-4">
         <div className="flex min-h-0 flex-col gap-3">
-          <div className="flex items-start gap-3 px-1">
+          <div className="flex items-center gap-3 px-1">
             {onBack ? (
-              <BackButton onClick={onBack} className="mt-1 h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
+              <BackButton onClick={onBack} className="h-11 min-w-11 shrink-0 rounded-2xl px-2" label="" />
             ) : null}
             <HeaderName
               name={entityName}
