@@ -1,5 +1,5 @@
 import type { AxiosError } from "axios";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
@@ -9,6 +9,8 @@ export type Integration = {
   slug: string;
   status: string;
   api_url: string;
+  base_url?: string | null;
+  type?: string | null;
   auth_type: string;
   auth_url?: string | null;
   username?: string | null;
@@ -32,6 +34,20 @@ export type IntegrationParams = {
   to_date?: string;
   page?: number;
   limit?: number;
+};
+
+export type CreateIntegrationPayload = {
+  name: string;
+  slug: string;
+  status: string;
+  base_url: string;
+  auth_type: string;
+  credentials: Record<string, string>;
+  market_id?: string | null;
+  is_active?: boolean;
+  field_mapping?: unknown;
+  status_mapping?: unknown;
+  status_sync_config?: unknown;
 };
 
 export type IntegrationsMeta = {
@@ -93,3 +109,15 @@ export const useGetIntegrationById = (id?: string | number) =>
     refetchOnWindowFocus: false,
     retry: false,
   });
+
+export const useCreateIntegration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateIntegrationPayload) =>
+      api.post(API_ENDPOINTS.INTEGRATIONS.BASE, payload).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: integrationKeys.all });
+    },
+  });
+};

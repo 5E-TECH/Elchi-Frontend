@@ -144,23 +144,22 @@ const LoginForm = () => {
                   {t("passwordLabel")}
                 </label>
               </div>
-              <div
-                className={`flex h-12 w-full items-center justify-between rounded-xl border bg-gray-50 px-5 text-sm text-maindark transition-all duration-200 focus-within:border-transparent focus-within:ring-2 focus-within:ring-maindark sm:text-base ${errors.password ? "border-red-500" : "border-gray-200"
-                  } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
+              <div className="relative">
                 <input
                   {...register("password")}
                   type={show ? "text" : "password"}
                   disabled={loading}
                   placeholder={t("passwordPlaceholder")}
-                  className="login-field h-full min-w-0 flex-1 rounded-xl bg-transparent pr-3 outline-none"
+                  autoComplete="current-password"
+                  className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 pr-12 text-sm text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark sm:text-base ${errors.password ? "border-red-500" : "border-gray-200"
+                    } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
                 <button
                   type="button"
                   disabled={loading}
                   onClick={() => setShow(!show)}
                   aria-label={show ? t("hidePassword", { defaultValue: "Hide password" }) : t("showPassword", { defaultValue: "Show password" })}
-                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:text-main focus:outline-none disabled:cursor-not-allowed"
+                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:text-main focus:outline-none disabled:cursor-not-allowed"
                 >
                   {show ? <Eye size={18} /> : <EyeClosed size={18} />}
                 </button>

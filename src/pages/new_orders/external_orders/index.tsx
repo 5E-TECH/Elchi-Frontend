@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { AlertCircle, CalendarRange, Cable, RefreshCw, Search, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, CalendarRange, Cable, Plus, RefreshCw, Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Table } from "../../../shared/components/Table/Table";
@@ -103,7 +103,11 @@ const ExternalOrdersPage = () => {
       {
         key: "api_url",
         label: t("apiUrl"),
-        render: (value) => <span className="text-sm text-maindark dark:text-primary">{value || "-"}</span>,
+        render: (value, row) => (
+          <span className="text-sm text-maindark dark:text-primary">
+            {value || row.base_url || "-"}
+          </span>
+        ),
       },
       {
         key: "auth_type",
@@ -163,14 +167,24 @@ const ExternalOrdersPage = () => {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => query.refetch()}
-            className="flex h-10 w-10 shrink-0 items-center justify-center self-end rounded-2xl border border-glass-border bg-sidebar/50 text-maindark/60 transition-all hover:border-main/30 hover:text-main dark:bg-maindark/40 dark:text-primary/60 sm:self-auto"
-            aria-label={t("refresh", { ns: "common" })}
-          >
-            <RefreshCw size={15} className={query.isFetching ? "animate-spin" : ""} />
-          </button>
+          <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => navigate("/new-orders/integrations/create")}
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-main px-4 text-sm font-bold text-white shadow-lg shadow-main/20 transition-all hover:bg-main/90 active:scale-[0.98]"
+            >
+              <Plus size={16} />
+              {t("createIntegration")}
+            </button>
+            <button
+              type="button"
+              onClick={() => query.refetch()}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-glass-border bg-sidebar/50 text-maindark/60 transition-all hover:border-main/30 hover:text-main dark:bg-maindark/40 dark:text-primary/60"
+              aria-label={t("refresh", { ns: "common" })}
+            >
+              <RefreshCw size={15} className={query.isFetching ? "animate-spin" : ""} />
+            </button>
+          </div>
         </div>
 
         <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-end">
