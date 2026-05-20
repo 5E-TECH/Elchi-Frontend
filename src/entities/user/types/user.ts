@@ -104,7 +104,9 @@ export interface CreateManagerRequest {
     name: string;
     phone_number: string;
     password: string;
-    salary: number;
+    salary?: number;
+    tariff_home?: number;
+    tariff_center?: number;
     branch_id: string;
 }
 
