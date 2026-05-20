@@ -4,7 +4,7 @@ import { CalendarDays, Funnel } from "lucide-react";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FilterSelect from "../../../shared/ui/FilterSelect";
-import CustomDatePicker from "../../../shared/ui/CustomDatePicker";
+import FilterDateInput from "../../../shared/ui/FilterDateInput";
 import Pagination from "../../../shared/components/pagination";
 import { useCashBox } from "../../../entities/payments";
 import { usePagination } from "../../../shared/lib/usePagination";
@@ -16,7 +16,6 @@ interface HistoryRow {
   changeAmount: number;
   previousBalance: number;
   nextBalance: number;
-  comment: string;
 }
 
 const toPositiveNumber = (value: unknown) => {
@@ -150,7 +149,6 @@ const HistoryTab = () => {
           changeAmount: signedChange,
           previousBalance,
           nextBalance,
-          comment: String(item.comment ?? "").trim() || "-",
         };
       }),
     [data?.data?.items],
@@ -169,11 +167,21 @@ const HistoryTab = () => {
   const columns = useMemo<ColumnConfig<HistoryRow>[]>(
     () => [
       {
+        key: "id",
+        label: "#",
+        width: "50px",
+        render: (_, __, index) => (
+          <span className="text-xs font-semibold text-gray-400">
+            {(pagination.page - 1) * pagination.limit + index + 1}
+          </span>
+        ),
+      },
+      {
         key: "date",
         label: t("financialBalanceDate"),
-        width: "180px",
+        width: "170px",
         render: (value) => (
-          <span className="text-sm text-gray-700 dark:text-white/80">
+          <span className="block whitespace-nowrap text-[13px] font-medium text-gray-700 dark:text-gray-200">
             {formatDateTime(value)}
           </span>
         ),
@@ -181,9 +189,9 @@ const HistoryTab = () => {
       {
         key: "sourceType",
         label: t("financialBalanceSource"),
-        width: "180px",
+        width: "190px",
         render: (value) => (
-          <span className="text-sm font-medium text-main/85">
+          <span className="block truncate text-sm font-medium text-main">
             {toSourceTypeLabel(value, t)}
           </span>
         ),
@@ -191,10 +199,10 @@ const HistoryTab = () => {
       {
         key: "changeAmount",
         label: t("financialBalanceChange"),
-        width: "170px",
+        width: "180px",
         render: (value) => (
           <span
-            className={`text-sm font-bold ${
+            className={`block whitespace-nowrap text-sm font-bold font-mono ${
               value < 0 ? "text-rose-400" : "text-emerald-400"
             }`}
           >
@@ -206,9 +214,9 @@ const HistoryTab = () => {
       {
         key: "previousBalance",
         label: t("financialBalancePreviousBalance"),
-        width: "180px",
+        width: "190px",
         render: (value) => (
-          <span className="text-sm text-gray-700 dark:text-white/80">
+          <span className="block whitespace-nowrap text-sm font-medium text-gray-700 dark:text-white/80">
             {toDisplayAmount(value)} UZS
           </span>
         ),
@@ -216,24 +224,15 @@ const HistoryTab = () => {
       {
         key: "nextBalance",
         label: t("financialBalanceNextBalance"),
-        width: "180px",
+        width: "190px",
         render: (value) => (
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+          <span className="block whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
             {toDisplayAmount(value)} UZS
           </span>
         ),
       },
-      {
-        key: "comment",
-        label: t("financialBalanceComment"),
-        render: (value) => (
-          <span className="text-sm text-gray-600 dark:text-white/70">
-            {value || "-"}
-          </span>
-        ),
-      },
     ],
-    [t],
+    [pagination.limit, pagination.page, t],
   );
 
   const sourceTypeOptions = useMemo(
@@ -249,7 +248,7 @@ const HistoryTab = () => {
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="rounded-2xl border border-gray-200 bg-primary p-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark">
         <div className="mb-4 flex items-center gap-2">
           <Funnel size={16} className="text-main" />
@@ -258,17 +257,19 @@ const HistoryTab = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <CustomDatePicker
+        <div className="grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(280px,0.95fr)]">
+          <FilterDateInput
+            label={t("startDate")}
             value={fromDate}
             onChange={setFromDate}
-            placeholder={t("startDate")}
+            placement="bottom"
           />
-          <CustomDatePicker
+          <FilterDateInput
+            label={t("endDate")}
             value={toDate}
             onChange={setToDate}
             minDate={fromDate || undefined}
-            placeholder={t("endDate")}
+            placement="bottom"
           />
           <FilterSelect
             name="financial_balance_source_type"
@@ -282,19 +283,16 @@ const HistoryTab = () => {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-sm dark:border-primarydark/60 dark:bg-maindark">
-        <div className="min-h-0 flex-1 overflow-auto custom-scrollbar">
-          <Table<HistoryRow>
-            data={rows}
-            columns={columns}
-            loading={isLoading}
-            dense
-            keyExtractor={(row) => row.id}
-            emptyMessage={t("financialBalanceHistoryEmpty")}
-          />
-        </div>
+      <div>
+        <Table<HistoryRow>
+          data={rows}
+          columns={columns}
+          loading={isLoading}
+          keyExtractor={(row) => row.id}
+          emptyMessage={t("financialBalanceHistoryEmpty")}
+        />
 
-        <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 dark:border-primarydark/60 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <span className="text-xs text-gray-500 dark:text-white/45">
             {pagination.page}-sahifa / {pagination.totalPages}
           </span>

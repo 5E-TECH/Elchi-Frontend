@@ -100,8 +100,8 @@ const FinancialBalance = () => {
   ];
 
   return (
-    <PageContainer className="flex flex-col xl:h-full xl:min-h-0 xl:overflow-hidden">
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-primary dark:bg-maindark xl:h-full">
+    <PageContainer className="flex flex-col">
+      <div className="flex flex-col rounded-2xl bg-primary dark:bg-maindark">
       {/* Hero */}
       <div
         className={`relative shrink-0 overflow-hidden px-5 py-4 transition-colors duration-500 sm:px-6 ${isNegative
@@ -223,7 +223,7 @@ const FinancialBalance = () => {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 px-4 pb-4">
+      <div className="px-4 pb-4">
         {activeTab === "overview" ? <Statistics data={data} /> : activeTab === "history" ? (
           <HistoryTab />
         ) : (
