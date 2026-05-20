@@ -1,6 +1,6 @@
 import { memo, useEffect, useState, type ReactNode, useMemo } from 'react';
 import HeaderName from './headerName';
-import { X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import Button from './button';
 import Popup from '../ui/Popup';
 import { Controller, useForm } from "react-hook-form";
@@ -127,33 +127,39 @@ const PopupSelect = <T extends Record<string, any>>({
           )}
         />
 
-        <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3 mb-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-2.5 mb-6 custom-scrollbar">
           {filteredData.map((item) => {
             const key = keyExtractor(item);
             const isSelected = selectedItem ? keyExtractor(selectedItem) === key : false;
             return (
-              <div
+              <button
+                type="button"
                 key={key}
                 onClick={() => handleItemClick(item)}
-                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border  ${isSelected
-                  ? "border-main/45 bg-[linear-gradient(135deg,rgba(99,102,241,0.16)_0%,rgba(124,92,255,0.1)_100%)] shadow-[0_14px_30px_rgba(99,102,241,0.12)] dark:bg-main/15 dark:bg-none dark:shadow-[0_0_0_1px_rgba(124,92,255,0.55)]"
-                  : "border-transparent bg-transparent hover:bg-[var(--color-main-soft)] dark:hover:bg-primary/8"
+                className={`group flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all duration-200 ${isSelected
+                  ? "border-main bg-main/10 shadow-[0_14px_34px_rgba(124,58,237,0.18)] ring-1 ring-main/25 dark:bg-main/18 dark:shadow-[0_16px_38px_rgba(0,0,0,0.28)]"
+                  : "border-[color:var(--color-border-soft)] bg-white/70 shadow-sm hover:-translate-y-0.5 hover:border-main/45 hover:bg-white hover:shadow-[0_12px_28px_rgba(39,44,82,0.12)] dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-main/55 dark:hover:bg-white/[0.075]"
                   }`}
               >
                 <div className="flex-1 min-w-0">
                   {renderItem ? (
                     renderItem(item, isSelected)
                   ) : (
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-[color:var(--color-main-soft)] dark:bg-primarydark flex items-center justify-center text-main dark:text-gray-300 font-medium text-sm">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold transition-colors ${isSelected
+                          ? "bg-main text-white shadow-lg shadow-main/25"
+                          : "bg-[color:var(--color-main-soft)] text-main dark:bg-white/10 dark:text-primary"
+                        }`}
+                      >
                         {key}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-maindark dark:text-primary font-medium text-lg leading-tight">
+                        <h3 className="truncate text-base font-bold leading-tight text-maindark dark:text-primary">
                           {labelKey ? item[labelKey] : String(item)}
                         </h3>
                         {secondaryLabelKey && (
-                          <p className="text-[color:var(--color-text-muted)] dark:text-gray-400 text-sm">
+                          <p className="mt-0.5 truncate text-sm font-medium text-[color:var(--color-text-muted)] dark:text-primary/60">
                             {item[secondaryLabelKey]}
                           </p>
                         )}
@@ -161,7 +167,17 @@ const PopupSelect = <T extends Record<string, any>>({
                     </div>
                   )}
                 </div>
-              </div>
+
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all ${isSelected
+                    ? "border-main bg-main text-white opacity-100"
+                    : "border-[color:var(--color-border-soft)] bg-white/60 text-transparent opacity-70 group-hover:border-main/45 dark:border-white/10 dark:bg-white/5"
+                  }`}
+                  aria-hidden="true"
+                >
+                  <Check size={15} strokeWidth={3} />
+                </span>
+              </button>
             );
           })}
         </div>

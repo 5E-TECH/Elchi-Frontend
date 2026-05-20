@@ -49,6 +49,7 @@ interface CustomDatePickerProps {
     className?: string;
     size?: "sm" | "md";
     variant?: "default" | "filter";
+    placement?: "auto" | "bottom";
 }
 
 const CustomDatePicker = memo(({
@@ -60,6 +61,7 @@ const CustomDatePicker = memo(({
     className = "",
     size = "md",
     variant = "default",
+    placement = "auto",
 }: CustomDatePickerProps) => {
 
     const today = new Date();
@@ -173,9 +175,10 @@ const CustomDatePicker = memo(({
             const viewportW = window.innerWidth;
             const viewportH = window.innerHeight;
 
-            const openUp =
+            const canOpenUp =
                 rect.bottom + popupGap + popupHeight > viewportH &&
                 rect.top - popupGap - popupHeight > popupGap;
+            const openUp = placement === "auto" && canOpenUp;
             const preferredTop = openUp ? rect.top - popupGap - popupHeight : rect.bottom + popupGap;
             const top = Math.min(
                 Math.max(popupGap, preferredTop),
