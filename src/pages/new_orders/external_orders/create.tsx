@@ -200,6 +200,7 @@ const ExternalIntegrationCreatePage = () => {
       const payload: CreateIntegrationPayload = {
         name: values.name.trim(),
         slug: values.slug.trim(),
+        type: "api",
         status: values.is_active ? "active" : "inactive",
         base_url: values.api_url.trim(),
         auth_type: values.auth_type,
