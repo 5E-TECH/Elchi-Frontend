@@ -42,6 +42,9 @@ const NewOrdersBranches = lazy(() => import("../../pages/new_orders/branches"));
 const NewOrdersBranchBatches = lazy(() => import("../../pages/new_orders/branches/batches"));
 const NewOrdersBranchBatchDetail = lazy(() => import("../../pages/new_orders/branches/batchDetail"));
 const NewOrdersExternalList = lazy(() => import("../../pages/new_orders/external_orders"));
+const ExternalIntegrationCreate = lazy(
+  () => import("../../pages/new_orders/external_orders/create"),
+);
 const ExternalIntegrationDetail = lazy(
   () => import("../../pages/new_orders/external_orders/detail"),
 );
@@ -288,6 +291,7 @@ const AppRouter = () => {
                 { path: "external", element: <Navigate replace to="/new-orders/integrations" /> },
                 { path: "external/:id", element: <Navigate replace to="/new-orders/integrations" /> },
                 { path: "integrations", element: <NewOrdersExternalList /> },
+                { path: "integrations/create", element: <ExternalIntegrationCreate /> },
                 { path: "branches", element: <NewOrdersBranches /> },
                 { path: "branches/:branchId", element: <NewOrdersBranchBatches /> },
                 { path: "branches/:branchId/batches/:batchId", element: <NewOrdersBranchBatchDetail /> },
