@@ -54,6 +54,9 @@ const normalizeBranch = (value: unknown): Branch => {
     status: item.status === "inactive" ? "inactive" : "active",
     employees_count: Number(item.employees_count ?? 0),
     created_at: item.created_at ?? new Date().toISOString(),
+    olinishi_kerak: Number(item.olinishi_kerak ?? 0),
+    berilishi_kerak: Number(item.berilishi_kerak ?? 0),
+    kassadagi_summa: Number(item.kassadagi_summa ?? 0),
   };
 };
 

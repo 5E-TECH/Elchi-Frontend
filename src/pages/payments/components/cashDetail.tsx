@@ -58,6 +58,7 @@ export interface DetailState {
     phone_number?: string;
     role?: string;
     amount?: number;
+    type?: string;
   };
 }
 
@@ -104,7 +105,7 @@ const CashDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
   const navigate = useNavigate();
-  const { getCashBoxById, createPaymentCourier, createPaymentMarket } = useCashBox();
+  const { getCashBoxById, createPaymentCourier, createPaymentBranchToMain, createPaymentMarket } = useCashBox();
   const { getMarkets } = useMarkets();
   const { apiRequest } = useAppNotification();
 
@@ -170,7 +171,10 @@ const CashDetail = () => {
   const selectedPaymentType = watch("paymentType");
   const selectedMarketId = watch("marketId");
   const isStoreTransfer = selectedPaymentType === "click_to_market";
-  const isSubmitting = createPaymentCourier.isPending || createPaymentMarket.isPending;
+  const isSubmitting =
+    createPaymentCourier.isPending ||
+    createPaymentBranchToMain.isPending ||
+    createPaymentMarket.isPending;
   const { data: marketsData, isLoading: marketsLoading } = getMarkets(
     { status: "active", limit: 0 },
     isStoreTransfer,
@@ -250,6 +254,34 @@ const CashDetail = () => {
 
     if (type === "courier") {
       if (!id) return;
+      const isBranchToMain =
+        user?.role === "branch" ||
+        (!!state?.entity?.type && state?.entity?.type !== "courier");
+
+      if (isBranchToMain) {
+        await apiRequest({
+          request: () =>
+            createPaymentBranchToMain.mutateAsync({
+              branch_id: id,
+              amount,
+              payment_method: normalizedPaymentMethod,
+              payment_date: paymentDate,
+              comment,
+            }),
+          successMessage: t("receivePaymentSuccess"),
+          errorMessage: t("receivePaymentError"),
+          onSuccess: () => {
+            reset({
+              amount: "",
+              paymentType: "",
+              marketId: "",
+              comment: "",
+            });
+          },
+        });
+        return;
+      }
+
       await apiRequest({
         request: () =>
           createPaymentCourier.mutateAsync({
