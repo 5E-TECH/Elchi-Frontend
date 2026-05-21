@@ -15,6 +15,9 @@ export interface Branch {
   status: "active" | "inactive";
   employees_count: number;
   created_at: string;
+  olinishi_kerak?: number;
+  berilishi_kerak?: number;
+  kassadagi_summa?: number;
 }
 
 export interface Employee {

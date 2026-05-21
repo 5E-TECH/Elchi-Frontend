@@ -105,6 +105,11 @@ export const useCashBox = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
   });
 
+  const createPaymentBranchToMain = useMutation({
+    mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN, data),
+    onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
+  });
+
   const createPaymentMarket = useMutation({
     mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_MARKET, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
@@ -251,6 +256,7 @@ export const useCashBox = () => {
     getCashBoxHistoryById,
     getCashBoxMain,
     createPaymentCourier,
+    createPaymentBranchToMain,
     createPaymentMarket,
     cashboxSpand,
     cashboxFill,

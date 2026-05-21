@@ -3,6 +3,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { useSelector } from "react-redux";
 import {
   BadgeDollarSign,
   Store,
@@ -22,9 +23,11 @@ import { useNavigate } from "react-router-dom";
 import { useCashBox } from "../../entities/payments";
 import { useUser } from "../../entities/user/api/userApi";
 import { useMarkets } from "../../entities/markets";
+import { useBranches } from "../../entities/branch";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../shared/lib/usePagination";
 import PageContainer from "../../shared/ui/PageContainer";
+import type { RootState } from "../../app/config/store";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const DEFAULT_PAYMENTS_LIMIT = 10;
@@ -51,6 +54,14 @@ type PaymentCourierOption = {
   amount: number;
 };
 
+type PaymentBranchOption = {
+  id: string;
+  name: string;
+  region: string;
+  type: string;
+  amount: number;
+};
+
 const asRecord = (value: unknown): UnknownRecord =>
   value && typeof value === "object" ? (value as UnknownRecord) : {};
 
@@ -65,6 +76,11 @@ const toPositiveNumber = (value: unknown) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 1) return null;
   return Math.floor(parsed);
+};
+
+const toNumber = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const normalizePagination = (
@@ -131,6 +147,8 @@ const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
 
 const Payments = () => {
   const { t } = useTranslation("payments");
+  const role = useSelector((state: RootState) => state.role.role);
+  const isAdminOrSuperAdmin = role === "admin" || role === "superadmin";
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "payments",
     defaultLimit: DEFAULT_PAYMENTS_LIMIT,
@@ -177,14 +195,36 @@ const Payments = () => {
   );
   const { data: couriersData, isLoading: couriersLoading } = getCouriers(
     { status: "active", limit: 0 },
-    isReceivedPopupOpen,
+    isReceivedPopupOpen && !isAdminOrSuperAdmin,
+  );
+  const { data: branchesData, isLoading: branchesLoading } = useBranches(
+    { status: "active", limit: 1000, page: 1 },
+    isReceivedPopupOpen && isAdminOrSuperAdmin,
   );
 
-  // API response: { statusCode, message, data: { mainCashboxTotal, courierCashboxTotal, marketCashboxTotal, ... } }
+  // API response formatlari:
+  // 1) oddiy: { data: { mainCashboxTotal, courierCashboxTotal, marketCashboxTotal } }
+  // 2) manager: { data: { kassadagi_summa, berilishi_kerak, olinishi_kerak, ... } }
   const cashboxData = cashboxInfo?.data;
-  const mainCashboxTotal = cashboxData?.mainCashboxTotal ?? 0;
-  const courierCashboxTotal = cashboxData?.courierCashboxTotal ?? 0;
-  const marketCashboxTotal = cashboxData?.marketCashboxTotal ?? 0;
+  const hasManagerCashboxFields =
+    !!cashboxData &&
+    (
+      "kassadagi_summa" in cashboxData ||
+      "berilishi_kerak" in cashboxData ||
+      "olinishi_kerak" in cashboxData
+    );
+
+  const mainCashboxTotal = hasManagerCashboxFields
+    ? toNumber(cashboxData?.kassadagi_summa)
+    : toNumber(cashboxData?.mainCashboxTotal);
+
+  const courierCashboxTotal = hasManagerCashboxFields
+    ? toNumber(cashboxData?.olinishi_kerak)
+    : toNumber(cashboxData?.courierCashboxTotal);
+
+  const marketCashboxTotal = hasManagerCashboxFields
+    ? toNumber(cashboxData?.berilishi_kerak)
+    : toNumber(cashboxData?.marketCashboxTotal);
 
   // ── To be given popup uchun market list ───────────────────────────────────
   const marketsList = useMemo<PaymentMarketOption[]>(
@@ -225,6 +265,18 @@ const Payments = () => {
         };
       }),
     [couriersData],
+  );
+
+  const branchesList = useMemo<PaymentBranchOption[]>(
+    () =>
+      (branchesData?.data ?? []).map((branch) => ({
+        id: String(branch.id),
+        name: branch.name ?? "—",
+        region: branch.region?.name ?? "Noma'lum",
+        type: String(branch.type ?? "BRANCH"),
+        amount: toNumber(branch.olinishi_kerak),
+      })),
+    [branchesData],
   );
 
   // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
@@ -528,23 +580,27 @@ const Payments = () => {
       />
 
       {/* To be received popup */}
-      <PopupSelect<PaymentCourierOption>
+      <PopupSelect<PaymentCourierOption | PaymentBranchOption>
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
-        data={couriersList}
+        data={isAdminOrSuperAdmin ? branchesList : couriersList}
         title={t("toBeReceived")}
-        description={couriersLoading ? t("loadingLabel") : t("selectCourierDescription")}
+        description={
+          isAdminOrSuperAdmin
+            ? (branchesLoading ? t("loadingLabel") : t("selectPlaceholder"))
+            : (couriersLoading ? t("loadingLabel") : t("selectCourierDescription"))
+        }
         icon={<Truck size={20} />}
-        keyExtractor={(c) => c.id}
+        keyExtractor={(item) => item.id}
         searchKeys={["name", "region"]}
         labelKey="name"
-        onSelect={(courier) => {
+        onSelect={(item) => {
           setIsReceivedPopupOpen(false);
-          navigate(`/payments/cash-detail/${courier.id}`, {
-            state: { type: "courier", entity: courier },
+          navigate(`/payments/cash-detail/${item.id}`, {
+            state: { type: "courier", entity: item },
           });
         }}
-        renderItem={(courier, isSelected) => (
+        renderItem={(item, isSelected) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <div
@@ -559,20 +615,20 @@ const Payments = () => {
                 <p
                   className={`font-medium text-sm ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
                 >
-                  {courier.name}
+                  {item.name}
                 </p>
                 <p
                   className={`text-xs ${isSelected ? "text-white/70" : "text-gray-500 dark:text-white/75"}`}
                 >
-                  {courier.region}
+                  {"region" in item ? item.region : ""}
                 </p>
               </div>
             </div>
             <span
-              className={`text-sm font-semibold ${courier.amount < 0 ? "text-rose-400" : isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
+              className={`text-sm font-semibold ${item.amount < 0 ? "text-rose-400" : isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
             >
-              {courier.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(courier.amount))} UZS
+              {item.amount < 0 ? "-" : ""}
+              {fmt(Math.abs(item.amount))} UZS
             </span>
           </div>
         )}
