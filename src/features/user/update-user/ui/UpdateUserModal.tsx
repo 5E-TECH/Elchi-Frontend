@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import UpdatePopup from "../../../../shared/components/popupUpdate";
 import SearchableSelect from "../../../../shared/ui/SearchableSelect";
+import CustomDatePicker from "../../../../shared/ui/CustomDatePicker";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import { UserRoleBadge } from "../../../../entities/user/ui/UserRoleBadge";
@@ -40,6 +41,24 @@ const parseAmount = (value: string): number =>
   Number(value.replace(/\s/g, ""));
 
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
+
+const paymentDayToIsoDate = (paymentDay: string): string => {
+  const day = Number(paymentDay);
+  if (!Number.isFinite(day) || day < 1 || day > 30) return "";
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}-${String(day).padStart(2, "0")}`;
+};
+
+const isoDateToPaymentDay = (value: string): string => {
+  if (!value) return "";
+  const parts = value.split("-");
+  if (parts.length !== 3) return "";
+  const day = Number(parts[2]);
+  if (!Number.isFinite(day) || day < 1 || day > 30) return "";
+  return String(day);
+};
 
 type RegionOption = {
   id: string | number;
@@ -535,17 +554,32 @@ export const UpdateUserModal = memo(({
                       placeholder: "2 500 000",
                     })}
 
-                    {renderTextInput({
-                      name: "payment_day",
-                      type: "number",
-                      label: (
-                        <>
-                          <Calendar size={11} className="inline mr-1 mb-px" />
-                          {t("paymentDayRange")}
-                        </>
-                      ),
-                      placeholder: "1 – 30",
-                    })}
+                    <Controller
+                      control={control}
+                      name="payment_day"
+                      render={({ field, fieldState }) => (
+                        <div className="relative">
+                          <label className={labelCls}>
+                            <Calendar size={11} className="inline mr-1 mb-px" />
+                            {t("paymentDayRange")}
+                          </label>
+                          <CustomDatePicker
+                            value={paymentDayToIsoDate(field.value)}
+                            onChange={(nextDate) =>
+                              field.onChange(isoDateToPaymentDay(nextDate))
+                            }
+                            placeholder="Sanani tanlang"
+                            variant="form"
+                            className="w-full"
+                          />
+                          {fieldState.error?.message && (
+                            <p className="absolute -bottom-4 right-0 text-[10px] text-red-500 font-medium">
+                              {fieldState.error.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
                   </>
                 )}
 

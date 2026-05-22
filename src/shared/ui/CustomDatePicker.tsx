@@ -48,7 +48,7 @@ interface CustomDatePickerProps {
     maxDate?: string;
     className?: string;
     size?: "sm" | "md";
-    variant?: "default" | "filter";
+    variant?: "default" | "filter" | "form";
     placement?: "auto" | "bottom";
 }
 
@@ -212,6 +212,19 @@ const CustomDatePicker = memo(({
                 : "text-maindark dark:text-white hover:border-main/40"
             }
         `
+        : variant === "form"
+            ? `
+            flex items-center gap-2 w-full
+            rounded-xl border-2 border-[color:var(--color-border-strong)]
+            bg-[color:var(--color-card-surface-strong)] dark:bg-[color:var(--color-primarydark)]
+            px-4 py-3 text-sm font-semibold
+            transition-all duration-200 shadow-sm
+            dark:border-white/15
+            ${open
+                ? "border-main ring-2 ring-main/15 text-maindark dark:text-white"
+                : "text-maindark dark:text-white hover:border-main/60"
+            }
+        `
         : `
             flex items-center gap-2 w-full
             bg-white dark:bg-primarydark
@@ -225,15 +238,21 @@ const CustomDatePicker = memo(({
 
     const iconClassName = variant === "filter"
         ? (open ? "text-main" : "text-[color:var(--color-text-muted)] dark:text-white/55")
-        : (open ? "text-main" : "text-maindark/40 dark:text-sidebar/50");
+        : variant === "form"
+            ? (open ? "text-main" : "text-[color:var(--color-text-muted)] dark:text-white/55")
+            : (open ? "text-main" : "text-maindark/40 dark:text-sidebar/50");
 
     const valueClassName = variant === "filter"
         ? (value ? "text-maindark dark:text-white" : "text-[color:var(--color-text-muted)] dark:text-white/55")
-        : (value ? "text-maindark dark:text-white" : "text-maindark/50 dark:text-sidebar/60");
+        : variant === "form"
+            ? (value ? "text-maindark dark:text-white" : "text-[color:var(--color-text-muted)] dark:text-white/55")
+            : (value ? "text-maindark dark:text-white" : "text-maindark/50 dark:text-sidebar/60");
 
     const clearClassName = variant === "filter"
         ? "ml-1 cursor-pointer text-[color:var(--color-text-muted)] transition-colors hover:text-red-400 dark:text-white/45 dark:hover:text-red-400"
-        : "ml-1 text-maindark/30 hover:text-red-400 dark:text-sidebar/40 dark:hover:text-red-400 transition-colors cursor-pointer";
+        : variant === "form"
+            ? "ml-1 cursor-pointer text-[color:var(--color-text-muted)] transition-colors hover:text-red-400 dark:text-white/45 dark:hover:text-red-400"
+            : "ml-1 text-maindark/30 hover:text-red-400 dark:text-sidebar/40 dark:hover:text-red-400 transition-colors cursor-pointer";
 
     return (
         <div ref={containerRef} className={`relative ${className}`}>
