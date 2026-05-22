@@ -63,14 +63,31 @@ const FilterSelect = memo(({
         useRedux && reduxKey ? (state.filter[reduxKey] as string) || "" : "",
     );
     const currentValue = useRedux ? reduxValue : value;
-    const selectedOption = useMemo(
-        () => options.find((option) => option.value === currentValue),
-        [currentValue, options],
+    const normalizedOptions = useMemo(
+        () => options.filter((option) => option.value !== ""),
+        [options],
     );
-    const dropdownOptions = useMemo(
-        () => [{ value: "", label: placeholder }, ...options],
+    const emptyOptionLabel = useMemo(
+        () => options.find((option) => option.value === "")?.label ?? placeholder,
         [options, placeholder],
     );
+    const emptyDisplayLabel = useMemo(() => {
+        const normalizedLabel = emptyOptionLabel.trim().toLowerCase();
+        const isAllLabel =
+            normalizedLabel === "all" ||
+            normalizedLabel.startsWith("all ") ||
+            normalizedLabel === "barchasi" ||
+            normalizedLabel.startsWith("barcha ") ||
+            normalizedLabel === "все" ||
+            normalizedLabel.startsWith("все ");
+
+        return isAllLabel ? `${t("select")} ${label.toLowerCase()}` : emptyOptionLabel;
+    }, [emptyOptionLabel, label, t]);
+    const selectedOption = useMemo(
+        () => normalizedOptions.find((option) => option.value === currentValue),
+        [currentValue, normalizedOptions],
+    );
+    const dropdownOptions = normalizedOptions;
 
     useEffect(() => {
         if (!isOpen) {
@@ -131,7 +148,10 @@ const FilterSelect = memo(({
             event.preventDefault();
 
             if (isOpen) {
-                handleChange(dropdownOptions[highlightedIndex]?.value ?? "");
+                const highlightedOption = dropdownOptions[highlightedIndex];
+                if (highlightedOption) {
+                    handleChange(highlightedOption.value);
+                }
                 return;
             }
 
@@ -142,6 +162,9 @@ const FilterSelect = memo(({
         if (event.key === "ArrowDown") {
             event.preventDefault();
             setIsOpen(true);
+            if (!dropdownOptions.length) {
+                return;
+            }
             setHighlightedIndex((current) =>
                 current < dropdownOptions.length - 1 ? current + 1 : 0,
             );
@@ -151,6 +174,9 @@ const FilterSelect = memo(({
         if (event.key === "ArrowUp") {
             event.preventDefault();
             setIsOpen(true);
+            if (!dropdownOptions.length) {
+                return;
+            }
             setHighlightedIndex((current) =>
                 current > 0 ? current - 1 : dropdownOptions.length - 1,
             );
@@ -207,7 +233,11 @@ const FilterSelect = memo(({
                             : "text-gray-500 dark:text-white/55"
                     } ${Icon ? "pl-7" : ""}`}
                 >
-                    {loading ? t("loading") : selectedOption?.label ?? placeholder}
+                    {loading
+                        ? t("loading")
+                        : currentValue
+                          ? selectedOption?.label ?? emptyDisplayLabel
+                          : emptyDisplayLabel}
                 </button>
 
                 {loading ? (
@@ -230,7 +260,6 @@ const FilterSelect = memo(({
                 >
                     <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
                         {dropdownOptions.map((option, optionIndex) => {
-                            const isPlaceholder = option.value === "";
                             const isSelected = option.value === currentValue;
                             const isHighlighted = optionIndex === highlightedIndex;
 
@@ -246,10 +275,10 @@ const FilterSelect = memo(({
                                     className={`flex h-11 w-full items-center gap-2 rounded-xl px-3 text-left text-sm font-semibold transition-colors ${
                                         isHighlighted
                                             ? "bg-main text-white shadow-sm shadow-main/25"
-                                            : isSelected && !isPlaceholder
-                                                ? "bg-main/15 text-main dark:bg-main/25 dark:text-primary"
-                                                : "text-maindark hover:bg-main/10 dark:text-primary dark:hover:bg-white/8"
-                                    } ${isPlaceholder && !isHighlighted ? "text-gray-500 dark:text-white/50" : ""}`}
+                                            : isSelected
+                                              ? "bg-main/15 text-main dark:bg-main/25 dark:text-primary"
+                                              : "text-maindark hover:bg-main/10 dark:text-primary dark:hover:bg-white/8"
+                                    }`}
                                     role="option"
                                     aria-selected={isSelected}
                                 >
@@ -257,7 +286,7 @@ const FilterSelect = memo(({
                                         <option.icon size={15} className="shrink-0" />
                                     ) : null}
                                     <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                                    {isSelected && !isPlaceholder ? (
+                                    {isSelected ? (
                                         <Check size={15} className="shrink-0" />
                                     ) : null}
                                 </button>

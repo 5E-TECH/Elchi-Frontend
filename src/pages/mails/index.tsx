@@ -179,7 +179,7 @@ const Mails = () => {
               <button
                 type="button"
                 onClick={() => setIsOldBatchMenuOpen((prev) => !prev)}
-                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border border-main/20 bg-primary px-4 py-3 text-left text-sm font-semibold text-main shadow-sm dark:border-white/10 dark:bg-primarydark dark:text-primary"
+                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border border-main/20 bg-primary px-4 py-3 text-left text-sm font-semibold text-main shadow-sm dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:text-white"
               >
                 <span className="truncate">
                   {selectedBatchId === "all" ? t("oldBatchFilterPlaceholder") : t("oldTab")}
@@ -204,7 +204,7 @@ const Mails = () => {
                     className={`flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all duration-200 ${
                       isActive
                         ? "border-main bg-main text-primary shadow-lg shadow-main/25"
-                        : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-primarydark dark:text-gray-300"
+                        : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:text-white/85 dark:hover:bg-white/10"
                     }`}
                   >
                     <span className="truncate">{option.label}</span>
@@ -282,7 +282,7 @@ const Mails = () => {
                   </div>
 
                   {isOldBatchMenuOpen && (
-                    <div className="absolute top-[calc(100%+8px)] left-0 z-50 w-full overflow-hidden rounded-xl border border-white/20 bg-white p-1 shadow-xl">
+                    <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)]">
                       {batchOptions.map((option) => {
                         const isActiveOption = selectedBatchId === option.value;
                         return (
@@ -293,7 +293,7 @@ const Mails = () => {
                             className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
                               isActiveOption
                                 ? "bg-main text-white"
-                                : "text-maindark hover:bg-main/10"
+                                : "text-maindark hover:bg-main/10 dark:text-white/85 dark:hover:bg-white/10"
                             }`}
                           >
                             {option.label}

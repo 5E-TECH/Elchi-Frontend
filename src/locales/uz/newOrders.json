@@ -35,8 +35,6 @@
   "passwordPlaceholder": "Parol kiriting",
   "token": "Token",
   "tokenPlaceholder": "Bearer token kiriting",
-  "apiKey": "API kalit",
-  "apiKeyPlaceholder": "API kalitni kiriting",
   "activeIntegration": "Faol",
   "fieldMapping": "Field mapping",
   "statusMapping": "Status mapping",
@@ -56,10 +54,11 @@
   "integrationReadyHint": "Saqlangandan keyin integratsiya ro'yxatda ko'rinadi va QR qidiruvda ishlatiladi.",
   "authTypes": {
     "none": "Auth yo'q",
-    "bearer": "Bearer token",
-    "basic": "Basic auth",
-    "api_key": "API key"
+    "bearer": "Token",
+    "basic": "Basic auth"
   },
+  "tableView": "Jadval ko'rinishi",
+  "cardView": "Karta ko'rinishi",
   "refreshing": "yangilanmoqda",
   "searchIntegration": "Integratsiya qidirish...",
   "refresh": "Yangilash",
@@ -91,6 +90,7 @@
   "apiUrl": "API URL",
   "auth": "Auth",
   "lastSync": "Oxirgi sync",
+  "notSynced": "Sync yo'q",
   "back": "Orqaga",
   "integrationLoadError": "Integratsiya ma'lumotini yuklashda xatolik yuz berdi",
   "marketSlug": "Market: {{slug}}",

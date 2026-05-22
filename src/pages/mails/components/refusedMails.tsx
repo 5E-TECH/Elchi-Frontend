@@ -1,11 +1,12 @@
 import { memo, useMemo } from "react";
-import { MapPin, Package, ChevronRight, AlertTriangle, User } from "lucide-react";
+import { MapPin, Package, AlertTriangle, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import MailSummaryStats from "./MailSummaryStats";
+import MailGridCard, { MAIL_CARD_GRID_CLASS, MAIL_CARD_SKELETON_CLASS } from "./MailGridCard";
 
 interface Region {
   id: string;
@@ -45,86 +46,33 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
   const courierName = item.courier?.name;
   const openDetail = () =>
     navigate(`/mails/${item.id}`, { state: { fromTab: "refused", type: "refused" } });
+  const title = isCourierLike
+    ? new Date(item.createdAt).toLocaleString("uz-UZ", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : regionName;
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={openDetail}
-      onKeyDown={(e) =>
-        e.key === "Enter" && openDetail()
-      }
-      className="group relative overflow-hidden rounded-2xl cursor-pointer"
-      style={{
-        background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
-      }}
-    >
-      {/* Shimmer */}
-      <div className="mail-card-shimmer" />
-
-      <div className="relative z-10 p-5 flex flex-col gap-3">
-        {/* Yuqori qator */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30">
-            <MapPin size={20} className="text-white" />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white/20 text-white border border-white/30">
-              <AlertTriangle size={11} />
-              {t("statusRejected")}
-            </span>
-            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/15 border border-white/25 group-hover:bg-white/25 transition-colors">
-              <ChevronRight size={16} className="text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Sarlavha */}
-        <div>
-          <h3 className="text-white font-bold text-lg leading-tight">
-            {isCourierLike
-              ? new Date(item.createdAt).toLocaleString("uz-UZ", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : regionName}
-          </h3>
-          {courierName && (
-            <div className="mt-1 flex items-center gap-1.5 text-sm text-white/80">
-              <User size={13} className="text-white/60" />
-              <span>{courierName}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="w-full h-px bg-white/20" />
-
-        {/* Statistika */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-white/70 text-sm flex items-center gap-1.5">
-              <Package size={13} className="text-white/50" />
-              {t("ordersLabel")}:
-            </span>
-            <span className="text-white font-bold text-sm">
-              {item.order_quantity}{" "}
-              <span className="font-normal opacity-70">ta</span>
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-white/70 text-sm">{t("amountLabel")}:</span>
-            <span className="text-white font-bold text-sm">
-              {formatPrice(item.post_total_price)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <MailGridCard
+      title={title}
+      subtitle={courierName ? (
+        <span className="inline-flex items-center gap-1.5">
+          <User size={13} />
+          {courierName}
+        </span>
+      ) : null}
+      statusLabel={t("statusRejected")}
+      statusIcon={<AlertTriangle size={11} />}
+      leadingIcon={<MapPin size={20} />}
+      orders={item.order_quantity}
+      amount={formatPrice(item.post_total_price)}
+      onOpen={openDetail}
+      variant="refused"
+    />
   );
 });
 RefusedMailCard.displayName = "RefusedMailCard";
@@ -132,7 +80,7 @@ RefusedMailCard.displayName = "RefusedMailCard";
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const RefusedMailCardSkeleton = memo(() => (
   <div className="rounded-2xl overflow-hidden animate-pulse">
-    <div className="h-45 bg-red-500/20 dark:bg-red-800/30 rounded-2xl" />
+    <div className={`${MAIL_CARD_SKELETON_CLASS} bg-red-500/20 dark:bg-red-800/30`} />
   </div>
 ));
 RefusedMailCardSkeleton.displayName = "RefusedMailCardSkeleton";
@@ -161,7 +109,7 @@ const RefusedMails = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className={MAIL_CARD_GRID_CLASS}>
         {Array.from({ length: 8 }).map((_, i) => (
           <RefusedMailCardSkeleton key={i} />
         ))}
@@ -206,7 +154,7 @@ const RefusedMails = () => {
       />
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className={MAIL_CARD_GRID_CLASS}>
         {mails.map((mail) => (
           <RefusedMailCard key={mail.id} item={mail} />
         ))}

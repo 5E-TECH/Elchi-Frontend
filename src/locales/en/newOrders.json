@@ -35,8 +35,6 @@
   "passwordPlaceholder": "Enter password",
   "token": "Token",
   "tokenPlaceholder": "Enter bearer token",
-  "apiKey": "API key",
-  "apiKeyPlaceholder": "Enter API key",
   "activeIntegration": "Active",
   "fieldMapping": "Field mapping",
   "statusMapping": "Status mapping",
@@ -56,10 +54,11 @@
   "integrationReadyHint": "After saving, the integration will appear in the list and be used for QR search.",
   "authTypes": {
     "none": "No auth",
-    "bearer": "Bearer token",
-    "basic": "Basic auth",
-    "api_key": "API key"
+    "bearer": "Token",
+    "basic": "Basic auth"
   },
+  "tableView": "Table view",
+  "cardView": "Card view",
   "refreshing": "refreshing",
   "searchIntegration": "Search integration...",
   "refresh": "Refresh",
@@ -91,6 +90,7 @@
   "apiUrl": "API URL",
   "auth": "Auth",
   "lastSync": "Last sync",
+  "notSynced": "Not synced",
   "back": "Back",
   "integrationLoadError": "Failed to load integration details",
   "marketSlug": "Market: {{slug}}",

@@ -72,22 +72,39 @@ const SearchableSelect = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
+  const normalizedOptions = useMemo(
+    () => options.filter((option) => option.value !== ""),
+    [options],
+  );
+  const displayPlaceholder = useMemo(() => {
+    const normalizedPlaceholder = placeholder.trim().toLowerCase();
+    const isAllPlaceholder =
+      normalizedPlaceholder === "all" ||
+      normalizedPlaceholder.startsWith("all ") ||
+      normalizedPlaceholder === "barchasi" ||
+      normalizedPlaceholder.startsWith("barcha ") ||
+      normalizedPlaceholder === "все" ||
+      normalizedPlaceholder.startsWith("все ");
+
+    return isAllPlaceholder ? `${t("select")} ${label.toLowerCase()}` : placeholder;
+  }, [label, placeholder, t]);
+
   const selectedOption = useMemo(
-    () => options.find((option) => option.value === value),
-    [options, value],
+    () => normalizedOptions.find((option) => option.value === value),
+    [normalizedOptions, value],
   );
 
   const filteredOptions = useMemo(() => {
     const normalizedQuery = searchValue.trim().toLowerCase();
 
     if (!normalizedQuery) {
-      return options;
+      return normalizedOptions;
     }
 
-    return options.filter((option) =>
+    return normalizedOptions.filter((option) =>
       option.label.toLowerCase().includes(normalizedQuery),
     );
-  }, [options, searchValue]);
+  }, [normalizedOptions, searchValue]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -144,7 +161,7 @@ const SearchableSelect = ({
   };
 
   const handleSelect = (optionValue: string) => {
-    const option = options.find((item) => item.value === optionValue);
+    const option = normalizedOptions.find((item) => item.value === optionValue);
     if (option?.disabled) {
       return;
     }
@@ -228,8 +245,8 @@ const SearchableSelect = ({
     size === "sm" ? "h-11 rounded-xl px-3.5" : "h-12 rounded-xl px-4";
   const controlSurfaceClass =
     surface === "search"
-      ? "bg-[color:var(--color-card-surface-strong)] dark:bg-[color:var(--color-primarydark)] border-[color:var(--color-border-strong)] dark:border-white/15"
-      : "bg-[color:var(--color-card-surface-strong)]/90 dark:bg-[color:var(--color-primarydark)]/90 border-[color:var(--color-border-strong)]/80 dark:border-white/12";
+      ? "bg-[color:var(--color-card-surface-strong)] dark:bg-[color:var(--color-card-surface-strong)] border-[color:var(--color-border-strong)] dark:border-white/12"
+      : "bg-[color:var(--color-card-surface-strong)]/90 dark:bg-[color:var(--color-card-surface-strong)]/95 border-[color:var(--color-border-strong)]/80 dark:border-white/10";
 
   return (
     <div ref={containerRef} className="relative space-y-0">
@@ -270,8 +287,8 @@ const SearchableSelect = ({
             autoFocus
             aria-expanded={isOpen}
             aria-haspopup="listbox"
-            placeholder={selectedOption?.label ?? placeholder}
-            className={`min-w-0 flex-1 bg-transparent text-sm font-semibold text-[color:var(--color-maindark)] outline-none placeholder:text-[color:var(--color-text-muted)] dark:text-[color:var(--color-primary)] dark:placeholder:text-white/55 ${Icon ? "pl-7" : ""}`}
+            placeholder={selectedOption?.label ?? displayPlaceholder}
+            className={`min-w-0 flex-1 bg-transparent text-sm font-semibold text-[color:var(--color-maindark)] outline-none placeholder:text-[color:var(--color-text-muted)] dark:text-white dark:placeholder:text-white/45 ${Icon ? "pl-7" : ""}`}
           />
         ) : (
           <button
@@ -284,18 +301,18 @@ const SearchableSelect = ({
             aria-haspopup="listbox"
             className={`min-w-0 flex-1 truncate bg-transparent text-left text-sm font-semibold outline-none ${
               selectedOption
-                ? "text-[color:var(--color-maindark)] dark:text-[color:var(--color-primary)]"
-                : "text-[color:var(--color-text-muted)] dark:text-white/55"
+                ? "text-[color:var(--color-maindark)] dark:text-white"
+                : "text-[color:var(--color-text-muted)] dark:text-white/50"
             } ${Icon ? "pl-7" : ""}`}
           >
-            {selectedOption?.label ?? placeholder}
+            {selectedOption?.label ?? displayPlaceholder}
           </button>
         )}
 
         <span className="ml-2 flex items-center gap-1.5">
           <ChevronDown
             size={18}
-            className={`pointer-events-none shrink-0 text-[color:var(--color-text-muted)] transition-all duration-200 dark:text-[color:var(--color-text-muted-dark)] ${
+            className={`pointer-events-none shrink-0 text-[color:var(--color-text-muted)] transition-all duration-200 dark:text-white/45 ${
               isOpen ? "rotate-180 text-main" : ""
             }`}
           />
@@ -303,10 +320,10 @@ const SearchableSelect = ({
       </div>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-primary)] shadow-[0_20px_45px_color-mix(in_srgb,var(--color-background-deep)_18%,transparent)] dark:bg-[color:var(--color-primarydark)]">
+        <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-primary)] shadow-[0_20px_45px_color-mix(in_srgb,var(--color-background-deep)_18%,transparent)] dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)]">
           <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
             {loading ? (
-              <div className="flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+              <div className="flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-[color:var(--color-text-muted)] dark:text-white/45">
                 {t("loading")}
               </div>
             ) : filteredOptions.length > 0 ? (
@@ -331,12 +348,12 @@ const SearchableSelect = ({
                     disabled={isDisabled}
                     className={`flex h-11 w-full items-center rounded-xl px-3 text-left text-sm font-medium transition-colors ${
                       isDisabled
-                        ? "cursor-not-allowed text-[color:var(--color-text-muted)] opacity-45 dark:text-[color:var(--color-text-muted-dark)]"
+                        ? "cursor-not-allowed text-[color:var(--color-text-muted)] opacity-45 dark:text-white/35"
                         : isHighlighted
                         ? "bg-main text-white shadow-sm shadow-main/25"
                         : isSelected
-                        ? "bg-main/20 text-main dark:bg-main/25 dark:text-white"
-                        : "text-[color:var(--color-maindark)] hover:bg-main/10 dark:text-[color:var(--color-primary)] dark:hover:bg-main/10"
+                        ? "bg-main/20 text-main dark:bg-main/20 dark:text-white"
+                        : "text-[color:var(--color-maindark)] hover:bg-main/10 dark:text-white/85 dark:hover:bg-white/10"
                     }`}
                   >
                     <span className="truncate">{option.label}</span>
@@ -344,7 +361,7 @@ const SearchableSelect = ({
                 );
               })
             ) : (
-              <div className="flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+              <div className="flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-[color:var(--color-text-muted)] dark:text-white/45">
                 {t("search")} topilmadi
               </div>
             )}

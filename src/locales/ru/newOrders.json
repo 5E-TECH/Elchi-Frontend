@@ -35,8 +35,6 @@
   "passwordPlaceholder": "Введите пароль",
   "token": "Token",
   "tokenPlaceholder": "Введите bearer token",
-  "apiKey": "API key",
-  "apiKeyPlaceholder": "Введите API key",
   "activeIntegration": "Активна",
   "fieldMapping": "Field mapping",
   "statusMapping": "Status mapping",
@@ -56,10 +54,11 @@
   "integrationReadyHint": "После сохранения интеграция появится в списке и будет использоваться для QR поиска.",
   "authTypes": {
     "none": "Без auth",
-    "bearer": "Bearer token",
-    "basic": "Basic auth",
-    "api_key": "API key"
+    "bearer": "Token",
+    "basic": "Basic auth"
   },
+  "tableView": "Таблица",
+  "cardView": "Карточки",
   "refreshing": "обновляется",
   "searchIntegration": "Поиск интеграции...",
   "refresh": "Обновить",
@@ -91,6 +90,7 @@
   "apiUrl": "API URL",
   "auth": "Auth",
   "lastSync": "Последняя синхронизация",
+  "notSynced": "Нет синхронизации",
   "back": "Назад",
   "integrationLoadError": "Ошибка при загрузке данных интеграции",
   "marketSlug": "Маркет: {{slug}}",
