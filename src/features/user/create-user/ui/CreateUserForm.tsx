@@ -10,6 +10,7 @@ import type {
 } from "../../../../entities/user/types/user";
 import { RoleSelector } from "./RoleSelector";
 import SearchableSelect from "../../../../shared/ui/SearchableSelect";
+import CustomDatePicker from "../../../../shared/ui/CustomDatePicker";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import {
@@ -52,6 +53,24 @@ const parseAmount = (value: string): number =>
   Number(value.replace(/\s/g, ""));
 
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
+
+const paymentDayToIsoDate = (paymentDay: string): string => {
+  const day = Number(paymentDay);
+  if (!Number.isFinite(day) || day < 1 || day > 30) return "";
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}-${String(day).padStart(2, "0")}`;
+};
+
+const isoDateToPaymentDay = (value: string): string => {
+  if (!value) return "";
+  const parts = value.split("-");
+  if (parts.length !== 3) return "";
+  const day = Number(parts[2]);
+  if (!Number.isFinite(day) || day < 1 || day > 30) return "";
+  return String(day);
+};
 
 interface CreateUserFormValues {
   role: UserRole;
@@ -335,6 +354,18 @@ export const CreateUserForm = memo(() => {
     }
 
     if (role === "courier" || role === "manager") {
+      const hasSalary = Boolean(values.salary.trim());
+      if (hasSalary && !values.paymentDay) {
+        setError("paymentDay", { message: t("dateRequired") });
+        valid = false;
+      } else if (hasSalary && values.paymentDay) {
+        const day = Number(values.paymentDay);
+        if (day < 1 || day > 30) {
+          setError("paymentDay", { message: t("paymentDayValidation") });
+          valid = false;
+        }
+      }
+
       const hasHomeRate = Boolean(values.homeRate.trim());
       const hasCenterRate = Boolean(values.centerRate.trim());
       if (hasHomeRate !== hasCenterRate) {
@@ -426,6 +457,9 @@ export const CreateUserForm = memo(() => {
 
       if (values.salary.trim()) {
         payload.salary = parseAmount(values.salary);
+        if (values.paymentDay) {
+          payload.payment_day = Number(values.paymentDay);
+        }
       }
       if (values.homeRate.trim() && values.centerRate.trim()) {
         payload.tariff_home = parseAmount(values.homeRate);
@@ -450,6 +484,9 @@ export const CreateUserForm = memo(() => {
       };
       if (values.salary.trim()) {
         payload.salary = parseAmount(values.salary);
+        if (values.paymentDay) {
+          payload.payment_day = Number(values.paymentDay);
+        }
       }
       if (values.homeRate.trim() && values.centerRate.trim()) {
         payload.tariff_home = parseAmount(values.homeRate);
@@ -601,6 +638,32 @@ export const CreateUserForm = memo(() => {
     />
   );
 
+  const renderPaymentDayPicker = ({
+    required,
+  }: {
+    required: boolean;
+  }) => (
+    <Controller
+      control={control}
+      name="paymentDay"
+      render={({ field, fieldState }) => (
+        <div className="space-y-0 relative">
+          <label className={labelClasses}>
+            {t("paymentDay")} {required && <span className="text-red-500">*</span>}
+          </label>
+          <CustomDatePicker
+            value={paymentDayToIsoDate(field.value)}
+            onChange={(nextDate) => field.onChange(isoDateToPaymentDay(nextDate))}
+            placeholder="Sanani tanlang"
+            variant="form"
+            className="w-full"
+          />
+          <FieldError message={fieldState.error?.message} />
+        </div>
+      )}
+    />
+  );
+
   return (
     <div className="flex w-full min-h-full flex-col overflow-hidden rounded-2xl transition-colors duration-300">
       <div className="shrink-0 border-b border-slate-100 px-3 py-3 dark:border-white/5 sm:px-4 md:px-6">
@@ -742,25 +805,19 @@ export const CreateUserForm = memo(() => {
                       name: "salary",
                       placeholder: "Masalan: 5 000 000",
                     })}
-                    {(role === "admin" || role === "registrator") &&
-                      renderInput({
-                        label: t("paymentDay"),
-                        name: "paymentDay",
-                        type: "number",
-                        placeholder: "1-30",
-                        icon: <Calendar size={18} />,
-                      })}
+                    {renderPaymentDayPicker({ required: true })}
                   </div>
                 )}
 
                 {role === "manager" && (
-                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 2xl:grid-cols-3 md:gap-6">
+                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 2xl:grid-cols-4 md:gap-6">
                     {renderInput({
                       label: t("salaryWithCurrency"),
                       name: "salary",
                       placeholder: "Masalan: 5 000 000",
                       required: false,
                     })}
+                    {renderPaymentDayPicker({ required: false })}
                     {renderInput({
                       label: t("homeTariffWithCurrency"),
                       name: "homeRate",
@@ -806,13 +863,14 @@ export const CreateUserForm = memo(() => {
                 )}
 
                 {role === "courier" && (
-                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 2xl:grid-cols-3 md:gap-6">
+                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 2xl:grid-cols-4 md:gap-6">
                     {renderInput({
                       label: t("salaryWithCurrency"),
                       name: "salary",
                       placeholder: "Masalan: 5 000 000",
                       required: false,
                     })}
+                    {renderPaymentDayPicker({ required: false })}
                     {renderInput({
                       label: t("homeTariffWithCurrency"),
                       name: "homeRate",
