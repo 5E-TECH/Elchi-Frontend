@@ -14,8 +14,15 @@ export type Integration = {
   auth_type: string;
   auth_url?: string | null;
   username?: string | null;
+  credentials?: Record<string, string> | null;
   is_active: boolean;
   market_id: string | null;
+  market?: {
+    id?: string | number;
+    name?: string | null;
+    username?: string | null;
+    phone_number?: string | null;
+  } | null;
   field_mapping?: unknown;
   status_mapping?: unknown;
   status_sync_config?: unknown;

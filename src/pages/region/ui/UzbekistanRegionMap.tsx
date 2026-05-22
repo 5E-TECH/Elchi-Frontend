@@ -378,6 +378,7 @@ const UzbekistanRegionMap = ({
       xhigh: isDarkMode ? mapTheme.xhigh : readCssColor("--color-region-map-xhigh", mapTheme.xhigh),
       stroke: mapTheme.stroke,
     };
+    const regionLabelColor = isDarkMode ? "#ffffff" : "#111827";
 
     const mapData: MapPoint[] = regions
       .map((region) => {
@@ -535,7 +536,7 @@ const UzbekistanRegionMap = ({
             allowOverlap: true,
             backgroundColor: "transparent",
             borderWidth: 0,
-            color: "#ffffff",
+            color: regionLabelColor,
             crop: false,
             formatter: function (this: any) {
               return this.point?.regionName || this.point?.name || "";
@@ -543,7 +544,7 @@ const UzbekistanRegionMap = ({
             padding: 0,
             shadow: false,
             style: {
-              color: "#ffffff",
+              color: regionLabelColor,
               fontSize: "12px",
               fontWeight: "900",
               lineHeight: "14px",
@@ -663,7 +664,10 @@ const UzbekistanRegionMap = ({
         />
         <div className="mt-4 flex flex-wrap items-center justify-center gap-6">
           {legendItems.map((item) => (
-            <div key={item.name} className="flex items-center gap-2 text-sm text-[color:var(--color-text-muted)]">
+            <div
+              key={item.name}
+              className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-primary/80"
+            >
               <span
                 className="h-3 w-3 rounded-sm"
                 style={{ backgroundColor: item.color }}

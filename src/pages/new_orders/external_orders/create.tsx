@@ -47,12 +47,9 @@ type IntegrationCreateForm = {
   token: string;
   market_id: string;
   is_active: boolean;
-  field_mapping: string;
-  status_mapping: string;
-  status_sync_config: string;
 };
 
-const authTypes = ["none", "bearer", "basic", "api_key"] as const;
+const authTypes = ["none", "bearer", "basic"] as const;
 
 const platformOptions = [
   { value: "custom", labelKey: "platformCustom", icon: PlugZap },
@@ -81,23 +78,6 @@ const getMarketItems = (value: unknown): MarketOptionSource[] => {
   }
 
   return [];
-};
-
-const parseOptionalJson = (
-  value: string,
-  fieldName: string,
-  errorMessage: string,
-) => {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-
-  try {
-    return JSON.parse(trimmed) as unknown;
-  } catch {
-    throw new Error(errorMessage.replace("{{field}}", fieldName));
-  }
 };
 
 const ExternalIntegrationCreatePage = () => {
@@ -130,9 +110,6 @@ const ExternalIntegrationCreatePage = () => {
       token: "",
       market_id: "",
       is_active: true,
-      field_mapping: "",
-      status_mapping: "",
-      status_sync_config: "",
     },
   });
 
@@ -179,23 +156,6 @@ const ExternalIntegrationCreatePage = () => {
         if (password) credentials.password = password;
       }
       if (selectedAuthType === "bearer" && token) credentials.token = token;
-      if (selectedAuthType === "api_key" && token) credentials.api_key = token;
-
-      const fieldMapping = parseOptionalJson(
-        values.field_mapping,
-        t("fieldMapping"),
-        t("invalidJsonField"),
-      );
-      const statusMapping = parseOptionalJson(
-        values.status_mapping,
-        t("statusMapping"),
-        t("invalidJsonField"),
-      );
-      const syncConfig = parseOptionalJson(
-        values.status_sync_config,
-        t("syncConfig"),
-        t("invalidJsonField"),
-      );
 
       const payload: CreateIntegrationPayload = {
         name: values.name.trim(),
@@ -207,9 +167,6 @@ const ExternalIntegrationCreatePage = () => {
         credentials,
         market_id: values.market_id,
         is_active: values.is_active,
-        field_mapping: fieldMapping,
-        status_mapping: statusMapping,
-        status_sync_config: syncConfig,
       };
 
       await createIntegration.mutateAsync(payload);
@@ -423,16 +380,16 @@ const ExternalIntegrationCreatePage = () => {
               </>
             )}
 
-            {(selectedAuthType === "bearer" || selectedAuthType === "api_key") && (
+            {selectedAuthType === "bearer" && (
               <label className="space-y-1.5 lg:col-span-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-maindark/55 dark:text-primary/55">
                   <KeyRound size={12} className="text-main" />
-                  {selectedAuthType === "api_key" ? t("apiKey") : t("token")}
+                  {t("token")}
                 </span>
                 <input
                   {...register("token")}
                   className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
-                  placeholder={selectedAuthType === "api_key" ? t("apiKeyPlaceholder") : t("tokenPlaceholder")}
+                  placeholder={t("tokenPlaceholder")}
                 />
               </label>
             )}
@@ -462,37 +419,6 @@ const ExternalIntegrationCreatePage = () => {
                 }`}
               />
             </button>
-          </div>
-
-          <div className="rounded-2xl border border-glass-border bg-sidebar/50 p-4 dark:bg-maindark/35">
-            <div className="mb-3">
-              <h4 className="text-sm font-bold text-maindark dark:text-primary">
-                {t("advancedSettings")}
-              </h4>
-              <p className="text-xs font-medium text-maindark/45 dark:text-primary/45">
-                {t("advancedSettingsHint")}
-              </p>
-            </div>
-
-            <div className="grid gap-3 lg:grid-cols-3">
-              {[
-                ["field_mapping", t("fieldMapping")],
-                ["status_mapping", t("statusMapping")],
-                ["status_sync_config", t("syncConfig")],
-              ].map(([name, label]) => (
-                <label key={name} className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase tracking-[0.12em] text-maindark/55 dark:text-primary/55">
-                    {label}
-                  </span>
-                  <textarea
-                    {...register(name as keyof IntegrationCreateForm)}
-                    rows={4}
-                    className="w-full resize-none rounded-2xl border-2 border-glass-border bg-white/80 px-3 py-2 text-xs font-semibold text-maindark outline-none transition focus:border-main dark:bg-primarydark/70 dark:text-primary"
-                    placeholder={t("optionalJsonPlaceholder")}
-                  />
-                </label>
-              ))}
-            </div>
           </div>
 
           <div className="flex flex-col-reverse gap-3 border-t border-glass-border pt-4 sm:flex-row sm:justify-end">
