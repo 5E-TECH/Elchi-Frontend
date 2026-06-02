@@ -30,7 +30,7 @@ import CancelModal from "./list/courier/list/CancelModal";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
-const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "PICKUP"]);
+const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
 const isOrderStatus = (value: string): value is OrderStatus =>
   [
