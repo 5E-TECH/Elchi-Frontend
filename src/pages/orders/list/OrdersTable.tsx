@@ -8,6 +8,8 @@ import {
     Home,
     Truck,
     ChevronRight,
+    CheckCircle,
+    XCircle,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -24,6 +26,10 @@ interface Props {
     onRowClick?: (order: OrderListItem) => void;
     rowNumberOffset?: number;
     onCreateOrder?: () => void;
+    canUseOrderActions?: (order: OrderListItem) => boolean;
+    onSellOrder?: (order: OrderListItem) => void;
+    onCancelOrder?: (order: OrderListItem) => void;
+    isOrderActionPending?: boolean;
 }
 
 const formatPhoneNumber = (phone: string | null | undefined) => {
@@ -52,6 +58,39 @@ const DeliveryBadge = ({ value, label }: { value: OrderListItem["where_deliver"]
         {label}
     </span>
 );
+
+const ActionButton = ({
+    label,
+    icon,
+    variant,
+    disabled,
+    onClick,
+}: {
+    label: string;
+    icon: React.ReactNode;
+    variant: "sell" | "cancel";
+    disabled?: boolean;
+    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}) => {
+    const variantClassName =
+        variant === "sell"
+            ? "border-emerald-400/35 bg-emerald-500/15 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-500 hover:text-white dark:text-emerald-200"
+            : "border-rose-400/35 bg-rose-500/15 text-rose-700 hover:border-rose-400 hover:bg-rose-500 hover:text-white dark:text-rose-200";
+
+    return (
+        <button
+            type="button"
+            disabled={disabled}
+            onClick={onClick}
+            aria-label={label}
+            title={label}
+            className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition-colors disabled:pointer-events-none disabled:opacity-60 ${variantClassName}`}
+        >
+            {icon}
+            <span className="hidden xl:inline">{label}</span>
+        </button>
+    );
+};
 
 const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -170,7 +209,17 @@ const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => st
     },
 ];
 
-const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0, onCreateOrder }: Props) => {
+const OrdersTable = ({
+    data,
+    isLoading,
+    onRowClick,
+    rowNumberOffset = 0,
+    onCreateOrder,
+    canUseOrderActions,
+    onSellOrder,
+    onCancelOrder,
+    isOrderActionPending = false,
+}: Props) => {
     const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
     const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
@@ -198,12 +247,68 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0, onCreat
             if (column.key === "createdAt") return { ...column, label: t("date") };
             return column;
         });
-        if (role === "market") {
-            return translatedColumns.filter((column) => column.key !== "market");
+        const visibleColumns = role === "market"
+            ? translatedColumns.filter((column) => column.key !== "market")
+            : translatedColumns;
+
+        if (!onSellOrder && !onCancelOrder) {
+            return visibleColumns;
         }
 
-        return translatedColumns;
-    }, [locale, role, rowNumberOffset, t]);
+        return [
+            ...visibleColumns,
+            {
+                key: "actions" as const,
+                label: t("actions", { ns: "common" }),
+                width: "150px",
+                className: "whitespace-nowrap",
+                render: (_: string, row: OrderListItem) => {
+                    if (!canUseOrderActions?.(row)) {
+                        return <span className="text-sm text-gray-400 dark:text-white/35">—</span>;
+                    }
+
+                    const stopAndRun =
+                        (handler?: (order: OrderListItem) => void) =>
+                            (event: React.MouseEvent<HTMLButtonElement>) => {
+                                event.stopPropagation();
+                                handler?.(row);
+                            };
+
+                    return (
+                        <div className="flex items-center gap-2">
+                            {onSellOrder && (
+                                <ActionButton
+                                    label={t("sell")}
+                                    icon={<CheckCircle size={14} />}
+                                    variant="sell"
+                                    disabled={isOrderActionPending}
+                                    onClick={stopAndRun(onSellOrder)}
+                                />
+                            )}
+                            {onCancelOrder && (
+                                <ActionButton
+                                    label={t("cancelOrderAction")}
+                                    icon={<XCircle size={14} />}
+                                    variant="cancel"
+                                    disabled={isOrderActionPending}
+                                    onClick={stopAndRun(onCancelOrder)}
+                                />
+                            )}
+                        </div>
+                    );
+                },
+            },
+        ];
+    }, [
+        canUseOrderActions,
+        isOrderActionPending,
+        locale,
+        onCancelOrder,
+        onSellOrder,
+        role,
+        rowNumberOffset,
+        t,
+    ]);
 
     if (isLoading) {
         return <TableSkeleton rows={8} columns={7} />;
@@ -299,7 +404,36 @@ const OrdersTable = ({ data, isLoading, onRowClick, rowNumberOffset = 0, onCreat
                     </div>
                 </div>
 
-                <ChevronRight size={18} className="text-gray-400" />
+                {canUseOrderActions?.(order) && (onSellOrder || onCancelOrder) ? (
+                    <div className="flex shrink-0 items-center gap-2">
+                        {onSellOrder && (
+                            <ActionButton
+                                label={t("sell")}
+                                icon={<CheckCircle size={14} />}
+                                variant="sell"
+                                disabled={isOrderActionPending}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onSellOrder(order);
+                                }}
+                            />
+                        )}
+                        {onCancelOrder && (
+                            <ActionButton
+                                label={t("cancelOrderAction")}
+                                icon={<XCircle size={14} />}
+                                variant="cancel"
+                                disabled={isOrderActionPending}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onCancelOrder(order);
+                                }}
+                            />
+                        )}
+                    </div>
+                ) : (
+                    <ChevronRight size={18} className="text-gray-400" />
+                )}
             </div>
         </div>
     );

@@ -143,7 +143,12 @@
   "tree": {
     "level": "{{level}}-daraja",
     "expand": "Ichki filiallarni ochish",
-    "collapse": "Ichki filiallarni yopish"
+    "collapse": "Ichki filiallarni yopish",
+    "childCount": "{{count}} ta ichki filial",
+    "showChildren": "Ko'rsatish",
+    "hideChildren": "Yopish",
+    "previousPage": "Oldingi filiallar",
+    "nextPage": "Keyingi filiallar"
   },
   "validation": {
     "minName": "Kamida 2 ta belgi",

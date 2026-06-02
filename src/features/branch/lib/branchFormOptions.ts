@@ -37,7 +37,7 @@ export const getParentBranchOptions = (
   excludeBranchId?: string,
 ) =>
   (branches ?? [])
-    .filter((branch) => branch.id !== excludeBranchId)
+    .filter((branch) => branch.id !== excludeBranchId && Number(branch.level ?? 0) < 2)
     .sort((left, right) => {
       const leftLevel = left.level ?? 0;
       const rightLevel = right.level ?? 0;
