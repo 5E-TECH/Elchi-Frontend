@@ -4,6 +4,7 @@ import {
   MessageSquare, CheckCircle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import Popup from "../../../../../shared/ui/Popup";
 
 type OrderItem = {
   id: string;
@@ -130,8 +131,8 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+84px)] pt-4 backdrop-blur-sm sm:items-center sm:px-0 sm:pb-0 sm:pt-0">
-      <div className="relative mx-0 flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl max-h-[calc(100dvh-118px)] dark:bg-gray-900 sm:mx-4 sm:max-h-[90vh]">
+    <Popup isShow={open} onClose={onClose}>
+      <div className="relative mx-3 flex w-[calc(100vw-24px)] max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl max-h-[calc(100dvh-32px)] dark:bg-gray-900 sm:mx-4 sm:max-h-[90vh]">
         {/* Header */}
         <div className="bg-green-500 px-5 pt-5 pb-4">
           <div className="flex items-center justify-between mb-3">
@@ -326,7 +327,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
           </button>
         </div>
       </div>
-    </div>
+    </Popup>
   );
 };
 
