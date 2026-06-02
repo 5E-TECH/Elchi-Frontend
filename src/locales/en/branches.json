@@ -143,7 +143,12 @@
   "tree": {
     "level": "Level {{level}}",
     "expand": "Expand child branches",
-    "collapse": "Collapse child branches"
+    "collapse": "Collapse child branches",
+    "childCount": "{{count}} child branches",
+    "showChildren": "Show",
+    "hideChildren": "Hide",
+    "previousPage": "Previous branches",
+    "nextPage": "Next branches"
   },
   "validation": {
     "minName": "At least 2 characters",

@@ -2,7 +2,7 @@ import { Button, Empty, Spin } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Building2, ChevronRight, GitBranch, Leaf, MapPin } from "lucide-react";
+import { ArrowRight, Building2, ChevronLeft, ChevronRight, GitBranch, Leaf, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BranchStatusBadge, type Branch } from "../../../entities/branch";
 import { DeleteBranchButton } from "../../../features/branch-delete";
@@ -23,6 +23,8 @@ const typeToneMap: Record<string, string> = {
   REGIONAL: "border-violet-400/42 bg-violet-400/12 text-violet-700 dark:text-violet-100",
   DISTRICT: "border-emerald-400/38 bg-emerald-400/12 text-emerald-700 dark:text-emerald-100",
 };
+
+const ROOT_CHILDREN_PAGE_SIZE = 5;
 
 const buildBranchTree = (branches: Branch[]) => {
   const nodeMap = new Map<string, BranchTreeNode>();
@@ -161,6 +163,32 @@ const BranchTreeNodeCard = ({
         </div>
       </button>
 
+      {onToggleChildren ? (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleChildren();
+          }}
+          className={`mt-3 flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-extrabold transition-all ${
+            isExpanded
+              ? "border-teal-400/45 bg-teal-400/12 text-teal-700 shadow-[0_8px_20px_rgba(20,184,166,0.14)] dark:text-teal-100"
+              : "border-main/45 bg-main/15 text-main shadow-[0_8px_22px_rgba(109,72,217,0.16)] hover:border-main hover:bg-main/20 dark:text-white"
+          }`}
+          aria-label={isExpanded ? t("tree.collapse") : t("tree.expand")}
+          title={isExpanded ? t("tree.collapse") : t("tree.expand")}
+        >
+          <span className="truncate">{t("tree.childCount", { count: node.children.length })}</span>
+          <span className="ml-2 inline-flex items-center gap-1">
+            {isExpanded ? t("tree.hideChildren") : t("tree.showChildren")}
+            <ChevronRight
+              size={15}
+              className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+            />
+          </span>
+        </button>
+      ) : null}
+
       <div className="mt-3 flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
         <Button
           size="small"
@@ -199,9 +227,21 @@ const BranchTreeItem = ({
   isRoot?: boolean;
   depth?: number;
 }) => {
+  const { t } = useTranslation("branches");
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
   const isRootChildrenPanel = isRoot && hasChildren && isExpanded;
+  const [rootChildrenPage, setRootChildrenPage] = useState(0);
+  const rootChildrenPageCount = isRootChildrenPanel
+    ? Math.max(1, Math.ceil(node.children.length / ROOT_CHILDREN_PAGE_SIZE))
+    : 1;
+  const safeRootChildrenPage = Math.min(rootChildrenPage, rootChildrenPageCount - 1);
+  const visibleChildren = isRootChildrenPanel
+    ? node.children.slice(
+        safeRootChildrenPage * ROOT_CHILDREN_PAGE_SIZE,
+        safeRootChildrenPage * ROOT_CHILDREN_PAGE_SIZE + ROOT_CHILDREN_PAGE_SIZE,
+      )
+    : node.children;
 
   return (
     <li className={`relative flex flex-col items-center ${isRoot ? "w-full" : depth === 1 ? "w-[15.5rem] shrink-0" : "w-full"}`}>
@@ -226,21 +266,46 @@ const BranchTreeItem = ({
           <div
             className={
               isRootChildrenPanel
-                ? "relative w-full rounded-2xl border border-border-soft bg-surface-elevated/70 px-4 py-7 dark:border-white/10 dark:bg-white/5 sm:px-6"
+                ? "relative w-full overflow-hidden rounded-2xl border border-border-soft bg-surface-elevated/70 px-3 py-6 dark:border-white/10 dark:bg-white/5 sm:px-4"
                 : "relative flex w-full justify-center"
             }
           >
+            {isRootChildrenPanel && rootChildrenPageCount > 1 ? (
+              <div className="mb-4 flex items-center justify-end gap-2">
+                <span className="rounded-full border border-border-soft bg-main-soft px-3 py-1 text-xs font-bold text-text-muted dark:border-white/10 dark:bg-white/8 dark:text-white/70">
+                  {safeRootChildrenPage + 1} / {rootChildrenPageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setRootChildrenPage((page) => Math.max(page - 1, 0))}
+                  disabled={safeRootChildrenPage === 0}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-soft bg-main-soft text-maindark transition-colors hover:border-main hover:text-main disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/8 dark:text-white"
+                  aria-label={t("tree.previousPage")}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRootChildrenPage((page) => Math.min(page + 1, rootChildrenPageCount - 1))}
+                  disabled={safeRootChildrenPage >= rootChildrenPageCount - 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-soft bg-main-soft text-maindark transition-colors hover:border-main hover:text-main disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/8 dark:text-white"
+                  aria-label={t("tree.nextPage")}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            ) : null}
             <div
               className={
                 isRootChildrenPanel
-                  ? "relative grid w-full grid-cols-[repeat(auto-fit,minmax(15.5rem,1fr))] items-start justify-items-center gap-x-8 gap-y-10 px-2"
+                  ? "relative grid w-full grid-cols-5 items-start justify-items-center gap-5 px-2 pt-1"
                   : "relative flex w-full flex-col items-center gap-8"
               }
             >
               {node.children.length > 1 && isRootChildrenPanel ? (
-                <span className="absolute -top-5 left-10 right-10 h-[7px] rounded-full bg-gradient-to-r from-transparent via-teal-300/45 to-transparent shadow-[0_0_16px_rgba(45,212,191,0.18)]" />
+                <span className="absolute left-6 right-6 top-0 h-[5px] rounded-full bg-gradient-to-r from-transparent via-teal-300/45 to-transparent shadow-[0_0_16px_rgba(45,212,191,0.18)]" />
               ) : null}
-              {node.children.map((child) => (
+              {visibleChildren.map((child) => (
                 <div
                   key={child.id}
                   className={

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookMarked, ListOrdered, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -7,6 +7,7 @@ import { message } from "antd";
 import Button from "../../shared/components/button";
 import HeaderName from "../../shared/components/headerName";
 import { useOrders } from "../../entities/order/api/orderApi";
+import { useOrders as useOrderActions } from "../../entities/orders";
 import { useMarkets } from "../../entities/markets";
 import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
 import OrderFilters, { ORDER_FILTER_KEYS } from "./list/OrderFilters";
@@ -24,9 +25,13 @@ import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
 import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
 import { isInactiveMarketStatus } from "../../shared/lib/marketStatus";
 import PageContainer from "../../shared/ui/PageContainer";
+import SellModal from "./list/courier/list/SellModal";
+import CancelModal from "./list/courier/list/CancelModal";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
+const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "PICKUP"]);
+const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
 const isOrderStatus = (value: string): value is OrderStatus =>
   [
     "created",
@@ -116,15 +121,20 @@ const Orders = () => {
   const { t } = useTranslation("orders");
   const navigate = useNavigate();
   const { getOrders } = useOrders();
+  const { SellOrder, PartlySellOrder, CancelOrder } = useOrderActions();
   const { getMarkets } = useMarkets();
   const { getAllParams } = useQueryParams();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [sellOrder, setSellOrder] = useState<OrderListItem | null>(null);
+  const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
 
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const branchType = getUserBranchType(currentUser);
   const canCreateOrder = !(role === "manager" && branchType === "REGIONAL");
+  const canUseManagerTableActions =
+    role === "manager" && Boolean(branchType && MANAGER_TABLE_ACTION_BRANCH_TYPES.has(branchType));
   const canFilterByBranch = role === "admin" || role === "superadmin";
 
 
@@ -323,6 +333,98 @@ const Orders = () => {
     });
   };
 
+  const canUseOrderActions = useCallback(
+    (order: OrderListItem) =>
+      canUseManagerTableActions && TABLE_ACTION_STATUSES.has(order.status),
+    [canUseManagerTableActions],
+  );
+
+  const selectedActionOrder = sellOrder ?? cancelOrder;
+  const selectedActionModalOrder = useMemo(() => {
+    if (!selectedActionOrder) return null;
+
+    const orderWithProducts = selectedActionOrder as OrderListItem & {
+      items?: Array<
+        OrderListItem["items"][number] & {
+          product?: { id?: string; name?: string; image_url?: string | null } | null;
+        }
+      >;
+    };
+
+    return {
+      id: selectedActionOrder.id,
+      created_at: selectedActionOrder.createdAt,
+      status: selectedActionOrder.status,
+      total_price: selectedActionOrder.total_price,
+      where_deliver: selectedActionOrder.where_deliver,
+      product_quantity: selectedActionOrder.product_quantity,
+      market: { name: selectedActionOrder.market?.name ?? "—" },
+      customer: {
+        name: selectedActionOrder.customer?.name ?? "—",
+        phone_number: selectedActionOrder.customer?.phone_number ?? "",
+      },
+      district: { name: selectedActionOrder.district?.name ?? "—" },
+      region: { name: selectedActionOrder.district?.region?.name ?? "—" },
+      items: (orderWithProducts.items ?? []).map((item) => {
+        const orderItem = item as OrderListItem["items"][number] & {
+          product?: { id?: string; name?: string; image_url?: string | null } | null;
+        };
+        const productId = orderItem.product?.id ?? orderItem.product_id;
+
+        return {
+          id: orderItem.id,
+          quantity: orderItem.quantity,
+          product: {
+            id: productId,
+            name: orderItem.product?.name ?? `#${productId}`,
+            image_url: orderItem.product?.image_url ?? null,
+          },
+        };
+      }),
+    };
+  }, [selectedActionOrder]);
+
+  const handleSellOrder = useCallback(
+    (orderId: string, payload: { comment: string; extraCost: number }) => {
+      SellOrder.mutate(
+        { orderId, data: payload },
+        { onSuccess: () => setSellOrder(null) },
+      );
+    },
+    [SellOrder],
+  );
+
+  const handlePartlySellOrder = useCallback(
+    (
+      orderId: string,
+      payload: {
+        order_item_info: { product_id: string; quantity: number }[];
+        totalPrice: number;
+        extraCost: number;
+        comment: string;
+      },
+    ) => {
+      PartlySellOrder.mutate(
+        { orderId, data: payload },
+        { onSuccess: () => setSellOrder(null) },
+      );
+    },
+    [PartlySellOrder],
+  );
+
+  const handleCancelOrder = useCallback(
+    (
+      orderId: string,
+      payload: { comment: string; extraCost: number; paidAmount: number },
+    ) => {
+      CancelOrder.mutate(
+        { orderId, data: payload },
+        { onSuccess: () => setCancelOrder(null) },
+      );
+    },
+    [CancelOrder],
+  );
+
   const handleExportOrders = async () => {
     if (isExporting) return;
 
@@ -446,6 +548,12 @@ const Orders = () => {
           rowNumberOffset={(currentPage - 1) * itemsPerPage}
           onRowClick={(order) => navigate(`edit/${order.id}`)}
           onCreateOrder={canCreateOrder ? handleOpenNewOrder : undefined}
+          canUseOrderActions={canUseOrderActions}
+          onSellOrder={canUseManagerTableActions ? setSellOrder : undefined}
+          onCancelOrder={canUseManagerTableActions ? setCancelOrder : undefined}
+          isOrderActionPending={
+            SellOrder.isPending || PartlySellOrder.isPending || CancelOrder.isPending
+          }
         />
 
         {/* Pagination */}
@@ -479,6 +587,21 @@ const Orders = () => {
         secondaryLabelKey="phone_number"
         placeholder={t("searchMarket")}
         className={isMarketsLoading ? "pointer-events-none opacity-90" : ""}
+      />
+      <SellModal
+        order={sellOrder ? selectedActionModalOrder : null}
+        open={!!sellOrder}
+        onClose={() => setSellOrder(null)}
+        onSell={handleSellOrder}
+        onPartlySell={handlePartlySellOrder}
+        isLoading={SellOrder.isPending || PartlySellOrder.isPending}
+      />
+      <CancelModal
+        order={cancelOrder ? selectedActionModalOrder : null}
+        open={!!cancelOrder}
+        onClose={() => setCancelOrder(null)}
+        onCancel={handleCancelOrder}
+        isLoading={CancelOrder.isPending}
       />
     </PageContainer>
   );

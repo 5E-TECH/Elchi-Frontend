@@ -143,7 +143,12 @@
   "tree": {
     "level": "Уровень {{level}}",
     "expand": "Открыть дочерние филиалы",
-    "collapse": "Скрыть дочерние филиалы"
+    "collapse": "Скрыть дочерние филиалы",
+    "childCount": "{{count}} дочерних филиалов",
+    "showChildren": "Показать",
+    "hideChildren": "Скрыть",
+    "previousPage": "Предыдущие филиалы",
+    "nextPage": "Следующие филиалы"
   },
   "validation": {
     "minName": "Минимум 2 символа",
