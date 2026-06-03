@@ -1,7 +1,6 @@
 import { memo, useMemo } from 'react';
 import {
   Cell,
-  ResponsiveContainer,
   Tooltip,
   PieChart,
   Pie,
@@ -34,12 +33,14 @@ interface CustomTooltipProps {
 }
 
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  const { t } = useTranslation("payments");
+
   if (active && payload?.length) {
     return (
       <div className="bg-[#1C1A28] border border-[#2E2B3E] rounded-xl px-3 py-2 text-xs text-white shadow-lg">
         <p className="font-semibold">{payload[0].payload.name}</p>
         <p className="text-slate-300 mt-0.5">
-          {formatFinancialAmount(payload[0].value, "comma")} UZS
+          {formatFinancialAmount(payload[0].value, "comma")} {t("currency")}
         </p>
       </div>
     );
@@ -69,6 +70,14 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
 
   const maxAmount = useMemo(
     () => Math.max(...chartData.map((item) => Math.abs(item.amount)), 1),
+    [chartData],
+  );
+  const pieData = useMemo(
+    () =>
+      chartData.map((item) => ({
+        ...item,
+        value: Math.abs(item.amount),
+      })),
     [chartData],
   );
 
@@ -130,29 +139,30 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
 
         {/* Donut Chart */}
         <div className="rounded-2xl border border-glass-border bg-primary p-4 dark:bg-maindark">
-          <p className="mb-3 text-sm font-semibold text-white">Taqsimot</p>
+          <p className="mb-3 text-sm font-semibold text-white">
+            {t("financialBalanceDistribution")}
+          </p>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
             <div className="h-32 w-32 shrink-0 self-center sm:self-auto">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart width={128} height={128}>
                   <Pie
-                    data={chartData}
+                    data={pieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={36}
                     outerRadius={56}
                     paddingAngle={2}
-                    dataKey="amount"
+                    dataKey="value"
                     strokeWidth={0}
+                    isAnimationActive={false}
                   >
-                    {chartData.map((entry) => (
+                    {pieData.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} opacity={0.9} />
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
                 </PieChart>
-              </ResponsiveContainer>
             </div>
 
             <div className="w-full flex-1 space-y-2.5">
@@ -169,7 +179,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
                     <span className="text-xs text-slate-300">{item.name}</span>
                   </div>
                   <span className="text-right text-xs font-semibold tabular-nums text-white">
-                    {formatFinancialAmount(item.amount, "comma")} UZS
+                    {formatFinancialAmount(item.amount, "comma")} {t("currency")}
                   </span>
                 </div>
               ))}
@@ -205,7 +215,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
             isNegative ? "text-red-100" : "text-emerald-100"
           }`}
         >
-          {formatFinancialAmount(netTotal, "comma")} UZS
+          {formatFinancialAmount(netTotal, "comma")} {t("currency")}
         </p>
       </div>
     </div>

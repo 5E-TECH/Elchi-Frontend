@@ -128,6 +128,7 @@
   "financialBalanceCouriers": "Couriers",
   "financialBalanceCouriersMoney": "(+) Our money",
   "financialBalanceIndicators": "Financial indicators",
+  "financialBalanceDistribution": "Distribution",
   "financialBalanceTotal": "Total balance",
   "financialBalanceTotalFormula": "Cashbox + Couriers + Markets",
   "financialBalanceComingSoon": "UI for this section will be added in the next stage.",

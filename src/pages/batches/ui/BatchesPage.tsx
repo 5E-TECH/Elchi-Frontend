@@ -92,7 +92,7 @@ const BatchCard = memo(({
     className="group relative cursor-pointer overflow-hidden rounded-xl border border-emerald-300/20 bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-sm shadow-emerald-950/10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-950/20"
   >
     <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,transparent_38%,rgba(255,255,255,0.09)_50%,transparent_62%)] opacity-0 transition-opacity group-hover:opacity-100" />
-    <div className="relative z-10 flex min-h-[138px] flex-col gap-2.5 p-3.5">
+    <div className="relative z-10 flex min-h-34.5 flex-col gap-2.5 p-3.5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/18 text-white backdrop-blur-sm">
           <PackageSearch size={16} />

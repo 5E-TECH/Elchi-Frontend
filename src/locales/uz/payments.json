@@ -128,6 +128,7 @@
   "financialBalanceCouriers": "Kuryerlar",
   "financialBalanceCouriersMoney": "(+) Bizning pul",
   "financialBalanceIndicators": "Moliyaviy ko'rsatkichlar",
+  "financialBalanceDistribution": "Taqsimot",
   "financialBalanceTotal": "Umumiy balans",
   "financialBalanceTotalFormula": "Kassa + Kuryerlar + Marketlar",
   "financialBalanceComingSoon": "Bu bo'lim uchun UI keyingi bosqichda qo'shiladi.",

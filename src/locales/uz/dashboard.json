@@ -35,6 +35,8 @@
     "to": "Tugash"
   },
   "currency_value": "{{value}} UZS",
+  "currency": "UZS",
+  "currency_sum": "so'm",
   "cards": {
     "total_orders": "Jami buyurtmalar",
     "sold": "Sotilgan",

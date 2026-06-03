@@ -76,7 +76,7 @@ const CashboxActionFormCard = ({
   onSubmit,
 }: CashboxActionFormCardProps) => {
   return (
-    <div className={`${sectionClassName} w-full max-w-[540px]`}>
+    <div className={`${sectionClassName} w-full max-w-135`}>
       <div className={`rounded-t-[1.35rem] bg-linear-to-r ${actionGradient} px-4 py-3`}>
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/16 text-primary shadow-inner">
@@ -158,7 +158,7 @@ const CashboxActionFormCard = ({
                   required
                   loading={marketLoading}
                   error={errors.marketId?.message}
-                  className="!border-[color:var(--color-border-soft)] !bg-[color:var(--color-card-surface-strong)] !py-3 !text-sm !font-semibold dark:!border-white/10 dark:!bg-white/[0.055] dark:!text-primary"
+                  className="border-(--color-border-soft)! !bg-[color:var(--color-card-surface-strong)] !py-3 !text-sm !font-semibold dark:!border-white/10 dark:!bg-white/[0.055] dark:!text-primary"
                 />
               )}
             />
@@ -166,7 +166,7 @@ const CashboxActionFormCard = ({
         )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-[color:var(--color-table-label)] dark:text-[color:var(--color-table-label-dark)]">
+          <label className="mb-1.5 block text-xs font-bold text-(--color-table-label) dark:text-[color:var(--color-table-label-dark)]">
             {commentLabel}
           </label>
           <textarea
