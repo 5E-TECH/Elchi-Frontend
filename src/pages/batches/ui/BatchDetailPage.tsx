@@ -126,7 +126,7 @@ const BatchDetailPage = () => {
   if (isDetailLoading || isRemainingLoading) {
     return (
       <PageContainer>
-        <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
+        <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
           Yuklanmoqda...
         </div>
       </PageContainer>
@@ -136,7 +136,7 @@ const BatchDetailPage = () => {
   if ((isDetailError && isRemainingError) || !batch) {
     return (
       <PageContainer>
-        <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
+        <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
           Paket topilmadi
         </div>
       </PageContainer>
@@ -161,7 +161,7 @@ const BatchDetailPage = () => {
 
       <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
         <div className="space-y-4">
-          <section className="rounded-[22px] border border-[color:var(--color-border-soft)] bg-primary p-3.5 shadow-sm dark:bg-primarydark">
+          <section className="rounded-[22px] border border-(--color-border-soft) bg-primary p-3.5 shadow-sm dark:bg-primarydark">
             <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {[
                 {
@@ -187,7 +187,7 @@ const BatchDetailPage = () => {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="min-w-0 rounded-xl border border-[color:var(--color-border-soft)] bg-white/60 px-3 py-2.5 dark:border-white/10 dark:bg-white/[0.04]"
+                  className="min-w-0 rounded-xl border border-(--color-border-soft) bg-white/60 px-3 py-2.5 dark:border-white/10 dark:bg-white/[0.04]"
                 >
                   <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-white/55">
                     {item.icon}
@@ -238,7 +238,7 @@ const BatchDetailPage = () => {
             ) : null}
           </section>
 
-          <section className="rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-sm dark:bg-primarydark">
+          <section className="rounded-[28px] border border-(--color-border-soft) bg-primary p-5 shadow-sm dark:bg-primarydark">
             <h3 className="mb-5 text-lg font-black text-maindark dark:text-white">Tarix</h3>
             {batch.history.length ? (
               <div className="relative space-y-5 pl-7 before:absolute before:bottom-2 before:left-[9px] before:top-2 before:w-px before:bg-main/30">
@@ -253,19 +253,19 @@ const BatchDetailPage = () => {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] px-4 py-8 text-center text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-white/60">
+              <div className="rounded-2xl border border-dashed border-(--color-border-soft) px-4 py-8 text-center text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-white/60">
                 Tarix hozircha mavjud emas
               </div>
             )}
           </section>
         </div>
 
-        <aside className="h-max rounded-[22px] border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-primarydark">
+        <aside className="h-max rounded-[22px] border border-(--color-border-soft) bg-primary p-4 shadow-sm dark:bg-primarydark">
           <div className="mb-3 flex items-center gap-2 text-base font-black text-maindark dark:text-white">
             <QrCode size={17} />
             QR kod
           </div>
-          <div className="rounded-[20px] border border-dashed border-[color:var(--color-border-soft)] bg-white p-3.5 dark:bg-white">
+          <div className="rounded-[20px] border border-dashed border-(--color-border-soft) bg-white p-3.5 dark:bg-white">
             <BatchQrCode
               token={batch.token}
               fallbackLabel={batch.id}

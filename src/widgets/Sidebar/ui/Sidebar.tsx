@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo } from "react";
+import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
@@ -11,7 +11,6 @@ import LogoIcon from "../../../shared/assets/logo qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import LogoIcondark from "../../../shared/assets/logo oq.png";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
-import { preloadRoutes } from "../../../app/lib/routePreload";
 
 const Sidebar = () => {
   const { t } = useTranslation(["sidebar"]);
@@ -38,19 +37,6 @@ const Sidebar = () => {
     () => navItems.map((item) => ({ ...item, label: t(item.label) })),
     [navItems, t],
   );
-
-  useEffect(() => {
-    const paths = links.map((link) => link.to);
-    const schedulePreload = () => preloadRoutes(paths);
-
-    if (typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(schedulePreload, { timeout: 1500 });
-      return () => window.cancelIdleCallback(idleId);
-    }
-
-    const timeoutId = globalThis.setTimeout(schedulePreload, 800);
-    return () => globalThis.clearTimeout(timeoutId);
-  }, [links]);
 
   // ─── Logo rasmlarini tanlash ──────────────────────────────────────────────
   const currentLogoText = isDarkMode ? LogoTextdark : LogoText;
