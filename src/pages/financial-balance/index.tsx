@@ -49,6 +49,7 @@ const FinancialBalance = () => {
   const { getFinancialBalance } = useCashBox();
   const { data: response, isLoading } = getFinancialBalance();
   const data = normalizeFinancialBalance(response);
+  const currencyLabel = t("currency");
   const [activeTab, setActiveTab] = useState<"overview" | "history" | "analysis">("overview");
 
   const total = data.currentSituation;
@@ -142,7 +143,7 @@ const FinancialBalance = () => {
                   {formatFinancialAmount(total)}
                 </p>
               )}
-              <p className="text-white/50 text-xs tracking-widest mt-1">UZS</p>
+              <p className="text-white/50 text-xs tracking-widest mt-1">{currencyLabel}</p>
             </div>
           </div>
         </div>
@@ -186,7 +187,7 @@ const FinancialBalance = () => {
                 </p>
               )}
               <p className="text-[11px] text-maindark/40 dark:text-slate-500 tracking-widest mt-1">
-                UZS
+                {currencyLabel}
               </p>
 
               <div className="mt-2.5 h-0.5 rounded-full bg-gray-200 dark:bg-white/5">

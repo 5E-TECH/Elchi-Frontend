@@ -91,6 +91,7 @@ const toSourceTypeLabel = (value: string, t: (key: string) => string) => {
 
 const HistoryTab = () => {
   const { t } = useTranslation("payments");
+  const currencyLabel = t("currency");
   const { getFinanceHistory } = useCashBox();
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "payments",
@@ -207,7 +208,7 @@ const HistoryTab = () => {
             }`}
           >
             {value < 0 ? "-" : "+"}
-            {toDisplayAmount(Math.abs(value))} UZS
+            {toDisplayAmount(Math.abs(value))} {currencyLabel}
           </span>
         ),
       },
@@ -217,7 +218,7 @@ const HistoryTab = () => {
         width: "190px",
         render: (value) => (
           <span className="block whitespace-nowrap text-sm font-medium text-gray-700 dark:text-white/80">
-            {toDisplayAmount(value)} UZS
+            {toDisplayAmount(value)} {currencyLabel}
           </span>
         ),
       },
@@ -227,12 +228,12 @@ const HistoryTab = () => {
         width: "190px",
         render: (value) => (
           <span className="block whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-            {toDisplayAmount(value)} UZS
+            {toDisplayAmount(value)} {currencyLabel}
           </span>
         ),
       },
     ],
-    [pagination.limit, pagination.page, t],
+    [currencyLabel, pagination.limit, pagination.page, t],
   );
 
   const sourceTypeOptions = useMemo(
