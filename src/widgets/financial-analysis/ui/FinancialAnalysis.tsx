@@ -159,7 +159,7 @@ const ComboVariant = ({ data }: { data: Array<{ date: string; revenue: number }>
 // ─── FinanceCard ──────────────────────────────────────────────────────────────
 
 const FinanceCard = memo(({
-  title, subtitle, value, currency = "UZS",
+  title, subtitle, value, currency,
   valueLabel, trend, trendValue, trendUp = false,
   compareLabel, compareValue, icon, variant,
 }: FinanceCardProps) => {
