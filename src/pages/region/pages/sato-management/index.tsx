@@ -1,12 +1,14 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { message } from "antd";
-import { ArrowLeft, MoveRight, Search } from "lucide-react";
+import { MoveRight, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../../app/config/store";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
 import PageContainer from "../../../../shared/ui/PageContainer";
+import BackButton from "../../../../shared/ui/BackButton";
 
 type District = {
   id: string;
@@ -65,7 +67,7 @@ const normalizeRegions = (payload: unknown): Region[] => {
 };
 
 const RegionSatoManagementPage = () => {
-  const navigate = useNavigate();
+  const { t } = useTranslation("region");
   const role = useSelector((state: RootState) => state.role.role);
   const canAccess = role === "superadmin" || role === "admin";
 
@@ -81,7 +83,7 @@ const RegionSatoManagementPage = () => {
       const res = await api.get(API_ENDPOINTS.REGIONS.BASE);
       setRegions(normalizeRegions(res.data));
     } catch {
-      message.error("Viloyatlar ro'yxatini yuklab bo'lmadi");
+      message.error(t("sato.loadError"));
       setRegions([]);
     } finally {
       setLoading(false);
@@ -142,9 +144,9 @@ const RegionSatoManagementPage = () => {
 
     try {
       await api.patch(API_ENDPOINTS.DISTRICTS.BY_ID(districtId), { assigned_region: toRegionId });
-      message.success("Tuman boshqa viloyatga o'tkazildi");
+      message.success(t("sato.moveSuccess"));
     } catch {
-      message.error("O'tkazishda xatolik yuz berdi");
+      message.error(t("sato.moveError"));
       await fetchRegions();
     } finally {
       setMovingId(null);
@@ -158,30 +160,23 @@ const RegionSatoManagementPage = () => {
 
   return (
     <PageContainer>
-        <button
-          type="button"
-          onClick={() => navigate("/regions")}
-          className="mb-4 inline-flex items-center gap-2 rounded-xl border border-[color:var(--color-border-soft)] bg-primary px-4 py-2 text-sm font-medium text-main dark:text-primary"
-        >
-          <ArrowLeft size={16} />
-          Orqaga
-        </button>
+        <BackButton to="/regions" className="mb-4 h-10 min-w-10 rounded-xl px-3" />
 
         <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 md:p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-xl font-bold text-main dark:text-primary">Tumanlarni viloyatlar bo'yicha boshqarish</h1>
+              <h1 className="text-xl font-bold text-main dark:text-primary">{t("sato.title")}</h1>
               <p className="mt-1 text-sm text-[color:var(--color-text-muted)]">
-                Tumanni ushlab olib kerakli viloyat ustiga tashlang
+                {t("sato.description")}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar px-3 py-2 text-sm text-main dark:text-primary">
-                Viloyatlar: <span className="font-semibold">{stats.totalRegions}</span>
+                {t("sato.regionsCount")}: <span className="font-semibold">{stats.totalRegions}</span>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar px-3 py-2 text-sm text-main dark:text-primary">
-                Tumanlar: <span className="font-semibold">{stats.totalDistricts}</span>
+                {t("sato.districtsCount")}: <span className="font-semibold">{stats.totalDistricts}</span>
               </div>
             </div>
           </div>
@@ -191,14 +186,14 @@ const RegionSatoManagementPage = () => {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Tuman yoki viloyat qidirish..."
+              placeholder={t("sato.searchPlaceholder")}
               className="w-full bg-transparent text-sm text-main outline-none placeholder:text-[color:var(--color-text-muted)] dark:text-primary"
             />
           </div>
 
           {loading ? (
             <div className="mt-4 rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-4 text-sm text-[color:var(--color-text-muted)]">
-              Yuklanmoqda...
+              {t("common:loading")}
             </div>
           ) : (
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -217,14 +212,14 @@ const RegionSatoManagementPage = () => {
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="truncate text-sm font-semibold text-main dark:text-primary">{region.name}</div>
                     <div className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-[color:var(--color-text-muted)]">
-                      {region.assignedDistricts.length} ta
+                      {t("sato.districtCount", { count: region.assignedDistricts.length })}
                     </div>
                   </div>
 
                   <div className="max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
                     {region.assignedDistricts.length === 0 ? (
                       <div className="rounded-lg border border-dashed border-[color:var(--color-border-soft)] bg-primary px-2 py-3 text-center text-xs text-[color:var(--color-text-muted)]">
-                        Tuman biriktirilmagan
+                        {t("sato.noDistricts")}
                       </div>
                     ) : (
                       region.assignedDistricts.map((district) => {
@@ -247,7 +242,7 @@ const RegionSatoManagementPage = () => {
                             <span className="truncate pr-2 text-[13px] font-medium text-main dark:text-primary">{district.name}</span>
                             <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-[color:var(--color-text-muted)]">
                               <MoveRight size={14} />
-                              {isMoving ? "Saqlanmoqda..." : "Ko'chirish"}
+                              {isMoving ? t("sato.saving") : t("sato.move")}
                             </span>
                           </div>
                         );
