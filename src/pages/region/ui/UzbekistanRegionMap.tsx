@@ -4,6 +4,7 @@ import Highcharts from "highcharts/highmaps";
 import HighchartsReact from "highcharts-react-official";
 import uzTopology from "@highcharts/map-collection/countries/uz/uz-all.topo.json";
 import { CheckCircle2, Clock3, Loader2, MapPin, Package, Phone, TrendingUp, Users, Wallet, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 
@@ -143,20 +144,44 @@ const UzbekistanRegionMap = ({
   startDate?: string;
   endDate?: string;
 }) => {
+  const { t } = useTranslation("region");
   const [mapOptions, setMapOptions] = useState<Highcharts.Options | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<RegionDetailInfo | null>(null);
+  const labels = useMemo(
+    () => ({
+      low: t("map.legend.low"),
+      medium: t("map.legend.medium"),
+      high: t("map.legend.high"),
+      veryHigh: t("map.legend.veryHigh"),
+      orders: t("map.metrics.orders"),
+      delivered: t("map.metrics.delivered"),
+      cancelled: t("map.metrics.cancelled"),
+      success: t("map.metrics.success"),
+      pending: t("map.metrics.pending"),
+      revenue: t("map.metrics.revenue"),
+      districts: t("map.metrics.districts"),
+      couriers: t("map.metrics.couriers"),
+      clickForDetails: t("map.clickForDetails"),
+      seriesName: t("map.seriesName"),
+      loadingError: t("map.loadingError"),
+      unknown: t("unknown"),
+      unknownDistrict: t("unknownDistrict"),
+      currencySum: t("currencySum"),
+    }),
+    [t],
+  );
   const legendItems = useMemo(
     () => [
-      { name: "Kam", color: isDarkMode ? "#334155" : "#d1fae5" },
-      { name: "O'rtacha", color: isDarkMode ? "#14532d" : "#86efac" },
-      { name: "Ko'p", color: isDarkMode ? "#15803d" : "#22c55e" },
-      { name: "Juda ko'p", color: isDarkMode ? "#166534" : "#15803d" },
+      { name: labels.low, color: isDarkMode ? "#334155" : "#d1fae5" },
+      { name: labels.medium, color: isDarkMode ? "#14532d" : "#86efac" },
+      { name: labels.high, color: isDarkMode ? "#15803d" : "#22c55e" },
+      { name: labels.veryHigh, color: isDarkMode ? "#166534" : "#15803d" },
     ],
-    [isDarkMode],
+    [isDarkMode, labels.high, labels.low, labels.medium, labels.veryHigh],
   );
 
   const computedSummary = useMemo(() => {
@@ -271,7 +296,7 @@ const UzbekistanRegionMap = ({
         (courierTotalOrders > 0 ? Math.round((courierDelivered / courierTotalOrders) * 100) : 0);
       return {
         id: String(item?.id ?? idx + 1),
-        name: String(item?.name ?? item?.full_name ?? "Noma'lum"),
+        name: String(item?.name ?? item?.full_name ?? labels.unknown),
         phone: String(item?.phone ?? item?.phone_number ?? "—"),
         totalOrders: courierTotalOrders,
         deliveredOrders: courierDelivered,
@@ -285,7 +310,7 @@ const UzbekistanRegionMap = ({
     const districts = districtsSource.map((item: any, idx: number) => {
       return {
         id: String(item?.id ?? idx + 1),
-        name: String(item?.name ?? "Noma'lum tuman"),
+        name: String(item?.name ?? labels.unknownDistrict),
         satoCode: item?.sato_code ? String(item.sato_code) : undefined,
         totalOrders: toNum(item?.totalOrders ?? item?.ordersCount ?? item?.orders_count, 0),
         successRate: toNum(item?.successRate ?? item?.success_rate, 0),
@@ -328,7 +353,7 @@ const UzbekistanRegionMap = ({
       });
       setSelectedRegion(normalizeDetail(response.data, point));
     } catch (error: any) {
-      setDetailError(error?.response?.data?.message ?? "Viloyat ma'lumotini yuklab bo'lmadi");
+      setDetailError(error?.response?.data?.message ?? labels.loadingError);
       setSelectedRegion(normalizeDetail({}, point));
     } finally {
       setIsDetailLoading(false);
@@ -428,25 +453,25 @@ const UzbekistanRegionMap = ({
         from: 0,
         to: q1,
         color: palette.low,
-        name: "Kam",
+        name: labels.low,
       },
       {
         from: q1,
         to: q2,
         color: palette.medium,
-        name: "O'rtacha",
+        name: labels.medium,
       },
       {
         from: q2,
         to: q3,
         color: palette.high,
-        name: "Ko'p",
+        name: labels.high,
       },
       {
         from: q3,
         to: rangeMax,
         color: palette.xhigh,
-        name: "Juda ko'p",
+        name: labels.veryHigh,
       },
     ];
 
@@ -503,14 +528,14 @@ const UzbekistanRegionMap = ({
           ">
             <div style="font-size:18px;font-weight:800;line-height:1.15;margin-bottom:10px;color:${mapTheme.tooltipText};">${p.regionName || p.name}</div>
             <div style="display:grid;row-gap:5px;font-size:14px;line-height:1.3;">
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Buyurtmalar:</span><b style="color:#60a5fa;">${totalOrders}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Yetkazilgan:</span><b style="color:#34d399;">${delivered}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Bekor qilingan:</span><b style="color:#fb7185;">${cancelled}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Muvaffaqiyat:</span><b style="color:#f472b6;">${successRate}%</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Jarayonda:</span><b style="color:#fbbf24;">${pending}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Tushum:</span><b style="color:#c084fc;">${revenue} so'm</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Tumanlar:</span><b>${districts}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">Kuryerlar:</span><b>${couriers}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.orders}:</span><b style="color:#60a5fa;">${totalOrders}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.delivered}:</span><b style="color:#34d399;">${delivered}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.cancelled}:</span><b style="color:#fb7185;">${cancelled}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.success}:</span><b style="color:#f472b6;">${successRate}%</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.pending}:</span><b style="color:#fbbf24;">${pending}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.revenue}:</span><b style="color:#c084fc;">${revenue} ${labels.currencySum}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.districts}:</span><b>${districts}</b></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.couriers}:</span><b>${couriers}</b></div>
             </div>
             <div style="
               margin-top:10px;
@@ -519,14 +544,14 @@ const UzbekistanRegionMap = ({
               color:${mapTheme.tooltipMuted};
               font-size:11px;
               font-weight:600;
-            ">Batafsil ko'rish uchun bosing</div>
+            ">${labels.clickForDetails}</div>
           </div>`;
         },
       },
       series: [
         {
           type: "map",
-          name: "Buyurtmalar",
+          name: labels.seriesName,
           data: mapData,
           joinBy: "hc-key",
           borderColor: palette.stroke,
@@ -580,14 +605,14 @@ const UzbekistanRegionMap = ({
         },
       ],
     });
-  }, [regions, isDarkMode]);
+  }, [regions, isDarkMode, labels]);
 
   if (!mapOptions) {
     return (
       <div className="relative w-full h-[500px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#e5e7eb] via-[#d1d5db] to-[#e5e7eb] animate-pulse">
         <div className="flex flex-col items-center gap-2 z-10">
           <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
-          <span className="text-gray-500">Yuklanmoqda...</span>
+          <span className="text-gray-500">{t("common:loading")}</span>
         </div>
       </div>
     );
@@ -602,7 +627,7 @@ const UzbekistanRegionMap = ({
               <Package className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Jami buyurtmalar</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t("map.metrics.totalOrders")}</p>
               <p className="text-lg font-bold text-blue-600">
                 {(summary?.totalOrders ?? computedSummary.orders).toLocaleString()}
               </p>
@@ -615,7 +640,7 @@ const UzbekistanRegionMap = ({
               <TrendingUp className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Yetkazilgan</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t("map.metrics.delivered")}</p>
               <p className="text-lg font-bold text-emerald-600">
                 {(summary?.totalDelivered ?? 0).toLocaleString()}
               </p>
@@ -628,7 +653,7 @@ const UzbekistanRegionMap = ({
               <MapPin className="h-5 w-5 text-indigo-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Bekor qilingan</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t("map.metrics.cancelled")}</p>
               <p className="text-lg font-bold text-indigo-600">
                 {(summary?.totalCancelled ?? 0).toLocaleString()}
               </p>
@@ -641,7 +666,7 @@ const UzbekistanRegionMap = ({
               <Package className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Umumiy tushum</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t("map.metrics.totalRevenue")}</p>
               <p className="text-lg font-bold text-purple-600">
                 {(summary?.totalRevenue ?? 0).toLocaleString()}
               </p>
@@ -685,7 +710,7 @@ const UzbekistanRegionMap = ({
         width={920}
         centered
         destroyOnHidden
-        title={selectedRegion?.name ?? "Viloyat ma'lumotlari"}
+        title={selectedRegion?.name ?? t("map.regionDetails")}
       >
         {isDetailLoading ? (
           <div className="flex items-center justify-center py-16">
@@ -699,8 +724,8 @@ const UzbekistanRegionMap = ({
                 background: "linear-gradient(90deg, var(--color-main), var(--color-purple))",
               }}
             >
-              <div className="text-2xl font-black">{selectedRegion?.name ?? "Viloyat"}</div>
-              <div className="text-sm opacity-85">Batafsil statistika</div>
+              <div className="text-2xl font-black">{selectedRegion?.name ?? t("map.region")}</div>
+              <div className="text-sm opacity-85">{t("map.detailedStatistics")}</div>
             </div>
 
             {detailError ? (
@@ -712,32 +737,32 @@ const UzbekistanRegionMap = ({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-main"><Package size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">Jami buyurtmalar</div>
+                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.totalOrders")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.totalOrders ?? 0}</div>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-emerald-600"><CheckCircle2 size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">Yetkazilgan</div>
+                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.delivered")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.deliveredOrders ?? 0}</div>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-rose-600"><XCircle size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">Bekor qilingan</div>
+                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.cancelled")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.cancelledOrders ?? 0}</div>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-amber-600"><Clock3 size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">Jarayonda</div>
+                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.pending")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.pendingOrders ?? 0}</div>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-fuchsia-600"><Wallet size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">Jami tushum</div>
-                <div className="text-xl font-black text-main dark:text-primary">{(selectedRegion?.totalRevenue ?? 0).toLocaleString()} so'm</div>
+                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.totalRevenue")}</div>
+                <div className="text-xl font-black text-main dark:text-primary">{(selectedRegion?.totalRevenue ?? 0).toLocaleString()} {t("currencySum")}</div>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-red-500"><TrendingUp size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">Muvaffaqiyat</div>
+                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.success")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.successRate ?? 0}%</div>
               </div>
             </div>
@@ -745,7 +770,7 @@ const UzbekistanRegionMap = ({
             <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4">
               <div className="mb-3 flex items-center gap-2 text-xl font-black text-main dark:text-primary">
                 <Users size={20} className="text-amber-500" />
-                Viloyat asosiy kuryeri ({selectedRegion?.couriers?.length ?? 0})
+                {t("map.mainCouriers", { count: selectedRegion?.couriers?.length ?? 0 })}
               </div>
               {selectedRegion?.couriers?.length ? (
                 <div className="space-y-2">
@@ -762,13 +787,13 @@ const UzbekistanRegionMap = ({
                             </div>
                           </div>
                           {courier.isMain ? (
-                            <span className="rounded-full bg-[color:var(--color-warning-soft)] px-2 py-0.5 text-xs text-amber-600">Viloyat asosiy kuryeri</span>
+                            <span className="rounded-full bg-[color:var(--color-warning-soft)] px-2 py-0.5 text-xs text-amber-600">{t("map.mainCourier")}</span>
                           ) : null}
                         </div>
                         <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div><span className="text-[color:var(--color-text-muted)]">Buyurtma:</span> <b>{courier.totalOrders}</b></div>
-                          <div><span className="text-[color:var(--color-text-muted)]">Muvaffaqiyat:</span> <b>{courier.successRate}%</b></div>
-                          <div><span className="text-[color:var(--color-text-muted)]">Tushum:</span> <b>{courier.revenue.toLocaleString()} so'm</b></div>
+                          <div><span className="text-[color:var(--color-text-muted)]">{t("map.metrics.order")}:</span> <b>{courier.totalOrders}</b></div>
+                          <div><span className="text-[color:var(--color-text-muted)]">{t("map.metrics.success")}:</span> <b>{courier.successRate}%</b></div>
+                          <div><span className="text-[color:var(--color-text-muted)]">{t("map.metrics.revenue")}:</span> <b>{courier.revenue.toLocaleString()} {t("currencySum")}</b></div>
                         </div>
                       </div>
                     </div>
@@ -776,7 +801,7 @@ const UzbekistanRegionMap = ({
                 </div>
               ) : (
                 <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 text-sm text-[color:var(--color-text-muted)] dark:bg-primarydark/40">
-                  Kuryerlar ma'lumoti topilmadi
+                  {t("map.couriersNotFound")}
                 </div>
               )}
             </div>
@@ -784,7 +809,7 @@ const UzbekistanRegionMap = ({
             <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4">
               <div className="mb-3 flex items-center gap-2 text-xl font-black text-main dark:text-primary">
                 <MapPin size={20} className="text-emerald-500" />
-                Tumanlar ({selectedRegion?.districtsCount ?? selectedRegion?.districts?.length ?? 0})
+                {t("map.districtsTitle", { count: selectedRegion?.districtsCount ?? selectedRegion?.districts?.length ?? 0 })}
               </div>
               {selectedRegion?.districts?.length ? (
                 <div className="space-y-2">
@@ -798,17 +823,17 @@ const UzbekistanRegionMap = ({
                         ) : null}
                       </div>
                       <div className="flex items-center gap-4 text-sm">
-                        <span><b>{district.totalOrders}</b> buyurtma</span>
+                        <span><b>{district.totalOrders}</b> {t("map.metrics.orderUnit")}</span>
                         <span className="rounded-full bg-[color:var(--color-warning-soft)] px-2 py-0.5 text-xs">{district.successRate}%</span>
-                        <span className="font-bold text-main">{district.revenue.toLocaleString()} so'm</span>
-                        <span className="text-[color:var(--color-text-muted)]">kuryer: {district.activeCouriers}</span>
+                        <span className="font-bold text-main">{district.revenue.toLocaleString()} {t("currencySum")}</span>
+                        <span className="text-[color:var(--color-text-muted)]">{t("map.metrics.courier")}: {district.activeCouriers}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 text-sm text-[color:var(--color-text-muted)] dark:bg-primarydark/40">
-                  Tumanlar ma'lumoti topilmadi
+                  {t("map.districtsNotFound")}
                 </div>
               )}
             </div>

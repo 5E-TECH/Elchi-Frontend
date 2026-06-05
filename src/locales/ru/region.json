@@ -1,0 +1,75 @@
+{
+  "title": "Регионы",
+  "subtitle": "Статистика заказов по регионам",
+  "assignedRegion": "Ваш закрепленный регион",
+  "unknown": "Неизвестно",
+  "unknownDistrict": "Неизвестный район",
+  "currencySum": "UZS",
+  "dateRange": {
+    "today": "Сегодня",
+    "week": "Неделя",
+    "month": "Месяц",
+    "all": "Все"
+  },
+  "actions": {
+    "satoManagement": "Перенос районов",
+    "districts": "Районы",
+    "logistAssignment": "Назначить логиста"
+  },
+  "sato": {
+    "title": "Управление районами по регионам",
+    "description": "Перетащите район на нужный регион",
+    "regionsCount": "Регионы",
+    "districtsCount": "Районы",
+    "districtCount": "{{count}} шт",
+    "searchPlaceholder": "Поиск района или региона...",
+    "noDistricts": "Районы не назначены",
+    "move": "Перенести",
+    "saving": "Сохранение...",
+    "loadError": "Не удалось загрузить список регионов",
+    "moveSuccess": "Район перенесен в другой регион",
+    "moveError": "Ошибка при переносе района"
+  },
+  "districts": {
+    "title": "Управление районами",
+    "description": "Этот раздел подключен к маршруту модуля регионов."
+  },
+  "logist": {
+    "title": "Назначить логиста",
+    "description": "Этот раздел подключен к маршруту модуля регионов."
+  },
+  "map": {
+    "seriesName": "Заказы",
+    "region": "Регион",
+    "regionDetails": "Детали региона",
+    "detailedStatistics": "Подробная статистика",
+    "clickForDetails": "Нажмите, чтобы посмотреть детали",
+    "loadingError": "Не удалось загрузить данные региона",
+    "mainCourier": "Основной курьер региона",
+    "mainCouriers": "Основные курьеры региона ({{count}})",
+    "couriersNotFound": "Информация о курьерах не найдена",
+    "districtsTitle": "Районы ({{count}})",
+    "districtsNotFound": "Информация о районах не найдена",
+    "legend": {
+      "low": "Мало",
+      "medium": "Средне",
+      "high": "Много",
+      "veryHigh": "Очень много"
+    },
+    "metrics": {
+      "orders": "Заказы",
+      "order": "Заказ",
+      "orderUnit": "заказов",
+      "totalOrders": "Всего заказов",
+      "delivered": "Доставлено",
+      "cancelled": "Отменено",
+      "success": "Успех",
+      "pending": "В процессе",
+      "revenue": "Выручка",
+      "totalRevenue": "Общая выручка",
+      "districts": "Районы",
+      "couriers": "Курьеры",
+      "courier": "курьер"
+    }
+  }
+}

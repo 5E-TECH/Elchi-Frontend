@@ -2,6 +2,7 @@ import { memo, useState, useEffect } from "react";
 import { X, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Order } from "./ordertable/pendingOrderTable";
+import Popup from "../../../../../shared/ui/Popup";
 
 type Props = {
   order: Order | null;
@@ -35,17 +36,10 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-md bg-white dark:bg-maindark rounded-2xl shadow-2xl overflow-hidden">
+    <Popup isShow={open} onClose={onClose}>
+      <div className="relative mx-3 w-[calc(100vw-24px)] max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-2xl dark:border-primarydark/60 dark:bg-maindark">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-red-500">
+        <div className="flex items-center justify-between bg-gradient-to-r from-rose-600 to-red-500 px-5 py-4 dark:from-rose-700 dark:to-red-600">
           <div className="flex items-center gap-2">
             <XCircle size={20} className="text-white" />
             <h2 className="text-white font-bold text-base">
@@ -55,6 +49,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+            aria-label={t("close", { ns: "common" })}
           >
             <X size={16} className="text-white" />
           </button>
@@ -63,7 +58,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
         {/* Body */}
         <div className="p-5 flex flex-col gap-4">
           {/* Order info */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
+          <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-3 dark:border-rose-500/20 dark:bg-rose-500/10">
             <span className="text-sm text-gray-600 dark:text-gray-400">{t("customer")}:</span>
             <span className="text-sm font-semibold text-gray-800 dark:text-white">
               {order.customer?.name}
@@ -80,7 +75,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
               min={0}
               value={extraCost}
               onChange={(e) => setExtraCost(Number(e.target.value))}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-white text-sm outline-none focus:border-red-400 dark:focus:border-red-500 transition-colors"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:focus:border-rose-400"
               placeholder="0"
             />
           </div>
@@ -95,7 +90,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
               min={0}
               value={paidAmount}
               onChange={(e) => setPaidAmount(Number(e.target.value))}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-white text-sm outline-none focus:border-red-400 dark:focus:border-red-500 transition-colors"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:focus:border-rose-400"
               placeholder="0"
             />
           </div>
@@ -109,24 +104,24 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-white text-sm outline-none focus:border-red-400 dark:focus:border-red-500 transition-colors resize-none"
+              className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:placeholder:text-white/35 dark:focus:border-rose-400"
               placeholder={t("cancelReason")}
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-3 px-5 pb-5">
+        <div className="flex items-center gap-3 border-t border-gray-200 px-5 py-4 dark:border-white/10">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            className="flex-1 rounded-xl border border-gray-200 bg-white/70 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/80 dark:hover:bg-white/10"
           >
             {t("back", { ns: "common" })}
           </button>
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/20 transition-colors hover:from-rose-500 hover:to-red-500 disabled:opacity-60"
           >
             {isLoading ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -137,7 +132,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
           </button>
         </div>
       </div>
-    </div>
+    </Popup>
   );
 };
 

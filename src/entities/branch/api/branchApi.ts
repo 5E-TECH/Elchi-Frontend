@@ -16,9 +16,9 @@ const normalizeBranchType = (value: unknown): BranchType | undefined => {
   const normalized = String(value ?? "").toUpperCase();
 
   if (normalized === "HQ") return "HQ";
-  if (normalized === "CITY") return "CITY";
+  if (normalized === "PICKUP") return "PICKUP";
   if (normalized === "REGIONAL" || normalized === "REGION") return "REGIONAL";
-  if (normalized === "DISTRICT") return "DISTRICT";
+  if (normalized === "HYBRID") return "HYBRID";
 
   return undefined;
 };

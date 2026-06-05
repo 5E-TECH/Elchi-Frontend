@@ -27,11 +27,13 @@ import { isInactiveMarketStatus } from "../../shared/lib/marketStatus";
 import PageContainer from "../../shared/ui/PageContainer";
 import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
+import PopupConfirm from "../../shared/components/popupConfirm";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
+const TABLE_ROLLBACK_STATUSES = new Set<OrderStatus>(["sold", "cancelled"]);
 const isOrderStatus = (value: string): value is OrderStatus =>
   [
     "created",
@@ -121,13 +123,14 @@ const Orders = () => {
   const { t } = useTranslation("orders");
   const navigate = useNavigate();
   const { getOrders } = useOrders();
-  const { SellOrder, PartlySellOrder, CancelOrder } = useOrderActions();
+  const { SellOrder, PartlySellOrder, CancelOrder, RollbackOrder } = useOrderActions();
   const { getMarkets } = useMarkets();
   const { getAllParams } = useQueryParams();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [sellOrder, setSellOrder] = useState<OrderListItem | null>(null);
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
+  const [rollbackOrder, setRollbackOrder] = useState<OrderListItem | null>(null);
 
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
@@ -335,7 +338,8 @@ const Orders = () => {
 
   const canUseOrderActions = useCallback(
     (order: OrderListItem) =>
-      canUseManagerTableActions && TABLE_ACTION_STATUSES.has(order.status),
+      canUseManagerTableActions &&
+      (TABLE_ACTION_STATUSES.has(order.status) || TABLE_ROLLBACK_STATUSES.has(order.status)),
     [canUseManagerTableActions],
   );
 
@@ -424,6 +428,14 @@ const Orders = () => {
     },
     [CancelOrder],
   );
+
+  const handleRollbackOrder = useCallback(() => {
+    if (!rollbackOrder) return;
+
+    RollbackOrder.mutate(rollbackOrder.id, {
+      onSuccess: () => setRollbackOrder(null),
+    });
+  }, [RollbackOrder, rollbackOrder]);
 
   const handleExportOrders = async () => {
     if (isExporting) return;
@@ -551,8 +563,12 @@ const Orders = () => {
           canUseOrderActions={canUseOrderActions}
           onSellOrder={canUseManagerTableActions ? setSellOrder : undefined}
           onCancelOrder={canUseManagerTableActions ? setCancelOrder : undefined}
+          onRollbackOrder={canUseManagerTableActions ? setRollbackOrder : undefined}
           isOrderActionPending={
-            SellOrder.isPending || PartlySellOrder.isPending || CancelOrder.isPending
+            SellOrder.isPending ||
+            PartlySellOrder.isPending ||
+            CancelOrder.isPending ||
+            RollbackOrder.isPending
           }
         />
 
@@ -602,6 +618,24 @@ const Orders = () => {
         onClose={() => setCancelOrder(null)}
         onCancel={handleCancelOrder}
         isLoading={CancelOrder.isPending}
+      />
+      <PopupConfirm
+        isOpen={!!rollbackOrder}
+        onClose={() => setRollbackOrder(null)}
+        onConfirm={handleRollbackOrder}
+        title={t("rollbackOrder")}
+        message={
+          <>
+            <span className="font-semibold text-[var(--color-maindark)] dark:text-white">
+              #{rollbackOrder?.id}
+            </span>{" "}
+            {t("rollbackConfirmMessage", { id: rollbackOrder?.id })}
+          </>
+        }
+        confirmLabel={t("rollbackConfirmLabel")}
+        cancelLabel={t("cancel", { ns: "common" })}
+        isLoading={RollbackOrder.isPending}
+        variant="warning"
       />
     </PageContainer>
   );

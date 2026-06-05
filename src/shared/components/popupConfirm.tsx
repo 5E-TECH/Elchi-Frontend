@@ -35,19 +35,19 @@ const PopupConfirm = ({
     ? "bg-rose-100 dark:bg-rose-500/12"
     : variant === "success"
       ? "bg-emerald-100 dark:bg-emerald-500/12"
-      : "bg-amber-100 dark:bg-amber-500/12";
+      : "bg-amber-100 dark:bg-amber-400/15";
 
   const iconColor = variant === "danger"
     ? "text-rose-500 dark:text-rose-300"
     : variant === "success"
       ? "text-emerald-500 dark:text-emerald-300"
-      : "text-amber-500 dark:text-amber-300";
+      : "text-amber-600 dark:text-amber-200";
 
   const confirmButtonClassName = variant === "danger"
     ? "border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/12 dark:text-rose-200 dark:hover:border-rose-400/60 dark:hover:bg-rose-500/18"
     : variant === "success"
       ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/12 dark:text-emerald-200 dark:hover:border-emerald-400/60 dark:hover:bg-emerald-500/18"
-      : "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/12 dark:text-amber-200 dark:hover:border-amber-400/60 dark:hover:bg-amber-500/18";
+      : "border-amber-300 bg-amber-100 text-amber-800 hover:border-amber-400 hover:bg-amber-200 dark:border-amber-400/35 dark:bg-amber-400/14 dark:text-amber-100 dark:hover:border-amber-300/60 dark:hover:bg-amber-400/22";
 
   const resolvedTitle = title ?? t("confirm");
   const resolvedConfirmLabel = confirmLabel ?? (variant === "danger" ? t("delete") : t("confirm"));
@@ -77,7 +77,7 @@ const PopupConfirm = ({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="rounded-xl border border-border-soft px-6 py-2.5 text-sm font-medium text-maindark transition-colors hover:bg-main-soft disabled:opacity-50 dark:text-white/85 dark:hover:bg-white/10"
+            className="rounded-xl border border-border-soft bg-white/70 px-6 py-2.5 text-sm font-medium text-maindark transition-colors hover:border-main/40 hover:bg-main-soft disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/85 dark:hover:border-white/20 dark:hover:bg-white/10"
           >
             {resolvedCancelLabel}
           </button>

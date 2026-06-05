@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { Calendar, HeadphonesIcon, MapPin, Settings } from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import type { RootState } from "../../app/config/store";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
@@ -183,6 +184,7 @@ const normalizeSummary = (payload: unknown): RegionSummary => {
 };
 
 const RegionPage = () => {
+  const { t } = useTranslation("region");
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { getParam, setMultipleParams, removeParam } = useQueryParams();
@@ -330,10 +332,10 @@ const RegionPage = () => {
                 <span className="w-10 h-10 rounded-xl bg-main flex items-center justify-center shadow-lg">
                   <MapPin className="w-5 h-5 text-primary" />
                 </span>
-                Hududlar
+                {t("title")}
               </h1>
               <p className="text-sm text-main/65 dark:text-primary/65 mt-1">
-                Hududlar kesimida buyurtmalar statistikasi
+                {t("subtitle")}
               </p>
             </div>
 
@@ -342,10 +344,10 @@ const RegionPage = () => {
                 <div className="flex items-center gap-1 rounded-xl border border-primarydark/20 bg-primary p-1 shadow-sm dark:border-white/10 dark:bg-primarydark/55">
                   <Calendar className="ml-2 h-4 w-4 text-main/55 dark:text-primary/70" />
                   {[
-                    { value: "today" as const, label: "Bugun" },
-                    { value: "week" as const, label: "Hafta" },
-                    { value: "month" as const, label: "Oy" },
-                    { value: "all" as const, label: "Barchasi" },
+                    { value: "today" as const, label: t("dateRange.today") },
+                    { value: "week" as const, label: t("dateRange.week") },
+                    { value: "month" as const, label: t("dateRange.month") },
+                    { value: "all" as const, label: t("dateRange.all") },
                   ].map((option) => (
                     <button
                       key={option.value}
@@ -400,7 +402,7 @@ const RegionPage = () => {
                         className="flex items-center gap-2 rounded-xl border border-primarydark/10 bg-sidebar px-4 py-2 text-sm font-semibold text-main transition-colors hover:bg-main/10 dark:border-white/10 dark:bg-primarydark/45 dark:text-primary dark:hover:bg-white/10"
                       >
                         <Settings size={16} />
-                        Tumanlarni o'tkazish
+                        {t("actions.satoManagement")}
                       </button>
                     </>
                   )}
@@ -411,7 +413,7 @@ const RegionPage = () => {
                       className="flex items-center gap-2 rounded-xl border border-primarydark/10 bg-sidebar px-4 py-2 text-sm font-semibold text-main transition-colors hover:bg-main/10 dark:border-white/10 dark:bg-primarydark/45 dark:text-primary dark:hover:bg-white/10"
                     >
                       <MapPin size={16} />
-                      Tumanlar
+                      {t("actions.districts")}
                     </button>
                   )}
                   <button
@@ -420,7 +422,7 @@ const RegionPage = () => {
                     className="flex items-center gap-2 rounded-xl border border-primarydark/10 bg-sidebar px-4 py-2 text-sm font-semibold text-main transition-colors hover:bg-main/10 dark:border-white/10 dark:bg-primarydark/45 dark:text-primary dark:hover:bg-white/10"
                   >
                     <HeadphonesIcon size={16} />
-                    Logist biriktirish
+                    {t("actions.logistAssignment")}
                   </button>
                 </div>
               )}
@@ -430,7 +432,7 @@ const RegionPage = () => {
 
         {isCourier ? (
           <div className="rounded-2xl border border-primarydark/20 bg-primary p-5 dark:border-white/10 dark:bg-primarydark/45">
-            <p className="text-sm text-main/70 dark:text-primary/70 mb-2">Siz biriktirilgan hudud</p>
+            <p className="text-sm text-main/70 dark:text-primary/70 mb-2">{t("assignedRegion")}</p>
             <h3 className="text-2xl font-bold text-main dark:text-primary">{userRegionName || "—"}</h3>
           </div>
         ) : (
@@ -456,7 +458,7 @@ const RegionPage = () => {
         )}
 
         {isLoading ? (
-          <div className="mt-4 text-sm text-main/60 dark:text-primary/60">Yuklanmoqda...</div>
+          <div className="mt-4 text-sm text-main/60 dark:text-primary/60">{t("common:loading")}</div>
         ) : null}
     </PageContainer>
   );

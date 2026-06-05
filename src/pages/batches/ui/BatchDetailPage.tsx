@@ -126,7 +126,7 @@ const BatchDetailPage = () => {
   if (isDetailLoading || isRemainingLoading) {
     return (
       <PageContainer>
-        <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
+        <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-(--color-text-muted) dark:bg-primarydark dark:text-white/70">
           Yuklanmoqda...
         </div>
       </PageContainer>
@@ -136,7 +136,7 @@ const BatchDetailPage = () => {
   if ((isDetailError && isRemainingError) || !batch) {
     return (
       <PageContainer>
-        <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark dark:text-white/70">
+        <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-(--color-text-muted) dark:bg-primarydark dark:text-white/70">
           Paket topilmadi
         </div>
       </PageContainer>
@@ -187,9 +187,9 @@ const BatchDetailPage = () => {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="min-w-0 rounded-xl border border-(--color-border-soft) bg-white/60 px-3 py-2.5 dark:border-white/10 dark:bg-white/[0.04]"
+                  className="min-w-0 rounded-xl border border-(--color-border-soft) bg-white/60 px-3 py-2.5 dark:border-white/10 dark:bg-white/4"
                 >
-                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-white/55">
+                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-(--color-text-muted) dark:text-white/55">
                     {item.icon}
                     {item.label}
                   </div>
@@ -241,19 +241,19 @@ const BatchDetailPage = () => {
           <section className="rounded-[28px] border border-(--color-border-soft) bg-primary p-5 shadow-sm dark:bg-primarydark">
             <h3 className="mb-5 text-lg font-black text-maindark dark:text-white">Tarix</h3>
             {batch.history.length ? (
-              <div className="relative space-y-5 pl-7 before:absolute before:bottom-2 before:left-[9px] before:top-2 before:w-px before:bg-main/30">
+              <div className="relative space-y-5 pl-7 before:absolute before:bottom-2 before:left-2.25 before:top-2 before:w-px before:bg-main/30">
                 {batch.history.map((item) => (
                   <div key={item.id} className="relative">
-                    <span className="absolute -left-[25px] top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-primary bg-main dark:border-primarydark" />
+                    <span className="absolute -left-6.25 top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-primary bg-main dark:border-primarydark" />
                     <p className="m-0 text-sm font-black text-maindark dark:text-white">{item.action}</p>
-                    <p className="m-0 mt-1 text-sm text-[color:var(--color-text-muted)] dark:text-white/60">
+                    <p className="m-0 mt-1 text-sm text-(--color-text-muted) dark:text-white/60">
                       {item.actor} • {formatBatchDateTime(item.created_at)}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-(--color-border-soft) px-4 py-8 text-center text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-white/60">
+              <div className="rounded-2xl border border-dashed border-(--color-border-soft) px-4 py-8 text-center text-sm font-semibold text-(--color-text-muted) dark:text-white/60">
                 Tarix hozircha mavjud emas
               </div>
             )}
@@ -270,7 +270,7 @@ const BatchDetailPage = () => {
               token={batch.token}
               fallbackLabel={batch.id}
               alt={`QR ${batch.id}`}
-              className="mx-auto aspect-square w-full max-w-[190px] object-contain"
+              className="mx-auto aspect-square w-full max-w-47.5 object-contain"
               fallbackClassName="mx-auto flex aspect-square w-full max-w-[190px] flex-col items-center justify-center rounded-xl border-2 border-maindark text-lg font-black text-maindark"
             />
           </div>

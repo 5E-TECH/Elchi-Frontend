@@ -1,0 +1,75 @@
+{
+  "title": "Hududlar",
+  "subtitle": "Hududlar kesimida buyurtmalar statistikasi",
+  "assignedRegion": "Siz biriktirilgan hudud",
+  "unknown": "Noma'lum",
+  "unknownDistrict": "Noma'lum tuman",
+  "currencySum": "so'm",
+  "dateRange": {
+    "today": "Bugun",
+    "week": "Hafta",
+    "month": "Oy",
+    "all": "Barchasi"
+  },
+  "actions": {
+    "satoManagement": "Tumanlarni o'tkazish",
+    "districts": "Tumanlar",
+    "logistAssignment": "Logist biriktirish"
+  },
+  "sato": {
+    "title": "Tumanlarni viloyatlar bo'yicha boshqarish",
+    "description": "Tumanni ushlab olib kerakli viloyat ustiga tashlang",
+    "regionsCount": "Viloyatlar",
+    "districtsCount": "Tumanlar",
+    "districtCount": "{{count}} ta",
+    "searchPlaceholder": "Tuman yoki viloyat qidirish...",
+    "noDistricts": "Tuman biriktirilmagan",
+    "move": "Ko'chirish",
+    "saving": "Saqlanmoqda...",
+    "loadError": "Viloyatlar ro'yxatini yuklab bo'lmadi",
+    "moveSuccess": "Tuman boshqa viloyatga o'tkazildi",
+    "moveError": "O'tkazishda xatolik yuz berdi"
+  },
+  "districts": {
+    "title": "Tumanlar boshqaruvi",
+    "description": "Bu bo'lim region moduliga mos route bilan ulangan."
+  },
+  "logist": {
+    "title": "Logist biriktirish",
+    "description": "Bu bo'lim region moduliga mos route bilan ulangan."
+  },
+  "map": {
+    "seriesName": "Buyurtmalar",
+    "region": "Viloyat",
+    "regionDetails": "Viloyat ma'lumotlari",
+    "detailedStatistics": "Batafsil statistika",
+    "clickForDetails": "Batafsil ko'rish uchun bosing",
+    "loadingError": "Viloyat ma'lumotini yuklab bo'lmadi",
+    "mainCourier": "Viloyat asosiy kuryeri",
+    "mainCouriers": "Viloyat asosiy kuryeri ({{count}})",
+    "couriersNotFound": "Kuryerlar ma'lumoti topilmadi",
+    "districtsTitle": "Tumanlar ({{count}})",
+    "districtsNotFound": "Tumanlar ma'lumoti topilmadi",
+    "legend": {
+      "low": "Kam",
+      "medium": "O'rtacha",
+      "high": "Ko'p",
+      "veryHigh": "Juda ko'p"
+    },
+    "metrics": {
+      "orders": "Buyurtmalar",
+      "order": "Buyurtma",
+      "orderUnit": "buyurtma",
+      "totalOrders": "Jami buyurtmalar",
+      "delivered": "Yetkazilgan",
+      "cancelled": "Bekor qilingan",
+      "success": "Muvaffaqiyat",
+      "pending": "Jarayonda",
+      "revenue": "Tushum",
+      "totalRevenue": "Umumiy tushum",
+      "districts": "Tumanlar",
+      "couriers": "Kuryerlar",
+      "courier": "kuryer"
+    }
+  }
+}

@@ -36,6 +36,7 @@ const authClient = axios.create({
 
 let initPromise: Promise<void> | null = null;
 const LOGOUT_SKIP_REFRESH_KEY = "elchi_skip_refresh_once";
+const LOGOUT_SKIP_REFRESH_MS = 10_000;
 
 const markLogoutSkipRefresh = () => {
   if (typeof window === "undefined") {
@@ -43,22 +44,25 @@ const markLogoutSkipRefresh = () => {
   }
 
   try {
-    window.sessionStorage.setItem(LOGOUT_SKIP_REFRESH_KEY, "1");
+    window.sessionStorage.setItem(LOGOUT_SKIP_REFRESH_KEY, String(Date.now()));
   } catch {
     // Ignore storage failures and continue logout flow.
   }
 };
 
-const consumeLogoutSkipRefresh = () => {
+const shouldSkipRefreshAfterLogout = () => {
   if (typeof window === "undefined") {
     return false;
   }
 
   try {
-    const shouldSkip = window.sessionStorage.getItem(LOGOUT_SKIP_REFRESH_KEY) === "1";
-    if (shouldSkip) {
+    const logoutAt = Number(window.sessionStorage.getItem(LOGOUT_SKIP_REFRESH_KEY));
+    const shouldSkip = Number.isFinite(logoutAt) && Date.now() - logoutAt < LOGOUT_SKIP_REFRESH_MS;
+
+    if (!shouldSkip) {
       window.sessionStorage.removeItem(LOGOUT_SKIP_REFRESH_KEY);
     }
+
     return shouldSkip;
   } catch {
     return false;
@@ -81,8 +85,11 @@ const resetClientAuthState = () => {
   store.dispatch(logoutAction());
   store.dispatch(removeRole());
   store.dispatch(setError(null));
-  localStorage.removeItem("name");
-  localStorage.removeItem("region");
+
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem("name");
+    window.localStorage.removeItem("region");
+  }
 };
 
 export const fetchMyProfile = async (accessToken?: string) => {
@@ -176,10 +183,8 @@ export const initAuth = async () => {
   }
 
   initPromise = (async () => {
-    store.dispatch(setAppInitializing(true));
-
     try {
-      if (consumeLogoutSkipRefresh()) {
+      if (shouldSkipRefreshAfterLogout()) {
         resetClientAuthState();
         return;
       }
@@ -187,7 +192,15 @@ export const initAuth = async () => {
       let accessToken = tokenStorage.getAccessToken();
 
       if (!accessToken) {
+        if (typeof window !== "undefined" && window.location.pathname === "/login") {
+          resetClientAuthState();
+          return;
+        }
+
+        store.dispatch(setAppInitializing(true));
         accessToken = await refreshAccessToken();
+      } else {
+        store.dispatch(setAppInitializing(true));
       }
 
       await fetchMyProfile(accessToken);

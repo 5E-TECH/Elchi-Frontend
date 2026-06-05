@@ -34,6 +34,11 @@
   "couriersEyebrow": "Courier holati",
   "totalCouriers": "Filial courierlari",
   "activeCouriers": "Bugun faol bo'lganlar",
+  "money": {
+    "full": "{{value}} so'm",
+    "million": "{{value}} mln",
+    "thousand": "{{value}} ming"
+  },
   "chartOrders": "Orderlar",
   "chartAmount": "Jami: {{amount}}",
   "emptyMarkets": "Market statistikasi hozircha yo'q",
