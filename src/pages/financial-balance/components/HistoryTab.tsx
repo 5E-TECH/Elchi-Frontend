@@ -295,7 +295,7 @@ const HistoryTab = () => {
 
         <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <span className="text-xs text-gray-500 dark:text-white/45">
-            {pagination.page}-sahifa / {pagination.totalPages}
+            {t("pageLabel", { page: pagination.page, totalPages: pagination.totalPages })}
           </span>
 
           <Pagination

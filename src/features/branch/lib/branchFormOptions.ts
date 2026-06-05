@@ -13,9 +13,9 @@ export const useParentBranchOptions = (enabled: boolean) =>
 
 export const getBranchTypeOptions = (t: TFunction) => [
   { value: "HQ", label: "HQ", disabled: true },
-  { value: "CITY", label: t("branchTypes.city") },
+  { value: "PICKUP", label: t("branchTypes.pickup") },
   { value: "REGIONAL", label: t("branchTypes.regional") },
-  { value: "DISTRICT", label: t("branchTypes.district") },
+  { value: "HYBRID", label: t("branchTypes.hybrid") },
 ];
 
 const getIndent = (level?: number) => {

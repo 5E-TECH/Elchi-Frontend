@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -75,15 +75,21 @@ const ProductThumbnail = ({
   className: string;
 }) => {
   const imageUrl = getProductImageUrl(item);
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [imageUrl]);
 
   return (
     <div className={className}>
-      {imageUrl ? (
+      {imageUrl && !hasImageError ? (
         <img
           src={imageUrl}
           alt={alt}
           className="h-full w-full object-cover"
           loading="lazy"
+          onError={() => setHasImageError(true)}
         />
       ) : (
         <Package size={18} className="text-gray-300 dark:text-white/20" />
@@ -702,7 +708,7 @@ const NewOrderUpdate = () => {
               <button
                 type="button"
                 onClick={() => setIsRollbackConfirmOpen(true)}
-                className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--color-border-strong)] bg-[color:var(--color-card-surface-strong)] px-3 py-1.5 text-xs font-bold text-[color:var(--color-text-muted)] transition-colors hover:text-[color:var(--color-main)]"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/70 bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-200 dark:border-amber-400/35 dark:bg-amber-400/12 dark:text-amber-100 dark:hover:border-amber-300/60 dark:hover:bg-amber-400/20"
               >
                 <RotateCcw size={13} />
                 {t("restoreOrder", { ns: "orders" })}

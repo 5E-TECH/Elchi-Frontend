@@ -1,18 +1,12 @@
-import { memo, useMemo } from 'react';
-import {
-  Cell,
-  Tooltip,
-  PieChart,
-  Pie,
-} from 'recharts';
-import { TrendingDown } from 'lucide-react';
+import { memo, useMemo } from "react";
+import { TrendingDown } from "lucide-react";
 import type { ReactNode } from "react";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import {
   formatFinancialAmount,
   toFinancialNumber,
   type FinancialBalanceData,
-} from '../lib/financialBalance';
+} from "../lib/financialBalance";
 
 interface StatisticsProps {
   data?: FinancialBalanceData;
@@ -23,30 +17,6 @@ interface ChartItem {
   amount: number;
   color: string;
 }
-
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Array<{
-    value: number;
-    payload: ChartItem;
-  }>;
-}
-
-const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
-  const { t } = useTranslation("payments");
-
-  if (active && payload?.length) {
-    return (
-      <div className="bg-[#1C1A28] border border-[#2E2B3E] rounded-xl px-3 py-2 text-xs text-white shadow-lg">
-        <p className="font-semibold">{payload[0].payload.name}</p>
-        <p className="text-slate-300 mt-0.5">
-          {formatFinancialAmount(payload[0].value, "comma")} {t("currency")}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
 
 const Statistics = ({ data: financialData }: StatisticsProps) => {
   const { t } = useTranslation("payments");
@@ -62,9 +32,9 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
     );
 
     return [
-      { name: t("cashbox"), amount: cashAmount, color: '#7C3AED' },
-      { name: t("financialBalanceCouriers"), amount: courierAmount, color: '#10B981' },
-      { name: t("financialBalanceMarkets"), amount: marketAmount, color: '#E24B4A' },
+      { name: t("financialBalanceCashbox"), amount: cashAmount, color: "#7C3AED" },
+      { name: t("financialBalanceCouriers"), amount: courierAmount, color: "#10B981" },
+      { name: t("financialBalanceMarkets"), amount: marketAmount, color: "#E24B4A" },
     ];
   }, [financialData, t]);
 
@@ -72,14 +42,23 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
     () => Math.max(...chartData.map((item) => Math.abs(item.amount)), 1),
     [chartData],
   );
-  const pieData = useMemo(
-    () =>
-      chartData.map((item) => ({
-        ...item,
-        value: Math.abs(item.amount),
-      })),
-    [chartData],
-  );
+  const donutBackground = useMemo(() => {
+    const total = chartData.reduce((sum, item) => sum + Math.abs(item.amount), 0);
+
+    if (total <= 0) {
+      return "conic-gradient(rgba(148, 163, 184, 0.28) 0deg 360deg)";
+    }
+
+    let cursor = 0;
+    const segments = chartData.map((item) => {
+      const start = cursor;
+      const size = (Math.abs(item.amount) / total) * 360;
+      cursor += size;
+      return `${item.color} ${start.toFixed(2)}deg ${cursor.toFixed(2)}deg`;
+    });
+
+    return `conic-gradient(${segments.join(", ")})`;
+  }, [chartData]);
 
   const netTotal =
     toFinancialNumber(financialData?.currentSituation) || toFinancialNumber(financialData?.difference);
@@ -88,16 +67,16 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
     ? <TrendingDown size={15} className="text-red-100" />
     : <TrendingDown size={15} className="rotate-180 text-emerald-100" />;
   const trendBackground = isNegative
-    ? 'linear-gradient(90deg, #8f1d1d, #9f1d1d)'
-    : 'linear-gradient(90deg, #065f46, #047857)';
-  const trendBorder = isNegative ? '#7f1d1d' : '#14532d';
+    ? "linear-gradient(90deg, #8f1d1d, #9f1d1d)"
+    : "linear-gradient(90deg, #065f46, #047857)";
+  const trendBorder = isNegative ? "#7f1d1d" : "#14532d";
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="grid min-h-0 grid-cols-1 gap-3 xl:flex-1 xl:grid-cols-2">
         {/* Bar Chart */}
         <div className="rounded-2xl border border-glass-border bg-primary p-4 dark:bg-maindark">
-          <p className="mb-4 text-sm font-semibold text-white">
+          <p className="mb-4 text-sm font-semibold text-maindark dark:text-white">
             {t("financialBalanceIndicators")}
           </p>
 
@@ -106,12 +85,12 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
               const pct = (Math.abs(item.amount) / maxAmount) * 100;
               return (
                 <div key={item.name} className="flex items-center gap-3">
-                  <span className="text-slate-400 text-xs w-20 text-right shrink-0">
+                  <span className="w-20 shrink-0 text-right text-xs text-(--color-text-muted) dark:text-slate-400">
                     {item.name}
                   </span>
-                  <div className="h-6 flex-1 overflow-hidden rounded-md bg-primary dark:bg-maindark">
+                  <div className="h-6 flex-1 overflow-hidden rounded-md bg-gray-100 dark:bg-primarydark/30">
                     <div
-                      className="h-full rounded-md transition-all duration-700"
+                      className="h-full rounded-md"
                       style={{
                         width: `${pct}%`,
                         background: item.color,
@@ -124,14 +103,14 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
             })}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 border-t border-[#2E2B3E] pt-3">
+          <div className="flex flex-wrap items-center gap-3 border-t border-gray-200 pt-3 dark:border-[#2E2B3E]">
             {chartData.map((item) => (
               <div key={item.name} className="flex items-center gap-1.5">
                 <span
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ background: item.color }}
                 />
-                <span className="text-xs text-slate-300">{item.name}</span>
+                <span className="text-xs text-(--color-text-muted) dark:text-slate-300">{item.name}</span>
               </div>
             ))}
           </div>
@@ -139,30 +118,19 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
 
         {/* Donut Chart */}
         <div className="rounded-2xl border border-glass-border bg-primary p-4 dark:bg-maindark">
-          <p className="mb-3 text-sm font-semibold text-white">
+          <p className="mb-3 text-sm font-semibold text-maindark dark:text-white">
             {t("financialBalanceDistribution")}
           </p>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
             <div className="h-32 w-32 shrink-0 self-center sm:self-auto">
-                <PieChart width={128} height={128}>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={36}
-                    outerRadius={56}
-                    paddingAngle={2}
-                    dataKey="value"
-                    strokeWidth={0}
-                    isAnimationActive={false}
-                  >
-                    {pieData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} opacity={0.9} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
+              <div
+                className="relative h-28 w-28 rounded-full"
+                style={{ background: donutBackground }}
+                aria-label={t("financialBalanceDistribution")}
+              >
+                <div className="absolute inset-7 rounded-full bg-primary dark:bg-maindark" />
+              </div>
             </div>
 
             <div className="w-full flex-1 space-y-2.5">
@@ -176,9 +144,9 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ background: item.color }}
                     />
-                    <span className="text-xs text-slate-300">{item.name}</span>
+                    <span className="text-xs text-(--color-text-muted) dark:text-slate-300">{item.name}</span>
                   </div>
-                  <span className="text-right text-xs font-semibold tabular-nums text-white">
+                  <span className="text-right text-xs font-semibold tabular-nums text-maindark dark:text-white">
                     {formatFinancialAmount(item.amount, "comma")} {t("currency")}
                   </span>
                 </div>
