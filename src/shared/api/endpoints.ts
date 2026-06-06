@@ -34,12 +34,9 @@ export const API_ENDPOINTS = {
   MANAGERS: {
     BASE: "managers", // GET list / POST create
   },
-  OPERATORS: {
-    // ⚠️ No backend route for operator CRUD (no /operators in openapi.json).
-    // Operators surface only via /finance/operators/{id}/* — see FINANCE.OPERATORS.
-    // Kept for the existing create-operator call; waived in the coverage audit.
-    BASE: "operators",
-  },
+  // Operators are not a CRUD user type — no /operators route exists. The role
+  // surfaces only via /finance/operators/{id}/* (earnings/payouts). The dead
+  // createOperator mutation that posted to /operators was removed.
   MARKETS: {
     BASE: "markets", // GET list / POST create
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
@@ -180,11 +177,9 @@ export const API_ENDPOINTS = {
     OPERATOR_BALANCE: (operatorId: string | number) => `finance/operators/${operatorId}/balance`,
     OPERATOR_EARNINGS: (operatorId: string | number) => `finance/operators/${operatorId}/earnings`,
     OPERATOR_PAYOUTS: (operatorId: string | number) => `finance/operators/${operatorId}/payments`,
-    // ⚠️ No backend route — enum lookups; values are client-side (guide §5).
-    // Kept for back-compat; should migrate to local enum constants.
-    OPERATION_TYPE: "finance/operation-type",
-    SOURCE_TYPE: "finance/source-type",
-    CASHBOX_TYPE: "finance/cashbox-type",
+    // NOTE: operation-type / source-type / cashbox-type are NOT backend routes.
+    // Per guide §5 these enums live client-side — add local constant modules when a
+    // screen needs them. The dead fetch-hooks that pointed here were removed.
   },
   CASHBOX_HISTORY: {
     BY_ID: (id: string | number) => `finance/history/${id}`, // was stale "cashbox-history/:id"

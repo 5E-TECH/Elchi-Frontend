@@ -9,7 +9,6 @@ import type {
   CreateCourierRequest,
   CreateManagerRequest,
   CreateMarketRequest,
-  CreateOperatorRequest,
   CreateRegistratorRequest,
   UpdateUserRequest,
   UserStatus,
@@ -85,13 +84,6 @@ export const useUser = () => {
   const createManager = useMutation({
     mutationFn: (data: CreateManagerRequest) =>
       api.post(API_ENDPOINTS.MANAGERS.BASE, data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
-  });
-
-  const createOperator = useMutation({
-    mutationFn: (data: CreateOperatorRequest) =>
-      api.post(API_ENDPOINTS.OPERATORS.BASE, data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
@@ -225,7 +217,6 @@ export const useUser = () => {
     createAdmin,
     createRegistrator,
     createManager,
-    createOperator,
     createMarket,
     createCourier,
     getRegions,
