@@ -31,7 +31,7 @@ export const fetchScanDetail = async (token: string): Promise<ScanDetailResponse
 
   if (resourceType === "post") {
     const response = await api
-      .get(API_ENDPOINTS.POSTS.QR_CODE(encodeURIComponent(normalizedToken)))
+      .get(API_ENDPOINTS.POSTS.SCAN(encodeURIComponent(normalizedToken)))
       .then((res) => res.data);
 
     return { type: resourceType, data: response };
@@ -39,7 +39,7 @@ export const fetchScanDetail = async (token: string): Promise<ScanDetailResponse
 
   if (resourceType === "package" || resourceType === "returned-package") {
     const response = await api
-      .get(API_ENDPOINTS.PACKAGES.QR_CODE(encodeURIComponent(normalizedToken)))
+      .get(API_ENDPOINTS.SCAN.BY_TOKEN(encodeURIComponent(normalizedToken)))
       .then((res) => res.data);
 
     return { type: resourceType, data: response };
@@ -54,7 +54,7 @@ export const fetchScanDetail = async (token: string): Promise<ScanDetailResponse
 
 export const receiveScannedPackage = async (packageIdOrToken: string) =>
   api
-    .patch(API_ENDPOINTS.PACKAGES.RECEIVE(encodeURIComponent(packageIdOrToken)))
+    .patch(API_ENDPOINTS.BATCHES.RECEIVE(encodeURIComponent(packageIdOrToken)))
     .then((res) => res.data);
 
 export const getBackendErrorMessage = (error: unknown) => {

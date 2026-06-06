@@ -9,7 +9,6 @@ import type {
   CreateCourierRequest,
   CreateManagerRequest,
   CreateMarketRequest,
-  CreateOperatorRequest,
   CreateRegistratorRequest,
   UpdateUserRequest,
   UserStatus,
@@ -89,13 +88,6 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
-  const createOperator = useMutation({
-    mutationFn: (data: CreateOperatorRequest) =>
-      api.post(API_ENDPOINTS.OPERATORS.BASE, data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
-  });
-
   const createMarket = useMutation({
     mutationFn: (data: CreateMarketRequest) => api.post(API_ENDPOINTS.MARKETS.BASE, data),
     onSuccess: () =>
@@ -142,42 +134,6 @@ export const useUser = () => {
         api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res: any) => res.data),
       staleTime: 60 * 1000,
     });
-
-  //   const getUserById = (id: string | undefined, params?: IUserFilter) =>
-  //     useQuery({
-  //       queryKey: [user, params, id],
-  //       queryFn: () => api.get(`user/${id}`, { params }).then((res) => res.data),
-  //     });
-
-  //   const getAdminAndRegister = (enabled = true, params?: IUserFilter) =>
-  //     useQuery({
-  //       queryKey: [user, params],
-  //       queryFn: () =>
-  //         api
-  //           .get("user/registrator-and-admin", { params })
-  //           .then((res) => res.data),
-  //       enabled,
-  //     });
-
-  //   const updateUser = useMutation({
-  //     mutationFn: ({ role, id, data }: { role: string; id: string; data: any }) =>
-  //       api.patch(`user/${role}/${id}`, data),
-  //     onSuccess: () =>
-  //       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
-  //   });
-
-  //   const removeUser = useMutation({
-  //     mutationFn: (id: string) =>
-  //       api.delete(`user/${id}`).then((res) => res.data),
-  //     onSuccess: () => client.invalidateQueries({ queryKey: [user] }),
-  //   });
-
-  //   const getUsersExceptMarket = (params?: IUserFilter) =>
-  //     useQuery({
-  //       queryKey: [user, params],
-  //       queryFn: () =>
-  //         api.get("user/except-market", { params }).then((res) => res.data),
-  //     });
 
   const updateUserStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
@@ -261,7 +217,6 @@ export const useUser = () => {
     createAdmin,
     createRegistrator,
     createManager,
-    createOperator,
     createMarket,
     createCourier,
     getRegions,
