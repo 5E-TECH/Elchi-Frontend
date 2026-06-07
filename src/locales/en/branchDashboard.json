@@ -34,6 +34,11 @@
   "couriersEyebrow": "Courier status",
   "totalCouriers": "Branch couriers",
   "activeCouriers": "Active today",
+  "money": {
+    "full": "{{value}} UZS",
+    "million": "{{value}}M",
+    "thousand": "{{value}}K"
+  },
   "chartOrders": "Orders",
   "chartAmount": "Total: {{amount}}",
   "emptyMarkets": "No market statistics yet",

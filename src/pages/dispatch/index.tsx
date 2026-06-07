@@ -302,7 +302,7 @@ const DispatchPage = () => {
 
   return (
     <PageContainer>
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-primarydark">
+      <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-4 shadow-sm dark:bg-primarydark">
         <HeaderName
           name={t("title")}
           description={t("subtitle")}
@@ -323,26 +323,26 @@ const DispatchPage = () => {
         </div>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary px-5 py-4 shadow-sm dark:bg-primarydark">
-        <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--color-border-soft) bg-primary px-5 py-4 shadow-sm dark:bg-primarydark">
+        <p className="m-0 text-sm font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
           {t("keyboardScannerHint")}
         </p>
         <ScannerActionButton
           onClick={handleToggleCameraScanner}
           label={t("openScanner")}
           showLabel
-          className="!bg-main !text-white !shadow-lg !shadow-main/20 hover:!bg-main/90 dark:!text-white"
+          className="bg-main! text-white! shadow-lg! shadow-main/20! hover:bg-main/90! dark:text-white!"
         />
       </div>
 
       <div className="mt-6">
-        <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark">
-          <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4">
+        <section className="overflow-hidden rounded-[28px] border border-(--color-border-soft) bg-primary shadow-sm dark:bg-primarydark">
+          <div className="flex items-center justify-between border-b border-(--color-border-soft) px-5 py-4">
             <div>
               <h3 className="m-0 text-xl font-extrabold text-maindark dark:text-white">
                 {t("pendingTitle")}
               </h3>
-              <p className="m-0 mt-1 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+              <p className="m-0 mt-1 text-sm text-(--color-text-muted) dark:text-text-muted-dark">
                 {t("pendingHint")}
               </p>
             </div>
@@ -353,29 +353,29 @@ const DispatchPage = () => {
 
           <div className="p-5">
             {pendingOrders.length === 0 ? (
-              <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[color:var(--color-border-soft)] px-6 text-center dark:border-white/10">
+              <div className="flex min-h-105 flex-col items-center justify-center rounded-3xl border border-dashed border-(--color-border-soft) px-6 text-center dark:border-white/10">
                 <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-main/10 text-main dark:bg-white/10 dark:text-white">
                   <QrCode size={28} />
                 </div>
                 <h4 className="m-0 mt-4 text-lg font-black text-maindark dark:text-white">
                   {t("scanOrdersTitle")}
                 </h4>
-                <p className="m-0 mt-2 max-w-md text-sm font-semibold leading-6 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                <p className="m-0 mt-2 max-w-md text-sm font-semibold leading-6 text-(--color-text-muted) dark:text-text-muted-dark">
                   {t("scanOrdersHint")}
                 </p>
                 <ScannerActionButton
                   onClick={handleToggleCameraScanner}
                   label={t("openScanner")}
                   showLabel
-                  className="mt-5 !bg-main !text-white !shadow-lg !shadow-main/20 hover:!bg-main/90 dark:!text-white"
+                  className="mt-5 bg-main! text-white! shadow-lg! shadow-main/20! hover:bg-main/90! dark:text-white!"
                 />
               </div>
             ) : (
-              <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+              <div className="max-h-130 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
                 {pendingOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="rounded-[24px] border border-[color:var(--color-border-soft)] bg-white/75 px-4 py-4 transition hover:border-main/30 dark:border-white/10 dark:bg-white/[0.04]"
+                    className="rounded-3xl border border-(--color-border-soft) bg-white/75 px-4 py-4 transition hover:border-main/30 dark:border-white/10 dark:bg-white/4"
                   >
                     <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
                       <div className="min-w-0 space-y-2">
@@ -385,13 +385,13 @@ const DispatchPage = () => {
                           </span>
                           <div className="min-w-0">
                             <p className="m-0 truncate text-sm font-extrabold">ORD-{order.id}</p>
-                            <p className="m-0 truncate text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                            <p className="m-0 truncate text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
                               {order.token}
                             </p>
                           </div>
                         </div>
                         <div className="grid gap-2 text-sm sm:grid-cols-2">
-                          <p className="m-0 font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                          <p className="m-0 font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
                             {t("market")}: <span className="text-maindark dark:text-white">{order.market}</span>
                           </p>
                           <p className="m-0 font-extrabold text-maindark dark:text-white">
@@ -477,7 +477,7 @@ const DispatchPage = () => {
               <p className="m-0 truncate text-base font-extrabold text-maindark dark:text-white">
                 {courier.label}
               </p>
-              <p className="m-0 mt-0.5 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+              <p className="m-0 mt-0.5 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
                 {t("courierOptionHint")}
               </p>
             </div>

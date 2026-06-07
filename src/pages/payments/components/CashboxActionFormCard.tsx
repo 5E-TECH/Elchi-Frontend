@@ -6,7 +6,7 @@ import type {
   UseFormHandleSubmit,
   UseFormRegister,
 } from "react-hook-form";
-import { CreditCard, PackageCheck, Send } from "lucide-react";
+import { CreditCard, Landmark, PackageCheck, Send } from "lucide-react";
 import Select from "../../../shared/ui/Select";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import { formatAmountInput } from "./lib/amountInput";
@@ -19,7 +19,7 @@ export interface CashboxActionFormValues {
 }
 
 interface CashboxActionFormCardProps {
-  type: "market" | "courier";
+  type: "market" | "courier" | "branch";
   actionGradient: string;
   actionLabel: string;
   actionSubLabel: string;
@@ -75,12 +75,21 @@ const CashboxActionFormCard = ({
   handleSubmit,
   onSubmit,
 }: CashboxActionFormCardProps) => {
+  const headerIcon =
+    type === "market" ? (
+      <CreditCard size={17} />
+    ) : type === "branch" ? (
+      <Landmark size={17} />
+    ) : (
+      <PackageCheck size={17} />
+    );
+
   return (
     <div className={`${sectionClassName} w-full max-w-135`}>
       <div className={`rounded-t-[1.35rem] bg-linear-to-r ${actionGradient} px-4 py-3`}>
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/16 text-primary shadow-inner">
-            {type === "market" ? <CreditCard size={17} /> : <PackageCheck size={17} />}
+            {headerIcon}
           </div>
           <div>
             <p className="text-sm font-extrabold leading-tight text-primary">{actionLabel}</p>

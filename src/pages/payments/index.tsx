@@ -62,6 +62,11 @@ type PaymentBranchOption = {
   amount: number;
 };
 
+type PaymentBranchToMainOption = PaymentBranchOption & {
+  role: "branch";
+  phone_number: string;
+};
+
 const asRecord = (value: unknown): UnknownRecord =>
   value && typeof value === "object" ? (value as UnknownRecord) : {};
 
@@ -148,7 +153,9 @@ const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
 const Payments = () => {
   const { t } = useTranslation("payments");
   const role = useSelector((state: RootState) => state.role.role);
+  const currentUser = useSelector((state: RootState) => state.user.user);
   const isAdminOrSuperAdmin = role === "admin" || role === "superadmin";
+  const isManagerRole = String(role).toLowerCase() === "manager";
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "payments",
     defaultLimit: DEFAULT_PAYMENTS_LIMIT,
@@ -191,7 +198,7 @@ const Payments = () => {
   // Faqat popup ochiq bo'lganda yuklanadi
   const { data: marketsData, isLoading: marketsLoading } = getMarkets(
     { status: "active", limit: 0 },
-    isGivenPopupOpen,
+    isGivenPopupOpen && !isManagerRole,
   );
   const { data: couriersData, isLoading: couriersLoading } = getCouriers(
     { status: "active", limit: 0 },
@@ -225,6 +232,37 @@ const Payments = () => {
   const marketCashboxTotal = hasManagerCashboxFields
     ? toNumber(cashboxData?.berilishi_kerak)
     : toNumber(cashboxData?.marketCashboxTotal);
+
+  const branchToMainOption = useMemo<PaymentBranchToMainOption | null>(() => {
+    const data = asRecord(cashboxData);
+    const profile = asRecord(currentUser);
+    const ownBranch = asRecord(data.branch ?? profile.branch);
+    const hqBranch = asRecord(
+      data.hq ?? data.main_branch ?? data.mainBranch ?? ownBranch.parent,
+    );
+    const region = asRecord(hqBranch.region ?? ownBranch.region ?? profile.region);
+    const branchId =
+      getRecordString(data, "branch_id") ||
+      getRecordString(ownBranch, "id") ||
+      getRecordString(profile, "branch_id");
+
+    if (!branchId) return null;
+
+    return {
+      id: branchId,
+      name:
+        getRecordString(hqBranch, "name") ||
+        getRecordString(data, "main_branch_name") ||
+        t("mainBranchFallback"),
+      phone_number:
+        getRecordString(hqBranch, "phone_number") ||
+        getRecordString(ownBranch, "phone_number"),
+      role: "branch",
+      region: getRecordString(region, "name", "HQ"),
+      type: "branch",
+      amount: marketCashboxTotal,
+    };
+  }, [cashboxData, currentUser, marketCashboxTotal, t]);
 
   // ── To be given popup uchun market list ───────────────────────────────────
   const marketsList = useMemo<PaymentMarketOption[]>(
@@ -284,7 +322,7 @@ const Payments = () => {
     {
       label: t("toBeGiven"),
       amount: marketCashboxTotal,
-      icon: <Store size={20} />,
+      icon: isManagerRole ? <Landmark size={20} /> : <Store size={20} />,
       action: <ArrowUpRight size={16} />,
       bg: "bg-maindark",
       iconBg: "bg-main/20",
@@ -392,9 +430,27 @@ const Payments = () => {
     path: string | null,
     showPopup: "given" | "received" | null,
   ) => {
-    if (showPopup === "given") setIsGivenPopupOpen(true);
-    else if (showPopup === "received") setIsReceivedPopupOpen(true);
-    else if (path) navigate(path);
+    if (showPopup === "given") {
+      if (isManagerRole && branchToMainOption) {
+        navigate(`/payments/cash-detail/${branchToMainOption.id}`, {
+          state: {
+            type: "branch",
+            entity: branchToMainOption,
+          },
+        });
+        return;
+      }
+
+      setIsGivenPopupOpen(true);
+      return;
+    }
+
+    if (showPopup === "received") {
+      setIsReceivedPopupOpen(true);
+      return;
+    }
+
+    if (path) navigate(path);
   };
 
   const filterOptionsMap: Record<DropdownKey, FilterSelectOption[]> = {
@@ -538,7 +594,7 @@ const Payments = () => {
         currentPage={page}
       />
 
-      {/* To be given popup — API dan marketlar */}
+      {/* To be given popup */}
       <PopupSelect<PaymentMarketOption>
         isOpen={isGivenPopupOpen}
         onClose={() => setIsGivenPopupOpen(false)}
@@ -549,14 +605,16 @@ const Payments = () => {
         keyExtractor={(m) => m.id}
         searchKeys={["name"]}
         labelKey="name"
-        secondaryLabelKey="amount"
-        onSelect={(market) => {
+        onSelect={(item) => {
           setIsGivenPopupOpen(false);
-          navigate(`/payments/cash-detail/${market.id}`, {
-            state: { type: "market", entity: market },
+          navigate(`/payments/cash-detail/${item.id}`, {
+            state: {
+              type: "market",
+              entity: item,
+            },
           });
         }}
-        renderItem={(market, isSelected) => (
+        renderItem={(item, isSelected) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <div
@@ -567,13 +625,13 @@ const Payments = () => {
               <p
                 className={`font-medium ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
               >
-                {market.name}
+                {item.name}
               </p>
             </div>
             <span
               className={`text-sm font-semibold ${isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
             >
-              {fmt(market.amount)} UZS
+              {fmt(item.amount)} UZS
             </span>
           </div>
         )}

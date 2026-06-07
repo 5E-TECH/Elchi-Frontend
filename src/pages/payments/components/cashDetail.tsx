@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Loader2, Store, Truck } from "lucide-react";
+import { Landmark, Loader2, Store, Truck } from "lucide-react";
 import type { PaymentRow } from "./patmentHistoryTable";
 import { useCashBox } from "../../../entities/payments";
 import { useMarkets } from "../../../entities/markets";
@@ -42,16 +42,19 @@ const formatDisplayName = (value?: string | null) => {
     .join(" ");
 };
 
+type CashDetailType = "market" | "courier" | "branch";
+
 const normalizeType = (
   cashboxType?: string | null,
   role?: string | null,
-): "market" | "courier" => {
+): CashDetailType => {
+  if (cashboxType === "main" || role === "branch") return "branch";
   if (cashboxType === "couriers" || role === "courier") return "courier";
   return "market";
 };
 
 export interface DetailState {
-  type: "market" | "courier";
+  type: CashDetailType;
   entity?: {
     id?: string;
     name?: string;
@@ -82,6 +85,16 @@ const CONFIG = {
     iconBg: "bg-success/25",
     headerIcon: <Truck size={20} />,
     entityIcon: <Truck size={18} className="text-white" />,
+  },
+  branch: {
+    kassaLabelKey: "branchMainCashboxLabel",
+    actionLabelKey: "payToMainAction",
+    actionSubKey: "payToMainDescription",
+    submitLabelKey: "payToMainAction",
+    actionGradient: "from-main to-primarydark",
+    iconBg: "bg-main/25",
+    headerIcon: <Landmark size={20} />,
+    entityIcon: <Landmark size={18} className="text-white" />,
   },
 } as const;
 
@@ -123,10 +136,11 @@ const CashDetail = () => {
     }),
     [selectedDateFrom, selectedDateTo],
   );
+  const isBranchToMainDetail = state?.type === "branch";
 
   const { data: cashboxResponse, isLoading } = getCashBoxById(
     id || "",
-    Boolean(id),
+    Boolean(id) && !isBranchToMainDetail,
     detailParams,
   );
 
@@ -144,7 +158,7 @@ const CashDetail = () => {
   );
   const user = detailEntry?.user ?? cashbox?.user ?? state?.entity;
 
-  const type = state?.type ?? normalizeType(cashbox?.cashbox_type, user?.role);
+  const type: CashDetailType = state?.type ?? normalizeType(cashbox?.cashbox_type, user?.role);
   const cfg = CONFIG[type];
   const entityName = user?.name?.trim() || t("userFallback");
   const totalBalance = toNumber(cashbox?.balance ?? state?.entity?.amount);
@@ -329,7 +343,7 @@ const CashDetail = () => {
     });
   };
 
-  if (isLoading) {
+  if (isLoading && !isBranchToMainDetail) {
     return (
       <div className="flex min-h-100 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-main" />
@@ -365,33 +379,35 @@ const CashDetail = () => {
       expenseLabel={t("expense")}
       todayTransactionsLabel={t("todayTransactions")}
       todayOperationsLabel={t("todayOperations")}
-      actionForm={(
-        <CashboxActionFormCard
-          type={type}
-          actionGradient={cfg.actionGradient}
-          actionLabel={t(cfg.actionLabelKey)}
-          actionSubLabel={t(cfg.actionSubKey)}
-          submitLabel={t(cfg.submitLabelKey)}
-          amountLabel={t("amountLabel")}
-          paymentTypeLabel={t("paymentType")}
-          paymentTypePlaceholder={t("paymentTypePlaceholder")}
-          showMarketSelect={isStoreTransfer}
-          marketLabel={t("selectMarket")}
-          marketPlaceholder={t("selectMarket")}
-          marketOptions={marketOptions}
-          marketLoading={marketsLoading}
-          submitLoading={isSubmitting}
-          submitDisabled={isStoreTransfer && !selectedMarketId}
-          commentLabel={t("comment")}
-          commentPlaceholder={t("commentPlaceholder")}
-          paymentTypeOptions={paymentTypeOptions}
-          control={control}
-          register={register}
-          errors={errors}
-          handleSubmit={handleSubmit}
-          onSubmit={onSubmit}
-        />
-      )}
+      actionForm={
+        type === "branch" ? null : (
+          <CashboxActionFormCard
+            type={type}
+            actionGradient={cfg.actionGradient}
+            actionLabel={t(cfg.actionLabelKey)}
+            actionSubLabel={t(cfg.actionSubKey)}
+            submitLabel={t(cfg.submitLabelKey)}
+            amountLabel={t("amountLabel")}
+            paymentTypeLabel={t("paymentType")}
+            paymentTypePlaceholder={t("paymentTypePlaceholder")}
+            showMarketSelect={isStoreTransfer}
+            marketLabel={t("selectMarket")}
+            marketPlaceholder={t("selectMarket")}
+            marketOptions={marketOptions}
+            marketLoading={marketsLoading}
+            submitLoading={isSubmitting}
+            submitDisabled={isStoreTransfer && !selectedMarketId}
+            commentLabel={t("comment")}
+            commentPlaceholder={t("commentPlaceholder")}
+            paymentTypeOptions={paymentTypeOptions}
+            control={control}
+            register={register}
+            errors={errors}
+            handleSubmit={handleSubmit}
+            onSubmit={onSubmit}
+          />
+        )
+      }
     />
   );
 };

@@ -10,6 +10,7 @@ import {
     ChevronRight,
     CheckCircle,
     XCircle,
+    RotateCcw,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -29,6 +30,7 @@ interface Props {
     canUseOrderActions?: (order: OrderListItem) => boolean;
     onSellOrder?: (order: OrderListItem) => void;
     onCancelOrder?: (order: OrderListItem) => void;
+    onRollbackOrder?: (order: OrderListItem) => void;
     isOrderActionPending?: boolean;
 }
 
@@ -68,14 +70,16 @@ const ActionButton = ({
 }: {
     label: string;
     icon: React.ReactNode;
-    variant: "sell" | "cancel";
+    variant: "sell" | "cancel" | "rollback";
     disabled?: boolean;
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }) => {
     const variantClassName =
         variant === "sell"
             ? "border-emerald-400/35 bg-emerald-500/15 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-500 hover:text-white dark:text-emerald-200"
-            : "border-rose-400/35 bg-rose-500/15 text-rose-700 hover:border-rose-400 hover:bg-rose-500 hover:text-white dark:text-rose-200";
+            : variant === "rollback"
+                ? "border-sky-400/35 bg-sky-500/15 text-sky-700 hover:border-sky-400 hover:bg-sky-500 hover:text-white dark:text-sky-200"
+                : "border-rose-400/35 bg-rose-500/15 text-rose-700 hover:border-rose-400 hover:bg-rose-500 hover:text-white dark:text-rose-200";
 
     return (
         <button
@@ -218,6 +222,7 @@ const OrdersTable = ({
     canUseOrderActions,
     onSellOrder,
     onCancelOrder,
+    onRollbackOrder,
     isOrderActionPending = false,
 }: Props) => {
     const { t, i18n } = useTranslation("orders");
@@ -251,7 +256,7 @@ const OrdersTable = ({
             ? translatedColumns.filter((column) => column.key !== "market")
             : translatedColumns;
 
-        if (!onSellOrder && !onCancelOrder) {
+        if (!onSellOrder && !onCancelOrder && !onRollbackOrder) {
             return visibleColumns;
         }
 
@@ -263,9 +268,12 @@ const OrdersTable = ({
                 width: "150px",
                 className: "whitespace-nowrap",
                 render: (_: string, row: OrderListItem) => {
-                    if (!canUseOrderActions?.(row)) {
+                    const canUseActions = canUseOrderActions?.(row);
+                    if (!canUseActions) {
                         return <span className="text-sm text-gray-400 dark:text-white/35">—</span>;
                     }
+                    const canRollback = row.status === "sold" || row.status === "cancelled";
+                    const canSellOrCancel = !canRollback;
 
                     const stopAndRun =
                         (handler?: (order: OrderListItem) => void) =>
@@ -276,7 +284,7 @@ const OrdersTable = ({
 
                     return (
                         <div className="flex items-center gap-2">
-                            {onSellOrder && (
+                            {canSellOrCancel && onSellOrder && (
                                 <ActionButton
                                     label={t("sell")}
                                     icon={<CheckCircle size={14} />}
@@ -285,13 +293,22 @@ const OrdersTable = ({
                                     onClick={stopAndRun(onSellOrder)}
                                 />
                             )}
-                            {onCancelOrder && (
+                            {canSellOrCancel && onCancelOrder && (
                                 <ActionButton
                                     label={t("cancelOrderAction")}
                                     icon={<XCircle size={14} />}
                                     variant="cancel"
                                     disabled={isOrderActionPending}
                                     onClick={stopAndRun(onCancelOrder)}
+                                />
+                            )}
+                            {canRollback && onRollbackOrder && (
+                                <ActionButton
+                                    label={t("rollbackOrder")}
+                                    icon={<RotateCcw size={14} />}
+                                    variant="rollback"
+                                    disabled={isOrderActionPending}
+                                    onClick={stopAndRun(onRollbackOrder)}
                                 />
                             )}
                         </div>
@@ -304,6 +321,7 @@ const OrdersTable = ({
         isOrderActionPending,
         locale,
         onCancelOrder,
+        onRollbackOrder,
         onSellOrder,
         role,
         rowNumberOffset,
@@ -404,9 +422,9 @@ const OrdersTable = ({
                     </div>
                 </div>
 
-                {canUseOrderActions?.(order) && (onSellOrder || onCancelOrder) ? (
+                {canUseOrderActions?.(order) && (onSellOrder || onCancelOrder || onRollbackOrder) ? (
                     <div className="flex shrink-0 items-center gap-2">
-                        {onSellOrder && (
+                        {order.status !== "sold" && order.status !== "cancelled" && onSellOrder && (
                             <ActionButton
                                 label={t("sell")}
                                 icon={<CheckCircle size={14} />}
@@ -418,7 +436,7 @@ const OrdersTable = ({
                                 }}
                             />
                         )}
-                        {onCancelOrder && (
+                        {order.status !== "sold" && order.status !== "cancelled" && onCancelOrder && (
                             <ActionButton
                                 label={t("cancelOrderAction")}
                                 icon={<XCircle size={14} />}
@@ -427,6 +445,18 @@ const OrdersTable = ({
                                 onClick={(event) => {
                                     event.stopPropagation();
                                     onCancelOrder(order);
+                                }}
+                            />
+                        )}
+                        {(order.status === "sold" || order.status === "cancelled") && onRollbackOrder && (
+                            <ActionButton
+                                label={t("rollbackOrder")}
+                                icon={<RotateCcw size={14} />}
+                                variant="rollback"
+                                disabled={isOrderActionPending}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onRollbackOrder(order);
                                 }}
                             />
                         )}

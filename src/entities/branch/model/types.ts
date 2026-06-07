@@ -1,4 +1,4 @@
-export type BranchType = "HQ" | "CITY" | "REGIONAL" | "DISTRICT";
+export type BranchType = "HQ" | "PICKUP" | "REGIONAL" | "HYBRID";
 
 export interface Branch {
   id: string;

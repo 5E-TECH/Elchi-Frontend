@@ -104,13 +104,17 @@ const UpdatePopup = ({
           <Button
             label={resolvedCancelLabel}
             onClick={onClose}
-            className="h-12 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 text-sm font-semibold text-maindark shadow-none hover:bg-[var(--color-main-soft)] dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10"
+            className="h-12 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/90 text-sm font-semibold text-[color:var(--color-maindark)] shadow-none hover:bg-[color:var(--color-main-soft)] dark:border-white/12 dark:bg-white/8 dark:text-white dark:hover:bg-white/12"
           />
           <Button
             label={isLoading ? t("submitting") : resolvedSaveLabel}
             onClick={onSave}
             disabled={isLoading}
-            className={`h-12 rounded-2xl text-sm font-semibold shadow-lg shadow-main/25 ${!isLoading ? "bg-main hover:bg-primarydark" : "opacity-50"}`}
+            className={`h-12 rounded-2xl text-sm font-semibold text-white shadow-lg shadow-main/25 ${
+              isLoading
+                ? "bg-main/55 text-white/80 shadow-none"
+                : "bg-main hover:bg-primarydark dark:hover:bg-main/90"
+            }`}
           />
         </div>
       </div>
