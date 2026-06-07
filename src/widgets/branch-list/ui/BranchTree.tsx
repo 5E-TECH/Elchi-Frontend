@@ -2,7 +2,7 @@ import { Button, Empty, Spin } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Building2, ChevronRight, GitBranch, Leaf, MapPin } from "lucide-react";
+import { ArrowRight, Building2, ChevronLeft, ChevronRight, GitBranch, Leaf, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BranchStatusBadge, type Branch } from "../../../entities/branch";
 import { DeleteBranchButton } from "../../../features/branch-delete";
@@ -23,6 +23,8 @@ const typeToneMap: Record<string, string> = {
   REGIONAL: "border-violet-400/42 bg-violet-400/12 text-violet-700 dark:text-violet-100",
   DISTRICT: "border-emerald-400/38 bg-emerald-400/12 text-emerald-700 dark:text-emerald-100",
 };
+
+const ROOT_CHILDREN_PAGE_SIZE = 5;
 
 const buildBranchTree = (branches: Branch[]) => {
   const nodeMap = new Map<string, BranchTreeNode>();
@@ -94,10 +96,10 @@ const BranchTreeNodeCard = ({
   const address = node.address || "—";
   const toneClass =
     typeToneMap[node.type ?? ""] ??
-    "border-[color:var(--color-border-soft)] bg-[color:var(--color-main-soft)] text-[color:var(--color-text-muted)] dark:text-white/80";
+    "border-border-soft bg-main-soft text-text-muted dark:text-white/80";
   const cardClass = node.type === "HQ"
-    ? "border-amber-300/45 bg-[color:var(--color-surface-elevated)] ring-4 ring-amber-300/10 hover:border-amber-300/70 dark:bg-[color:var(--color-surface-elevated-dark)]"
-    : "border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)] hover:border-main/60 dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]";
+    ? "border-amber-300/45 bg-surface-elevated ring-4 ring-amber-300/10 hover:border-amber-300/70 dark:bg-surface-elevated-dark"
+    : "border-border-soft bg-surface-elevated hover:border-main/60 dark:border-white/10 dark:bg-surface-elevated-dark";
 
   return (
     <div className={`relative mx-auto flex min-h-[136px] w-full max-w-[15.5rem] flex-col rounded-2xl border p-3.5 text-left shadow-[0_12px_26px_rgba(39,44,82,0.10)] transition-colors dark:shadow-[0_14px_28px_rgba(8,10,28,0.20)] ${cardClass}`}>
@@ -115,7 +117,7 @@ const BranchTreeNodeCard = ({
           }}
           aria-label={isExpanded ? t("tree.collapse") : t("tree.expand")}
           title={isExpanded ? t("tree.collapse") : t("tree.expand")}
-          className="absolute -left-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-teal-400/25 bg-[color:var(--color-surface-elevated)] text-teal-600 shadow-[0_10px_20px_rgba(39,44,82,0.16)] transition-colors hover:border-teal-400/45 hover:bg-[color:var(--color-main-soft)] dark:bg-primarydark dark:text-teal-100 dark:shadow-[0_10px_20px_rgba(8,10,28,0.24)] dark:hover:bg-primarydark/80"
+          className="absolute -left-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-teal-400/25 bg-surface-elevated text-teal-600 shadow-[0_10px_20px_rgba(39,44,82,0.16)] transition-colors hover:border-teal-400/45 hover:bg-main-soft dark:bg-primarydark dark:text-teal-100 dark:shadow-[0_10px_20px_rgba(8,10,28,0.24)] dark:hover:bg-primarydark/80"
         >
           <ChevronRight
             size={16}
@@ -134,26 +136,26 @@ const BranchTreeNodeCard = ({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
-              <h3 className="truncate text-[0.98rem] font-extrabold text-[color:var(--color-maindark)] dark:text-white">{node.name}</h3>
+              <h3 className="truncate text-[0.98rem] font-extrabold text-maindark dark:text-white">{node.name}</h3>
               <BranchStatusBadge status={node.status} />
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {node.code ? (
-                <span className="rounded-full border border-[color:var(--color-border-soft)] bg-[color:var(--color-main-soft)] px-2 py-0.5 text-[11px] font-bold text-[color:var(--color-text-muted)] dark:border-white/10 dark:bg-white/8 dark:text-white/75">
+                <span className="rounded-full border border-border-soft bg-main-soft px-2 py-0.5 text-[11px] font-bold text-text-muted dark:border-white/10 dark:bg-white/8 dark:text-white/75">
                   {node.code}
                 </span>
               ) : null}
               <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${toneClass}`}>
                 {typeLabel}
               </span>
-              <span className="rounded-full border border-[color:var(--color-border-soft)] bg-[color:var(--color-main-soft)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-text-muted)] dark:border-white/10 dark:bg-white/8 dark:text-white/65">
+              <span className="rounded-full border border-border-soft bg-main-soft px-2 py-0.5 text-[11px] font-semibold text-text-muted dark:border-white/10 dark:bg-white/8 dark:text-white/65">
                 {t("tree.level", { level })}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="mt-2.5 flex min-h-0 flex-1 items-start gap-2 text-xs leading-5 text-[color:var(--color-text-muted)] dark:text-white/55">
+        <div className="mt-2.5 flex min-h-0 flex-1 items-start gap-2 text-xs leading-5 text-text-muted dark:text-white/55">
           <MapPin size={13} className="mt-1 shrink-0" />
           <span className="line-clamp-2 min-h-[2.25rem]">
             {address} · {regionName}, {districtName}
@@ -161,11 +163,37 @@ const BranchTreeNodeCard = ({
         </div>
       </button>
 
+      {onToggleChildren ? (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleChildren();
+          }}
+          className={`mt-3 flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-extrabold transition-all ${
+            isExpanded
+              ? "border-teal-400/45 bg-teal-400/12 text-teal-700 shadow-[0_8px_20px_rgba(20,184,166,0.14)] dark:text-teal-100"
+              : "border-main/45 bg-main/15 text-main shadow-[0_8px_22px_rgba(109,72,217,0.16)] hover:border-main hover:bg-main/20 dark:text-white"
+          }`}
+          aria-label={isExpanded ? t("tree.collapse") : t("tree.expand")}
+          title={isExpanded ? t("tree.collapse") : t("tree.expand")}
+        >
+          <span className="truncate">{t("tree.childCount", { count: node.children.length })}</span>
+          <span className="ml-2 inline-flex items-center gap-1">
+            {isExpanded ? t("tree.hideChildren") : t("tree.showChildren")}
+            <ChevronRight
+              size={15}
+              className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+            />
+          </span>
+        </button>
+      ) : null}
+
       <div className="mt-3 flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
         <Button
           size="small"
           icon={<ArrowRight size={15} />}
-          className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !p-0 !text-[color:var(--color-maindark)] hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
+          className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-border-soft !bg-main-soft !p-0 !text-maindark hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
           onClick={() => navigate(`/branches/${node.id}`)}
           aria-label={tCommon("open")}
           title={tCommon("open")}
@@ -173,7 +201,7 @@ const BranchTreeNodeCard = ({
         <Button
           size="small"
           icon={<EditOutlined />}
-          className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !p-0 !text-[color:var(--color-maindark)] hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
+          className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-border-soft !bg-main-soft !p-0 !text-maindark hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
           onClick={() => onEdit(node)}
           aria-label={t("actions.edit")}
           title={t("actions.edit")}
@@ -199,9 +227,21 @@ const BranchTreeItem = ({
   isRoot?: boolean;
   depth?: number;
 }) => {
+  const { t } = useTranslation("branches");
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
   const isRootChildrenPanel = isRoot && hasChildren && isExpanded;
+  const [rootChildrenPage, setRootChildrenPage] = useState(0);
+  const rootChildrenPageCount = isRootChildrenPanel
+    ? Math.max(1, Math.ceil(node.children.length / ROOT_CHILDREN_PAGE_SIZE))
+    : 1;
+  const safeRootChildrenPage = Math.min(rootChildrenPage, rootChildrenPageCount - 1);
+  const visibleChildren = isRootChildrenPanel
+    ? node.children.slice(
+        safeRootChildrenPage * ROOT_CHILDREN_PAGE_SIZE,
+        safeRootChildrenPage * ROOT_CHILDREN_PAGE_SIZE + ROOT_CHILDREN_PAGE_SIZE,
+      )
+    : node.children;
 
   return (
     <li className={`relative flex flex-col items-center ${isRoot ? "w-full" : depth === 1 ? "w-[15.5rem] shrink-0" : "w-full"}`}>
@@ -226,21 +266,46 @@ const BranchTreeItem = ({
           <div
             className={
               isRootChildrenPanel
-                ? "relative w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)]/70 px-4 py-7 dark:border-white/10 dark:bg-white/5 sm:px-6"
+                ? "relative w-full overflow-hidden rounded-2xl border border-border-soft bg-surface-elevated/70 px-3 py-6 dark:border-white/10 dark:bg-white/5 sm:px-4"
                 : "relative flex w-full justify-center"
             }
           >
+            {isRootChildrenPanel && rootChildrenPageCount > 1 ? (
+              <div className="mb-4 flex items-center justify-end gap-2">
+                <span className="rounded-full border border-border-soft bg-main-soft px-3 py-1 text-xs font-bold text-text-muted dark:border-white/10 dark:bg-white/8 dark:text-white/70">
+                  {safeRootChildrenPage + 1} / {rootChildrenPageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setRootChildrenPage((page) => Math.max(page - 1, 0))}
+                  disabled={safeRootChildrenPage === 0}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-soft bg-main-soft text-maindark transition-colors hover:border-main hover:text-main disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/8 dark:text-white"
+                  aria-label={t("tree.previousPage")}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRootChildrenPage((page) => Math.min(page + 1, rootChildrenPageCount - 1))}
+                  disabled={safeRootChildrenPage >= rootChildrenPageCount - 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-soft bg-main-soft text-maindark transition-colors hover:border-main hover:text-main disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/8 dark:text-white"
+                  aria-label={t("tree.nextPage")}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            ) : null}
             <div
               className={
                 isRootChildrenPanel
-                  ? "relative grid w-full grid-cols-[repeat(auto-fit,minmax(15.5rem,1fr))] items-start justify-items-center gap-x-8 gap-y-10 px-2"
+                  ? "relative grid w-full grid-cols-5 items-start justify-items-center gap-5 px-2 pt-1"
                   : "relative flex w-full flex-col items-center gap-8"
               }
             >
               {node.children.length > 1 && isRootChildrenPanel ? (
-                <span className="absolute -top-5 left-10 right-10 h-[7px] rounded-full bg-gradient-to-r from-transparent via-teal-300/45 to-transparent shadow-[0_0_16px_rgba(45,212,191,0.18)]" />
+                <span className="absolute left-6 right-6 top-0 h-[5px] rounded-full bg-gradient-to-r from-transparent via-teal-300/45 to-transparent shadow-[0_0_16px_rgba(45,212,191,0.18)]" />
               ) : null}
-              {node.children.map((child) => (
+              {visibleChildren.map((child) => (
                 <div
                   key={child.id}
                   className={
@@ -297,7 +362,7 @@ const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary px-4 py-6 shadow-sm dark:bg-primarydark sm:px-5 sm:py-8">
+    <div className="relative overflow-hidden rounded-2xl border border-border-soft bg-primary px-4 py-6 shadow-sm dark:bg-primarydark sm:px-5 sm:py-8">
       <div className="pointer-events-none absolute inset-x-8 top-8 h-px bg-gradient-to-r from-transparent via-main/20 to-transparent dark:via-teal-100/18" />
       <div className="relative z-10 flex w-full justify-center">
         <ul className="flex w-full flex-col items-center gap-10 px-2 sm:px-4">

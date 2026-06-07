@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
-import { isInactiveMarketStatus, unwrapMarketPayload } from "../../shared/lib/marketStatus";
 
 export const products = "products";
 
@@ -9,22 +8,7 @@ export const useProducts = () => {
   const client = useQueryClient();
 
   const createProduct = useMutation({
-    mutationFn: async (data: FormData) => {
-      const marketId = data.get("market_id");
-
-      if (typeof marketId === "string" && marketId) {
-        const marketResponse = await api
-          .get(API_ENDPOINTS.MARKETS.BY_ID(marketId))
-          .then((res) => res.data);
-        const market = unwrapMarketPayload(marketResponse);
-
-        if (isInactiveMarketStatus(market?.status)) {
-          throw new Error("Faol emas market uchun yangi mahsulot yaratib bo'lmaydi.");
-        }
-      }
-
-      return api.post(API_ENDPOINTS.PRODUCTS.BASE, data);
-    },
+    mutationFn: (data: FormData) => api.post(API_ENDPOINTS.PRODUCTS.BASE, data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [products] });
       client.invalidateQueries({ queryKey: ["market"] });

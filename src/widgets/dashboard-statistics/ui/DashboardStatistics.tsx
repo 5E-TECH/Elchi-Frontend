@@ -161,7 +161,7 @@ const DashboardStatistics = memo(
         value: formatMoney(profit),
         icon: <DollarSign size={20} />,
         variant: "warning",
-        suffix: "so'm",
+        suffix: t("currency_sum"),
         compact: true,
       },
     ];

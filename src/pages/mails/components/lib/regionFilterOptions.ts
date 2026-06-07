@@ -9,7 +9,6 @@ interface MailRegionSource {
 
 export const buildRegionFilterOptions = <T extends MailRegionSource>(
   items: T[],
-  allRegionsLabel: string,
 ): SearchableSelectOption[] => {
   const uniqueRegions = new Map<string, SearchableSelectOption>();
 
@@ -22,10 +21,7 @@ export const buildRegionFilterOptions = <T extends MailRegionSource>(
     }
   });
 
-  return [
-    { value: "", label: allRegionsLabel },
-    ...Array.from(uniqueRegions.values()).sort((left, right) =>
+  return Array.from(uniqueRegions.values()).sort((left, right) =>
       left.label.localeCompare(right.label, "uz"),
-    ),
-  ];
+    );
 };

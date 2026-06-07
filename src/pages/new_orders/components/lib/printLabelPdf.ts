@@ -116,8 +116,8 @@ const getLandmark = (order: LabelOrder) => {
 const getProducts = (order: LabelOrder) =>
   order.items.length
     ? order.items
-        .map((item) => `${safe(item.product?.name, "Mahsulot")} x${item.quantity}`)
-        .join(", ")
+      .map((item) => `${safe(item.product?.name, "Mahsulot")} x${item.quantity}`)
+      .join(", ")
     : "-";
 
 const getDeliveryLabel = (order: LabelOrder) =>
@@ -159,13 +159,22 @@ const fitFontSize = (
   preferred: number,
   min = preferred - 1.5,
 ) => {
-  let size = preferred;
-  while (size > min) {
-    pdf.setFontSize(size);
-    if (pdf.getTextWidth(text) <= maxWidth) break;
-    size -= 0.2;
+  // Binary search — O(log n) vs O(n) linear loop
+  let lo = min;
+  let hi = preferred;
+  let best = min;
+  for (let i = 0; i < 12; i++) {
+    const mid = (lo + hi) / 2;
+    pdf.setFontSize(mid);
+    if (pdf.getTextWidth(text) <= maxWidth) {
+      best = mid;
+      lo = mid;
+    } else {
+      hi = mid;
+    }
   }
-  return size;
+  pdf.setFontSize(best);
+  return best;
 };
 
 const drawCellText = (
@@ -432,14 +441,19 @@ const loadImage = (src: string): Promise<string> =>
       }
 
       context.drawImage(image, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      const dataUrl = canvas.toDataURL("image/png");
+      // Canvas'ni bo'shatish — GC tezroq ishlaydi
+      canvas.width = 0;
+      canvas.height = 0;
+      resolve(dataUrl);
     };
-    image.onerror = reject;
+    image.onerror = (ev) => reject(new Error(`Image load failed: ${src}`, { cause: ev }));
     image.src = src;
   });
 
 const generateQr = async (text: string): Promise<string> => {
-  const qrSource = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${encodeURIComponent(text)}`;
+  // 150x150 — print uchun yetarli, kamroq bandwidth
+  const qrSource = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=2&data=${encodeURIComponent(text)}&ecc=M`;
   return loadImage(qrSource);
 };
 
@@ -669,7 +683,8 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
     return;
   }
 
-  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 120_000);
+  // Oyna yopilgandan keyin yoki 2 daqiqa o'tgach blobUrl'ni tozalash
+  globalThis.setTimeout(() => URL.revokeObjectURL(blobUrl), 120_000);
 };
 
 export const openOrdersLabelPdf = async (orders: ApiOrder[]): Promise<void> => {
@@ -702,10 +717,13 @@ export const openOrdersLabelPdf = async (orders: ApiOrder[]): Promise<void> => {
   const openedWindow = window.open(url, "_blank", "noopener,noreferrer");
 
   if (!openedWindow) {
+    // Popup bloklangan bo'lsa — to'g'ridan-to'g'ri yuklab olish
     pdf.save(`elchi-orders-${Date.now()}.pdf`);
+    URL.revokeObjectURL(url);
+    return;
   }
 
-  window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+  globalThis.setTimeout(() => URL.revokeObjectURL(url), 120_000);
 };
 
 export const openOrdersLabelBrowserPrint = (orders: ApiOrder[]): void => {

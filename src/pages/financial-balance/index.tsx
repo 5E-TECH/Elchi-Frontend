@@ -5,6 +5,8 @@ import { Scale, Briefcase, Store, Truck, History, ChartColumn } from "lucide-rea
 import Statistics from "./components/Statistics";
 import HistoryTab from "./components/HistoryTab";
 import { useCashBox } from "../../entities/payments";
+import PageContainer from "../../shared/ui/PageContainer";
+import { formatFinancialAmount, normalizeFinancialBalance } from "./lib/financialBalance";
 
 interface BalanceCard {
   label: string;
@@ -46,14 +48,12 @@ const FinancialBalance = () => {
   const { t } = useTranslation("payments");
   const { getFinancialBalance } = useCashBox();
   const { data: response, isLoading } = getFinancialBalance();
-  const data = response?.data;
+  const data = normalizeFinancialBalance(response);
+  const currencyLabel = t("currency");
   const [activeTab, setActiveTab] = useState<"overview" | "history" | "analysis">("overview");
 
-  const total = data?.currentSituation ?? 0;
+  const total = data.currentSituation;
   const isNegative = total < 0;
-
-  const formatAmount = (val: number): string =>
-    val.toLocaleString("ru-RU").replace(/\s/g, " ");
 
   const tabs = [
     {
@@ -78,7 +78,7 @@ const FinancialBalance = () => {
       label: t("cashbox"),
       subLabel: t("financialBalanceCashAvailable"),
       subType: "neutral",
-      amount: data?.main?.balance ?? 0,
+      amount: data.main.balance,
       icon: <Briefcase size={18} />,
       colorClass: "purple",
     },
@@ -86,7 +86,7 @@ const FinancialBalance = () => {
       label: t("financialBalanceMarkets"),
       subLabel: t("financialBalanceMarketsDebt"),
       subType: "negative",
-      amount: data?.markets?.marketsTotalBalans ?? 0,
+      amount: data.markets.marketsTotalBalans,
       icon: <Store size={18} />,
       colorClass: "red",
     },
@@ -94,17 +94,18 @@ const FinancialBalance = () => {
       label: t("financialBalanceCouriers"),
       subLabel: t("financialBalanceCouriersMoney"),
       subType: "positive",
-      amount: data?.couriers?.couriersTotalBalanse ?? 0,
+      amount: data.couriers.couriersTotalBalanse,
       icon: <Truck size={18} />,
       colorClass: "green",
     },
   ];
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-primary dark:bg-maindark">
+    <PageContainer className="flex flex-col">
+      <div className="flex flex-col rounded-2xl bg-primary dark:bg-maindark">
       {/* Hero */}
       <div
-        className={`relative px-6 py-5 overflow-hidden transition-colors duration-500 ${isNegative
+        className={`relative shrink-0 overflow-hidden px-5 py-4 transition-colors duration-500 sm:px-6 ${isNegative
           ? "bg-linear-to-br from-red-800 via-red-600 to-red-800"
           : "bg-linear-to-br from-emerald-800 via-emerald-600 to-emerald-800"
           }`}
@@ -123,7 +124,7 @@ const FinancialBalance = () => {
             description={t("financialBalanceMarketsAndCouriers")}
             icon={<Scale />}
           />
-          <div className="flex items-end justify-between mt-3">
+          <div className="mt-2.5 flex items-end justify-between">
             <div className="flex items-center gap-2 text-white/60 text-sm">
               <span
                 className={`inline-block w-2 h-2 rounded-full animate-pulse ${isNegative ? "bg-red-300" : "bg-emerald-300"
@@ -136,20 +137,20 @@ const FinancialBalance = () => {
                 <div className="h-10 w-48 bg-white/10 animate-pulse rounded-lg" />
               ) : (
                 <p
-                  className={`font-black text-4xl tracking-wider leading-none ${isNegative ? "text-red-100" : "text-emerald-100"
+                  className={`text-3xl font-black leading-none tracking-wider sm:text-4xl ${isNegative ? "text-red-100" : "text-emerald-100"
                     }`}
                 >
-                  {formatAmount(total)}
+                  {formatFinancialAmount(total)}
                 </p>
               )}
-              <p className="text-white/50 text-xs tracking-widest mt-1">UZS</p>
+              <p className="text-white/50 text-xs tracking-widest mt-1">{currencyLabel}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid shrink-0 grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => {
           const colors = colorMap[card.colorClass];
           const maxAbs = Math.max(...cards.map((c) => Math.abs(c.amount)), 1);
@@ -158,9 +159,9 @@ const FinancialBalance = () => {
           return (
             <div
               key={card.label}
-              className="border border-gray-200 dark:border-glass-border rounded-2xl p-4 hover:border-main/40 dark:hover:border-[#4A476A] hover:-translate-y-0.5 transition-all duration-200 bg-white/60 dark:bg-transparent"
+              className="rounded-2xl border border-gray-200 bg-white/60 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-main/40 dark:border-glass-border dark:bg-transparent dark:hover:border-[#4A476A]"
             >
-              <div className="flex items-center gap-3 mb-3">
+              <div className="mb-2.5 flex items-center gap-3">
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center ${colors.icon}`}
                 >
@@ -182,14 +183,14 @@ const FinancialBalance = () => {
                 <p
                   className={`font-black text-2xl tracking-wide leading-none ${colors.amount}`}
                 >
-                  {formatAmount(card.amount)}
+                  {formatFinancialAmount(card.amount)}
                 </p>
               )}
               <p className="text-[11px] text-maindark/40 dark:text-slate-500 tracking-widest mt-1">
-                UZS
+                {currencyLabel}
               </p>
 
-              <div className="mt-3 h-0.5 rounded-full bg-gray-200 dark:bg-white/5">
+              <div className="mt-2.5 h-0.5 rounded-full bg-gray-200 dark:bg-white/5">
                 <div
                   className={`h-full rounded-full ${colors.bar}`}
                   style={{ width: `${barWidth}%` }}
@@ -200,7 +201,7 @@ const FinancialBalance = () => {
         })}
       </div>
 
-      <div className="px-4 pb-4">
+      <div className="shrink-0 px-4 pb-3">
         <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-primary p-2 dark:border-primarydark/60 dark:bg-maindark sm:grid-cols-3">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -210,7 +211,7 @@ const FinancialBalance = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${isActive
+                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
                   ? "bg-[var(--color-main-soft)] text-[var(--color-main)] dark:bg-primarydark/70 dark:text-primary"
                   : "text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:bg-[var(--color-table-row-alt)] dark:hover:bg-primarydark/70 hover:text-[var(--color-maindark)] dark:hover:text-[var(--color-primary)]"
                   }`}
@@ -237,7 +238,8 @@ const FinancialBalance = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </PageContainer>
   );
 };
 

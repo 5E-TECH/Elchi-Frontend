@@ -101,18 +101,14 @@ export interface CreateRegistratorRequest extends CreateAdminRequest {
 }
 
 export interface CreateManagerRequest {
-    name: string;
-    phone_number: string;
-    password: string;
-    salary: number;
-    branch_id: string;
-}
-
-export interface CreateOperatorRequest {
-    name: string;
-    phone_number: string;
-    password: string;
-    branch_id: string;
+  name: string;
+  phone_number: string;
+  password: string;
+  salary?: number;
+  payment_day?: number;
+  tariff_home?: number;
+  tariff_center?: number;
+  branch_id: string;
 }
 
 // Admin yaratish response
@@ -147,10 +143,11 @@ export interface CreateCourierRequest {
     branch_id?: string;
     name: string;          // Kuryer ismi
     phone_number: string;  // Telefon (+998...)
-    password: string;      // Parol
-    salary?: number;
-    tariff_home?: number;   // Uyga tarif (so'm)
-    tariff_center?: number; // Markazga tarif (so'm)
+  password: string;      // Parol
+  salary?: number;
+  payment_day?: number;
+  tariff_home?: number;   // Uyga tarif (so'm)
+  tariff_center?: number; // Markazga tarif (so'm)
 }
 
 // ==================== USER DETAIL ====================

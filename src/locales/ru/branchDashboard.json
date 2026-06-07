@@ -34,6 +34,11 @@
   "couriersEyebrow": "Состояние курьеров",
   "totalCouriers": "Курьеры филиала",
   "activeCouriers": "Активны сегодня",
+  "money": {
+    "full": "{{value}} UZS",
+    "million": "{{value}} млн",
+    "thousand": "{{value}} тыс"
+  },
   "chartOrders": "Заказы",
   "chartAmount": "Итого: {{amount}}",
   "emptyMarkets": "Пока нет статистики по маркетам",

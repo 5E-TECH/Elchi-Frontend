@@ -16,7 +16,7 @@ const MainLayout = () => {
   }, [location.pathname, dispatch]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F4F5FA] dark:bg-(--color-dark-bg-py) dark:text-[#E7E3FCE5] transition-all duration-300 ease-in-out">
+    <div className="flex flex-col min-h-screen bg-[#F4F5FA] dark:bg-dark-bg-py dark:text-[#E7E3FCE5] transition-all duration-300 ease-in-out">
       {/* Header */}
       <Header />
 

@@ -83,6 +83,8 @@ const formatCurrency = (value: number) => value.toLocaleString("uz-UZ");
 // ─── CustomTooltip ────────────────────────────────────────────────────────────
 
 const CustomTooltip = ({ active, payload, label }: any) => {
+  const { t } = useTranslation("dashboard");
+
   if (!active || !payload?.length) return null;
   return (
     <div
@@ -93,7 +95,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       </p>
       {payload.map((entry: any, i: number) => (
         <p key={i} className="font-bold" style={{ color: entry.color }}>
-          {formatCurrency(Number(entry.value ?? 0))} UZS
+          {t("currency_value", { value: formatCurrency(Number(entry.value ?? 0)) })}
         </p>
       ))}
     </div>
@@ -157,7 +159,7 @@ const ComboVariant = ({ data }: { data: Array<{ date: string; revenue: number }>
 // ─── FinanceCard ──────────────────────────────────────────────────────────────
 
 const FinanceCard = memo(({
-  title, subtitle, value, currency = "UZS",
+  title, subtitle, value, currency,
   valueLabel, trend, trendValue, trendUp = false,
   compareLabel, compareValue, icon, variant,
 }: FinanceCardProps) => {
@@ -440,6 +442,7 @@ const FinancialAnalysis = memo(
     );
     const finance = revenuePayload?.finance;
     const currentSituation = Number(finance?.currentSituation ?? 0);
+    const currencyLabel = t("currency");
 
     const profitIsNegative = profit < 0;
 
@@ -482,7 +485,7 @@ const FinancialAnalysis = memo(
             title={t("financial_cards.today_revenue.title")}
             subtitle={t("financial_cards.today_revenue.subtitle")}
             value={formatCurrency(Number(currentPoint?.revenue ?? profit))}
-            currency="UZS"
+            currency={currencyLabel}
             valueLabel={t("financial_cards.today_revenue.value_label")}
             trendUp={!profitIsNegative}
             icon={<DollarSign size={15} />}
@@ -503,7 +506,7 @@ const FinancialAnalysis = memo(
             title={t("financial_cards.week_revenue.title")}
             subtitle={t("financial_cards.week_revenue.subtitle")}
             value={formatCurrency(currentSituation || totalRevenue)}
-            currency="UZS"
+            currency={currencyLabel}
             valueLabel={t("financial_cards.week_revenue.value_label")}
             trendUp={(currentSituation || totalRevenue) >= 0}
             icon={<DollarSign size={15} />}

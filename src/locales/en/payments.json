@@ -122,11 +122,16 @@
   "financialBalanceMarketsAndCouriers": "Markets and Couriers",
   "financialBalanceNegativeState": "Negative state",
   "financialBalancePositiveState": "Positive state",
+  "financialBalanceCashbox": "Cashbox",
   "financialBalanceCashAvailable": "Available funds",
   "financialBalanceMarkets": "Markets",
   "financialBalanceMarketsDebt": "(-) We owe",
   "financialBalanceCouriers": "Couriers",
   "financialBalanceCouriersMoney": "(+) Our money",
+  "financialBalanceIndicators": "Financial indicators",
+  "financialBalanceDistribution": "Distribution",
+  "financialBalanceTotal": "Total balance",
+  "financialBalanceTotalFormula": "Cashbox + Couriers + Markets",
   "financialBalanceComingSoon": "UI for this section will be added in the next stage.",
   "financialBalanceDate": "Date",
   "financialBalanceSource": "Source",
@@ -200,5 +205,12 @@
   ,"receivePaymentError": "Failed to accept payment from courier"
   ,"marketPaymentSuccess": "Payment to market was sent successfully"
   ,"marketPaymentError": "Failed to send payment to market"
+  ,"selectMainBranchDescription": "Select HQ to transfer funds"
+  ,"branchMainCashboxLabel": "HQ cashbox"
+  ,"payToMainDescription": "Transfer funds from branch cashbox to the main cashbox"
+  ,"payToMainAction": "Transfer to HQ"
+  ,"branchToMainPaymentSuccess": "Payment was transferred to HQ successfully"
+  ,"branchToMainPaymentError": "Failed to transfer payment to HQ"
+  ,"mainBranchFallback": "HQ branch"
   ,"currencyAmountSuffix": "so'm"
 }

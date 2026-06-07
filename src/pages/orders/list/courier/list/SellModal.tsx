@@ -4,6 +4,7 @@ import {
   MessageSquare, CheckCircle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import Popup from "../../../../../shared/ui/Popup";
 
 type OrderItem = {
   id: string;
@@ -130,10 +131,10 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-3 pb-[calc(env(safe-area-inset-bottom)+84px)] pt-4 backdrop-blur-sm sm:items-center sm:px-0 sm:pb-0 sm:pt-0">
-      <div className="relative mx-0 flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl max-h-[calc(100dvh-118px)] dark:bg-gray-900 sm:mx-4 sm:max-h-[90vh]">
+    <Popup isShow={open} onClose={onClose}>
+      <div className="relative mx-3 flex max-h-[calc(100dvh-32px)] w-[calc(100vw-24px)] max-w-md flex-col overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-2xl dark:border-primarydark/60 dark:bg-maindark sm:mx-4 sm:max-h-[90vh]">
         {/* Header */}
-        <div className="bg-green-500 px-5 pt-5 pb-4">
+        <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 pb-4 pt-5 dark:from-emerald-700 dark:to-emerald-600">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white font-bold text-lg">
               {isPartial ? t("partialSell") : t("sell")}
@@ -141,6 +142,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
             <button
               onClick={onClose}
               className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              aria-label={t("close", { ns: "common" })}
             >
               <X size={14} className="text-white" />
             </button>
@@ -179,8 +181,8 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
             onClick={() => setIsPartial((p) => !p)}
             className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 transition-all select-none ${
               isPartial
-                ? "border-orange-400 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-600"
-                : "border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800"
+                ? "border-orange-400 bg-orange-50 dark:border-orange-400/45 dark:bg-orange-400/10"
+                : "border-orange-200 bg-orange-50 dark:border-orange-400/20 dark:bg-orange-400/10"
             }`}
           >
             <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
@@ -215,7 +217,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                 {order.items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl"
+                    className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/80 p-3 dark:border-white/10 dark:bg-primarydark/35"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate text-gray-800 dark:text-gray-100">
@@ -227,7 +229,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                       <button
                         onClick={() => setItemQty(item, getItemQty(item) - 1)}
                         disabled={!canDecreaseItem(item)}
-                        className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         <Minus size={12} />
                       </button>
@@ -236,9 +238,9 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                       </span>
                       <button
                         onClick={() => setItemQty(item, getItemQty(item) + 1)}
-                        className="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center hover:bg-green-200 transition-colors"
+                        className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center hover:bg-emerald-200 dark:hover:bg-emerald-500/25 transition-colors"
                       >
-                        <Plus size={12} className="text-green-600" />
+                        <Plus size={12} className="text-emerald-600 dark:text-emerald-200" />
                       </button>
                     </div>
                   </div>
@@ -260,7 +262,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
                 {t("paymentAmount")} <span className="text-red-400">*</span>
               </p>
-              <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
                 <input
                   type="text"
                   inputMode="numeric"
@@ -269,7 +271,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                     setTotalPrice(sanitizeAmountInput(e.target.value))
                   }
                   placeholder="0"
-                  className="flex-1 bg-transparent text-sm outline-none text-gray-800 dark:text-gray-100"
+                  className="flex-1 bg-transparent text-sm text-gray-800 outline-none dark:text-gray-100"
                 />
                 <span className="text-sm text-gray-400">{t("currency")}</span>
               </div>
@@ -282,7 +284,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               <Plus size={12} className="text-green-500" />
               {t("extraPayment")}
             </p>
-            <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
               <input
                 type="text"
                 inputMode="numeric"
@@ -291,7 +293,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                   setExtraCost(sanitizeAmountInput(e.target.value))
                 }
                 placeholder="0"
-                className="flex-1 bg-transparent text-sm outline-none text-gray-800 dark:text-gray-100"
+                className="flex-1 bg-transparent text-sm text-gray-800 outline-none dark:text-gray-100"
               />
               <span className="text-sm text-gray-400">{t("currency")}</span>
             </div>
@@ -309,24 +311,24 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               onChange={(e) => setNote(e.target.value)}
               placeholder={t("writeNote")}
               rows={3}
-              className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm bg-transparent outline-none resize-none text-gray-800 dark:text-gray-100 placeholder:text-gray-300"
+              className="w-full resize-none rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-100 dark:placeholder:text-white/35"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-gray-100 bg-white px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-4 dark:border-white/10 dark:bg-gray-900 sm:pb-5">
+        <div className="shrink-0 border-t border-gray-200 bg-primary px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-4 dark:border-white/10 dark:bg-maindark sm:pb-5">
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="w-full bg-green-500 hover:bg-green-600 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-500 hover:to-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <CheckCircle size={18} />
             {isLoading ? t("loading", { ns: "common" }) : t("sell")}
           </button>
         </div>
       </div>
-    </div>
+    </Popup>
   );
 };
 

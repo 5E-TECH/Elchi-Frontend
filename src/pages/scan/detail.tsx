@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  ArrowLeft,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -30,6 +29,7 @@ import {
 } from "./lib/scanResource";
 import ScanPackageDetail from "./ui/ScanPackageDetail";
 import ScanPostDetail from "./ui/ScanPostDetail";
+import BackButton from "../../shared/ui/BackButton";
 
 type ScanOrderView = {
   id: string;
@@ -227,14 +227,7 @@ const ScanDetailPage = () => {
     <div className="rounded-[32px] border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_94%,var(--color-main)_6%)_0%,color-mix(in_srgb,var(--color-sidebar)_88%,var(--color-main)_12%)_100%)] shadow-sm dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
       <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4 md:px-7">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/scan")}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-white text-[color:var(--color-text-muted)] transition hover:border-main/30 hover:bg-main/5 hover:text-main dark:bg-maindark dark:text-white/80 dark:hover:bg-white/12 dark:hover:text-white"
-            aria-label={t("back")}
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <BackButton to="/scan" className="shrink-0 bg-white dark:bg-maindark" label="" />
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/15 dark:text-emerald-100">
             <CheckCircle2 size={20} />
           </div>

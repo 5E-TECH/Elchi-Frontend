@@ -1,5 +1,5 @@
 import type { AxiosError } from "axios";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
@@ -9,11 +9,20 @@ export type Integration = {
   slug: string;
   status: string;
   api_url: string;
+  base_url?: string | null;
+  type?: string | null;
   auth_type: string;
   auth_url?: string | null;
   username?: string | null;
+  credentials?: Record<string, string> | null;
   is_active: boolean;
   market_id: string | null;
+  market?: {
+    id?: string | number;
+    name?: string | null;
+    username?: string | null;
+    phone_number?: string | null;
+  } | null;
   field_mapping?: unknown;
   status_mapping?: unknown;
   status_sync_config?: unknown;
@@ -33,6 +42,23 @@ export type IntegrationParams = {
   page?: number;
   limit?: number;
 };
+
+export type CreateIntegrationPayload = {
+  name: string;
+  slug: string;
+  type: string;
+  status: string;
+  base_url: string;
+  auth_type: string;
+  credentials: Record<string, string>;
+  market_id?: string | null;
+  is_active?: boolean;
+  field_mapping?: unknown;
+  status_mapping?: unknown;
+  status_sync_config?: unknown;
+};
+
+export type UpdateIntegrationPayload = Partial<CreateIntegrationPayload>;
 
 export type IntegrationsMeta = {
   page: number;
@@ -93,3 +119,40 @@ export const useGetIntegrationById = (id?: string | number) =>
     refetchOnWindowFocus: false,
     retry: false,
   });
+
+export const useCreateIntegration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateIntegrationPayload) =>
+      api.post(API_ENDPOINTS.INTEGRATIONS.BASE, payload).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: integrationKeys.all });
+    },
+  });
+};
+
+export const useDeleteIntegration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string | number) =>
+      api.delete(API_ENDPOINTS.INTEGRATIONS.BY_ID(id)).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: integrationKeys.all });
+    },
+  });
+};
+
+export const useUpdateIntegration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string | number; payload: UpdateIntegrationPayload }) =>
+      api.patch(API_ENDPOINTS.INTEGRATIONS.BY_ID(id), payload).then((res) => res.data),
+    onSuccess: (_response, variables) => {
+      queryClient.invalidateQueries({ queryKey: integrationKeys.all });
+      queryClient.invalidateQueries({ queryKey: integrationKeys.byId(variables.id) });
+    },
+  });
+};

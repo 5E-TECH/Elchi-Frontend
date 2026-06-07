@@ -13,9 +13,9 @@ export const useParentBranchOptions = (enabled: boolean) =>
 
 export const getBranchTypeOptions = (t: TFunction) => [
   { value: "HQ", label: "HQ", disabled: true },
-  { value: "CITY", label: t("branchTypes.city") },
+  { value: "PICKUP", label: t("branchTypes.pickup") },
   { value: "REGIONAL", label: t("branchTypes.regional") },
-  { value: "DISTRICT", label: t("branchTypes.district") },
+  { value: "HYBRID", label: t("branchTypes.hybrid") },
 ];
 
 const getIndent = (level?: number) => {
@@ -37,7 +37,7 @@ export const getParentBranchOptions = (
   excludeBranchId?: string,
 ) =>
   (branches ?? [])
-    .filter((branch) => branch.id !== excludeBranchId)
+    .filter((branch) => branch.id !== excludeBranchId && Number(branch.level ?? 0) < 2)
     .sort((left, right) => {
       const leftLevel = left.level ?? 0;
       const rightLevel = right.level ?? 0;

@@ -24,6 +24,8 @@ export interface TableProps<T> {
   onRowClick?: (row: T, index: number) => void;
   mobileRowRender?: (row: T, index: number) => React.ReactNode;
   className?: string;
+  headerCellClassName?: string;
+  bodyCellClassName?: string;
   dense?: boolean;
   striped?: boolean;
   bordered?: boolean;

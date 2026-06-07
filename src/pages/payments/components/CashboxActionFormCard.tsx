@@ -6,8 +6,9 @@ import type {
   UseFormHandleSubmit,
   UseFormRegister,
 } from "react-hook-form";
-import { CreditCard, PackageCheck, Send } from "lucide-react";
+import { CreditCard, Landmark, PackageCheck, Send } from "lucide-react";
 import Select from "../../../shared/ui/Select";
+import FilterSelect from "../../../shared/ui/FilterSelect";
 import { formatAmountInput } from "./lib/amountInput";
 
 export interface CashboxActionFormValues {
@@ -18,7 +19,7 @@ export interface CashboxActionFormValues {
 }
 
 interface CashboxActionFormCardProps {
-  type: "market" | "courier";
+  type: "market" | "courier" | "branch";
   actionGradient: string;
   actionLabel: string;
   actionSubLabel: string;
@@ -44,7 +45,10 @@ interface CashboxActionFormCardProps {
 }
 
 const sectionClassName =
-  "overflow-hidden rounded-[1.35rem] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark";
+  "rounded-[1.35rem] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark";
+
+const fieldClassName =
+  "w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] px-4 py-3 text-sm font-semibold text-maindark outline-none transition-all placeholder:text-[color:var(--color-text-muted)] focus:border-main focus:ring-2 focus:ring-main/15 dark:border-white/10 dark:bg-white/[0.055] dark:text-primary dark:placeholder:text-white/35 dark:focus:border-main dark:focus:ring-main/20";
 
 const CashboxActionFormCard = ({
   type,
@@ -71,25 +75,34 @@ const CashboxActionFormCard = ({
   handleSubmit,
   onSubmit,
 }: CashboxActionFormCardProps) => {
+  const headerIcon =
+    type === "market" ? (
+      <CreditCard size={17} />
+    ) : type === "branch" ? (
+      <Landmark size={17} />
+    ) : (
+      <PackageCheck size={17} />
+    );
+
   return (
-    <div className={`${sectionClassName} w-full max-w-[540px]`}>
-      <div className={`bg-linear-to-r ${actionGradient} px-3.5 py-2`}>
-        <div className="flex items-center gap-1.5">
-          <div className="flex h-6 w-6 items-center justify-center rounded-[0.75rem] bg-primary/15 text-primary shadow-inner">
-            {type === "market" ? <CreditCard size={12} /> : <PackageCheck size={12} />}
+    <div className={`${sectionClassName} w-full max-w-135`}>
+      <div className={`rounded-t-[1.35rem] bg-linear-to-r ${actionGradient} px-4 py-3`}>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/16 text-primary shadow-inner">
+            {headerIcon}
           </div>
           <div>
-            <p className="text-[12px] font-bold leading-none text-primary">{actionLabel}</p>
-            <p className="mt-0.5 text-[9px] leading-none text-primary/70">
+            <p className="text-sm font-extrabold leading-tight text-primary">{actionLabel}</p>
+            <p className="mt-0.5 text-[11px] font-semibold leading-tight text-primary/75">
               {actionSubLabel}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-2 p-2.5">
+      <div className="space-y-3.5 p-3.5">
         <div>
-          <label className="mb-0.5 block text-[12px] font-semibold text-gray-700 dark:text-gray-300">
+          <label className="mb-1.5 block text-xs font-bold text-[color:var(--color-table-label)] dark:text-[color:var(--color-table-label-dark)]">
             {amountLabel} <span className="text-rose-400">*</span>
           </label>
           <div className="relative">
@@ -103,11 +116,11 @@ const CashboxActionFormCard = ({
                   placeholder="0"
                   value={formatAmountInput(field.value)}
                   onChange={(event) => field.onChange(event.target.value)}
-                  className="w-full rounded-[0.9rem] border border-gray-200 bg-gray-50 px-3 py-2 pr-14 text-[13px] font-semibold text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-main focus:ring-2 focus:ring-main/15 dark:border-white/10 dark:bg-[#312D4B] dark:text-white dark:placeholder:text-white/20 dark:focus:border-info dark:focus:ring-info/15"
+                  className={`${fieldClassName} pr-16`}
                 />
               )}
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 dark:text-white/40">
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[color:var(--color-text-muted)] dark:text-white/45">
               UZS
             </span>
           </div>
@@ -121,19 +134,21 @@ const CashboxActionFormCard = ({
             control={control}
             name="paymentType"
             render={({ field }) => (
-              <Select
+              <FilterSelect
                 label={paymentTypeLabel}
                 name={field.name}
                 value={field.value}
                 onChange={field.onChange}
                 options={paymentTypeOptions}
                 placeholder={paymentTypePlaceholder}
-                required
-                error={errors.paymentType?.message}
-                className="py-2 text-[13px] dark:bg-[#312D4B] dark:border-white/10 dark:focus:border-info dark:focus:ring-info/15"
               />
             )}
           />
+          {errors.paymentType && (
+            <p className="mt-1 text-xs font-semibold text-error">
+              {errors.paymentType.message}
+            </p>
+          )}
         </div>
 
         {showMarketSelect && (
@@ -152,7 +167,7 @@ const CashboxActionFormCard = ({
                   required
                   loading={marketLoading}
                   error={errors.marketId?.message}
-                  className="py-2 text-[13px] dark:bg-[#312D4B] dark:border-white/10 dark:focus:border-info dark:focus:ring-info/15"
+                  className="border-(--color-border-soft)! !bg-[color:var(--color-card-surface-strong)] !py-3 !text-sm !font-semibold dark:!border-white/10 dark:!bg-white/[0.055] dark:!text-primary"
                 />
               )}
             />
@@ -160,14 +175,14 @@ const CashboxActionFormCard = ({
         )}
 
         <div>
-          <label className="mb-0.5 block text-[12px] font-semibold text-gray-700 dark:text-gray-300">
+          <label className="mb-1.5 block text-xs font-bold text-(--color-table-label) dark:text-[color:var(--color-table-label-dark)]">
             {commentLabel}
           </label>
           <textarea
             placeholder={commentPlaceholder}
-            rows={1}
+            rows={2}
             {...register("comment")}
-            className="w-full min-h-10 resize-none rounded-[0.9rem] border border-gray-200 bg-gray-50 px-3 py-2 text-[13px] text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-main focus:ring-2 focus:ring-main/15 dark:border-white/10 dark:bg-[#312D4B] dark:text-white dark:placeholder:text-white/20 dark:focus:border-info dark:focus:ring-info/15"
+            className={`${fieldClassName} min-h-[4.5rem] resize-none`}
           />
         </div>
 
@@ -175,9 +190,9 @@ const CashboxActionFormCard = ({
           type="button"
           onClick={handleSubmit(onSubmit)}
           disabled={submitDisabled || submitLoading}
-          className={`flex h-9 w-full items-center justify-center gap-1.5 rounded-[0.9rem] bg-linear-to-r text-[13px] font-semibold text-white shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${actionGradient}`}
+          className={`flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r text-sm font-extrabold text-white shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${actionGradient}`}
         >
-          <Send size={13} />
+          <Send size={16} />
           {submitLoading ? "Yuklanmoqda..." : submitLabel}
         </button>
       </div>

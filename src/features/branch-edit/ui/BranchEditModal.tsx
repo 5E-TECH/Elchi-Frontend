@@ -43,7 +43,7 @@ const BranchEditModal = ({
     defaultValues: {
       name: "",
       parent_id: "",
-      type: "CITY",
+      type: "PICKUP",
       code: "",
       phone_number: "+998",
       address: "",
@@ -62,7 +62,7 @@ const BranchEditModal = ({
       reset({
         name: initialData.name,
         parent_id: initialData.parent_id ?? initialData.parent?.id ?? "",
-        type: initialData.type ?? "CITY",
+        type: initialData.type ?? "PICKUP",
         code: initialData.code ?? "",
         phone_number: initialData.phone_number ?? "+998",
         address: initialData.address,
@@ -76,7 +76,7 @@ const BranchEditModal = ({
       const payload: UpdateBranchDto = {
         ...values,
         code: values.code.trim(),
-        parent_id: values.type === "HQ" ? "" : values.parent_id,
+        parent_id: values.type === "PICKUP" ? "" : values.parent_id,
       };
       await updateBranch.mutateAsync({ id: initialData.id, payload });
       message.success(t("messages.updated"));
@@ -133,7 +133,7 @@ const BranchEditModal = ({
                 value={field.value}
                 onChange={(value) => {
                   field.onChange(value);
-                  if (value === "HQ") {
+                  if (value === "PICKUP") {
                     setValue("parent_id", "");
                   }
                 }}
@@ -155,10 +155,10 @@ const BranchEditModal = ({
                 name={field.name}
                 value={field.value}
                 onChange={field.onChange}
-                disabled={selectedType === "HQ"}
+                disabled={selectedType === "PICKUP"}
                 options={parentOptions}
                 loading={parentBranchesLoading}
-                placeholder={selectedType === "HQ" ? t("placeholders.parentForHq") : t("placeholders.parent")}
+                placeholder={selectedType === "PICKUP" ? t("placeholders.parentForHq") : t("placeholders.parent")}
                 icon={Building2}
                 hideLabel
                 surface="search"

@@ -171,8 +171,9 @@ const AdminStats = ({ user }: { user: User }) => {
 export const UserStatsCard = memo(({ user }: UserStatsCardProps) => {
     const { t } = useTranslation("users");
     const isAdmin = user.role === 'admin' || user.role === 'manager' || user.role === 'registrator' || user.role === 'superadmin';
+    const hasSalary = Number(user.salary ?? 0) > 0;
 
-    if (!isAdmin) return null;
+    if (!isAdmin || !hasSalary) return null;
 
     return (
         <div className="bg-white dark:bg-maindark rounded-2xl border border-slate-100 dark:border-primarydark/20 shadow-sm overflow-hidden">

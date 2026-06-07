@@ -35,6 +35,8 @@
     "to": "Конец"
   },
   "currency_value": "{{value}} UZS",
+  "currency": "UZS",
+  "currency_sum": "UZS",
   "cards": {
     "total_orders": "Всего заказов",
     "sold": "Продано",

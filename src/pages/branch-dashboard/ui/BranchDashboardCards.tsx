@@ -21,15 +21,19 @@ import {
 import { useTranslation } from "react-i18next";
 import type { BranchDashboardSnapshot } from "./branchDashboardAdapter";
 
-const formatMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
-const formatCompactMoney = (value: number) => {
+type Translate = ReturnType<typeof useTranslation>["t"];
+
+const formatMoney = (value: number, t: Translate) =>
+  t("money.full", { value: value.toLocaleString("uz-UZ") });
+
+const formatCompactMoney = (value: number, t: Translate) => {
   if (value >= 1_000_000) {
     const amount = value / 1_000_000;
-    return `${Number.isInteger(amount) ? amount : amount.toFixed(1)} mln`;
+    return t("money.million", { value: Number.isInteger(amount) ? amount : amount.toFixed(1) });
   }
 
   if (value >= 1_000) {
-    return `${Math.round(value / 1_000)} ming`;
+    return t("money.thousand", { value: Math.round(value / 1_000) });
   }
 
   return String(value);
@@ -155,7 +159,7 @@ export const MarketsPerformanceCard = memo(({ markets }: { markets: BranchDashbo
                   background: "var(--color-primary)",
                 }}
                 formatter={(value, key) =>
-                  key === "amount" ? formatMoney(Number(value)) : Number(value)
+                  key === "amount" ? formatMoney(Number(value), t) : Number(value)
                 }
               />
               <Bar dataKey="orders" radius={[10, 10, 0, 0]} maxBarSize={44}>
@@ -163,7 +167,7 @@ export const MarketsPerformanceCard = memo(({ markets }: { markets: BranchDashbo
                   dataKey="amount"
                   position="top"
                   offset={8}
-                  formatter={(value) => formatCompactMoney(Number(value) || 0)}
+                  formatter={(value) => formatCompactMoney(Number(value) || 0, t)}
                   className="fill-[color:var(--color-maindark)] dark:fill-white"
                   fontSize={11}
                   fontWeight={700}

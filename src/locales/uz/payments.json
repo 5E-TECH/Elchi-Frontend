@@ -122,11 +122,16 @@
   "financialBalanceMarketsAndCouriers": "Marketlar va kuryerlar",
   "financialBalanceNegativeState": "Salbiy holat",
   "financialBalancePositiveState": "Ijobiy holat",
+  "financialBalanceCashbox": "Kassa",
   "financialBalanceCashAvailable": "Mavjud mablag'",
   "financialBalanceMarkets": "Marketlar",
   "financialBalanceMarketsDebt": "(-) Biz qarzmiz",
   "financialBalanceCouriers": "Kuryerlar",
   "financialBalanceCouriersMoney": "(+) Bizning pul",
+  "financialBalanceIndicators": "Moliyaviy ko'rsatkichlar",
+  "financialBalanceDistribution": "Taqsimot",
+  "financialBalanceTotal": "Umumiy balans",
+  "financialBalanceTotalFormula": "Kassa + Kuryerlar + Marketlar",
   "financialBalanceComingSoon": "Bu bo'lim uchun UI keyingi bosqichda qo'shiladi.",
   "financialBalanceDate": "Sana",
   "financialBalanceSource": "Manba",
@@ -200,5 +205,12 @@
   ,"receivePaymentError": "Kuryerdan to'lovni qabul qilishda xatolik yuz berdi"
   ,"marketPaymentSuccess": "Marketga to'lov muvaffaqiyatli amalga oshirildi"
   ,"marketPaymentError": "Marketga to'lovni yuborishda xatolik yuz berdi"
+  ,"selectMainBranchDescription": "Asosiy filialga pul o'tkazish uchun tanlang"
+  ,"branchMainCashboxLabel": "Asosiy filial kassasi"
+  ,"payToMainDescription": "Filial kassasidan asosiy kassaga pul o'tkazish"
+  ,"payToMainAction": "HQga o'tkazish"
+  ,"branchToMainPaymentSuccess": "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi"
+  ,"branchToMainPaymentError": "Asosiy filialga to'lov o'tkazishda xatolik yuz berdi"
+  ,"mainBranchFallback": "Asosiy filial"
   ,"currencyAmountSuffix": "so'm"
 }

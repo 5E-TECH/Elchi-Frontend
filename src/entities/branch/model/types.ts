@@ -1,4 +1,4 @@
-export type BranchType = "HQ" | "CITY" | "REGIONAL" | "DISTRICT";
+export type BranchType = "HQ" | "PICKUP" | "REGIONAL" | "HYBRID";
 
 export interface Branch {
   id: string;
@@ -15,6 +15,9 @@ export interface Branch {
   status: "active" | "inactive";
   employees_count: number;
   created_at: string;
+  olinishi_kerak?: number;
+  berilishi_kerak?: number;
+  kassadagi_summa?: number;
 }
 
 export interface Employee {

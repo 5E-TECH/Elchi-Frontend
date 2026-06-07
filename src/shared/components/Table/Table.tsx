@@ -14,6 +14,8 @@ export const Table = memo(<T extends Record<string, any>>({
   onRowClick,
   mobileRowRender,
   className = '',
+  headerCellClassName,
+  bodyCellClassName,
   dense = false,
   striped = true,
   bordered = true,
@@ -93,12 +95,12 @@ export const Table = memo(<T extends Record<string, any>>({
   );
   const cardColumns = mobileColumns.length > 0 ? mobileColumns : columns;
 
-  const headerCellClass = dense || isCompactMode
+  const headerCellClass = headerCellClassName ?? (dense || isCompactMode
     ? 'px-3 py-3 text-[11px]'
-    : 'px-6 py-4';
-  const bodyCellClass = dense || isCompactMode
+    : 'px-6 py-4');
+  const bodyCellClass = bodyCellClassName ?? (dense || isCompactMode
     ? 'px-3 py-3 text-[13px]'
-    : 'px-6 py-4 text-sm';
+    : 'px-6 py-4 text-sm');
 
   // Sorting logikasi
   const sortedData = useMemo(() => {

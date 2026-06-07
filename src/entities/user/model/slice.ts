@@ -6,12 +6,15 @@ const initialAccessToken =
     ? window.localStorage.getItem("accessToken")
     : null;
 
+const startsOnLoginPage =
+  typeof window !== "undefined" && window.location.pathname === "/login";
+
 const initialState: UserState = {
   user: null,
   isAuthenticated: Boolean(initialAccessToken),
   accessToken: initialAccessToken,
   loading: false,
-  isAppInitializing: true,
+  isAppInitializing: Boolean(initialAccessToken) || !startsOnLoginPage,
   error: null,
 };
 

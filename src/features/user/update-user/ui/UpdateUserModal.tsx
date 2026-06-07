@@ -1,5 +1,6 @@
 import { memo, useEffect } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
+import { useSelector } from "react-redux";
 import {
   Building,
   Building2,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import UpdatePopup from "../../../../shared/components/popupUpdate";
 import SearchableSelect from "../../../../shared/ui/SearchableSelect";
+import CustomDatePicker from "../../../../shared/ui/CustomDatePicker";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import { UserRoleBadge } from "../../../../entities/user/ui/UserRoleBadge";
@@ -20,6 +22,7 @@ import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser"
 import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
 import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
+import type { RootState } from "../../../../app/config/store";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -38,6 +41,24 @@ const parseAmount = (value: string): number =>
   Number(value.replace(/\s/g, ""));
 
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
+
+const paymentDayToIsoDate = (paymentDay: string): string => {
+  const day = Number(paymentDay);
+  if (!Number.isFinite(day) || day < 1 || day > 30) return "";
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}-${String(day).padStart(2, "0")}`;
+};
+
+const isoDateToPaymentDay = (value: string): string => {
+  if (!value) return "";
+  const parts = value.split("-");
+  if (parts.length !== 3) return "";
+  const day = Number(parts[2]);
+  if (!Number.isFinite(day) || day < 1 || day > 30) return "";
+  return String(day);
+};
 
 type RegionOption = {
   id: string | number;
@@ -110,6 +131,7 @@ export const UpdateUserModal = memo(({
   isOwnProfile = false,
 }: UpdateUserModalProps) => {
   const { t } = useTranslation("users");
+  const authRole = useSelector((state: RootState) => state.role.role);
   const { getUserById, updateUser, updateMyProfile, getRegions } = useUser();
   const { apiRequest } = useAppNotification();
 
@@ -148,6 +170,10 @@ export const UpdateUserModal = memo(({
   const isCourier = !isOwnProfile && role === "courier";
   const isMarket = !isOwnProfile && (role === "market" || role === "marketing");
   const isCustomer = role === "customer";
+  const canEditManagerFinancial =
+    !isOwnProfile &&
+    role === "manager" &&
+    (authRole === "admin" || authRole === "superadmin");
 
   useEffect(() => {
     if (!userData) return;
@@ -197,6 +223,20 @@ export const UpdateUserModal = memo(({
       }
     }
 
+    if (canEditManagerFinancial) {
+      const hasHomeTariff = Boolean(values.tariff_home.trim());
+      const hasCenterTariff = Boolean(values.tariff_center.trim());
+      if (hasHomeTariff !== hasCenterTariff) {
+        if (!hasHomeTariff) {
+          setError("tariff_home", { message: t("homeTariffRequired") });
+        }
+        if (!hasCenterTariff) {
+          setError("tariff_center", { message: t("centerTariffRequired") });
+        }
+        valid = false;
+      }
+    }
+
     return valid;
   };
 
@@ -220,10 +260,32 @@ export const UpdateUserModal = memo(({
     }
 
     if (isAdmin) {
+      if (values.salary.trim()) {
+        const salary = parseAmount(values.salary);
+        if (salary !== Number((userData as any).salary ?? 0)) {
+          payload.salary = salary;
+        }
+      }
+
       if (values.payment_day) {
         const paymentDay = Number(values.payment_day);
         if (paymentDay !== Number((userData as any).payment_day)) {
           payload.payment_day = paymentDay;
+        }
+      }
+    }
+
+    if (canEditManagerFinancial) {
+      if (values.tariff_home.trim() && values.tariff_center.trim()) {
+        const tariffHome = parseAmount(values.tariff_home);
+        const tariffCenter = parseAmount(values.tariff_center);
+
+        if (tariffHome !== Number((userData as any).tariff_home ?? 0)) {
+          payload.tariff_home = tariffHome;
+        }
+
+        if (tariffCenter !== Number((userData as any).tariff_center ?? 0)) {
+          payload.tariff_center = tariffCenter;
         }
       }
     }
@@ -482,15 +544,67 @@ export const UpdateUserModal = memo(({
                     </div>
 
                     {renderTextInput({
-                      name: "payment_day",
-                      type: "number",
+                      name: "salary",
                       label: (
                         <>
-                          <Calendar size={11} className="inline mr-1 mb-px" />
-                          {t("paymentDayRange")}
+                          <Building size={11} className="inline mr-1 mb-px" />
+                          {t("salaryWithCurrency")}
                         </>
                       ),
-                      placeholder: "1 – 30",
+                      placeholder: "2 500 000",
+                    })}
+
+                    <Controller
+                      control={control}
+                      name="payment_day"
+                      render={({ field, fieldState }) => (
+                        <div className="relative">
+                          <label className={labelCls}>
+                            <Calendar size={11} className="inline mr-1 mb-px" />
+                            {t("paymentDayRange")}
+                          </label>
+                          <CustomDatePicker
+                            value={paymentDayToIsoDate(field.value)}
+                            onChange={(nextDate) =>
+                              field.onChange(isoDateToPaymentDay(nextDate))
+                            }
+                            placeholder="Sanani tanlang"
+                            variant="form"
+                            className="w-full"
+                          />
+                          {fieldState.error?.message && (
+                            <p className="absolute -bottom-4 right-0 text-[10px] text-red-500 font-medium">
+                              {fieldState.error.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+                  </>
+                )}
+
+                {canEditManagerFinancial && (
+                  <>
+                    {renderTextInput({
+                      name: "tariff_home",
+                      label: (
+                        <>
+                          <Home size={11} className="inline mr-1 mb-px" />
+                          {t("homeTariffWithCurrency")}
+                        </>
+                      ),
+                      placeholder: "10 000",
+                    })}
+
+                    {renderTextInput({
+                      name: "tariff_center",
+                      label: (
+                        <>
+                          <Building2 size={11} className="inline mr-1 mb-px" />
+                          {t("centerTariffWithCurrency")}
+                        </>
+                      ),
+                      placeholder: "8 000",
                     })}
                   </>
                 )}

@@ -15,26 +15,28 @@ import { useTheme } from "../../../app/providers/theme/ThemeContext";
 const Sidebar = () => {
   const { t } = useTranslation(["sidebar"]);
   const dispatch = useDispatch();
-  const sidebarRedux = useSelector((state: RootState) => state.sidebar);
+  // Faqat kerakli field — butun sidebar object emas (re-render kamayadi)
+  const isOpen = useSelector((state: RootState) => state.sidebar.isOpen);
   const { theme } = useTheme();
   const isDarkMode = theme === "dark";
 
   // ─── User role'ni Redux dan oling ────────────────────────────────────────
-  const { role } = useSelector((state: RootState) => state.role);
+  const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   const userRole = (role as SidebarUserRole) || "admin";
 
   // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
-  const links = useMemo(() => {
-    const navItems = getSidebarConfigForUser(userRole, user);
+  // navItems va links alohida memoized — role/user o'zgarmasa qayta hisoblanmaydi
+  const navItems = useMemo(
+    () => getSidebarConfigForUser(userRole, user),
+    [userRole, user],
+  );
 
-    return navItems.map((item) => ({
-      to: item.to,
-      icon: <item.icon />,
-      label: t(item.label),
-      end: item.end,
-    }));
-  }, [userRole, user, t]);
+  // t() faqat til o'zgarganda links yangilanadi
+  const links = useMemo(
+    () => navItems.map((item) => ({ ...item, label: t(item.label) })),
+    [navItems, t],
+  );
 
   // ─── Logo rasmlarini tanlash ──────────────────────────────────────────────
   const currentLogoText = isDarkMode ? LogoTextdark : LogoText;
@@ -42,19 +44,19 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`sticky left-0 top-0 z-50 hidden h-screen flex-col bg-sidebar text-maindark transition-all duration-300 ease-in-out lg:flex dark:bg-maindark dark:text-primary ${!sidebarRedux.isOpen ? "w-20" : "w-72"
+      className={`sticky left-0 top-0 z-50 hidden h-screen flex-col bg-sidebar text-maindark transition-all duration-300 ease-in-out lg:flex dark:bg-maindark dark:text-primary ${!isOpen ? "w-20" : "w-72"
         }`}
     >
       {/* Header with Logo */}
       <div className="flex h-22 items-center justify-start overflow-hidden bg-sidebar pl-4 dark:bg-maindark">
         <div
-          className={`transition-all duration-300 flex items-center justify-start ${!sidebarRedux.isOpen ? "w-full px-2" : "w-full px-4"
+          className={`transition-all duration-300 flex items-center justify-start ${!isOpen ? "w-full px-2" : "w-full px-4"
             }`}
         >
           <img
-            src={sidebarRedux.isOpen ? currentLogoText : currentLogoIcon}
+            src={isOpen ? currentLogoText : currentLogoIcon}
             alt="Elchi Logo"
-            className={`object-contain transition-all duration-300 ${!sidebarRedux.isOpen ? "h-10 w-10" : "h-auto w-40"
+            className={`object-contain transition-all duration-300 ${!isOpen ? "h-10 w-10" : "h-auto w-40"
               }`}
           />
         </div>
@@ -63,17 +65,27 @@ const Sidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 space-y-1.5 overflow-y-auto bg-sidebar px-3 py-4 custom-scrollbar dark:bg-maindark">
         {links.map((link) => (
-          <SidebarLink key={link.to} {...link} />
+          <SidebarLink
+            key={link.to}
+            to={link.to}
+            icon={<link.icon />}
+            label={link.label}
+            end={link.end}
+            isOpen={isOpen}
+          />
         ))}
       </nav>
 
-      {/* Footer with Toggle Button and Logout */}
-      <div className={`p-3 flex bg-primary/5 dark:bg-maindark/50 ${!sidebarRedux.isOpen ? "flex-col space-y-3 items-center" : "items-center justify-between"}`}>
+      {/* Footer with Toggle Button */}
+      <div
+        className={`p-3 flex bg-primary/5 dark:bg-maindark/50 ${!isOpen ? "flex-col space-y-3 items-center" : "items-center justify-between"
+          }`}
+      >
         <button
           onClick={() => dispatch(toggleSidebar())}
           className="flex items-center justify-center rounded-lg p-2 transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10"
         >
-          {sidebarRedux.isOpen ? (
+          {isOpen ? (
             <>
               <ChevronLeft size={20} />
               <span className="ml-2 text-sm font-medium">{t("collapse")}</span>

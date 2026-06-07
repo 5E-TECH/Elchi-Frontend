@@ -1,0 +1,75 @@
+{
+  "title": "Regions",
+  "subtitle": "Order statistics by region",
+  "assignedRegion": "Your assigned region",
+  "unknown": "Unknown",
+  "unknownDistrict": "Unknown district",
+  "currencySum": "UZS",
+  "dateRange": {
+    "today": "Today",
+    "week": "Week",
+    "month": "Month",
+    "all": "All"
+  },
+  "actions": {
+    "satoManagement": "Move districts",
+    "districts": "Districts",
+    "logistAssignment": "Assign logist"
+  },
+  "sato": {
+    "title": "Manage districts by region",
+    "description": "Drag a district and drop it onto the target region",
+    "regionsCount": "Regions",
+    "districtsCount": "Districts",
+    "districtCount": "{{count}} pcs",
+    "searchPlaceholder": "Search district or region...",
+    "noDistricts": "No districts assigned",
+    "move": "Move",
+    "saving": "Saving...",
+    "loadError": "Could not load regions",
+    "moveSuccess": "District moved to another region",
+    "moveError": "Could not move district"
+  },
+  "districts": {
+    "title": "District management",
+    "description": "This section is connected to the region module route."
+  },
+  "logist": {
+    "title": "Assign logist",
+    "description": "This section is connected to the region module route."
+  },
+  "map": {
+    "seriesName": "Orders",
+    "region": "Region",
+    "regionDetails": "Region details",
+    "detailedStatistics": "Detailed statistics",
+    "clickForDetails": "Click to view details",
+    "loadingError": "Could not load region details",
+    "mainCourier": "Regional main courier",
+    "mainCouriers": "Regional main couriers ({{count}})",
+    "couriersNotFound": "Courier information not found",
+    "districtsTitle": "Districts ({{count}})",
+    "districtsNotFound": "District information not found",
+    "legend": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "veryHigh": "Very high"
+    },
+    "metrics": {
+      "orders": "Orders",
+      "order": "Order",
+      "orderUnit": "orders",
+      "totalOrders": "Total orders",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "success": "Success",
+      "pending": "Pending",
+      "revenue": "Revenue",
+      "totalRevenue": "Total revenue",
+      "districts": "Districts",
+      "couriers": "Couriers",
+      "courier": "courier"
+    }
+  }
+}

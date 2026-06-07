@@ -28,7 +28,7 @@ export const tokenStorage = {
   },
 
   clear() {
-    accessToken = null;
+    this.setAccessToken(null);
   },
 };
 

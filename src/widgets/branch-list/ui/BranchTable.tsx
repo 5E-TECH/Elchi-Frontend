@@ -20,7 +20,7 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
   const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
   const actionButtonClassName =
-    "!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-[color:var(--color-border-soft)] !bg-[color:var(--color-main-soft)] !p-0 !font-medium !text-[var(--color-maindark)] transition-colors hover:!border-[var(--color-main)] hover:!bg-[color:color-mix(in_srgb,var(--color-main)_22%,white)] hover:!text-[var(--color-main)] dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-[var(--color-main)] dark:hover:!bg-primarydark/70 dark:hover:!text-white";
+    "!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-border-soft !bg-main-soft !p-0 !font-medium !text-maindark transition-colors hover:!border-main hover:!bg-main-soft hover:!text-main dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-main dark:hover:!bg-primarydark/70 dark:hover:!text-white";
   const deleteButtonClassName =
     `${actionButtonClassName} !border-rose-200/80 !bg-rose-50 !text-rose-600 hover:!border-rose-400 hover:!bg-rose-100 hover:!text-rose-700 dark:!border-rose-500/30 dark:!bg-rose-500/12 dark:!text-rose-300 dark:hover:!border-rose-400/60 dark:hover:!bg-rose-500/18 dark:hover:!text-rose-200`;
 
@@ -32,7 +32,7 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
       render: (_, record) => (
         <button
           type="button"
-          className="font-semibold text-[var(--color-main)] transition-colors hover:text-[var(--color-primarydark)] dark:text-white dark:hover:text-[var(--color-main)]"
+          className="font-semibold text-main transition-colors hover:text-primarydark dark:text-white dark:hover:text-main"
           onClick={(event) => {
             event.stopPropagation();
             navigate(`/branches/${record.id}`);
@@ -102,7 +102,7 @@ const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
 
   return (
     <Table
-      className="text-[var(--color-maindark)] dark:text-white/85"
+      className="text-maindark dark:text-white/85"
       keyExtractor={(branch) => branch.id}
       loading={loading}
       columns={columns}

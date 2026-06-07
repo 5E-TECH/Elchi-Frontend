@@ -11,6 +11,14 @@ const Auth = lazy(() => import("../../features/auth/page"));
 const Orders = lazy(() => import("../../pages/orders"));
 const OrderCreate = lazy(() => import("../../pages/orders/create"));
 const Profile = lazy(() => import("../../pages/profile/ui/ProfilePage"));
+const SettlementPage = lazy(() => import("../../pages/settlement"));
+const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
+const IntegrationsOpsPage = lazy(() => import("../../pages/integrations-ops"));
+const InvestorsOpsPage = lazy(() => import("../../pages/investors-ops"));
+const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
+const BranchOpsPage = lazy(() => import("../../pages/branch-ops"));
+const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
+const SystemOpsPage = lazy(() => import("../../pages/system-ops"));
 
 // ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
@@ -42,6 +50,9 @@ const NewOrdersBranches = lazy(() => import("../../pages/new_orders/branches"));
 const NewOrdersBranchBatches = lazy(() => import("../../pages/new_orders/branches/batches"));
 const NewOrdersBranchBatchDetail = lazy(() => import("../../pages/new_orders/branches/batchDetail"));
 const NewOrdersExternalList = lazy(() => import("../../pages/new_orders/external_orders"));
+const ExternalIntegrationCreate = lazy(
+  () => import("../../pages/new_orders/external_orders/create"),
+);
 const ExternalIntegrationDetail = lazy(
   () => import("../../pages/new_orders/external_orders/detail"),
 );
@@ -232,6 +243,14 @@ const AppRouter = () => {
               ),
             },
             { path: "profile", element: <Profile /> },
+            { path: "settlement", element: <SettlementPage /> },
+            { path: "finance-operators", element: <FinanceOperatorsPage /> },
+            { path: "integrations-ops", element: <IntegrationsOpsPage /> },
+            { path: "investors-ops", element: <InvestorsOpsPage /> },
+            { path: "logistics-ops", element: <LogisticsOpsPage /> },
+            { path: "branch-ops", element: <BranchOpsPage /> },
+            { path: "identity-ops", element: <IdentityOpsPage /> },
+            { path: "system-ops", element: <SystemOpsPage /> },
             {
               path: "all-users",
               children: [
@@ -288,6 +307,7 @@ const AppRouter = () => {
                 { path: "external", element: <Navigate replace to="/new-orders/integrations" /> },
                 { path: "external/:id", element: <Navigate replace to="/new-orders/integrations" /> },
                 { path: "integrations", element: <NewOrdersExternalList /> },
+                { path: "integrations/create", element: <ExternalIntegrationCreate /> },
                 { path: "branches", element: <NewOrdersBranches /> },
                 { path: "branches/:branchId", element: <NewOrdersBranchBatches /> },
                 { path: "branches/:branchId/batches/:batchId", element: <NewOrdersBranchBatchDetail /> },

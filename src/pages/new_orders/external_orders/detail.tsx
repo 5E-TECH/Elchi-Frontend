@@ -1,8 +1,7 @@
 import { memo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   CheckCircle2,
   Globe,
   Package,
@@ -14,10 +13,10 @@ import {
   getIntegrationErrorMessage,
   useGetIntegrationById,
 } from "../../../entities/integrations";
+import BackButton from "../../../shared/ui/BackButton";
 
 const ExternalIntegrationDetail = () => {
   const { t } = useTranslation("newOrders");
-  const navigate = useNavigate();
   const { id } = useParams();
 
   const query = useGetIntegrationById(id);
@@ -36,14 +35,7 @@ const ExternalIntegrationDetail = () => {
       {/* Top row (screenshot-like) */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="h-9 px-3 rounded-xl flex items-center gap-2 text-xs font-bold bg-main-soft/30 dark:bg-white/5 border border-glass-border text-gray-600 dark:text-white/60 hover:border-main/40 hover:text-main transition-all"
-          >
-            <ArrowLeft size={14} />
-            {t("back")}
-          </button>
+          <BackButton className="h-9 min-w-9 rounded-xl px-3 text-xs" />
 
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-main/10 dark:bg-main/20 ring-1 ring-main/15 flex items-center justify-center shrink-0">

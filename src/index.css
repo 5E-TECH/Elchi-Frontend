@@ -416,7 +416,33 @@ select:-webkit-autofill:focus {
   color: rgba(244, 245, 250, 0.85);
 }
 
+/* Ant Design notifications must stay above app modals/popups. */
+.ant-notification,
+.ant-notification-top,
+.ant-notification-topRight,
+.ant-notification-bottom,
+.ant-notification-bottomRight,
+.ant-notification-notice-wrapper,
+.ant-notification-notice {
+  z-index: 10080 !important;
+}
+
 @layer components {
+  .login-field:-webkit-autofill,
+  .login-field:-webkit-autofill:hover,
+  .login-field:-webkit-autofill:focus,
+  .login-field:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #f9fafb inset !important;
+    -webkit-text-fill-color: var(--color-maindark) !important;
+    caret-color: var(--color-maindark);
+    transition: background-color 9999s ease-out 0s;
+  }
+
+  .login-field::selection {
+    background: rgba(87, 106, 219, 0.2);
+    color: var(--color-maindark);
+  }
+
   .el-surface-page {
     border: 1px solid var(--color-border-soft);
     background: var(--color-page-surface);
@@ -488,6 +514,78 @@ select:-webkit-autofill:focus {
 
   .el-soft-text {
     color: var(--color-dashboard-text-soft);
+  }
+
+  .branch-settings-action.ant-btn {
+    height: 2rem;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 0.5rem;
+    background: var(--color-main-soft);
+    padding-inline: 0.75rem;
+    color: var(--color-maindark);
+    font-weight: 500;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .branch-settings-action.ant-btn:hover {
+    border-color: var(--color-main);
+    background: var(--color-main-soft);
+    color: var(--color-main);
+  }
+
+  .branch-settings-action-danger.ant-btn {
+    border-color: rgba(254, 205, 211, 0.8);
+    background: #fff1f2;
+    color: #e11d48;
+  }
+
+  .branch-settings-action-danger.ant-btn:hover {
+    border-color: #fb7185;
+    background: #ffe4e6;
+    color: #be123c;
+  }
+
+  .branch-settings-primary-action.ant-btn {
+    height: 2.5rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: var(--color-main);
+    padding-inline: 1rem;
+    color: #ffffff;
+    font-weight: 500;
+    box-shadow: 0 14px 28px rgba(87, 106, 219, 0.24);
+  }
+
+  .branch-settings-primary-action.ant-btn:hover {
+    background: var(--color-primarydark);
+    color: #ffffff;
+  }
+
+  .dark .branch-settings-action.ant-btn {
+    border-color: rgba(76, 87, 152, 0.6);
+    background: rgba(76, 87, 152, 0.4);
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .dark .branch-settings-action.ant-btn:hover {
+    border-color: var(--color-main);
+    background: rgba(76, 87, 152, 0.7);
+    color: #ffffff;
+  }
+
+  .dark .branch-settings-action-danger.ant-btn {
+    border-color: rgba(244, 63, 94, 0.3);
+    background: rgba(244, 63, 94, 0.12);
+    color: #fda4af;
+  }
+
+  .dark .branch-settings-action-danger.ant-btn:hover {
+    border-color: rgba(251, 113, 133, 0.6);
+    background: rgba(244, 63, 94, 0.18);
+    color: #fecdd3;
   }
 }
 
@@ -628,13 +726,60 @@ select:-webkit-autofill:focus {
   color: var(--color-primary);
 }
 
-.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
-.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
-.dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
-  background: rgba(87, 106, 219, 0.28);
-}
+  .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
+  .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
+  .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
+    background: rgba(87, 106, 219, 0.28);
+  }
 
-@layer utilities {
+  .popup-select-option-selected .popup-select-option-content {
+    color: var(--color-maindark);
+  }
+
+  .popup-select-option-selected .popup-select-option-content [class*="text-white"] {
+    color: var(--color-maindark) !important;
+  }
+
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/85"],
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/80"] {
+    color: rgba(39, 44, 82, 0.78) !important;
+  }
+
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/70"],
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/60"],
+  .popup-select-option-selected .popup-select-option-content [class*="text-white/50"] {
+    color: var(--color-text-muted) !important;
+  }
+
+  .popup-select-option-selected .popup-select-option-content [class*="bg-white/20"],
+  .popup-select-option-selected .popup-select-option-content [class*="bg-white/10"] {
+    background-color: rgba(87, 106, 219, 0.14) !important;
+    color: var(--color-main) !important;
+  }
+
+  .dark .popup-select-option-selected .popup-select-option-content,
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white"] {
+    color: var(--color-primary) !important;
+  }
+
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/85"],
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/80"] {
+    color: rgba(255, 255, 255, 0.86) !important;
+  }
+
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/70"],
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/60"],
+  .dark .popup-select-option-selected .popup-select-option-content [class*="text-white/50"] {
+    color: var(--color-text-muted-dark) !important;
+  }
+
+  .dark .popup-select-option-selected .popup-select-option-content [class*="bg-white/20"],
+  .dark .popup-select-option-selected .popup-select-option-content [class*="bg-white/10"] {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    color: var(--color-primary) !important;
+  }
+
+  @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;

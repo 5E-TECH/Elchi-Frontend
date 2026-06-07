@@ -1,9 +1,9 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import {
-  MoveLeft,
   Package,
   User,
   Phone,
@@ -21,14 +21,21 @@ import {
   Trash2,
   MessageSquare,
   Truck,
+  RotateCcw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
+import BackButton from "../../../shared/ui/BackButton";
 import { useOrders } from "../../../entities/orders";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
+import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
+import type { RootState } from "../../../app/config/store";
+import SellModal from "../../orders/list/courier/list/SellModal";
+import CancelModal from "../../orders/list/courier/list/CancelModal";
+import PopupConfirm from "../../../shared/components/popupConfirm";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -54,6 +61,42 @@ interface OrderItem {
   quantity: number;
   product: { id: string; name: string; image_url?: string | null } | null;
 }
+
+const getProductImageUrl = (item: OrderItem) =>
+  resolveAssetUrl(item.product?.image_url);
+
+const ProductThumbnail = ({
+  item,
+  alt,
+  className,
+}: {
+  item: OrderItem;
+  alt: string;
+  className: string;
+}) => {
+  const imageUrl = getProductImageUrl(item);
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [imageUrl]);
+
+  return (
+    <div className={className}>
+      {imageUrl && !hasImageError ? (
+        <img
+          src={imageUrl}
+          alt={alt}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={() => setHasImageError(true)}
+        />
+      ) : (
+        <Package size={18} className="text-gray-300 dark:text-white/20" />
+      )}
+    </div>
+  );
+};
 interface OrderDetail {
   id: string;
   where_deliver: "center" | "address";
@@ -98,19 +141,106 @@ const DELIVER_OPTIONS = [
   { value: "center", labelKey: "deliverCenter" },
   { value: "address", labelKey: "deliverAddress" },
 ] as const;
+const BRANCH_TYPES = new Set(["HQ", "PICKUP", "REGIONAL", "HYBRID"]);
+const ACTIONABLE_STATUSES = new Set(["waiting", "on the road", "new", "received"]);
+const DEFAULT_STATUS_CLS = "bg-slate-500/20 text-slate-300 border border-slate-500/30";
 
-const STATUS_CONFIG: Record<string, { labelKey: string; cls: string }> = {
+const getOrderPageBranchType = (
+  user: RootState["user"]["user"],
+): "HQ" | "PICKUP" | "REGIONAL" | "HYBRID" | null => {
+  const rawUser = user as
+    | (RootState["user"]["user"] & {
+        branch_type?: string | null;
+        branch?: {
+          type?: string | null;
+          branch_type?: string | null;
+          branch?: {
+            type?: string | null;
+            branch_type?: string | null;
+          } | null;
+        } | null;
+      })
+    | null
+    | undefined;
+
+  const normalize = (value: unknown) => {
+    if (typeof value !== "string") return null;
+    const upper = value.toUpperCase();
+    return BRANCH_TYPES.has(upper)
+      ? (upper as "HQ" | "PICKUP" | "REGIONAL" | "HYBRID")
+      : null;
+  };
+
+  return (
+    normalize(rawUser?.branch?.branch?.type) ??
+    normalize(rawUser?.branch?.branch?.branch_type) ??
+    normalize(rawUser?.branch?.type) ??
+    normalize(rawUser?.branch?.branch_type) ??
+    normalize(rawUser?.branch_type) ??
+    null
+  );
+};
+
+const STATUS_CONFIG: Record<string, { labelKey: string; cls: string; ns?: "newOrders" | "orders" }> = {
+  created: {
+    labelKey: "statusCreated",
+    ns: "orders",
+    cls: "bg-sky-500/20 text-sky-400 border border-sky-500/30",
+  },
+  received: {
+    labelKey: "statusReceived",
+    ns: "orders",
+    cls: "bg-violet-500/20 text-violet-400 border border-violet-500/30",
+  },
+  "on the road": {
+    labelKey: "statusOnTheRoad",
+    ns: "orders",
+    cls: "bg-orange-500/20 text-orange-400 border border-orange-500/30",
+  },
+  waiting: {
+    labelKey: "statusWaiting",
+    ns: "orders",
+    cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+  },
   new: {
     labelKey: "statusNew",
+    ns: "newOrders",
     cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
   },
   processing: {
     labelKey: "statusProcessing",
+    ns: "newOrders",
     cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
   },
   completed: {
     labelKey: "statusCompleted",
+    ns: "newOrders",
     cls: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+  },
+  sold: {
+    labelKey: "statusSold",
+    ns: "orders",
+    cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
+  },
+  paid: {
+    labelKey: "statusPaid",
+    ns: "orders",
+    cls: "bg-teal-500/20 text-teal-400 border border-teal-500/30",
+  },
+  partly_paid: {
+    labelKey: "statusPartlyPaid",
+    ns: "orders",
+    cls: "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30",
+  },
+  cancelled: {
+    labelKey: "statusCancelled",
+    ns: "orders",
+    cls: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
+  },
+  closed: {
+    labelKey: "statusClosed",
+    ns: "orders",
+    cls: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
   },
 };
 
@@ -257,10 +387,13 @@ const InputField = memo(({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderUpdate = () => {
-  const { t } = useTranslation("newOrders");
+  const { t } = useTranslation(["newOrders", "orders"]);
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const queryClient = useQueryClient();
+  const role = useSelector((state: RootState) => state.role.role);
+  const user = useSelector((state: RootState) => state.user.user);
+  const branchType = getOrderPageBranchType(user);
 
   // ─── State ──────────────────────────────────────────────────────────────────
   const [addressPopupOpen, setAddressPopupOpen] = useState(false);
@@ -275,9 +408,19 @@ const NewOrderUpdate = () => {
   const [orderForm, setOrderForm] = useState<OrderForm>({
     where_deliver: "", total_price: "", comment: "", items: [],
   });
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isRollbackConfirmOpen, setIsRollbackConfirmOpen] = useState(false);
 
   // ─── Data fetching ───────────────────────────────────────────────────────────
-  const { getOrderById, updateNewOrder } = useOrders();
+  const {
+    getOrderById,
+    updateNewOrder,
+    SellOrder,
+    PartlySellOrder,
+    CancelOrder,
+    RollbackOrder,
+  } = useOrders();
   const { updateUser } = useUser();
   const { getRegions, getDistricts } = useLogistics();
 
@@ -309,9 +452,24 @@ const NewOrderUpdate = () => {
     [districtsData],
   );
 
-  const statusCfg = useMemo(
-    () => order ? (STATUS_CONFIG[order.status] ?? STATUS_CONFIG.new) : null,
-    [order],
+  const statusCfg = useMemo(() => {
+    if (!order) return null;
+    return STATUS_CONFIG[order.status] ?? null;
+  }, [order]);
+  const canUseCourierActions = useMemo(
+    () =>
+      role === "manager" &&
+      (branchType === "REGIONAL" || branchType === "HYBRID") &&
+      Boolean(order?.status) &&
+      ACTIONABLE_STATUSES.has(order?.status ?? ""),
+    [role, branchType, order?.status],
+  );
+  const canRollbackSoldOrder = useMemo(
+    () =>
+      role === "manager" &&
+      (branchType === "REGIONAL" || branchType === "HYBRID") &&
+      order?.status === "sold",
+    [role, branchType, order?.status],
   );
 
   const regionName = useMemo(
@@ -432,7 +590,6 @@ const NewOrderUpdate = () => {
   const removeItem = useCallback((itemId: string) =>
     setOrderForm((p) => ({ ...p, items: p.items.filter((i) => i.id !== itemId) })), []);
 
-  const handleNavigateBack = useCallback(() => navigate(-1), [navigate]);
   const handleNavigateToCustomer = useCallback(
     () => {
       if (!userId) return;
@@ -440,23 +597,124 @@ const NewOrderUpdate = () => {
     },
     [navigate, userId],
   );
+  const handleSell = useCallback(
+    (id: string, payload: { comment: string; extraCost: number }) => {
+      SellOrder.mutate(
+        { orderId: id, data: payload },
+        { onSuccess: () => setIsSellModalOpen(false) },
+      );
+    },
+    [SellOrder],
+  );
+
+  const handlePartlySell = useCallback(
+    (
+      id: string,
+      payload: {
+        order_item_info: { product_id: string; quantity: number }[];
+        totalPrice: number;
+        extraCost: number;
+        comment: string;
+      },
+    ) => {
+      PartlySellOrder.mutate(
+        { orderId: id, data: payload },
+        { onSuccess: () => setIsSellModalOpen(false) },
+      );
+    },
+    [PartlySellOrder],
+  );
+
+  const handleCancelOrder = useCallback(
+    (id: string, payload: { comment: string; extraCost: number; paidAmount: number }) => {
+      CancelOrder.mutate(
+        { orderId: id, data: payload },
+        { onSuccess: () => setIsCancelModalOpen(false) },
+      );
+    },
+    [CancelOrder],
+  );
+  const handleRollbackConfirm = useCallback(() => {
+    if (!order?.id) return;
+    RollbackOrder.mutate(order.id, {
+      onSuccess: () => setIsRollbackConfirmOpen(false),
+    });
+  }, [RollbackOrder, order?.id]);
+
+  const sellModalOrder = useMemo(() => {
+    if (!order) return null;
+    return {
+      id: order.id,
+      created_at: "",
+      status: order.status,
+      total_price: order.total_price,
+      where_deliver: order.where_deliver,
+      product_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      market: { name: "-" },
+      customer: { name: order.customer.name, phone_number: order.customer.phone_number },
+      district: { name: districtName },
+      region: { name: regionName },
+      items: order.items.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        product: {
+          id: item.product?.id ?? item.id,
+          name: item.product?.name ?? "",
+          image_url: item.product?.image_url ?? null,
+        },
+      })),
+    };
+  }, [order, districtName, regionName]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-full space-y-4 rounded-2xl p-3 pb-20 sm:space-y-5 sm:p-4 sm:pb-24 md:space-y-6 md:p-6 md:pb-4">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div onClick={handleNavigateBack} className="cursor-pointer min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
+          <BackButton className="h-11 min-w-11 shrink-0 rounded-2xl px-2" label="" />
           <HeaderName
-            icon={<MoveLeft />}
+            icon={<Package />}
             name={order?.customer?.name ?? t("orders")}
             description={t("viewOrderDetails")}
           />
         </div>
-        {statusCfg && (
-          <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg.cls}`}>
-            {t(statusCfg.labelKey)}
-          </span>
+        {order?.status && (
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg?.cls ?? DEFAULT_STATUS_CLS}`}>
+              {statusCfg
+                ? t(statusCfg.labelKey, { ns: statusCfg.ns ?? "orders", defaultValue: order.status })
+                : order.status}
+            </span>
+            {canUseCourierActions && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsSellModalOpen(true)}
+                  className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                >
+                  {t("sell", { ns: "orders" })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCancelModalOpen(true)}
+                  className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                >
+                  {t("cancelOrderAction", { ns: "orders" })}
+                </button>
+              </>
+            )}
+            {canRollbackSoldOrder && (
+              <button
+                type="button"
+                onClick={() => setIsRollbackConfirmOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/70 bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-200 dark:border-amber-400/35 dark:bg-amber-400/12 dark:text-amber-100 dark:hover:border-amber-300/60 dark:hover:bg-amber-400/20"
+              >
+                <RotateCcw size={13} />
+                {t("restoreOrder", { ns: "orders" })}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -493,18 +751,11 @@ const NewOrderUpdate = () => {
                       className="grid grid-cols-1 items-center gap-2 border-b border-gray-50 py-2 dark:border-white/4 sm:grid-cols-[1fr_auto] sm:gap-3"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/8 flex items-center justify-center shrink-0 overflow-hidden">
-                          {item.product?.image_url ? (
-                            <img
-                              src={item.product.image_url}
-                              alt={item.product.name}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <Package size={18} className="text-gray-300 dark:text-white/20" />
-                          )}
-                        </div>
+                        <ProductThumbnail
+                          item={item}
+                          alt={item.product?.name ?? t("productFallback", { id: item.id })}
+                          className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-white/8 dark:bg-white/5"
+                        />
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
                             {item.product?.name ?? t("productFallback", { id: item.id })}
@@ -762,6 +1013,35 @@ const NewOrderUpdate = () => {
           </div>
         </div>
       </UpdatePopup>
+
+      <SellModal
+        order={sellModalOrder}
+        open={isSellModalOpen}
+        onClose={() => setIsSellModalOpen(false)}
+        onSell={handleSell}
+        onPartlySell={handlePartlySell}
+        isLoading={SellOrder.isPending || PartlySellOrder.isPending}
+      />
+
+      <CancelModal
+        order={sellModalOrder}
+        open={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onCancel={handleCancelOrder}
+        isLoading={CancelOrder.isPending}
+      />
+
+      <PopupConfirm
+        isOpen={isRollbackConfirmOpen}
+        onClose={() => setIsRollbackConfirmOpen(false)}
+        onConfirm={handleRollbackConfirm}
+        title={t("rollbackOrder", { ns: "orders" })}
+        message={t("rollbackConfirmMessage", { ns: "orders", id: order?.id })}
+        confirmLabel={t("rollbackConfirmLabel", { ns: "orders" })}
+        cancelLabel={t("cancelOrderAction", { ns: "orders" })}
+        isLoading={RollbackOrder.isPending}
+        variant="warning"
+      />
     </div>
   );
 };
@@ -782,18 +1062,11 @@ const OrderItemRow = memo(({
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-      <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
-        {item.product?.image_url ? (
-          <img
-            src={item.product.image_url}
-            alt={item.product.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <Package size={18} className="text-gray-300 dark:text-white/20" />
-        )}
-      </div>
+      <ProductThumbnail
+        item={item}
+        alt={item.product?.name ?? "—"}
+        className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/8"
+      />
       <span className="flex-1 text-sm font-semibold text-gray-900 dark:text-white truncate">
         {item.product?.name ?? "—"}
       </span>

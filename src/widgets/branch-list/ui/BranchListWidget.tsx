@@ -13,6 +13,9 @@ import BranchTree from "./BranchTree";
 
 type ViewMode = "table" | "card" | "tree";
 
+const TABLE_PAGE_SIZE = 12;
+const CARD_PAGE_SIZE = 8;
+
 interface BranchListWidgetProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
@@ -27,7 +30,7 @@ const BranchListWidget = ({
   const { t } = useTranslation("branches");
   const [params, setParams] = useState<BranchParams>({
     page: 1,
-    limit: 12,
+    limit: viewMode === "card" ? CARD_PAGE_SIZE : TABLE_PAGE_SIZE,
     search: "",
     status: "",
   });
@@ -37,7 +40,7 @@ const BranchListWidget = ({
   );
   const { data, isLoading } = useBranches(queryParams);
   const currentPage = data?.page ?? params.page ?? 1;
-  const currentLimit = data?.limit ?? params.limit ?? 12;
+  const currentLimit = data?.limit ?? params.limit ?? TABLE_PAGE_SIZE;
   const totalItems = data?.total ?? 0;
   const from = totalItems === 0 ? 0 : (currentPage - 1) * currentLimit + 1;
   const to = totalItems === 0 ? 0 : Math.min(currentPage * currentLimit, totalItems);
@@ -88,13 +91,20 @@ const BranchListWidget = ({
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => onViewModeChange(option.value)}
+                    onClick={() => {
+                      onViewModeChange(option.value);
+                      setParams((prev) => ({
+                        ...prev,
+                        page: 1,
+                        limit: option.value === "card" ? CARD_PAGE_SIZE : TABLE_PAGE_SIZE,
+                      }));
+                    }}
                     aria-label={option.label}
                     title={option.label}
                     className={`flex h-10 w-10 items-center justify-center self-center rounded-lg text-base transition-all duration-200 ${
                       isActive
-                        ? "bg-[linear-gradient(135deg,var(--color-main)_0%,var(--color-primarydark)_100%)] text-white shadow-[0_10px_25px_rgba(109,72,217,0.28)]"
-                        : "text-[color:var(--color-text-muted)] hover:bg-[color:var(--color-main-soft)] hover:text-[var(--color-main)] dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
+                        ? "bg-main text-white shadow-[0_10px_25px_rgba(109,72,217,0.28)]"
+                        : "text-text-muted hover:bg-main-soft hover:text-main dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
                     }`}
                   >
                     {option.icon}
@@ -133,7 +143,7 @@ const BranchListWidget = ({
                 ? t("list.paginationSummary", { from, to, total: totalItems })
                 : t("list.emptyCount")
             }
-            pageSizeOptions={[12, 24, 48, 96]}
+            pageSizeOptions={viewMode === "card" ? [8, 16, 32, 64] : [12, 24, 48, 96]}
           />
         </div>
       ) : null}

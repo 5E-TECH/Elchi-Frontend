@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { MapPin, Package, ChevronRight, TrendingUp, MapPinned } from "lucide-react";
+import { MapPin, Package, TrendingUp, MapPinned } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMails } from "../../../entities/mails";
@@ -8,6 +8,7 @@ import type { RootState } from "../../../app/config/store";
 import MailSummaryStats from "./MailSummaryStats";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
+import MailGridCard, { MAIL_CARD_GRID_CLASS, MAIL_CARD_SKELETON_CLASS } from "./MailGridCard";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Region {
@@ -33,94 +34,34 @@ interface MailItem {
 const formatPrice = (price: number): string =>
   price.toLocaleString("uz-UZ") + " so'm";
 
-// ─── Yagona Karta Komponenti ──────────────────────────────────────────────────
 const MailCard = memo(({ item }: { item: MailItem }) => {
   const { t } = useTranslation("mails");
   const navigate = useNavigate();
-  // console.log(item);
-
-  // API dan to'g'ridan-to'g'ri region.name olamiz
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const { role } = useSelector((state: RootState) => state.role);
   const isCourierLike = role === "courier";
   const openDetail = () => navigate(`/mails/${item.id}`, { state: { fromTab: "today" } });
-  // console.log(role, region);
+  const title = isCourierLike
+    ? new Date(item?.createdAt).toLocaleString("uz-UZ", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : regionName;
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={openDetail}
-      onKeyDown={(e) =>
-        e.key === "Enter" && openDetail()
-      }
-      className="mail-card group relative overflow-hidden rounded-2xl cursor-pointer"
-    >
-      {/* Gradient fon */}
-      <div className="mail-card-bg" />
-
-      {/* Shimmer effekti */}
-      <div className="mail-card-shimmer" />
-
-      {/* Karta ichidagi kontent */}
-      <div className="relative z-10 p-5 flex flex-col gap-3">
-        {/* Yuqori qator: icon + badge + arrow */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30">
-            <MapPin size={20} className="text-white" />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="mail-status-badge">
-              <TrendingUp size={11} />
-              {t("statusNew")}
-            </span>
-            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/15 border border-white/25 group-hover:bg-white/25 transition-colors">
-              <ChevronRight size={16} className="text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Viloyat nomi */}
-        <div>
-          <h3 className="text-white font-bold text-lg leading-tight">
-            {isCourierLike
-              ? new Date(item?.createdAt).toLocaleString("uz-UZ", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : regionName}{" "}
-          </h3>
-        </div>
-
-        {/* Divider */}
-        <div className="w-full h-px bg-white/20" />
-
-        {/* Buyurtmalar va summa */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-white/70 text-sm flex items-center gap-1.5">
-              <Package size={13} className="text-white/50" />
-              {t("ordersLabel")}:
-            </span>
-            <span className="text-white font-bold text-sm">
-              {item.order_quantity}{" "}
-              <span className="font-normal opacity-70">ta</span>
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-white/70 text-sm">{t("amountLabel")}:</span>
-            <span className="text-white font-bold text-sm">
-              {formatPrice(item.post_total_price)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <MailGridCard
+      title={title}
+      statusLabel={t("statusNew")}
+      statusIcon={<TrendingUp size={11} />}
+      leadingIcon={<MapPin size={20} />}
+      orders={item.order_quantity}
+      amount={formatPrice(item.post_total_price)}
+      onOpen={openDetail}
+      variant="today"
+    />
   );
 });
 MailCard.displayName = "MailCard";
@@ -128,7 +69,7 @@ MailCard.displayName = "MailCard";
 // ─── Skeleton Karta ───────────────────────────────────────────────────────────
 const MailCardSkeleton = memo(() => (
   <div className="rounded-2xl overflow-hidden animate-pulse">
-    <div className="h-45 bg-emerald-500/20 dark:bg-emerald-800/30 rounded-2xl" />
+    <div className={`${MAIL_CARD_SKELETON_CLASS} bg-emerald-500/20 dark:bg-emerald-800/30`} />
   </div>
 ));
 MailCardSkeleton.displayName = "MailCardSkeleton";
@@ -149,10 +90,7 @@ const TodaysMails = () => {
   const isError = isCourierLike ? courierQuery.isError : defaultQuery.isError;
 
   const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
-  const regionOptions = useMemo(
-    () => buildRegionFilterOptions(mails, t("oldRegionFilterPlaceholder")),
-    [mails, t],
-  );
+  const regionOptions = useMemo(() => buildRegionFilterOptions(mails), [mails]);
   const filteredMails = useMemo(
     () =>
       selectedRegionId
@@ -173,7 +111,7 @@ const TodaysMails = () => {
   if (isLoading) {
     return (
       <div className="space-y-5">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className={MAIL_CARD_GRID_CLASS}>
           {Array.from({ length: 8 }).map((_, i) => (
             <MailCardSkeleton key={i} />
           ))}
@@ -246,7 +184,7 @@ const TodaysMails = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className={MAIL_CARD_GRID_CLASS}>
           {filteredMails.map((mail) => (
             <MailCard key={mail.id} item={mail} />
           ))}

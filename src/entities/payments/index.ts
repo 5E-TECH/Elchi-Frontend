@@ -105,6 +105,11 @@ export const useCashBox = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
   });
 
+  const createPaymentBranchToMain = useMutation({
+    mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN, data),
+    onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
+  });
+
   const createPaymentMarket = useMutation({
     mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_MARKET, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
@@ -217,27 +222,6 @@ export const useCashBox = () => {
         api.get(API_ENDPOINTS.CASHBOX.SHIFT_HISTORY, { params }).then((res) => res.data),
     });
 
-  const getOperationTypes = () =>
-    useQuery({
-      queryKey: [cashbox, "operation-types"],
-      queryFn: () => api.get(API_ENDPOINTS.FINANCE.OPERATION_TYPE).then((res) => res.data),
-    });
-
-  const getSourceTypes = (enabled: boolean = true) =>
-    useQuery({
-      queryKey: [cashbox, "source-types"],
-      queryFn: () => api.get(API_ENDPOINTS.FINANCE.SOURCE_TYPE).then((res) => res.data),
-      enabled,
-      staleTime: 10 * 60 * 1000,
-      refetchOnWindowFocus: false,
-    });
-
-  const getCashboxTypes = () =>
-    useQuery({
-      queryKey: [cashbox, "cashbox-types"],
-      queryFn: () => api.get(API_ENDPOINTS.FINANCE.CASHBOX_TYPE).then((res) => res.data),
-    });
-
   const getFinancialBalance = () =>
     useQuery({
       queryKey: [cashbox, "financial-balance"],
@@ -251,14 +235,12 @@ export const useCashBox = () => {
     getCashBoxHistoryById,
     getCashBoxMain,
     createPaymentCourier,
+    createPaymentBranchToMain,
     createPaymentMarket,
     cashboxSpand,
     cashboxFill,
     getFinanceHistory,
     getFinanceHistoryById,
-    getOperationTypes,
-    getSourceTypes,
-    getCashboxTypes,
     // Shift hooks
     getCurrentShift,
     openShift,

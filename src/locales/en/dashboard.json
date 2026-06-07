@@ -35,6 +35,8 @@
     "to": "End"
   },
   "currency_value": "{{value}} UZS",
+  "currency": "UZS",
+  "currency_sum": "UZS",
   "cards": {
     "total_orders": "Total orders",
     "sold": "Sold",

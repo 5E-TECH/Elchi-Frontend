@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Loader2, Store, Truck } from "lucide-react";
+import { Landmark, Loader2, Store, Truck } from "lucide-react";
 import type { PaymentRow } from "./patmentHistoryTable";
 import { useCashBox } from "../../../entities/payments";
 import { useMarkets } from "../../../entities/markets";
@@ -42,22 +42,26 @@ const formatDisplayName = (value?: string | null) => {
     .join(" ");
 };
 
+type CashDetailType = "market" | "courier" | "branch";
+
 const normalizeType = (
   cashboxType?: string | null,
   role?: string | null,
-): "market" | "courier" => {
+): CashDetailType => {
+  if (cashboxType === "main" || role === "branch") return "branch";
   if (cashboxType === "couriers" || role === "courier") return "courier";
   return "market";
 };
 
 export interface DetailState {
-  type: "market" | "courier";
+  type: CashDetailType;
   entity?: {
     id?: string;
     name?: string;
     phone_number?: string;
     role?: string;
     amount?: number;
+    type?: string;
   };
 }
 
@@ -82,6 +86,16 @@ const CONFIG = {
     headerIcon: <Truck size={20} />,
     entityIcon: <Truck size={18} className="text-white" />,
   },
+  branch: {
+    kassaLabelKey: "branchMainCashboxLabel",
+    actionLabelKey: "payToMainAction",
+    actionSubKey: "payToMainDescription",
+    submitLabelKey: "payToMainAction",
+    actionGradient: "from-main to-primarydark",
+    iconBg: "bg-main/25",
+    headerIcon: <Landmark size={20} />,
+    entityIcon: <Landmark size={18} className="text-white" />,
+  },
 } as const;
 
 const cashDetailSchema: yup.ObjectSchema<CashboxActionFormValues> = yup.object({
@@ -104,7 +118,7 @@ const CashDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
   const navigate = useNavigate();
-  const { getCashBoxById, createPaymentCourier, createPaymentMarket } = useCashBox();
+  const { getCashBoxById, createPaymentCourier, createPaymentBranchToMain, createPaymentMarket } = useCashBox();
   const { getMarkets } = useMarkets();
   const { apiRequest } = useAppNotification();
 
@@ -122,10 +136,11 @@ const CashDetail = () => {
     }),
     [selectedDateFrom, selectedDateTo],
   );
+  const isBranchToMainDetail = state?.type === "branch";
 
   const { data: cashboxResponse, isLoading } = getCashBoxById(
     id || "",
-    Boolean(id),
+    Boolean(id) && !isBranchToMainDetail,
     detailParams,
   );
 
@@ -143,7 +158,7 @@ const CashDetail = () => {
   );
   const user = detailEntry?.user ?? cashbox?.user ?? state?.entity;
 
-  const type = state?.type ?? normalizeType(cashbox?.cashbox_type, user?.role);
+  const type: CashDetailType = state?.type ?? normalizeType(cashbox?.cashbox_type, user?.role);
   const cfg = CONFIG[type];
   const entityName = user?.name?.trim() || t("userFallback");
   const totalBalance = toNumber(cashbox?.balance ?? state?.entity?.amount);
@@ -170,7 +185,10 @@ const CashDetail = () => {
   const selectedPaymentType = watch("paymentType");
   const selectedMarketId = watch("marketId");
   const isStoreTransfer = selectedPaymentType === "click_to_market";
-  const isSubmitting = createPaymentCourier.isPending || createPaymentMarket.isPending;
+  const isSubmitting =
+    createPaymentCourier.isPending ||
+    createPaymentBranchToMain.isPending ||
+    createPaymentMarket.isPending;
   const { data: marketsData, isLoading: marketsLoading } = getMarkets(
     { status: "active", limit: 0 },
     isStoreTransfer,
@@ -250,6 +268,34 @@ const CashDetail = () => {
 
     if (type === "courier") {
       if (!id) return;
+      const isBranchToMain =
+        user?.role === "branch" ||
+        (!!state?.entity?.type && state?.entity?.type !== "courier");
+
+      if (isBranchToMain) {
+        await apiRequest({
+          request: () =>
+            createPaymentBranchToMain.mutateAsync({
+              branch_id: id,
+              amount,
+              payment_method: normalizedPaymentMethod,
+              payment_date: paymentDate,
+              comment,
+            }),
+          successMessage: t("receivePaymentSuccess"),
+          errorMessage: t("receivePaymentError"),
+          onSuccess: () => {
+            reset({
+              amount: "",
+              paymentType: "",
+              marketId: "",
+              comment: "",
+            });
+          },
+        });
+        return;
+      }
+
       await apiRequest({
         request: () =>
           createPaymentCourier.mutateAsync({
@@ -297,7 +343,7 @@ const CashDetail = () => {
     });
   };
 
-  if (isLoading) {
+  if (isLoading && !isBranchToMainDetail) {
     return (
       <div className="flex min-h-100 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-main" />
@@ -310,7 +356,7 @@ const CashDetail = () => {
       entityName={entityName}
       description={t(cfg.kassaLabelKey)}
       headerIcon={cfg.headerIcon}
-      onHeaderIconClick={() => navigate(-1)}
+      onBack={() => navigate(-1)}
       accentClass={cfg.iconBg}
       accentIcon={cfg.entityIcon}
       summarySubtitle={t(cfg.kassaLabelKey)}
@@ -333,33 +379,35 @@ const CashDetail = () => {
       expenseLabel={t("expense")}
       todayTransactionsLabel={t("todayTransactions")}
       todayOperationsLabel={t("todayOperations")}
-      actionForm={(
-        <CashboxActionFormCard
-          type={type}
-          actionGradient={cfg.actionGradient}
-          actionLabel={t(cfg.actionLabelKey)}
-          actionSubLabel={t(cfg.actionSubKey)}
-          submitLabel={t(cfg.submitLabelKey)}
-          amountLabel={t("amountLabel")}
-          paymentTypeLabel={t("paymentType")}
-          paymentTypePlaceholder={t("paymentTypePlaceholder")}
-          showMarketSelect={isStoreTransfer}
-          marketLabel={t("selectMarket")}
-          marketPlaceholder={t("selectMarket")}
-          marketOptions={marketOptions}
-          marketLoading={marketsLoading}
-          submitLoading={isSubmitting}
-          submitDisabled={isStoreTransfer && !selectedMarketId}
-          commentLabel={t("comment")}
-          commentPlaceholder={t("commentPlaceholder")}
-          paymentTypeOptions={paymentTypeOptions}
-          control={control}
-          register={register}
-          errors={errors}
-          handleSubmit={handleSubmit}
-          onSubmit={onSubmit}
-        />
-      )}
+      actionForm={
+        type === "branch" ? null : (
+          <CashboxActionFormCard
+            type={type}
+            actionGradient={cfg.actionGradient}
+            actionLabel={t(cfg.actionLabelKey)}
+            actionSubLabel={t(cfg.actionSubKey)}
+            submitLabel={t(cfg.submitLabelKey)}
+            amountLabel={t("amountLabel")}
+            paymentTypeLabel={t("paymentType")}
+            paymentTypePlaceholder={t("paymentTypePlaceholder")}
+            showMarketSelect={isStoreTransfer}
+            marketLabel={t("selectMarket")}
+            marketPlaceholder={t("selectMarket")}
+            marketOptions={marketOptions}
+            marketLoading={marketsLoading}
+            submitLoading={isSubmitting}
+            submitDisabled={isStoreTransfer && !selectedMarketId}
+            commentLabel={t("comment")}
+            commentPlaceholder={t("commentPlaceholder")}
+            paymentTypeOptions={paymentTypeOptions}
+            control={control}
+            register={register}
+            errors={errors}
+            handleSubmit={handleSubmit}
+            onSubmit={onSubmit}
+          />
+        )
+      }
     />
   );
 };

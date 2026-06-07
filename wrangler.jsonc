@@ -1,14 +1,20 @@
 {
+  // Cloudflare Workers Builds konfiguratsiyasi.
+  // Bu fayl bo'lmasa `wrangler deploy` 0 soniyada xato bilan tugaydi.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "elchi-frontend",
   "compatibility_date": "2026-05-19",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "observability": {
     "enabled": true
   },
   "assets": {
+    // Vite build chiqaradigan papka (vite.config.ts -> build.outDir).
+    "directory": "./dist",
+    // SPA: mavjud bo'lmagan barcha yo'llar index.html ga (200) qaytariladi,
+    // shunda react-router sahifalari to'g'ridan-to'g'ri ochilganda ham ishlaydi.
     "not_found_handling": "single-page-application"
-  },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  }
 }

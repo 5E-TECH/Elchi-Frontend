@@ -1,5 +1,6 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
+import i18n from "../../../i18n";
 import type { PaginatedResponse } from "../../../shared/types/pagination";
 import type {
   Branch,
@@ -15,9 +16,9 @@ const normalizeBranchType = (value: unknown): BranchType | undefined => {
   const normalized = String(value ?? "").toUpperCase();
 
   if (normalized === "HQ") return "HQ";
-  if (normalized === "CITY") return "CITY";
+  if (normalized === "PICKUP") return "PICKUP";
   if (normalized === "REGIONAL" || normalized === "REGION") return "REGIONAL";
-  if (normalized === "DISTRICT") return "DISTRICT";
+  if (normalized === "HYBRID") return "HYBRID";
 
   return undefined;
 };
@@ -29,7 +30,7 @@ const normalizeBranch = (value: unknown): Branch => {
 
   return {
     id: String(item.id),
-    name: item.name ?? "Noma'lum filial",
+    name: item.name ?? i18n.t("branches:fallback.unknownBranch"),
     parent_id: item.parent_id ? String(item.parent_id) : parent?.id ? String(parent.id) : "",
     parent: parent
       ? {
@@ -53,6 +54,9 @@ const normalizeBranch = (value: unknown): Branch => {
     status: item.status === "inactive" ? "inactive" : "active",
     employees_count: Number(item.employees_count ?? 0),
     created_at: item.created_at ?? new Date().toISOString(),
+    olinishi_kerak: Number(item.olinishi_kerak ?? 0),
+    berilishi_kerak: Number(item.berilishi_kerak ?? 0),
+    kassadagi_summa: Number(item.kassadagi_summa ?? 0),
   };
 };
 
@@ -71,7 +75,7 @@ const normalizeEmployee = (value: unknown): Employee => {
         item.fullName ??
         item.full_name ??
         item.name ??
-        "Noma'lum",
+        i18n.t("branches:fallback.unknown"),
       phone:
         user.phone ??
         user.phone_number ??
@@ -79,7 +83,7 @@ const normalizeEmployee = (value: unknown): Employee => {
         item.phone_number ??
         "—",
     },
-    position: item.position ?? item.role ?? user.role ?? "Xodim",
+    position: item.position ?? item.role ?? user.role ?? i18n.t("branches:fallback.employee"),
     joined_at: item.joined_at ?? item.created_at ?? item.createdAt ?? new Date().toISOString(),
   };
 };

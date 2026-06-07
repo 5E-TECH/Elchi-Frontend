@@ -28,13 +28,30 @@ type RegionOption = {
   districts?: Array<{ id: string; name: string }>;
 };
 
+const extractRegionOptions = (payload: unknown): RegionOption[] => {
+  const response = payload as {
+    data?: RegionOption[] | { data?: RegionOption[]; items?: RegionOption[] };
+    items?: RegionOption[];
+  };
+
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray((response?.data as { data?: RegionOption[] } | undefined)?.data)) {
+    return (response.data as { data: RegionOption[] }).data;
+  }
+  if (Array.isArray((response?.data as { items?: RegionOption[] } | undefined)?.items)) {
+    return (response.data as { items: RegionOption[] }).items;
+  }
+  if (Array.isArray(response?.items)) return response.items;
+
+  return [];
+};
+
 const useRegionOptions = () =>
   useQuery({
     queryKey: queryKeys.regions.all,
     queryFn: async () => {
       const response = await api.get(API_ENDPOINTS.REGIONS.BASE);
-      const raw = response.data as { data?: RegionOption[] } | RegionOption[];
-      return Array.isArray(raw) ? raw : raw.data ?? [];
+      return extractRegionOptions(response.data);
     },
   });
 
@@ -80,11 +97,11 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
   );
   const branchTypeOptions = useMemo(
     () => [
-      { value: "PICKUP", label: "Pickup" },
-      { value: "REGIONAL", label: "Regional" },
-      { value: "HYBRID", label: "Hybrid" },
+      { value: "PICKUP", label: t("branchTypes.pickup") },
+      { value: "REGIONAL", label: t("branchTypes.regional") },
+      { value: "HYBRID", label: t("branchTypes.hybrid") },
     ],
-    [],
+    [t],
   );
   const parentOptions = useMemo(
     () => getParentBranchOptions(parentBranches?.data, t),
@@ -105,6 +122,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
           ...values,
           type: normalizedType,
           code: values.code.trim(),
+          parent_id: normalizedType === "PICKUP" ? "" : values.parent_id,
         };
         await createBranch.mutateAsync(payload);
         apiNotification.success({
@@ -117,7 +135,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
         applyBranchBackendErrors(error, setError);
         const backendMessage =
           (error as { response?: { data?: { message?: string | string[] } } })?.response?.data
-            ?.message ?? "Xatolik yuz berdi";
+            ?.message ?? t("errors.generic");
         apiNotification.error({
           message: Array.isArray(backendMessage) ? backendMessage.join(", ") : backendMessage,
           placement: "topRight",
@@ -127,7 +145,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     (invalidErrors) => {
       const firstError = Object.values(invalidErrors)[0];
       apiNotification.error({
-        message: firstError?.message || "Formani to'liq to'ldiring",
+        message: firstError?.message || t("validation.completeForm"),
         placement: "topRight",
       });
     },

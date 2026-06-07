@@ -122,11 +122,16 @@
   "financialBalanceMarketsAndCouriers": "Маркеты и курьеры",
   "financialBalanceNegativeState": "Отрицательное состояние",
   "financialBalancePositiveState": "Положительное состояние",
+  "financialBalanceCashbox": "Касса",
   "financialBalanceCashAvailable": "Доступные средства",
   "financialBalanceMarkets": "Маркеты",
   "financialBalanceMarketsDebt": "(-) Мы должны",
   "financialBalanceCouriers": "Курьеры",
   "financialBalanceCouriersMoney": "(+) Наши деньги",
+  "financialBalanceIndicators": "Финансовые показатели",
+  "financialBalanceDistribution": "Распределение",
+  "financialBalanceTotal": "Общий баланс",
+  "financialBalanceTotalFormula": "Касса + Курьеры + Маркеты",
   "financialBalanceComingSoon": "Интерфейс для этого раздела будет добавлен на следующем этапе.",
   "financialBalanceDate": "Дата",
   "financialBalanceSource": "Источник",
@@ -200,5 +205,12 @@
   ,"receivePaymentError": "Ошибка при приеме платежа от курьера"
   ,"marketPaymentSuccess": "Платеж маркету успешно отправлен"
   ,"marketPaymentError": "Ошибка при отправке платежа маркету"
+  ,"selectMainBranchDescription": "Выберите HQ для перевода средств"
+  ,"branchMainCashboxLabel": "Касса HQ"
+  ,"payToMainDescription": "Перевод средств из кассы филиала в основную кассу"
+  ,"payToMainAction": "Перевести в HQ"
+  ,"branchToMainPaymentSuccess": "Платеж успешно переведен в HQ"
+  ,"branchToMainPaymentError": "Ошибка при переводе платежа в HQ"
+  ,"mainBranchFallback": "Главный филиал"
   ,"currencyAmountSuffix": "сум"
 }
