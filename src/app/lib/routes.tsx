@@ -11,6 +11,7 @@ const Auth = lazy(() => import("../../features/auth/page"));
 const Orders = lazy(() => import("../../pages/orders"));
 const OrderCreate = lazy(() => import("../../pages/orders/create"));
 const Profile = lazy(() => import("../../pages/profile/ui/ProfilePage"));
+const SettingsPage = lazy(() => import("../../pages/settings/ui/SettingsPage"));
 const SettlementPage = lazy(() => import("../../pages/settlement"));
 const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
 const IntegrationsOpsPage = lazy(() => import("../../pages/integrations-ops"));
@@ -243,6 +244,7 @@ const AppRouter = () => {
               ),
             },
             { path: "profile", element: <Profile /> },
+            { path: "settings", element: <SettingsPage /> },
             { path: "settlement", element: <SettlementPage /> },
             { path: "finance-operators", element: <FinanceOperatorsPage /> },
             { path: "integrations-ops", element: <IntegrationsOpsPage /> },

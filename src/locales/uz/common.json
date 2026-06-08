@@ -76,8 +76,29 @@
   "dateRangePlaceholder": "{{from}} → {{to}}",
   "datePicker": {
     "clearAriaLabel": "Sanalar oralig'ini tozalash",
-    "months": ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
-    "weekDaysShort": ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"]
+    "months": [
+      "Yanvar",
+      "Fevral",
+      "Mart",
+      "Aprel",
+      "May",
+      "Iyun",
+      "Iyul",
+      "Avgust",
+      "Sentabr",
+      "Oktabr",
+      "Noyabr",
+      "Dekabr"
+    ],
+    "weekDaysShort": [
+      "Du",
+      "Se",
+      "Ch",
+      "Pa",
+      "Ju",
+      "Sh",
+      "Ya"
+    ]
   },
   "retry": "Qayta urinish",
   "refresh": "Yangilash",

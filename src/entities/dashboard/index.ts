@@ -65,6 +65,22 @@ export interface BranchDashboardPayload {
   };
 }
 
+export interface TopMarket {
+  market_id: string;
+  market_name: string | null;
+  total_orders: number;
+  successful_orders: number;
+  success_rate: number;
+}
+
+export interface TopCourier {
+  courier_id: string;
+  courier_name: string | null;
+  total_orders: number;
+  successful_orders: number;
+  success_rate: number;
+}
+
 export interface DashboardResponse {
   statusCode: number;
   message: string;
@@ -72,8 +88,8 @@ export interface DashboardResponse {
     orders: DashboardOrdersSummary;
     markets?: unknown[];
     couriers?: unknown[];
-    topMarkets?: unknown[];
-    topCouriers?: unknown[];
+    topMarkets?: TopMarket[];
+    topCouriers?: TopCourier[];
     branchDashboard?: BranchDashboardPayload | null;
   };
 }
@@ -110,6 +126,19 @@ export interface RevenueResponse {
   };
 }
 
+export interface KpiResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    averageOrderValue: number;
+    averageFulfillmentHours: number;
+    onTimeRate: number;
+    cancellationRate: number;
+    courierEfficiency: number;
+    marketRating: unknown[];
+  };
+}
+
 export const useDashboard = () => {
     const getDashboard = (params?: any, enabled: boolean = true) =>
         useQuery<DashboardResponse>({
@@ -117,6 +146,16 @@ export const useDashboard = () => {
             queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.DASHBOARD, { params }).then((res) => res.data),
             enabled,
             placeholderData: (prev) => prev,
+        });
+
+    const getKpi = (params?: any, enabled: boolean = true) =>
+        useQuery<KpiResponse>({
+            queryKey: ["kpi", params],
+            queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.KPI, { params }).then((res) => res.data),
+            enabled,
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+            placeholderData: (prev: any) => prev,
         });
 
     const getRevenue = (params?: any, enabled: boolean = true) =>
@@ -129,5 +168,5 @@ export const useDashboard = () => {
             placeholderData: (prev: any) => prev,
         });
 
-    return { getDashboard, getRevenue }
+    return { getDashboard, getRevenue, getKpi }
 };

@@ -10,6 +10,7 @@ import { NotificationProvider } from "../providers/notification/NotificationProv
 import PageLoader from "../../shared/ui/PageLoader";
 import i18n from "../../i18n";
 import AuthBootstrap from "../../auth/AuthBootstrap";
+import SettingsSync from "../providers/SettingsSync";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,7 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
             <QueryClientProvider client={queryClient}>
               <NotificationProvider>
                 <AuthBootstrap>
+                  <SettingsSync />
                   <GlobalLoader>
                     <Suspense fallback={<PageLoader />}>
                       {children}

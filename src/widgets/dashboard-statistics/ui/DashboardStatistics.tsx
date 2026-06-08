@@ -1,181 +1,261 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ShoppingCart,
-  CheckCircle2,
   XCircle,
-  DollarSign,
-  TrendingUp,
+  Truck,
+  Wallet,
+  Receipt,
+  Timer,
+  Send,
+  ArrowUpRight,
+  Clock,
+  TrendingDown,
 } from "lucide-react";
+import MetricCard, { MetricCardSkeleton } from "../../../shared/ui/MetricCard";
+import OrderStatusDonut from "./OrderStatusDonut";
+import SuccessGauge from "./SuccessGauge";
+import {
+  formatCompactMoney,
+  formatHours,
+  formatPercent,
+  formatNumber,
+  ratio,
+  type Tone,
+} from "../../../shared/config/designSystem";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ColorVariant = "info" | "success" | "error" | "warning";
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  variant: ColorVariant;
-  badge?: string;
-  suffix?: string;
-  compact?: boolean;
-}
-
+/**
+ * DashboardStatistics — bento-uslubdagi asosiy ko'rsatkichlar bo'limi.
+ *
+ * Bir xil kartalar o'rniga vizual iyerarxiya: katta donut (buyurtma holati),
+ * gauge (muvaffaqiyat darajasi), ajralib turuvchi "yetkazib berilgan" featured
+ * karta, va kichikroq yordamchi metrikalar. Har bir ko'rsatkich faqat bir marta.
+ */
 export interface DashboardStatisticsProps {
-  totalOrders: number;
+  accepted: number;
   sold: number;
   cancelled: number;
   profit: number;
+  avgOrderValue: number;
+  avgFulfillmentHours: number;
+  onTimeRate: number; // 24 soat ichida yetkazilganlar % (SLA)
   loading?: boolean;
 }
 
-// ─── Color Map ────────────────────────────────────────────────────────────────
-
-const VARIANT_COLOR: Record<ColorVariant, string> = {
-  info: "#2563eb",
-  success: "#059669",
-  error: "#e11d48",
-  warning: "#d97706",
-};
-
-const formatNumber = (value: number) =>
-  new Intl.NumberFormat("uz-UZ").format(value);
-
-const formatMoney = (value: number) =>
-  formatNumber(value).replace(/\u00A0/g, " ");
-
-// ─── StatCard ─────────────────────────────────────────────────────────────────
-
-const StatCard = memo(
-  ({ title, value, icon, variant, badge, suffix, compact = false }: StatCardProps) => {
-    const color = VARIANT_COLOR[variant];
-
-    return (
-      <div
-        className="el-card group relative flex min-h-[144px] cursor-pointer flex-col overflow-hidden rounded-2xl
-        transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-border-strong)]"
-      >
-        <span
-          className="absolute left-0 right-0 top-0 h-1"
-          style={{ background: color }}
-        />
-
-        <div className="flex flex-1 flex-col justify-between p-4 pt-5">
-          <div className="mb-6 flex items-start justify-between">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-white/10"
-              style={{
-                background: color,
-                color: "var(--color-primary)",
-              }}
-            >
-              {icon}
-            </div>
-
-            {badge && (
-              <span
-                className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md"
-                style={{
-                  background: `color-mix(in srgb, ${color} 15%, transparent)`,
-                  color,
-                }}
-              >
-                <TrendingUp size={10} strokeWidth={3} />
-                {badge}
-              </span>
-            )}
-          </div>
-
-          <p className="mb-2 text-[12px] font-semibold text-maindark/60 dark:text-primary/70">
-            {title}
-          </p>
-
-          <div className="flex items-baseline gap-1.5">
-            <span
-              className={`min-w-0 break-words font-bold leading-none tracking-tight text-maindark dark:text-primary ${
-                compact ? "text-[22px] sm:text-[24px]" : "text-[28px]"
-              }`}
-            >
-              {value}
-            </span>
-            {suffix && (
-              <span className="shrink-0 text-[11px] font-semibold uppercase text-maindark/50 dark:text-primary/50">
-                {suffix}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  },
-);
-
-StatCard.displayName = "StatCard";
-
-// ─── DashboardStatistics ──────────────────────────────────────────────────────
-
 const DashboardStatistics = memo(
-  ({ totalOrders, sold, cancelled, profit, loading = false }: DashboardStatisticsProps) => {
+  ({
+    accepted,
+    sold,
+    cancelled,
+    profit,
+    avgOrderValue,
+    avgFulfillmentHours,
+    onTimeRate,
+    loading = false,
+  }: DashboardStatisticsProps) => {
     const { t } = useTranslation("dashboard");
+
+    const gridClass =
+      "grid grid-cols-2 gap-4 lg:grid-cols-12 lg:auto-rows-[142px]";
 
     if (loading) {
       return (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div
-              key={index}
-              className="el-card min-h-[144px] rounded-2xl p-4"
-              style={{ opacity: 1 - index * 0.08 }}
-            >
-              <div className="mb-7 h-10 w-10 animate-pulse rounded-xl bg-slate-200 dark:bg-white/12" />
-              <div className="mb-4 h-3 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-white/12" />
-              <div className="h-7 w-28 animate-pulse rounded-full bg-slate-200 dark:bg-white/12" />
-            </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <MetricCardSkeleton key={i} />
           ))}
         </div>
       );
     }
 
-    const stats: StatCardProps[] = [
-      {
-        title: t("cards.total_orders"),
-        value: totalOrders,
-        icon: <ShoppingCart size={20} />,
-        variant: "info",
-      },
-      {
-        title: t("cards.sold"),
-        value: sold,
-        icon: <CheckCircle2 size={20} />,
-        variant: "success",
-      },
-      {
-        title: t("cards.cancelled"),
-        value: cancelled,
-        icon: <XCircle size={20} />,
-        variant: "error",
-      },
-      {
-        title: t("cards.profit"),
-        value: formatMoney(profit),
-        icon: <DollarSign size={20} />,
-        variant: "warning",
-        suffix: t("currency_sum"),
-        compact: true,
-      },
-    ];
+    const successRate = ratio(sold, accepted);
+    const cancelRate = ratio(cancelled, accepted);
+    const inProgress = Math.max(0, accepted - sold - cancelled);
+    const profitTone: Tone = profit < 0 ? "danger" : "success";
+    // Yo'qotilgan daromad: bekor qilingan buyurtmalarning taxminiy qiymati
+    const lostRevenue = cancelled * avgOrderValue;
+    const slaTone: Tone =
+      onTimeRate >= 70 ? "success" : onTimeRate >= 40 ? "warning" : "danger";
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <StatCard key={stat.title} {...stat} />
-        ))}
+      <div className="space-y-4">
+      <div className={gridClass}>
+        {/* ── Donut: buyurtma holati (katta, chap) ── */}
+        <div className="col-span-2 lg:col-span-4 lg:row-span-2">
+          <OrderStatusDonut
+            accepted={accepted}
+            sold={sold}
+            inProgress={inProgress}
+            cancelled={cancelled}
+            title={t("status.title")}
+            centerLabel={t("status.center")}
+            legend={{
+              sold: t("cards.sold"),
+              inProgress: t("cards.in_progress"),
+              cancelled: t("cards.cancelled"),
+            }}
+          />
+        </div>
+
+        {/* ── Gauge: muvaffaqiyat darajasi (katta, markaz) ── */}
+        <div className="col-span-2 lg:col-span-4 lg:row-span-2">
+          <SuccessGauge
+            successRate={successRate}
+            sold={sold}
+            cancelled={cancelled}
+            title={t("cards.success_rate")}
+            soldLabel={t("cards.sold")}
+            cancelledLabel={t("cards.cancelled")}
+          />
+        </div>
+
+        {/* ── Featured: yetkazib berilgan (ajralib turadi) ── */}
+        <div className="col-span-2 lg:col-span-4 lg:row-span-1">
+          <FeaturedDeliveredCard
+            sold={sold}
+            successRate={successRate}
+            title={t("featured.delivered")}
+            hint={t("featured.delivered_hint")}
+            unit={t("unit.orders")}
+            rateLabel={t("cards.success_rate")}
+          />
+        </div>
+
+        {/* ── Bekor qilingan ── */}
+        <div className="col-span-1 lg:col-span-2 lg:row-span-1">
+          <MetricCard
+            title={t("cards.cancelled")}
+            value={formatNumber(cancelled)}
+            suffix={t("unit.orders")}
+            icon={<XCircle size={20} />}
+            tone="danger"
+            badge={formatPercent(cancelRate)}
+            badgeUp={false}
+          />
+        </div>
+
+        {/* ── Jarayonda ── */}
+        <div className="col-span-1 lg:col-span-2 lg:row-span-1">
+          <MetricCard
+            title={t("cards.in_progress")}
+            value={formatNumber(inProgress)}
+            suffix={t("unit.orders")}
+            icon={<Truck size={20} />}
+            tone="warning"
+          />
+        </div>
+
+      </div>
+
+      {/* ── Ikkilamchi metrikalar qatori ── */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+        <MetricCard
+          title={t("cards.profit")}
+          value={formatCompactMoney(profit)}
+          suffix={t("currency_sum")}
+          icon={<Wallet size={20} />}
+          tone={profitTone}
+          compact
+          hint={t("cards.profit_hint")}
+        />
+        <MetricCard
+          title={t("cards.avg_order_value")}
+          value={formatCompactMoney(avgOrderValue)}
+          suffix={t("currency_sum")}
+          icon={<Receipt size={20} />}
+          tone="brand"
+          compact
+          hint={t("cards.avg_order_value_hint")}
+        />
+        <MetricCard
+          title={t("cards.avg_fulfillment")}
+          value={formatHours(avgFulfillmentHours)}
+          icon={<Timer size={20} />}
+          tone="neutral"
+          compact
+          hint={t("cards.avg_fulfillment_hint")}
+        />
+        {/* SLA — 24 soat ichida yetkazilgan % */}
+        <MetricCard
+          title={t("cards.on_time")}
+          value={formatPercent(onTimeRate)}
+          icon={<Clock size={20} />}
+          tone={slaTone}
+          badge={t("cards.on_time_badge")}
+          progress={onTimeRate}
+          compact
+          hint={t("cards.on_time_hint")}
+        />
+        {/* Yo'qotilgan daromad */}
+        <MetricCard
+          title={t("cards.lost_revenue")}
+          value={formatCompactMoney(lostRevenue)}
+          suffix={t("currency_sum")}
+          icon={<TrendingDown size={20} />}
+          tone="danger"
+          compact
+          hint={t("cards.lost_revenue_hint")}
+        />
+      </div>
       </div>
     );
   },
 );
 
 DashboardStatistics.displayName = "DashboardStatistics";
+
+// ─── FeaturedDeliveredCard ────────────────────────────────────────────────────
+// Asosiy "yetkazib berilgan" ko'rsatkichi — gradient fon bilan keskin ajralib turadi.
+
+interface FeaturedDeliveredCardProps {
+  sold: number;
+  successRate: number;
+  title: string;
+  hint: string;
+  unit: string;
+  rateLabel: string;
+}
+
+const FeaturedDeliveredCard = memo(
+  ({ sold, successRate, title, hint, unit, rateLabel }: FeaturedDeliveredCardProps) => (
+    <div
+      className="relative flex h-full min-h-[132px] flex-col justify-between overflow-hidden rounded-2xl p-5 text-white shadow-lg"
+      style={{
+        background:
+          "linear-gradient(135deg, var(--color-main) 0%, var(--color-purple-dark) 100%)",
+      }}
+    >
+      {/* dekorativ halqa */}
+      <span className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10" />
+      <span className="pointer-events-none absolute -bottom-12 -right-2 h-24 w-24 rounded-full bg-white/5" />
+
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 ring-1 ring-white/25">
+            <Send size={20} />
+          </div>
+          <span className="text-[13px] font-semibold text-white/90">{title}</span>
+        </div>
+        <span className="flex items-center gap-1 rounded-lg bg-white/20 px-2 py-0.5 text-[11px] font-bold">
+          <ArrowUpRight size={12} strokeWidth={3} />
+          {formatPercent(successRate)} {rateLabel}
+        </span>
+      </div>
+
+      <div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[40px] font-bold leading-none tracking-tight">
+            {formatNumber(sold)}
+          </span>
+          <span className="text-[12px] font-semibold uppercase text-white/70">
+            {unit}
+          </span>
+        </div>
+        <p className="mt-1.5 text-[11px] text-white/70">{hint}</p>
+      </div>
+    </div>
+  ),
+);
+
+FeaturedDeliveredCard.displayName = "FeaturedDeliveredCard";
 
 export default DashboardStatistics;
