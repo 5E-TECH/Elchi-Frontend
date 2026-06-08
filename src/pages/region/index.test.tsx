@@ -4,6 +4,12 @@ import Region from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 
 const apiGetMock = vi.fn();
+const adminRoleState = {
+  id: "admin-1",
+  role: "admin",
+  region: null,
+  name: "Admin",
+};
 
 vi.mock("../../shared/api/api", () => ({
   api: {
@@ -12,6 +18,11 @@ vi.mock("../../shared/api/api", () => ({
 }));
 
 describe("Region page", () => {
+  const renderRegionPage = () =>
+    renderWithProviders(<Region />, {
+      preloadedState: { role: adminRoleState },
+    });
+
   beforeEach(() => {
     apiGetMock.mockResolvedValue({
       data: [
@@ -28,20 +39,16 @@ describe("Region page", () => {
   });
 
   it("renders region page header", async () => {
-    renderWithProviders(<Region />);
+    renderRegionPage();
 
-    expect(
-      await screen.findByText("O'zbekiston viloyatlari xaritasi"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Hududlar")).toBeInTheDocument();
   });
 
   it("renders region page description", async () => {
-    renderWithProviders(<Region />);
+    renderRegionPage();
 
     expect(
-      await screen.findByText(
-        "Region ustiga bosganingizda shu hudud bo'yicha barcha tafsilotlar popup ichida ochiladi.",
-      ),
+      await screen.findByText("Hududlar kesimida buyurtmalar statistikasi"),
     ).toBeInTheDocument();
   });
 });

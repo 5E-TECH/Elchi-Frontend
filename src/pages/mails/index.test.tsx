@@ -16,6 +16,13 @@ vi.mock("./components/oldMails", () => ({
 }));
 
 describe("Mails page", () => {
+  beforeEach(() => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 1440,
+    });
+  });
+
   it("renders today tab by default", () => {
     renderWithProviders(<Mails />, { route: "/mails/today" });
 

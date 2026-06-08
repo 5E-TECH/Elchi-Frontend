@@ -3,6 +3,8 @@
   "pageDescription": "Kassa va to'lovlarni boshqarish",
   "toBeGiven": "Berilishi kerak",
   "amountInCashbox": "Kassadagi summa",
+  "settlementStatus": "Hisob-kitob holati",
+  "counterparty": "Qarshi tomon",
   "toBeReceived": "Qabul qilinishi kerak",
   "filters": "Filtrlar",
   "clearFilters": "Filterlarni tozalash",

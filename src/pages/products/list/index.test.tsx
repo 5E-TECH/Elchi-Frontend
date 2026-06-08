@@ -8,6 +8,12 @@ import { renderWithProviders } from "../../../test/test-utils";
 const navigateMock = vi.fn();
 const deleteMutateMock = vi.fn();
 const updateMutateAsyncMock = vi.fn();
+const adminRoleState = {
+  id: "admin-1",
+  role: "admin",
+  region: null,
+  name: "Admin",
+};
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -28,13 +34,24 @@ vi.mock("../../../shared/components/button", () => ({
 }));
 
 vi.mock("../../../shared/components/Table/Table", () => ({
-  Table: ({ data, columns }: { data: any[]; columns: any[] }) => (
+  Table: ({
+    data,
+    columns,
+  }: {
+    data: Array<Record<string, unknown>>;
+    columns: Array<{
+      key: string;
+      render?: (value: unknown, row: Record<string, unknown>, index: number) => ReactNode;
+    }>;
+  }) => (
     <div>
       {data.map((row) => (
-        <div key={row.id}>
+        <div key={String(row.id)}>
           {columns.map((column) => (
             <div key={String(column.key)}>
-              {column.render ? column.render(row[column.key], row, 0) : row[column.key]}
+              {column.render
+                ? column.render(row[column.key], row, 0)
+                : String(row[column.key] ?? "")}
             </div>
           ))}
         </div>
@@ -88,6 +105,11 @@ vi.mock("../../../entities/product", () => ({
       isLoading: false,
       isFetching: false,
     }),
+    getMyProducts: () => ({
+      data: { data: [] },
+      isLoading: false,
+      isFetching: false,
+    }),
     getProductById: () => ({
       data: {
         data: { id: 1, name: "Olma", image_url: "/uploads/olma.png", market: { id: 1, name: "Fresh" } },
@@ -121,6 +143,11 @@ vi.mock("../../../features/search", () => ({
 }));
 
 describe("ProductTable", () => {
+  const renderProductTable = () =>
+    renderWithProviders(<ProductTable />, {
+      preloadedState: { role: adminRoleState },
+    });
+
   beforeEach(() => {
     navigateMock.mockReset();
     deleteMutateMock.mockReset();
@@ -128,7 +155,7 @@ describe("ProductTable", () => {
   });
 
   it("renders product page header and count", () => {
-    renderWithProviders(<ProductTable />);
+    renderProductTable();
 
     expect(screen.getByText("Mahsulotlar")).toBeInTheDocument();
     expect(screen.getByText("1 ta")).toBeInTheDocument();
@@ -137,7 +164,7 @@ describe("ProductTable", () => {
 
   it("opens market selection popup when create button is clicked", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ProductTable />);
+    renderProductTable();
 
     await user.click(screen.getByRole("button", { name: "Mahsulot yaratish" }));
 
@@ -146,7 +173,7 @@ describe("ProductTable", () => {
 
   it("opens delete confirmation and confirms delete", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ProductTable />);
+    renderProductTable();
 
     await user.click(screen.getByLabelText("Mahsulotni o'chirish"));
     await user.click(screen.getByRole("button", { name: "confirm-delete" }));
@@ -156,7 +183,7 @@ describe("ProductTable", () => {
 
   it("opens edit popup from action button", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ProductTable />);
+    renderProductTable();
 
     await user.click(screen.getByLabelText("Mahsulotni tahrirlash"));
 

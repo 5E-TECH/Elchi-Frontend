@@ -3,6 +3,8 @@
   "pageDescription": "Управление кассой и платежами",
   "toBeGiven": "К выдаче",
   "amountInCashbox": "Сумма в кассе",
+  "settlementStatus": "Состояние расчетов",
+  "counterparty": "Контрагент",
   "toBeReceived": "К получению",
   "filters": "Фильтры",
   "clearFilters": "Очистить фильтры",
