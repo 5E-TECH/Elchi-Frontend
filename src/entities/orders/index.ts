@@ -4,6 +4,16 @@ import { API_ENDPOINTS } from "../../shared/api";
 
 const orders = "orders";
 
+export type UpdateNewOrderPayload = Partial<{
+  region_id: string;
+  district_id: string;
+  address: string;
+  where_deliver: string;
+  total_price: number;
+  comment: string;
+  items: { product_id: string; quantity: number }[];
+}>;
+
 export const useOrders = () => {
   const client = useQueryClient();
 
@@ -70,7 +80,7 @@ export const useOrders = () => {
     });
 
   const updateNewOrder = useMutation({
-    mutationFn: ({ orderId, data }: { orderId: string; data: any }) =>
+    mutationFn: ({ orderId, data }: { orderId: string; data: UpdateNewOrderPayload }) =>
       api.patch(API_ENDPOINTS.ORDERS.FULL(orderId), data).then((res) => res.data),
     onSuccess: () => {
       // Barcha orders cache ni yangilash

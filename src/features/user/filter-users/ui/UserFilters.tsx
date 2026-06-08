@@ -111,9 +111,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
     };
 
     return (
-        <section className="relative mb-6 overflow-visible rounded-[28px] border border-white/55 bg-white/75 p-4 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045] dark:shadow-black/10">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-main/20 blur-3xl dark:bg-main/25" />
-            <div className="pointer-events-none absolute -bottom-20 left-1/4 h-32 w-32 rounded-full bg-emerald-400/10 blur-3xl" />
+        <section className="relative mb-6 overflow-visible rounded-[28px] border border-white/70 bg-white/95 p-4 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-[#342f4b] dark:shadow-black/10">
 
             <div className="relative flex flex-col gap-4">
                 {isMobile && (

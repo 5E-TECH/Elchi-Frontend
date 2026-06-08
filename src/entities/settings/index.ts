@@ -37,8 +37,16 @@ export interface AppSettings {
   };
 }
 
+export interface AppSettingsPatch {
+  appearance?: Partial<AppSettings["appearance"]>;
+  dashboard?: {
+    widgets?: Partial<AppSettings["dashboard"]["widgets"]>;
+  };
+  interface?: Partial<AppSettings["interface"]>;
+}
+
 export const DEFAULT_SETTINGS: AppSettings = {
-  appearance: { theme: "light", language: "uz" },
+  appearance: { theme: "dark", language: "uz" },
   dashboard: {
     widgets: {
       stats: true,
@@ -71,6 +79,17 @@ export const mergeSettings = (raw: unknown): AppSettings => {
   };
 };
 
+const applySettingsPatch = (
+  current: AppSettings,
+  patch: AppSettingsPatch,
+): AppSettings => ({
+  appearance: { ...current.appearance, ...patch.appearance },
+  dashboard: {
+    widgets: { ...current.dashboard.widgets, ...patch.dashboard?.widgets },
+  },
+  interface: { ...current.interface, ...patch.interface },
+});
+
 const SETTINGS_KEY = ["app-settings"];
 
 /** Joriy foydalanuvchi sozlamalarini oladi (my-profile.settings dan). */
@@ -95,14 +114,18 @@ export const useSettings = () => {
 export const useUpdateSettings = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (next: AppSettings) => {
-      await api.patch(API_ENDPOINTS.AUTH.MY_SETTINGS, { settings: next });
-      return next;
+    scope: { id: "app-settings" },
+    mutationFn: async (patch: AppSettingsPatch) => {
+      await api.patch(API_ENDPOINTS.AUTH.MY_SETTINGS, { settings: patch });
+      return patch;
     },
-    onMutate: async (next: AppSettings) => {
+    onMutate: async (patch: AppSettingsPatch) => {
       await qc.cancelQueries({ queryKey: SETTINGS_KEY });
       const prev = qc.getQueryData<AppSettings>(SETTINGS_KEY);
-      qc.setQueryData(SETTINGS_KEY, next);
+      qc.setQueryData(
+        SETTINGS_KEY,
+        applySettingsPatch(prev ?? DEFAULT_SETTINGS, patch),
+      );
       return { prev };
     },
     onError: (_e, _v, ctx) => {

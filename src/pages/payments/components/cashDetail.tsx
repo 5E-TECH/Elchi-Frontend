@@ -21,6 +21,9 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const reduceBalanceTowardsZero = (balance: number, amount: number) =>
+  balance < 0 ? Math.min(0, balance + amount) : Math.max(0, balance - amount);
+
 const toIsoDate = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -125,6 +128,7 @@ const CashDetail = () => {
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [balanceOverride, setBalanceOverride] = useState<number | null>(null);
 
   const detailParams = useMemo(
     () => ({
@@ -138,7 +142,7 @@ const CashDetail = () => {
   );
   const isBranchToMainDetail = state?.type === "branch";
 
-  const { data: cashboxResponse, isLoading } = getCashBoxById(
+  const { data: cashboxResponse, isLoading, refetch: refetchCashbox } = getCashBoxById(
     id || "",
     Boolean(id) && !isBranchToMainDetail,
     detailParams,
@@ -161,7 +165,12 @@ const CashDetail = () => {
   const type: CashDetailType = state?.type ?? normalizeType(cashbox?.cashbox_type, user?.role);
   const cfg = CONFIG[type];
   const entityName = user?.name?.trim() || t("userFallback");
-  const totalBalance = toNumber(cashbox?.balance ?? state?.entity?.amount);
+  const apiBalance = toNumber(cashbox?.balance ?? state?.entity?.amount);
+  const totalBalance = balanceOverride ?? apiBalance;
+
+  useEffect(() => {
+    setBalanceOverride(null);
+  }, [id]);
 
   const paymentTypeOptions = [
     { value: "cash", label: `💵 ${t("cash")}` },
@@ -207,6 +216,33 @@ const CashDetail = () => {
       setValue("marketId", "");
     }
   }, [isStoreTransfer, setValue]);
+
+  const resetActionForm = () => {
+    reset({
+      amount: "",
+      paymentType: "",
+      marketId: "",
+      comment: "",
+    });
+  };
+
+  const refreshAfterPayment = async (amount: number) => {
+    setBalanceOverride(reduceBalanceTowardsZero(totalBalance, amount));
+    resetActionForm();
+
+    const refreshed = await refetchCashbox();
+    const refreshedData = refreshed.data?.data;
+    const refreshedEntry = Array.isArray(refreshedData) ? refreshedData[0] : refreshedData;
+    const refreshedBalance = refreshedEntry?.cashbox?.balance ?? refreshedEntry?.balance;
+
+    if (
+      refreshedBalance !== undefined &&
+      refreshedBalance !== null &&
+      toNumber(refreshedBalance) !== apiBalance
+    ) {
+      setBalanceOverride(toNumber(refreshedBalance));
+    }
+  };
 
   const historyRows = useMemo<PaymentRow[]>(() => {
     return cashboxHistory.map((item: Record<string, unknown>, index: number) => {
@@ -273,7 +309,7 @@ const CashDetail = () => {
         (!!state?.entity?.type && state?.entity?.type !== "courier");
 
       if (isBranchToMain) {
-        await apiRequest({
+        const result = await apiRequest({
           request: () =>
             createPaymentBranchToMain.mutateAsync({
               branch_id: id,
@@ -281,22 +317,15 @@ const CashDetail = () => {
               payment_method: normalizedPaymentMethod,
               payment_date: paymentDate,
               comment,
-            }),
+          }),
           successMessage: t("receivePaymentSuccess"),
           errorMessage: t("receivePaymentError"),
-          onSuccess: () => {
-            reset({
-              amount: "",
-              paymentType: "",
-              marketId: "",
-              comment: "",
-            });
-          },
         });
+        if (result) await refreshAfterPayment(amount);
         return;
       }
 
-      await apiRequest({
+      const result = await apiRequest({
         request: () =>
           createPaymentCourier.mutateAsync({
             courier_id: id,
@@ -305,23 +334,16 @@ const CashDetail = () => {
             market_id: isStoreTransfer ? values.marketId : null,
             payment_date: paymentDate,
             comment,
-          }),
+        }),
         successMessage: t("receivePaymentSuccess"),
         errorMessage: t("receivePaymentError"),
-        onSuccess: () => {
-          reset({
-            amount: "",
-            paymentType: "",
-            marketId: "",
-            comment: "",
-          });
-        },
       });
+      if (result) await refreshAfterPayment(amount);
       return;
     }
 
     if (!id) return;
-    await apiRequest({
+    const result = await apiRequest({
       request: () =>
         createPaymentMarket.mutateAsync({
           market_id: id,
@@ -329,18 +351,11 @@ const CashDetail = () => {
           payment_method: normalizedPaymentMethod,
           payment_date: paymentDate,
           comment,
-        }),
+      }),
       successMessage: t("marketPaymentSuccess"),
       errorMessage: t("marketPaymentError"),
-      onSuccess: () => {
-        reset({
-          amount: "",
-          paymentType: "",
-          marketId: "",
-          comment: "",
-        });
-      },
     });
+    if (result) await refreshAfterPayment(amount);
   };
 
   if (isLoading && !isBranchToMainDetail) {

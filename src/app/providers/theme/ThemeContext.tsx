@@ -1,6 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+    readStoredTheme,
+    writeStoredTheme,
+    type StoredTheme,
+} from '../../../shared/lib/preferencesStorage';
 
-type Theme = 'light' | 'dark';
+type Theme = StoredTheme;
 
 interface ThemeContextType {
     theme: Theme;
@@ -18,7 +23,6 @@ const applyTheme = (theme: Theme) => {
     root.classList.add(THEME_SWITCHING_CLASS);
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-    window.localStorage.setItem('theme', theme);
 
     window.requestAnimationFrame(() => {
         window.setTimeout(() => {
@@ -28,22 +32,24 @@ const applyTheme = (theme: Theme) => {
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-    const [theme, setTheme] = useState<Theme>(() => {
-        if (typeof window !== 'undefined') {
-            const savedTheme = localStorage.getItem('theme') as Theme;
-            if (savedTheme) return savedTheme;
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
-        }
-        return 'light';
-    });
+    const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? 'dark');
 
     useEffect(() => {
         applyTheme(theme);
     }, [theme]);
 
-    const toggleTheme = () => {
-        setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-    };
+    const setTheme = useCallback((nextTheme: Theme) => {
+        writeStoredTheme(nextTheme);
+        setThemeState(nextTheme);
+    }, []);
+
+    const toggleTheme = useCallback(() => {
+        setThemeState((previousTheme) => {
+            const nextTheme = previousTheme === 'light' ? 'dark' : 'light';
+            writeStoredTheme(nextTheme);
+            return nextTheme;
+        });
+    }, []);
 
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>

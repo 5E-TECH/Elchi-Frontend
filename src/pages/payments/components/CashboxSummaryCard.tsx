@@ -25,9 +25,9 @@ const CashboxSummaryCard = ({
   onToggleVisibility,
 }: CashboxSummaryCardProps) => {
   return (
-    <div className="w-full max-w-[540px]">
+    <div className="w-full max-w-[540px] xl:max-w-none">
       <div
-        className="relative flex aspect-[1.56/1] min-h-[13.5rem] max-h-[16rem] w-full flex-col overflow-hidden rounded-[1.45rem] border border-white/10 p-3 shadow-[0_24px_54px_rgba(16,10,44,0.38)] sm:aspect-[1.68/1] sm:max-h-[16.75rem] md:aspect-[1.75/1] md:max-h-none xl:aspect-[1.9/1] sm:rounded-[1.7rem] sm:p-4 sm:shadow-[0_28px_60px_rgba(16,10,44,0.38)]"
+        className="relative flex min-h-[12.5rem] w-full flex-col overflow-hidden rounded-[1.45rem] border border-white/10 p-3 shadow-[0_24px_54px_rgba(16,10,44,0.38)] sm:aspect-[1.75/1] sm:min-h-[13.5rem] sm:max-h-[18rem] sm:rounded-[1.7rem] sm:p-4 sm:shadow-[0_28px_60px_rgba(16,10,44,0.38)] xl:aspect-[1.7/1] xl:max-h-none"
         style={{
           background:
             "linear-gradient(145deg, color-mix(in srgb, var(--color-main) 28%, #201442) 0%, color-mix(in srgb, var(--color-maindark) 92%, #120d2f) 42%, color-mix(in srgb, var(--color-purple) 44%, #180d35) 100%)",
@@ -68,7 +68,7 @@ const CashboxSummaryCard = ({
           <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55 sm:mb-2 sm:text-[11px] sm:tracking-[0.16em]">
             <Wallet2 size={11} /> Umumiy balans
           </p>
-          <p className="text-[clamp(2.15rem,6vw,3rem)] font-black tracking-tight text-white drop-shadow-[0_6px_16px_rgba(0,0,0,0.28)]">
+          <p className="break-words text-[clamp(1.8rem,6vw,3rem)] font-black tracking-tight text-white drop-shadow-[0_6px_16px_rgba(0,0,0,0.28)]">
             {balanceVisible ? `${fmt(balance)} UZS` : "••••••• UZS"}
           </p>
         </div>

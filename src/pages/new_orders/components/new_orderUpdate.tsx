@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Truck,
   RotateCcw,
+  LockKeyhole,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
@@ -36,6 +37,16 @@ import type { RootState } from "../../../app/config/store";
 import SellModal from "../../orders/list/courier/list/SellModal";
 import CancelModal from "../../orders/list/courier/list/CancelModal";
 import PopupConfirm from "../../../shared/components/popupConfirm";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import {
+  buildAddressUpdatePayload,
+  buildCustomerUpdatePayload,
+  buildOrderUpdatePayload,
+  getBackend400Message,
+  isOrderReceivedOrLater,
+  isOrderSentToBranch,
+  type EditableOrderSnapshot,
+} from "./newOrderUpdateRules";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -75,11 +86,8 @@ const ProductThumbnail = ({
   className: string;
 }) => {
   const imageUrl = getProductImageUrl(item);
-  const [hasImageError, setHasImageError] = useState(false);
-
-  useEffect(() => {
-    setHasImageError(false);
-  }, [imageUrl]);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const hasImageError = failedImageUrl === imageUrl;
 
   return (
     <div className={className}>
@@ -89,7 +97,7 @@ const ProductThumbnail = ({
           alt={alt}
           className="h-full w-full object-cover"
           loading="lazy"
-          onError={() => setHasImageError(true)}
+          onError={() => setFailedImageUrl(imageUrl)}
         />
       ) : (
         <Package size={18} className="text-gray-300 dark:text-white/20" />
@@ -97,7 +105,7 @@ const ProductThumbnail = ({
     </div>
   );
 };
-interface OrderDetail {
+interface OrderDetail extends EditableOrderSnapshot {
   id: string;
   where_deliver: "center" | "address";
   total_price: number;
@@ -111,6 +119,7 @@ interface OrderDetail {
   customer: Customer;
   district?: District;
   region?: Region;
+  [key: string]: unknown;
 }
 
 interface AddressForm {
@@ -144,6 +153,10 @@ const DELIVER_OPTIONS = [
 const BRANCH_TYPES = new Set(["HQ", "PICKUP", "REGIONAL", "HYBRID"]);
 const ACTIONABLE_STATUSES = new Set(["waiting", "on the road", "new", "received"]);
 const DEFAULT_STATUS_CLS = "bg-slate-500/20 text-slate-300 border border-slate-500/30";
+const PRODUCTS_LOCK_REASON =
+  "HQ qabul qilgandan keyin summa va mahsulotlarni o‘zgartirib bo‘lmaydi.";
+const DESTINATION_LOCK_REASON =
+  "Branchga jo‘natilgandan keyin mijoz va manzilni o‘zgartirib bo‘lmaydi.";
 
 const getOrderPageBranchType = (
   user: RootState["user"]["user"],
@@ -304,18 +317,35 @@ const InfoRow = memo(({
   </div>
 ));
 
-const EditBtn = memo(({ onClick }: { onClick: () => void }) => {
+const EditBtn = memo(({
+  onClick,
+  disabled = false,
+  reason,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  reason?: string;
+}) => {
   const { t } = useTranslation("common");
 
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 text-xs font-semibold transition-colors"
+      disabled={disabled}
+      title={disabled ? reason : undefined}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45"
     >
       <Edit2 size={12} /> {t("edit")}
     </button>
   );
 });
+
+const LockNotice = memo(({ children }: { children: string }) => (
+  <div className="flex items-start gap-2 rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-100">
+    <LockKeyhole size={14} className="mt-0.5 shrink-0" />
+    <span>{children}</span>
+  </div>
+));
 
 const Skeleton = memo(() => (
   <div className="animate-pulse space-y-4">
@@ -327,7 +357,7 @@ const Skeleton = memo(() => (
 
 // ─── Popup Field Components ───────────────────────────────────────────────────
 const SelectField = memo(({
-  label, icon: Icon, value, onChange, placeholder, options,
+  label, icon: Icon, value, onChange, placeholder, options, disabled = false,
 }: {
   label: string;
   icon: LucideIcon;
@@ -335,6 +365,7 @@ const SelectField = memo(({
   onChange: (v: string) => void;
   placeholder: string;
   options: ReadonlyArray<{ value: string; label: string }>;
+  disabled?: boolean;
 }) => (
   <div className="space-y-1.5">
     <label className="text-sm text-gray-500 dark:text-white ml-1">{label}</label>
@@ -343,7 +374,8 @@ const SelectField = memo(({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`${FIELD_CLS} pl-10 pr-10 appearance-none cursor-pointer`}
+        disabled={disabled}
+        className={`${FIELD_CLS} pl-10 pr-10 appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
       >
         <option value="" className="bg-sidebar dark:bg-maindark">{placeholder}</option>
         {options.map((o) => (
@@ -360,13 +392,14 @@ const SelectField = memo(({
 ));
 
 const InputField = memo(({
-  label, icon: Icon, value, onChange, placeholder,
+  label, icon: Icon, value, onChange, placeholder, disabled = false,
 }: {
   label: string;
   icon: LucideIcon;
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  disabled?: boolean;
 }) => (
   <div className="space-y-1.5">
     <label className="text-sm text-gray-500 dark:text-white ml-1">{label}</label>
@@ -379,7 +412,8 @@ const InputField = memo(({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`${FIELD_CLS} pl-10 pr-4 placeholder:text-gray-400 dark:placeholder:text-white/80`}
+        disabled={disabled}
+        className={`${FIELD_CLS} pl-10 pr-4 placeholder:text-gray-400 dark:placeholder:text-white/80 disabled:cursor-not-allowed disabled:opacity-60`}
       />
     </div>
   </div>
@@ -391,6 +425,7 @@ const NewOrderUpdate = () => {
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const queryClient = useQueryClient();
+  const { api: notificationApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   const branchType = getOrderPageBranchType(user);
@@ -456,6 +491,18 @@ const NewOrderUpdate = () => {
     if (!order) return null;
     return STATUS_CONFIG[order.status] ?? null;
   }, [order]);
+  const productsLocked = Boolean(order && isOrderReceivedOrLater(order.status));
+  const destinationLocked = Boolean(order && isOrderSentToBranch(order));
+  const showUpdateError = useCallback((error: unknown) => {
+    notificationApi.error({
+      message: t("error", { ns: "common", defaultValue: "Xatolik" }),
+      description:
+        getBackend400Message(error) ??
+        t("updateError", { ns: "newOrders", defaultValue: "Ma'lumotlarni yangilab bo'lmadi" }),
+      placement: "topRight",
+      duration: 5,
+    });
+  }, [notificationApi, t]);
   const canUseCourierActions = useMemo(
     () =>
       role === "manager" &&
@@ -481,13 +528,14 @@ const NewOrderUpdate = () => {
 
   // ─── Handlers — Address popup ─────────────────────────────────────────────
   const handleOpenAddressPopup = useCallback(() => {
+    if (destinationLocked) return;
     setAddressForm({
       region_id: order?.district?.region_id ?? order?.region?.id ?? "",
       district_id: order?.district_id ?? order?.district?.id ?? "",
       address: order?.address ?? "",
     });
     setAddressPopupOpen(true);
-  }, [order]);
+  }, [destinationLocked, order]);
 
   const handleCloseAddressPopup = useCallback(() => setAddressPopupOpen(false), []);
 
@@ -501,21 +549,30 @@ const NewOrderUpdate = () => {
     setAddressForm((p) => ({ ...p, address: v })), []);
 
   const handleSaveAddress = useCallback(() => {
-    if (!orderId) return;
+    if (!orderId || !order || destinationLocked) return;
+    const data = buildAddressUpdatePayload(order, addressForm);
+    if (!Object.keys(data).length) {
+      setAddressPopupOpen(false);
+      return;
+    }
     updateNewOrder.mutate(
-      { orderId, data: addressForm },
-      { onSuccess: () => setAddressPopupOpen(false) },
+      { orderId, data },
+      {
+        onSuccess: () => setAddressPopupOpen(false),
+        onError: showUpdateError,
+      },
     );
-  }, [orderId, addressForm, updateNewOrder]);
+  }, [addressForm, destinationLocked, order, orderId, showUpdateError, updateNewOrder]);
 
   // ─── Handlers — Customer popup ────────────────────────────────────────────
   const handleOpenCustomerPopup = useCallback(() => {
+    if (destinationLocked) return;
     setCustomerForm({
       name: order?.customer?.name ?? "",
       phone: order?.customer?.phone_number ?? "",
     });
     setCustomerPopupOpen(true);
-  }, [order]);
+  }, [destinationLocked, order]);
 
   const handleCloseCustomerPopup = useCallback(() => setCustomerPopupOpen(false), []);
 
@@ -526,17 +583,23 @@ const NewOrderUpdate = () => {
     setCustomerForm((p) => ({ ...p, phone: v })), []);
 
   const handleSaveCustomer = useCallback(() => {
-    if (!userId) return;
+    if (!userId || !order || destinationLocked) return;
+    const data = buildCustomerUpdatePayload(order, customerForm);
+    if (!Object.keys(data).length) {
+      setCustomerPopupOpen(false);
+      return;
+    }
     updateUser.mutate(
-      { id: userId, data: { name: customerForm.name, phone_number: customerForm.phone } },
+      { id: userId, data },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["orders"] });
           setCustomerPopupOpen(false);
         },
+        onError: showUpdateError,
       },
     );
-  }, [userId, customerForm, updateUser, queryClient]);
+  }, [customerForm, destinationLocked, order, queryClient, showUpdateError, updateUser, userId]);
 
   // ─── Handlers — Order popup ───────────────────────────────────────────────
   const handleOpenOrderPopup = useCallback(() => {
@@ -564,31 +627,38 @@ const NewOrderUpdate = () => {
   );
 
   const handleSaveOrder = useCallback(() => {
-    if (!orderId) return;
+    if (!orderId || !order) return;
+    const data = buildOrderUpdatePayload(order, orderForm, {
+      products: productsLocked,
+      destination: destinationLocked,
+    });
+    if (!Object.keys(data).length) {
+      setOrderPopupOpen(false);
+      return;
+    }
     updateNewOrder.mutate(
+      { orderId, data },
       {
-        orderId,
-        data: {
-          where_deliver: orderForm.where_deliver,
-          total_price: Number(orderForm.total_price),
-          comment: orderForm.comment,
-          items: orderForm.items.map((i) => ({ product_id: i.product?.id, quantity: i.quantity })),
-        },
+        onSuccess: () => setOrderPopupOpen(false),
+        onError: showUpdateError,
       },
-      { onSuccess: () => setOrderPopupOpen(false) },
     );
-  }, [orderId, orderForm, updateNewOrder]);
+  }, [destinationLocked, order, orderForm, orderId, productsLocked, showUpdateError, updateNewOrder]);
 
-  const adjustQty = useCallback((itemId: string, delta: number) =>
+  const adjustQty = useCallback((itemId: string, delta: number) => {
+    if (productsLocked) return;
     setOrderForm((p) => ({
       ...p,
       items: p.items.map((i) =>
         i.id === itemId ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i
       ),
-    })), []);
+    }));
+  }, [productsLocked]);
 
-  const removeItem = useCallback((itemId: string) =>
-    setOrderForm((p) => ({ ...p, items: p.items.filter((i) => i.id !== itemId) })), []);
+  const removeItem = useCallback((itemId: string) => {
+    if (productsLocked) return;
+    setOrderForm((p) => ({ ...p, items: p.items.filter((i) => i.id !== itemId) }));
+  }, [productsLocked]);
 
   const handleNavigateToCustomer = useCallback(
     () => {
@@ -639,7 +709,7 @@ const NewOrderUpdate = () => {
     RollbackOrder.mutate(order.id, {
       onSuccess: () => setIsRollbackConfirmOpen(false),
     });
-  }, [RollbackOrder, order?.id]);
+  }, [RollbackOrder, order]);
 
   const sellModalOrder = useMemo(() => {
     if (!order) return null;
@@ -740,6 +810,7 @@ const NewOrderUpdate = () => {
                   sub={t("productsCount", { count: order.items.length })}
                   action={<EditBtn onClick={handleOpenOrderPopup} />}
                 />
+                {productsLocked && <LockNotice>{PRODUCTS_LOCK_REASON}</LockNotice>}
                 <div className="hidden border-b border-gray-100 pb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:border-white/6 dark:text-white sm:grid sm:grid-cols-[1fr_auto]">
                   <span>{t("product")}</span>
                   <span>{t("quantity")}</span>
@@ -823,12 +894,15 @@ const NewOrderUpdate = () => {
                   action={
                     <button
                       onClick={handleOpenCustomerPopup}
-                      className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors"
+                      disabled={destinationLocked}
+                      title={destinationLocked ? DESTINATION_LOCK_REASON : undefined}
+                      className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       <Edit2 size={14} />
                     </button>
                   }
                 />
+                {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
                 <div
                   onClick={handleNavigateToCustomer}
                   className="flex items-center gap-3 p-3.5 rounded-xl bg-main/8 dark:bg-main/10 border border-main/20 cursor-pointer"
@@ -867,8 +941,15 @@ const NewOrderUpdate = () => {
                   title={t("addressTitle")}
                   sub={t("addressSubtitle")}
                   iconCls="bg-amber-500/15 text-amber-500"
-                  action={<EditBtn onClick={handleOpenAddressPopup} />}
+                  action={
+                    <EditBtn
+                      onClick={handleOpenAddressPopup}
+                      disabled={destinationLocked}
+                      reason={DESTINATION_LOCK_REASON}
+                    />
+                  }
                 />
+                {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
                 <div>
                   <InfoRow
                     icon={<Map size={15} />}
@@ -906,6 +987,7 @@ const NewOrderUpdate = () => {
         title={t("editAddress")}
         icon={<MapPin size={20} />}
       >
+        {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
         <SelectField
           label={t("region")}
           icon={Map}
@@ -913,6 +995,7 @@ const NewOrderUpdate = () => {
           onChange={handleRegionChange}
           placeholder={t("selectRegion")}
           options={regions}
+          disabled={destinationLocked}
         />
         <SelectField
           label={t("district")}
@@ -921,6 +1004,7 @@ const NewOrderUpdate = () => {
           onChange={handleDistrictChange}
           placeholder={addressForm.region_id ? t("selectDistrict") : t("selectRegionFirst")}
           options={districts}
+          disabled={destinationLocked}
         />
         <InputField
           label={t("fullAddress")}
@@ -928,6 +1012,7 @@ const NewOrderUpdate = () => {
           value={addressForm.address}
           onChange={handleAddressChange}
           placeholder={t("enterAddress")}
+          disabled={destinationLocked}
         />
       </UpdatePopup>
 
@@ -940,12 +1025,14 @@ const NewOrderUpdate = () => {
         title={t("editCustomer")}
         icon={<User size={20} />}
       >
+        {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
         <InputField
           label={t("name")}
           icon={User}
           value={customerForm.name}
           onChange={handleCustomerNameChange}
           placeholder={t("customerNamePlaceholder")}
+          disabled={destinationLocked}
         />
         <InputField
           label={t("phone")}
@@ -953,6 +1040,7 @@ const NewOrderUpdate = () => {
           value={customerForm.phone}
           onChange={handleCustomerPhoneChange}
           placeholder={t("phonePlaceholder")}
+          disabled={destinationLocked}
         />
       </UpdatePopup>
 
@@ -965,6 +1053,8 @@ const NewOrderUpdate = () => {
         title={t("editOrder")}
         icon={<ShoppingBag size={20} />}
       >
+        {productsLocked && <LockNotice>{PRODUCTS_LOCK_REASON}</LockNotice>}
+        {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
         {/* Mahsulotlar */}
         <div className="space-y-2">
           {orderForm.items.map((item) => (
@@ -973,6 +1063,7 @@ const NewOrderUpdate = () => {
               item={item}
               onAdjust={adjustQty}
               onRemove={removeItem}
+              disabled={productsLocked}
             />
           ))}
         </div>
@@ -985,6 +1076,7 @@ const NewOrderUpdate = () => {
           onChange={handleOrderDeliverChange}
           placeholder={t("selectType")}
           options={DELIVER_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
+          disabled={destinationLocked}
         />
 
         {/* Total amount */}
@@ -994,6 +1086,7 @@ const NewOrderUpdate = () => {
           value={orderForm.total_price}
           onChange={handleOrderPriceChange}
           placeholder={t("enterPrice")}
+          disabled={productsLocked}
         />
 
         {/* Izoh */}
@@ -1051,10 +1144,12 @@ const OrderItemRow = memo(({
   item,
   onAdjust,
   onRemove,
+  disabled = false,
 }: {
   item: OrderItem;
   onAdjust: (id: string, delta: number) => void;
   onRemove: (id: string) => void;
+  disabled?: boolean;
 }) => {
   const handleDec = useCallback(() => onAdjust(item.id, -1), [item.id, onAdjust]);
   const handleInc = useCallback(() => onAdjust(item.id, 1), [item.id, onAdjust]);
@@ -1073,7 +1168,8 @@ const OrderItemRow = memo(({
       <div className="flex items-center gap-1.5">
         <button
           onClick={handleDec}
-          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:text-main transition-colors"
+          disabled={disabled}
+          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:text-main transition-colors disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Minus size={12} />
         </button>
@@ -1082,14 +1178,16 @@ const OrderItemRow = memo(({
         </span>
         <button
           onClick={handleInc}
-          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:text-main transition-colors"
+          disabled={disabled}
+          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:text-main transition-colors disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Plus size={12} />
         </button>
       </div>
       <button
         onClick={handleRemove}
-        className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+        disabled={disabled}
+        className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Trash2 size={13} />
       </button>

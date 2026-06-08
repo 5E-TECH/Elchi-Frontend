@@ -3,8 +3,13 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { useSettings } from "../../entities/settings";
 import { useTheme } from "./theme/ThemeContext";
-import { normalizeLanguage } from "../../i18n";
+import { changeAppLanguage, normalizeLanguage } from "../../i18n";
 import { setSidebar } from "../../widgets/Sidebar/model/sidebarSlice";
+import {
+  readStoredLanguage,
+  readStoredSidebar,
+  readStoredTheme,
+} from "../../shared/lib/preferencesStorage";
 
 /**
  * SettingsSync — backenddagi per-user sozlamalarni ilova yuklanganda jonli
@@ -24,14 +29,16 @@ const SettingsSync = () => {
     if (appliedRef.current) return;
     appliedRef.current = true;
 
-    if (data.appearance.theme !== theme) {
+    if (!readStoredTheme() && data.appearance.theme !== theme) {
       setTheme(data.appearance.theme);
     }
     const currentLang = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language);
-    if (data.appearance.language !== currentLang) {
-      void i18n.changeLanguage(data.appearance.language);
+    if (!readStoredLanguage() && data.appearance.language !== currentLang) {
+      void changeAppLanguage(data.appearance.language);
     }
-    dispatch(setSidebar(data.interface.sidebarOpen));
+    if (readStoredSidebar() === null) {
+      dispatch(setSidebar(data.interface.sidebarOpen));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 

@@ -66,14 +66,14 @@ export const UserStats = memo(({
                 return (
                     <div
                         key={index}
-                        className="group relative cursor-default overflow-hidden rounded-2xl border border-white/55 bg-white/75 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.07)] backdrop-blur-xl transition-all duration-300 sm:rounded-[24px] sm:p-5 sm:shadow-[0_18px_55px_rgba(15,23,42,0.07)] sm:hover:-translate-y-1 dark:border-white/10 dark:bg-white/[0.045] dark:shadow-black/10"
+                        className="group relative cursor-default overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.07)] transition-transform duration-200 sm:rounded-[24px] sm:p-5 sm:shadow-[0_18px_55px_rgba(15,23,42,0.07)] sm:hover:-translate-y-1 dark:border-white/10 dark:bg-[#342f4b] dark:shadow-black/10"
                         style={{
                             boxShadow: `0 4px 24px ${stat.colorFrom}18, 0 1px 4px rgba(0,0,0,0.06)`,
                         }}
                     >
                         {/* Decorative blob */}
                         <div
-                            className="absolute -right-8 -top-8 hidden h-36 w-36 rounded-full blur-3xl opacity-15 transition-opacity duration-500 group-hover:opacity-25 sm:block"
+                            className="absolute -right-8 -top-8 hidden h-36 w-36 rounded-full opacity-10 transition-opacity duration-300 group-hover:opacity-15 sm:block"
                             style={{ background: `radial-gradient(circle, ${stat.colorFrom}, ${stat.colorTo})` }}
                         />
 
@@ -90,7 +90,7 @@ export const UserStats = memo(({
                                 </div>
                                 {/* Icon badge */}
                                 <div
-                                    className={`shrink-0 rounded-xl border border-white/60 bg-white/70 p-2 shadow-sm backdrop-blur-sm sm:rounded-2xl sm:p-3 dark:border-white/10 dark:bg-slate-900/35 ${stat.bg} ${stat.text}`}
+                                    className={`shrink-0 rounded-xl border border-white/60 bg-white/90 p-2 shadow-sm sm:rounded-2xl sm:p-3 dark:border-white/10 dark:bg-slate-900/50 ${stat.bg} ${stat.text}`}
                                 >
                                     <IconComponent size={17} strokeWidth={2.7} className="sm:h-[22px] sm:w-[22px]" />
                                 </div>
@@ -121,9 +121,9 @@ export const UserStats = memo(({
                     type="button"
                     onClick={onAdd}
                     aria-label={t("addUser")}
-                    className="group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-white/55 bg-white/75 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.07)] backdrop-blur-xl transition-all duration-300 hover:border-main/40 hover:shadow-[0_14px_32px_rgba(87,106,219,0.2)] dark:border-white/10 dark:bg-white/[0.045] sm:hidden"
+                    className="group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.07)] transition-shadow duration-200 hover:border-main/40 hover:shadow-[0_14px_32px_rgba(87,106,219,0.2)] dark:border-white/10 dark:bg-[#342f4b] sm:hidden"
                 >
-                    <span className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-main/20 blur-2xl transition-opacity group-hover:opacity-80" />
+                    <span className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-main/10 transition-opacity group-hover:opacity-80" />
                     <span className="relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/60 bg-main text-white shadow-md shadow-main/30">
                         <UserPlus size={20} strokeWidth={2.4} />
                     </span>

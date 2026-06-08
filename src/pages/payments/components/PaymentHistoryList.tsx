@@ -82,7 +82,7 @@ const HistoryRow = memo(
     <button
       type="button"
       onClick={() => onClick(row)}
-      className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left hover:bg-gray-50/60 dark:hover:bg-white/3 transition-colors cursor-pointer"
+      className="flex w-full flex-col items-stretch gap-3 px-3 py-3 text-left transition-colors hover:bg-gray-50/60 dark:hover:bg-white/3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5"
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
@@ -116,7 +116,7 @@ const HistoryRow = memo(
         </div>
       </div>
 
-      <div className="text-right shrink-0">
+      <div className="shrink-0 border-t border-gray-100 pt-2 text-left dark:border-white/10 sm:border-0 sm:pt-0 sm:text-right">
         <p className={`text-[13px] font-black tabular-nums m-0 ${isIncome ? "text-emerald-300" : "text-rose-300"}`}>
           {sign}
           {fmt(Math.abs(amount))} {t("currencyAmountSuffix")}
@@ -126,7 +126,7 @@ const HistoryRow = memo(
             Balans: {fmt(row.balance_after)} so&apos;m
           </p>
         )}
-        <p className="text-[11px] text-gray-500 dark:text-white/35 flex items-center gap-1.5 justify-end mt-1 m-0">
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-white/35 sm:justify-end">
           <Calendar size={12} className="shrink-0" />
           {formatDate(dateStr)}
         </p>
