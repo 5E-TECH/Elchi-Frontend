@@ -128,7 +128,7 @@ export const useCashBox = () => {
     params?: any,
   ) =>
     useQuery({
-      queryKey: [cashbox, id, params],
+      queryKey: [cashbox, "by-user", id, params],
       queryFn: () =>
         api
           .get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(id as string), { params })
@@ -138,21 +138,21 @@ export const useCashBox = () => {
 
   const getCashBoxHistoryById = (id: string | null, bool: boolean = true) =>
     useQuery({
-      queryKey: [cashbox, id],
+      queryKey: [cashbox, "history-by-id", id],
       queryFn: () => api.get(API_ENDPOINTS.CASHBOX_HISTORY.BY_ID(id as string)).then((res) => res.data),
       enabled: bool,
     });
 
   const getCashboxMyCashbox = (params?: any) =>
     useQuery({
-      queryKey: [cashbox, params],
+      queryKey: [cashbox, "my-cashbox", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.MY_CASHBOX, { params }).then((res) => res.data),
     });
 
   const getCashBoxInfo = (bool: boolean = true, params?: any) =>
     useQuery({
-      queryKey: [cashbox, params],
+      queryKey: [cashbox, "all-info", params],
       queryFn: () =>
         api
           .get(API_ENDPOINTS.FINANCE.CASHBOX_ALL_INFO, { params })
@@ -162,7 +162,7 @@ export const useCashBox = () => {
 
   const getCashBoxMain = (params?: any) =>
     useQuery({
-      queryKey: [cashbox, params],
+      queryKey: [cashbox, "main", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.CASHBOX_MAIN, { params }).then((res) => res.data),
     });

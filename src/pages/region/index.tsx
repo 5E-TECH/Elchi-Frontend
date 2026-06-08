@@ -386,7 +386,7 @@ const RegionPage = () => {
                       setDateRange("all");
                     }}
                     className="region-range-picker border-0! bg-transparent! shadow-none!"
-                    popupClassName="region-range-picker-popup"
+                    classNames={{ popup: { root: "region-range-picker-popup" } }}
                     style={{ width: 220 }}
                   />
                 </div>

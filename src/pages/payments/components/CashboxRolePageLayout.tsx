@@ -17,6 +17,7 @@ interface CashboxRolePageLayoutProps {
   accentIcon: ReactNode;
   summarySubtitle: string;
   balance: number;
+  balanceLabel?: string;
   balanceVisible: boolean;
   onToggleBalanceVisibility: () => void;
   dateRangeValue: {
@@ -33,6 +34,7 @@ interface CashboxRolePageLayoutProps {
   todayTransactionsLabel: string;
   todayOperationsLabel: string;
   actionForm?: ReactNode;
+  summaryDetails?: ReactNode;
 }
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
@@ -52,6 +54,7 @@ const CashboxRolePageLayout = ({
   accentIcon,
   summarySubtitle,
   balance,
+  balanceLabel,
   balanceVisible,
   onToggleBalanceVisibility,
   dateRangeValue,
@@ -65,6 +68,7 @@ const CashboxRolePageLayout = ({
   todayTransactionsLabel,
   todayOperationsLabel,
   actionForm,
+  summaryDetails,
 }: CashboxRolePageLayoutProps) => {
   return (
     <PageContainer className="flex min-w-0 flex-col gap-3 overflow-x-hidden">
@@ -88,11 +92,13 @@ const CashboxRolePageLayout = ({
             subtitle={summarySubtitle}
             holderName={entityName}
             balance={balance}
+            balanceLabel={balanceLabel}
             balanceVisible={balanceVisible}
             onToggleVisibility={onToggleBalanceVisibility}
           />
 
           {actionForm}
+          {summaryDetails}
         </div>
 
         <div className="flex min-h-0 min-w-0 flex-col gap-3 xl:pt-1">

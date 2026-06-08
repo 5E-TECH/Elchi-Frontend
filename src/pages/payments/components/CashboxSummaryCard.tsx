@@ -10,6 +10,7 @@ interface CashboxSummaryCardProps {
   subtitle: string;
   holderName: string;
   balance: number;
+  balanceLabel?: string;
   balanceVisible: boolean;
   onToggleVisibility: () => void;
 }
@@ -21,6 +22,7 @@ const CashboxSummaryCard = ({
   subtitle,
   holderName,
   balance,
+  balanceLabel = "Umumiy balans",
   balanceVisible,
   onToggleVisibility,
 }: CashboxSummaryCardProps) => {
@@ -66,7 +68,7 @@ const CashboxSummaryCard = ({
 
         <div className="relative z-10 flex flex-1 flex-col justify-center pt-2 text-left sm:pt-3">
           <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55 sm:mb-2 sm:text-[11px] sm:tracking-[0.16em]">
-            <Wallet2 size={11} /> Umumiy balans
+            <Wallet2 size={11} /> {balanceLabel}
           </p>
           <p className="break-words text-[clamp(1.8rem,6vw,3rem)] font-black tracking-tight text-white drop-shadow-[0_6px_16px_rgba(0,0,0,0.28)]">
             {balanceVisible ? `${fmt(balance)} UZS` : "••••••• UZS"}

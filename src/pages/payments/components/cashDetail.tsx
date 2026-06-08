@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Landmark, Loader2, Store, Truck } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Landmark, Loader2, Store, Truck, WalletCards } from "lucide-react";
 import type { PaymentRow } from "./patmentHistoryTable";
 import { useCashBox } from "../../../entities/payments";
 import { useMarkets } from "../../../entities/markets";
@@ -140,17 +140,29 @@ const CashDetail = () => {
     }),
     [selectedDateFrom, selectedDateTo],
   );
-  const isBranchToMainDetail = state?.type === "branch";
-
   const { data: cashboxResponse, isLoading, refetch: refetchCashbox } = getCashBoxById(
     id || "",
-    Boolean(id) && !isBranchToMainDetail,
+    Boolean(id),
     detailParams,
   );
 
   const detailData = cashboxResponse?.data;
   const detailEntry = Array.isArray(detailData) ? detailData[0] : detailData;
   const cashbox = detailEntry?.cashbox ?? detailEntry;
+  const hasSettlementDetails =
+    detailEntry?.kassadagi_summa !== undefined ||
+    detailEntry?.berilishi_kerak !== undefined ||
+    detailEntry?.olinishi_kerak !== undefined ||
+    detailEntry?.counterparty !== undefined;
+  const settlementDetails = {
+    cashboxAmount: toNumber(detailEntry?.kassadagi_summa ?? cashbox?.balance),
+    amountToGive: toNumber(detailEntry?.berilishi_kerak),
+    amountToReceive: toNumber(detailEntry?.olinishi_kerak),
+    counterparty:
+      typeof detailEntry?.counterparty === "string" && detailEntry.counterparty.trim()
+        ? detailEntry.counterparty.trim()
+        : "—",
+  };
   const cashboxHistory = useMemo(
     () =>
       Array.isArray(detailEntry?.cashboxHistory)
@@ -166,7 +178,10 @@ const CashDetail = () => {
   const cfg = CONFIG[type];
   const entityName = user?.name?.trim() || t("userFallback");
   const apiBalance = toNumber(cashbox?.balance ?? state?.entity?.amount);
-  const totalBalance = balanceOverride ?? apiBalance;
+  const displayBalance =
+    detailEntry?.olinishi_kerak !== undefined
+      ? settlementDetails.amountToReceive
+      : balanceOverride ?? apiBalance;
 
   useEffect(() => {
     setBalanceOverride(null);
@@ -227,7 +242,7 @@ const CashDetail = () => {
   };
 
   const refreshAfterPayment = async (amount: number) => {
-    setBalanceOverride(reduceBalanceTowardsZero(totalBalance, amount));
+    setBalanceOverride(reduceBalanceTowardsZero(apiBalance, amount));
     resetActionForm();
 
     const refreshed = await refetchCashbox();
@@ -358,7 +373,7 @@ const CashDetail = () => {
     if (result) await refreshAfterPayment(amount);
   };
 
-  if (isLoading && !isBranchToMainDetail) {
+  if (isLoading) {
     return (
       <div className="flex min-h-100 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-main" />
@@ -375,7 +390,12 @@ const CashDetail = () => {
       accentClass={cfg.iconBg}
       accentIcon={cfg.entityIcon}
       summarySubtitle={t(cfg.kassaLabelKey)}
-      balance={totalBalance}
+      balance={displayBalance}
+      balanceLabel={
+        detailEntry?.olinishi_kerak !== undefined
+          ? t("toBeReceived")
+          : t("totalBalanceLabel")
+      }
       balanceVisible={balanceVisible}
       onToggleBalanceVisibility={() => setBalanceVisible((prev) => !prev)}
       dateRangeValue={{
@@ -394,6 +414,60 @@ const CashDetail = () => {
       expenseLabel={t("expense")}
       todayTransactionsLabel={t("todayTransactions")}
       todayOperationsLabel={t("todayOperations")}
+      summaryDetails={
+        hasSettlementDetails ? (
+          <div className="overflow-hidden rounded-[1.5rem] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark">
+            <div className="border-b border-[color:var(--color-border-soft)] px-4 py-3.5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20">
+                  <WalletCards size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    {t("settlementStatus")}
+                  </p>
+                  <p className="text-[11px] text-gray-400 dark:text-white/40">
+                    {t("counterparty")}: {settlementDetails.counterparty}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-3">
+              {[
+                {
+                  label: t("amountInCashbox"),
+                  amount: settlementDetails.cashboxAmount,
+                  icon: <WalletCards size={16} />,
+                  className: "border-main/20 bg-main/8 text-main dark:text-primary",
+                },
+                {
+                  label: t("toBeGiven"),
+                  amount: settlementDetails.amountToGive,
+                  icon: <ArrowUpRight size={16} />,
+                  className: "border-rose-500/20 bg-rose-500/8 text-rose-500",
+                },
+                {
+                  label: t("toBeReceived"),
+                  amount: settlementDetails.amountToReceive,
+                  icon: <ArrowDownLeft size={16} />,
+                  className: "border-emerald-500/20 bg-emerald-500/8 text-emerald-500",
+                },
+              ].map((item) => (
+                <div key={item.label} className={`rounded-2xl border p-3 ${item.className}`}>
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold">
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                  <p className="text-sm font-black tabular-nums">
+                    {item.amount.toLocaleString("uz-UZ")} {t("currency")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null
+      }
       actionForm={
         type === "branch" ? null : (
           <CashboxActionFormCard

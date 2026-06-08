@@ -2,6 +2,13 @@ import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import logo from '../assets/logoo.png';
 
+const PARTICLES = Array.from({ length: 12 }, (_, index) => ({
+    top: `${(index * 37 + 11) % 100}%`,
+    left: `${(index * 61 + 7) % 100}%`,
+    animationDelay: `${((index * 13) % 25) / 5}s`,
+    opacity: 0.08 + ((index * 7) % 20) / 100,
+}));
+
 /**
  * PageLoader — "Quantum Pulse" Edition
  * Premium, 3D-effect, high-fidelity loading animation.
@@ -36,16 +43,11 @@ const PageLoader = () => {
                 />
 
                 {/* Particles */}
-                {[...Array(12)].map((_, i) => (
+                {PARTICLES.map((style, i) => (
                     <div
                         key={i}
                         className="absolute w-1 h-1 bg-white rounded-full animate-float-particle"
-                        style={{
-                            top: `${Math.random() * 100}%`,
-                            left: `${Math.random() * 100}%`,
-                            animationDelay: `${Math.random() * 5}s`,
-                            opacity: Math.random() * 0.3
-                        }}
+                        style={style}
                     />
                 ))}
             </div>
