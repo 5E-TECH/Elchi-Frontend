@@ -85,7 +85,7 @@ const CashboxActionFormCard = ({
     );
 
   return (
-    <div className={`${sectionClassName} w-full max-w-135`}>
+    <div className={`${sectionClassName} w-full max-w-[540px] xl:max-w-none`}>
       <div className={`rounded-t-[1.35rem] bg-linear-to-r ${actionGradient} px-4 py-3`}>
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/16 text-primary shadow-inner">

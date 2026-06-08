@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { Phone, Trash2, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { User } from '../../../entities/user/types/user';
@@ -16,7 +16,7 @@ interface UserListTableProps {
     users: User[];
     isLoading?: boolean;
     isError?: boolean;
-    error?: any;
+    error?: unknown;
     pagination?: {
         page: number;
         limit: number;
@@ -28,6 +28,17 @@ interface UserListTableProps {
     onPageChange: (page: number) => void;
     onItemsPerPageChange?: (limit: number) => void;
 }
+
+const formatPhoneNumber = (phone: string) => {
+    const digits = phone.replace(/\D/g, "");
+    const local = digits.startsWith("998") ? digits.slice(3) : digits;
+
+    if (local.length === 9) {
+        return `+998 (${local.slice(0, 2)}) ${local.slice(2, 5)}-${local.slice(5, 7)}-${local.slice(7, 9)}`;
+    }
+
+    return phone;
+};
 
 export const UserListTable = memo(({
     users,
@@ -49,18 +60,7 @@ export const UserListTable = memo(({
     const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
     const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
-    const formatPhoneNumber = (phone: string) => {
-        const digits = phone.replace(/\D/g, "");
-        const local = digits.startsWith("998") ? digits.slice(3) : digits;
-
-        if (local.length === 9) {
-            return `+998 (${local.slice(0, 2)}) ${local.slice(2, 5)}-${local.slice(5, 7)}-${local.slice(7, 9)}`;
-        }
-
-        return phone;
-    };
-
-    const handleStatusToggle = (user: User, e: React.MouseEvent) => {
+    const handleStatusToggle = useCallback((user: User, e: React.MouseEvent) => {
         e.stopPropagation(); // Row click ga o'tmasin
         if (loadingIds.has(user.id)) return; // Ikki marta bosilmasin
 
@@ -124,9 +124,9 @@ export const UserListTable = memo(({
                 },
             }
         );
-    };
+    }, [api, loadingIds, t, updateUserStatus]);
 
-    const handleDeleteConfirm = () => {
+    const handleDeleteConfirm = useCallback(() => {
         if (!deleteTarget || deleteUser.isPending) return;
 
         deleteUser.mutate(deleteTarget.id, {
@@ -169,9 +169,9 @@ export const UserListTable = memo(({
                 });
             },
         });
-    };
+    }, [api, deleteTarget, deleteUser, t]);
 
-    const renderUserActions = (user: User, compact = false) => {
+    const renderUserActions = useCallback((user: User, compact = false) => {
         const isActive = user.status === 'active';
         const isPending = loadingIds.has(user.id);
 
@@ -235,7 +235,7 @@ export const UserListTable = memo(({
                 </button>
             </div>
         );
-    };
+    }, [handleStatusToggle, loadingIds, t]);
 
     // console.log('=== BACKEND DATA ===');
     // console.log('Full Response:', data);
@@ -243,7 +243,7 @@ export const UserListTable = memo(({
     // console.log('Meta:', data?.data?.meta);
     // console.log('===================');
 
-    const columns: ColumnConfig<User>[] = [
+    const columns = useMemo<ColumnConfig<User>[]>(() => [
         {
             key: 'name',
             label: t('firstName'),
@@ -274,13 +274,13 @@ export const UserListTable = memo(({
             label: t('role'),
             width: '15%',
             sortable: true,
-            render: (value) => <UserRoleBadge role={value as any} />,
+            render: (value) => <UserRoleBadge role={value as User["role"]} />,
         },
         {
             key: 'status',
             label: t('status'),
             width: '15%',
-            render: (value) => <UserStatusBadge status={value as any} />,
+            render: (value) => <UserStatusBadge status={value as User["status"]} />,
         },
         {
             key: 'id',
@@ -289,13 +289,46 @@ export const UserListTable = memo(({
             className: 'whitespace-nowrap',
             render: (_, user) => renderUserActions(user),
         },
-    ];
+    ], [renderUserActions, t]);
 
+    const renderMobileRow = useCallback((user: User) => (
+        <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
+                    <UserRound size={16} />
+                </div>
+
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                        {user.name}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-500 dark:text-white/65">
+                        <Phone size={13} />
+                        <span className="truncate">{formatPhoneNumber(String(user.phone_number ?? ""))}</span>
+                    </p>
+                    <div className="mt-2">
+                        <UserRoleBadge role={user.role} />
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex shrink-0 flex-col items-end gap-2">
+                <UserStatusBadge status={user.status} />
+                {renderUserActions(user, true)}
+            </div>
+        </div>
+    ), [renderUserActions]);
+
+    const getUserKey = useCallback((user: User) => user.id, []);
+    const handleRowClick = useCallback(
+        (user: User) => navigate(`/all-users/${user.id}`),
+        [navigate],
+    );
 
     // Loading state
     if (isLoading) {
         return (
-            <div className="overflow-hidden rounded-[24px] border border-white/55 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
+            <div className="overflow-hidden rounded-[24px] border border-white/70 bg-white/95 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-[#342f4b]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center space-y-3">
                         <span className="relative flex h-12 w-12 mx-auto">
@@ -314,7 +347,7 @@ export const UserListTable = memo(({
     // Error state
     if (isError) {
         return (
-            <div className="overflow-hidden rounded-[24px] border border-red-200/70 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-red-400/20 dark:bg-white/[0.045]">
+            <div className="overflow-hidden rounded-[24px] border border-red-200/70 bg-white/95 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-red-400/20 dark:bg-[#342f4b]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -335,7 +368,7 @@ export const UserListTable = memo(({
     // Empty state
     if (users.length === 0) {
         return (
-            <div className="overflow-hidden rounded-[24px] border border-white/55 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
+            <div className="overflow-hidden rounded-[24px] border border-white/70 bg-white/95 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-[#342f4b]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -353,45 +386,19 @@ export const UserListTable = memo(({
 
     return (
         <>
-            <div className="overflow-hidden rounded-[24px] border border-white/55 bg-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
+            <div className="overflow-hidden rounded-[24px] border border-white/70 bg-white/95 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-[#342f4b]">
                 <Table
                     data={users}
                     columns={columns}
-                    keyExtractor={(user) => user.id}
+                    keyExtractor={getUserKey}
                     hoverable
-                    mobileRowRender={(user) => (
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="flex min-w-0 items-start gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
-                                    <UserRound size={16} />
-                                </div>
-
-                                <div className="min-w-0">
-                                    <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
-                                        {user.name}
-                                    </p>
-                                    <p className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-500 dark:text-white/65">
-                                        <Phone size={13} />
-                                        <span className="truncate">{formatPhoneNumber(String(user.phone_number ?? ""))}</span>
-                                    </p>
-                                    <div className="mt-2">
-                                        <UserRoleBadge role={user.role as any} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex shrink-0 flex-col items-end gap-2">
-                                <UserStatusBadge status={user.status as any} />
-                                {renderUserActions(user, true)}
-                            </div>
-                        </div>
-                    )}
-                    onRowClick={(user) => navigate(`/all-users/${user.id}`)}
+                    mobileRowRender={renderMobileRow}
+                    onRowClick={handleRowClick}
                 />
 
                 {/* Pagination */}
                 <div
-                    className="flex flex-col gap-3 border-t border-slate-200/70 bg-white/70 px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-white/[0.035]"
+                    className="flex flex-col gap-3 border-t border-slate-200/70 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-[#302b46]"
                 >
                     <span className="text-center text-sm font-semibold text-slate-600 dark:text-white/65 sm:text-left">
                         {pagination ? (
@@ -411,7 +418,7 @@ export const UserListTable = memo(({
                         onPageChange={onPageChange}
                         onItemsPerPageChange={onItemsPerPageChange}
                         className="w-full pt-0 sm:w-auto"
-                        summary={null}
+                        summary={false}
                     />
                 </div>
             </div>

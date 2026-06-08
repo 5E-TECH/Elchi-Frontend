@@ -12,6 +12,17 @@
     <meta name="apple-mobile-web-app-title" content="Elchi" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Elchi Pochta</title>
+    <script>
+      (() => {
+        let savedTheme;
+        try {
+          savedTheme = localStorage.getItem("theme");
+        } catch {
+          // Dark remains the default when storage is unavailable.
+        }
+        document.documentElement.classList.add(savedTheme === "light" ? "light" : "dark");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

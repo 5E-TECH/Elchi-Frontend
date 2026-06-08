@@ -100,19 +100,26 @@ export interface FinanceHistoryDetailResponse {
 export const useCashBox = () => {
   const client = useQueryClient();
 
+  const refreshCashboxQueries = async () => {
+    await Promise.all([
+      client.invalidateQueries({ queryKey: [cashbox] }),
+      client.invalidateQueries({ queryKey: ["finance-cov"] }),
+    ]);
+  };
+
   const createPaymentCourier = useMutation({
     mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_COURIER, data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
+    onSuccess: refreshCashboxQueries,
   });
 
   const createPaymentBranchToMain = useMutation({
     mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN, data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
+    onSuccess: refreshCashboxQueries,
   });
 
   const createPaymentMarket = useMutation({
     mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_MARKET, data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [cashbox] }),
+    onSuccess: refreshCashboxQueries,
   });
 
   const getCashBoxById = (

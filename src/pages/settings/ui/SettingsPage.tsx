@@ -16,7 +16,7 @@ import HeaderName from "../../../shared/components/headerName";
 import PageContainer from "../../../shared/ui/PageContainer";
 import Toggle from "../../../shared/ui/Toggle";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
-import { normalizeLanguage } from "../../../i18n";
+import { changeAppLanguage, normalizeLanguage } from "../../../i18n";
 import { setSidebar } from "../../../widgets/Sidebar/model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import {
@@ -24,6 +24,7 @@ import {
   useUpdateSettings,
   DEFAULT_SETTINGS,
   type AppSettings,
+  type AppSettingsPatch,
   type ThemeMode,
   type Language,
   type DashboardWidgetId,
@@ -148,27 +149,18 @@ const SettingsPage = () => {
 
   const currentLang = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) as Language;
 
-  const persist = (partial: Partial<AppSettings>) => {
-    const next: AppSettings = {
-      appearance: { ...settings.appearance, ...(partial.appearance ?? {}) },
-      dashboard: {
-        widgets: { ...settings.dashboard.widgets, ...(partial.dashboard?.widgets ?? {}) },
-      },
-      interface: { ...settings.interface, ...(partial.interface ?? {}) },
-    };
-    update.mutate(next);
-  };
+  const persist = (patch: AppSettingsPatch) => update.mutate(patch);
 
   const onTheme = (next: ThemeMode) => {
     setTheme(next);
-    persist({ appearance: { ...settings.appearance, theme: next } });
+    persist({ appearance: { theme: next } });
   };
   const onLanguage = (next: Language) => {
-    void i18n.changeLanguage(next);
-    persist({ appearance: { ...settings.appearance, language: next } });
+    void changeAppLanguage(next);
+    persist({ appearance: { language: next } });
   };
   const onWidget = (id: DashboardWidgetId, visible: boolean) => {
-    persist({ dashboard: { widgets: { ...settings.dashboard.widgets, [id]: visible } } });
+    persist({ dashboard: { widgets: { [id]: visible } } });
   };
   const onSidebar = (open: boolean) => {
     dispatch(setSidebar(open));

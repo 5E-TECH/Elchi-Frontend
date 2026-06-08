@@ -1,29 +1,9 @@
 // src/store/sidebarSlice.js
 import { createSlice } from "@reduxjs/toolkit";
+import { readStoredSidebar } from "../../../shared/lib/preferencesStorage";
 
 const getStoredSidebarState = () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    const storedSidebar = window.localStorage.getItem("sidebarIsOpen");
-    return storedSidebar ? JSON.parse(storedSidebar) : false;
-  } catch {
-    return false;
-  }
-};
-
-const persistSidebarState = (value: boolean) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem("sidebarIsOpen", JSON.stringify(value));
-  } catch {
-    // Ignore storage failures and keep sidebar usable.
-  }
+  return readStoredSidebar() ?? false;
 };
 
 const initialState = {
@@ -36,20 +16,16 @@ const sidebarSlice = createSlice({
   reducers: {
     openSidebar(state) {
       state.isOpen = true;
-      persistSidebarState(true);
     },
     closeSidebar(state) {
       state.isOpen = false;
-      persistSidebarState(false);
     },
     toggleSidebar(state) {
       state.isOpen = !state.isOpen;
-      persistSidebarState(state.isOpen);
     },
     setSidebar(state, action) {
       const value = !!action.payload;
       state.isOpen = value;
-      persistSidebarState(value);
     },
   },
 });

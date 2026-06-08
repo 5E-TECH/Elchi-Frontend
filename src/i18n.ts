@@ -1,11 +1,15 @@
 import i18n, { type Resource } from "i18next";
 import { initReactI18next } from "react-i18next";
+import {
+  readStoredLanguage,
+  writeStoredLanguage,
+  type StoredLanguage,
+} from "./shared/lib/preferencesStorage";
 
-const LANGUAGE_STORAGE_KEY = "app-language";
 const DEFAULT_LANGUAGE = "uz";
 const FALLBACK_LANGUAGE = "uz";
 const SUPPORTED_LANGUAGES = ["uz", "en", "ru"] as const;
-type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+type SupportedLanguage = StoredLanguage;
 
 const localeModules = import.meta.glob<{ default: Record<string, string | object> }>(
   "./locales/*/*.json",
@@ -55,7 +59,7 @@ const getInitialLanguage = () => {
     return DEFAULT_LANGUAGE;
   }
 
-  const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  const savedLanguage = readStoredLanguage();
 
   if (savedLanguage) {
     return normalizeLanguage(savedLanguage);
@@ -79,17 +83,17 @@ void i18n.use(initReactI18next).init({
   },
 });
 
-i18n.on("languageChanged", (language) => {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, normalizeLanguage(language));
-  }
-});
+const changeAppLanguage = (language: string) => {
+  const normalizedLanguage = normalizeLanguage(language);
+  writeStoredLanguage(normalizedLanguage);
+  return i18n.changeLanguage(normalizedLanguage);
+};
 
 export {
-  LANGUAGE_STORAGE_KEY,
   DEFAULT_LANGUAGE,
   FALLBACK_LANGUAGE,
   SUPPORTED_LANGUAGES,
+  changeAppLanguage,
   normalizeLanguage,
 };
 export default i18n;
