@@ -67,8 +67,8 @@ const CashboxRolePageLayout = ({
   actionForm,
 }: CashboxRolePageLayoutProps) => {
   return (
-    <PageContainer className="flex flex-col gap-3 overflow-x-hidden">
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(18rem,0.42fr)_minmax(24rem,0.58fr)] lg:gap-4">
+    <PageContainer className="flex min-w-0 flex-col gap-3 overflow-x-hidden">
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(19rem,0.42fr)_minmax(0,0.58fr)]">
         <div className="flex min-h-0 flex-col gap-3">
           <div className="flex items-center gap-3 px-1">
             {onBack ? (
@@ -95,7 +95,7 @@ const CashboxRolePageLayout = ({
           {actionForm}
         </div>
 
-        <div className="flex min-h-0 flex-col gap-3 lg:pt-1">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3 xl:pt-1">
           <div className={sectionClassName}>
             <div className={sectionHeaderClassName}>
               <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ const CashboxRolePageLayout = ({
             </div>
           </div>
 
-          <div className="min-h-[16rem] flex-1 overflow-hidden max-h-none lg:min-h-0 lg:max-h-[52vh] xl:max-h-[calc(100vh-18rem)]">
+          <div className="min-h-[16rem] flex-1 overflow-hidden xl:min-h-0 xl:max-h-[calc(100vh-18rem)]">
             <PaymentHistoryList
               data={historyRows}
             />

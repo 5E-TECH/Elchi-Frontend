@@ -7,7 +7,7 @@ import { UserListTable } from "../../../widgets/user-list/ui/UserListTable";
 import { UserFilters } from "../../../features/user/filter-users/ui/UserFilters";
 import Button from "../../../shared/components/button";
 import type { RootState } from "../../../app/config/store";
-import { useUser } from "../../../entities/user/api/userApi";
+import { useUser, type IUserFilter } from "../../../entities/user/api/userApi";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
 import { setMultipleFilters } from "../../../features/Select/model/FilterSlice";
@@ -109,7 +109,7 @@ const UserListPage = memo(() => {
   ]);
 
   const apiParams = useMemo(() => {
-    const params: any = { page, limit };
+    const params: IUserFilter = { page, limit };
 
     // Backend so'rovi uchun asosiy manba: URL params
     if (roleFromUrl) params.role = roleFromUrl;
@@ -147,7 +147,7 @@ const UserListPage = memo(() => {
   }, [filtersKey, limit, resetPagination]);
 
   return (
-    <div className="relative min-h-full overflow-hidden">
+    <div className="relative min-h-full">
       {/* Header — mobilda ustma-ust, desktopda yonma-yon */}
       <div className="relative z-10 mb-5 flex items-start justify-between gap-3 sm:items-center">
         <div className="flex min-w-0 items-start gap-3.5 py-2.5 text-maindark">

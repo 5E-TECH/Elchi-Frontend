@@ -20,7 +20,11 @@ import {
   Scale,
   BarChart2,
 } from "lucide-react";
-import { useDashboard, type RevenuePoint } from "../../../entities/dashboard";
+import {
+  useDashboard,
+  type RevenueParams,
+  type RevenuePoint,
+} from "../../../entities/dashboard";
 import {
   formatCompactMoney,
   toneAccent,
@@ -195,14 +199,14 @@ const FinancialAnalysis = memo(({ startDate, endDate }: FinancialAnalysisProps) 
   const [period, setPeriod] = useState<RevenuePeriod>("daily");
 
   const revenueParams = useMemo(() => {
-    const params: Record<string, string> = { period };
+    const params: RevenueParams = { period };
     if (startDate) {
-      params.startDate = startDate;
       params.start_day = startDate;
+      params.startDate = startDate;
     }
     if (endDate) {
-      params.endDate = endDate;
       params.end_day = endDate;
+      params.endDate = endDate;
     }
     return params;
   }, [endDate, period, startDate]);
