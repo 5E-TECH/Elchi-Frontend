@@ -37,11 +37,58 @@
   "currency_value": "{{value}} UZS",
   "currency": "UZS",
   "currency_sum": "UZS",
+  "unit": {
+    "orders": "pcs"
+  },
+  "status": {
+    "title": "Order statuses",
+    "center": "Total accepted"
+  },
+  "featured": {
+    "delivered": "Delivered",
+    "delivered_hint": "Sold and closed orders"
+  },
   "cards": {
     "total_orders": "Total orders",
+    "accepted": "Accepted",
+    "accepted_hint": "Orders accepted in the selected period",
     "sold": "Sold",
+    "success_rate": "Success rate",
     "cancelled": "Cancelled",
-    "profit": "Profit"
+    "cancellation_rate": "Cancellation rate",
+    "in_progress": "In progress",
+    "in_progress_hint": "Orders still on the way, not yet delivered",
+    "profit": "Net profit",
+    "profit_hint": "Market tariff − courier tariff (sold only)",
+    "avg_order_value": "Average order value",
+    "avg_order_value_hint": "Average revenue per sold order",
+    "avg_fulfillment": "Average delivery time",
+    "avg_fulfillment_hint": "Average time from accept to sold",
+    "on_time": "On time (SLA)",
+    "on_time_badge": "24 hours",
+    "on_time_hint": "Share of orders delivered within 24 hours",
+    "lost_revenue": "Lost revenue",
+    "lost_revenue_hint": "Estimated value of cancelled orders"
+  },
+  "top": {
+    "markets_title": "Top markets",
+    "couriers_title": "Top couriers",
+    "empty": "Not enough data (min 30 orders required)"
+  },
+  "region": {
+    "title": "By region",
+    "subtitle": "Orders and sales metrics across provinces"
+  },
+  "balance": {
+    "title": "Cashbox balance",
+    "main": "Post cashbox",
+    "main_hint": "Current balance of the central cashbox",
+    "markets": "Markets balance",
+    "markets_hint": "Amount payable to markets",
+    "couriers": "Couriers balance",
+    "couriers_hint": "Current amount held by couriers",
+    "current": "Current state",
+    "current_hint": "Overall financial state (cash − debts)"
   },
   "periods": {
     "daily": "Daily",

@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
     LOGOUT: "auth/logout",
     VALIDATE: "auth/validate", // GET — validate current JWT on app load
     MY_PROFILE: "auth/my-profile", // GET (read) / PATCH (update own profile)
+    MY_SETTINGS: "auth/my-settings", // PATCH — update own UI settings/preferences
   },
 
   // ── Identity / Users (superadmin/admin/manager) ──────────────────────────

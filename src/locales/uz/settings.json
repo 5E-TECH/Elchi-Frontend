@@ -1,0 +1,42 @@
+{
+  "title": "Sozlamalar",
+  "subtitle": "Ilova, dashboard va profil sozlamalari",
+  "tabs": {
+    "appearance": "Ko'rinish",
+    "dashboard": "Dashboard",
+    "interface": "Interfeys",
+    "profile": "Profil"
+  },
+  "tabs_desc": {
+    "appearance": "Mavzu va til",
+    "dashboard": "Widgetlarni boshqarish",
+    "interface": "Panel va ko'rinish",
+    "profile": "Shaxsiy ma'lumotlar"
+  },
+  "appearance": {
+    "theme": "Mavzu",
+    "theme_hint": "Ilova rang sxemasi",
+    "light": "Yorug'",
+    "dark": "Tungi",
+    "language": "Til",
+    "language_hint": "Interfeys tili"
+  },
+  "dashboard": {
+    "widgets": "Dashboard widgetlari",
+    "widgets_hint": "Ko'rsatiladigan bo'limlarni tanlang. Yashirilgan widgetlar o'rni avtomatik to'ldiriladi.",
+    "w_stats": "Asosiy ko'rsatkichlar",
+    "w_stats_hint": "Donut, gauge, KPI kartalar",
+    "w_top": "Top reytinglar",
+    "w_top_hint": "Eng yaxshi marketlar va kuryerlar",
+    "w_financial": "Moliyaviy tahlil",
+    "w_financial_hint": "Daromad grafigi va kassa balansi",
+    "w_region": "Hududlar xaritasi",
+    "w_region_hint": "Viloyatlar bo'yicha statistika"
+  },
+  "interface": {
+    "sidebar": "Yon panel ochiq turishi",
+    "sidebar_hint": "Ilova ochilganda yon panel ochiq bo'lsinmi"
+  },
+  "saved": "Saqlandi",
+  "save_error": "Saqlashda xatolik"
+}

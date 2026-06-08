@@ -4,7 +4,10 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
+import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
+import RegionStatsCard from "../../widgets/dashboard-region/ui/RegionStatsCard";
 import { useDashboard } from "../../entities/dashboard";
+import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
@@ -45,13 +48,23 @@ const DashboardPage = () => {
     setToDate(range.to);
   }, []);
 
-  const { getDashboard } = useDashboard();
+  const { getDashboard, getKpi } = useDashboard();
   const { data, isLoading } = getDashboard({
+    start_day: fromDate,
+    end_day: toDate,
+  });
+  const { data: kpiData, isLoading: kpiLoading } = getKpi({
     start_day: fromDate,
     end_day: toDate,
   });
 
   const orders = data?.data?.orders;
+  const kpi = kpiData?.data;
+  const topMarkets = data?.data?.topMarkets ?? [];
+  const topCouriers = data?.data?.topCouriers ?? [];
+
+  const { data: settingsData } = useSettings();
+  const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
 
   return (
     <PageContainer>
@@ -87,24 +100,37 @@ const DashboardPage = () => {
       </div>
 
       {/* Stat cards */}
-      <div className="mb-5">
-        <DashboardStatistics
-          totalOrders={orders?.acceptedCount ?? 0}
-          sold={orders?.soldAndPaid ?? 0}
-          cancelled={orders?.cancelled ?? 0}
-          profit={orders?.profit ?? 0}
-          loading={isLoading}
-        />
-      </div>
+      {widgets.stats && (
+        <div className="mb-5">
+          <DashboardStatistics
+            accepted={orders?.acceptedCount ?? 0}
+            sold={orders?.soldAndPaid ?? 0}
+            cancelled={orders?.cancelled ?? 0}
+            profit={orders?.profit ?? 0}
+            avgOrderValue={kpi?.averageOrderValue ?? 0}
+            avgFulfillmentHours={kpi?.averageFulfillmentHours ?? 0}
+            onTimeRate={kpi?.onTimeRate ?? 0}
+            loading={isLoading || kpiLoading}
+          />
+        </div>
+      )}
+
+      {/* Top performers — marketlar & kuryerlar reytingi */}
+      {widgets.topPerformers && (
+        <div className="mb-5">
+          <TopPerformers markets={topMarkets} couriers={topCouriers} />
+        </div>
+      )}
 
       {/* Financial analysis */}
-      <FinancialAnalysis
-        totalOrders={orders?.acceptedCount ?? 0}
-        sold={orders?.soldAndPaid ?? 0}
-        profit={orders?.profit ?? 0}
-        startDate={fromDate}
-        endDate={toDate}
-      />
+      {widgets.financial && (
+        <div className="mb-5">
+          <FinancialAnalysis startDate={fromDate} endDate={toDate} />
+        </div>
+      )}
+
+      {/* Hududlar bo'yicha xarita */}
+      {widgets.region && <RegionStatsCard startDate={fromDate} endDate={toDate} />}
     </PageContainer>
   );
 };

@@ -37,11 +37,58 @@
   "currency_value": "{{value}} UZS",
   "currency": "UZS",
   "currency_sum": "so'm",
+  "unit": {
+    "orders": "ta"
+  },
+  "status": {
+    "title": "Buyurtmalar holati",
+    "center": "Jami qabul qilingan"
+  },
+  "featured": {
+    "delivered": "Yetkazib berilgan",
+    "delivered_hint": "Mijozga sotilgan va yopilgan buyurtmalar"
+  },
   "cards": {
     "total_orders": "Jami buyurtmalar",
+    "accepted": "Qabul qilingan",
+    "accepted_hint": "Tanlangan davrda qabul qilingan buyurtmalar",
     "sold": "Sotilgan",
+    "success_rate": "Muvaffaqiyat darajasi",
     "cancelled": "Bekor qilingan",
-    "profit": "Foyda"
+    "cancellation_rate": "Bekor qilish darajasi",
+    "in_progress": "Jarayonda",
+    "in_progress_hint": "Hali yetkazilmagan, yo'ldagi buyurtmalar",
+    "profit": "Sof foyda",
+    "profit_hint": "Market tarifi − kuryer tarifi (sotilganlar)",
+    "avg_order_value": "O'rtacha buyurtma qiymati",
+    "avg_order_value_hint": "Bitta sotilgan buyurtmaga o'rtacha daromad",
+    "avg_fulfillment": "O'rtacha yetkazish vaqti",
+    "avg_fulfillment_hint": "Qabuldan sotilgungacha o'rtacha vaqt",
+    "on_time": "O'z vaqtida (SLA)",
+    "on_time_badge": "24 soat",
+    "on_time_hint": "24 soat ichida yetkazilgan buyurtmalar ulushi",
+    "lost_revenue": "Yo'qotilgan daromad",
+    "lost_revenue_hint": "Bekor qilingan buyurtmalarning taxminiy qiymati"
+  },
+  "top": {
+    "markets_title": "Top marketlar",
+    "couriers_title": "Top kuryerlar",
+    "empty": "Yetarli ma'lumot yo'q (kamida 30 buyurtma kerak)"
+  },
+  "region": {
+    "title": "Hududlar bo'yicha",
+    "subtitle": "Viloyatlar kesimida buyurtma va sotuv ko'rsatkichlari"
+  },
+  "balance": {
+    "title": "Kassa balansi",
+    "main": "Pochta kassasi",
+    "main_hint": "Markaziy kassadagi joriy balans",
+    "markets": "Marketlar balansi",
+    "markets_hint": "Marketlarga to'lanishi kerak bo'lgan summa",
+    "couriers": "Kuryerlar balansi",
+    "couriers_hint": "Kuryerlardagi joriy summa",
+    "current": "Joriy holat",
+    "current_hint": "Umumiy moliyaviy holat (kassa − qarzlar)"
   },
   "periods": {
     "daily": "Kunlik",
