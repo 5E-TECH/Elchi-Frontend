@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { X, LogOut, Moon, Sun, Bell, User, ScanQrCode, Globe } from "lucide-react";
+import { X, LogOut, Bell, User, ScanQrCode, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "../../../shared/lib/useLogout";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
@@ -10,7 +10,6 @@ import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { Controller, useForm } from "react-hook-form";
 import { GlobalSearchInput } from "../../../features/search";
 import { useNavigate } from "react-router-dom";
-import { LANGUAGE_STORAGE_KEY, normalizeLanguage } from "../../../i18n";
 
 interface MobileMenuProps {
     isOpen: boolean;
@@ -24,16 +23,14 @@ interface MobileMenuSearchValues {
 const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const { t } = useTranslation(["sidebar"]);
     const { logout } = useLogout();
-    const { theme, toggleTheme } = useTheme();
+    const { theme } = useTheme();
     const roleState = useSelector((state: RootState) => state.role);
-    const { i18n } = useTranslation("common");
     const { control } = useForm<MobileMenuSearchValues>({
         defaultValues: { search: "" },
     });
     const navigate = useNavigate();
 
     const currentLogo = theme === "dark" ? LogoTextdark : LogoText;
-    const activeLanguage = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language);
 
     if (!isOpen) return null;
 
@@ -83,37 +80,22 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 <div className="flex-1 overflow-y-auto py-4 px-4 space-y-1 custom-scrollbar">
                     <p className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-maindark/40 dark:text-white/30">{t("settings")}</p>
 
-                    {/* Language in mobile menu */}
-                    <div className="px-2 py-2">
-                        <div className="mb-2 flex items-center gap-2 px-2 text-[10px] font-black uppercase tracking-widest text-maindark/55 dark:text-white/40">
-                            <Globe size={12} />
-                            <span>{t("language")}</span>
+                    {/* Settings link (mavzu, til va boshqa sozlamalar shu yerda) */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onClose();
+                            navigate("/settings");
+                        }}
+                        className="group flex w-full items-center justify-between rounded-2xl px-4 py-4 text-maindark/75 transition-all hover:bg-black/5 hover:text-maindark dark:text-white/70 dark:hover:bg-white/5 dark:hover:text-white"
+                    >
+                        <div className="flex items-center gap-4">
+                            <span className="rounded-xl bg-black/5 p-2 transition-colors group-hover:bg-main/20 dark:bg-white/5">
+                                <Settings size={20} />
+                            </span>
+                            <span className="font-bold text-sm tracking-wide uppercase">{t("settings")}</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { key: "uz", label: "UZ" },
-                                { key: "ru", label: "RU" },
-                                { key: "en", label: "EN" },
-                            ].map((language) => (
-                                <button
-                                    key={language.key}
-                                    type="button"
-                                    onClick={() => {
-                                        const normalizedLanguage = normalizeLanguage(language.key);
-                                        window.localStorage.setItem(LANGUAGE_STORAGE_KEY, normalizedLanguage);
-                                        void i18n.changeLanguage(normalizedLanguage);
-                                    }}
-                                    className={`h-10 rounded-xl border text-xs font-bold transition-all ${
-                                        activeLanguage === language.key
-                                            ? "border-main bg-main text-white"
-                                            : "border-black/10 bg-black/5 text-maindark/75 hover:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
-                                    }`}
-                                >
-                                    {language.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    </button>
 
                     {/* Scanner in mobile menu */}
                     <button
@@ -129,24 +111,6 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                                 <ScanQrCode size={20} />
                             </span>
                             <span className="font-bold text-sm tracking-wide uppercase">Scanner</span>
-                        </div>
-                    </button>
-
-                    {/* Theme Toggle in Menu */}
-                    <button
-                        onClick={toggleTheme}
-                        className="group flex w-full items-center justify-between rounded-2xl px-4 py-4 text-maindark/65 transition-all hover:bg-black/5 hover:text-maindark dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
-                    >
-                        <div className="flex items-center gap-4">
-                            <span className="rounded-xl bg-black/5 p-2 transition-colors group-hover:bg-main/20 dark:bg-white/5">
-                                {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
-                            </span>
-                            <span className="font-bold text-sm tracking-wide uppercase">
-                                {theme === "light" ? t("darkMode") : t("lightMode")}
-                            </span>
-                        </div>
-                        <div className={`relative h-4 w-8 rounded-full transition-colors ${theme === "dark" ? "bg-main" : "bg-black/15 dark:bg-white/10"}`}>
-                            <div className={`absolute top-1 w-2 h-2 rounded-full bg-white transition-all ${theme === "dark" ? "right-1" : "left-1"}`} />
                         </div>
                     </button>
 

@@ -76,8 +76,29 @@
   "dateRangePlaceholder": "{{from}} → {{to}}",
   "datePicker": {
     "clearAriaLabel": "Clear date range",
-    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-    "weekDaysShort": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+    "months": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "weekDaysShort": [
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa",
+      "Su"
+    ]
   },
   "retry": "Retry",
   "refresh": "Refresh",

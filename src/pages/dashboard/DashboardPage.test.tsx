@@ -5,17 +5,20 @@ import DashboardPage from "./DashboardPage";
 import { renderWithProviders } from "../../test/test-utils";
 
 const getDashboardMock = vi.fn();
+const getKpiMock = vi.fn();
 
 vi.mock("../../entities/dashboard", () => ({
   useDashboard: () => ({
     getDashboard: getDashboardMock,
+    getKpi: getKpiMock,
   }),
 }));
 
 vi.mock("../../widgets/dashboard-statistics/ui/DashboardStatistics", () => ({
   default: (props: Record<string, number>) => (
     <div data-testid="dashboard-statistics">
-      {props.totalOrders}-{props.sold}-{props.cancelled}-{props.profit}
+      {props.accepted}-{props.sold}-{props.cancelled}-{props.profit}-
+      {props.avgOrderValue}-{props.avgFulfillmentHours}
     </div>
   ),
 }));
@@ -24,6 +27,14 @@ vi.mock("../../widgets/financial-analysis/ui/FinancialAnalysis", () => ({
   default: (props: Record<string, unknown>) => (
     <div data-testid="financial-analysis">{JSON.stringify(props)}</div>
   ),
+}));
+
+vi.mock("../../widgets/dashboard-top-performers/ui/TopPerformers", () => ({
+  default: () => <div data-testid="top-performers" />,
+}));
+
+vi.mock("../../widgets/dashboard-region/ui/RegionStatsCard", () => ({
+  default: () => <div data-testid="region-stats" />,
 }));
 
 vi.mock("../../shared/ui/DateRangePicker", () => ({
@@ -64,6 +75,18 @@ describe("DashboardPage", () => {
         },
       },
     });
+    getKpiMock.mockReturnValue({
+      data: {
+        data: {
+          averageOrderValue: 96000,
+          averageFulfillmentHours: 24,
+          onTimeRate: 80,
+          cancellationRate: 16.67,
+          courierEfficiency: 0,
+          marketRating: [],
+        },
+      },
+    });
   });
 
   it("renders dashboard header and date filters", () => {
@@ -79,8 +102,10 @@ describe("DashboardPage", () => {
   it("passes dashboard metrics into child widgets", () => {
     renderWithProviders(<DashboardPage />);
 
-    expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent("12-5-2-480000");
-    expect(screen.getByTestId("financial-analysis")).toHaveTextContent('"totalOrders":12');
+    expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent(
+      "12-5-2-480000-96000-24",
+    );
+    expect(screen.getByTestId("financial-analysis")).toHaveTextContent('"startDate"');
   });
 
   it("switches to filtered title when dates are selected", async () => {

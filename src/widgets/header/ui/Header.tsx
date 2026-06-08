@@ -1,16 +1,11 @@
 import { memo, useEffect, useRef, useState } from "react";
-import type { JSX } from "react";
 import {
   Bell,
-  Check,
-  ChevronDown,
   CircleHelp,
-  Globe,
   LogOut,
   Menu,
-  Moon,
   Search,
-  Sun,
+  Settings,
   User,
   X,
 } from "lucide-react";
@@ -24,7 +19,6 @@ import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { useNavigate } from "react-router-dom";
 import { GlobalSearchInput } from "../../../features/search";
 import { useGlobalSearch } from "../../../features/search/api/useGlobalSearch";
-import { LANGUAGE_STORAGE_KEY, normalizeLanguage } from "../../../i18n";
 import type { RootState } from "../../../app/config/store";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 import Popup from "../../../shared/ui/Popup";
@@ -39,73 +33,10 @@ interface HeaderSearchValues {
   search: string;
 }
 
-const FLAGS: Record<string, JSX.Element> = {
-  uz: (
-    <svg
-      viewBox="0 0 900 600"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full"
-    >
-      <rect width="900" height="200" fill="#1EB2A6" />
-      <rect y="200" width="900" height="200" fill="#fff" />
-      <rect y="400" width="900" height="200" fill="#1DBF73" />
-      <rect y="186" width="900" height="28" fill="#E8112D" />
-      <rect y="386" width="900" height="28" fill="#E8112D" />
-      <circle cx="160" cy="100" r="60" fill="white" />
-      <circle cx="185" cy="100" r="50" fill="#1EB2A6" />
-      {(
-        [
-          [260, 55],
-          [320, 38],
-          [380, 55],
-          [260, 100],
-          [320, 83],
-          [380, 100],
-          [260, 145],
-          [320, 128],
-          [380, 145],
-        ] as [number, number][]
-      ).map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="16" fill="white" />
-      ))}
-    </svg>
-  ),
-  ru: (
-    <svg
-      viewBox="0 0 3 2"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full"
-    >
-      <rect width="3" height="0.667" fill="#fff" />
-      <rect y="0.667" width="3" height="0.667" fill="#0039A6" />
-      <rect y="1.333" width="3" height="0.667" fill="#D52B1E" />
-    </svg>
-  ),
-  en: (
-    <svg
-      viewBox="0 0 60 30"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full"
-    >
-      <rect width="60" height="30" fill="#012169" />
-      <path d="M0,0 L60,30 M60,0 L0,30" stroke="white" strokeWidth="6" />
-      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4" />
-      <path d="M30,0 V30 M0,15 H60" stroke="white" strokeWidth="10" />
-      <path d="M30,0 V30 M0,15 H60" stroke="#C8102E" strokeWidth="6" />
-    </svg>
-  ),
-};
-
-const LANGUAGE_OPTIONS = [
-  { key: "uz", label: "O'zbekcha" },
-  { key: "ru", label: "Русский" },
-  { key: "en", label: "English" },
-] as const;
-
 const Header = ({ onMenuClick }: HeaderProps) => {
   const { logout } = useLogout();
-  const { theme, toggleTheme } = useTheme();
-  const { t, i18n } = useTranslation("common");
+  const { theme } = useTheme();
+  const { t } = useTranslation("common");
   const { t: tUsers } = useTranslation("users");
   const profile = useSelector((state: RootState) => state.user.user);
   const roleState = useSelector((state: RootState) => state.role);
@@ -113,8 +44,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [searchLimit, setSearchLimit] = useState(10);
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const languageMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileSearchContainerRef = useRef<HTMLDivElement | null>(null);
   const desktopSearchContainerRef = useRef<HTMLDivElement | null>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -142,11 +71,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const totalSearchItems = searchData?.meta.total ?? 0;
   const hasMoreSearch = searchItems.length < totalSearchItems;
 
-  const activeLanguage =
-    LANGUAGE_OPTIONS.find(
-      (language) =>
-        language.key === normalizeLanguage(i18n.resolvedLanguage ?? i18n.language),
-    ) ?? LANGUAGE_OPTIONS[0];
   const profileRecord = profile as typeof profile & {
     fullName?: string;
     full_name?: string;
@@ -162,9 +86,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (!languageMenuRef.current?.contains(event.target as Node)) {
-        setIsLanguageOpen(false);
-      }
       const inDesktop = desktopSearchContainerRef.current?.contains(event.target as Node);
       const inMobile = mobileSearchContainerRef.current?.contains(event.target as Node);
       if (!inDesktop && !inMobile) {
@@ -212,7 +133,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
       if (event.key === "Escape") {
         setIsShortcutsOpen(false);
-        setIsLanguageOpen(false);
         setIsSearchFocused(false);
         setIsSearchOpen(false);
         return;
@@ -266,17 +186,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
     return () => window.clearTimeout(timer);
   }, [searchValue]);
-
-  const handleLanguageChange = async (nextLanguage: string) => {
-    const normalizedLanguage = normalizeLanguage(nextLanguage);
-    if (normalizedLanguage === normalizeLanguage(i18n.language)) {
-      setIsLanguageOpen(false);
-      return;
-    }
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, normalizedLanguage);
-    await i18n.changeLanguage(normalizedLanguage);
-    setIsLanguageOpen(false);
-  };
 
   const handleSelectSearchItem = (item: (typeof searchItems)[number]) => {
     const sourceId = item.sourceId ?? String(item.raw.sourceId ?? "");
@@ -418,64 +327,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       <div
         className={`flex items-center gap-2 md:gap-3 shrink-0 ${isSearchOpen ? "hidden md:flex" : "flex"}`}
       >
-        <div ref={languageMenuRef} className="relative hidden lg:block">
-          <button
-            type="button"
-            onClick={() => setIsLanguageOpen((prev) => !prev)}
-            className="el-glass-control group flex h-9 items-center gap-1.5 rounded-xl px-2 text-maindark transition-all duration-200 hover:border-[var(--color-border-strong)] hover:bg-main/10 dark:text-primary"
-            aria-label={t("language")}
-          >
-            <span className="flex h-5 w-7 overflow-hidden rounded-lg shrink-0">
-              {FLAGS[activeLanguage.key]}
-            </span>
-            <div className="hidden items-center gap-1.5 xl:flex">
-              <span className="text-sm font-medium leading-none">
-                {activeLanguage.label}
-              </span>
-              <Globe className="h-3.5 w-3.5 text-main/80 dark:text-primary/80" />
-            </div>
-            <ChevronDown
-              className={`h-3.5 w-3.5 text-maindark/50 transition-all duration-200 dark:text-primary/60 ${isLanguageOpen ? "rotate-180" : "group-hover:translate-y-px"}`}
-            />
-          </button>
-
-          {isLanguageOpen && (
-            <div className="el-card absolute right-0 top-full z-50 mt-2 w-44 rounded-2xl p-1.5">
-              {LANGUAGE_OPTIONS.map((language) => {
-                const isSelected = language.key === activeLanguage.key;
-                return (
-                  <button
-                    key={language.key}
-                    type="button"
-                    onClick={() => void handleLanguageChange(language.key)}
-                    className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-all duration-200 ${isSelected
-                        ? "bg-main text-primary"
-                        : "text-maindark hover:bg-main/10 dark:text-primary dark:hover:bg-primary/10"
-                      }`}
-                  >
-                    <span
-                      className={`flex h-6 w-8 overflow-hidden rounded-lg shrink-0 ${isSelected ? "ring-1 ring-primary/50" : ""}`}
-                    >
-                      {FLAGS[language.key]}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold">
-                        {language.label}
-                      </div>
-                      <div
-                        className={`text-[10px] uppercase tracking-[0.18em] ${isSelected ? "text-primary/75" : "text-maindark/45 dark:text-primary/45"}`}
-                      >
-                        {language.key}
-                      </div>
-                    </div>
-                    {isSelected && <Check className="h-4 w-4 text-primary" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
         <button
           type="button"
           onClick={() => setIsShortcutsOpen(true)}
@@ -515,15 +366,11 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <div className="hidden md:flex items-center gap-1.5 lg:gap-3 shrink-0">
           <button
             type="button"
-            onClick={toggleTheme}
+            onClick={() => navigate("/settings")}
             className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary"
-            aria-label={t("toggleTheme")}
+            aria-label={t("settings")}
           >
-            {theme === "light" ? (
-              <Moon className="w-5 h-5" />
-            ) : (
-              <Sun className="w-5 h-5" />
-            )}
+            <Settings className="w-5 h-5" />
           </button>
 
           <button

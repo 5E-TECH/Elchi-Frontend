@@ -1,0 +1,42 @@
+{
+  "title": "Settings",
+  "subtitle": "Application, dashboard and profile preferences",
+  "tabs": {
+    "appearance": "Appearance",
+    "dashboard": "Dashboard",
+    "interface": "Interface",
+    "profile": "Profile"
+  },
+  "tabs_desc": {
+    "appearance": "Theme and language",
+    "dashboard": "Manage widgets",
+    "interface": "Panel and layout",
+    "profile": "Personal info"
+  },
+  "appearance": {
+    "theme": "Theme",
+    "theme_hint": "Application color scheme",
+    "light": "Light",
+    "dark": "Dark",
+    "language": "Language",
+    "language_hint": "Interface language"
+  },
+  "dashboard": {
+    "widgets": "Dashboard widgets",
+    "widgets_hint": "Choose which sections to show. Hidden widgets free up space automatically.",
+    "w_stats": "Key metrics",
+    "w_stats_hint": "Donut, gauge, KPI cards",
+    "w_top": "Top rankings",
+    "w_top_hint": "Best markets and couriers",
+    "w_financial": "Financial analysis",
+    "w_financial_hint": "Revenue chart and cashbox balance",
+    "w_region": "Region map",
+    "w_region_hint": "Province-level statistics"
+  },
+  "interface": {
+    "sidebar": "Sidebar open",
+    "sidebar_hint": "Open the sidebar on app start"
+  },
+  "saved": "Saved",
+  "save_error": "Failed to save"
+}
