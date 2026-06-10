@@ -222,7 +222,7 @@ const MainCashbox = () => {
         ...courier,
         region: courier.region?.name || "Noma'lum",
         amount: Number(courier.cashbox?.balance ?? courier.amount ?? 0),
-      })),
+      })).filter((courier: any) => courier.amount !== 0),
     [couriersData?.data?.items],
   );
   const markets = useMemo(
@@ -230,7 +230,7 @@ const MainCashbox = () => {
       (marketsData?.data?.items ?? []).map((market: any) => ({
         ...market,
         amount: Number(market.cashbox?.balance ?? market.amount ?? 0),
-      })),
+      })).filter((market: any) => market.amount !== 0),
     [marketsData?.data?.items],
   );
 

@@ -25,7 +25,7 @@ interface PopupSelectProps<T> {
   secondaryLabelKey?: keyof T; // For default item subtitle
 }
 
-const PopupSelect = <T extends Record<string, any>>({
+const PopupSelect = <T extends object>({
   isOpen,
   onClose,
   data,
@@ -131,6 +131,8 @@ const PopupSelect = <T extends Record<string, any>>({
           {filteredData.map((item) => {
             const key = keyExtractor(item);
             const isSelected = selectedItem ? keyExtractor(selectedItem) === key : false;
+            const label = labelKey ? String(item[labelKey] ?? "").trim() : "";
+            const initial = label.charAt(0).toLocaleUpperCase() || "•";
             return (
               <button
                 type="button"
@@ -154,15 +156,15 @@ const PopupSelect = <T extends Record<string, any>>({
                           : "bg-[color:var(--color-main-soft)] text-main dark:bg-white/10 dark:text-primary"
                         }`}
                       >
-                        {key}
+                        {initial}
                       </div>
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-bold leading-tight text-maindark dark:text-primary">
-                          {labelKey ? item[labelKey] : String(item)}
+                          {labelKey ? label : String(item)}
                         </h3>
                         {secondaryLabelKey && (
                           <p className="mt-0.5 truncate text-sm font-medium text-[color:var(--color-text-muted)] dark:text-primary/60">
-                            {item[secondaryLabelKey]}
+                            {String(item[secondaryLabelKey] ?? "")}
                           </p>
                         )}
                       </div>

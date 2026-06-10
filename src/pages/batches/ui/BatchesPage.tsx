@@ -1,11 +1,12 @@
-import { memo, useMemo, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { memo, useCallback, useMemo, type ReactNode } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { CalendarDays, ChevronRight, Clock, MapPin, Package, PackageSearch, RotateCcw, TrendingUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
 import PageStatBadge from "../../../shared/ui/PageStatBadge";
 import EmptyState from "../../../shared/ui/EmptyState";
 import { useBatches, type Batch, type BatchDirection, type BatchStatus } from "../../../entities/batch";
+import { useBranches } from "../../../entities/branch";
 import {
   formatBatchDateTime,
   formatBatchCompactMoney,
@@ -43,8 +44,8 @@ const batchTabs: BatchTabItem[] = [
     icon: <Clock size={18} />,
     status: "received",
     direction: "forward",
-    activeClassName: "border-main bg-main text-primary shadow-lg shadow-main/25",
-    inactiveIconClassName: "bg-main/10 text-main",
+    activeClassName: "border-slate-500 bg-slate-600 text-white shadow-lg shadow-slate-700/25",
+    inactiveIconClassName: "bg-slate-500/10 text-slate-500 dark:text-slate-300",
   },
   {
     key: "return",
@@ -56,6 +57,12 @@ const batchTabs: BatchTabItem[] = [
     inactiveIconClassName: "bg-amber-500/10 text-amber-600 dark:text-amber-300",
   },
 ];
+
+const batchCardClass: Record<BatchTabKey, string> = {
+  new: "border-emerald-300/20 bg-linear-to-br from-emerald-500 to-emerald-700 shadow-emerald-950/10 hover:shadow-emerald-950/20",
+  old: "border-slate-300/20 bg-linear-to-br from-slate-500 to-slate-700 shadow-slate-950/10 hover:shadow-slate-950/20",
+  return: "border-amber-300/20 bg-linear-to-br from-amber-500 to-amber-700 shadow-amber-950/10 hover:shadow-amber-950/20",
+};
 
 const batchCardStatusClass: Record<BatchStatus, string> = {
   new: "border-sky-100/70 bg-sky-50 text-sky-700 shadow-sky-950/10",
@@ -70,18 +77,26 @@ const BatchCard = memo(({
   statusLabel,
   directionLabel,
   labels,
+  tone,
 }: {
   batch: Batch;
   onOpen: () => void;
   statusLabel: string;
   directionLabel: string;
+  tone: BatchTabKey;
   labels: {
     orders: string;
     piece: string;
     amount: string;
     direction: string;
   };
-}) => (
+}) => {
+  const branchNames = [batch.from_branch.name, batch.to_branch.name].filter(
+    (name) => name && name !== "—" && !/^Filial #\S+$/i.test(name),
+  );
+  const routeLabel = branchNames.join(" → ");
+
+  return (
   <div
     role="button"
     tabIndex={0}
@@ -89,9 +104,7 @@ const BatchCard = memo(({
     onKeyDown={(event) => {
       if (event.key === "Enter") onOpen();
     }}
-    className="group relative cursor-pointer overflow-hidden rounded-xl border border-emerald-300/20 
-    bg-linear-to-br from-emerald-500 to-emerald-700 shadow-sm shadow-emerald-950/10 
-    transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-950/20"
+    className={`group relative cursor-pointer overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${batchCardClass[tone]}`}
   >
     <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,transparent_38%,rgba(255,255,255,0.09)_50%,transparent_62%)] 
     opacity-0 transition-opacity group-hover:opacity-100" />
@@ -113,9 +126,11 @@ const BatchCard = memo(({
 
       <div>
         <p className="m-0 text-xs font-semibold text-white/70">{formatBatchDisplayId(batch.id)}</p>
-        <h3 className="m-0 mt-0.5 truncate text-base font-bold leading-tight text-white">
-          {batch.from_branch.name} → {batch.to_branch.name}
-        </h3>
+        {routeLabel ? (
+          <h3 className="m-0 mt-0.5 truncate text-base font-bold leading-tight text-white">
+            {routeLabel}
+          </h3>
+        ) : null}
       </div>
 
       <div className="h-px w-full bg-white/20" />
@@ -149,35 +164,43 @@ const BatchCard = memo(({
       </div>
     </div>
   </div>
-));
+  );
+});
 BatchCard.displayName = "BatchCard";
 
-const BatchCardSkeleton = memo(() => (
-  <div className="h-34.5 animate-pulse rounded-xl bg-emerald-500/20 dark:bg-emerald-800/30" />
+const batchSkeletonClass: Record<BatchTabKey, string> = {
+  new: "bg-emerald-500/20 dark:bg-emerald-800/30",
+  old: "bg-slate-500/20 dark:bg-slate-700/30",
+  return: "bg-amber-500/20 dark:bg-amber-800/30",
+};
+
+const BatchCardSkeleton = memo(({ tone }: { tone: BatchTabKey }) => (
+  <div className={`h-34.5 animate-pulse rounded-xl ${batchSkeletonClass[tone]}`} />
 ));
 BatchCardSkeleton.displayName = "BatchCardSkeleton";
 
 const BatchesPage = () => {
   const { t } = useTranslation(["batches", "common"]);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "batches",
     defaultLimit: 10,
   });
-  const [status, setStatus] = useState<BatchStatus | "">("new");
-  const [direction, setDirection] = useState<BatchDirection | "">("forward");
-
-  const activeTab = useMemo(() => {
-    if (direction === "return") return "return";
-    if (status === "received" && direction === "forward") return "old";
-    if (status === "new" && direction === "forward") return "new";
-    return "";
-  }, [direction, status]);
+  const tabParam = searchParams.get("tab");
+  const activeTab: BatchTabKey =
+    tabParam === "old" || tabParam === "return" ? tabParam : "new";
+  const activeTabConfig = batchTabs.find((tab) => tab.key === activeTab) ?? batchTabs[0];
+  const status = activeTabConfig.status;
+  const direction = activeTabConfig.direction;
 
   const handleTabChange = (tab: BatchTabItem) => {
-    setStatus(tab.status);
-    setDirection(tab.direction);
-    setPage(1);
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("tab", tab.key);
+      next.set("page", "1");
+      return next;
+    }, { replace: true });
   };
 
   const params = useMemo(() => {
@@ -190,6 +213,33 @@ const BatchesPage = () => {
   }, [direction, limit, page, status]);
 
   const { data, isLoading, isError } = useBatches(params);
+  const { data: branchesResponse } = useBranches({ page: 1, limit: 1000 });
+  const branchNames = useMemo(
+    () => new Map((branchesResponse?.data ?? []).map((branch) => [String(branch.id), branch.name])),
+    [branchesResponse?.data],
+  );
+  const resolveBranchName = useCallback(
+    (id: string, name: string) =>
+      name === "—" || /^Filial #\S+$/i.test(name)
+        ? branchNames.get(id) ?? "—"
+        : name,
+    [branchNames],
+  );
+  const batches = useMemo(
+    () =>
+      (data?.data ?? []).map((batch) => ({
+        ...batch,
+        from_branch: {
+          ...batch.from_branch,
+          name: resolveBranchName(batch.from_branch.id, batch.from_branch.name),
+        },
+        to_branch: {
+          ...batch.to_branch,
+          name: resolveBranchName(batch.to_branch.id, batch.to_branch.name),
+        },
+      })),
+    [data?.data, resolveBranchName],
+  );
   const statusLabels = useMemo<Record<BatchStatus, string>>(
     () => ({
       new: t("status.new"),
@@ -267,10 +317,10 @@ const BatchesPage = () => {
       {isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,270px))] gap-3">
           {Array.from({ length: limit }).map((_, index) => (
-            <BatchCardSkeleton key={index} />
+            <BatchCardSkeleton key={index} tone={activeTab} />
           ))}
         </div>
-      ) : (data?.data ?? []).length === 0 ? (
+      ) : batches.length === 0 ? (
         <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-6 dark:bg-primarydark">
           <EmptyState
             icon="📦"
@@ -281,13 +331,14 @@ const BatchesPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,270px))] gap-3">
-          {(data?.data ?? []).map((batch) => (
+          {batches.map((batch) => (
             <BatchCard
               key={batch.id}
               batch={batch}
               onOpen={() => navigate(`/batches/${batch.id}`)}
               statusLabel={statusLabels[batch.status]}
               directionLabel={directionLabels[batch.direction]}
+              tone={activeTab}
               labels={cardLabels}
             />
           ))}

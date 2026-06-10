@@ -70,11 +70,33 @@ interface Customer {
 interface OrderItem {
   id: string;
   quantity: number;
-  product: { id: string; name: string; image_url?: string | null } | null;
+  image?: string | null;
+  image_url?: string | null;
+  product: {
+    id: string;
+    name: string;
+    image?: string | null;
+    image_url?: string | null;
+    imageUrl?: string | null;
+    photo?: string | null;
+    photo_url?: string | null;
+    file?: string | null;
+    url?: string | null;
+  } | null;
 }
 
 const getProductImageUrl = (item: OrderItem) =>
-  resolveAssetUrl(item.product?.image_url);
+  resolveAssetUrl(
+    item.product?.image_url ??
+    item.product?.imageUrl ??
+    item.product?.image ??
+    item.product?.photo_url ??
+    item.product?.photo ??
+    item.product?.file ??
+    item.product?.url ??
+    item.image_url ??
+    item.image,
+  );
 
 const ProductThumbnail = ({
   item,

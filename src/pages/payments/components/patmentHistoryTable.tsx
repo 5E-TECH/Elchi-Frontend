@@ -5,6 +5,7 @@ import type { ColumnConfig } from "../../../shared/components/Table/Table.types"
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import { useTranslation } from "react-i18next";
 import Pagination from "../../../shared/components/pagination";
+import { resolvePaymentActorName } from "./paymentHistoryActor";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,11 @@ export interface PaymentRow {
   source_id?: string;
   cashbox_type?: string;
   created_by?: string;
+  created_by_user?: PaymentHistoryActor | null;
+  createdByUser?: PaymentHistoryActor | null;
+  user?: PaymentHistoryActor | null;
+  source_user?: PaymentHistoryActor | null;
+  sourceUser?: PaymentHistoryActor | null;
   payment_method?: string;
   payment_date?: string;
   comment?: string;
@@ -49,6 +55,14 @@ export interface PaymentRow {
     balance_card?: number;
     cashbox_type: string;
   };
+}
+
+export interface PaymentHistoryActor {
+  id?: string | number;
+  name?: string | null;
+  full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
 }
 
 export interface Pagination {
@@ -104,9 +118,9 @@ const PaymentHistoryTable = ({
         key: "created_by",
         label: t("createdBy"),
         width: "200px",
-        render: (val) => (
+        render: (_, row) => (
           <span className="text-sm font-semibold text-gray-900 dark:text-white truncate block max-w-45">
-            {val || "-"}
+            {resolvePaymentActorName(row)}
           </span>
         ),
       },
@@ -230,7 +244,7 @@ const PaymentHistoryTable = ({
 
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
-                      {row.created_by || "-"}
+                      {resolvePaymentActorName(row)}
                     </p>
                     <p className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-500 dark:text-white/65">
                       <Calendar size={13} />

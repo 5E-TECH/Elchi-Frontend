@@ -267,41 +267,45 @@ const Payments = () => {
   // ── To be given popup uchun market list ───────────────────────────────────
   const marketsList = useMemo<PaymentMarketOption[]>(
     () =>
-      (marketsData?.data?.items ?? []).map((market: unknown) => {
-        const m = asRecord(market);
-        const cashbox = asRecord(m.cashbox);
+      (marketsData?.data?.items ?? [])
+        .map((market: unknown) => {
+          const m = asRecord(market);
+          const cashbox = asRecord(m.cashbox);
 
-        return {
-          id: getRecordString(m, "id"),
-          name: getRecordString(m, "name"),
-          phone_number: getRecordString(m, "phone_number", getRecordString(m, "phone")),
-          role: getRecordString(m, "role", "market"),
-          cashbox: m.cashbox,
-          amount: Number(cashbox.balance ?? m.amount ?? 0),
-        };
-      }),
+          return {
+            id: getRecordString(m, "id"),
+            name: getRecordString(m, "name"),
+            phone_number: getRecordString(m, "phone_number", getRecordString(m, "phone")),
+            role: getRecordString(m, "role", "market"),
+            cashbox: m.cashbox,
+            amount: Number(cashbox.balance ?? m.amount ?? 0),
+          };
+        })
+        .filter((market: PaymentMarketOption) => market.amount !== 0),
     [marketsData],
   );
 
   // ── To be received popup uchun kuryerlar list ─────────────────────────────
   const couriersList = useMemo<PaymentCourierOption[]>(
     () =>
-      (couriersData?.data?.items ?? []).map((courier: unknown) => {
-        const c = asRecord(courier);
-        const region = asRecord(c.region);
-        const cashbox = asRecord(c.cashbox);
+      (couriersData?.data?.items ?? [])
+        .map((courier: unknown) => {
+          const c = asRecord(courier);
+          const region = asRecord(c.region);
+          const cashbox = asRecord(c.cashbox);
 
-        return {
-          id: getRecordString(c, "id"),
-          name: getRecordString(c, "name"),
-          phone_number: getRecordString(c, "phone_number", getRecordString(c, "phone")),
-          role: getRecordString(c, "role", "courier"),
-          region: getRecordString(region, "name", "Noma'lum"),
-          region_id: getRecordString(region, "id", getRecordString(c, "region_id")),
-          cashbox: c.cashbox,
-          amount: Number(cashbox.balance ?? 0),
-        };
-      }),
+          return {
+            id: getRecordString(c, "id"),
+            name: getRecordString(c, "name"),
+            phone_number: getRecordString(c, "phone_number", getRecordString(c, "phone")),
+            role: getRecordString(c, "role", "courier"),
+            region: getRecordString(region, "name", "Noma'lum"),
+            region_id: getRecordString(region, "id", getRecordString(c, "region_id")),
+            cashbox: c.cashbox,
+            amount: Number(cashbox.balance ?? 0),
+          };
+        })
+        .filter((courier: PaymentCourierOption) => courier.amount !== 0),
     [couriersData],
   );
 
@@ -313,7 +317,7 @@ const Payments = () => {
         region: branch.region?.name ?? "Noma'lum",
         type: String(branch.type ?? "BRANCH"),
         amount: toNumber(branch.olinishi_kerak),
-      })),
+      })).filter((branch) => branch.amount !== 0),
     [branchesData],
   );
 

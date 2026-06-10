@@ -1,10 +1,11 @@
 // Migrated to React Hook Form
 import { memo, useEffect, type ReactNode } from "react";
-import { Controller, useForm, type Resolver } from "react-hook-form";
+import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { ChevronDown, X } from "lucide-react";
+import { X } from "lucide-react";
 import Popup from "../../../shared/ui/Popup";
+import FilterSelect from "../../../shared/ui/FilterSelect";
 import HeaderName from "../../../shared/components/headerName";
 import Button from "../../../shared/components/button";
 import { useTranslation } from "react-i18next";
@@ -77,7 +78,6 @@ const CashboxFormPopup = ({
         handleSubmit,
         reset,
         formState: { errors },
-        watch,
     } = useForm<CashboxFormValues>({
         defaultValues: {
             amount: "",
@@ -87,9 +87,10 @@ const CashboxFormPopup = ({
         resolver: yupResolver(cashboxFormSchema) as Resolver<CashboxFormValues>,
     });
 
-    const amount = watch("amount");
-    const selectedType = watch("type");
-    const comment = watch("comment");
+    const [amount, selectedType, comment] = useWatch({
+        control,
+        name: ["amount", "type", "comment"],
+    });
     const hasTypeOptions = sourceTypes.length > 0;
 
     const handleClose = () => {
@@ -119,9 +120,9 @@ const CashboxFormPopup = ({
 
     return (
         <Popup isShow={isOpen} onClose={handleClose}>
-            <div className="bg-primary dark:bg-maindark w-[92vw] max-w-115 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+            <div className="bg-primary dark:bg-maindark w-[92vw] max-w-115 rounded-2xl shadow-2xl flex flex-col">
                 {/* Gradient header */}
-                <div className={`bg-linear-to-r ${accentColor} px-6 py-5 flex items-center justify-between`}>
+                <div className={`rounded-t-2xl bg-linear-to-r ${accentColor} px-6 py-5 flex items-center justify-between`}>
                     <HeaderName name={title} description={description} icon={icon} />
                     <button
                         onClick={handleClose}
@@ -174,30 +175,19 @@ const CashboxFormPopup = ({
                             control={control}
                             name="type"
                             render={({ field }) => (
-                                <div className="rounded-[1rem] border border-gray-200 bg-gray-50/90 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-glass-border dark:bg-white/[0.04]">
-                                    <div className="relative">
-                                        <select
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            className="h-9 w-full appearance-none rounded-[0.8rem] bg-transparent px-3 pr-9 text-sm font-medium text-gray-900 outline-none dark:text-white"
-                                        >
-                                            <option value="">
-                                                {typePlaceholder ?? t("paymentTypePlaceholder")}
-                                            </option>
-                                            {sourceTypes.map((item) => (
-                                                <option key={item.id} value={String(item.id)} className="dark:bg-maindark">
-                                                    {item.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown
-                                            size={16}
-                                            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40"
-                                        />
-                                    </div>
-                                </div>
+                                <FilterSelect
+                                    label={typeLabel ?? t("paymentType")}
+                                    name={field.name}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    options={sourceTypes.map((item) => ({
+                                        value: String(item.id),
+                                        label: item.name,
+                                    }))}
+                                    placeholder={typePlaceholder ?? t("paymentTypePlaceholder")}
+                                    hideLabel
+                                    size="sm"
+                                />
                             )}
                         />
                         {errors.type && (
