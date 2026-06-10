@@ -22,6 +22,8 @@ import {
   type FinanceHistoryActor,
   type FinanceHistoryDetail,
 } from "../../../entities/payments";
+import { useTranslation } from "react-i18next";
+import { getPaymentSourceTypeLabel } from "./paymentSourceType";
 
 const fmt = (n: number) => Math.abs(n).toLocaleString("uz-UZ");
 
@@ -34,17 +36,6 @@ const formatDate = (dateStr?: string) => {
   } catch {
     return dateStr;
   }
-};
-
-const getSourceTypeLabel = (value?: string | null) => {
-  const normalized = value?.toLowerCase();
-  if (normalized === "sell") return "Sotuv";
-  if (normalized === "correction") return "Tuzatish";
-  if (normalized === "salary") return "Oylik";
-  if (normalized === "market_payment") return "Market to'lovi";
-  if (normalized === "manual_income") return "Qo'lda kirim";
-  if (normalized === "manual_expense") return "Qo'lda chiqim";
-  return value || "—";
 };
 
 const getPaymentMethodLabel = (value?: string | null) => {
@@ -192,6 +183,7 @@ interface Props {
 }
 
 const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
+  const { t } = useTranslation("payments");
   const { getFinanceHistoryById } = useCashBox();
   const rowId = row?.id ?? null;
   const { data, isLoading, isError } = getFinanceHistoryById(rowId, !!rowId);
@@ -360,7 +352,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                 <InfoCard
                   icon={<CreditCard size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                   label="Manba turi"
-                  value={getSourceTypeLabel(detail?.source_type)}
+                  value={getPaymentSourceTypeLabel(detail?.source_type, t)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard

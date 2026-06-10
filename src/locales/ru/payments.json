@@ -213,6 +213,7 @@
   ,"payToMainAction": "Перевести в HQ"
   ,"branchToMainPaymentSuccess": "Платеж успешно переведен в HQ"
   ,"branchToMainPaymentError": "Ошибка при переводе платежа в HQ"
+  ,"branchToMainSource": "Перевод из филиала в HQ"
   ,"mainBranchFallback": "Главный филиал"
   ,"currencyAmountSuffix": "сум"
 }

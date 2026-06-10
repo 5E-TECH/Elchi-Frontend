@@ -213,6 +213,7 @@
   ,"payToMainAction": "HQga o'tkazish"
   ,"branchToMainPaymentSuccess": "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi"
   ,"branchToMainPaymentError": "Asosiy filialga to'lov o'tkazishda xatolik yuz berdi"
+  ,"branchToMainSource": "Filialdan HQga o'tkazma"
   ,"mainBranchFallback": "Asosiy filial"
   ,"currencyAmountSuffix": "so'm"
 }

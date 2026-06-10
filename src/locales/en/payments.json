@@ -211,6 +211,7 @@
   ,"payToMainAction": "Transfer to HQ"
   ,"branchToMainPaymentSuccess": "Payment was transferred to HQ successfully"
   ,"branchToMainPaymentError": "Failed to transfer payment to HQ"
+  ,"branchToMainSource": "Branch to HQ transfer"
   ,"mainBranchFallback": "HQ branch"
   ,"currencyAmountSuffix": "so'm"
 }
