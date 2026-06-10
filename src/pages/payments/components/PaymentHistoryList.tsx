@@ -1,6 +1,7 @@
 import { memo, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, Calendar } from "lucide-react";
 import type { PaymentRow } from "./patmentHistoryTable";
+import { resolvePaymentActorName } from "./paymentHistoryActor";
 import { useTranslation } from "react-i18next";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 
@@ -72,7 +73,7 @@ const HistoryRow = memo(
   const isIncome = op === "income";
   const sign = isIncome ? "+" : "-";
   const amount = Number(row.amount ?? 0);
-  const created = row.created_by || "-";
+  const created = resolvePaymentActorName(row);
   const commentInfo = extractRollback(row.comment || "");
   const cashboxType = row.payment_method || row.cashbox_type || row.cashbox?.cashbox_type || "";
   const sourceType = row.source_type || "";

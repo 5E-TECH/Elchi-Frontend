@@ -72,22 +72,36 @@ const toApiBatchDirection = (direction: BatchDirection): ApiBatchDirection => {
 };
 
 const normalizeBranch = (value: any, fallback = "—"): BatchBranch => {
-  const id = toText(value?.id ?? value?._id ?? value?.branch_id, fallback);
+  const branch = value?.branch ?? value?.branch_data ?? value?.branchData ?? value;
+  const id = toText(
+    branch?.id ??
+      branch?._id ??
+      branch?.branch_id ??
+      branch?.branchId ??
+      value?.branch_id ??
+      value?.branchId,
+    fallback,
+  );
   const name = toText(
-    value?.name ?? value?.title ?? value?.branch_name,
-    id !== fallback ? `Filial #${id}` : fallback,
+    branch?.name ??
+      branch?.title ??
+      branch?.branch_name ??
+      branch?.branchName ??
+      value?.branch_name ??
+      value?.branchName,
+    fallback,
   );
 
   return {
     id,
     name,
-    code: value?.code ? toText(value.code, fallback) : undefined,
-    region: value?.region?.name
-      ? toText(value.region.name, fallback)
-      : value?.region
-        ? toText(value.region, fallback)
-        : value?.region_name
-          ? toText(value.region_name, fallback)
+    code: branch?.code ? toText(branch.code, fallback) : undefined,
+    region: branch?.region?.name
+      ? toText(branch.region.name, fallback)
+      : branch?.region
+        ? toText(branch.region, fallback)
+        : branch?.region_name ?? branch?.regionName
+          ? toText(branch.region_name ?? branch.regionName, fallback)
           : undefined,
   };
 };
@@ -153,24 +167,26 @@ const normalizeBatch = (raw: any): Batch => ({
   id: toText(raw?.id ?? raw?._id ?? raw?.batch_id),
   token: toText(raw?.qr_code_token ?? raw?.token ?? raw?.qr_token ?? raw?.qrCodeToken, ""),
   from_branch: normalizeBranch(
-    raw?.from_branch ??
+      raw?.from_branch ??
       raw?.fromBranch ??
       raw?.source_branch ??
+      raw?.sourceBranch ??
       raw?.from ??
       {
-        id: raw?.source_branch_id ?? raw?.from_branch_id,
-        name: raw?.source_branch_name ?? raw?.from_branch_name,
+        id: raw?.source_branch_id ?? raw?.sourceBranchId ?? raw?.from_branch_id ?? raw?.fromBranchId,
+        name: raw?.source_branch_name ?? raw?.sourceBranchName ?? raw?.from_branch_name ?? raw?.fromBranchName,
       },
   ),
   to_branch: normalizeBranch(
     raw?.to_branch ??
       raw?.toBranch ??
       raw?.destination_branch ??
+      raw?.destinationBranch ??
       raw?.to ??
-      (raw?.destination_branch_id || raw?.destination_branch_name
+      (raw?.destination_branch_id || raw?.destinationBranchId || raw?.destination_branch_name || raw?.destinationBranchName
         ? {
-            id: raw?.destination_branch_id,
-            name: raw?.destination_branch_name,
+            id: raw?.destination_branch_id ?? raw?.destinationBranchId,
+            name: raw?.destination_branch_name ?? raw?.destinationBranchName,
           }
         : null) ??
       {
@@ -301,7 +317,6 @@ export const useBatches = (params?: BatchListParams, options?: { enabled?: boole
       };
     },
     enabled: options?.enabled ?? true,
-    placeholderData: (prev) => prev,
   });
 
 export const useBatchDetail = (id?: string) =>

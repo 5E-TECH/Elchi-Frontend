@@ -49,7 +49,13 @@ export const resolveAssetUrl = (value?: string | null): string | undefined => {
     return parsedUrl.toString();
   } catch {
     if (trimmed.startsWith("/")) {
-      return trimmed;
+      const assetBaseUrl = getAssetBaseUrl();
+
+      if (assetBaseUrl.startsWith("/")) {
+        return `${assetBaseUrl}/${trimmed.replace(/^\/+/, "")}`;
+      }
+
+      return new URL(trimmed, `${assetBaseUrl}/`).toString();
     }
 
     try {

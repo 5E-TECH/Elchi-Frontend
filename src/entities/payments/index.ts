@@ -102,8 +102,11 @@ export const useCashBox = () => {
 
   const refreshCashboxQueries = async () => {
     await Promise.all([
-      client.invalidateQueries({ queryKey: [cashbox] }),
-      client.invalidateQueries({ queryKey: ["finance-cov"] }),
+      client.invalidateQueries({ queryKey: [cashbox], refetchType: "all" }),
+      client.invalidateQueries({ queryKey: ["finance-cov"], refetchType: "all" }),
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "all" }),
+      client.invalidateQueries({ queryKey: ["couriers"], refetchType: "all" }),
+      client.invalidateQueries({ queryKey: ["branches"], refetchType: "all" }),
     ]);
   };
 

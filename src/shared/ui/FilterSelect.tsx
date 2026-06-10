@@ -112,17 +112,6 @@ const FilterSelect = memo(({
             return;
         }
 
-        const selectedIndex = dropdownOptions.findIndex(
-            (option) => option.value === currentValue,
-        );
-        setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
-    }, [currentValue, dropdownOptions, isOpen]);
-
-    useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-
         optionRefs.current[highlightedIndex]?.scrollIntoView({ block: "nearest" });
     }, [highlightedIndex, isOpen]);
 
@@ -143,6 +132,14 @@ const FilterSelect = memo(({
         setIsOpen(false);
     };
 
+    const openSelect = () => {
+        const selectedIndex = dropdownOptions.findIndex(
+            (option) => option.value === currentValue,
+        );
+        setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+        setIsOpen(true);
+    };
+
     const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
         if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -155,14 +152,17 @@ const FilterSelect = memo(({
                 return;
             }
 
-            setIsOpen(true);
+            openSelect();
             return;
         }
 
         if (event.key === "ArrowDown") {
             event.preventDefault();
-            setIsOpen(true);
             if (!dropdownOptions.length) {
+                return;
+            }
+            if (!isOpen) {
+                openSelect();
                 return;
             }
             setHighlightedIndex((current) =>
@@ -173,8 +173,11 @@ const FilterSelect = memo(({
 
         if (event.key === "ArrowUp") {
             event.preventDefault();
-            setIsOpen(true);
             if (!dropdownOptions.length) {
+                return;
+            }
+            if (!isOpen) {
+                openSelect();
                 return;
             }
             setHighlightedIndex((current) =>
@@ -222,7 +225,11 @@ const FilterSelect = memo(({
                     id={name}
                     name={name}
                     type="button"
-                    onClick={() => !disabled && !loading && setIsOpen((current) => !current)}
+                    onClick={() => {
+                        if (disabled || loading) return;
+                        if (isOpen) setIsOpen(false);
+                        else openSelect();
+                    }}
                     onKeyDown={handleKeyDown}
                     disabled={disabled || loading}
                     aria-expanded={isOpen}
