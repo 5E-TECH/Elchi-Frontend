@@ -24,6 +24,7 @@
   "page_title_filtered": "Статистика за выбранный период",
   "page_subtitle_today": "Показатели за сегодня",
   "page_subtitle_filtered": "По диапазону дат",
+  "load_error": "Не удалось загрузить данные дашборда.",
   "quickRanges": {
     "today": "Сегодня",
     "week": "Эта неделя",
@@ -133,5 +134,12 @@
       "subtitle": "По сравнению с прошлой неделей",
       "value_label": "На этой неделе"
     }
+  },
+  "market": {
+    "page_title": "Мой дашборд",
+    "page_subtitle": "Заказы и показатели за сегодня",
+    "add_order": "Добавить заказ",
+    "view_orders": "Просмотр заказов",
+    "quick_actions": "Быстрые действия"
   }
 }

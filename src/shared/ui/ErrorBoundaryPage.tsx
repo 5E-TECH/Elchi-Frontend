@@ -1,13 +1,13 @@
-import { memo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { House, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "./EmptyState";
-
-export interface RuntimeErrorPayload {
-  message?: string;
-  stack?: string;
-  componentStack?: string;
-}
+import {
+  clearRuntimeError,
+  getRuntimeError,
+  getRuntimeErrorRecoveryPath,
+  type RuntimeErrorPayload,
+} from "../lib/runtimeError";
 
 interface ErrorBoundaryPageProps {
   error?: RuntimeErrorPayload | null;
@@ -15,16 +15,18 @@ interface ErrorBoundaryPageProps {
 
 const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
   const navigate = useNavigate();
-  const runtimeError = error ?? (() => {
-    try {
-      const payload = sessionStorage.getItem("elchi_runtime_error");
-      return payload ? (JSON.parse(payload) as RuntimeErrorPayload) : null;
-    } catch {
-      return null;
-    }
-  })();
+  const runtimeError = useMemo(() => error ?? getRuntimeError(), [error]);
+  const recoveryPath = getRuntimeErrorRecoveryPath(runtimeError);
   const errorMessage = runtimeError?.message?.trim();
   const errorStack = [runtimeError?.stack, runtimeError?.componentStack].filter(Boolean).join("\n\n");
+
+  useEffect(() => {
+    if (!runtimeError) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate, runtimeError]);
+
+  if (!runtimeError) return null;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4 dark:bg-background">
@@ -39,8 +41,8 @@ const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
               <button
                 type="button"
                 onClick={() => {
-                  sessionStorage.removeItem("elchi_runtime_error");
-                  window.location.reload();
+                  clearRuntimeError();
+                  window.location.replace(recoveryPath);
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition hover:bg-main/90"
               >
@@ -50,8 +52,8 @@ const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
               <button
                 type="button"
                 onClick={() => {
-                  sessionStorage.removeItem("elchi_runtime_error");
-                  navigate("/");
+                  clearRuntimeError();
+                  navigate("/", { replace: true });
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-5 py-3 text-sm font-bold text-maindark transition hover:border-main/50 hover:text-main dark:border-white/10 dark:bg-white/5 dark:text-white"
               >

@@ -11,8 +11,6 @@ export interface AnalyticsDateParams {
 
 export interface RevenueParams extends AnalyticsDateParams {
   period: "daily" | "weekly" | "monthly" | "yearly";
-  startDate?: string;
-  endDate?: string;
 }
 
 export interface DashboardOrdersSummary {
@@ -62,7 +60,7 @@ export interface BranchDashboardPayload {
   active_batches_count: number;
   couriers_count: number;
   role?: string;
-  cards: {
+  cards?: {
     orders: BranchDashboardOrdersCard | null;
     markets: BranchDashboardMarketCard[] | null;
     packages: BranchDashboardPackagesCard | null;
@@ -108,7 +106,7 @@ export interface DashboardResponse {
 export interface RevenuePoint {
   period: string;
   label: string;
-  ordersCount: number;
+  ordersCount?: number;
   revenue: number;
 }
 
@@ -153,6 +151,15 @@ export interface KpiResponse {
 const toNumber = (value: unknown): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const toOptionalBoolean = (value: unknown): boolean | undefined => {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "string") {
+    if (value.toLowerCase() === "true") return true;
+    if (value.toLowerCase() === "false") return false;
+  }
+  return Boolean(value);
 };
 
 export const cleanAnalyticsParams = (params?: object): Record<string, unknown> | undefined => {
@@ -207,12 +214,83 @@ const normalizeTopCourier = (value: unknown): TopCourier => {
   };
 };
 
+const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null => {
+  const item = asRecord(value);
+  if (!Object.keys(item).length) return null;
+
+  const cards = asRecord(item.cards);
+  const orders = asRecord(cards.orders);
+  const packages = asRecord(cards.packages);
+  const couriers = asRecord(cards.couriers);
+  const visibility = asRecord(item.visibility);
+  const markets = cards.markets;
+
+  return {
+    today_orders_count: toNumber(item.today_orders_count ?? item.todayOrdersCount),
+    week_orders_count: toNumber(item.week_orders_count ?? item.weekOrdersCount),
+    active_batches_count: toNumber(item.active_batches_count ?? item.activeBatchesCount),
+    couriers_count: toNumber(item.couriers_count ?? item.couriersCount),
+    role: String(item.role ?? ""),
+    cards: {
+      orders: Object.keys(orders).length
+        ? {
+            total: toNumber(orders.total),
+            new: toNumber(orders.new),
+            on_the_road: toNumber(orders.on_the_road ?? orders.onTheRoad),
+            delivered: toNumber(orders.delivered),
+            returned: toNumber(orders.returned),
+          }
+        : null,
+      markets: Array.isArray(markets)
+        ? markets.map((market) => {
+            const entry = asRecord(market);
+            return {
+              id: String(entry.id ?? ""),
+              name: String(entry.name ?? entry.title ?? ""),
+              orders: toNumber(entry.orders ?? entry.orders_count ?? entry.ordersCount ?? entry.total),
+              amount: toNumber(
+                entry.amount ?? entry.total_amount ?? entry.totalAmount ?? entry.price,
+              ),
+            };
+          })
+        : [],
+      packages: Object.keys(packages).length
+        ? {
+            on_the_way: toNumber(packages.on_the_way ?? packages.onTheWay),
+            waiting_for_acceptance: toNumber(
+              packages.waiting_for_acceptance ?? packages.waitingForAcceptance,
+            ),
+          }
+        : null,
+      couriers: Object.keys(couriers).length
+        ? {
+            total: toNumber(couriers.total),
+            active: toNumber(
+              couriers.active ??
+                couriers.active_today ??
+                couriers.activeToday ??
+                couriers.active_count ??
+                couriers.activeCount,
+            ),
+          }
+        : null,
+    },
+    visibility: {
+      orders: toOptionalBoolean(visibility.orders),
+      markets: toOptionalBoolean(visibility.markets),
+      packages: toOptionalBoolean(visibility.packages),
+      couriers: toOptionalBoolean(visibility.couriers),
+    },
+  };
+};
+
 export const normalizeDashboardResponse = (payload: unknown): DashboardResponse => {
   const response = asRecord(payload);
   const data = asRecord(response.data);
   const orders = asRecord(data.orders);
   const topMarkets = data.topMarkets ?? data.top_markets;
   const topCouriers = data.topCouriers ?? data.top_couriers;
+  const branchDashboard = data.branchDashboard ?? data.branch_dashboard;
 
   return {
     statusCode: toNumber(response.statusCode),
@@ -233,6 +311,7 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
       topCouriers: Array.isArray(topCouriers)
         ? topCouriers.map(normalizeTopCourier)
         : [],
+      branchDashboard: normalizeBranchDashboard(branchDashboard),
     },
   };
 };
@@ -258,9 +337,56 @@ export const normalizeKpiResponse = (payload: unknown): KpiResponse => {
   };
 };
 
-const useGetDashboard = (params?: AnalyticsDateParams, enabled = true) =>
+export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
+  const response = asRecord(payload);
+  const data = asRecord(response.data);
+  const chart = asRecord(data.chart);
+  const finance = asRecord(data.finance);
+  const main = asRecord(finance.main);
+  const markets = asRecord(finance.markets);
+  const couriers = asRecord(finance.couriers);
+
+  return {
+    statusCode: toNumber(response.statusCode),
+    message: String(response.message ?? ""),
+    data: {
+      ...data,
+      chart: {
+        labels: Array.isArray(chart.labels) ? chart.labels.map(String) : [],
+        values: Array.isArray(chart.values) ? chart.values.map(toNumber) : [],
+      },
+      finance: Object.keys(finance).length
+        ? {
+            currentSituation: toNumber(
+              finance.currentSituation ?? finance.current_situation,
+            ),
+            main: { balance: toNumber(main.balance) },
+            markets: {
+              marketsTotalBalans: toNumber(
+                markets.marketsTotalBalans ??
+                  markets.marketsTotalBalance ??
+                  markets.markets_total_balans ??
+                  markets.markets_total_balance,
+              ),
+            },
+            couriers: {
+              couriersTotalBalanse: toNumber(
+                couriers.couriersTotalBalanse ??
+                  couriers.couriersTotalBalance ??
+                  couriers.couriers_total_balanse ??
+                  couriers.couriers_total_balance,
+              ),
+            },
+            difference: toNumber(finance.difference),
+          }
+        : undefined,
+    },
+  };
+};
+
+const useGetDashboard = (params?: AnalyticsDateParams, enabled = true, scope = "anonymous") =>
   useQuery<DashboardResponse>({
-    queryKey: [dashboard, cleanAnalyticsParams(params)],
+    queryKey: [dashboard, scope, cleanAnalyticsParams(params)],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.ANALYTICS.DASHBOARD, { params: cleanAnalyticsParams(params) })
@@ -270,9 +396,9 @@ const useGetDashboard = (params?: AnalyticsDateParams, enabled = true) =>
     refetchOnWindowFocus: false,
   });
 
-const useGetKpi = (params?: AnalyticsDateParams, enabled = true) =>
+const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonymous") =>
   useQuery<KpiResponse>({
-    queryKey: ["kpi", cleanAnalyticsParams(params)],
+    queryKey: ["kpi", scope, cleanAnalyticsParams(params)],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.ANALYTICS.KPI, { params: cleanAnalyticsParams(params) })
@@ -282,13 +408,13 @@ const useGetKpi = (params?: AnalyticsDateParams, enabled = true) =>
     refetchOnWindowFocus: false,
   });
 
-const useGetRevenue = (params: RevenueParams, enabled = true) =>
+const useGetRevenue = (params: RevenueParams, enabled = true, scope = "anonymous") =>
   useQuery<RevenueResponse>({
-    queryKey: ["revenue", cleanAnalyticsParams(params)],
+    queryKey: ["revenue", scope, cleanAnalyticsParams(params)],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.ANALYTICS.REVENUE, { params: cleanAnalyticsParams(params) })
-        .then((res) => res.data),
+        .then((res) => normalizeRevenueResponse(res.data)),
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,

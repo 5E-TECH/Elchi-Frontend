@@ -24,6 +24,7 @@
   "page_title_filtered": "Statistics for the selected period",
   "page_subtitle_today": "Today's metrics",
   "page_subtitle_filtered": "Based on the selected date range",
+  "load_error": "Dashboard data could not be loaded.",
   "quickRanges": {
     "today": "Today",
     "week": "This week",
@@ -133,5 +134,12 @@
       "subtitle": "Compared with last week",
       "value_label": "This week"
     }
+  },
+  "market": {
+    "page_title": "My Dashboard",
+    "page_subtitle": "Today's orders and metrics",
+    "add_order": "Add Order",
+    "view_orders": "View Orders",
+    "quick_actions": "Quick Actions"
   }
 }

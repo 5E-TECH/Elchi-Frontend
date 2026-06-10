@@ -1,9 +1,11 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Map as MapIcon, Loader2 } from "lucide-react";
 import UzbekistanRegionMap from "../../../pages/region/ui/UzbekistanRegionMap";
 import { useRegionStats, toRegionMapItems } from "../../../entities/region";
 import { TYPO, TEXT } from "../../../shared/config/designSystem";
+import QueryErrorState from "../../../shared/ui/QueryErrorState";
+import { getTodayRange } from "../../../shared/lib/dateRange";
 
 /**
  * RegionStatsCard — Dashboard uchun hududlar bo'yicha xarita widgeti.
@@ -17,7 +19,14 @@ export interface RegionStatsCardProps {
 
 const RegionStatsCard = memo(({ startDate, endDate }: RegionStatsCardProps) => {
   const { t } = useTranslation("dashboard");
-  const { data, isLoading } = useRegionStats({ startDate, endDate });
+  const params = useMemo(() => {
+    const today = getTodayRange();
+    return {
+      startDate: startDate || today.from,
+      endDate: endDate || today.to,
+    };
+  }, [endDate, startDate]);
+  const { data, isLoading, isError, refetch } = useRegionStats(params);
 
   const regions = data?.regions ?? [];
   const summary = data?.summary ?? null;
@@ -36,7 +45,12 @@ const RegionStatsCard = memo(({ startDate, endDate }: RegionStatsCardProps) => {
         </div>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryErrorState
+          description={t("load_error")}
+          onRetry={() => void refetch()}
+        />
+      ) : isLoading ? (
         <div className="flex h-[400px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)]">
           <Loader2 className="h-7 w-7 animate-spin" style={{ color: "var(--color-main)" }} />
         </div>
@@ -44,8 +58,8 @@ const RegionStatsCard = memo(({ startDate, endDate }: RegionStatsCardProps) => {
         <UzbekistanRegionMap
           regions={toRegionMapItems(regions)}
           summary={summary}
-          startDate={startDate}
-          endDate={endDate}
+          startDate={params.startDate}
+          endDate={params.endDate}
         />
       )}
     </section>

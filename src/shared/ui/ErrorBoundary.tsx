@@ -1,4 +1,9 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import {
+  getCurrentAppPath,
+  RUNTIME_ERROR_PATH,
+  saveRuntimeError,
+} from "../lib/runtimeError";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -21,19 +26,19 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     console.error("Global ErrorBoundary xatoligi:", error, errorInfo);
 
     try {
-      const payload = JSON.stringify({
+      saveRuntimeError({
         message: error.message,
         stack: error.stack,
         componentStack: errorInfo.componentStack,
+        sourcePath: getCurrentAppPath(),
+        occurredAt: new Date().toISOString(),
       });
-
-      window.sessionStorage.setItem("elchi_runtime_error", payload);
     } catch {
       // Ignore storage failures and still try to navigate to the runtime error page.
     }
 
-    if (typeof window !== "undefined" && window.location.pathname !== "/runtime-error") {
-      window.location.replace("/runtime-error");
+    if (typeof window !== "undefined" && window.location.pathname !== RUNTIME_ERROR_PATH) {
+      window.location.replace(RUNTIME_ERROR_PATH);
     }
   }
 
