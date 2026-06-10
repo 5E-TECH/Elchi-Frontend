@@ -22,8 +22,12 @@ export const useOrders = () => {
     const createOrder = useMutation({
         mutationFn: (data: CreateOrderRequest) =>
             api.post(API_ENDPOINTS.ORDERS.BASE, data).then((res) => res.data),
-        onSuccess: () =>
-            client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
+        onSuccess: async () => {
+            await Promise.all([
+                client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "all" }),
+                client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "all" }),
+            ]);
+        },
     });
 
     const getOrders = (params?: OrderListParams) =>

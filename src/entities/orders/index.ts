@@ -52,7 +52,7 @@ export const useOrders = () => {
     });
 
   const getTodayOrdersByMarket = (
-    marketId: number,
+    marketId: string | number,
     params?: any,
     enabled: boolean = true,
   ) =>

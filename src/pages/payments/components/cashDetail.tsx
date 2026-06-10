@@ -178,14 +178,23 @@ const CashDetail = () => {
   const cfg = CONFIG[type];
   const entityName = user?.name?.trim() || t("userFallback");
   const apiBalance = toNumber(cashbox?.balance ?? state?.entity?.amount);
-  const displayBalance =
-    detailEntry?.olinishi_kerak !== undefined
-      ? settlementDetails.amountToReceive
-      : balanceOverride ?? apiBalance;
+  const settlementBalance =
+    type === "market" && detailEntry?.berilishi_kerak !== undefined
+      ? settlementDetails.amountToGive
+      : detailEntry?.olinishi_kerak !== undefined
+        ? settlementDetails.amountToReceive
+        : apiBalance;
+  const displayBalance = balanceOverride ?? settlementBalance;
+  const balanceLabel =
+    type === "market" && detailEntry?.berilishi_kerak !== undefined
+      ? t("toBeGiven")
+      : detailEntry?.olinishi_kerak !== undefined
+        ? t("toBeReceived")
+        : t("totalBalanceLabel");
 
   useEffect(() => {
     setBalanceOverride(null);
-  }, [id]);
+  }, [id, settlementBalance]);
 
   const paymentTypeOptions = [
     { value: "cash", label: `💵 ${t("cash")}` },
@@ -242,18 +251,23 @@ const CashDetail = () => {
   };
 
   const refreshAfterPayment = async (amount: number) => {
-    setBalanceOverride(reduceBalanceTowardsZero(apiBalance, amount));
+    setBalanceOverride(reduceBalanceTowardsZero(settlementBalance, amount));
     resetActionForm();
 
     const refreshed = await refetchCashbox();
     const refreshedData = refreshed.data?.data;
     const refreshedEntry = Array.isArray(refreshedData) ? refreshedData[0] : refreshedData;
-    const refreshedBalance = refreshedEntry?.cashbox?.balance ?? refreshedEntry?.balance;
+    const refreshedBalance =
+      type === "market" && refreshedEntry?.berilishi_kerak !== undefined
+        ? refreshedEntry.berilishi_kerak
+        : refreshedEntry?.olinishi_kerak ??
+          refreshedEntry?.cashbox?.balance ??
+          refreshedEntry?.balance;
 
     if (
       refreshedBalance !== undefined &&
       refreshedBalance !== null &&
-      toNumber(refreshedBalance) !== apiBalance
+      toNumber(refreshedBalance) !== settlementBalance
     ) {
       setBalanceOverride(toNumber(refreshedBalance));
     }
@@ -391,11 +405,7 @@ const CashDetail = () => {
       accentIcon={cfg.entityIcon}
       summarySubtitle={t(cfg.kassaLabelKey)}
       balance={displayBalance}
-      balanceLabel={
-        detailEntry?.olinishi_kerak !== undefined
-          ? t("toBeReceived")
-          : t("totalBalanceLabel")
-      }
+      balanceLabel={balanceLabel}
       balanceVisible={balanceVisible}
       onToggleBalanceVisibility={() => setBalanceVisible((prev) => !prev)}
       dateRangeValue={{

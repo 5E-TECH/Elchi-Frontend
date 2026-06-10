@@ -29,6 +29,9 @@ const DashboardLayout = lazy(
 );
 const ScanLayout = lazy(() => import("../../widgets/layout/scanLayout"));
 const DashboardPage = lazy(() => import("../../pages/dashboard/DashboardPage"));
+const MarketDashboardPage = lazy(
+  () => import("../../pages/dashboard/MarketDashboardPage"),
+);
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
@@ -150,6 +153,10 @@ const DashboardEntry = () => {
 
   if (role === "manager" || role === "operator") {
     return <Navigate replace to="/branch-dashboard" />;
+  }
+
+  if (role === "market") {
+    return <MarketDashboardPage />;
   }
 
   return <DashboardPage />;

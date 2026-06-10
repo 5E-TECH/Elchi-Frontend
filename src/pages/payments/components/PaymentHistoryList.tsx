@@ -4,6 +4,7 @@ import type { PaymentRow } from "./patmentHistoryTable";
 import { resolvePaymentActorName } from "./paymentHistoryActor";
 import { useTranslation } from "react-i18next";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { getPaymentSourceTypeLabel } from "./paymentSourceType";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -103,7 +104,7 @@ const HistoryRow = memo(
             {commentInfo.isRollback && <RollbackBadge />}
             {sourceType && (
               <span className="text-[11px] text-gray-600 dark:text-white/55 truncate max-w-80">
-                {sourceType}
+                {getPaymentSourceTypeLabel(sourceType, t)}
               </span>
             )}
             {cashboxType && <Badge text={labelCashboxType(cashboxType, t) || cashboxType} tone="neutral" />}

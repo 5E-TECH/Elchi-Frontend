@@ -6,6 +6,7 @@ import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import { useTranslation } from "react-i18next";
 import Pagination from "../../../shared/components/pagination";
 import { resolvePaymentActorName } from "./paymentHistoryActor";
+import { getPaymentSourceTypeLabel } from "./paymentSourceType";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,9 @@ const PaymentHistoryTable = ({
         label: t("sourceType"),
         width: "140px",
         render: (val) => (
-          <span className="text-sm text-main/80 font-medium">{val || "-"}</span>
+          <span className="text-sm text-main/80 font-medium">
+            {getPaymentSourceTypeLabel(val as string | undefined, t)}
+          </span>
         ),
       },
       {

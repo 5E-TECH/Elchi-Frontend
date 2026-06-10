@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { LayoutDashboard, Plus, ShoppingBag, XCircle, TrendingUp, Package, Timer, Clock } from "lucide-react";
+import { LayoutDashboard, Plus, ShoppingBag, XCircle, TrendingUp, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,6 @@ import {
   formatCompactMoney,
   formatNumber,
   formatPercent,
-  formatHours,
   ratio,
 } from "../../shared/config/designSystem";
 
@@ -57,7 +56,7 @@ const MarketDashboardPage = () => {
   );
 
   // ─── API so'rovlari ───────────────────────────────────────────────────────────
-  const { getDashboard, getKpi } = useDashboard();
+  const { getDashboard } = useDashboard();
 
   const {
     data,
@@ -66,24 +65,13 @@ const MarketDashboardPage = () => {
     refetch: refetchDashboard,
   } = getDashboard(analyticsParams, true, analyticsScope);
 
-  const {
-    data: kpiData,
-    isLoading: kpiLoading,
-    isError: kpiError,
-    refetch: refetchKpi,
-  } = getKpi(analyticsParams, true, analyticsScope);
-
   // ─── Hisoblangan qiymatlar ────────────────────────────────────────────────────
   const orders = data?.data?.orders;
-  const kpi = kpiData?.data;
 
   const accepted = orders?.acceptedCount ?? 0;
   const sold = orders?.soldAndPaid ?? 0;
   const cancelled = orders?.cancelled ?? 0;
   const profit = orders?.profit ?? 0;
-  const avgOrderValue = kpi?.averageOrderValue ?? 0;
-  const avgFulfillmentHours = kpi?.averageFulfillmentHours ?? 0;
-  const onTimeRate = kpi?.onTimeRate ?? 0;
 
   const inProgress = Math.max(0, accepted - sold - cancelled);
   const successRate = ratio(sold, accepted);
@@ -113,8 +101,7 @@ const MarketDashboardPage = () => {
     dispatch(removeFilterValue("dashboardToDate"));
   }, [dispatch]);
 
-  const isDataLoading = isLoading || kpiLoading;
-  const hasError = dashboardError || kpiError;
+  const isDataLoading = isLoading;
 
   return (
     <PageContainer>
@@ -159,17 +146,17 @@ const MarketDashboardPage = () => {
       )}
 
       {/* Xato holati */}
-      {hasError && (
+      {dashboardError && (
         <div className="mb-5">
           <QueryErrorState
             description={t("load_error")}
-            onRetry={() => void Promise.all([refetchDashboard(), refetchKpi()])}
+            onRetry={() => void refetchDashboard()}
           />
         </div>
       )}
 
-      {/* KPI kartalar */}
-      {!hasError && (
+      {/* Marketga ruxsatli dashboard statistikasi */}
+      {!dashboardError && (
         <div className="mb-5">
           <MarketStatsGrid
             accepted={accepted}
@@ -177,9 +164,6 @@ const MarketDashboardPage = () => {
             cancelled={cancelled}
             inProgress={inProgress}
             profit={profit}
-            avgOrderValue={avgOrderValue}
-            avgFulfillmentHours={avgFulfillmentHours}
-            onTimeRate={onTimeRate}
             successRate={successRate}
             loading={isDataLoading}
             t={t}
@@ -188,7 +172,7 @@ const MarketDashboardPage = () => {
       )}
 
       {/* Tezkor harakatlar */}
-      {!hasError && !isDataLoading && (
+      {!dashboardError && !isDataLoading && (
         <MarketQuickActions
           onViewOrders={() => navigate("/new-orders")}
           onAddOrder={canAddOrder ? () => navigate("/orders/add") : undefined}
@@ -207,9 +191,6 @@ interface MarketStatsGridProps {
   cancelled: number;
   inProgress: number;
   profit: number;
-  avgOrderValue: number;
-  avgFulfillmentHours: number;
-  onTimeRate: number;
   successRate: number;
   loading: boolean;
   t: (key: string) => string;
@@ -221,9 +202,6 @@ const MarketStatsGrid = memo(({
   cancelled,
   inProgress,
   profit,
-  avgOrderValue,
-  avgFulfillmentHours,
-  onTimeRate,
   successRate,
   loading,
   t,
@@ -231,7 +209,7 @@ const MarketStatsGrid = memo(({
   if (loading) {
     return (
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <MetricCardSkeleton key={i} />
         ))}
       </div>
@@ -239,9 +217,6 @@ const MarketStatsGrid = memo(({
   }
 
   const profitTone = profit < 0 ? "danger" : "success" as const;
-  const slaTone =
-    onTimeRate >= 70 ? "success" : onTimeRate >= 40 ? "warning" : "danger" as const;
-
   return (
     <div className="space-y-4">
       {/* Asosiy statistika */}
@@ -289,8 +264,7 @@ const MarketStatsGrid = memo(({
         />
       </div>
 
-      {/* KPI ko'rsatkichlari */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           title={t("cards.profit")}
           value={formatCompactMoney(profit)}
@@ -299,36 +273,6 @@ const MarketStatsGrid = memo(({
           tone={profitTone}
           compact
           hint={t("cards.profit_hint")}
-        />
-
-        <MetricCard
-          title={t("cards.avg_order_value")}
-          value={formatCompactMoney(avgOrderValue)}
-          suffix={t("currency_sum")}
-          icon={<ShoppingBag size={20} />}
-          tone="brand"
-          compact
-          hint={t("cards.avg_order_value_hint")}
-        />
-
-        <MetricCard
-          title={t("cards.avg_fulfillment")}
-          value={formatHours(avgFulfillmentHours)}
-          icon={<Timer size={20} />}
-          tone="neutral"
-          compact
-          hint={t("cards.avg_fulfillment_hint")}
-        />
-
-        <MetricCard
-          title={t("cards.on_time")}
-          value={formatPercent(onTimeRate)}
-          icon={<Clock size={20} />}
-          tone={slaTone}
-          badge={t("cards.on_time_badge")}
-          progress={onTimeRate}
-          compact
-          hint={t("cards.on_time_hint")}
         />
       </div>
     </div>

@@ -368,6 +368,7 @@ const Payments = () => {
     source_type: [
       { value: "courier_payment", label: t("paymentCourier") },
       { value: "market_payment", label: t("paymentMarket") },
+      { value: "branch_to_main", label: t("branchToMainSource") },
       { value: "manual_expense", label: t("financialBalanceSourceManualExpense") },
       { value: "manual_income", label: t("financialBalanceSourceManualIncome") },
       { value: "correction", label: t("financialBalanceSourceCorrection") },

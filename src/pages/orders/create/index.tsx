@@ -124,14 +124,14 @@ const applyOrderCreateFieldErrors = (
 };
 
 type MarketNewOrdersTableProps = {
-  marketId?: number;
+  marketId?: string | number;
   marketName?: string;
   onRowClick: (order: ApiOrder) => void;
 };
 
 const mapMarketOrderToListItem = (
   order: ApiOrder,
-  marketId?: number,
+  marketId?: string | number,
   marketName?: string,
 ): OrderListItem => ({
   id: order.id,
@@ -188,7 +188,10 @@ const MarketNewOrdersTable = ({
   const { getTodayOrdersByMarket } = useIncomingOrders();
   const enabled = Boolean(marketId);
   const { data, isLoading } = getTodayOrdersByMarket(marketId ?? 0, undefined, enabled);
-  const orders: ApiOrder[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+  const orders = useMemo<ApiOrder[]>(
+    () => (Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []),
+    [data],
+  );
   const orderListItems = useMemo(
     () => orders.map((order) => mapMarketOrderToListItem(order, marketId, marketName)),
     [marketId, marketName, orders],
@@ -343,8 +346,12 @@ const OrderCreateFormContent = () => {
   const market = useWatch({ control, name: "market" });
   const customer = useWatch({ control, name: "customer" });
   const details = useWatch({ control, name: "details" });
-  const selectedMarketId = market?.id ?? selectedMarketFromState?.id;
-  const selectedMarketName = market?.name ?? selectedMarketFromState?.name;
+  const selectedMarketId = isMarketRole
+    ? profile?.id
+    : market?.id ?? selectedMarketFromState?.id;
+  const selectedMarketName = isMarketRole
+    ? profile?.name
+    : market?.name ?? selectedMarketFromState?.name;
   const isInactiveSelectedMarket = isMarketRole
     ? isInactiveMarketStatus(profile?.status)
     : isInactiveMarketStatus(market?.status ?? selectedMarketFromState?.status);
@@ -354,15 +361,15 @@ const OrderCreateFormContent = () => {
       return isMarketRole || !!market;
     }
 
-      return Boolean(
+    return Boolean(
       (isMarketRole || market) &&
-        !isInactiveSelectedMarket &&
-        customer?.phone?.trim() &&
-        customer?.name?.trim() &&
-        customer?.region_id &&
-        customer?.district_id &&
-        details?.items?.length &&
-        details?.total_price?.trim(),
+      !isInactiveSelectedMarket &&
+      customer?.phone?.trim() &&
+      customer?.name?.trim() &&
+      customer?.region_id &&
+      customer?.district_id &&
+      details?.items?.length &&
+      details?.total_price?.trim(),
     );
   }, [customer, details, isInactiveSelectedMarket, isMarketRole, market, step]);
 
@@ -513,7 +520,7 @@ const OrderCreateFormContent = () => {
 
         <MarketNewOrdersTable
           marketId={selectedMarketId}
-          marketName={market?.name ?? selectedMarketFromState?.name}
+          marketName={selectedMarketName}
           onRowClick={(order) =>
             navigate(`/new-orders/${selectedMarketId}/edit/${order.id}`)
           }
