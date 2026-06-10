@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { LayoutDashboard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,60 +11,78 @@ import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
+import QueryErrorState from "../../shared/ui/QueryErrorState";
 import type { RootState } from "../../app/config/store";
-import {
-  removeFilterValue,
-  setMultipleFilters,
-} from "../../features/Select/model/FilterSlice";
+import { removeFilterValue, setMultipleFilters } from "../../features/Select/model/FilterSlice";
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
 const DashboardPage = () => {
   const { t } = useTranslation("dashboard");
   const dispatch = useDispatch();
-  const filters = useSelector((state: RootState) => state.filter);
+  const storedFromDate = useSelector((state: RootState) => state.filter.dashboardFromDate);
+  const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
+  const user = useSelector((state: RootState) => state.user.user);
+  const role = useSelector((state: RootState) => state.role.role);
+  const analyticsScope = `${role || "unknown"}:${user?.id || "unknown"}`;
+  const [fromDate, setFromDate] = useState(
+    typeof storedFromDate === "string" ? storedFromDate : "",
+  );
+  const [toDate, setToDate] = useState(
+    typeof storedToDate === "string" ? storedToDate : "",
+  );
+  const { data: settingsData } = useSettings();
+  const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
 
-  const initialFromDate =
-    typeof filters.dashboardFromDate === "string" ? filters.dashboardFromDate : "";
-  const initialToDate =
-    typeof filters.dashboardToDate === "string" ? filters.dashboardToDate : "";
+  const hasDateFilter = Boolean(fromDate && toDate);
 
-  const [fromDate, setFromDate] = useState(initialFromDate);
-  const [toDate, setToDate] = useState(initialToDate);
-
-  useEffect(() => {
-    dispatch(
-      setMultipleFilters({
-        dashboardFromDate: fromDate,
-        dashboardToDate: toDate,
-      }),
-    );
-  }, [dispatch, fromDate, toDate]);
-
-  const hasDateFilter = Boolean(fromDate || toDate);
-
-  const applyRange = useCallback((range: { from: string; to: string }) => {
-    setFromDate(range.from);
-    setToDate(range.to);
-  }, []);
+  const applyRange = useCallback(
+    (range: { from: string; to: string }) => {
+      setFromDate(range.from);
+      setToDate(range.to);
+      dispatch(
+        setMultipleFilters({
+          dashboardFromDate: range.from,
+          dashboardToDate: range.to,
+        }),
+      );
+    },
+    [dispatch],
+  );
 
   const { getDashboard, getKpi } = useDashboard();
-  const { data, isLoading } = getDashboard({
-    start_day: fromDate,
-    end_day: toDate,
-  });
-  const { data: kpiData, isLoading: kpiLoading } = getKpi({
-    start_day: fromDate,
-    end_day: toDate,
-  });
+  const analyticsParams = useMemo(
+    () => ({
+      start_day: hasDateFilter ? fromDate : "",
+      end_day: hasDateFilter ? toDate : "",
+    }),
+    [fromDate, hasDateFilter, toDate],
+  );
+  const needsDashboard = widgets.stats || widgets.topPerformers;
+  const {
+    data,
+    isLoading,
+    isError: dashboardError,
+    refetch: refetchDashboard,
+  } = getDashboard(analyticsParams, needsDashboard, analyticsScope);
+  const {
+    data: kpiData,
+    isLoading: kpiLoading,
+    isError: kpiError,
+    refetch: refetchKpi,
+  } = getKpi(analyticsParams, widgets.stats, analyticsScope);
 
   const orders = data?.data?.orders;
   const kpi = kpiData?.data;
   const topMarkets = data?.data?.topMarkets ?? [];
   const topCouriers = data?.data?.topCouriers ?? [];
 
-  const { data: settingsData } = useSettings();
-  const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
+  const clearRange = useCallback(() => {
+    setFromDate("");
+    setToDate("");
+    dispatch(removeFilterValue("dashboardFromDate"));
+    dispatch(removeFilterValue("dashboardToDate"));
+  }, [dispatch]);
 
   return (
     <PageContainer>
@@ -80,12 +98,7 @@ const DashboardPage = () => {
             fromDate={fromDate}
             toDate={toDate}
             onChange={applyRange}
-            onClear={() => {
-              setFromDate("");
-              setToDate("");
-              dispatch(removeFilterValue("dashboardFromDate"));
-              dispatch(removeFilterValue("dashboardToDate"));
-            }}
+            onClear={clearRange}
             labels={{
               today: t("quickRanges.today"),
               week: t("quickRanges.week"),
@@ -100,7 +113,16 @@ const DashboardPage = () => {
       </div>
 
       {/* Stat cards */}
-      {widgets.stats && (
+      {widgets.stats && (dashboardError || kpiError) && (
+        <div className="mb-5">
+          <QueryErrorState
+            description={t("load_error")}
+            onRetry={() => void Promise.all([refetchDashboard(), refetchKpi()])}
+          />
+        </div>
+      )}
+
+      {widgets.stats && !dashboardError && !kpiError && (
         <div className="mb-5">
           <DashboardStatistics
             accepted={orders?.acceptedCount ?? 0}
@@ -116,7 +138,16 @@ const DashboardPage = () => {
       )}
 
       {/* Top performers — marketlar & kuryerlar reytingi */}
-      {widgets.topPerformers && (
+      {widgets.topPerformers && dashboardError && !widgets.stats && (
+        <div className="mb-5">
+          <QueryErrorState
+            description={t("load_error")}
+            onRetry={() => void refetchDashboard()}
+          />
+        </div>
+      )}
+
+      {widgets.topPerformers && !dashboardError && (
         <div className="mb-5">
           <TopPerformers markets={topMarkets} couriers={topCouriers} />
         </div>
@@ -125,12 +156,21 @@ const DashboardPage = () => {
       {/* Financial analysis */}
       {widgets.financial && (
         <div className="mb-5">
-          <FinancialAnalysis startDate={fromDate} endDate={toDate} />
+          <FinancialAnalysis
+            startDate={hasDateFilter ? fromDate : ""}
+            endDate={hasDateFilter ? toDate : ""}
+            analyticsScope={analyticsScope}
+          />
         </div>
       )}
 
       {/* Hududlar bo'yicha xarita */}
-      {widgets.region && <RegionStatsCard startDate={fromDate} endDate={toDate} />}
+      {widgets.region && (
+        <RegionStatsCard
+          startDate={hasDateFilter ? fromDate : ""}
+          endDate={hasDateFilter ? toDate : ""}
+        />
+      )}
     </PageContainer>
   );
 };

@@ -90,33 +90,36 @@ export const createEmptyBranchDashboard = (role: string): BranchDashboardSnapsho
 
 export const adaptBranchDashboard = (
   payload?: BranchDashboardPayload | null,
+  fallbackRole = "OPERATOR",
 ): BranchDashboardSnapshot => {
-  const role = payload?.role?.toUpperCase?.() ?? "OPERATOR";
+  const role = payload?.role?.toUpperCase?.() || fallbackRole.toUpperCase();
   const fallback = createEmptyBranchDashboard(role);
 
   if (!payload) {
     return fallback;
   }
 
+  const cards = payload.cards;
+
   return {
     orderSummary: {
-      total: toNumber(payload.cards.orders?.total),
-      new: toNumber(payload.cards.orders?.new),
-      onTheRoad: toNumber(payload.cards.orders?.on_the_road),
-      delivered: toNumber(payload.cards.orders?.delivered),
-      returned: toNumber(payload.cards.orders?.returned),
+      total: toNumber(cards?.orders?.total),
+      new: toNumber(cards?.orders?.new),
+      onTheRoad: toNumber(cards?.orders?.on_the_road),
+      delivered: toNumber(cards?.orders?.delivered),
+      returned: toNumber(cards?.orders?.returned),
     },
-    markets: (payload.cards.markets ?? []).map(mapMarket),
+    markets: (cards?.markets ?? []).map(mapMarket),
     packages: {
-      onTheWay: toNumber(payload.cards.packages?.on_the_way),
-      waiting: toNumber(payload.cards.packages?.waiting_for_acceptance),
+      onTheWay: toNumber(cards?.packages?.on_the_way),
+      waiting: toNumber(cards?.packages?.waiting_for_acceptance),
     },
     couriers: {
-      total: toNumber(payload.cards.couriers?.total ?? payload.couriers_count),
+      total: toNumber(cards?.couriers?.total ?? payload.couriers_count),
       active: toNumber(
-        payload.cards.couriers?.active ??
-          payload.cards.couriers?.active_today ??
-          payload.cards.couriers?.active_count,
+        cards?.couriers?.active ??
+          cards?.couriers?.active_today ??
+          cards?.couriers?.active_count,
       ),
     },
     visibility: {

@@ -1,6 +1,7 @@
 {
   "pageTitle": "Сегодняшние заказы",
   "pageDescription": "Список маркетов с новыми заказами",
+  "addOrderBtn": "Добавить заказ",
   "marketsTab": "Маркеты",
   "externalTab": "Внешние заказы",
   "integrationsTitle": "Интеграции",

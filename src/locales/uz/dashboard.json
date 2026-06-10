@@ -24,6 +24,7 @@
   "page_title_filtered": "Tanlangan davr statistikasi",
   "page_subtitle_today": "Bugungi ko'rsatkichlar",
   "page_subtitle_filtered": "Sana oralig'i bo'yicha",
+  "load_error": "Dashboard ma'lumotlarini yuklab bo'lmadi.",
   "quickRanges": {
     "today": "Bugun",
     "week": "Bu hafta",
@@ -133,5 +134,12 @@
       "subtitle": "O'tgan hafta bilan solishtirganda",
       "value_label": "Shu hafta"
     }
+  },
+  "market": {
+    "page_title": "Mening dashboardim",
+    "page_subtitle": "Bugungi buyurtmalar va ko'rsatkichlar",
+    "add_order": "Buyurtma qo'shish",
+    "view_orders": "Buyurtmalarni ko'rish",
+    "quick_actions": "Tezkor harakatlar"
   }
 }

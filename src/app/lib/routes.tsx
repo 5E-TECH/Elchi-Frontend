@@ -269,12 +269,7 @@ const AppRouter = () => {
                 {
                   path: "add",
                   element: (
-                    <ProtectedRoute
-                      canActivate={(state) =>
-                        (state.role.role !== "market" || Boolean(state.user.user?.add_order)) &&
-                        canCreateOrdersByRoleAndBranchType(state)
-                      }
-                    >
+                    <ProtectedRoute canActivate={canCreateOrdersByRoleAndBranchType}>
                       <OrderCreate />
                     </ProtectedRoute>
                   ),

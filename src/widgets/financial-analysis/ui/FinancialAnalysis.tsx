@@ -33,6 +33,7 @@ import {
   TYPO,
   TEXT,
 } from "../../../shared/config/designSystem";
+import QueryErrorState from "../../../shared/ui/QueryErrorState";
 
 /**
  * FinancialAnalysis — moliyaviy tahlil bo'limi.
@@ -69,7 +70,16 @@ const formatCurrency = (value: number) => value.toLocaleString("uz-UZ");
 
 // ─── CustomTooltip ────────────────────────────────────────────────────────────
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface RevenueTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    color?: string;
+    value?: number | string;
+  }>;
+  label?: string | number;
+}
+
+const CustomTooltip = ({ active, payload, label }: RevenueTooltipProps) => {
   const { t } = useTranslation("dashboard");
   if (!active || !payload?.length) return null;
   return (
@@ -77,7 +87,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       <p className="mb-1 font-semibold" style={{ color: TEXT.strong }}>
         {label}
       </p>
-      {payload.map((entry: any, i: number) => (
+      {payload.map((entry, i) => (
         <p key={i} className="font-bold" style={{ color: entry.color }}>
           {t("currency_value", { value: formatCurrency(Number(entry.value ?? 0)) })}
         </p>
@@ -191,9 +201,14 @@ RevenueChart.displayName = "RevenueChart";
 export interface FinancialAnalysisProps {
   startDate?: string;
   endDate?: string;
+  analyticsScope?: string;
 }
 
-const FinancialAnalysis = memo(({ startDate, endDate }: FinancialAnalysisProps) => {
+const FinancialAnalysis = memo(({
+  startDate,
+  endDate,
+  analyticsScope,
+}: FinancialAnalysisProps) => {
   const { t } = useTranslation("dashboard");
   const { getRevenue } = useDashboard();
   const [period, setPeriod] = useState<RevenuePeriod>("daily");
@@ -202,29 +217,28 @@ const FinancialAnalysis = memo(({ startDate, endDate }: FinancialAnalysisProps) 
     const params: RevenueParams = { period };
     if (startDate) {
       params.start_day = startDate;
-      params.startDate = startDate;
     }
     if (endDate) {
       params.end_day = endDate;
-      params.endDate = endDate;
     }
     return params;
   }, [endDate, period, startDate]);
 
-  const { data } = getRevenue(revenueParams);
+  const { data, isLoading, isError, refetch } = getRevenue(
+    revenueParams,
+    true,
+    analyticsScope,
+  );
   const revenuePayload = data?.data;
 
   // Daromad grafigi nuqtalari
-  const rawRevenuePoints = Object.values(revenuePayload ?? {}).filter(
-    (item): item is RevenuePoint =>
-      typeof item === "object" &&
-      item !== null &&
-      "label" in item &&
-      "revenue" in item &&
-      "ordersCount" in item,
-  );
-  const chartData =
-    revenuePayload?.chart?.labels?.length && revenuePayload?.chart?.values?.length
+  const chartData = useMemo(() => {
+    const rawRevenuePoints = Object.values(revenuePayload ?? {}).filter(
+      (item): item is RevenuePoint =>
+        typeof item === "object" && item !== null && "label" in item && "revenue" in item,
+    );
+
+    return revenuePayload?.chart?.labels?.length && revenuePayload?.chart?.values?.length
       ? revenuePayload.chart.labels.map((label, index) => ({
           date: label,
           revenue: Number(revenuePayload.chart?.values?.[index] ?? 0),
@@ -233,6 +247,7 @@ const FinancialAnalysis = memo(({ startDate, endDate }: FinancialAnalysisProps) 
           date: item.label,
           revenue: Number(item.revenue ?? 0),
         }));
+  }, [revenuePayload]);
 
   // Noyob moliyaviy balans ma'lumotlari (kassa holati) — DashboardStatistics'da YO'Q
   const finance = revenuePayload?.finance;
@@ -258,6 +273,19 @@ const FinancialAnalysis = memo(({ startDate, endDate }: FinancialAnalysisProps) 
       tone: currentSituation < 0 ? "danger" : "success",
     },
   ];
+
+  if (isError) {
+    return (
+      <QueryErrorState
+        description={t("load_error")}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  if (isLoading) {
+    return <div className="h-80 animate-pulse rounded-2xl bg-main/10" />;
+  }
 
   return (
     <section>

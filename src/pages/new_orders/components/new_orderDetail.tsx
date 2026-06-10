@@ -1,9 +1,9 @@
 import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
-import { Globe, FileText, CheckCircle2, Loader2 } from "lucide-react";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useNavigate, useParams } from "react-router-dom";
+import { Globe, FileText, CheckCircle2, Loader2, Plus } from "lucide-react";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { GlobalSearchInput, useDebounce } from "../../../features/search";
 import { useOrders } from "../../../entities/orders";
 import { OrderCard, Checkbox, fmt } from "./OrderCard";
@@ -26,6 +26,8 @@ const NewOrderDetail = () => {
   const roleState = useSelector((state: RootState) => state.role);
   const currentUser = useSelector((state: RootState) => state.user.user as Record<string, unknown> | null);
   const isMarketRole = roleState.role === "market";
+  // Market roli bo'lsa har doim order qo'sha oladi
+  const canAddOrder = isMarketRole;
   // Backend payloadlari farq qilgani uchun manager/registratorlarda
   // qabul qilishni doim transfer-batches endpointiga yo'naltiramiz.
   const shouldUseBranchTransferReceive =
@@ -298,6 +300,17 @@ const NewOrderDetail = () => {
             <div className="w-full sm:flex-1 lg:w-80 lg:flex-none">
               <GlobalSearchInput searchKey="new_order_detail_search" placeholder={t("searchOrder")} />
             </div>
+
+            {/* Market roli uchun buyurtma qo'shish tugmasi */}
+            {canAddOrder && (
+              <button
+                onClick={() => navigate("/orders/add")}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-main px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-main/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-main/90 active:translate-y-0 sm:w-auto"
+              >
+                <Plus size={16} />
+                {t("addOrderBtn")}
+              </button>
+            )}
 
             {!isMarketRole && (
               <PrintModeSelect

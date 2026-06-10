@@ -3,6 +3,7 @@ import {
   cleanAnalyticsParams,
   normalizeDashboardResponse,
   normalizeKpiResponse,
+  normalizeRevenueResponse,
 } from "./index";
 
 describe("dashboard response normalization", () => {
@@ -62,6 +63,71 @@ describe("dashboard response normalization", () => {
       averageOrderValue: 96000,
       averageFulfillmentHours: 24.5,
       onTimeRate: 80,
+    });
+  });
+
+  it("normalizes branch dashboard cards without requiring every nested object", () => {
+    const result = normalizeDashboardResponse({
+      data: {
+        branch_dashboard: {
+          role: "manager",
+          todayOrdersCount: "7",
+          cards: {
+            orders: {
+              total: "12",
+              onTheRoad: "4",
+            },
+          },
+          visibility: {
+            markets: "false",
+          },
+        },
+      },
+    });
+
+    expect(result.data.branchDashboard).toMatchObject({
+      role: "manager",
+      today_orders_count: 7,
+      cards: {
+        orders: {
+          total: 12,
+          on_the_road: 4,
+        },
+        markets: [],
+        packages: null,
+        couriers: null,
+      },
+      visibility: {
+        markets: false,
+      },
+    });
+  });
+
+  it("normalizes revenue chart and finance numeric strings", () => {
+    const result = normalizeRevenueResponse({
+      data: {
+        chart: {
+          labels: ["2026-06-10"],
+          values: ["150000"],
+        },
+        finance: {
+          current_situation: "90000",
+          main: { balance: "120000" },
+          markets: { markets_total_balance: "20000" },
+          couriers: { couriers_total_balanse: "10000" },
+        },
+      },
+    });
+
+    expect(result.data.chart).toEqual({
+      labels: ["2026-06-10"],
+      values: [150000],
+    });
+    expect(result.data.finance).toMatchObject({
+      currentSituation: 90000,
+      main: { balance: 120000 },
+      markets: { marketsTotalBalans: 20000 },
+      couriers: { couriersTotalBalanse: 10000 },
     });
   });
 });

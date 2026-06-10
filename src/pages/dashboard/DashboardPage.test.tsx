@@ -92,6 +92,16 @@ describe("DashboardPage", () => {
   it("renders dashboard header and date filters", () => {
     renderWithProviders(<DashboardPage />);
 
+    expect(getDashboardMock).toHaveBeenCalledWith(
+      { start_day: "", end_day: "" },
+      true,
+      "unknown:unknown",
+    );
+    expect(getKpiMock).toHaveBeenCalledWith(
+      { start_day: "", end_day: "" },
+      true,
+      "unknown:unknown",
+    );
     expect(screen.getByText("Bugungi statistika")).toBeInTheDocument();
     expect(screen.getByLabelText("Boshlanish → Tugash")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bugun" })).toBeInTheDocument();
@@ -115,6 +125,11 @@ describe("DashboardPage", () => {
     await user.click(screen.getByLabelText("Boshlanish → Tugash"));
 
     expect(screen.getByText("Tanlangan davr statistikasi")).toBeInTheDocument();
+    expect(getDashboardMock).toHaveBeenLastCalledWith(
+      { start_day: "2026-04-01", end_day: "2026-04-14" },
+      true,
+      "unknown:unknown",
+    );
   });
 
   it("falls back to zero metrics when api response is empty", () => {

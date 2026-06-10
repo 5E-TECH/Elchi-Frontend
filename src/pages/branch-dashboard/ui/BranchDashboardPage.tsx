@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { Building2, CalendarRange, PackageCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import HeaderName from "../../../shared/components/headerName";
 import { useDashboard } from "../../../entities/dashboard";
 import {
@@ -11,21 +12,41 @@ import {
 } from "./BranchDashboardCards";
 import { adaptBranchDashboard } from "./branchDashboardAdapter";
 import PageContainer from "../../../shared/ui/PageContainer";
+import QueryErrorState from "../../../shared/ui/QueryErrorState";
+import type { RootState } from "../../../app/config/store";
 
 const statCardClassName =
   "rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.05]";
 
 const BranchDashboardPage = () => {
   const { t } = useTranslation("branchDashboard");
+  const userRole = useSelector((state: RootState) => state.role.role);
+  const userId = useSelector((state: RootState) => state.user.user?.id);
+  const analyticsScope = `${userRole || "unknown"}:${userId || "unknown"}`;
   const { getDashboard } = useDashboard();
-  const { data, isLoading } = getDashboard();
+  const { data, isLoading, isError, refetch } = getDashboard(
+    undefined,
+    true,
+    analyticsScope,
+  );
 
   const branchDashboard = useMemo(
-    () => adaptBranchDashboard(data?.data?.branchDashboard),
-    [data?.data?.branchDashboard],
+    () => adaptBranchDashboard(data?.data?.branchDashboard, userRole || "OPERATOR"),
+    [data?.data?.branchDashboard, userRole],
   );
 
   const isManager = branchDashboard.role === "MANAGER";
+
+  if (isError) {
+    return (
+      <PageContainer>
+        <QueryErrorState
+          description={t("loadError")}
+          onRetry={() => void refetch()}
+        />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer className="flex flex-col xl:h-full xl:min-h-0 xl:overflow-hidden">
