@@ -18,6 +18,7 @@ const STATUS_CONFIG: Record<
     waiting: { labelKey: "statusWaiting", colorKey: "waiting" },
     sold: { labelKey: "statusSold", colorKey: "sold" },
     cancelled: { labelKey: "statusCancelled", colorKey: "cancelled" },
+    "cancelled (sent)": { labelKey: "statusCancelled", colorKey: "cancelled" },
     paid: { labelKey: "statusPaid", colorKey: "paid" },
     partly_paid: { labelKey: "statusPartlyPaid", colorKey: "partly_paid" },
     closed: { labelKey: "statusClosed", colorKey: "closed" },

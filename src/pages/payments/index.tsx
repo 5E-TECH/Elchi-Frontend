@@ -278,7 +278,12 @@ const Payments = () => {
             phone_number: getRecordString(m, "phone_number", getRecordString(m, "phone")),
             role: getRecordString(m, "role", "market"),
             cashbox: m.cashbox,
-            amount: Number(cashbox.balance ?? m.amount ?? 0),
+            amount: toNumber(
+              m.berilishi_kerak ??
+                cashbox.berilishi_kerak ??
+                cashbox.balance ??
+                m.amount,
+            ),
           };
         })
         .filter((market: PaymentMarketOption) => market.amount !== 0),
@@ -302,7 +307,12 @@ const Payments = () => {
             region: getRecordString(region, "name", "Noma'lum"),
             region_id: getRecordString(region, "id", getRecordString(c, "region_id")),
             cashbox: c.cashbox,
-            amount: Number(cashbox.balance ?? 0),
+            amount: toNumber(
+              c.olinishi_kerak ??
+                cashbox.olinishi_kerak ??
+                cashbox.balance ??
+                c.amount,
+            ),
           };
         })
         .filter((courier: PaymentCourierOption) => courier.amount !== 0),

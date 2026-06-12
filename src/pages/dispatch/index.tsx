@@ -111,27 +111,22 @@ const normalizeCourierOption = (value: unknown) => {
   };
 };
 
-const normalizeOrder = (payload: unknown, token: string, t: (key: string) => string): PendingOrder => {
+const normalizeOrder = (payload: unknown, token: string, t: (key: string) => string): PendingOrder | null => {
   const source = asRecord(payload);
   const responseData = asRecord(source.data ?? source);
   const order = asRecord(responseData.data ?? responseData.order ?? responseData);
+  const id = safe(order.id, "");
+  if (!id) return null;
+
   const market = asRecord(order.market);
   const sender = asRecord(order.sender);
   const customer = asRecord(order.customer);
   const customerDistrict = asRecord(customer.district);
   const district = asRecord(order.district ?? customerDistrict);
-  const districtRegion = asRecord(district.region);
-  const customerRegion = asRecord(customer.region);
-  const region = asRecord(
-    order.region ??
-      district.region ??
-      customer.region ??
-      districtRegion ??
-      customerRegion,
-  );
+  const region = asRecord(order.region ?? district.region ?? customer.region);
 
   return {
-    id: safe(order?.id),
+    id,
     token,
     market: safe(market.name ?? sender.name, t("marketFallback")),
     customer: safe(customer.name ?? order.customer_name),
@@ -261,6 +256,10 @@ const DispatchPage = () => {
       }
 
       const nextOrder = normalizeOrder(detail.data, normalizedToken, t);
+      if (!nextOrder) {
+        throw new Error(t("orderLookupError"));
+      }
+
       setPendingOrders((prev) => {
         if (prev.some((order) => order.id === nextOrder.id || order.token.toLowerCase() === tokenKey)) {
           return prev;

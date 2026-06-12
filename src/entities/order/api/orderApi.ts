@@ -24,8 +24,8 @@ export const useOrders = () => {
             api.post(API_ENDPOINTS.ORDERS.BASE, data).then((res) => res.data),
         onSuccess: async () => {
             await Promise.all([
-                client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "all" }),
-                client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "all" }),
+                client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
+                client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
             ]);
         },
     });

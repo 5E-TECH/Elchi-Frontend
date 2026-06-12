@@ -15,6 +15,12 @@ describe("OrderStatusBadge", () => {
     expect(screen.getByText("Bekor qilingan")).toHaveClass("text-red-700");
   });
 
+  it("renders cancelled sent status as cancelled", () => {
+    renderWithProviders(<OrderStatusBadge status="cancelled (sent)" />);
+
+    expect(screen.getByText("Bekor qilingan")).toHaveClass("text-red-700");
+  });
+
   it("renders paid status label", () => {
     renderWithProviders(<OrderStatusBadge status="paid" />);
 

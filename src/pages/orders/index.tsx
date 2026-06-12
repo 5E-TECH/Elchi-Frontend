@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookMarked, ListOrdered, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { message } from "antd";
 import Button from "../../shared/components/button";
@@ -28,10 +28,13 @@ import PageContainer from "../../shared/ui/PageContainer";
 import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
 import PopupConfirm from "../../shared/components/popupConfirm";
+import OrderTabs from "./list/courier/list/tabs";
+import { setFilterValue } from "../../features/Select/model/FilterSlice";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
+const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
 const TABLE_ROLLBACK_STATUSES = new Set<OrderStatus>(["sold", "cancelled"]);
 const isOrderStatus = (value: string): value is OrderStatus =>
@@ -43,6 +46,7 @@ const isOrderStatus = (value: string): value is OrderStatus =>
     "waiting",
     "sold",
     "cancelled",
+    "cancelled (sent)",
     "paid",
     "partly_paid",
     "closed",
@@ -71,6 +75,20 @@ const parseStatusFilterValue = (value: unknown): OrderListParams["status"] => {
   }
 
   return statusList;
+};
+
+const getManagerOrdersTab = (status: OrderListParams["status"]) => {
+  const statuses = Array.isArray(status) ? status : status ? [status] : [];
+
+  if (statuses.length === 1 && statuses[0] === "waiting") return "pending";
+  if (
+    statuses.length > 0 &&
+    statuses.every((item) => item === "cancelled" || item === "cancelled (sent)")
+  ) {
+    return "cancelled";
+  }
+
+  return "all";
 };
 
 const toPositiveNumber = (value: unknown): number | null => {
@@ -121,11 +139,12 @@ const extractOrderTotal = (payload: unknown): number | null => {
 // ── Main component ─────────────────────────────────────────────────────────
 const Orders = () => {
   const { t } = useTranslation("orders");
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { getOrders } = useOrders();
   const { SellOrder, PartlySellOrder, CancelOrder, RollbackOrder } = useOrderActions();
   const { getMarkets } = useMarkets();
-  const { getAllParams } = useQueryParams();
+  const { getAllParams, setMultipleParams } = useQueryParams();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [sellOrder, setSellOrder] = useState<OrderListItem | null>(null);
@@ -138,6 +157,8 @@ const Orders = () => {
   const canCreateOrder = !(role === "manager" && branchType === "REGIONAL");
   const canUseManagerTableActions =
     role === "manager" && Boolean(branchType && MANAGER_TABLE_ACTION_BRANCH_TYPES.has(branchType));
+  const canUseManagerTabs =
+    role === "manager" && Boolean(branchType && MANAGER_TABS_BRANCH_TYPES.has(branchType));
   const canFilterByBranch = role === "admin" || role === "superadmin";
 
 
@@ -158,6 +179,26 @@ const Orders = () => {
   const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams.orderDateFrom ?? "";
   const urlDateTo = urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams.orderDateTo ?? "";
   const urlSearch = urlParams[ORDER_FILTER_KEYS.search] ?? "";
+  const activeManagerTab = getManagerOrdersTab(parseStatusFilterValue(urlStatusRaw));
+
+  const handleManagerTabChange = useCallback(
+    (tabId: string) => {
+      dispatch(setFilterValue({
+        key: ORDER_FILTER_KEYS.status,
+        value: tabId === "pending" ? ["waiting"] : tabId === "cancelled" ? ["cancelled"] : [],
+      }));
+      setMultipleParams({
+        [ORDER_FILTER_KEYS.status]:
+          tabId === "pending"
+            ? "waiting"
+            : tabId === "cancelled"
+              ? "cancelled,cancelled (sent)"
+              : "",
+        page: "1",
+      });
+    },
+    [dispatch, setMultipleParams],
+  );
 
   // API params qurishda Redux + URL params birga ishlatiladi (UserListPage patterndek)
   const apiParams = useMemo((): OrderListParams => {
@@ -505,6 +546,7 @@ const Orders = () => {
           waiting: t("statusWaiting"),
           sold: t("statusSold"),
           cancelled: t("statusCancelled"),
+          "cancelled (sent)": t("statusCancelled"),
           paid: t("statusPaid"),
           partly_paid: t("statusPartlyPaid"),
           closed: t("statusClosed"),
@@ -539,6 +581,9 @@ const Orders = () => {
             />
           )}
         </div>
+        {canUseManagerTabs ? (
+          <OrderTabs activeTab={activeManagerTab} onChange={handleManagerTabChange} />
+        ) : null}
       </div>
 
       {/* ── Filters + Table ── */}

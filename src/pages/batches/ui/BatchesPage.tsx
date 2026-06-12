@@ -213,7 +213,16 @@ const BatchesPage = () => {
   }, [direction, limit, page, status]);
 
   const { data, isLoading, isError } = useBatches(params);
-  const { data: branchesResponse } = useBranches({ page: 1, limit: 1000 });
+  const needsBranchNames = useMemo(
+    () =>
+      (data?.data ?? []).some((batch) =>
+        [batch.from_branch.name, batch.to_branch.name].some(
+          (name) => name === "—" || /^Filial #\S+$/i.test(name),
+        ),
+      ),
+    [data?.data],
+  );
+  const { data: branchesResponse } = useBranches({ page: 1, limit: 1000 }, needsBranchNames);
   const branchNames = useMemo(
     () => new Map((branchesResponse?.data ?? []).map((branch) => [String(branch.id), branch.name])),
     [branchesResponse?.data],

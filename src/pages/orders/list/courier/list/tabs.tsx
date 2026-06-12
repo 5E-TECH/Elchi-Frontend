@@ -12,6 +12,7 @@ type Tab = {
 type TabsProps = {
   onChange?: (tabId: string) => void;
   defaultTab?: string;
+  activeTab?: string;
 };
 
 const tabs: Tab[] = [
@@ -35,9 +36,9 @@ const tabs: Tab[] = [
   },
 ];
 
-const Tabs = ({ onChange, defaultTab = "pending" }: TabsProps) => {
+const Tabs = ({ onChange, defaultTab = "pending", activeTab: controlledActiveTab }: TabsProps) => {
   const { t } = useTranslation("orders");
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [internalActiveTab, setInternalActiveTab] = useState(defaultTab);
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 640 : false,
   );
@@ -45,7 +46,7 @@ const Tabs = ({ onChange, defaultTab = "pending" }: TabsProps) => {
   const mobileTabsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setActiveTab(defaultTab);
+    setInternalActiveTab(defaultTab);
   }, [defaultTab]);
 
   useEffect(() => {
@@ -74,13 +75,14 @@ const Tabs = ({ onChange, defaultTab = "pending" }: TabsProps) => {
   }, [isMobile, isMobileOpen]);
 
   const handleTabClick = (tabId: string) => {
-    setActiveTab(tabId);
+    setInternalActiveTab(tabId);
     onChange?.(tabId);
     if (isMobile) {
       setIsMobileOpen(false);
     }
   };
 
+  const activeTab = controlledActiveTab ?? internalActiveTab;
   const activeTabItem = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
 
   return (

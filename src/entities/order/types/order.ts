@@ -13,6 +13,7 @@ export type OrderStatus =
     | "waiting"
     | "sold"
     | "cancelled"
+    | "cancelled (sent)"
     | "paid"
     | "partly_paid"
     | "closed";

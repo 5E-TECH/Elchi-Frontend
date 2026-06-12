@@ -243,24 +243,24 @@ const MailDetailPage = () => {
   );
 
   const handleMissingScannedOrder = useCallback(() => {
-    notifApi.warning({
-        message: "QR topilmadi",
-        description: "Bu QR kod ushbu pochta orderlariga mos kelmadi.",
-        placement: "topRight",
-        duration: 3,
-      });
     playMissingOrderFeedback();
+    notifApi.warning({
+      message: "QR topilmadi",
+      description: "Bu QR kod ushbu pochta orderlariga mos kelmadi.",
+      placement: "topRight",
+      duration: 3,
+    });
   }, [notifApi]);
 
   const selectScannedOrder = useCallback((order: PostOrder) => {
     selectOne(order.id);
+    void playScanFeedback("success");
     notifApi.success({
       message: "Order tanlandi",
       description: `#${order.id}`,
       placement: "topRight",
       duration: 2,
     });
-    void playScanFeedback("success");
   }, [notifApi, selectOne]);
 
   useOrderQrScanner({
