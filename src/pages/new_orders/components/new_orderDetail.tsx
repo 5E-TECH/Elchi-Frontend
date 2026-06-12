@@ -62,7 +62,7 @@ const NewOrderDetail = () => {
 
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
   const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
-  const rawOrders: ApiOrder[] = res?.data ?? res ?? [];
+  const rawOrders = useMemo<ApiOrder[]>(() => res?.data ?? res ?? [], [res]);
   const orders = useMemo(
     () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
     [rawOrders, receivedOrderIds],
@@ -91,13 +91,13 @@ const NewOrderDetail = () => {
   }, [isMarketRole, orders, ordersKey]);
 
   const handleMissingScannedOrder = useCallback(() => {
+    playMissingOrderFeedback();
     notifApi.warning({
       message: "QR topilmadi",
       description: "Bu QR kod ushbu ro'yxatdagi orderlarga mos kelmadi.",
       placement: "topRight",
       duration: 3,
     });
-    playMissingOrderFeedback();
   }, [notifApi]);
 
   const receiveScannedOrder = useCallback((order: ApiOrder) => {
@@ -111,6 +111,7 @@ const NewOrderDetail = () => {
       { orderIds: [orderId] },
       {
         onSuccess: () => {
+          void playScanFeedback("success");
           setReceivedOrderIds((prev) => {
             const next = new Set(prev);
             next.add(orderId);
@@ -129,9 +130,9 @@ const NewOrderDetail = () => {
             placement: "topRight",
             duration: 2,
           });
-          void playScanFeedback("success");
         },
         onError: (err: unknown) => {
+          void playScanFeedback("error");
           const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
           const msg = apiErr?.response?.data?.message ?? apiErr?.message ?? t("receiveError");
           notifApi.error({
@@ -140,7 +141,6 @@ const NewOrderDetail = () => {
             placement: "topRight",
             duration: 5,
           });
-          playMissingOrderFeedback();
         },
         onSettled: () => {
           pendingScanOrderIdsRef.current.delete(orderId);

@@ -100,6 +100,7 @@
   "batchSendMainSuccess": "Paket asosiy filialga yuborildi",
   "batchSendMainError": "Paketni yuborishda xatolik bo'ldi",
   "batchScanHint": "Scanner bilan order QR kodlarini o'qing: mos order avtomatik tanlanadi va tanlanganlar asosiy filialga jo'natiladi.",
+  "refusedScanHint": "Courier qaytargan order QR kodlarini skaner qiling. Mos orderlar avtomatik tanlanadi, keyin qabul qilish tugmasini bosing.",
   "batchScanMissing": "Bu QR kod ushbu paket orderlariga mos kelmadi.",
   "qrNotFound": "QR topilmadi",
   "orderSelected": "Order tanlandi",

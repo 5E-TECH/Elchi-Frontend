@@ -18,6 +18,7 @@ import { Checkbox } from "../components/OrderCard";
 import BackButton from "../../../shared/ui/BackButton";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { getBackendErrorMessage } from "../../scan/lib/scanResource";
 
 const BranchBatchDetailPage = () => {
   const { branchId, batchId } = useParams<{ branchId: string; batchId: string }>();
@@ -100,8 +101,8 @@ const BranchBatchDetailPage = () => {
           });
           await refetchBatchData();
         },
-        onError: (error: any) => {
-          const msg = error?.response?.data?.message ?? error?.message ?? t("receiveError");
+        onError: (error: unknown) => {
+          const msg = getBackendErrorMessage(error) ?? t("receiveError");
           api.error({
             message: t("receiveError"),
             description: msg,
@@ -113,13 +114,13 @@ const BranchBatchDetailPage = () => {
   };
 
   const handleMissingScannedOrder = useCallback(() => {
+    playMissingOrderFeedback();
     api.warning({
       message: t("qrNotFound"),
       description: t("branchOrderScanMissing"),
       placement: "topRight",
       duration: 3,
     });
-    playMissingOrderFeedback();
   }, [api, t]);
 
   const receiveScannedOrder = useCallback((order: BatchOrder) => {
@@ -130,6 +131,7 @@ const BranchBatchDetailPage = () => {
       { batchId, orderIds: [order.id] },
       {
         onSuccess: async () => {
+          void playScanFeedback("success");
           markOrdersReceived([order.id]);
           api.success({
             message: t("branchOrderReceiveSuccess"),
@@ -137,18 +139,17 @@ const BranchBatchDetailPage = () => {
             placement: "topRight",
             duration: 2,
           });
-          void playScanFeedback("success");
           await refetchBatchData();
         },
-        onError: (error: any) => {
-          const msg = error?.response?.data?.message ?? error?.message ?? t("receiveError");
+        onError: (error: unknown) => {
+          void playScanFeedback("error");
+          const msg = getBackendErrorMessage(error) ?? t("receiveError");
           api.error({
             message: t("receiveError"),
             description: msg,
             placement: "topRight",
             duration: 5,
           });
-          playMissingOrderFeedback();
         },
         onSettled: () => {
           pendingScanOrderIdsRef.current.delete(order.id);

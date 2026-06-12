@@ -70,7 +70,11 @@ const Mails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const role = useSelector((state: RootState) => state.role.role);
+  const canUseReturnTab = role !== "courier";
   const canUseOldBatchMode = role === "admin" || role === "superadmin";
+  const visibleTabs = canUseReturnTab
+    ? tabs
+    : tabs.filter((tab) => tab.key !== "return");
   const [isCompactTabs, setIsCompactTabs] = useState(
     typeof window !== "undefined" ? window.innerWidth < 1280 : false,
   );
@@ -96,7 +100,7 @@ const Mails = () => {
   const activeTab = normalizeMailTab(
     location.pathname.split("/").filter(Boolean).at(-1),
   );
-  const activeTabData = tabs.find((tab) => tab.key === activeTab) ?? tabs[0];
+  const activeTabData = visibleTabs.find((tab) => tab.key === activeTab) ?? visibleTabs[0];
   const selectedBatchId = new URLSearchParams(location.search).get("batch_mode") ?? "";
 
   const batchOptions = [
@@ -120,10 +124,15 @@ const Mails = () => {
   }, [canUseOldBatchMode, selectedBatchId, location.pathname, location.search, navigate]);
 
   if (shouldRedirectFromTabParam) {
-    return <Navigate replace to={getMailTabPath(tabParam)} />;
+    return (
+      <Navigate
+        replace
+        to={getMailTabPath(!canUseReturnTab && tabParam === "return" ? "today" : tabParam)}
+      />
+    );
   }
 
-  if (shouldRedirectFromRootPath) {
+  if (shouldRedirectFromRootPath || (!canUseReturnTab && activeTab === "return")) {
     return <Navigate replace to={getMailTabPath("today")} />;
   }
 
@@ -216,7 +225,7 @@ const Mails = () => {
 
           {isCompactTabsOpen && (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {tabs.filter((tab) => tab.key !== activeTab).map((tab) => {
+              {visibleTabs.filter((tab) => tab.key !== activeTab).map((tab) => {
                 const isActive = activeTab === tab.key;
 
                 return (
@@ -248,8 +257,12 @@ const Mails = () => {
           )}
         </div>
       ) : (
-        <div className="mb-6 mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {tabs.map((tab) => {
+        <div
+          className={`mb-6 mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 ${
+            canUseReturnTab ? "xl:grid-cols-4" : "xl:grid-cols-3"
+          }`}
+        >
+          {visibleTabs.map((tab) => {
             const isActive = activeTab === tab.key;
             const isOldTabDropdown =
               tab.key === "old" && isActive && canUseOldBatchMode;
@@ -335,7 +348,7 @@ const Mails = () => {
       )}
 
       {activeTab === "today" && <TodaysMails />}
-      {activeTab === "return" && <ReturnMails />}
+      {canUseReturnTab && activeTab === "return" && <ReturnMails />}
       {activeTab === "refused" && <RefusedMails />}
       {activeTab === "old" && <OldMails />}
     </PageContainer>
