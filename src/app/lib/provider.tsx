@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { memo, Suspense, useState, useEffect, type ReactNode } from "react";
+import { memo, Suspense, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Provider, useSelector } from "react-redux";
 import { I18nextProvider } from "react-i18next";
@@ -26,29 +26,11 @@ const queryClient = new QueryClient({
 
 const GlobalLoader = ({ children }: { children: ReactNode }) => {
   const isAppInitializing = useSelector((state: RootState) => state.user.isAppInitializing);
-  const [showLoader, setShowLoader] = useState(isAppInitializing);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-
-    if (isAppInitializing) {
-      setShowLoader(true);
-    } else {
-      // Minimal 500ms ko'rinishni ta'minlash (UX uchun)
-      timer = setTimeout(() => {
-        setShowLoader(false);
-      }, 500);
-    }
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [isAppInitializing]);
 
   return (
     <>
-      {showLoader && <PageLoader />}
-      <div className={showLoader ? "opacity-0 invisible" : "opacity-100 visible transition-all duration-500"}>
+      {isAppInitializing && <PageLoader />}
+      <div className={isAppInitializing ? "invisible opacity-0" : "visible opacity-100"}>
         {children}
       </div>
     </>

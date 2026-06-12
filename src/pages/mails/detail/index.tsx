@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, Ban, FileText, Globe, MapPin } from "lucide-react";
+import { AlertTriangle, Ban, FileText, Globe, MapPin, ScanLine } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   useMails,
@@ -109,7 +109,7 @@ const MailDetailPage = () => {
   const isRefusedDetail = typeRaw === "refused";
   const isAllBatchesDetail = viewRaw === "old-all-batches";
   const isOldDetail = viewRaw === "old" || isAllBatchesDetail;
-  const isReadOnlyRefusedCourier = isCourierLikeReceiver && isRefusedDetail;
+  const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
   const fromTab = fromTabRaw;
   const { getRefusedMailsCourierByPostId } = useMails();
   const {
@@ -208,6 +208,9 @@ const MailDetailPage = () => {
   // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
   const receivePost = useReceivePost();
   const receiveCanceledPost = useReceiveCanceledPost();
+  const isReceiving = isRefusedDetail
+    ? receiveCanceledPost.isPending
+    : receivePost.isPending;
   const { SendToPost } = useOrders();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
@@ -392,6 +395,7 @@ const MailDetailPage = () => {
     refetchTransferBatchDetail,
     regionId,
     isCheckingCouriers,
+    t,
   ]);
 
   const selectedOrders = useMemo(
@@ -522,6 +526,13 @@ const MailDetailPage = () => {
         showSelectionCard={!isOldDetail}
       />
 
+      {role === "manager" && isRefusedDetail && !isOldDetail ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-main dark:text-white">
+          <ScanLine size={20} className="shrink-0" />
+          <p className="m-0 text-sm font-semibold">{t("refusedScanHint")}</p>
+        </div>
+      ) : null}
+
       {/* Jadval */}
       <OrdersTable
         orders={orders}
@@ -547,9 +558,11 @@ const MailDetailPage = () => {
             onSend={handleSend}
             onReceive={handleReceive}
             isBusy={
-              !isCourierLikeReceiver &&
-              !isRefusedDetail &&
-              (isBranchTransferRole ? sendTransferBatch.isPending : isCheckingCouriers)
+              isCourierLikeReceiver || isRefusedDetail
+                ? isReceiving
+                : isBranchTransferRole
+                  ? sendTransferBatch.isPending
+                  : isCheckingCouriers
             }
           />
         </div>

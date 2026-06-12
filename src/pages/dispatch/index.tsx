@@ -1,10 +1,14 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
+  Loader2,
+  MapPin,
   PackagePlus,
+  Phone,
   QrCode,
   Trash2,
   Truck,
+  UserRound,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../shared/components/headerName";
@@ -25,6 +29,11 @@ type PendingOrder = {
   id: string;
   token: string;
   market: string;
+  customer: string;
+  phone: string;
+  district: string;
+  region: string;
+  address: string;
   amount: number;
 };
 
@@ -108,11 +117,28 @@ const normalizeOrder = (payload: unknown, token: string, t: (key: string) => str
   const order = asRecord(responseData.data ?? responseData.order ?? responseData);
   const market = asRecord(order.market);
   const sender = asRecord(order.sender);
+  const customer = asRecord(order.customer);
+  const customerDistrict = asRecord(customer.district);
+  const district = asRecord(order.district ?? customerDistrict);
+  const districtRegion = asRecord(district.region);
+  const customerRegion = asRecord(customer.region);
+  const region = asRecord(
+    order.region ??
+      district.region ??
+      customer.region ??
+      districtRegion ??
+      customerRegion,
+  );
 
   return {
     id: safe(order?.id),
     token,
     market: safe(market.name ?? sender.name, t("marketFallback")),
+    customer: safe(customer.name ?? order.customer_name),
+    phone: safe(customer.phone_number ?? customer.phone ?? order.phone_number ?? order.phone),
+    district: safe(district.name ?? order.district_name),
+    region: safe(region.name ?? order.region_name),
+    address: safe(order.address ?? customer.address, ""),
     amount: Number(order?.total_price ?? 0) || 0,
   };
 };
@@ -163,15 +189,17 @@ const DispatchPage = () => {
 
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const [scanError, setScanError] = useState("");
-  const [isLookingUpOrder, setIsLookingUpOrder] = useState(false);
+  const [activeLookupCount, setActiveLookupCount] = useState(0);
+  const [isLookupSlow, setIsLookupSlow] = useState(false);
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
   const [isCourierPopupOpen, setIsCourierPopupOpen] = useState(false);
+  const isLookingUpOrder = activeLookupCount > 0;
 
   const isCameraScannerOpenRef = useRef(false);
   const pendingTokensRef = useRef<Set<string>>(new Set());
   const lookupTokensRef = useRef<Set<string>>(new Set());
   const { canAcceptScan, blockScans, resetScannerGate } = useScannerGate({
-    cooldownMs: 1000,
+    cooldownMs: 150,
     duplicateCooldownMs: 2600,
   });
 
@@ -184,6 +212,16 @@ const DispatchPage = () => {
       pendingOrders.map((order) => order.token.trim().toLowerCase()),
     );
   }, [pendingOrders]);
+
+  useEffect(() => {
+    if (!isLookingUpOrder) {
+      setIsLookupSlow(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setIsLookupSlow(true), 1200);
+    return () => window.clearTimeout(timeout);
+  }, [isLookingUpOrder]);
 
   const handleRemoveOrder = useCallback((orderId: string) => {
     setPendingOrders((prev) => prev.filter((order) => order.id !== orderId));
@@ -208,12 +246,12 @@ const DispatchPage = () => {
 
     if (pendingTokensRef.current.has(tokenKey) || lookupTokensRef.current.has(tokenKey)) {
       setScanError(t("duplicateOrder"));
-      blockScans(1800);
+      blockScans(250);
       return true;
     }
 
     lookupTokensRef.current.add(tokenKey);
-    setIsLookingUpOrder(true);
+    setActiveLookupCount((count) => count + 1);
     setScanError("");
 
     try {
@@ -234,16 +272,16 @@ const DispatchPage = () => {
       if (isCameraScannerOpenRef.current) {
         setIsCameraScannerOpen(false);
       }
-      blockScans(1400);
+      blockScans(250);
       return true;
     } catch (error) {
       setScanError(getBackendErrorMessage(error) ?? t("orderLookupError"));
       void playScanFeedback("error");
-      blockScans(1800);
+      blockScans(600);
       return true;
     } finally {
       lookupTokensRef.current.delete(tokenKey);
-      setIsLookingUpOrder(false);
+      setActiveLookupCount((count) => Math.max(0, count - 1));
     }
   }, [blockScans, canAcceptScan, t]);
 
@@ -300,6 +338,17 @@ const DispatchPage = () => {
     }
   };
 
+  const handleAssignCourier = () => {
+    const onlyCourier = couriers.length === 1 ? couriers[0] : null;
+
+    if (onlyCourier) {
+      void handleComplete(onlyCourier.value, onlyCourier.label);
+      return;
+    }
+
+    setIsCourierPopupOpen(true);
+  };
+
   return (
     <PageContainer>
       <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-4 shadow-sm dark:bg-primarydark">
@@ -352,6 +401,34 @@ const DispatchPage = () => {
           </div>
 
           <div className="p-5">
+            {isLookingUpOrder ? (
+              <div
+                role="status"
+                className="mb-4 flex items-center gap-3 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-main dark:text-white"
+              >
+                <Loader2 size={20} className="shrink-0 animate-spin" />
+                <div>
+                  <p className="m-0 text-sm font-extrabold">
+                    {t("loadingCount", { count: activeLookupCount })}
+                  </p>
+                  {isLookupSlow ? (
+                    <p className="m-0 mt-1 text-xs font-semibold opacity-75">
+                      {t("slowLoading")}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {scanError && !isCameraScannerOpen ? (
+              <div
+                role="alert"
+                className="mb-4 rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-100"
+              >
+                {scanError}
+              </div>
+            ) : null}
+
             {pendingOrders.length === 0 ? (
               <div className="flex min-h-105 flex-col items-center justify-center rounded-3xl border border-dashed border-(--color-border-soft) px-6 text-center dark:border-white/10">
                 <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-main/10 text-main dark:bg-white/10 dark:text-white">
@@ -390,11 +467,33 @@ const DispatchPage = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="grid gap-2 text-sm sm:grid-cols-2">
-                          <p className="m-0 font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
+                        <div className="grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                          <p className="m-0 truncate font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
                             {t("market")}: <span className="text-maindark dark:text-white">{order.market}</span>
                           </p>
-                          <p className="m-0 font-extrabold text-maindark dark:text-white">
+                          <p className="m-0 flex min-w-0 items-center gap-1.5 font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
+                            <UserRound size={14} className="shrink-0 text-main" />
+                            <span className="truncate text-maindark dark:text-white">{order.customer}</span>
+                          </p>
+                          <p className="m-0 flex min-w-0 items-center gap-1.5 font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
+                            <Phone size={14} className="shrink-0 text-main" />
+                            <span className="truncate text-maindark dark:text-white">{order.phone}</span>
+                          </p>
+                          <p className="m-0 flex min-w-0 items-center gap-1.5 font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
+                            <MapPin size={14} className="shrink-0 text-main" />
+                            <span className="truncate text-maindark dark:text-white">
+                              {[order.region, order.district].filter((value) => value !== "—").join(", ") || "—"}
+                            </span>
+                          </p>
+                          {order.address ? (
+                            <p className="m-0 flex min-w-0 items-center gap-1.5 font-semibold text-(--color-text-muted) dark:text-text-muted-dark sm:col-span-2 xl:col-span-3">
+                              <MapPin size={14} className="shrink-0 text-main" />
+                              <span className="truncate">
+                                {t("address")}: <span className="text-maindark dark:text-white">{order.address}</span>
+                              </span>
+                            </p>
+                          ) : null}
+                          <p className="m-0 font-extrabold text-maindark dark:text-white xl:text-right">
                             {formatMoney(order.amount)}
                           </p>
                         </div>
@@ -416,8 +515,8 @@ const DispatchPage = () => {
 
             <button
               type="button"
-              onClick={() => setIsCourierPopupOpen(true)}
-              disabled={pendingOrders.length === 0 || assignCourier.isPending || isCouriersLoading || isCouriersError || couriers.length === 0}
+              onClick={handleAssignCourier}
+              disabled={pendingOrders.length === 0 || isLookingUpOrder || assignCourier.isPending || isCouriersLoading || isCouriersError || couriers.length === 0}
               className="mt-5 flex w-full cursor-pointer items-center justify-center gap-3 rounded-[28px] bg-emerald-500 px-6 py-5 text-base font-extrabold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {assignCourier.isPending ? (

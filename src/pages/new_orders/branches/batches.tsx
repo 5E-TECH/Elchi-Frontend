@@ -11,6 +11,7 @@ import { Checkbox } from "../components/OrderCard";
 import BackButton from "../../../shared/ui/BackButton";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { getBackendErrorMessage } from "../../scan/lib/scanResource";
 
 type ScannableBatch = Batch & { qr_code_token?: string | null };
 
@@ -99,13 +100,13 @@ const BranchSentBatchesPage = () => {
   };
 
   const handleMissingScannedBatch = useCallback(() => {
+    playMissingOrderFeedback();
     api.warning({
       message: "QR topilmadi",
       description: "Bu QR kod ushbu filial batchlariga mos kelmadi.",
       placement: "topRight",
       duration: 3,
     });
-    playMissingOrderFeedback();
   }, [api]);
 
   const receiveScannedBatch = useCallback((batch: ScannableBatch) => {
@@ -114,6 +115,7 @@ const BranchSentBatchesPage = () => {
     pendingScanBatchIdsRef.current.add(batch.id);
     receiveTransferBatch.mutate(batch.id, {
       onSuccess: () => {
+        void playScanFeedback("success");
         markBatchesReceived([batch.id]);
         api.success({
           message: "Batch qabul qilindi",
@@ -121,17 +123,16 @@ const BranchSentBatchesPage = () => {
           placement: "topRight",
           duration: 2,
         });
-        void playScanFeedback("success");
       },
-      onError: (error: any) => {
-        const msg = error?.response?.data?.message ?? error?.message ?? "Batchni qabul qilishda xatolik yuz berdi";
+      onError: (error: unknown) => {
+        void playScanFeedback("error");
+        const msg = getBackendErrorMessage(error) ?? "Batchni qabul qilishda xatolik yuz berdi";
         api.error({
           message: "Batch qabul qilinmadi",
           description: msg,
           placement: "topRight",
           duration: 5,
         });
-        playMissingOrderFeedback();
       },
       onSettled: () => {
         pendingScanBatchIdsRef.current.delete(batch.id);

@@ -15,6 +15,19 @@ vi.mock("./components/oldMails", () => ({
   default: () => <div>old-content</div>,
 }));
 
+vi.mock("./components/returnMails", () => ({
+  default: () => <div>return-content</div>,
+}));
+
+const courierState = {
+  role: {
+    id: "1",
+    role: "courier",
+    region: null,
+    name: "Courier",
+  },
+};
+
 describe("Mails page", () => {
   beforeEach(() => {
     Object.defineProperty(window, "innerWidth", {
@@ -53,5 +66,26 @@ describe("Mails page", () => {
     await waitFor(() => {
       expect(screen.getByText("refused-content")).toBeInTheDocument();
     });
+  });
+
+  it("hides returns tab for courier", () => {
+    renderWithProviders(<Mails />, {
+      route: "/mails/today",
+      preloadedState: courierState,
+    });
+
+    expect(screen.queryByRole("button", { name: /Qaytarilgan pochtalar/i })).not.toBeInTheDocument();
+  });
+
+  it("redirects courier away from returns route", async () => {
+    renderWithProviders(<Mails />, {
+      route: "/mails/return",
+      preloadedState: courierState,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("today-content")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("return-content")).not.toBeInTheDocument();
   });
 });
