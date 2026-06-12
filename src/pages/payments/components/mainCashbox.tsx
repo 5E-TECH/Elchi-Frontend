@@ -221,7 +221,12 @@ const MainCashbox = () => {
       (couriersData?.data?.items ?? []).map((courier: any) => ({
         ...courier,
         region: courier.region?.name || "Noma'lum",
-        amount: Number(courier.cashbox?.balance ?? courier.amount ?? 0),
+        amount: toNumber(
+          courier.olinishi_kerak ??
+            courier.cashbox?.olinishi_kerak ??
+            courier.cashbox?.balance ??
+            courier.amount,
+        ),
       })).filter((courier: any) => courier.amount !== 0),
     [couriersData?.data?.items],
   );
@@ -229,7 +234,12 @@ const MainCashbox = () => {
     () =>
       (marketsData?.data?.items ?? []).map((market: any) => ({
         ...market,
-        amount: Number(market.cashbox?.balance ?? market.amount ?? 0),
+        amount: toNumber(
+          market.berilishi_kerak ??
+            market.cashbox?.berilishi_kerak ??
+            market.cashbox?.balance ??
+            market.amount,
+        ),
       })).filter((market: any) => market.amount !== 0),
     [marketsData?.data?.items],
   );

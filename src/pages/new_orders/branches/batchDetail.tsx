@@ -31,16 +31,10 @@ const BranchBatchDetailPage = () => {
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
 
-  const data = useMemo<BatchDetail | undefined>(() => {
-    const remainingOrders = remainingQuery.data?.orders?.length ?? 0;
-    const detailOrders = detailQuery.data?.orders?.length ?? 0;
-
-    if (remainingQuery.data && (remainingOrders > 0 || detailOrders === 0)) {
-      return remainingQuery.data;
-    }
-
-    return detailQuery.data ?? remainingQuery.data;
-  }, [detailQuery.data, remainingQuery.data]);
+  const data = useMemo<BatchDetail | undefined>(
+    () => remainingQuery.data ?? detailQuery.data,
+    [detailQuery.data, remainingQuery.data],
+  );
 
   const isLoading = detailQuery.isLoading || remainingQuery.isLoading;
   const isError = detailQuery.isError && remainingQuery.isError;
