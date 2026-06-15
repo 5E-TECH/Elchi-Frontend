@@ -25,6 +25,12 @@ const DashboardPage = () => {
   const user = useSelector((state: RootState) => state.user.user);
   const role = useSelector((state: RootState) => state.role.role);
   const analyticsScope = `${role || "unknown"}:${user?.id || "unknown"}`;
+  // KPI and revenue analytics are backend-restricted to SUPERADMIN/ADMIN.
+  // Firing them for other roles returns 403 and breaks the shared dashboard
+  // landing page on every login — gate them client-side too. (Audit P1-2.)
+  const isAnalyticsAdmin = ["superadmin", "admin"].includes(
+    String(role || "").toLowerCase(),
+  );
   const [fromDate, setFromDate] = useState(
     typeof storedFromDate === "string" ? storedFromDate : "",
   );
@@ -70,7 +76,7 @@ const DashboardPage = () => {
     isLoading: kpiLoading,
     isError: kpiError,
     refetch: refetchKpi,
-  } = getKpi(analyticsParams, widgets.stats, analyticsScope);
+  } = getKpi(analyticsParams, widgets.stats && isAnalyticsAdmin, analyticsScope);
 
   const orders = data?.data?.orders;
   const kpi = kpiData?.data;
@@ -153,8 +159,8 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Financial analysis */}
-      {widgets.financial && (
+      {/* Financial analysis — revenue endpoint is SUPERADMIN/ADMIN-only. */}
+      {widgets.financial && isAnalyticsAdmin && (
         <div className="mb-5">
           <FinancialAnalysis
             startDate={hasDateFilter ? fromDate : ""}

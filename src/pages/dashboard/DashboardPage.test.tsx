@@ -61,6 +61,12 @@ vi.mock("../../shared/ui/DateRangePicker", () => ({
   ),
 }));
 
+// KPI + financial analysis are gated to SUPERADMIN/ADMIN (Audit P1-2), so the
+// happy-path dashboard test renders as an admin.
+const adminState = {
+  role: { id: "admin-1", role: "admin", region: null, name: "Admin" },
+} as never;
+
 describe("DashboardPage", () => {
   beforeEach(() => {
     getDashboardMock.mockReturnValue({
@@ -90,17 +96,17 @@ describe("DashboardPage", () => {
   });
 
   it("renders dashboard header and date filters", () => {
-    renderWithProviders(<DashboardPage />);
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
     expect(getDashboardMock).toHaveBeenCalledWith(
       { start_day: "", end_day: "" },
       true,
-      "unknown:unknown",
+      "admin:unknown",
     );
     expect(getKpiMock).toHaveBeenCalledWith(
       { start_day: "", end_day: "" },
       true,
-      "unknown:unknown",
+      "admin:unknown",
     );
     expect(screen.getByText("Bugungi statistika")).toBeInTheDocument();
     expect(screen.getByLabelText("Boshlanish → Tugash")).toBeInTheDocument();
@@ -110,7 +116,7 @@ describe("DashboardPage", () => {
   });
 
   it("passes dashboard metrics into child widgets", () => {
-    renderWithProviders(<DashboardPage />);
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
     expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent(
       "12-5-2-480000-96000-24",
@@ -120,7 +126,7 @@ describe("DashboardPage", () => {
 
   it("switches to filtered title when dates are selected", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<DashboardPage />);
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
     await user.click(screen.getByLabelText("Boshlanish → Tugash"));
 
@@ -128,13 +134,13 @@ describe("DashboardPage", () => {
     expect(getDashboardMock).toHaveBeenLastCalledWith(
       { start_day: "2026-04-01", end_day: "2026-04-14" },
       true,
-      "unknown:unknown",
+      "admin:unknown",
     );
   });
 
   it("falls back to zero metrics when api response is empty", () => {
     getDashboardMock.mockReturnValue({ data: undefined });
-    renderWithProviders(<DashboardPage />);
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
     expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent("0-0-0-0");
   });

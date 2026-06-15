@@ -13,54 +13,64 @@ const { Title, Text } = Typography;
  * settlement-state lookup, all via `useOrdersCoverage()`.
  */
 
-interface Allocation {
-  order_id: string;
-  allocated: number;
-  status?: string;
+// The backend FIFO-settlement legs return the response envelope
+// { statusCode, message, data: { settled_order_ids, allocated, leftover } }.
+// (Per-order amounts are not returned — only which orders were settled, the
+// total allocated, and the unallocated remainder.) Previously this screen read
+// `result.allocations` / `result.remaining`, which never exist, so it always
+// showed "Qoldiq: 0 · 0 ta buyurtma" and hid un-applied cash. (Audit P1-1.)
+interface SettlementBody {
+  settled_order_ids?: string[];
+  allocated?: number;
+  leftover?: number;
 }
 
-interface SettlementResult {
-  allocations?: Allocation[];
-  remaining?: number;
+interface SettlementResult extends SettlementBody {
+  data?: SettlementBody;
 }
 
 const fmt = (n: number) => Number(n || 0).toLocaleString("uz-UZ");
 
-const allocationColumns = [
-  { title: "Buyurtma", dataIndex: "order_id", key: "order_id" },
-  {
-    title: "Taqsimlandi",
-    dataIndex: "allocated",
-    key: "allocated",
-    render: (v: number) => `${fmt(v)} so'm`,
-  },
-  {
-    title: "Holat",
-    dataIndex: "status",
-    key: "status",
-    render: (v?: string) => (v ? <Tag color="blue">{v}</Tag> : "—"),
-  },
+const settledOrderColumns = [
+  { title: "Hisob-kitob qilingan buyurtma", dataIndex: "order_id", key: "order_id" },
 ];
 
 const AllocationResult = ({ result }: { result?: SettlementResult }) => {
   if (!result) return null;
-  const allocations = result.allocations ?? [];
+  // Tolerate both the wrapped envelope and an already-unwrapped body.
+  const body: SettlementBody = result.data ?? result;
+  const settledIds = body.settled_order_ids ?? [];
+  const allocated = body.allocated ?? 0;
+  const leftover = body.leftover ?? 0;
+  const rows = settledIds.map((id) => ({ order_id: id }));
   return (
     <div style={{ marginTop: 12 }}>
       <Alert
         type="success"
         showIcon
         message="Hisob-kitob qabul qilindi"
-        description={`Qoldiq: ${fmt(result.remaining ?? 0)} so'm · ${allocations.length} ta buyurtmaga taqsimlandi`}
+        description={
+          <>
+            Taqsimlandi: <b>{fmt(allocated)} so'm</b> · {settledIds.length} ta buyurtma
+            {leftover > 0 ? (
+              <>
+                {" · "}
+                <Tag color="orange">Qoldiq: {fmt(leftover)} so'm</Tag>
+              </>
+            ) : (
+              " · Qoldiq: 0 so'm"
+            )}
+          </>
+        }
         style={{ marginBottom: 8 }}
       />
-      {allocations.length ? (
+      {rows.length ? (
         <Table
           size="small"
           rowKey="order_id"
           pagination={false}
-          columns={allocationColumns}
-          dataSource={allocations}
+          columns={settledOrderColumns}
+          dataSource={rows}
         />
       ) : null}
     </div>

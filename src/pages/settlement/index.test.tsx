@@ -16,10 +16,17 @@ vi.mock("../../shared/api/api", () => ({
 
 describe("Settlement page", () => {
   beforeEach(() => {
+    // Mirror the real backend response envelope for the FIFO settlement legs:
+    // { statusCode, message, data: { settled_order_ids, allocated, leftover } }.
     apiPostMock.mockResolvedValue({
       data: {
-        remaining: 0,
-        allocations: [{ order_id: "o1", allocated: 50000, status: "SETTLED" }],
+        statusCode: 200,
+        message: "Courier→branch settlement applied",
+        data: {
+          settled_order_ids: ["o1"],
+          allocated: 50000,
+          leftover: 0,
+        },
       },
     });
     apiGetMock.mockResolvedValue({ data: { order_id: "o1", status: "AT_BRANCH" } });
