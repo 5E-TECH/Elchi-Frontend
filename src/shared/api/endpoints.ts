@@ -78,6 +78,8 @@ export const API_ENDPOINTS = {
     RECEIVE: "orders/receive", // POST market_operator bulk intake
     MARKETS_NEW: "orders/markets/new", // GET markets with NEW orders
     MARKET_NEW: (marketId: string | number) => `orders/markets/${marketId}/new`,
+    MARKETS_CANCELLED: "orders/markets/cancelled", // GET markets with cancelled orders
+    MARKET_CANCELLED: (marketId: string | number) => `orders/markets/${marketId}/cancelled`,
     BY_MARKET: (marketId: string | number) => `orders/market/${marketId}`, // GET orders by market id
     COURIER_ORDERS: "orders/courier/orders",
     SELL: (id: string | number) => `orders/sell/${id}`, // POST courier sell (proof per §5)

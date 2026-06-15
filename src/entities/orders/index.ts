@@ -89,6 +89,21 @@ export const useOrders = () => {
         api.get(API_ENDPOINTS.ORDERS.COURIER_ORDERS, { params }).then((res) => res.data),
     });
 
+  const useCancelledMarkets = (params?: { search?: string }) =>
+    useQuery({
+      queryKey: [orders, "markets", "cancelled", params],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params }).then((res) => res.data),
+    });
+
+  const useCancelledOrdersByMarket = (marketId: string | number) =>
+    useQuery({
+      queryKey: [orders, "markets", marketId, "cancelled"],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId)).then((res) => res.data),
+      enabled: Boolean(marketId),
+    });
+
   const updateNewOrder = useMutation({
     mutationFn: ({ orderId, data }: { orderId: string; data: UpdateNewOrderPayload }) =>
       api.patch(API_ENDPOINTS.ORDERS.FULL(orderId), data).then((res) => res.data),
@@ -167,6 +182,8 @@ export const useOrders = () => {
     getTodayOrdersByMarket,
     getOrderById,
     getOrderCourier,
+    useCancelledMarkets,
+    useCancelledOrdersByMarket,
     SendToPost,
     RollbackOrder,
     updateNewOrder,
