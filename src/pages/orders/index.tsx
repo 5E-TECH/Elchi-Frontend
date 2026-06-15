@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookMarked, ListOrdered, Plus } from "lucide-react";
+import { BookMarked, ListOrdered, Plus, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -37,6 +37,7 @@ const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
 const TABLE_ROLLBACK_STATUSES = new Set<OrderStatus>(["sold", "cancelled"]);
+const isUnsentCancelledOrder = (order: OrderListItem) => order.status === "cancelled";
 const isOrderStatus = (value: string): value is OrderStatus =>
   [
     "created",
@@ -142,7 +143,7 @@ const Orders = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { getOrders } = useOrders();
-  const { SellOrder, PartlySellOrder, CancelOrder, RollbackOrder } = useOrderActions();
+  const { SellOrder, PartlySellOrder, CancelOrder, RollbackOrder, SendToPost } = useOrderActions();
   const { getMarkets } = useMarkets();
   const { getAllParams, setMultipleParams } = useQueryParams();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
@@ -150,6 +151,7 @@ const Orders = () => {
   const [sellOrder, setSellOrder] = useState<OrderListItem | null>(null);
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
   const [rollbackOrder, setRollbackOrder] = useState<OrderListItem | null>(null);
+  const [selectedCancelledIds, setSelectedCancelledIds] = useState<Set<string>>(new Set());
 
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
@@ -183,6 +185,7 @@ const Orders = () => {
 
   const handleManagerTabChange = useCallback(
     (tabId: string) => {
+      setSelectedCancelledIds(new Set());
       dispatch(setFilterValue({
         key: ORDER_FILTER_KEYS.status,
         value: tabId === "pending" ? ["waiting"] : tabId === "cancelled" ? ["cancelled"] : [],
@@ -345,10 +348,26 @@ const Orders = () => {
   const rawPagination = (data as { meta?: Record<string, unknown>; pagination?: Record<string, unknown> } | undefined)?.meta
     ?? (data as { pagination?: Record<string, unknown> } | undefined)?.pagination
     ?? {};
-  const items: OrderListItem[] = data?.data ?? [];
+  const items = useMemo<OrderListItem[]>(() => data?.data ?? [], [data?.data]);
   const currentPage = toPositiveNumber(data?.page ?? rawPagination.page) ?? page;
   const itemsPerPage = toPositiveNumber(data?.limit ?? rawPagination.limit) ?? limit;
   const total = toPositiveNumber(data?.total ?? rawPagination.total) ?? items.length;
+  const canSendCancelledToHq = canUseManagerTabs && activeManagerTab === "cancelled";
+
+  useEffect(() => {
+    if (!canSendCancelledToHq) {
+      setSelectedCancelledIds((previous) => previous.size > 0 ? new Set() : previous);
+      return;
+    }
+
+    const selectableIds = new Set(
+      items.filter(isUnsentCancelledOrder).map((order) => order.id),
+    );
+    setSelectedCancelledIds((previous) => {
+      const next = new Set([...previous].filter((id) => selectableIds.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [canSendCancelledToHq, items]);
 
   if (role === "courier") {
     return (
@@ -477,6 +496,38 @@ const Orders = () => {
       onSuccess: () => setRollbackOrder(null),
     });
   }, [RollbackOrder, rollbackOrder]);
+
+  const handleSelectCancelled = useCallback((id: string, checked: boolean) => {
+    setSelectedCancelledIds((previous) => {
+      const next = new Set(previous);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAllCancelled = useCallback((checked: boolean) => {
+    setSelectedCancelledIds(
+      checked
+        ? new Set(items.filter(isUnsentCancelledOrder).map((order) => order.id))
+        : new Set(),
+    );
+  }, [items]);
+
+  const handleSendCancelledToHq = useCallback(() => {
+    if (selectedCancelledIds.size === 0 || SendToPost.isPending) return;
+
+    SendToPost.mutate(Array.from(selectedCancelledIds), {
+      onSuccess: () => {
+        setSelectedCancelledIds(new Set());
+        message.success(t("sentToHqSuccess"));
+      },
+      onError: (error: unknown) => {
+        const backendMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        message.error(backendMessage ?? t("sendToHqError"));
+      },
+    });
+  }, [SendToPost, selectedCancelledIds, t]);
 
   const handleExportOrders = async () => {
     if (isExporting) return;
@@ -609,6 +660,10 @@ const Orders = () => {
           onSellOrder={canUseManagerTableActions ? setSellOrder : undefined}
           onCancelOrder={canUseManagerTableActions ? setCancelOrder : undefined}
           onRollbackOrder={canUseManagerTableActions ? setRollbackOrder : undefined}
+          isSelectable={canSendCancelledToHq ? isUnsentCancelledOrder : undefined}
+          selectedIds={selectedCancelledIds}
+          onSelectChange={canSendCancelledToHq ? handleSelectCancelled : undefined}
+          onSelectAll={canSendCancelledToHq ? handleSelectAllCancelled : undefined}
           isOrderActionPending={
             SellOrder.isPending ||
             PartlySellOrder.isPending ||
@@ -631,6 +686,24 @@ const Orders = () => {
           </div>
         )}
       </div>
+
+      {canSendCancelledToHq && selectedCancelledIds.size > 0 ? (
+        <div className="fixed bottom-22 left-3 right-3 z-50 sm:bottom-6 sm:left-auto sm:right-6">
+          <button
+            type="button"
+            onClick={handleSendCancelledToHq}
+            disabled={SendToPost.isPending}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-red-500 to-red-600 px-5 py-3 text-sm font-bold text-white shadow-2xl shadow-red-500/25 transition hover:from-red-600 hover:to-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          >
+            {SendToPost.isPending ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <Send size={16} />
+            )}
+            {t("sendSelectedToHq", { count: selectedCancelledIds.size })}
+          </button>
+        </div>
+      ) : null}
 
       <PopupSelect<MarketOption>
         isOpen={showMarketSelect}
