@@ -17,6 +17,16 @@ export type UpdateNewOrderPayload = Partial<{
 export const useOrders = () => {
   const client = useQueryClient();
 
+  // A sell/cancel/rollback/partly-sell moves COD cash across cashboxes, so the
+  // finance/cashbox caches (separate key space, 30s staleTime) must be refreshed
+  // too — otherwise balances shown right after the action are stale. (Audit P1-3.)
+  const invalidateMoney = () => {
+    client.invalidateQueries({ queryKey: [orders] });
+    client.invalidateQueries({ queryKey: ["finance-cov"] });
+    client.invalidateQueries({ queryKey: ["cashbox"] });
+    client.invalidateQueries({ queryKey: ["dashboard"] });
+  };
+
   const createReceiveOrder = useMutation({
     mutationFn: (data: { orderIds?: string[]; order_ids?: string[] }) => {
       const normalizedOrderIds = Array.isArray(data?.order_ids)
@@ -96,9 +106,7 @@ export const useOrders = () => {
       orderId: string;
       data: { comment: string; extraCost: number };
     }) => api.post(API_ENDPOINTS.ORDERS.SELL(orderId), data).then((res) => res.data),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [orders] });
-    },
+    onSuccess: invalidateMoney,
   });
 
   const PartlySellOrder = useMutation({
@@ -115,17 +123,13 @@ export const useOrders = () => {
       };
     }) =>
       api.post(API_ENDPOINTS.ORDERS.PARTLY_SELL(orderId), data).then((res) => res.data),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [orders] });
-    },
+    onSuccess: invalidateMoney,
   });
 
   const RollbackOrder = useMutation({
     mutationFn: (orderId: string) =>
       api.post(API_ENDPOINTS.ORDERS.ROLLBACK(orderId)).then((res) => res.data),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [orders] });
-    },
+    onSuccess: invalidateMoney,
   });
 
   const SendToPost = useMutation({
@@ -144,9 +148,7 @@ export const useOrders = () => {
       orderId: string;
       data: { comment: string; extraCost: number; paidAmount: number };
     }) => api.post(API_ENDPOINTS.ORDERS.CANCEL(orderId), data).then((res) => res.data),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [orders] });
-    },
+    onSuccess: invalidateMoney,
   });
 
   const deleteOrder = useMutation({
