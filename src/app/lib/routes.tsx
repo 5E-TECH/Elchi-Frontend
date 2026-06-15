@@ -140,6 +140,14 @@ const canViewReturns = (state: RootState) => {
   return role === "manager" || role === "operator" || role === "admin" || role === "superadmin";
 };
 
+// Internal ops/maintenance screens (settlement, *-ops). Backend RBAC already
+// 403s their write endpoints, but these dev forms must not be reachable by URL
+// for non-admins. Admin/superadmin only. (Audit I17.)
+const canViewOps = (state: RootState) => {
+  const role = state.role.role;
+  return role === "admin" || role === "superadmin";
+};
+
 const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
   const role = state.role.role;
   if (role !== "manager") return true;
@@ -252,14 +260,70 @@ const AppRouter = () => {
             },
             { path: "profile", element: <Profile /> },
             { path: "settings", element: <SettingsPage /> },
-            { path: "settlement", element: <SettlementPage /> },
-            { path: "finance-operators", element: <FinanceOperatorsPage /> },
-            { path: "integrations-ops", element: <IntegrationsOpsPage /> },
-            { path: "investors-ops", element: <InvestorsOpsPage /> },
-            { path: "logistics-ops", element: <LogisticsOpsPage /> },
-            { path: "branch-ops", element: <BranchOpsPage /> },
-            { path: "identity-ops", element: <IdentityOpsPage /> },
-            { path: "system-ops", element: <SystemOpsPage /> },
+            {
+              path: "settlement",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <SettlementPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "finance-operators",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <FinanceOperatorsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "integrations-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <IntegrationsOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "investors-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <InvestorsOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "logistics-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <LogisticsOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "branch-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <BranchOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "identity-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <IdentityOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "system-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <SystemOpsPage />
+                </ProtectedRoute>
+              ),
+            },
             {
               path: "all-users",
               children: [

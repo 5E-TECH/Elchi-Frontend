@@ -371,6 +371,25 @@ const CashDetail = () => {
       return;
     }
 
+    // Branch manager remits their branch's cash to HQ. (Audit I5.)
+    if (type === "branch") {
+      if (!id) return;
+      const result = await apiRequest({
+        request: () =>
+          createPaymentBranchToMain.mutateAsync({
+            branch_id: id,
+            amount,
+            payment_method: normalizedPaymentMethod,
+            payment_date: paymentDate,
+            comment,
+          }),
+        successMessage: t("receivePaymentSuccess"),
+        errorMessage: t("receivePaymentError"),
+      });
+      if (result) await refreshAfterPayment(amount);
+      return;
+    }
+
     if (!id) return;
     const result = await apiRequest({
       request: () =>
@@ -479,33 +498,31 @@ const CashDetail = () => {
         ) : null
       }
       actionForm={
-        type === "branch" ? null : (
-          <CashboxActionFormCard
-            type={type}
-            actionGradient={cfg.actionGradient}
-            actionLabel={t(cfg.actionLabelKey)}
-            actionSubLabel={t(cfg.actionSubKey)}
-            submitLabel={t(cfg.submitLabelKey)}
-            amountLabel={t("amountLabel")}
-            paymentTypeLabel={t("paymentType")}
-            paymentTypePlaceholder={t("paymentTypePlaceholder")}
-            showMarketSelect={isStoreTransfer}
-            marketLabel={t("selectMarket")}
-            marketPlaceholder={t("selectMarket")}
-            marketOptions={marketOptions}
-            marketLoading={marketsLoading}
-            submitLoading={isSubmitting}
-            submitDisabled={isStoreTransfer && !selectedMarketId}
-            commentLabel={t("comment")}
-            commentPlaceholder={t("commentPlaceholder")}
-            paymentTypeOptions={paymentTypeOptions}
-            control={control}
-            register={register}
-            errors={errors}
-            handleSubmit={handleSubmit}
-            onSubmit={onSubmit}
-          />
-        )
+        <CashboxActionFormCard
+          type={type}
+          actionGradient={cfg.actionGradient}
+          actionLabel={t(cfg.actionLabelKey)}
+          actionSubLabel={t(cfg.actionSubKey)}
+          submitLabel={t(cfg.submitLabelKey)}
+          amountLabel={t("amountLabel")}
+          paymentTypeLabel={t("paymentType")}
+          paymentTypePlaceholder={t("paymentTypePlaceholder")}
+          showMarketSelect={isStoreTransfer}
+          marketLabel={t("selectMarket")}
+          marketPlaceholder={t("selectMarket")}
+          marketOptions={marketOptions}
+          marketLoading={marketsLoading}
+          submitLoading={isSubmitting}
+          submitDisabled={isStoreTransfer && !selectedMarketId}
+          commentLabel={t("comment")}
+          commentPlaceholder={t("commentPlaceholder")}
+          paymentTypeOptions={paymentTypeOptions}
+          control={control}
+          register={register}
+          errors={errors}
+          handleSubmit={handleSubmit}
+          onSubmit={onSubmit}
+        />
       }
     />
   );

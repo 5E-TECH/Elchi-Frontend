@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../../shared/ui/Popup";
+import ProofUpload from "../../../../../shared/ui/ProofUpload";
 
 type OrderItem = {
   id: string;
@@ -29,6 +30,7 @@ type Order = {
 type SellPayload = {
   comment: string;
   extraCost: number;
+  proofFileKeys?: string[];
 };
 
 type PartlySellPayload = {
@@ -36,6 +38,7 @@ type PartlySellPayload = {
   totalPrice: number;
   extraCost: number;
   comment: string;
+  proofFileKeys?: string[];
 };
 
 type SellModalProps = {
@@ -63,6 +66,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
   const [totalPrice, setTotalPrice] = useState("");
   const [extraCost, setExtraCost] = useState("");
   const [note, setNote] = useState("");
+  const [proofKeys, setProofKeys] = useState<string[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -72,6 +76,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
     setTotalPrice("");
     setExtraCost("");
     setNote("");
+    setProofKeys([]);
   }, [open, order?.id]);
 
   if (!open || !order) return null;
@@ -120,12 +125,14 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
         totalPrice: Number(totalPrice) || 0,
         extraCost: Number(extraCost) || 0,
         comment: note,
+        proofFileKeys: proofKeys.length ? proofKeys : undefined,
       });
     } else {
       // POST /orders/sell/{id}
       onSell(order.id, {
         comment: note,
         extraCost: Number(extraCost) || 0,
+        proofFileKeys: proofKeys.length ? proofKeys : undefined,
       });
     }
   };
@@ -314,6 +321,9 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               className="w-full resize-none rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-100 dark:placeholder:text-white/35"
             />
           </div>
+
+          {/* Proof files (image/video) — required by some markets for sell. */}
+          <ProofUpload value={proofKeys} onChange={setProofKeys} />
         </div>
 
         {/* Footer */}

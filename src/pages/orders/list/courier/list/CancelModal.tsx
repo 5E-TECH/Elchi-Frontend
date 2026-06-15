@@ -3,6 +3,7 @@ import { X, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Order } from "./ordertable/pendingOrderTable";
 import Popup from "../../../../../shared/ui/Popup";
+import ProofUpload from "../../../../../shared/ui/ProofUpload";
 
 type Props = {
   order: Order | null;
@@ -10,7 +11,12 @@ type Props = {
   onClose: () => void;
   onCancel: (
     orderId: string,
-    payload: { comment: string; extraCost: number; paidAmount: number }
+    payload: {
+      comment: string;
+      extraCost: number;
+      paidAmount: number;
+      proofFileKeys?: string[];
+    }
   ) => void;
   isLoading?: boolean;
 };
@@ -20,19 +26,26 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
   const [comment, setComment]       = useState("");
   const [extraCost, setExtraCost]   = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
+  const [proofKeys, setProofKeys]   = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
       setComment("");
       setExtraCost(0);
       setPaidAmount(0);
+      setProofKeys([]);
     }
   }, [open]);
 
   if (!open || !order) return null;
 
   const handleSubmit = () => {
-    onCancel(order.id, { comment, extraCost, paidAmount });
+    onCancel(order.id, {
+      comment,
+      extraCost,
+      paidAmount,
+      proofFileKeys: proofKeys.length ? proofKeys : undefined,
+    });
   };
 
   return (
@@ -108,6 +121,9 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading }: Props) => {
               placeholder={t("cancelReason")}
             />
           </div>
+
+          {/* Proof files (image/video) — required by some markets for cancel. */}
+          <ProofUpload value={proofKeys} onChange={setProofKeys} />
         </div>
 
         {/* Footer */}

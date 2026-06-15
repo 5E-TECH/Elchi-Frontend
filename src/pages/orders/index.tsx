@@ -449,7 +449,10 @@ const Orders = () => {
   }, [selectedActionOrder]);
 
   const handleSellOrder = useCallback(
-    (orderId: string, payload: { comment: string; extraCost: number }) => {
+    (
+      orderId: string,
+      payload: { comment: string; extraCost: number; proofFileKeys?: string[] },
+    ) => {
       SellOrder.mutate(
         { orderId, data: payload },
         { onSuccess: () => setSellOrder(null) },
@@ -466,6 +469,7 @@ const Orders = () => {
         totalPrice: number;
         extraCost: number;
         comment: string;
+        proofFileKeys?: string[];
       },
     ) => {
       PartlySellOrder.mutate(
@@ -479,7 +483,12 @@ const Orders = () => {
   const handleCancelOrder = useCallback(
     (
       orderId: string,
-      payload: { comment: string; extraCost: number; paidAmount: number },
+      payload: {
+        comment: string;
+        extraCost: number;
+        paidAmount: number;
+        proofFileKeys?: string[];
+      },
     ) => {
       CancelOrder.mutate(
         { orderId, data: payload },
