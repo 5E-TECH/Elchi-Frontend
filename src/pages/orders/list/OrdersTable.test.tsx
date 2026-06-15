@@ -68,4 +68,32 @@ describe("OrdersTable", () => {
       0,
     );
   });
+
+  it("allows selecting only unsent cancelled orders", async () => {
+    const user = userEvent.setup();
+    const onSelectChange = vi.fn();
+    const cancelledOrders = [
+      { ...orders[0], id: "cancelled-1", status: "cancelled" },
+      { ...orders[0], id: "sent-1", status: "cancelled (sent)" },
+    ];
+
+    renderWithProviders(
+      <OrdersTable
+        data={cancelledOrders as never}
+        isLoading={false}
+        isSelectable={(order) => order.status === "cancelled"}
+        selectedIds={new Set()}
+        onSelectChange={onSelectChange}
+        onSelectAll={vi.fn()}
+      />,
+    );
+
+    const rowCheckboxes = screen.getAllByRole("checkbox").filter((checkbox) => checkbox !== screen.getAllByRole("checkbox")[0]);
+    const enabledCheckbox = rowCheckboxes.find((checkbox) => !checkbox.hasAttribute("disabled"));
+    const disabledCheckbox = rowCheckboxes.find((checkbox) => checkbox.hasAttribute("disabled"));
+
+    expect(disabledCheckbox).toBeDisabled();
+    await user.click(enabledCheckbox!);
+    expect(onSelectChange).toHaveBeenCalledWith("cancelled-1", true);
+  });
 });

@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
     MapPin,
     Store,
@@ -21,6 +21,8 @@ import OrderStatusBadge from "./OrderStatusBadge";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import type { RootState } from "../../../app/config/store";
 
+const EMPTY_SELECTED_IDS = new Set<string>();
+
 interface Props {
     data: OrderListItem[];
     isLoading: boolean;
@@ -32,6 +34,10 @@ interface Props {
     onCancelOrder?: (order: OrderListItem) => void;
     onRollbackOrder?: (order: OrderListItem) => void;
     isOrderActionPending?: boolean;
+    isSelectable?: (order: OrderListItem) => boolean;
+    selectedIds?: Set<string>;
+    onSelectChange?: (id: string, checked: boolean) => void;
+    onSelectAll?: (checked: boolean) => void;
 }
 
 const formatPhoneNumber = (phone: string | null | undefined) => {
@@ -224,12 +230,25 @@ const OrdersTable = ({
     onCancelOrder,
     onRollbackOrder,
     isOrderActionPending = false,
+    isSelectable,
+    selectedIds = EMPTY_SELECTED_IDS,
+    onSelectChange,
+    onSelectAll,
 }: Props) => {
     const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
     const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
-    const formatPrice = (num: number) =>
-        `${(num ?? 0).toLocaleString(locale)} ${t("currency")}`;
+    const formatPrice = useCallback(
+        (num: number) => `${(num ?? 0).toLocaleString(locale)} ${t("currency")}`,
+        [locale, t],
+    );
+    const selectableOrders = useMemo(
+        () => data.filter((order) => isSelectable?.(order)),
+        [data, isSelectable],
+    );
+    const allSelected =
+        selectableOrders.length > 0 && selectableOrders.every((order) => selectedIds.has(order.id));
+    const someSelected = selectableOrders.some((order) => selectedIds.has(order.id));
     const tableColumns = useMemo(() => {
         const translatedColumns = createColumns(rowNumberOffset, formatPrice).map((column) => {
             if (column.key === "customer") return { ...column, label: t("customer") };
@@ -255,13 +274,48 @@ const OrdersTable = ({
         const visibleColumns = role === "market"
             ? translatedColumns.filter((column) => column.key !== "market")
             : translatedColumns;
+        const columnsWithSelection = isSelectable && onSelectChange && onSelectAll
+            ? [
+                {
+                    key: "selection" as const,
+                    label: t("selectLabel"),
+                    width: "48px",
+                    renderHeader: () => (
+                        <input
+                            type="checkbox"
+                            checked={allSelected}
+                            ref={(element) => {
+                                if (element) element.indeterminate = someSelected && !allSelected;
+                            }}
+                            onChange={(event) => onSelectAll(event.target.checked)}
+                            className="h-4 w-4 cursor-pointer accent-red-500"
+                        />
+                    ),
+                    render: (_: string, row: OrderListItem) => {
+                        const selectable = isSelectable(row);
+
+                        return (
+                            <input
+                                type="checkbox"
+                                checked={selectedIds.has(row.id)}
+                                disabled={!selectable}
+                                onClick={(event) => event.stopPropagation()}
+                                onChange={(event) => onSelectChange(row.id, event.target.checked)}
+                                className="h-4 w-4 cursor-pointer accent-red-500 disabled:cursor-not-allowed disabled:opacity-25"
+                            />
+                        );
+                    },
+                },
+                ...visibleColumns,
+            ]
+            : visibleColumns;
 
         if (!onSellOrder && !onCancelOrder && !onRollbackOrder) {
-            return visibleColumns;
+            return columnsWithSelection;
         }
 
         return [
-            ...visibleColumns,
+            ...columnsWithSelection,
             {
                 key: "actions" as const,
                 label: t("actions", { ns: "common" }),
@@ -318,13 +372,19 @@ const OrdersTable = ({
         ];
     }, [
         canUseOrderActions,
+        allSelected,
+        formatPrice,
         isOrderActionPending,
-        locale,
+        isSelectable,
         onCancelOrder,
         onRollbackOrder,
+        onSelectAll,
+        onSelectChange,
         onSellOrder,
         role,
         rowNumberOffset,
+        selectedIds,
+        someSelected,
         t,
     ]);
 
@@ -357,9 +417,25 @@ const OrdersTable = ({
     }
 
     const renderMobileCard = (order: OrderListItem, index: number) => (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-transform active:scale-[0.98] dark:border-primarydark/70 dark:bg-primarydark/70">
+        <div className={`rounded-xl border bg-white p-4 shadow-sm transition-transform active:scale-[0.98] dark:bg-primarydark/70 ${
+            selectedIds.has(order.id)
+                ? "border-red-400/60 ring-1 ring-red-400/30 dark:border-red-400/60"
+                : "border-gray-100 dark:border-primarydark/70"
+        }`}>
             <div className="mb-3 flex items-center justify-between">
-                <OrderStatusBadge status={order.status} />
+                <div className="flex items-center gap-2">
+                    {isSelectable && onSelectChange ? (
+                        <input
+                            type="checkbox"
+                            checked={selectedIds.has(order.id)}
+                            disabled={!isSelectable(order)}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={(event) => onSelectChange(order.id, event.target.checked)}
+                            className="h-4 w-4 cursor-pointer accent-red-500 disabled:cursor-not-allowed disabled:opacity-25"
+                        />
+                    ) : null}
+                    <OrderStatusBadge status={order.status} />
+                </div>
                 <span className="text-xs text-gray-400">#{rowNumberOffset + index + 1}</span>
             </div>
 
