@@ -50,6 +50,8 @@ const ProductCreate = lazy(() => import("../../pages/products/create"));
 
 const NewOrders = lazy(() => import("../../pages/new_orders"));
 const NewOrdersMarkets = lazy(() => import("../../pages/new_orders/markets"));
+const NewOrdersCancelled = lazy(() => import("../../pages/new_orders/cancelled"));
+const NewOrdersCancelledDetail = lazy(() => import("../../pages/new_orders/cancelled/detail"));
 const NewOrdersBranches = lazy(() => import("../../pages/new_orders/branches"));
 const NewOrdersBranchBatches = lazy(() => import("../../pages/new_orders/branches/batches"));
 const NewOrdersBranchBatchDetail = lazy(() => import("../../pages/new_orders/branches/batchDetail"));
@@ -316,6 +318,8 @@ const AppRouter = () => {
                 { path: "branches/:branchId", element: <NewOrdersBranchBatches /> },
                 { path: "branches/:branchId/batches/:batchId", element: <NewOrdersBranchBatchDetail /> },
                 { path: "branches/:branchId/:batchId", element: <LegacyBranchBatchRedirect /> },
+                { path: "cancelled", element: <NewOrdersCancelled /> },
+                { path: "cancelled/:marketId", element: <NewOrdersCancelledDetail /> },
                 { path: "integrations/:id", element: <ExternalIntegrationDetail /> },
                 { path: ":marketId", element: <NewOrderDetail /> },
                 { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
