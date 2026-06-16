@@ -13,7 +13,6 @@ import {
   Trash2,
   FileText,
   Globe,
-  Hash,
 } from "lucide-react";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
@@ -32,77 +31,6 @@ interface OrderRowProps {
   readOnly?: boolean;
 }
 
-const getTextValue = (value: string | number | null | undefined, fallback = "—") => {
-  if (typeof value === "number") return String(value);
-  if (typeof value === "string" && value.trim()) return value.trim();
-  return fallback;
-};
-
-const getOrderProducts = (order: PostOrder) => {
-  if (!order.items.length) return "—";
-
-  return order.items
-    .map((item) => {
-      const productName = item.product?.name ?? item.product_id;
-      return `${productName} ×${item.quantity}`;
-    })
-    .join(", ");
-};
-
-const DetailItem = memo(({ label, value }: { label: string; value: React.ReactNode }) => (
-  <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 dark:border-white/8 dark:bg-white/[0.045]">
-    <p className="m-0 text-[9px] font-black uppercase tracking-[0.13em] text-slate-400 dark:text-white/40">
-      {label}
-    </p>
-    <div className="mt-1 min-w-0 break-words text-[12px] font-bold leading-5 text-slate-800 dark:text-white/85">
-      {value}
-    </div>
-  </div>
-));
-DetailItem.displayName = "DetailItem";
-
-const OrderDetailsGrid = memo(({ order }: { order: PostOrder }) => {
-  const { t } = useTranslation("mails");
-  const products = getOrderProducts(order);
-
-  const details = [
-    { label: t("detailOrderId"), value: `#${order.id}` },
-    { label: t("detailQrToken"), value: getTextValue(order.qr_code_token) },
-    { label: t("detailCustomerId"), value: getTextValue(order.customer_id) },
-    { label: t("detailCustomerExtraPhone"), value: getTextValue(order.customer?.extra_number) },
-    { label: t("detailMarketId"), value: getTextValue(order.market_id) },
-    { label: t("detailRegion"), value: getTextValue(order.region?.name ?? order.district?.region?.name ?? order.region_id) },
-    { label: t("detailAddress"), value: getTextValue(order.address) },
-    { label: t("detailProductCount"), value: `${order.product_quantity} ${t("piece")}` },
-    { label: t("detailProducts"), value: products },
-    { label: t("detailPaidAmount"), value: formatPrice(order.paid_amount) },
-    { label: t("detailToBePaid"), value: formatPrice(order.to_be_paid) },
-    { label: t("detailOperator"), value: getTextValue(order.operator) },
-    { label: t("detailComment"), value: getTextValue(order.comment) },
-    { label: t("detailPostId"), value: getTextValue(order.post_id) },
-    { label: t("detailCanceledPostId"), value: getTextValue(order.canceled_post_id) },
-    { label: t("detailExternalId"), value: getTextValue(order.external_id) },
-    { label: t("detailCreatedAt"), value: formatDate(order.createdAt) },
-    { label: t("detailUpdatedAt"), value: formatDate(order.updatedAt) },
-    { label: t("detailSoldAt"), value: getTextValue(order.sold_at ? formatDate(order.sold_at) : null) },
-  ];
-
-  return (
-    <div className="border-t border-slate-100 px-3 py-3 dark:border-white/8 2xl:px-4">
-      <div className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.13em] text-slate-500 dark:text-white/50">
-        <Hash size={13} />
-        {t("detailFullInfo")}
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        {details.map((item) => (
-          <DetailItem key={item.label} label={item.label} value={item.value} />
-        ))}
-      </div>
-    </div>
-  );
-});
-OrderDetailsGrid.displayName = "OrderDetailsGrid";
-
 const OrderRow = memo(({
   order,
   checked,
@@ -114,10 +42,10 @@ const OrderRow = memo(({
   readOnly = false,
 }: OrderRowProps) => {
   const { t } = useTranslation(["mails", "orders", "common"]);
-  const customerName = order.customer?.name ?? t("mails:customerNumber", { id: order.customer_id });
+  const customerName = order.customer?.name ?? "—";
   const customerPhone = order.customer?.phone_number ?? t("mails:phoneUnavailable");
-  const districtName = order.district?.name ?? t("mails:districtNumber", { id: order.district_id });
-  const marketName = order.market?.name ?? t("mails:marketNumber", { id: order.market_id });
+  const districtName = order.district?.name ?? "—";
+  const marketName = order.market?.name ?? "—";
   const isAddressDelivery = order.where_deliver === "address";
   const locationLabel = order.address?.trim() || districtName;
   const isHistory = variant === "history";
@@ -139,7 +67,7 @@ const OrderRow = memo(({
   if (isHistory) {
     return (
       <div className="rounded-[22px] border border-slate-200/70 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:border-white/8 dark:bg-white/[0.03]">
-        <div className={`hidden 2xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-4`}>
+        <div className={`hidden xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-4`}>
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 shrink-0">
               <User size={14} className="text-slate-500 dark:text-white/70" />
@@ -188,7 +116,7 @@ const OrderRow = memo(({
           </div>
         </div>
 
-        <div className="2xl:hidden px-4 py-4">
+        <div className="xl:hidden px-4 py-4">
           <div className="flex items-start gap-3">
             <div className="flex items-center justify-center h-9 w-9 shrink-0 rounded-full border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
               <User size={15} className="text-slate-500 dark:text-white/70" />
@@ -257,7 +185,7 @@ const OrderRow = memo(({
       }}
     >
       {/* XL table layout */}
-      <div className={`hidden 2xl:grid ${TABLE_COLS} items-center gap-2 px-3 2xl:px-4 py-3.5`}>
+      <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 px-3 xl:px-4 py-3.5`}>
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 shrink-0">
             <User size={13} className="text-slate-500 dark:text-white/70" />
@@ -358,7 +286,7 @@ const OrderRow = memo(({
       </div>
 
       {/* Compact layout (no horizontal scroll) */}
-      <div className="2xl:hidden px-3 py-2.5">
+      <div className="xl:hidden px-3 py-2.5">
         <div className="lg:hidden">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
@@ -535,12 +463,6 @@ const OrderRow = memo(({
           )}
         </div>
 
-        <div className="mt-3">
-          <OrderDetailsGrid order={order} />
-        </div>
-      </div>
-      <div className="hidden 2xl:block">
-        <OrderDetailsGrid order={order} />
       </div>
     </div>
   );
