@@ -43,6 +43,7 @@ export interface OrderListItem {
     operator: string | null;
     comment: string | null;
     post_id: string | null;
+    qr_code_token?: string | null;
     createdAt: string;
     updatedAt: string;
     deleted: boolean;
@@ -53,6 +54,11 @@ export interface OrderListItem {
         quantity: number;
         createdAt: string;
         updatedAt: string;
+        product?: {
+            id: string;
+            name: string;
+            image_url?: string | null;
+        };
     }[];
     customer?: {
         id: string;

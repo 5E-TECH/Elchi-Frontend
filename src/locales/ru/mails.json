@@ -136,6 +136,26 @@
       "hint": "Формат чека"
     }
   },
+  "detailFullInfo": "Полная информация",
+  "detailOrderId": "ID заказа",
+  "detailQrToken": "QR token",
+  "detailCustomerId": "ID клиента",
+  "detailCustomerExtraPhone": "Доп. телефон",
+  "detailMarketId": "ID маркета",
+  "detailRegion": "Регион",
+  "detailAddress": "Адрес",
+  "detailProductCount": "Кол-во товаров",
+  "detailProducts": "Товары",
+  "detailPaidAmount": "Оплачено",
+  "detailToBePaid": "К оплате",
+  "detailOperator": "Оператор",
+  "detailComment": "Комментарий",
+  "detailPostId": "ID почты",
+  "detailCanceledPostId": "ID отклоненной почты",
+  "detailExternalId": "External ID",
+  "detailCreatedAt": "Создан",
+  "detailUpdatedAt": "Обновлен",
+  "detailSoldAt": "Продан",
   "sourceBranchNotFound": "Не найден исходный филиал для отправки.",
   "multipleSourceBranchesError": "Выбранные заказы относятся к разным исходным филиалам. Выберите заказы из одного исходного филиала."
 }

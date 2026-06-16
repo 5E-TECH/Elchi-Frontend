@@ -39,6 +39,11 @@ export interface OrderItem {
   quantity: number;
   createdAt: string;
   updatedAt: string;
+  product?: {
+    id: string;
+    name: string;
+    image_url?: string | null;
+  };
 }
 
 export interface Market {
