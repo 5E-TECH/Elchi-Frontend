@@ -132,6 +132,26 @@
       "hint": "Receipt format"
     }
   },
+  "detailFullInfo": "Full information",
+  "detailOrderId": "Order ID",
+  "detailQrToken": "QR token",
+  "detailCustomerId": "Customer ID",
+  "detailCustomerExtraPhone": "Additional phone",
+  "detailMarketId": "Market ID",
+  "detailRegion": "Region",
+  "detailAddress": "Address",
+  "detailProductCount": "Product count",
+  "detailProducts": "Products",
+  "detailPaidAmount": "Paid",
+  "detailToBePaid": "To be paid",
+  "detailOperator": "Operator",
+  "detailComment": "Comment",
+  "detailPostId": "Mail ID",
+  "detailCanceledPostId": "Rejected mail ID",
+  "detailExternalId": "External ID",
+  "detailCreatedAt": "Created",
+  "detailUpdatedAt": "Updated",
+  "detailSoldAt": "Sold at",
   "sourceBranchNotFound": "Source branch was not found for dispatch.",
   "multipleSourceBranchesError": "Selected orders belong to different source branches. Please select orders from a single source branch."
 }

@@ -136,6 +136,26 @@
       "hint": "Receipt format"
     }
   },
+  "detailFullInfo": "To'liq ma'lumot",
+  "detailOrderId": "Order ID",
+  "detailQrToken": "QR token",
+  "detailCustomerId": "Mijoz ID",
+  "detailCustomerExtraPhone": "Qo'shimcha telefon",
+  "detailMarketId": "Market ID",
+  "detailRegion": "Viloyat",
+  "detailAddress": "Manzil",
+  "detailProductCount": "Mahsulot soni",
+  "detailProducts": "Mahsulotlar",
+  "detailPaidAmount": "To'langan",
+  "detailToBePaid": "To'lanishi kerak",
+  "detailOperator": "Operator",
+  "detailComment": "Izoh",
+  "detailPostId": "Pochta ID",
+  "detailCanceledPostId": "Rad pochta ID",
+  "detailExternalId": "External ID",
+  "detailCreatedAt": "Yaratilgan",
+  "detailUpdatedAt": "Yangilangan",
+  "detailSoldAt": "Sotilgan vaqt",
   "sourceBranchNotFound": "Jo'natish uchun manba filial topilmadi.",
   "multipleSourceBranchesError": "Tanlangan orderlar turli manba filiallarga tegishli. Iltimos, bir xil manba filialdagi orderlarni tanlang."
 }

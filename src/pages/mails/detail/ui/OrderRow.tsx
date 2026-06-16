@@ -13,6 +13,7 @@ import {
   Trash2,
   FileText,
   Globe,
+  Hash,
 } from "lucide-react";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
@@ -30,6 +31,77 @@ interface OrderRowProps {
   variant?: "default" | "history";
   readOnly?: boolean;
 }
+
+const getTextValue = (value: string | number | null | undefined, fallback = "—") => {
+  if (typeof value === "number") return String(value);
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return fallback;
+};
+
+const getOrderProducts = (order: PostOrder) => {
+  if (!order.items.length) return "—";
+
+  return order.items
+    .map((item) => {
+      const productName = item.product?.name ?? item.product_id;
+      return `${productName} ×${item.quantity}`;
+    })
+    .join(", ");
+};
+
+const DetailItem = memo(({ label, value }: { label: string; value: React.ReactNode }) => (
+  <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 dark:border-white/8 dark:bg-white/[0.045]">
+    <p className="m-0 text-[9px] font-black uppercase tracking-[0.13em] text-slate-400 dark:text-white/40">
+      {label}
+    </p>
+    <div className="mt-1 min-w-0 break-words text-[12px] font-bold leading-5 text-slate-800 dark:text-white/85">
+      {value}
+    </div>
+  </div>
+));
+DetailItem.displayName = "DetailItem";
+
+const OrderDetailsGrid = memo(({ order }: { order: PostOrder }) => {
+  const { t } = useTranslation("mails");
+  const products = getOrderProducts(order);
+
+  const details = [
+    { label: t("detailOrderId"), value: `#${order.id}` },
+    { label: t("detailQrToken"), value: getTextValue(order.qr_code_token) },
+    { label: t("detailCustomerId"), value: getTextValue(order.customer_id) },
+    { label: t("detailCustomerExtraPhone"), value: getTextValue(order.customer?.extra_number) },
+    { label: t("detailMarketId"), value: getTextValue(order.market_id) },
+    { label: t("detailRegion"), value: getTextValue(order.region?.name ?? order.district?.region?.name ?? order.region_id) },
+    { label: t("detailAddress"), value: getTextValue(order.address) },
+    { label: t("detailProductCount"), value: `${order.product_quantity} ${t("piece")}` },
+    { label: t("detailProducts"), value: products },
+    { label: t("detailPaidAmount"), value: formatPrice(order.paid_amount) },
+    { label: t("detailToBePaid"), value: formatPrice(order.to_be_paid) },
+    { label: t("detailOperator"), value: getTextValue(order.operator) },
+    { label: t("detailComment"), value: getTextValue(order.comment) },
+    { label: t("detailPostId"), value: getTextValue(order.post_id) },
+    { label: t("detailCanceledPostId"), value: getTextValue(order.canceled_post_id) },
+    { label: t("detailExternalId"), value: getTextValue(order.external_id) },
+    { label: t("detailCreatedAt"), value: formatDate(order.createdAt) },
+    { label: t("detailUpdatedAt"), value: formatDate(order.updatedAt) },
+    { label: t("detailSoldAt"), value: getTextValue(order.sold_at ? formatDate(order.sold_at) : null) },
+  ];
+
+  return (
+    <div className="border-t border-slate-100 px-3 py-3 dark:border-white/8 2xl:px-4">
+      <div className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.13em] text-slate-500 dark:text-white/50">
+        <Hash size={13} />
+        {t("detailFullInfo")}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {details.map((item) => (
+          <DetailItem key={item.label} label={item.label} value={item.value} />
+        ))}
+      </div>
+    </div>
+  );
+});
+OrderDetailsGrid.displayName = "OrderDetailsGrid";
 
 const OrderRow = memo(({
   order,
@@ -167,6 +239,7 @@ const OrderRow = memo(({
               </span>
             )}
           </div>
+
         </div>
       </div>
     );
@@ -461,6 +534,13 @@ const OrderRow = memo(({
             </div>
           )}
         </div>
+
+        <div className="mt-3">
+          <OrderDetailsGrid order={order} />
+        </div>
+      </div>
+      <div className="hidden 2xl:block">
+        <OrderDetailsGrid order={order} />
       </div>
     </div>
   );

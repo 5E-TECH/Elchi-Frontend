@@ -80,7 +80,14 @@ if (typeof window !== "undefined") {
   window.addEventListener("touchstart", unlockOnce);
 }
 
-type ScanFeedbackType = "success" | "error" | "missing";
+export type ScanFeedbackType = "success" | "error" | "missing";
+
+export type ScanFeedbackDetail = {
+  type: ScanFeedbackType;
+  message?: string;
+};
+
+export const SCAN_FEEDBACK_EVENT = "elchi:scan-feedback";
 
 type Tone = {
   frequency: number;
@@ -157,7 +164,15 @@ const scheduleFeedback = (context: AudioContext, type: ScanFeedbackType) => {
   });
 };
 
-export const playScanFeedback = (type: ScanFeedbackType) => {
+export const playScanFeedback = (type: ScanFeedbackType, message?: string) => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent<ScanFeedbackDetail>(SCAN_FEEDBACK_EVENT, {
+        detail: { type, message },
+      }),
+    );
+  }
+
   const context = getAudioContext();
   if (!context) return;
 

@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Phone, MapPin, SquarePen, Trash2, Package, CheckSquare, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
 export const Checkbox = memo(({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
@@ -35,6 +36,8 @@ const statusConfig: Record<string, { labelKey: string; cls: string; dot: string 
     new: { labelKey: "statusNew", cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
     processing: { labelKey: "statusProcessing", cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
     completed: { labelKey: "statusCompleted", cls: "bg-blue-500/10 text-blue-600 dark:text-blue-400", dot: "bg-blue-500" },
+    cancelled: { labelKey: "statusCancelled", cls: "bg-red-500/10 text-red-600 dark:text-red-400", dot: "bg-red-500" },
+    "cancelled (sent)": { labelKey: "statusCancelled", cls: "bg-red-500/10 text-red-600 dark:text-red-400", dot: "bg-red-500" },
 };
 
 const deliverLabel: Record<string, string> = { center: "deliverCenter", home: "deliverHome", address: "deliverAddress" };
@@ -54,7 +57,7 @@ const StatusBadge = memo(({ status }: { status: string }) => {
 // ─── OrderCard ────────────────────────────────────────────────────────────────
 export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, showCheckbox = true }: {
     order: ApiOrder; isSelected: boolean;
-    onToggle?: () => void; onEdit: (id: string) => void; onDelete: (id: string) => void;
+    onToggle?: () => void; onEdit?: (id: string) => void; onDelete?: (id: string) => void;
     showCheckbox?: boolean;
 }) => {
     const { t } = useTranslation("newOrders");
@@ -140,16 +143,22 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
                             <p className="text-[10px] text-emerald-500 font-semibold mt-1">✓ {fmt(order.paid_amount)} {t("paid").toLowerCase()}</p>
                         )}
                     </div>
-                    <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-white/5">
-                        <button onClick={(e) => { e.stopPropagation(); onEdit(order.id); }}
-                            className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-main transition-all active:scale-90">
-                            <SquarePen size={16} />
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(order.id); }}
-                            className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-500 transition-all active:scale-90">
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
+                    {(onEdit || onDelete) && (
+                        <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-white/5">
+                            {onEdit && (
+                                <button onClick={(e) => { e.stopPropagation(); onEdit(order.id); }}
+                                    className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-main transition-all active:scale-90">
+                                    <SquarePen size={16} />
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button onClick={(e) => { e.stopPropagation(); onDelete(order.id); }}
+                                    className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-500 transition-all active:scale-90">
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -155,6 +155,20 @@ export const useOrders = () => {
     },
   });
 
+  const handoverCancelledOrders = useMutation({
+    mutationFn: ({ marketId, orderIds }: { marketId: string | number; orderIds: string[] }) =>
+      api
+        .post(API_ENDPOINTS.ORDERS.MARKET_CANCELLED_HANDOVER(marketId), {
+          order_ids: orderIds,
+        })
+        .then((res) => res.data),
+    onSuccess: (_data, variables) => {
+      client.invalidateQueries({ queryKey: [orders] });
+      client.invalidateQueries({ queryKey: [orders, "markets", "cancelled"] });
+      client.invalidateQueries({ queryKey: [orders, "markets", variables.marketId, "cancelled"] });
+    },
+  });
+
   const CancelOrder = useMutation({
     mutationFn: ({
       orderId,
@@ -185,6 +199,7 @@ export const useOrders = () => {
     useCancelledMarkets,
     useCancelledOrdersByMarket,
     SendToPost,
+    handoverCancelledOrders,
     RollbackOrder,
     updateNewOrder,
     deleteOrder,

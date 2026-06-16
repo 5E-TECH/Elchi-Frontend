@@ -80,6 +80,7 @@ export const API_ENDPOINTS = {
     MARKET_NEW: (marketId: string | number) => `orders/markets/${marketId}/new`,
     MARKETS_CANCELLED: "orders/markets/cancelled", // GET markets with cancelled orders
     MARKET_CANCELLED: (marketId: string | number) => `orders/markets/${marketId}/cancelled`,
+    MARKET_CANCELLED_HANDOVER: (marketId: string | number) => `orders/markets/${marketId}/cancelled/handover`,
     BY_MARKET: (marketId: string | number) => `orders/market/${marketId}`, // GET orders by market id
     COURIER_ORDERS: "orders/courier/orders",
     SELL: (id: string | number) => `orders/sell/${id}`, // POST courier sell (proof per §5)
