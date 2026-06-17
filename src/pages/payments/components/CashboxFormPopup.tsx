@@ -156,7 +156,7 @@ const CashboxFormPopup = ({
                                     )}
                                 />
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-main/10 px-2 py-0.5 text-[10px] font-bold tracking-[0.1em] text-main dark:bg-white/10 dark:text-white/75 pointer-events-none">
-                                    UZS
+                                    {t("currency")}
                                 </span>
                             </div>
                         </div>

@@ -12,14 +12,6 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const formatDisplayName = (value?: string | null) => {
-  if (!value) return "";
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-};
-
 const toIsoDate = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -63,7 +55,7 @@ const MyCashboxPage = () => {
   const currentRole = role === "market" ? "market" : "courier";
   const entityName =
     cashbox?.user?.name?.trim() ||
-    (currentRole === "market" ? "Market cashbox" : "Courier cashbox");
+    (currentRole === "market" ? t("marketCashboxLabel") : t("courierCashboxLabel"));
   const totalBalance = toNumber(cashbox?.balance);
   const incomeAmount = toNumber(detailData?.income);
   const outcomeAmount = toNumber(detailData?.outcome);
@@ -84,7 +76,7 @@ const MyCashboxPage = () => {
         ),
         amount,
         operation_type: operationType,
-        source_type: formatDisplayName((item["source_type"] ?? item["type"]) as string | null | undefined),
+        source_type: (item["source_type"] ?? item["type"]) as string | undefined,
         source_id: item["source_id"],
         cashbox_type: (item["cashbox_type"] as string | undefined) ?? cashbox?.cashbox_type,
         created_by:
@@ -94,8 +86,7 @@ const MyCashboxPage = () => {
           (item["createdBy"] as string | undefined) ??
           ((item["user"] as { name?: string } | undefined)?.name) ??
           entityName,
-        payment_method:
-          formatDisplayName((item["payment_method"] ?? item["method"]) as string | null | undefined) || undefined,
+        payment_method: (item["payment_method"] ?? item["method"]) as string | undefined,
         payment_date:
           (item["payment_date"] as string | undefined) ?? (item["createdAt"] as string | undefined) ?? (item["created_at"] as string | undefined),
         comment: item["comment"],
@@ -112,7 +103,7 @@ const MyCashboxPage = () => {
   const accentClass =
     currentRole === "market" ? "bg-main/30" : "bg-success/25";
   const description =
-    currentRole === "market" ? "Market kassasi" : "Kuryer kassasi";
+    currentRole === "market" ? t("marketCashboxLabel") : t("courierCashboxLabel");
 
   if (isLoading) {
     return (
@@ -129,7 +120,7 @@ const MyCashboxPage = () => {
       headerIcon={headerIcon}
       accentClass={accentClass}
       accentIcon={accentIcon}
-      summarySubtitle={currentRole === "market" ? "Market cashbox" : "Courier cashbox"}
+      summarySubtitle={currentRole === "market" ? t("marketCashboxLabel") : t("courierCashboxLabel")}
       balance={totalBalance}
       balanceVisible={balanceVisible}
       onToggleBalanceVisibility={() => setBalanceVisible((prev) => !prev)}

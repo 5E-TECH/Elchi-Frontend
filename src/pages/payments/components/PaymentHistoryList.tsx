@@ -25,17 +25,17 @@ const formatDate = (dateStr: string) => {
 
 const labelCashboxType = (v?: string, t?: (key: string) => string) => {
   if (!v) return "";
-  if (v === "cash") return t ? t("cash") : "Cash";
-  if (v === "card") return "Click";
-  if (v === "transfer") return t ? t("transferOption") : "Transfer";
-  if (v === "click_to_market") return t ? t("toMarketTransferOption") : "Transfer to market";
+  if (v === "cash") return t ? t("cash") : v;
+  if (v === "card") return t ? t("clickPayment") : v;
+  if (v === "transfer") return t ? t("transferOption") : v;
+  if (v === "click_to_market") return t ? t("toMarketTransferOption") : v;
   return v;
 };
 
 const labelOperation = (v?: string, t?: (key: string) => string) => {
   if (!v) return "";
-  if (v === "income") return t ? t("income") : "Income";
-  if (v === "expense") return t ? t("expense") : "Expense";
+  if (v === "income") return t ? t("income") : v;
+  if (v === "expense") return t ? t("expense") : v;
   return v;
 };
 
@@ -125,7 +125,7 @@ const HistoryRow = memo(
         </p>
         {typeof row.balance_after === "number" && (
           <p className="mt-1 text-[11px] text-gray-500 dark:text-white/45">
-            Balans: {fmt(row.balance_after)} so&apos;m
+            {t("balance")}: {fmt(row.balance_after)} {t("currencyAmountSuffix")}
           </p>
         )}
         <p className="mt-1 flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-white/35 sm:justify-end">

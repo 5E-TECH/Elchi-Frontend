@@ -42,6 +42,23 @@ const toNumber = (v: unknown, fallback = 0): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const toDataItems = (value: unknown): unknown[] => {
+  if (Array.isArray(value)) return value;
+
+  const record = asRecord(value);
+  if (Array.isArray(record.items)) return record.items;
+  if (Array.isArray(record.data)) return record.data;
+
+  const data = asRecord(record.data);
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.data)) return data.data;
+
+  return [];
+};
+
 const toIsoDate = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -218,17 +235,25 @@ const MainCashbox = () => {
   );
   const couriers = useMemo(
     () =>
-      (couriersData?.data?.items ?? []).map((courier: any) => ({
-        ...courier,
-        region: courier.region?.name || "Noma'lum",
-        amount: toNumber(
-          courier.olinishi_kerak ??
-            courier.cashbox?.olinishi_kerak ??
-            courier.cashbox?.balance ??
-            courier.amount,
-        ),
-      })).filter((courier: any) => courier.amount !== 0),
-    [couriersData?.data?.items],
+      toDataItems(couriersData).map((courier) => {
+        const item = asRecord(courier);
+        const region = asRecord(item.region);
+        const cashbox = asRecord(item.cashbox);
+
+        return {
+          ...item,
+          id: String(item.id ?? ""),
+          name: String(item.name ?? ""),
+          region: String(region.name ?? t("unknown")),
+          amount: toNumber(
+            item.olinishi_kerak ??
+              cashbox.olinishi_kerak ??
+              cashbox.balance ??
+              item.amount,
+          ),
+        };
+      }).filter((courier) => courier.id),
+    [couriersData, t],
   );
   const markets = useMemo(
     () =>
@@ -348,6 +373,24 @@ const MainCashbox = () => {
       cardBalance: transferBalance,
       fromDate: draftHistoryFrom || undefined,
       toDate: draftHistoryTo || undefined,
+      labels: {
+        defaultReportTitle: t("report"),
+        mainCashbox: t("mainCashbox"),
+        income: t("income"),
+        expense: t("expense"),
+        expenseSection: t("expenseSection"),
+        balance: t("balance"),
+        cash: t("cash"),
+        card: t("card"),
+        total: t("total"),
+        no: t("no"),
+        fromWhere: t("fromWhere"),
+        toWhere: t("toWhere"),
+        other: t("other"),
+        comment: t("comment"),
+        summaryIncome: t("summaryIncome"),
+        summaryExpense: t("summaryExpense"),
+      },
     });
   }, [
     historyRows,
@@ -356,6 +399,7 @@ const MainCashbox = () => {
     transferBalance,
     draftHistoryFrom,
     draftHistoryTo,
+    t,
   ]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -404,7 +448,7 @@ const MainCashbox = () => {
                     <Skeleton className="h-4 w-20" />
                   ) : (
                     <p className="text-sm font-bold text-white">
-                      {balanceVisible ? `${fmt(amount)} UZS` : "••••••"}
+                      {balanceVisible ? `${fmt(amount)} ${t("currency")}` : "••••••"}
                     </p>
                   )}
                 </div>
@@ -468,7 +512,7 @@ const MainCashbox = () => {
                   +{fmt(filteredIncome)}
                 </p>
                 <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(filteredExpense)} UZS
+                  -{fmt(filteredExpense)} {t("currency")}
                 </p>
               </div>
             </div>
@@ -483,7 +527,7 @@ const MainCashbox = () => {
                   +{fmt(weeklyStats.income)}
                 </p>
                 <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(weeklyStats.expense)} UZS
+                  -{fmt(weeklyStats.expense)} {t("currency")}
                 </p>
               </div>
             </div>
@@ -498,7 +542,7 @@ const MainCashbox = () => {
                   +{fmt(monthlyStats.income)}
                 </p>
                 <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(monthlyStats.expense)} UZS
+                  -{fmt(monthlyStats.expense)} {t("currency")}
                 </p>
               </div>
             </div>
@@ -673,7 +717,7 @@ const MainCashbox = () => {
               }`}
             >
               {c.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(c.amount))} UZS
+              {fmt(Math.abs(c.amount))} {t("currency")}
             </span>
           </div>
         )}
@@ -720,7 +764,7 @@ const MainCashbox = () => {
               }`}
             >
               {m.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(m.amount))} UZS
+              {fmt(Math.abs(m.amount))} {t("currency")}
             </span>
           </div>
         )}
@@ -740,7 +784,7 @@ const MainCashbox = () => {
         typePlaceholder={t("paymentTypePlaceholder")}
         sourceTypes={[
           { id: "cash", name: t("cash") },
-          { id: "click", name: "Click" },
+          { id: "click", name: t("clickPayment") },
         ]}
         requireType
         requireComment
@@ -767,7 +811,7 @@ const MainCashbox = () => {
         typePlaceholder={t("paymentTypePlaceholder")}
         sourceTypes={[
           { id: "cash", name: t("cash") },
-          { id: "click", name: "Click" },
+          { id: "click", name: t("clickPayment") },
         ]}
         requireType
         requireComment

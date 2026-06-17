@@ -321,6 +321,7 @@ const OrderCreateFormContent = () => {
   const { createOrder } = useOrders();
   const { api } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
+  const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
   const isMarketRole = role === "market";
   const navigationState = location.state as { selectedMarket?: MarketOption } | null;
@@ -346,11 +347,13 @@ const OrderCreateFormContent = () => {
   const market = useWatch({ control, name: "market" });
   const customer = useWatch({ control, name: "customer" });
   const details = useWatch({ control, name: "details" });
+  const marketRoleId = roleState.id ?? profile?.id;
+  const marketRoleName = roleState.name ?? profile?.name;
   const selectedMarketId = isMarketRole
-    ? profile?.id
+    ? marketRoleId
     : market?.id ?? selectedMarketFromState?.id;
   const selectedMarketName = isMarketRole
-    ? profile?.name
+    ? marketRoleName
     : market?.name ?? selectedMarketFromState?.name;
   const isInactiveSelectedMarket = isMarketRole
     ? isInactiveMarketStatus(profile?.status)

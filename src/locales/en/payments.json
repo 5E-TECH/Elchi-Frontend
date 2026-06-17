@@ -3,6 +3,8 @@
   "pageDescription": "Manage cashboxes and payments",
   "toBeGiven": "To be given",
   "amountInCashbox": "Amount in cashbox",
+  "settlementStatus": "Settlement status",
+  "counterparty": "Counterparty",
   "toBeReceived": "To be received",
   "filters": "Filters",
   "clearFilters": "Clear filters",
@@ -213,5 +215,22 @@
   ,"branchToMainPaymentError": "Failed to transfer payment to HQ"
   ,"branchToMainSource": "Branch to HQ transfer"
   ,"mainBranchFallback": "HQ branch"
+  ,"unknown": "Unknown"
+  ,"cardHolder": "Card holder"
+  ,"customerRole": "Customer"
+  ,"adminRole": "Admin"
+  ,"superAdminRole": "Super Admin"
+  ,"clickPayment": "Click"
+  ,"paymePayment": "Payme"
+  ,"statusSold": "Sold"
+  ,"statusCancelled": "Cancelled"
+  ,"statusPaid": "Paid"
+  ,"statusPartlyPaid": "Partly paid"
+  ,"statusNew": "New"
+  ,"statusReceived": "Received"
+  ,"deliveryAddress": "To address"
+  ,"deliveryCenter": "To center"
+  ,"region": "Region"
+  ,"no": "No"
   ,"currencyAmountSuffix": "so'm"
 }

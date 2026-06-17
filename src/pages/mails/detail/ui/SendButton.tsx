@@ -14,6 +14,7 @@ interface SendButtonProps {
     sendLabel?: string;
     receiveLabel?: string;
     busyLabel?: string;
+    disabled?: boolean;
 }
 
 const SendButton = memo(({
@@ -27,9 +28,10 @@ const SendButton = memo(({
     sendLabel,
     receiveLabel,
     busyLabel,
+    disabled = false,
 }: SendButtonProps) => {
     const { t } = useTranslation("mails");
-    const isDisabled = selectedCount === 0 || isBusy;
+    const isDisabled = disabled || selectedCount === 0 || isBusy;
     const shouldReceive = isCourier || mode === "receive";
     const loadingText = busyLabel ?? t("checking");
 
