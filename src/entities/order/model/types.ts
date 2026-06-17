@@ -3,6 +3,16 @@ export interface TrackingEventOldNew {
   [key: string]: unknown;
 }
 
+export interface TrackingEventActor {
+  id?: string | number | null;
+  name?: string | null;
+  username?: string | null;
+  phone_number?: string | null;
+  phoneNumber?: string | null;
+  role?: string | null;
+  status?: string | null;
+}
+
 export interface TrackingEvent {
   id: string;
   order_id: string;
@@ -13,9 +23,13 @@ export interface TrackingEvent {
   to_status?: string | null;
   changed_by: string | number;
   changed_by_role: string;
+  actor?: TrackingEventActor | null;
   user_name?: string;
+  description?: string | null;
+  metadata?: Record<string, unknown> | null;
   note?: string;
   created_at: string;
+  [key: string]: unknown;
 }
 
 export interface ActivityLogResponse {

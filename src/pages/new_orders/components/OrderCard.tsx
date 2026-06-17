@@ -6,10 +6,15 @@ import { useTranslation } from "react-i18next";
 export const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
 export const Checkbox = memo(({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
-    <button type="button" onClick={(e) => { e.stopPropagation(); onChange(); }} className="focus:outline-none">
+    <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onChange(); }}
+        aria-pressed={checked}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition-all hover:border-main/40 hover:bg-main/10 focus:outline-none focus:ring-2 focus:ring-main/35"
+    >
         {checked
-            ? <div className="bg-main rounded-md p-0.5 shadow-sm shadow-main/40"><CheckSquare size={18} className="text-white" /></div>
-            : <Square size={22} className="text-gray-300 dark:text-gray-600 hover:text-main transition-colors" />}
+            ? <div className="rounded-lg bg-main p-0.5 shadow-sm shadow-main/40"><CheckSquare size={18} className="text-white" /></div>
+            : <Square size={20} className="text-gray-300 transition-colors dark:text-white/35" />}
     </button>
 ));
 
@@ -73,11 +78,12 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
         <div
             onClick={showCheckbox && onToggle ? onToggle : undefined}
             className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${showCheckbox ? "cursor-pointer" : "cursor-default"} ${isSelected
-                ? "border-emerald-500 shadow-xl shadow-emerald-500/25 bg-white dark:bg-maindark"
-                : "border-gray-100 dark:border-white/5 bg-white dark:bg-maindark hover:border-main/20 hover:shadow-md shadow-sm"}`}>
+                ? "border-emerald-500 bg-emerald-50/65 shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400/70 dark:bg-emerald-500/8"
+                : "border-gray-100 bg-white shadow-sm hover:border-main/25 hover:shadow-md dark:border-white/5 dark:bg-maindark"}`}>
 
-            {isSelected && <div className="absolute inset-0 bg-linear-to-br from-emerald-500/8 via-emerald-500/4 to-transparent pointer-events-none" />}
+            {isSelected && <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-emerald-500/12 via-emerald-500/5 to-transparent" />}
             <div className={`h-0.5 w-full transition-all ${isSelected ? "bg-linear-to-r from-emerald-500 to-emerald-300/40" : "bg-transparent"}`} />
+            {isSelected && <div className="absolute bottom-0 left-0 top-0 w-1 bg-emerald-500" />}
 
             <div className="relative flex flex-col gap-3 p-3 sm:flex-row sm:gap-4 sm:p-5">
                 {/* Chap: checkbox + ID */}

@@ -164,14 +164,81 @@
     "by": "Кем изменено",
     "role": "Роль",
     "note": "Примечание",
+    "executor": "Кто выполнил",
+    "responsibleUser": "Ответственный пользователь",
+    "relatedDetails": "Связанные данные",
+    "additional": "Дополнительно",
+    "statusTitle": "Статус",
+    "oldToNew": "{{count}} записей — от старых к новым (слева направо)",
+    "from": "Было",
+    "to": "Стало",
+    "entity": {
+      "courier": "Курьер",
+      "branch": "Филиал",
+      "post": "Почта",
+      "market": "Маркет",
+      "user": "Пользователь",
+      "phone": "Телефон"
+    },
+    "field": {
+      "branch": "Филиал",
+      "market": "Маркет",
+      "courier": "Курьер",
+      "post": "Почта",
+      "customer": "Клиент",
+      "district": "Район",
+      "region": "Область",
+      "product": "Товар",
+      "user": "Пользователь",
+      "phone": "Телефон"
+    },
+    "dynamic": {
+      "dispatchToBranch": "{{post}} отправлена из HQ в филиал {{branch}}"
+    },
+    "roleValue": {
+      "superadmin": "Super Admin",
+      "admin": "Админ",
+      "registrator": "Регистратор",
+      "courier": "Курьер",
+      "branch": "Филиал",
+      "manager": "Менеджер",
+      "market": "Маркет",
+      "system": "System"
+    },
+    "status": {
+      "created": "Создан",
+      "new": "Новый",
+      "received": "Принят",
+      "on_the_road": "В пути",
+      "waiting": "Ожидает",
+      "sold": "Продан",
+      "cancelled": "Отменен",
+      "cancelled_sent": "Отменен, отправлен",
+      "paid": "Оплачен",
+      "partly_paid": "Частично оплачен",
+      "closed": "Закрыт"
+    },
+    "notes": {
+      "order_created": "Заказ создан",
+      "order_assigned_to_post": "Заказ прикреплен к почте",
+      "order_partly_sold": "Заказ частично продан",
+      "order_canceled": "Заказ отменен",
+      "order_cancelled": "Заказ отменен",
+      "rollback_to_waiting": "Статус возвращен в ожидание",
+      "branch_canceled_post_sent_to_hq": "Филиал отправил отмененную почту в главный офис"
+    },
     "action": {
       "created": "Создан",
       "statusChange": "Статус изменен",
       "sold": "Продан",
       "paid": "Оплачен",
       "cancelled": "Отменен",
+      "cancelledSent": "Отмененный отправлен",
       "closed": "Закрыт",
-      "rollback": "Возвращен"
+      "received": "Принят",
+      "rollback": "Возвращен",
+      "sent": "Отправлен",
+      "waiting": "Ожидает"
     }
   },
   "branch": "Филиал",

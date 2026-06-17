@@ -1,16 +1,23 @@
 import { History } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
 import { Loader } from "../../../shared/ui/Loader";
 import { TrackingEmptyState, TrackingTimeline, useOrderTracking } from "../../../features/order-tracking";
 
 type OrderTrackingProps = {
   orderId: string | number;
   currentStatus?: string | null;
+  context?: {
+    branchName?: string | null;
+    postName?: string | null;
+  };
 };
 
-export const OrderTracking = ({ orderId, currentStatus }: OrderTrackingProps) => {
+export const OrderTracking = ({ orderId, currentStatus, context }: OrderTrackingProps) => {
   const { t } = useTranslation("orders");
   const { events, isLoading, isError, errorMessage, hasMore, loadMore } = useOrderTracking(orderId);
+  const currentUser = useSelector((state: RootState) => state.user.user);
   void currentStatus;
 
   return (
@@ -20,9 +27,16 @@ export const OrderTracking = ({ orderId, currentStatus }: OrderTrackingProps) =>
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-main/12 text-main dark:bg-main/25 dark:text-primary">
             <History size={18} />
           </div>
-          <h2 className="text-[18px] font-medium text-[var(--color-maindark)] dark:text-primary">
-            {t("tracking.title")}
-          </h2>
+          <div>
+            <h2 className="text-[18px] font-medium text-[var(--color-maindark)] dark:text-primary">
+              {t("tracking.title")}
+            </h2>
+            {events.length > 0 ? (
+              <p className="mt-1 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                {t("tracking.oldToNew", { count: events.length })}
+              </p>
+            ) : null}
+          </div>
         </div>
         <div className="rounded-full border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-main)_10%,var(--color-primary))] px-3 py-1 text-xs font-semibold text-main dark:border-white/10 dark:bg-white/10 dark:text-primary">
           {events.length}
@@ -46,7 +60,7 @@ export const OrderTracking = ({ orderId, currentStatus }: OrderTrackingProps) =>
 
       {events.length > 0 ? (
         <div className="space-y-5">
-          <TrackingTimeline events={events} />
+          <TrackingTimeline events={events} currentUser={currentUser} context={context} />
           {hasMore ? (
             <div className="flex justify-center">
               <button
