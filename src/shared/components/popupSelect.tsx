@@ -1,4 +1,5 @@
 import { memo, useEffect, useState, type ReactNode, useMemo } from 'react';
+import { useTranslation } from "react-i18next";
 import HeaderName from './headerName';
 import { Check, X } from 'lucide-react';
 import Button from './button';
@@ -36,13 +37,17 @@ const PopupSelect = <T extends object>({
   title,
   description = "",
   icon,
-  placeholder = "Search...",
-  selectLabel = "Select",
-  cancelLabel = "Cancel",
+  placeholder,
+  selectLabel,
+  cancelLabel,
   className = "",
   labelKey,
   secondaryLabelKey,
 }: PopupSelectProps<T>) => {
+  const { t } = useTranslation("common");
+  const resolvedPlaceholder = placeholder ?? t("searchPlaceholder");
+  const resolvedSelectLabel = selectLabel ?? t("select");
+  const resolvedCancelLabel = cancelLabel ?? t("cancel");
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
   const { control, watch } = useForm({
     defaultValues: { search: "" },
@@ -105,7 +110,7 @@ const PopupSelect = <T extends object>({
           <button
             type="button"
             onClick={onClose}
-            aria-label={cancelLabel}
+            aria-label={resolvedCancelLabel}
             className="absolute right-5 top-5 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-[color:var(--color-text-muted)] transition hover:bg-black/5 hover:text-error dark:text-white/55 dark:hover:bg-white/10 dark:hover:text-primary"
           >
             <X size={18} />
@@ -121,7 +126,7 @@ const PopupSelect = <T extends object>({
               value={field.value}
               onBlur={field.onBlur}
               onValueChange={field.onChange}
-              placeholder={placeholder}
+              placeholder={resolvedPlaceholder}
               className="mb-4 px-2"
               inputClassName="bg-white/95 text-maindark border-[color:var(--color-border-soft)] py-3 placeholder:text-[color:var(--color-text-muted)] shadow-[0_8px_18px_rgba(68,78,125,0.06)] focus:shadow-[0_0_0_4px_rgba(124,92,255,0.12)] dark:border-white/10 dark:bg-primarydark dark:text-primary dark:placeholder:text-primary/45"
               iconClassName="text-[color:var(--color-text-muted)] group-focus-within:text-main"
@@ -191,12 +196,12 @@ const PopupSelect = <T extends object>({
 
         <div className="flex justify-end gap-3 pt-4 border-t border-[color:var(--color-border-soft)] dark:border-white/10">
           <Button
-            label={cancelLabel}
+            label={resolvedCancelLabel}
             className="!border !border-[color:var(--color-border-soft)] !bg-white !text-maindark !shadow-sm hover:!bg-[var(--color-main-soft)] dark:!border-white/10 dark:!bg-white/8 dark:!text-primary dark:hover:!bg-white/14"
             onClick={onClose}
           />
           <Button
-            label={selectLabel}
+            label={resolvedSelectLabel}
             disabled={!selectedItem}
             className={`px-8 ${!selectedItem
               ? "!cursor-not-allowed !border !border-[color:var(--color-border-soft)] !bg-slate-200 !text-slate-500 !shadow-none opacity-100 dark:!border-white/10 dark:!bg-white/10 dark:!text-white/45"

@@ -1,4 +1,5 @@
 import { memo, type ReactNode, type FormEventHandler } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import Popup from "../Popup";
 import Button from "../../components/button";
@@ -29,13 +30,17 @@ const FormPopup = ({
   title,
   description,
   icon,
-  submitLabel = "Saqlash",
-  cancelLabel = "Bekor qilish",
+  submitLabel,
+  cancelLabel,
   isLoading = false,
   children,
   widthClassName = "max-w-2xl",
   theme = "default",
 }: FormPopupProps) => {
+  const { t } = useTranslation("common");
+  const resolvedSubmitLabel = submitLabel ?? t("save");
+  const resolvedCancelLabel = cancelLabel ?? t("cancel");
+
   return (
     <Popup isShow={isOpen} onClose={onClose}>
       <form
@@ -76,13 +81,13 @@ const FormPopup = ({
         <div className={`${styles.footer} flex flex-col-reverse gap-3 border-t border-[color:var(--color-border-soft)] px-4 py-4 sm:flex-row sm:px-6 sm:py-5`}>
           <Button
             type="button"
-            label={cancelLabel}
+            label={resolvedCancelLabel}
             onClick={onClose}
             className="flex-1 !bg-transparent !text-[var(--color-maindark)] !shadow-none border border-[color:var(--color-border-soft)] hover:!bg-[var(--color-main-soft)] dark:!text-white/85 dark:hover:!bg-white/10"
           />
           <Button
             type="submit"
-            label={isLoading ? "Saqlanmoqda..." : submitLabel}
+            label={isLoading ? t("submitting") : resolvedSubmitLabel}
             disabled={isLoading}
             className="flex-1 !bg-[linear-gradient(90deg,var(--color-main)_0%,var(--color-primarydark)_100%)] hover:opacity-95"
           />

@@ -386,7 +386,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             type="button"
             onClick={logout}
             className="p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 group"
-            title="Chiqish"
+            title={t("logout")}
             aria-label={t("logout")}
           >
             <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />

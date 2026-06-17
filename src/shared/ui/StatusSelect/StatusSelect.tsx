@@ -1,5 +1,6 @@
 import { Select } from "antd";
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 
 export type StatusFilterValue = "active" | "inactive" | "";
 
@@ -9,18 +10,19 @@ interface StatusSelectProps {
   placeholder?: string;
 }
 
-const options = [
-  { value: "", label: "Barchasi" },
-  { value: "active", label: "Faol" },
-  { value: "inactive", label: "Nofaol" },
-];
+const StatusSelect = ({ value = "", onChange, placeholder }: StatusSelectProps) => {
+  const { t } = useTranslation("common");
+  const options = [
+    { value: "", label: t("all") },
+    { value: "active", label: t("active") },
+    { value: "inactive", label: t("inactive") },
+  ];
 
-const StatusSelect = ({ value = "", onChange, placeholder = "Holat" }: StatusSelectProps) => {
   return (
     <Select
       value={value}
       options={options}
-      placeholder={placeholder}
+      placeholder={placeholder ?? t("status")}
       style={{ minWidth: 160 }}
       onChange={(nextValue) => onChange(nextValue as StatusFilterValue)}
     />

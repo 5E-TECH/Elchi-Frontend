@@ -1,5 +1,4 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import { Calendar, HeadphonesIcon, MapPin, Settings } from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -8,11 +7,11 @@ import { useTranslation } from "react-i18next";
 import type { RootState } from "../../app/config/store";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { parseISODate, toISODate } from "../../shared/lib/dateRange";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
+import DateRangePicker from "../../shared/ui/DateRangePicker";
 import PageContainer from "../../shared/ui/PageContainer";
 import UzbekistanRegionMap from "./ui/UzbekistanRegionMap";
-
-const { RangePicker } = DatePicker;
 
 type RegionItem = {
   id: string;
@@ -366,18 +365,21 @@ const RegionPage = () => {
                     </button>
                   ))}
                   <div className="mx-1 h-6 w-px bg-primarydark/30 dark:bg-white/15" />
-                  <RangePicker
+                  <DateRangePicker
                     value={
                       dateRange === "custom" && customRange
-                        ? [dayjs(customRange.start), dayjs(customRange.end)]
-                        : null
+                        ? {
+                            startDate: parseISODate(customRange.start),
+                            endDate: parseISODate(customRange.end),
+                          }
+                        : { startDate: null, endDate: null }
                     }
-                    onChange={(dates) => {
-                      if (dates?.[0] && dates?.[1]) {
+                    onChange={({ startDate, endDate }) => {
+                      if (startDate && endDate) {
                         setDateRange("custom");
                         setCustomRange({
-                          start: dates[0].format("YYYY-MM-DD"),
-                          end: dates[1].format("YYYY-MM-DD"),
+                          start: toISODate(startDate),
+                          end: toISODate(endDate),
                         });
                         return;
                       }
@@ -385,9 +387,12 @@ const RegionPage = () => {
                       setCustomRange(null);
                       setDateRange("all");
                     }}
-                    className="region-range-picker border-0! bg-transparent! shadow-none!"
-                    classNames={{ popup: { root: "region-range-picker-popup" } }}
-                    style={{ width: 220 }}
+                    className="w-[220px]"
+                    size="sm"
+                    placeholder={t("common:dateRangePlaceholder", {
+                      from: t("common:from"),
+                      to: t("common:to"),
+                    })}
                   />
                 </div>
               )}
