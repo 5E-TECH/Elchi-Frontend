@@ -2,6 +2,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Form, Input, Modal, Select, message } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { Notification } from "../../../entities/notification";
 import { useUsers } from "../../../entities/user";
 import { notificationEditSchema } from "../model/schema";
@@ -15,6 +16,7 @@ interface NotificationEditModalProps {
 }
 
 const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditModalProps) => {
+  const { t } = useTranslation("common");
   const { data: users = [] } = useUsers();
   const updateNotification = useUpdateNotification();
   const {
@@ -52,14 +54,14 @@ const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditM
   const onSubmit = handleSubmit(async (values) => {
     if (!initialData) return;
     await updateNotification.mutateAsync({ id: initialData.id, payload: values });
-    message.success("Bildirishnoma yangilandi");
+    message.success(t("notificationUpdated"));
     onClose();
   });
 
   return (
-    <Modal destroyOnHidden open={open} title="Bildirishnomani tahrirlash" footer={null} onCancel={onClose}>
+    <Modal destroyOnHidden open={open} title={t("editNotification")} footer={null} onCancel={onClose}>
       <Form layout="vertical" onFinish={onSubmit}>
-        <Form.Item label="Foydalanuvchi" validateStatus={errors.user_id ? "error" : ""} help={errors.user_id?.message}>
+        <Form.Item label={t("notificationUser")} validateStatus={errors.user_id ? "error" : ""} help={errors.user_id?.message}>
           <Controller
             control={control}
             name="user_id"
@@ -81,7 +83,7 @@ const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditM
           <Controller control={control} name="chat_id" render={({ field }) => <Input {...field} />} />
         </Form.Item>
 
-        <Form.Item label="Holat" validateStatus={errors.status ? "error" : ""} help={errors.status?.message}>
+        <Form.Item label={t("status")} validateStatus={errors.status ? "error" : ""} help={errors.status?.message}>
           <Controller
             control={control}
             name="status"
@@ -89,8 +91,8 @@ const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditM
               <Select
                 {...field}
                 options={[
-                  { value: "active", label: "Faol" },
-                  { value: "inactive", label: "Nofaol" },
+                  { value: "active", label: t("active") },
+                  { value: "inactive", label: t("inactive") },
                 ]}
               />
             )}
@@ -98,7 +100,7 @@ const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditM
         </Form.Item>
 
         <Button block type="primary" htmlType="submit" loading={updateNotification.isPending}>
-          Saqlash
+          {t("save")}
         </Button>
       </Form>
     </Modal>

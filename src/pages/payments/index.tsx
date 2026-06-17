@@ -341,7 +341,7 @@ const Payments = () => {
   // ── To be given popup uchun market list ───────────────────────────────────
   const marketsList = useMemo<PaymentMarketOption[]>(
     () =>
-      (marketsData?.data?.items ?? [])
+      toDataItems(marketsData)
         .map((market: unknown) => {
           const m = asRecord(market);
           const cashbox = asRecord(m.cashbox);
@@ -356,11 +356,11 @@ const Payments = () => {
               m.berilishi_kerak ??
                 cashbox.berilishi_kerak ??
                 cashbox.balance ??
-                m.amount,
+              m.amount,
             ),
           };
         })
-        .filter((market: PaymentMarketOption) => market.amount !== 0),
+        .filter((market: PaymentMarketOption) => market.id),
     [marketsData],
   );
 

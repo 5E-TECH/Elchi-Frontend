@@ -2,6 +2,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Button, Form, Input, Modal, Select, message } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useUsers } from "../../../entities/user";
 import { notificationSchema } from "../model/schema";
 import type { CreateNotificationDto } from "../model/types";
@@ -13,6 +14,7 @@ interface NotificationFormModalProps {
 }
 
 const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) => {
+  const { t } = useTranslation("common");
   const { data: users = [], isLoading: usersLoading } = useUsers();
   const createNotification = useCreateNotification();
   const {
@@ -41,7 +43,7 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
 
   const onSubmit = handleSubmit(async (values) => {
     await createNotification.mutateAsync(values);
-    message.success("Bildirishnoma yaratildi");
+    message.success(t("notificationCreated"));
     onClose();
     reset();
   });
@@ -50,13 +52,13 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
     <Modal
       destroyOnHidden
       open={open}
-      title="Yangi bildirishnoma"
+      title={t("addNotification")}
       footer={null}
       onCancel={onClose}
     >
       <Form layout="vertical" onFinish={onSubmit}>
         <Form.Item
-          label="Foydalanuvchi"
+          label={t("notificationUser")}
           validateStatus={errors.user_id ? "error" : ""}
           help={errors.user_id?.message}
         >
@@ -68,7 +70,7 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
                 {...field}
                 showSearch
                 loading={usersLoading}
-                placeholder="Foydalanuvchini tanlang"
+                placeholder={t("selectUser")}
                 optionFilterProp="label"
                 options={users.map((user) => ({
                   value: user.id,
@@ -87,12 +89,12 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
           <Controller
             control={control}
             name="chat_id"
-            render={({ field }) => <Input {...field} type="tel" placeholder="Masalan: 123456789" />}
+            render={({ field }) => <Input {...field} type="tel" placeholder={t("exampleChatId")} />}
           />
         </Form.Item>
 
         <Form.Item
-          label="Holat"
+          label={t("status")}
           validateStatus={errors.status ? "error" : ""}
           help={errors.status?.message}
         >
@@ -103,8 +105,8 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
               <Select
                 {...field}
                 options={[
-                  { value: "active", label: "Faol" },
-                  { value: "inactive", label: "Nofaol" },
+                  { value: "active", label: t("active") },
+                  { value: "inactive", label: t("inactive") },
                 ]}
               />
             )}
@@ -112,7 +114,7 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
         </Form.Item>
 
         <Button block type="primary" htmlType="submit" loading={createNotification.isPending}>
-          Saqlash
+          {t("save")}
         </Button>
       </Form>
     </Modal>

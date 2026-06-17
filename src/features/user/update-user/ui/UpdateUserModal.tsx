@@ -568,7 +568,7 @@ export const UpdateUserModal = memo(({
                             onChange={(nextDate) =>
                               field.onChange(isoDateToPaymentDay(nextDate))
                             }
-                            placeholder="Sanani tanlang"
+                            placeholder={t("common:selectDateRange")}
                             variant="form"
                             className="w-full"
                           />

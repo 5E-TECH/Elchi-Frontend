@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import DateRangePicker from "./DateRangePicker";
 import FilterClearButton from "./FilterClearButton";
 import {
@@ -8,12 +9,6 @@ import {
   type DateRangePreset,
   type ISODateRange,
 } from "../lib/dateRange";
-
-const defaultLabels: Record<DateRangePreset, string> = {
-  today: "Bugun",
-  week: "Shu hafta",
-  month: "Shu oy",
-};
 
 interface QuickDateRangeFilterProps {
   fromDate: string;
@@ -35,13 +30,14 @@ const QuickDateRangeFilter = ({
   onChange,
   onClear,
   labels,
-  placeholder = "Dan → Gacha",
+  placeholder,
   className = "",
   pickerClassName = "",
   clearClassName = "",
   size = "md",
   showPicker = true,
 }: QuickDateRangeFilterProps) => {
+  const { t } = useTranslation("common");
   const ranges = useMemo(
     () => ({
       today: getPresetDateRange("today"),
@@ -59,6 +55,20 @@ const QuickDateRangeFilter = ({
   }, [fromDate, ranges, toDate]);
 
   const hasDateFilter = Boolean(fromDate || toDate);
+  const defaultLabels = useMemo<Record<DateRangePreset, string>>(
+    () => ({
+      today: t("today"),
+      week: t("thisWeek"),
+      month: t("thisMonth"),
+    }),
+    [t],
+  );
+  const pickerPlaceholder =
+    placeholder ??
+    t("dateRangePlaceholder", {
+      from: t("from"),
+      to: t("to"),
+    });
 
   return (
     <div className={`flex w-full flex-col gap-2 ${className}`}>
@@ -96,7 +106,7 @@ const QuickDateRangeFilter = ({
                 to: endDate ? toISODate(endDate) : "",
               });
             }}
-            placeholder={placeholder}
+            placeholder={pickerPlaceholder}
             className={pickerClassName}
             size={size}
           />

@@ -651,10 +651,10 @@ export const CreateUserForm = memo(() => {
           <label className={labelClasses}>
             {t("paymentDay")} {required && <span className="text-red-500">*</span>}
           </label>
-          <CustomDatePicker
-            value={paymentDayToIsoDate(field.value)}
-            onChange={(nextDate) => field.onChange(isoDateToPaymentDay(nextDate))}
-            placeholder="Sanani tanlang"
+            <CustomDatePicker
+              value={paymentDayToIsoDate(field.value)}
+              onChange={(nextDate) => field.onChange(isoDateToPaymentDay(nextDate))}
+            placeholder={t("common:selectDateRange")}
             variant="form"
             className="w-full"
           />
