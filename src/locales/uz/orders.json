@@ -164,14 +164,81 @@
     "by": "Kim tomonidan",
     "role": "Rol",
     "note": "Izoh",
+    "executor": "Kim bajardi",
+    "responsibleUser": "Javobgar foydalanuvchi",
+    "relatedDetails": "Bog'liq ma'lumotlar",
+    "additional": "Qo'shimcha",
+    "statusTitle": "Holat",
+    "oldToNew": "{{count}} ta yozuv — eskidan yangiga (chapdan o'ngga)",
+    "from": "Oldin",
+    "to": "Keyin",
+    "entity": {
+      "courier": "Kuryer",
+      "branch": "Filial",
+      "post": "Pochta",
+      "market": "Market",
+      "user": "Foydalanuvchi",
+      "phone": "Telefon"
+    },
+    "field": {
+      "branch": "Filial",
+      "market": "Market",
+      "courier": "Kuryer",
+      "post": "Pochta",
+      "customer": "Mijoz",
+      "district": "Tuman",
+      "region": "Viloyat",
+      "product": "Mahsulot",
+      "user": "Foydalanuvchi",
+      "phone": "Telefon"
+    },
+    "dynamic": {
+      "dispatchToBranch": "{{post}} HQ’dan {{branch}} filialiga jo‘natildi"
+    },
+    "roleValue": {
+      "superadmin": "Super Admin",
+      "admin": "Admin",
+      "registrator": "Registrator",
+      "courier": "Kuryer",
+      "branch": "Filial",
+      "manager": "Manager",
+      "market": "Market",
+      "system": "System"
+    },
+    "status": {
+      "created": "Yaratilgan",
+      "new": "Yangi",
+      "received": "Qabul qilingan",
+      "on_the_road": "Yo'lda",
+      "waiting": "Kutilmoqda",
+      "sold": "Sotilgan",
+      "cancelled": "Bekor qilingan",
+      "cancelled_sent": "Bekor qilingan, jo'natilgan",
+      "paid": "To'langan",
+      "partly_paid": "Qisman to'langan",
+      "closed": "Yopilgan"
+    },
+    "notes": {
+      "order_created": "Buyurtma yaratildi",
+      "order_assigned_to_post": "Buyurtma pochtaga biriktirildi",
+      "order_partly_sold": "Buyurtma qisman sotildi",
+      "order_canceled": "Buyurtma bekor qilindi",
+      "order_cancelled": "Buyurtma bekor qilindi",
+      "rollback_to_waiting": "Holat kutilmoqda bosqichiga qaytarildi",
+      "branch_canceled_post_sent_to_hq": "Filial bekor qilingan pochtani bosh ofisga jo'natdi"
+    },
     "action": {
       "created": "Yaratildi",
       "statusChange": "Holat o'zgartirildi",
       "sold": "Sotildi",
       "paid": "To'landi",
       "cancelled": "Bekor qilindi",
+      "cancelledSent": "Bekor qilingan jo'natildi",
       "closed": "Yopildi",
-      "rollback": "Qaytarildi"
+      "received": "Qabul qilindi",
+      "rollback": "Qaytarildi",
+      "sent": "Jo'natildi",
+      "waiting": "Kutilmoqda"
     }
   },
   "branch": "Filial",

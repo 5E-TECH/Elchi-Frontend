@@ -280,6 +280,7 @@ export const API_ENDPOINTS = {
   // ── Scan / QR (any-auth) ─────────────────────────────────────────────────
   SCAN: {
     BY_TOKEN: (token: string | number) => `scan/${token}`, // resolve QR → order/batch/post
+    MARKET_CANCELLED: "scan/market-cancelled",
   },
 
   // ── Files (MinIO) — guide §10 ────────────────────────────────────────────

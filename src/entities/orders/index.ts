@@ -156,10 +156,19 @@ export const useOrders = () => {
   });
 
   const handoverCancelledOrders = useMutation({
-    mutationFn: ({ marketId, orderIds }: { marketId: string | number; orderIds: string[] }) =>
+    mutationFn: ({
+      marketId,
+      orderIds,
+      authorizationToken,
+    }: {
+      marketId: string | number;
+      orderIds: string[];
+      authorizationToken: string;
+    }) =>
       api
         .post(API_ENDPOINTS.ORDERS.MARKET_CANCELLED_HANDOVER(marketId), {
           order_ids: orderIds,
+          authorization_token: authorizationToken,
         })
         .then((res) => res.data),
     onSuccess: (_data, variables) => {
@@ -172,6 +181,11 @@ export const useOrders = () => {
   const generateCancelledMarketQr = useMutation({
     mutationFn: (marketId: string | number) =>
       api.post(API_ENDPOINTS.ORDERS.MARKET_CANCELLED_QR(marketId)).then((res) => res.data),
+  });
+
+  const scanMarketCancelledQr = useMutation({
+    mutationFn: (qrToken: string) =>
+      api.post(API_ENDPOINTS.SCAN.MARKET_CANCELLED, { qr_token: qrToken }).then((res) => res.data),
   });
 
   const CancelOrder = useMutation({
@@ -205,6 +219,7 @@ export const useOrders = () => {
     useCancelledOrdersByMarket,
     SendToPost,
     generateCancelledMarketQr,
+    scanMarketCancelledQr,
     handoverCancelledOrders,
     RollbackOrder,
     updateNewOrder,

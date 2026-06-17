@@ -164,14 +164,81 @@
     "by": "Changed by",
     "role": "Role",
     "note": "Note",
+    "executor": "Performed by",
+    "responsibleUser": "Responsible user",
+    "relatedDetails": "Related details",
+    "additional": "Additional",
+    "statusTitle": "Status",
+    "oldToNew": "{{count}} records — oldest to newest (left to right)",
+    "from": "From",
+    "to": "To",
+    "entity": {
+      "courier": "Courier",
+      "branch": "Branch",
+      "post": "Post",
+      "market": "Market",
+      "user": "User",
+      "phone": "Phone"
+    },
+    "field": {
+      "branch": "Branch",
+      "market": "Market",
+      "courier": "Courier",
+      "post": "Post",
+      "customer": "Customer",
+      "district": "District",
+      "region": "Region",
+      "product": "Product",
+      "user": "User",
+      "phone": "Phone"
+    },
+    "dynamic": {
+      "dispatchToBranch": "{{post}} was dispatched from HQ to {{branch}} branch"
+    },
+    "roleValue": {
+      "superadmin": "Super Admin",
+      "admin": "Admin",
+      "registrator": "Registrar",
+      "courier": "Courier",
+      "branch": "Branch",
+      "manager": "Manager",
+      "market": "Market",
+      "system": "System"
+    },
+    "status": {
+      "created": "Created",
+      "new": "New",
+      "received": "Received",
+      "on_the_road": "On the road",
+      "waiting": "Waiting",
+      "sold": "Sold",
+      "cancelled": "Cancelled",
+      "cancelled_sent": "Cancelled, sent",
+      "paid": "Paid",
+      "partly_paid": "Partly paid",
+      "closed": "Closed"
+    },
+    "notes": {
+      "order_created": "Order created",
+      "order_assigned_to_post": "Order assigned to post",
+      "order_partly_sold": "Order partly sold",
+      "order_canceled": "Order cancelled",
+      "order_cancelled": "Order cancelled",
+      "rollback_to_waiting": "Rolled back to waiting",
+      "branch_canceled_post_sent_to_hq": "Branch sent cancelled post to HQ"
+    },
     "action": {
       "created": "Created",
       "statusChange": "Status changed",
       "sold": "Sold",
       "paid": "Paid",
       "cancelled": "Cancelled",
+      "cancelledSent": "Cancelled sent",
       "closed": "Closed",
-      "rollback": "Rolled back"
+      "received": "Received",
+      "rollback": "Rolled back",
+      "sent": "Sent",
+      "waiting": "Waiting"
     }
   },
   "branch": "Branch",

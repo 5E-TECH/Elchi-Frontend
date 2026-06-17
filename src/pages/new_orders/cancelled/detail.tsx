@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -36,6 +36,11 @@ type CancelledMarketQr = {
   image?: string;
   token?: string;
   payload?: string;
+};
+
+type CancelledHandoverAuthorization = {
+  authorizationToken: string;
+  expiresAt: number;
 };
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -101,6 +106,30 @@ const normalizeCancelledMarketQr = (response: unknown): CancelledMarketQr => {
   };
 };
 
+const normalizeCancelledAuthorization = (
+  response: unknown,
+): CancelledHandoverAuthorization => {
+  const source = asRecord(response);
+  const data = asRecord(source.data ?? source);
+  const authorizationToken = firstText(
+    data.authorization_token,
+    data.authorizationToken,
+    data.token,
+  );
+  const expiresAtText = firstText(data.expires_at, data.expiresAt);
+  const expiresAtFromResponse = expiresAtText ? new Date(expiresAtText).getTime() : NaN;
+  const remainingSeconds = Number(data.remaining_seconds ?? data.remainingSeconds ?? 300);
+  const expiresAt = Number.isFinite(expiresAtFromResponse)
+    ? expiresAtFromResponse
+    : Date.now() + Math.max(1, remainingSeconds) * 1000;
+
+  if (!authorizationToken) {
+    throw new Error("Authorization token is missing");
+  }
+
+  return { authorizationToken, expiresAt };
+};
+
 const getDecodedScannerText = (rawValue: string) => {
   const candidates = normalizeScannerCandidates(rawValue, window.location.origin);
   return [rawValue, ...candidates].map((item) => item.trim()).filter(Boolean);
@@ -135,6 +164,11 @@ const scannerContainsMarketCancelledQr = (rawValue: string, marketId: string) =>
   });
 };
 
+const extractMarketCancelledQrToken = (rawValue: string) =>
+  getDecodedScannerText(rawValue).find((candidate) =>
+    candidate.trim().toUpperCase().startsWith("MCR-"),
+  ) ?? "";
+
 const toOrderCardData = (order: OrderListItem): ApiOrder => ({
   id: order.id,
   qr_code_token: order.qr_code_token,
@@ -166,6 +200,13 @@ const toOrderCardData = (order: OrderListItem): ApiOrder => ({
   region: order.district?.region ? { name: order.district.region.name } : undefined,
 });
 
+const formatCountdown = (seconds: number) => {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+};
+
 const CancelledMarketDetail = () => {
   const { t } = useTranslation("newOrders");
   const { api: notificationApi } = useAppNotification();
@@ -174,6 +215,7 @@ const CancelledMarketDetail = () => {
   const {
     useCancelledOrdersByMarket,
     generateCancelledMarketQr,
+    scanMarketCancelledQr,
     handoverCancelledOrders,
   } = useOrders();
   const query = useCancelledOrdersByMarket(marketId);
@@ -184,15 +226,21 @@ const CancelledMarketDetail = () => {
   const [scanError, setScanError] = useState("");
   const [handoverQr, setHandoverQr] = useState<CancelledMarketQr | null>(null);
   const [isHandoverQrScanned, setIsHandoverQrScanned] = useState(false);
+  const [authorizationToken, setAuthorizationToken] = useState("");
+  const [authorizationExpiresAt, setAuthorizationExpiresAt] = useState<number | null>(null);
+  const [authorizationRemainingSeconds, setAuthorizationRemainingSeconds] = useState(0);
   const rawOrders = useMemo(() => extractCancelledOrders(query.data), [query.data]);
   const orders = useMemo(
     () => rawOrders.filter((order) => !sentIds.has(order.id)),
     [rawOrders, sentIds],
   );
   const selectableOrders = useMemo(
-    () => orders.filter((order) => order.status === "cancelled"),
+    () => orders,
     [orders],
   );
+  const allSelectableSelected =
+    selectableOrders.length > 0 &&
+    selectableOrders.every((order) => selectedIds.has(order.id));
   const totalAmount = useMemo(
     () => orders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0),
     [orders],
@@ -218,8 +266,31 @@ const CancelledMarketDetail = () => {
     duplicateCooldownMs: 1800,
   });
 
+  useEffect(() => {
+    if (!authorizationToken || !authorizationExpiresAt) {
+      setAuthorizationRemainingSeconds(0);
+      return;
+    }
+
+    const updateRemaining = () => {
+      const remainingSeconds = Math.max(0, Math.ceil((authorizationExpiresAt - Date.now()) / 1000));
+      setAuthorizationRemainingSeconds(remainingSeconds);
+
+      if (remainingSeconds > 0) return;
+
+      setAuthorizationToken("");
+      setAuthorizationExpiresAt(null);
+      setIsHandoverQrScanned(false);
+    };
+
+    updateRemaining();
+    const timer = window.setInterval(updateRemaining, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [authorizationExpiresAt, authorizationToken]);
+
   const selectOrder = useCallback((order: OrderListItem) => {
-    if (order.status !== "cancelled" || selectedIds.has(order.id)) return;
+    if (selectedIds.has(order.id)) return;
 
     setSelectedIds((previous) => {
       const next = new Set(previous);
@@ -229,25 +300,6 @@ const CancelledMarketDetail = () => {
     setScanError("");
     void playScanFeedback("success");
   }, [selectedIds]);
-
-  const handleMissingOrder = useCallback(() => {
-    const message = t("cancelledScanMissing");
-    setScanError(message);
-    playMissingOrderFeedback();
-    notificationApi.warning({
-      message: t("qrNotFound"),
-      description: message,
-      placement: "topRight",
-      duration: 3,
-    });
-  }, [notificationApi, t]);
-
-  useOrderQrScanner({
-    orders: selectableOrders,
-    enabled: !isMarketRole && !handoverCancelledOrders.isPending,
-    onMatch: selectOrder,
-    onMissing: handleMissingOrder,
-  });
 
   const isGeneratedQrMatch = useCallback((rawValue: string) => {
     if (!handoverQr) return false;
@@ -263,7 +315,7 @@ const CancelledMarketDetail = () => {
       .some((value) => expectedValues.includes(value));
   }, [handoverQr]);
 
-  const verifyHandoverQr = useCallback((rawValue: string) => {
+  const verifyHandoverQr = useCallback(async (rawValue: string) => {
     if (!marketId) return false;
 
     const isValid =
@@ -272,24 +324,81 @@ const CancelledMarketDetail = () => {
 
     if (!isValid) return false;
 
-    setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
-    setIsHandoverQrScanned(true);
-    setScanError("");
-    void playScanFeedback("success");
-    notificationApi.success({
-      message: t("cancelledQrAccepted"),
-      description: t("cancelledQrAcceptedDescription", { count: selectableOrders.length }),
+    const qrToken = extractMarketCancelledQrToken(rawValue) || handoverQr?.token || handoverQr?.payload || "";
+    if (!qrToken) return false;
+
+    try {
+      const response = await scanMarketCancelledQr.mutateAsync(qrToken);
+      const authorization = normalizeCancelledAuthorization(response);
+
+      setAuthorizationToken(authorization.authorizationToken);
+      setAuthorizationExpiresAt(authorization.expiresAt);
+      setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
+      setIsHandoverQrScanned(true);
+      setScanError("");
+      void playScanFeedback("success");
+      notificationApi.success({
+        message: t("cancelledQrAccepted"),
+        description: t("cancelledQrAcceptedDescription", { count: selectableOrders.length }),
+        placement: "topRight",
+        duration: 3,
+      });
+
+      return true;
+    } catch (error: unknown) {
+      const message = getBackendErrorMessage(error) ?? t("cancelledScanMissing");
+      setAuthorizationToken("");
+      setAuthorizationExpiresAt(null);
+      setIsHandoverQrScanned(false);
+      setScanError(message);
+      playMissingOrderFeedback();
+      notificationApi.error({
+        message: t("qrNotFound"),
+        description: message,
+        placement: "topRight",
+        duration: 4,
+      });
+      return true;
+    }
+  }, [
+    handoverQr?.payload,
+    handoverQr?.token,
+    isGeneratedQrMatch,
+    marketId,
+    notificationApi,
+    scanMarketCancelledQr,
+    selectableOrders,
+    t,
+  ]);
+
+  const handleMissingOrder = useCallback((rawValue?: string) => {
+    if (rawValue && extractMarketCancelledQrToken(rawValue)) {
+      void verifyHandoverQr(rawValue);
+      return;
+    }
+
+    const message = t("cancelledScanMissing");
+    setScanError(message);
+    playMissingOrderFeedback();
+    notificationApi.warning({
+      message: t("qrNotFound"),
+      description: message,
       placement: "topRight",
       duration: 3,
     });
+  }, [notificationApi, t, verifyHandoverQr]);
 
-    return true;
-  }, [isGeneratedQrMatch, marketId, notificationApi, selectableOrders, t]);
+  useOrderQrScanner({
+    orders: selectableOrders,
+    enabled: !isMarketRole && !handoverCancelledOrders.isPending && !scanMarketCancelledQr.isPending,
+    onMatch: selectOrder,
+    onMissing: handleMissingOrder,
+  });
 
-  const handleCameraDecode = useCallback((rawValue: string) => {
+  const handleCameraDecode = useCallback(async (rawValue: string) => {
     if (!canAcceptScan(rawValue)) return;
 
-    if (verifyHandoverQr(rawValue)) {
+    if (await verifyHandoverQr(rawValue)) {
       setIsCameraOpen(false);
       return;
     }
@@ -299,7 +408,7 @@ const CancelledMarketDetail = () => {
       .find(Boolean);
 
     if (!matchedOrder) {
-      handleMissingOrder();
+      handleMissingOrder(rawValue);
       return;
     }
 
@@ -343,14 +452,17 @@ const CancelledMarketDetail = () => {
       selectedIds.size === 0 ||
       handoverCancelledOrders.isPending ||
       !marketId ||
-      !isHandoverQrScanned
+      !isHandoverQrScanned ||
+      !authorizationToken
     ) return;
     const orderIds = Array.from(selectedIds);
 
-    handoverCancelledOrders.mutate({ marketId, orderIds }, {
+    handoverCancelledOrders.mutate({ marketId, orderIds, authorizationToken }, {
       onSuccess: () => {
         setSentIds((previous) => new Set([...previous, ...orderIds]));
         setSelectedIds(new Set());
+        setAuthorizationToken("");
+        setAuthorizationExpiresAt(null);
         setIsHandoverQrScanned(false);
         notificationApi.success({
           message: t("cancelledSendSuccess"),
@@ -368,10 +480,38 @@ const CancelledMarketDetail = () => {
         });
       },
     });
-  }, [handoverCancelledOrders, isHandoverQrScanned, marketId, notificationApi, query, selectedIds, t]);
+  }, [
+    authorizationToken,
+    handoverCancelledOrders,
+    isHandoverQrScanned,
+    marketId,
+    notificationApi,
+    query,
+    selectedIds,
+    t,
+  ]);
 
   return (
     <div className="space-y-5 pb-28 md:pb-6">
+      {!isMarketRole && authorizationToken ? (
+        <div className="fixed right-4 top-24 z-50 rounded-2xl border border-emerald-300/25 bg-[#172b3a]/95 px-4 py-3 text-emerald-100 shadow-2xl shadow-emerald-500/20 backdrop-blur-xl dark:bg-[#172b3a]/95 sm:right-8">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-400" />
+            </span>
+            <div className="min-w-0">
+              <p className="m-0 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200/80">
+                QR-code aktiv vaqti
+              </p>
+              <p className="m-0 mt-1 font-mono text-3xl font-black leading-none tracking-normal text-white">
+                {formatCountdown(authorizationRemainingSeconds)}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <section className="relative overflow-hidden rounded-[28px] border border-red-300/20 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primary)_94%,#ef4444_6%)_0%,var(--color-primary)_68%)] p-4 shadow-sm dark:border-red-300/10 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primarydark)_88%,#ef4444_12%)_0%,var(--color-primarydark)_72%)] sm:p-5">
         <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-red-500/10 blur-3xl dark:bg-red-400/10" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -495,39 +635,61 @@ const CancelledMarketDetail = () => {
                   {isMarketRole
                     ? t("cancelledQrReady")
                     : isHandoverQrScanned
-                      ? t("cancelledQrScanned")
+                      ? `${t("cancelledQrScanned")} · ${formatCountdown(authorizationRemainingSeconds)}`
                       : t("cancelledQrRequired")}
                 </div>
-                {!isMarketRole ? (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAll(selectedIds.size !== selectableOrders.length)}
-                    disabled={selectableOrders.length === 0 || handoverCancelledOrders.isPending}
-                    className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 px-4 text-sm font-bold text-maindark transition hover:border-main/35 hover:text-main disabled:cursor-not-allowed disabled:opacity-45 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-                  >
-                    <CheckCircle2 size={16} />
-                    {selectedIds.size === selectableOrders.length && selectableOrders.length > 0
-                      ? t("deselectAll")
-                      : t("selectAll")}
-                  </button>
+                {!isMarketRole && selectedIds.size > 0 ? (
+                  <span className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-main px-4 text-sm font-black text-white shadow-lg shadow-main/20">
+                    {t("cancelledSelectedCount", { count: selectedIds.size })}
+                  </span>
                 ) : null}
               </div>
             </div>
 
             <div className="space-y-3 p-3 sm:p-4">
+              {!isMarketRole ? (
+                <button
+                  type="button"
+                  onClick={() => handleSelectAll(!allSelectableSelected)}
+                  disabled={selectableOrders.length === 0 || handoverCancelledOrders.isPending}
+                  className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-3 py-3 text-left transition hover:border-main/30 hover:bg-main/5 disabled:cursor-not-allowed disabled:opacity-45 dark:border-white/5 dark:bg-maindark dark:hover:bg-white/5 sm:px-4"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-all ${
+                      allSelectableSelected
+                        ? "border-main bg-main text-white shadow-sm shadow-main/30"
+                        : "border-white/10 bg-white/5 text-gray-300 dark:text-white/45"
+                    }`}>
+                      <CheckCircle2 size={18} />
+                    </span>
+                    <span className="truncate text-sm font-bold text-maindark dark:text-white">
+                      {allSelectableSelected ? t("deselectAll") : t("selectAll")}
+                    </span>
+                  </span>
+                  {selectedIds.size > 0 ? (
+                    <span className="shrink-0 rounded-lg bg-main px-2.5 py-1 text-xs font-black text-white">
+                      {t("cancelledSelectedCount", { count: selectedIds.size })}
+                    </span>
+                  ) : null}
+                </button>
+              ) : null}
               {query.isLoading ? (
                 <div className="flex h-64 items-center justify-center">
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-main/20 border-t-main" />
                 </div>
-              ) : orders.map((order) => (
+              ) : orders.length > 0 ? orders.map((order) => (
                 <OrderCard
                   key={order.id}
                   order={toOrderCardData(order)}
                   isSelected={selectedIds.has(order.id)}
                   onToggle={() => handleSelectChange(order.id, !selectedIds.has(order.id))}
-                  showCheckbox={!isMarketRole && order.status === "cancelled"}
+                  showCheckbox={!isMarketRole}
                 />
-              ))}
+              )) : (
+                <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-[color:var(--color-border-soft)] text-sm font-bold text-[color:var(--color-text-muted)] dark:border-white/10 dark:text-[color:var(--color-text-muted-dark)]">
+                  {t("noCancelledOrders")}
+                </div>
+              )}
             </div>
           </section>
         </>
@@ -552,7 +714,7 @@ const CancelledMarketDetail = () => {
             <button
               type="button"
               onClick={handleSendToMarket}
-              disabled={handoverCancelledOrders.isPending || !isHandoverQrScanned}
+              disabled={handoverCancelledOrders.isPending || !isHandoverQrScanned || !authorizationToken}
               className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-red-500 to-red-600 px-5 text-sm font-black text-white shadow-lg shadow-red-500/25 transition hover:-translate-y-0.5 hover:from-red-600 hover:to-red-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:w-auto"
             >
               {handoverCancelledOrders.isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
@@ -625,7 +787,7 @@ const CancelledMarketDetail = () => {
         torchOnLabel={t("torchOn")}
         torchOffLabel={t("torchOff")}
         invalidQrMessage={t("cancelledScanMissing")}
-        loading={handoverCancelledOrders.isPending}
+        loading={handoverCancelledOrders.isPending || scanMarketCancelledQr.isPending}
         loadingText={t("cancelledSending")}
         error={scanError}
       />

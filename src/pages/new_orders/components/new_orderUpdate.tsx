@@ -547,6 +547,32 @@ const NewOrderUpdate = () => {
   );
   const districtName = useMemo(() => order?.district?.name ?? "—", [order]);
   const addressText = useMemo(() => order?.address ?? "—", [order]);
+  const trackingContext = useMemo(() => {
+    const source = order as (OrderDetail & {
+      branch?: { name?: string | null } | null;
+      destination_branch?: { name?: string | null } | null;
+      target_branch?: { name?: string | null } | null;
+      post?: { name?: string | null; title?: string | null } | null;
+      branch_name?: string | null;
+      destination_branch_name?: string | null;
+      target_branch_name?: string | null;
+      post_name?: string | null;
+    }) | null;
+
+    return {
+      branchName:
+        source?.destination_branch?.name ??
+        source?.target_branch?.name ??
+        source?.destination_branch_name ??
+        source?.target_branch_name ??
+        null,
+      postName:
+        source?.post?.name ??
+        source?.post?.title ??
+        source?.post_name ??
+        null,
+    };
+  }, [districtName, order]);
 
   // ─── Handlers — Address popup ─────────────────────────────────────────────
   const handleOpenAddressPopup = useCallback(() => {
@@ -998,7 +1024,13 @@ const NewOrderUpdate = () => {
         </div>
       )}
 
-      {orderId ? <OrderTracking orderId={orderId} currentStatus={order?.status} /> : null}
+      {orderId ? (
+        <OrderTracking
+          orderId={orderId}
+          currentStatus={order?.status}
+          context={trackingContext}
+        />
+      ) : null}
 
       {/* ─── Address Edit Popup ─────────────────────────────────────────────── */}
       <UpdatePopup
