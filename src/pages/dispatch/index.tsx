@@ -1,13 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
-  CalendarDays,
   CheckCircle2,
   Home,
   Loader2,
-  MapPin,
-  Phone,
-  Printer,
   QrCode,
   Trash2,
   Truck,
@@ -42,6 +38,11 @@ type PendingOrder = {
   deliveryType: string;
   createdAt: string;
   status: string;
+  fields: Array<{
+    key: string;
+    label: string;
+    value: string;
+  }>;
 };
 
 type BackendOrderError = {
@@ -61,6 +62,7 @@ const asRecord = (value: unknown): UnknownRecord =>
 const safe = (value: unknown, fallback = "—") => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
+  if (typeof value === "boolean") return value ? "true" : "false";
   return fallback;
 };
 
@@ -82,6 +84,97 @@ const getDeliveryLabel = (value: unknown, t: (key: string) => string) => {
   if (value === "center") return t("orders:deliveryToCenter");
   if (value === "address" || value === "home") return t("orders:deliveryToHome");
   return safe(value);
+};
+
+const unwrapOrderPayload = (payload: unknown) => {
+  const source = asRecord(payload);
+  const responseData = asRecord(source.data ?? source);
+  const responsePayload = asRecord(responseData.data ?? responseData);
+  return asRecord(responsePayload.order ?? responseData.order ?? responsePayload);
+};
+
+const formatFieldLabel = (key: string) =>
+  key
+    .replace(/\./g, " ")
+    .replace(/_/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (letter) => letter.toUpperCase());
+
+const isHiddenOrderField = (key: string) => {
+  const lastPart = key.split(".").at(-1) ?? key;
+  const normalized = lastPart.toLowerCase();
+
+  return (
+    normalized === "id" ||
+    normalized === "uuid" ||
+    normalized.endsWith("_id") ||
+    /Id$/.test(lastPart)
+  );
+};
+
+const formatFieldValue = (value: unknown): string => {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return safe(value);
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map(formatFieldValue)
+      .filter((item) => item !== "—")
+      .join(", ") || "—";
+  }
+
+  const record = asRecord(value);
+  const readableValue =
+    record.name ??
+    record.fullName ??
+    record.full_name ??
+    record.title ??
+    record.phone_number ??
+    record.phone;
+
+  if (readableValue !== undefined) return safe(readableValue);
+
+  const values = Object.entries(record)
+    .filter(([key]) => !isHiddenOrderField(key))
+    .map(([, item]) => formatFieldValue(item))
+    .filter((item) => item !== "—");
+
+  return values.join(", ") || "—";
+};
+
+const flattenOrderFields = (order: UnknownRecord) => {
+  const fields: PendingOrder["fields"] = [];
+
+  const walk = (record: UnknownRecord, prefix = "", depth = 0) => {
+    Object.entries(record).forEach(([key, value]) => {
+      const nextKey = prefix ? `${prefix}.${key}` : key;
+
+      if (isHiddenOrderField(nextKey)) return;
+
+      if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        depth < 1
+      ) {
+        walk(asRecord(value), nextKey, depth + 1);
+        return;
+      }
+
+      fields.push({
+        key: nextKey,
+        label: formatFieldLabel(nextKey),
+        value: formatFieldValue(value),
+      });
+    });
+  };
+
+  walk(order);
+
+  return fields.filter((field) => field.value !== "—");
 };
 
 const ORDER_STATUS_KEYS = new Set([
@@ -153,10 +246,7 @@ const normalizeCourierOption = (value: unknown) => {
 };
 
 const normalizeOrder = (payload: unknown, token: string, t: (key: string) => string): PendingOrder | null => {
-  const source = asRecord(payload);
-  const responseData = asRecord(source.data ?? source);
-  const responsePayload = asRecord(responseData.data ?? responseData);
-  const order = asRecord(responsePayload.order ?? responseData.order ?? responsePayload);
+  const order = unwrapOrderPayload(payload);
   const id = safe(order.id, "");
   if (!id) return null;
 
@@ -172,7 +262,7 @@ const normalizeOrder = (payload: unknown, token: string, t: (key: string) => str
     id,
     token,
     market: safe(market.name ?? sender.name),
-    name: safe(customer.name ?? order.name ?? order.customer_name ?? order.receiver),
+    name: safe(order.name, ""),
     phone: safe(customer.phone_number ?? customer.phone ?? order.phone_number ?? order.phone),
     district: safe(district.name ?? order.district_name),
     region: safe(region.name ?? order.region_name),
@@ -181,6 +271,7 @@ const normalizeOrder = (payload: unknown, token: string, t: (key: string) => str
     deliveryType: getDeliveryLabel(order.where_deliver ?? order.delivery_type ?? order.deliveryType, t),
     createdAt: formatDate(order.createdAt ?? order.created_at ?? order.updatedAt ?? order.updated_at),
     status: status || "—",
+    fields: flattenOrderFields(order),
   };
 };
 
@@ -259,11 +350,6 @@ const DispatchPage = () => {
     setSelectedOrderIds((prev) => {
       const availableIds = new Set(pendingOrders.map((order) => order.id));
       const next = new Set<string>();
-      pendingOrders.forEach((order) => {
-        if (prev.size === 0 || prev.has(order.id)) {
-          next.add(order.id);
-        }
-      });
 
       prev.forEach((id) => {
         if (availableIds.has(id)) next.add(id);
@@ -296,6 +382,20 @@ const DispatchPage = () => {
     () => pendingOrders.filter((order) => selectedOrderIds.has(order.id)),
     [pendingOrders, selectedOrderIds],
   );
+
+  const tableColumns = useMemo(() => {
+    const columns = new Map<string, string>();
+
+    pendingOrders.forEach((order) => {
+      order.fields.forEach((field) => {
+        if (!columns.has(field.key)) {
+          columns.set(field.key, field.label);
+        }
+      });
+    });
+
+    return Array.from(columns, ([key, label]) => ({ key, label }));
+  }, [pendingOrders]);
 
   const allOrdersSelected = pendingOrders.length > 0 && selectedOrderIds.size === pendingOrders.length;
 
@@ -383,6 +483,11 @@ const DispatchPage = () => {
 
         return [...prev, nextOrder];
       });
+      setSelectedOrderIds((selectedIds) => {
+        const next = new Set(selectedIds);
+        next.add(nextOrder.id);
+        return next;
+      });
       void playScanFeedback("success");
       if (isCameraScannerOpenRef.current) {
         setIsCameraScannerOpen(false);
@@ -420,25 +525,31 @@ const DispatchPage = () => {
 
   const handleComplete = async (courierId: string, courierName: string) => {
     if (!courierId || selectedOrders.length === 0 || assignCourier.isPending) return;
+    const assignedOrderIds = new Set(selectedOrders.map((order) => order.id));
+    const assignedCount = selectedOrders.length;
 
     try {
       await assignCourier.mutateAsync({
         courier_id: courierId,
-        order_ids: selectedOrders.map((order) => order.id),
+        order_ids: Array.from(assignedOrderIds),
       });
 
       notificationApi.success({
         message: t("success"),
         description: t("assignSuccess", {
-          count: selectedOrders.length,
+          count: assignedCount,
           courier: courierName,
         }),
         placement: "topRight",
         duration: 3,
       });
 
-      setPendingOrders([]);
-      setSelectedOrderIds(new Set());
+      setPendingOrders((prev) => prev.filter((order) => !assignedOrderIds.has(order.id)));
+      setSelectedOrderIds((prev) => {
+        const next = new Set(prev);
+        assignedOrderIds.forEach((id) => next.delete(id));
+        return next;
+      });
       setIsCourierPopupOpen(false);
       setScanError("");
       setIsCameraScannerOpen(false);
@@ -503,13 +614,6 @@ const DispatchPage = () => {
               showLabel
               className="!h-10 !rounded-2xl !border !border-main/25 !bg-main/10 !text-main hover:!bg-main/15 dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
             />
-            <button
-              type="button"
-              className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-2xl border border-main/25 bg-main/10 px-4 text-sm font-extrabold text-main transition hover:bg-main/15 dark:border-white/10 dark:bg-white/8 dark:text-white dark:hover:bg-white/12"
-            >
-              <Printer size={16} />
-              {t("printSelected", { count: selectedOrders.length })}
-            </button>
           </div>
         </div>
 
@@ -613,23 +717,24 @@ const DispatchPage = () => {
           </div>
         ) : (
           <div className="mt-3 overflow-x-auto custom-scrollbar">
-            <table className="min-w-[1030px] w-full border-separate border-spacing-y-2">
+            <table className="min-w-max w-full border-separate border-spacing-y-2">
               <thead>
                 <tr className="text-left text-[11px] font-black uppercase text-(--color-text-muted) dark:text-text-muted-dark">
-                  <th className="px-4 py-2">{t("tableName")}</th>
-                  <th className="px-4 py-2">{t("tablePhone")}</th>
-                  <th className="px-4 py-2">{t("tableDistrict")}</th>
-                  <th className="px-4 py-2">{t("tableMarket")}</th>
-                  <th className="px-4 py-2">{t("tablePrice")}</th>
-                  <th className="px-4 py-2">{t("tableDeliveryType")}</th>
-                  <th className="px-4 py-2">{t("tableDate")}</th>
-                  <th className="px-4 py-2">{t("tableStatus")}</th>
+                  <th className="sticky left-0 z-10 bg-primary px-4 py-2 dark:bg-primarydark">
+                    {t("selectAll")}
+                  </th>
+                  {tableColumns.map((column) => (
+                    <th key={column.key} className="whitespace-nowrap px-4 py-2">
+                      {column.label}
+                    </th>
+                  ))}
                   <th className="px-4 py-2 text-right">{t("tableAction")}</th>
                 </tr>
               </thead>
               <tbody>
                 {pendingOrders.map((order) => {
                   const selected = selectedOrderIds.has(order.id);
+                  const fieldMap = new Map(order.fields.map((field) => [field.key, field.value]));
 
                   return (
                     <tr
@@ -637,54 +742,32 @@ const DispatchPage = () => {
                       onClick={() => toggleOrderSelection(order.id)}
                       className={`cursor-pointer text-sm font-semibold text-maindark transition dark:text-white ${selected ? "bg-main/10 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.38)]" : "bg-white/45 dark:bg-white/4"} hover:bg-main/12 dark:hover:bg-white/8`}
                     >
-                      <td className="rounded-l-xl px-4 py-3">
-                        <div className="flex min-w-0 items-center gap-2">
+                      <td className="sticky left-0 z-10 rounded-l-xl bg-inherit px-4 py-3">
+                        <div className="flex items-center gap-2">
                           <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${selected ? "bg-main text-white" : "bg-white/70 text-(--color-text-muted) dark:bg-white/8 dark:text-white/70"}`}>
                             <UserRound size={13} />
                           </span>
-                          <span className="max-w-42 truncate">{order.name}</span>
+                          <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${selected ? "border-main bg-main text-white" : "border-main/35 bg-main/10 text-transparent dark:border-white/20"}`}>
+                            <CheckCircle2 size={13} />
+                          </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex max-w-38 items-center gap-1.5 truncate text-(--color-text-muted) dark:text-text-muted-dark">
-                          <Phone size={12} className="shrink-0" />
-                          <span className="truncate">{order.phone}</span>
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex max-w-38 items-center gap-1.5 truncate text-(--color-text-muted) dark:text-text-muted-dark">
-                          <MapPin size={12} className="shrink-0" />
-                          <span className="truncate">
-                            {[order.region, order.district].filter((value) => value !== "—").join(", ") || "—"}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="block max-w-36 truncate">{order.market}</span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-black">
-                        {formatMoney(order.amount)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-lg border px-2.5 py-1 text-[11px] font-extrabold ${order.deliveryType === t("orders:deliveryToHome") ? "border-amber-400/25 bg-amber-500/12 text-amber-600 dark:text-amber-300" : "border-slate-400/20 bg-slate-500/12 text-slate-600 dark:text-slate-200"}`}>
-                          {order.deliveryType}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-(--color-text-muted) dark:text-text-muted-dark">
-                          <CalendarDays size={12} className="shrink-0" />
-                          {order.createdAt}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {isOrderStatus(order.status) ? (
-                          <OrderStatusBadge status={order.status} />
-                        ) : (
-                          <span className="inline-flex rounded-full border border-(--color-border-soft) px-2.5 py-1 text-[12px] font-semibold text-(--color-text-muted) dark:border-white/10 dark:text-text-muted-dark">
-                            {order.status}
-                          </span>
-                        )}
-                      </td>
+                      {tableColumns.map((column) => {
+                        const value = fieldMap.get(column.key) ?? "—";
+                        const normalizedKey = column.key.toLowerCase();
+
+                        return (
+                          <td key={column.key} className="max-w-64 px-4 py-3">
+                            {normalizedKey.endsWith("status") && isOrderStatus(value) ? (
+                              <OrderStatusBadge status={value} />
+                            ) : (
+                              <span className="block truncate" title={value}>
+                                {value}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
                       <td className="rounded-r-xl px-4 py-3">
                         <div className="flex justify-end">
                           <button

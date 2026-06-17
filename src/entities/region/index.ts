@@ -49,6 +49,30 @@ export interface RegionSummary {
   totalRevenue: number;
 }
 
+export interface DistrictStatsItem {
+  id: string;
+  name: string;
+  satoCode?: string;
+  totalOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  pendingOrders: number;
+  successRate: number;
+  revenue: number;
+  activeCouriers: number;
+}
+
+export interface RegionDetailStats {
+  id: string;
+  name: string;
+  summary: RegionSummary & {
+    pendingOrders: number;
+    activeCouriers: number;
+    successRate: number;
+  };
+  districts: DistrictStatsItem[];
+}
+
 export const toNumber = (value: unknown, fallback = 0): number => {
   if (value === null || value === undefined || value === "") return fallback;
   const parsed = Number(value);
@@ -136,6 +160,114 @@ export const normalizeSummary = (payload: unknown): RegionSummary => {
   };
 };
 
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const unwrapRegionDetail = (payload: unknown) => {
+  const response = asRecord(payload);
+  const firstData = asRecord(response.data);
+  const secondData = asRecord(firstData.data);
+
+  return Object.keys(secondData).length
+    ? secondData
+    : Object.keys(firstData).length
+      ? firstData
+      : response;
+};
+
+const normalizeDistrictStatsItem = (raw: unknown, index: number): DistrictStatsItem => {
+  const item = asRecord(raw);
+  const totalOrders = toNumber(
+    item.totalOrders ??
+      item.total_orders ??
+      item.ordersCount ??
+      item.orders_count ??
+      item.orderCount ??
+      item.order_count,
+  );
+  const deliveredOrders = toNumber(item.deliveredOrders ?? item.delivered_orders);
+  const cancelledOrders = toNumber(item.cancelledOrders ?? item.cancelled_orders);
+  const rawPending = toNumber(item.pendingOrders ?? item.pending_orders);
+  const pendingOrders =
+    rawPending > 0 ? rawPending : Math.max(totalOrders - deliveredOrders - cancelledOrders, 0);
+  const successRate =
+    toNumber(item.successRate ?? item.success_rate) ||
+    (totalOrders > 0 ? Math.round((deliveredOrders / totalOrders) * 100) : 0);
+
+  return {
+    id: String(item.id ?? item.district_id ?? item.districtId ?? index + 1),
+    name: String(item.name ?? item.districtName ?? item.district_name ?? ""),
+    satoCode: item.sato_code || item.satoCode ? String(item.sato_code ?? item.satoCode) : undefined,
+    totalOrders,
+    deliveredOrders,
+    cancelledOrders,
+    pendingOrders,
+    successRate,
+    revenue: toNumber(item.revenue ?? item.totalRevenue ?? item.total_revenue),
+    activeCouriers: toNumber(
+      item.activeCouriers ??
+        item.active_couriers ??
+        (Array.isArray(item.couriers) ? item.couriers.length : 0),
+    ),
+  };
+};
+
+export const normalizeRegionDetailStats = (payload: unknown): RegionDetailStats => {
+  const source = unwrapRegionDetail(payload);
+  const summary = asRecord(source.summary);
+  const region = asRecord(source.region);
+  const districtsSource = Array.isArray(source.districts)
+    ? source.districts
+    : Array.isArray(source.tumanlar)
+      ? source.tumanlar
+      : [];
+  const districts = districtsSource.map(normalizeDistrictStatsItem);
+  const summaryOrders = toNumber(
+    summary.totalOrders ??
+      summary.total_orders ??
+      summary.ordersCount ??
+      summary.orders_count ??
+      source.totalOrders ??
+      source.ordersCount ??
+      source.orders_count,
+  );
+  const totalOrders =
+    summaryOrders || districts.reduce((sum, district) => sum + district.totalOrders, 0);
+  const totalDelivered =
+    toNumber(summary.totalDelivered ?? summary.total_delivered ?? summary.deliveredOrders ?? summary.delivered_orders) ||
+    districts.reduce((sum, district) => sum + district.deliveredOrders, 0);
+  const totalCancelled =
+    toNumber(summary.totalCancelled ?? summary.total_cancelled ?? summary.cancelledOrders ?? summary.cancelled_orders) ||
+    districts.reduce((sum, district) => sum + district.cancelledOrders, 0);
+  const pendingOrders =
+    toNumber(summary.pendingOrders ?? summary.pending_orders) ||
+    districts.reduce((sum, district) => sum + district.pendingOrders, 0);
+  const totalRevenue =
+    toNumber(summary.totalRevenue ?? summary.total_revenue ?? summary.revenue) ||
+    districts.reduce((sum, district) => sum + district.revenue, 0);
+  const activeCouriers =
+    toNumber(summary.activeCouriers ?? summary.active_couriers) ||
+    districts.reduce((sum, district) => sum + district.activeCouriers, 0);
+  const successRate =
+    toNumber(summary.successRate ?? summary.success_rate) ||
+    (totalOrders > 0 ? Math.round((totalDelivered / totalOrders) * 100) : 0);
+
+  return {
+    id: String(region.id ?? source.id ?? source.region_id ?? ""),
+    name: String(region.name ?? source.name ?? source.region_name ?? ""),
+    summary: {
+      totalOrders,
+      totalDelivered,
+      totalCancelled,
+      totalRevenue,
+      pendingOrders,
+      activeCouriers,
+      successRate,
+    },
+    districts,
+  };
+};
+
 /** Flat RegionItem[] → xarita kutadigan {id, name, stats}[]. */
 export const toRegionMapItems = (regions: RegionItem[]): RegionMapItem[] =>
   regions.map((r) => ({
@@ -168,6 +300,22 @@ export const useRegionStats = (
       };
     },
     enabled,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
+export const useRegionDetailStats = (
+  regionId: string,
+  params?: { startDate?: string; endDate?: string; courier_id?: string; branch_id?: string },
+  enabled = true,
+) =>
+  useQuery({
+    queryKey: ["region-stats", "detail", regionId, params],
+    queryFn: async () => {
+      const res = await api.get(API_ENDPOINTS.REGIONS.STATS_BY_ID(regionId), { params });
+      return normalizeRegionDetailStats(res.data);
+    },
+    enabled: enabled && Boolean(regionId),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });

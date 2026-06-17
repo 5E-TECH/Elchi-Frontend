@@ -557,6 +557,7 @@ const MailDetailPage = () => {
             mode={isRefusedDetail ? "receive" : "send"}
             onSend={handleSend}
             onReceive={handleReceive}
+            disabled={isRefusedDetail}
             isBusy={
               isCourierLikeReceiver || isRefusedDetail
                 ? isReceiving

@@ -37,14 +37,6 @@ const parseIsoDate = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
-const formatDisplayName = (value?: string | null) => {
-  if (!value) return "";
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-};
-
 type CashDetailType = "market" | "courier" | "branch";
 
 const normalizeType = (
@@ -179,14 +171,14 @@ const CashDetail = () => {
   const entityName = user?.name?.trim() || t("userFallback");
   const apiBalance = toNumber(cashbox?.balance ?? state?.entity?.amount);
   const settlementBalance =
-    type === "market" && detailEntry?.berilishi_kerak !== undefined
+    (type === "market" || type === "branch") && detailEntry?.berilishi_kerak !== undefined
       ? settlementDetails.amountToGive
       : detailEntry?.olinishi_kerak !== undefined
         ? settlementDetails.amountToReceive
         : apiBalance;
   const displayBalance = balanceOverride ?? settlementBalance;
   const balanceLabel =
-    type === "market" && detailEntry?.berilishi_kerak !== undefined
+    (type === "market" || type === "branch") && detailEntry?.berilishi_kerak !== undefined
       ? t("toBeGiven")
       : detailEntry?.olinishi_kerak !== undefined
         ? t("toBeReceived")
@@ -258,7 +250,7 @@ const CashDetail = () => {
     const refreshedData = refreshed.data?.data;
     const refreshedEntry = Array.isArray(refreshedData) ? refreshedData[0] : refreshedData;
     const refreshedBalance =
-      type === "market" && refreshedEntry?.berilishi_kerak !== undefined
+      (type === "market" || type === "branch") && refreshedEntry?.berilishi_kerak !== undefined
         ? refreshedEntry.berilishi_kerak
         : refreshedEntry?.olinishi_kerak ??
           refreshedEntry?.cashbox?.balance ??
@@ -285,7 +277,7 @@ const CashDetail = () => {
         ),
         amount,
         operation_type: operationType,
-        source_type: (item["source_type"] as string | undefined) ?? formatDisplayName(item["type"] as string | undefined),
+        source_type: (item["source_type"] as string | undefined) ?? (item["type"] as string | undefined),
         source_id: item["source_id"],
         cashbox_type: (item["cashbox_type"] as string | undefined) ?? cashbox?.cashbox_type,
         created_by:
@@ -295,7 +287,7 @@ const CashDetail = () => {
           entityName,
         payment_method:
           (item["payment_method"] as string | undefined) ??
-          formatDisplayName(item["method"] as string | undefined),
+          (item["method"] as string | undefined),
         payment_date:
           (item["payment_date"] as string | undefined) ?? (item["createdAt"] as string | undefined) ?? (item["created_at"] as string | undefined),
         comment: item["comment"],

@@ -10,6 +10,7 @@ import { CreditCard, Landmark, PackageCheck, Send } from "lucide-react";
 import Select from "../../../shared/ui/Select";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import { formatAmountInput } from "./lib/amountInput";
+import { useTranslation } from "react-i18next";
 
 export interface CashboxActionFormValues {
   amount: string;
@@ -75,6 +76,7 @@ const CashboxActionFormCard = ({
   handleSubmit,
   onSubmit,
 }: CashboxActionFormCardProps) => {
+  const { t } = useTranslation("payments");
   const headerIcon =
     type === "market" ? (
       <CreditCard size={17} />
@@ -121,7 +123,7 @@ const CashboxActionFormCard = ({
               )}
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[color:var(--color-text-muted)] dark:text-white/45">
-              UZS
+              {t("currency")}
             </span>
           </div>
           {errors.amount && (
@@ -193,7 +195,7 @@ const CashboxActionFormCard = ({
           className={`flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r text-sm font-extrabold text-white shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${actionGradient}`}
         >
           <Send size={16} />
-          {submitLoading ? "Yuklanmoqda..." : submitLabel}
+          {submitLoading ? t("loadingLabel") : submitLabel}
         </button>
       </div>
     </div>

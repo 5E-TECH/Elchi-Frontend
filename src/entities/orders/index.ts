@@ -169,6 +169,11 @@ export const useOrders = () => {
     },
   });
 
+  const generateCancelledMarketQr = useMutation({
+    mutationFn: (marketId: string | number) =>
+      api.post(API_ENDPOINTS.ORDERS.MARKET_CANCELLED_QR(marketId)).then((res) => res.data),
+  });
+
   const CancelOrder = useMutation({
     mutationFn: ({
       orderId,
@@ -199,6 +204,7 @@ export const useOrders = () => {
     useCancelledMarkets,
     useCancelledOrdersByMarket,
     SendToPost,
+    generateCancelledMarketQr,
     handoverCancelledOrders,
     RollbackOrder,
     updateNewOrder,

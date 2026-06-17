@@ -21,9 +21,9 @@ import PaymentHistoryTable from "./components/patmentHistoryTable";
 import PopupSelect from "../../shared/components/popupSelect";
 import { useNavigate } from "react-router-dom";
 import { useCashBox } from "../../entities/payments";
+import { useFinanceCoverage } from "../../entities/payments/financeCoverage";
 import { useUser } from "../../entities/user/api/userApi";
 import { useMarkets } from "../../entities/markets";
-import { useBranches } from "../../entities/branch";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../shared/lib/usePagination";
 import PageContainer from "../../shared/ui/PageContainer";
@@ -54,15 +54,12 @@ type PaymentCourierOption = {
   amount: number;
 };
 
-type PaymentBranchOption = {
+type PaymentBranchToMainOption = {
   id: string;
   name: string;
   region: string;
   type: string;
   amount: number;
-};
-
-type PaymentBranchToMainOption = PaymentBranchOption & {
   role: "branch";
   phone_number: string;
 };
@@ -86,6 +83,60 @@ const toPositiveNumber = (value: unknown) => {
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getNestedData = (value: unknown): UnknownRecord => {
+  const root = asRecord(value);
+  const data = asRecord(root.data);
+
+  return Object.keys(data).length ? data : root;
+};
+
+const getResponseNumber = (
+  response: unknown,
+  keys: string[],
+  fallback = 0,
+) => {
+  const root = asRecord(response);
+  const rawData = root.data;
+
+  if (typeof rawData === "number" || typeof rawData === "string") {
+    return toNumber(rawData);
+  }
+
+  const dataRecord = asRecord(rawData);
+  const source = Object.keys(dataRecord).length ? dataRecord : root;
+
+  return getRecordNumber(source, keys, fallback);
+};
+
+const getRecordNumber = (
+  record: UnknownRecord,
+  keys: string[],
+  fallback = 0,
+) => {
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && value !== "") {
+      return toNumber(value);
+    }
+  }
+
+  return fallback;
+};
+
+const toDataItems = (value: unknown): unknown[] => {
+  if (Array.isArray(value)) return value;
+
+  const record = asRecord(value);
+  if (Array.isArray(record.items)) return record.items;
+  if (Array.isArray(record.data)) return record.data;
+
+  const data = asRecord(record.data);
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.data)) return data.data;
+
+  return [];
 };
 
 const normalizePagination = (
@@ -154,7 +205,6 @@ const Payments = () => {
   const { t } = useTranslation("payments");
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
-  const isAdminOrSuperAdmin = role === "admin" || role === "superadmin";
   const isManagerRole = String(role).toLowerCase() === "manager";
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "payments",
@@ -189,11 +239,14 @@ const Payments = () => {
 
   const navigate = useNavigate();
   const { getFinanceHistory, getCashBoxInfo } = useCashBox();
+  const { getManagerSettlement, getManagerPayableToHq } = useFinanceCoverage();
   const { getUser, getCouriers } = useUser();
   const { getMarkets } = useMarkets();
 
   // ── API dan cashbox ma'lumotlarini olish ──────────────────────────────────
   const { data: cashboxInfo, isLoading: cashboxLoading } = getCashBoxInfo();
+  const { data: managerSettlementInfo } = getManagerSettlement(isManagerRole);
+  const { data: managerPayableInfo } = getManagerPayableToHq(isManagerRole);
 
   // Faqat popup ochiq bo'lganda yuklanadi
   const { data: marketsData, isLoading: marketsLoading } = getMarkets(
@@ -202,11 +255,7 @@ const Payments = () => {
   );
   const { data: couriersData, isLoading: couriersLoading } = getCouriers(
     { status: "active", limit: 0 },
-    isReceivedPopupOpen && !isAdminOrSuperAdmin,
-  );
-  const { data: branchesData, isLoading: branchesLoading } = useBranches(
-    { status: "active", limit: 1000, page: 1 },
-    isReceivedPopupOpen && isAdminOrSuperAdmin,
+    isReceivedPopupOpen,
   );
 
   // API response formatlari:
@@ -221,16 +270,41 @@ const Payments = () => {
       "olinishi_kerak" in cashboxData
     );
 
+  const managerSettlementData = getNestedData(managerSettlementInfo);
+
   const mainCashboxTotal = hasManagerCashboxFields
-    ? toNumber(cashboxData?.kassadagi_summa)
+    ? getRecordNumber(
+        managerSettlementData,
+        ["kassadagi_summa", "cashbox_amount", "cashboxAmount", "balance", "total"],
+        toNumber(cashboxData?.kassadagi_summa),
+      )
     : toNumber(cashboxData?.mainCashboxTotal);
 
   const courierCashboxTotal = hasManagerCashboxFields
-    ? toNumber(cashboxData?.olinishi_kerak)
+    ? getRecordNumber(
+        managerSettlementData,
+        ["olinishi_kerak", "to_be_received", "toBeReceived", "receivable", "courier_receivable"],
+        toNumber(cashboxData?.olinishi_kerak),
+      )
     : toNumber(cashboxData?.courierCashboxTotal);
 
   const marketCashboxTotal = hasManagerCashboxFields
-    ? toNumber(cashboxData?.berilishi_kerak)
+    ? getResponseNumber(
+        managerPayableInfo,
+        [
+          "berilishi_kerak",
+          "payable_to_hq",
+          "payableToHq",
+          "payable",
+          "to_be_given",
+          "toBeGiven",
+          "net_payable",
+          "netPayable",
+          "tariff_deducted_amount",
+          "tariffDeductedAmount",
+        ],
+        toNumber(cashboxData?.berilishi_kerak),
+      )
     : toNumber(cashboxData?.marketCashboxTotal);
 
   const branchToMainOption = useMemo<PaymentBranchToMainOption | null>(() => {
@@ -258,7 +332,7 @@ const Payments = () => {
         getRecordString(hqBranch, "phone_number") ||
         getRecordString(ownBranch, "phone_number"),
       role: "branch",
-      region: getRecordString(region, "name", "HQ"),
+      region: getRecordString(region, "name", t("mainBranchFallback")),
       type: "branch",
       amount: marketCashboxTotal,
     };
@@ -293,7 +367,7 @@ const Payments = () => {
   // ── To be received popup uchun kuryerlar list ─────────────────────────────
   const couriersList = useMemo<PaymentCourierOption[]>(
     () =>
-      (couriersData?.data?.items ?? [])
+      toDataItems(couriersData)
         .map((courier: unknown) => {
           const c = asRecord(courier);
           const region = asRecord(c.region);
@@ -304,7 +378,7 @@ const Payments = () => {
             name: getRecordString(c, "name"),
             phone_number: getRecordString(c, "phone_number", getRecordString(c, "phone")),
             role: getRecordString(c, "role", "courier"),
-            region: getRecordString(region, "name", "Noma'lum"),
+            region: getRecordString(region, "name", t("unknown")),
             region_id: getRecordString(region, "id", getRecordString(c, "region_id")),
             cashbox: c.cashbox,
             amount: toNumber(
@@ -315,20 +389,8 @@ const Payments = () => {
             ),
           };
         })
-        .filter((courier: PaymentCourierOption) => courier.amount !== 0),
-    [couriersData],
-  );
-
-  const branchesList = useMemo<PaymentBranchOption[]>(
-    () =>
-      (branchesData?.data ?? []).map((branch) => ({
-        id: String(branch.id),
-        name: branch.name ?? "—",
-        region: branch.region?.name ?? "Noma'lum",
-        type: String(branch.type ?? "BRANCH"),
-        amount: toNumber(branch.olinishi_kerak),
-      })).filter((branch) => branch.amount !== 0),
-    [branchesData],
+        .filter((courier: PaymentCourierOption) => courier.id),
+    [couriersData, t],
   );
 
   // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
@@ -434,11 +496,11 @@ const Payments = () => {
 
   const cashboxTypeOptions = useMemo<FilterSelectOption[]>(
     () => [
-      { value: "main", label: "Asosiy", icon: Landmark },
-      { value: "couriers", label: "Courier", icon: Truck },
-      { value: "markets", label: "Market", icon: Store },
+      { value: "main", label: t("mainCashbox"), icon: Landmark },
+      { value: "couriers", label: t("courierShort"), icon: Truck },
+      { value: "markets", label: t("marketShort"), icon: Store },
     ],
-    [],
+    [t],
   );
 
   const handleCardClick = (
@@ -551,7 +613,7 @@ const Payments = () => {
                   {fmt(amount)}
                 </p>
               )}
-              <p className="text-xs text-white/40 mt-1.5">UZS</p>
+              <p className="text-xs text-white/40 mt-1.5">{t("currency")}</p>
             </div>
           ),
         )}
@@ -620,6 +682,9 @@ const Payments = () => {
         keyExtractor={(m) => m.id}
         searchKeys={["name"]}
         labelKey="name"
+        placeholder={t("searchPlaceholder")}
+        selectLabel={t("selectLabel")}
+        cancelLabel={t("cancelShort")}
         onSelect={(item) => {
           setIsGivenPopupOpen(false);
           navigate(`/payments/cash-detail/${item.id}`, {
@@ -646,27 +711,26 @@ const Payments = () => {
             <span
               className={`text-sm font-semibold ${isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
             >
-              {fmt(item.amount)} UZS
+              {fmt(item.amount)} {t("currency")}
             </span>
           </div>
         )}
       />
 
       {/* To be received popup */}
-      <PopupSelect<PaymentCourierOption | PaymentBranchOption>
+      <PopupSelect<PaymentCourierOption>
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
-        data={isAdminOrSuperAdmin ? branchesList : couriersList}
+        data={couriersList}
         title={t("toBeReceived")}
-        description={
-          isAdminOrSuperAdmin
-            ? (branchesLoading ? t("loadingLabel") : t("selectPlaceholder"))
-            : (couriersLoading ? t("loadingLabel") : t("selectCourierDescription"))
-        }
+        description={couriersLoading ? t("loadingLabel") : t("selectCourierDescription")}
         icon={<Truck size={20} />}
         keyExtractor={(item) => item.id}
         searchKeys={["name", "region"]}
         labelKey="name"
+        placeholder={t("searchPlaceholder")}
+        selectLabel={t("selectLabel")}
+        cancelLabel={t("cancelShort")}
         onSelect={(item) => {
           setIsReceivedPopupOpen(false);
           navigate(`/payments/cash-detail/${item.id}`, {
@@ -701,7 +765,7 @@ const Payments = () => {
               className={`text-sm font-semibold ${item.amount < 0 ? "text-rose-400" : isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
             >
               {item.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(item.amount))} UZS
+              {fmt(Math.abs(item.amount))} {t("currency")}
             </span>
           </div>
         )}

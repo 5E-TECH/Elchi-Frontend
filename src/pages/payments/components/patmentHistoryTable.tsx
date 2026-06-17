@@ -28,6 +28,15 @@ const formatDate = (dateStr: string) => {
   }
 };
 
+const getCashboxTypeLabel = (value: string | undefined, t: (key: string) => string) => {
+  if (!value) return "-";
+  if (value === "main") return t("mainCashbox");
+  if (value === "couriers" || value === "courier") return t("courierShort");
+  if (value === "markets" || value === "market") return t("marketShort");
+  if (value === "branch") return t("branchMainCashboxLabel");
+  return value;
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PaymentRow {
@@ -140,10 +149,10 @@ const PaymentHistoryTable = ({
         label: t("cashboxType"),
         width: "150px",
         render: (val, row) => {
-          const type = val || row.cashbox?.cashbox_type;
+          const type = (val || row.cashbox?.cashbox_type) as string | undefined;
           return (
             <span className="text-sm text-gray-700 dark:text-white/70">
-              {type || "-"}
+              {getCashboxTypeLabel(type, t)}
             </span>
           );
         },
@@ -178,7 +187,7 @@ const PaymentHistoryTable = ({
                 }`}
             >
               {isIncome ? "+" : "-"}
-              {fmt(Math.abs(val))} UZS
+              {fmt(Math.abs(val))} {t("currency")}
             </span>
           );
         },
@@ -235,8 +244,8 @@ const PaymentHistoryTable = ({
             const paymentDate = formatDate(
               (row.payment_date || row.createdAt || row.created_at || "") as string,
             );
-            const sourceLabel = row.source_type || "-";
-            const cashboxLabel = row.cashbox_type || row.cashbox?.cashbox_type || "-";
+            const sourceLabel = getPaymentSourceTypeLabel(row.source_type, t);
+            const cashboxLabel = getCashboxTypeLabel(row.cashbox_type || row.cashbox?.cashbox_type, t);
 
             return (
               <div className="flex items-start justify-between gap-3">
@@ -270,7 +279,7 @@ const PaymentHistoryTable = ({
                   </span>
                   <span className={`inline-flex items-center gap-1 text-sm font-bold ${isIncome ? "text-emerald-400" : "text-rose-400"}`}>
                     <Banknote size={13} />
-                    {isIncome ? "+" : "-"}{fmt(Math.abs(row.amount))} UZS
+                    {isIncome ? "+" : "-"}{fmt(Math.abs(row.amount))} {t("currency")}
                   </span>
                 </div>
               </div>

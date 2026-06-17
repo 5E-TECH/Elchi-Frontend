@@ -38,40 +38,40 @@ const formatDate = (dateStr?: string) => {
   }
 };
 
-const getPaymentMethodLabel = (value?: string | null) => {
+const getPaymentMethodLabel = (value: string | null | undefined, t: (key: string) => string) => {
   const normalized = value?.toLowerCase();
-  if (normalized === "cash") return "Naqd";
-  if (normalized === "click") return "Click";
-  if (normalized === "payme") return "Payme";
-  if (normalized === "transfer") return "O'tkazma";
-  if (normalized === "click_to_market") return "Do'konga o'tkazma";
-  if (normalized === "card") return "Karta";
+  if (normalized === "cash") return t("cash");
+  if (normalized === "click") return t("clickPayment");
+  if (normalized === "payme") return t("paymePayment");
+  if (normalized === "transfer") return t("transferOption");
+  if (normalized === "click_to_market") return t("toMarketTransferOption");
+  if (normalized === "card") return t("card");
   return value || "—";
 };
 
-const getRoleLabel = (value?: string | null) => {
-  if (value === "market") return "Market";
-  if (value === "courier") return "Courier";
-  if (value === "customer") return "Customer";
-  if (value === "admin") return "Admin";
-  if (value === "superadmin") return "Super Admin";
-  return value || "User";
+const getRoleLabel = (value: string | null | undefined, t: (key: string) => string) => {
+  if (value === "market") return t("marketShort");
+  if (value === "courier") return t("courierShort");
+  if (value === "customer") return t("customerRole");
+  if (value === "admin") return t("adminRole");
+  if (value === "superadmin") return t("superAdminRole");
+  return value || t("user");
 };
 
-const getStatusLabel = (value?: string | null) => {
+const getStatusLabel = (value: string | null | undefined, t: (key: string) => string) => {
   if (!value) return "—";
-  if (value === "sold") return "To'langan";
-  if (value === "cancelled") return "Bekor qilingan";
-  if (value === "paid") return "To'langan";
-  if (value === "partly_paid") return "Qisman to'langan";
-  if (value === "new") return "Yangi";
-  if (value === "received") return "Qabul qilingan";
+  if (value === "sold") return t("statusSold");
+  if (value === "cancelled") return t("statusCancelled");
+  if (value === "paid") return t("statusPaid");
+  if (value === "partly_paid") return t("statusPartlyPaid");
+  if (value === "new") return t("statusNew");
+  if (value === "received") return t("statusReceived");
   return value;
 };
 
-const getDeliveryLabel = (value?: string | null) => {
-  if (value === "address") return "Manzilga";
-  if (value === "center") return "Markazga";
+const getDeliveryLabel = (value: string | null | undefined, t: (key: string) => string) => {
+  if (value === "address") return t("deliveryAddress");
+  if (value === "center") return t("deliveryCenter");
   return value || "—";
 };
 
@@ -197,10 +197,11 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   const hasComment = Boolean(detail?.comment);
   const actorRole = getRoleLabel(
     actor?.role ?? detail?.order?.market?.role ?? detail?.cashbox?.cashbox_type,
+    t,
   );
-  const directionLabel = isIncome ? "Qayerdan" : "Qayerga";
+  const directionLabel = isIncome ? t("fromWhere") : t("toWhere");
   const directionValue = resolveDirectionValue(detail, actor);
-  const directionRoleLabel = getRoleLabel(detail?.source_user?.role ?? detail?.cashbox?.cashbox_type);
+  const directionRoleLabel = getRoleLabel(detail?.source_user?.role ?? detail?.cashbox?.cashbox_type, t);
   const order = detail?.order;
   const locationLabel = [
     order?.district?.name ?? order?.customer?.district?.name ?? "",
@@ -242,11 +243,11 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
               </div>
               <div>
                 <p className="text-[16px] font-bold capitalize text-primary">
-                  {isIncome ? "kirim" : "chiqim"}
+                  {isIncome ? t("income") : t("expense")}
                 </p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-primary/80">
                   <Receipt size={12} />
-                  To'lov tarixi
+                  {t("paymentHistory")}
                 </p>
               </div>
             </div>
@@ -264,21 +265,21 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
 
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[11px] text-primary/75">Miqdor</p>
+              <p className="text-[11px] text-primary/75">{t("amount")}</p>
               <p className="mt-1 text-[30px] leading-none font-extrabold text-primary">
                 {isIncome ? "+" : "-"}
                 {fmt(display?.amount ?? 0)}
                 <span className="ml-1.5 text-[14px] font-medium uppercase text-primary/85">
-                  UZS
+                  {t("currency")}
                 </span>
               </p>
             </div>
 
             {display?.balance_after !== undefined && (
               <div className="text-right">
-                <p className="text-[10px] text-primary/70">Amaldan keyingi balans</p>
+                <p className="text-[10px] text-primary/70">{t("balanceAfterTransaction")}</p>
                 <p className="mt-1 text-[13px] font-bold text-primary">
-                  {fmt(display.balance_after)} UZS
+                  {fmt(display.balance_after)} {t("currency")}
                 </p>
               </div>
             )}
@@ -288,15 +289,15 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
         <div className="min-h-0 space-y-3 overflow-y-auto bg-primary p-3 sm:p-4 dark:bg-maindark">
           {isLoading && (
             <PopupState
-              title="Detail yuklanmoqda"
-              description="Backenddan payment history detail olinmoqda."
+              title={t("detailLoading")}
+              description={t("detailLoadingDescription")}
             />
           )}
 
           {!isLoading && isError && (
             <PopupState
-              title="Detail yuklanmadi"
-              description="`finance/history/:id` detailini olishda xatolik bo‘ldi."
+              title={t("detailError")}
+              description={t("detailErrorDescription")}
               isError
             />
           )}
@@ -311,7 +312,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                     </div>
                     <div className="min-w-0">
                       <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-warning-end)] dark:text-[var(--color-warning-text)]">
-                        Izoh
+                        {t("comment")}
                       </p>
                       <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-maindark)] dark:text-primary">
                         {detail?.comment}
@@ -344,32 +345,32 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                 {actorPhone !== "—" && (
                   <InfoCard
                     icon={<Phone size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                    label="Telefon raqami"
+                    label={t("phoneNumber")}
                     value={actorPhone}
                     accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                   />
                 )}
                 <InfoCard
                   icon={<CreditCard size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                  label="Manba turi"
+                  label={t("sourceType")}
                   value={getPaymentSourceTypeLabel(detail?.source_type, t)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
                   icon={<Wallet size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                  label="To'lov turi"
-                  value={getPaymentMethodLabel(detail?.payment_method)}
+                  label={t("paymentType")}
+                  value={getPaymentMethodLabel(detail?.payment_method, t)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
                   icon={<Calendar size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                  label="To'lov kuni"
+                  label={t("paymentDate")}
                   value={formatDate(detail?.payment_date ?? detail?.createdAt)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
                   icon={<User size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                  label="Foydalanuvchi"
+                  label={t("user")}
                   value={
                     <div className="flex flex-col gap-1">
                       <span>{actorName || detail?.created_by || "—"}</span>
@@ -397,7 +398,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                       </div>
                       <div>
                         <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[var(--color-success)] dark:text-white/85">
-                          Buyurtma
+                          {t("order")}
                         </p>
                         <p className="text-[15px] font-bold text-[var(--color-maindark)] dark:text-white">#{order.id}</p>
                       </div>
@@ -409,7 +410,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                       <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-sidebar/70 p-3 dark:border-white/10 dark:bg-maindark/40">
                         <div className="mb-2 flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
                           <MessageSquare size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Izoh</span>
+                          <span>{t("comment")}</span>
                         </div>
                         <p className="whitespace-pre-line text-[var(--color-maindark)] dark:text-white">
                           {detail?.comment}
@@ -420,7 +421,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                     <div className="grid grid-cols-[1fr_auto] gap-y-2.5">
                       <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
                         <MapPin size={12} className="text-[var(--color-main)] dark:text-white" />
-                        <span>Hudud</span>
+                        <span>{t("region")}</span>
                       </div>
                       <span className="text-right font-medium text-[var(--color-maindark)] dark:text-white">
                         {locationLabel || "—"}
@@ -428,7 +429,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
 
                       <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
                         <Phone size={12} className="text-[var(--color-main)] dark:text-white" />
-                        <span>Telefon nomer</span>
+                        <span>{t("phoneNumber")}</span>
                       </div>
                       <span className="text-right font-medium text-[var(--color-maindark)] dark:text-white">
                         {order.customer?.phone_number || "—"}
@@ -439,10 +440,10 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
                           <Wallet size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Umumiy narx</span>
+                          <span>{t("totalPrice")}</span>
                         </div>
                         <span className="font-bold text-[var(--color-main)] dark:text-white">
-                          {fmt(order.total_price ?? order.to_be_paid ?? 0)} UZS
+                          {fmt(order.total_price ?? order.to_be_paid ?? 0)} {t("currency")}
                         </span>
                       </div>
                     </div>
@@ -451,7 +452,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
                           <BadgeCheck size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Holat</span>
+                          <span>{t("transactionStatus")}</span>
                         </div>
                         <span
                           className="rounded-full border px-2 py-0.5 text-[10px] font-bold dark:border-white/10 dark:text-white"
@@ -470,7 +471,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                                 : "color-mix(in srgb, var(--color-error) 26%, transparent)",
                           }}
                         >
-                          {getStatusLabel(order.status)}
+                          {getStatusLabel(order.status, t)}
                         </span>
                       </div>
                     </div>
@@ -479,7 +480,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                       <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
                         <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
                           <MapPin size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Manzil</span>
+                          <span>{t("address")}</span>
                         </div>
                         <p className="mt-1 leading-5 text-[var(--color-maindark)] dark:text-white">{order.address}</p>
                       </div>
@@ -489,10 +490,10 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
                           <ExternalLink size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Yetkazish</span>
+                          <span>{t("delivery")}</span>
                         </div>
                         <span className="font-medium text-[var(--color-maindark)] dark:text-white">
-                          {getDeliveryLabel(order.where_deliver)}
+                          {getDeliveryLabel(order.where_deliver, t)}
                         </span>
                       </div>
                     </div>

@@ -1,5 +1,6 @@
 import { memo, type ReactNode } from "react";
 import { Eye, EyeOff, Wallet2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -22,10 +23,12 @@ const CashboxSummaryCard = ({
   subtitle,
   holderName,
   balance,
-  balanceLabel = "Umumiy balans",
+  balanceLabel,
   balanceVisible,
   onToggleVisibility,
 }: CashboxSummaryCardProps) => {
+  const { t } = useTranslation("payments");
+
   return (
     <div className="w-full max-w-[540px] xl:max-w-none">
       <div
@@ -68,17 +71,19 @@ const CashboxSummaryCard = ({
 
         <div className="relative z-10 flex flex-1 flex-col justify-center pt-2 text-left sm:pt-3">
           <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55 sm:mb-2 sm:text-[11px] sm:tracking-[0.16em]">
-            <Wallet2 size={11} /> {balanceLabel}
+            <Wallet2 size={11} /> {balanceLabel ?? t("totalBalanceLabel")}
           </p>
           <p className="break-words text-[clamp(1.8rem,6vw,3rem)] font-black tracking-tight text-white drop-shadow-[0_6px_16px_rgba(0,0,0,0.28)]">
-            {balanceVisible ? `${fmt(balance)} UZS` : "••••••• UZS"}
+            {balanceVisible
+              ? `${fmt(balance)} ${t("currency")}`
+              : `••••••• ${t("currency")}`}
           </p>
         </div>
 
         <div className="relative z-10 mt-auto flex items-end justify-between gap-3 pt-2 sm:gap-4">
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40 sm:text-[10px] sm:tracking-[0.18em]">
-              Card holder
+              {t("cardHolder")}
             </p>
             <p className="mt-0.5 max-w-[11rem] truncate text-[13px] font-bold text-white/90 sm:mt-1 sm:max-w-[13rem] sm:text-sm">
               {holderName}

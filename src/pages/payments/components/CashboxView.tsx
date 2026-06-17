@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Clock, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -22,6 +23,8 @@ export interface CashboxViewProps {
 // ── Shared CashboxView komponenti ─────────────────────────────────────────────
 // mainCashbox va cashDetail sahifalarida qayta ishlatiladi
 const CashboxView = memo(({ income, expense, history }: CashboxViewProps) => {
+  const { t } = useTranslation("payments");
+
   return (
     <div className="flex flex-col gap-5">
       {/* Today's transactions header */}
@@ -31,17 +34,17 @@ const CashboxView = memo(({ income, expense, history }: CashboxViewProps) => {
         </div>
         <div>
           <p className="font-bold text-gray-900 dark:text-white text-sm">
-            Today's transactions
+            {t("todayTransactions")}
           </p>
           <p className="text-xs text-gray-400 dark:text-white/40">
-            Bugungi operatsiyalar
+            {t("todayOperations")}
           </p>
         </div>
       </div>
 
       {/* Date range */}
       <div className="grid grid-cols-2 gap-3">
-        {["Start date", "End date"].map((ph) => (
+        {[t("startDate"), t("endDate")].map((ph) => (
           <div
             key={ph}
             className="flex items-center justify-between px-4 py-3 rounded-xl bg-primary dark:bg-primarydark border border-gray-200 dark:border-glass-border text-sm text-gray-400 dark:text-white/30"
@@ -56,19 +59,19 @@ const CashboxView = memo(({ income, expense, history }: CashboxViewProps) => {
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-2xl p-5 bg-linear-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-white/80 text-sm font-semibold">Income</span>
+            <span className="text-white/80 text-sm font-semibold">{t("income")}</span>
             <TrendingUp size={18} className="text-white/70" />
           </div>
           <p className="text-2xl font-black text-white">+{fmt(income)}</p>
-          <p className="text-white/60 text-xs mt-1">UZS</p>
+          <p className="text-white/60 text-xs mt-1">{t("currency")}</p>
         </div>
         <div className="rounded-2xl p-5 bg-linear-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-white/80 text-sm font-semibold">Expense</span>
+            <span className="text-white/80 text-sm font-semibold">{t("expense")}</span>
             <TrendingDown size={18} className="text-white/70" />
           </div>
           <p className="text-2xl font-black text-white">-{fmt(expense)}</p>
-          <p className="text-white/60 text-xs mt-1">UZS</p>
+          <p className="text-white/60 text-xs mt-1">{t("currency")}</p>
         </div>
       </div>
 
@@ -79,15 +82,15 @@ const CashboxView = memo(({ income, expense, history }: CashboxViewProps) => {
             <Clock size={16} className="text-main" />
             <div>
               <p className="text-sm font-bold text-gray-900 dark:text-white">
-                Payment history
+                {t("paymentHistory")}
               </p>
               <p className="text-[11px] text-gray-400 dark:text-white/40">
-                So'nggi operatsiyalar
+                {t("lastOperations")}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-main/10 text-main px-2.5 py-1 rounded-lg text-xs font-bold">
-            ✦ {history.length} ta
+            {t("countLabel", { count: history.length })}
           </div>
         </div>
 
@@ -134,10 +137,10 @@ const CashboxView = memo(({ income, expense, history }: CashboxViewProps) => {
                   }`}
                 >
                   {item.amount > 0 ? "+" : ""}
-                  {fmt(item.amount)} so'm
+                  {fmt(item.amount)} {t("currencyAmountSuffix")}
                 </p>
                 <p className="text-[11px] text-gray-400 dark:text-white/30 mt-0.5">
-                  ⏱ {item.time} Bugun
+                  {item.time} {t("today")}
                 </p>
               </div>
 
@@ -150,7 +153,7 @@ const CashboxView = memo(({ income, expense, history }: CashboxViewProps) => {
 
           {history.length === 0 && (
             <div className="py-10 text-center text-gray-400 dark:text-white/30 text-sm">
-              Operatsiyalar yo'q
+              {t("noOperations")}
             </div>
           )}
         </div>
