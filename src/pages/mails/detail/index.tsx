@@ -36,6 +36,7 @@ import {
   playScanFeedback,
 } from "../../scan/lib/scanShared";
 import { getMailTabPath, normalizeMailTab } from "../lib/navigation";
+import BackButton from "../../../shared/ui/BackButton";
 import PageContainer from "../../../shared/ui/PageContainer";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -486,7 +487,8 @@ const MailDetailPage = () => {
     <PageContainer className="flex flex-col gap-5">
       {/* Sarlavha */}
       <div className="flex items-center justify-between gap-4">
-        <div className="max-w-100">
+        <div className="flex min-w-0 items-center gap-3">
+          <BackButton onClick={handleBack} className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
           <HeaderName
             name={t("regionOrdersTitle", { region: regionName })}
             description={

@@ -1,20 +1,20 @@
 import { memo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { CreateUserWidget } from '../../../widgets/user-create/ui/CreateUserWidget';
 import HeaderName from '../../../shared/components/headerName';
 import { useTranslation } from 'react-i18next';
+import BackButton from '../../../shared/ui/BackButton';
 
 const CreateUserPage = memo(() => {
-    const navigate = useNavigate();
     const { t } = useTranslation("users");
 
     return (
         <div className="rounded-2xl">
-            <div className="cursor-pointer px-3 py-3 sm:px-4 sm:py-4 md:px-5" onClick={() => navigate(-1)}>
+            <div className="flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-4 md:px-5">
+                <BackButton className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
                 <HeaderName
                     name={t("createNewUser")}
-                    icon={<ArrowLeft />}
+                    icon={<UserPlus />}
                     description={t("createNewUserDescription")}
                 />
             </div>

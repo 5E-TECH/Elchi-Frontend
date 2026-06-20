@@ -10,8 +10,8 @@ import {
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useNavigate, useParams } from "react-router-dom";
-import { Box, Image, X, Trash2, Edit, MoveLeft } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Box, Image, X, Trash2, Edit } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Button from "../../../shared/components/button";
@@ -24,6 +24,7 @@ import i18n from "../../../i18n";
 import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
+import BackButton from "../../../shared/ui/BackButton";
 
 interface ExistingProduct {
   id: number;
@@ -105,7 +106,6 @@ const CreateProductPage = () => {
     return marketD.data[0]?.market?.name ?? null;
   }, [isMarketRole, marketD?.data, profile?.name, roleState.name]);
 
-  const navigate = useNavigate();
   const { getMarketById } = useMarkets();
   const { data: selectedMarketData, isLoading: isMarketStatusLoading } = getMarketById(
     Number(effectiveMarketId),
@@ -285,15 +285,15 @@ const CreateProductPage = () => {
       >
         {/* Header with gradient bar */}
         <div
-          onClick={() => navigate(-1)}
-          className="cursor-pointer px-6 py-4 flex items-center gap-3"
+          className="px-6 py-4 flex items-center gap-3"
           style={{
             background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)',
           }}
         >
-          <div className="p-2 rounded-lg bg-white/10">
-            <MoveLeft size={20} className="text-white" />
-          </div>
+          <BackButton
+            className="h-10 min-w-10 shrink-0 rounded-xl border-white/20 bg-white/10 px-2 text-white hover:border-white/35 hover:bg-white/15 hover:text-white dark:bg-white/10 dark:text-white"
+            label=""
+          />
           <div>
             <h2 className="text-lg font-bold text-white m-0">{t("createTitle")}</h2>
             <p className="text-white/60 text-sm m-0">

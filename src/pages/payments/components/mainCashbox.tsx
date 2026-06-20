@@ -17,6 +17,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
+import BackButton from "../../../shared/ui/BackButton";
 import DateRangePicker from "../../../shared/ui/DateRangePicker";
 import PopupSelect from "../../../shared/components/popupSelect";
 import CashboxFormPopup from "./CashboxFormPopup";
@@ -407,12 +408,15 @@ const MainCashbox = () => {
     <div className="p-5 bg-sidebar dark:bg-maindark min-h-full flex flex-col gap-5 rounded-2xl">
       {/* ── Header ── */}
       <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border px-4 shadow-sm">
-        <HeaderName
-          name={t("mainCashboxTitle")}
-          description={t("mainCashboxDescription")}
-          icon={<Wallet />}
-          onIconClick={() => navigate(-1)}
-        />
+        <div className="flex items-center gap-3 py-2">
+          <BackButton className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
+          <HeaderName
+            name={t("mainCashboxTitle")}
+            description={t("mainCashboxDescription")}
+            icon={<Wallet />}
+            onIconClick={() => navigate(-1)}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
