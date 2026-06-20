@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
-  ArrowLeft,
   Camera,
   CheckCircle2,
   Flashlight,
@@ -25,6 +24,7 @@ import {
   fetchScanDetail,
   getScanDetailQueryKey,
 } from "./lib/scanResource";
+import BackButton from "../../shared/ui/BackButton";
 
 const ScanPage = () => {
   const { t } = useTranslation("common");
@@ -134,14 +134,7 @@ const ScanPage = () => {
 
       <div className="relative flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4 md:px-7">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-white text-[color:var(--color-text-muted)] transition hover:border-main/30 hover:bg-main/5 hover:text-main dark:bg-maindark dark:text-white/80 dark:hover:bg-white/12 dark:hover:text-white"
-            aria-label={t("back")}
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <BackButton to="/" className="bg-white dark:bg-maindark" label="" />
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-main/10 text-main ring-1 ring-main/10 dark:bg-white/10 dark:text-white dark:ring-white/10">
             <QrCode size={20} />
           </div>
