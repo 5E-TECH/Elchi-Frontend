@@ -60,10 +60,11 @@ const StatusBadge = memo(({ status }: { status: string }) => {
 });
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
-export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, showCheckbox = true }: {
+export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, showCheckbox = true, showOrderId = true }: {
     order: ApiOrder; isSelected: boolean;
     onToggle?: () => void; onEdit?: (id: string) => void; onDelete?: (id: string) => void;
     showCheckbox?: boolean;
+    showOrderId?: boolean;
 }) => {
     const { t } = useTranslation("newOrders");
     const location = order.customer?.district?.name
@@ -91,8 +92,12 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
                     {showCheckbox && onToggle && (
                         <Checkbox checked={isSelected} onChange={onToggle} />
                     )}
-                    <div className="hidden w-px flex-1 bg-gray-100 dark:bg-white/5 sm:block" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-300 dark:text-gray-700 sm:[writing-mode:vertical-lr] sm:rotate-180">#{order.id}</span>
+                    {showOrderId ? (
+                        <>
+                            <div className="hidden w-px flex-1 bg-gray-100 dark:bg-white/5 sm:block" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-300 dark:text-gray-700 sm:[writing-mode:vertical-lr] sm:rotate-180">#{order.id}</span>
+                        </>
+                    ) : null}
                 </div>
 
                 {/* O'rta: info */}

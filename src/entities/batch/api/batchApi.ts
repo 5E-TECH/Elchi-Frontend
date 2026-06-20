@@ -51,6 +51,24 @@ const normalizeDirection = (value: unknown): BatchDirection => {
   return "forward";
 };
 
+const normalizeWhereDeliver = (value: unknown): BatchOrder["where_deliver"] => {
+  const normalized = String(value ?? "").trim().toLowerCase();
+
+  if (["center", "centre", "branch", "office", "pickup", "markaz", "markazga"].includes(normalized)) {
+    return "center";
+  }
+
+  if (["home", "house", "door", "door_to_door", "uy", "uyga"].includes(normalized)) {
+    return "home";
+  }
+
+  if (["address", "manzil", "manzilga", "delivery_address"].includes(normalized)) {
+    return "address";
+  }
+
+  return undefined;
+};
+
 const toApiBatchStatus = (status: BatchStatus): ApiBatchStatus => {
   const statusMap: Record<BatchStatus, ApiBatchStatus> = {
     new: "PENDING",
@@ -121,6 +139,16 @@ const normalizeOrder = (order: any, index: number): BatchOrder => ({
       order?.token,
     "",
   ) || null,
+  where_deliver: normalizeWhereDeliver(
+    order?.order?.where_deliver ??
+      order?.order?.whereDeliver ??
+      order?.order?.delivery_type ??
+      order?.order?.deliveryType ??
+      order?.where_deliver ??
+      order?.whereDeliver ??
+      order?.delivery_type ??
+      order?.deliveryType,
+  ),
   receiver: toText(
     order?.order?.customer?.name ??
       order?.order?.receiver ??
