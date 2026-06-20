@@ -32,7 +32,7 @@ const BranchBatchDetailPage = () => {
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
 
   const data = useMemo<BatchDetail | undefined>(
-    () => remainingQuery.data ?? detailQuery.data,
+    () => detailQuery.data ?? remainingQuery.data,
     [detailQuery.data, remainingQuery.data],
   );
 
