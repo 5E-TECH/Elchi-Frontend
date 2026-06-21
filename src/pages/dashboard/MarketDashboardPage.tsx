@@ -119,10 +119,12 @@ const MarketDashboardPage = () => {
             toDate={toDate}
             onChange={applyRange}
             onClear={clearRange}
+            includeAll
             labels={{
               today: t("quickRanges.today"),
               week: t("quickRanges.week"),
               month: t("quickRanges.month"),
+              all: t("quickRanges.all"),
             }}
             placeholder={`${t("datePicker.from")} → ${t("datePicker.to")}`}
             className="lg:items-end"

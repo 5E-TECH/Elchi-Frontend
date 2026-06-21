@@ -24,11 +24,14 @@
   "page_title_filtered": "Статистика за выбранный период",
   "page_subtitle_today": "Показатели за сегодня",
   "page_subtitle_filtered": "По диапазону дат",
+  "page_title_all": "Общая статистика",
+  "page_subtitle_all": "Показатели за всё время",
   "load_error": "Не удалось загрузить данные дашборда.",
   "quickRanges": {
     "today": "Сегодня",
     "week": "Эта неделя",
     "month": "Этот месяц",
+    "all": "Все",
     "clear": "Очистить"
   },
   "datePicker": {
@@ -60,6 +63,8 @@
     "in_progress": "В процессе",
     "in_progress_hint": "Ещё не доставленные заказы в пути",
     "profit": "Чистая прибыль",
+    "total_revenue": "Общая выручка",
+    "total_revenue_hint": "Стоимость всех проданных заказов",
     "profit_hint": "Тариф маркета − тариф курьера (проданные)",
     "avg_order_value": "Средняя стоимость заказа",
     "avg_order_value_hint": "Средний доход с одного проданного заказа",

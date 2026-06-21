@@ -35,9 +35,11 @@ export interface DashboardStatisticsProps {
   sold: number;
   cancelled: number;
   profit: number;
+  totalRevenue: number;
   avgOrderValue: number;
   avgFulfillmentHours: number;
   onTimeRate: number; // 24 soat ichida yetkazilganlar % (SLA)
+  showFinancialMetrics?: boolean;
   loading?: boolean;
 }
 
@@ -47,9 +49,11 @@ const DashboardStatistics = memo(
     sold,
     cancelled,
     profit,
+    totalRevenue,
     avgOrderValue,
     avgFulfillmentHours,
     onTimeRate,
+    showFinancialMetrics = true,
     loading = false,
   }: DashboardStatisticsProps) => {
     const { t } = useTranslation("dashboard");
@@ -147,25 +151,38 @@ const DashboardStatistics = memo(
       </div>
 
       {/* ── Ikkilamchi metrikalar qatori ── */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-        <MetricCard
-          title={t("cards.profit")}
-          value={formatCompactMoney(profit)}
-          suffix={t("currency_sum")}
-          icon={<Wallet size={20} />}
-          tone={profitTone}
-          compact
-          hint={t("cards.profit_hint")}
-        />
-        <MetricCard
-          title={t("cards.avg_order_value")}
-          value={formatCompactMoney(avgOrderValue)}
-          suffix={t("currency_sum")}
-          icon={<Receipt size={20} />}
-          tone="brand"
-          compact
-          hint={t("cards.avg_order_value_hint")}
-        />
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        {showFinancialMetrics ? (
+          <>
+            <MetricCard
+              title={t("cards.total_revenue")}
+              value={formatCompactMoney(totalRevenue)}
+              suffix={t("currency_sum")}
+              icon={<Receipt size={20} />}
+              tone="brand"
+              compact
+              hint={t("cards.total_revenue_hint")}
+            />
+            <MetricCard
+              title={t("cards.profit")}
+              value={formatCompactMoney(profit)}
+              suffix={t("currency_sum")}
+              icon={<Wallet size={20} />}
+              tone={profitTone}
+              compact
+              hint={t("cards.profit_hint")}
+            />
+            <MetricCard
+              title={t("cards.avg_order_value")}
+              value={formatCompactMoney(avgOrderValue)}
+              suffix={t("currency_sum")}
+              icon={<Receipt size={20} />}
+              tone="brand"
+              compact
+              hint={t("cards.avg_order_value_hint")}
+            />
+          </>
+        ) : null}
         <MetricCard
           title={t("cards.avg_fulfillment")}
           value={formatHours(avgFulfillmentHours)}
@@ -186,15 +203,17 @@ const DashboardStatistics = memo(
           hint={t("cards.on_time_hint")}
         />
         {/* Yo'qotilgan daromad */}
-        <MetricCard
-          title={t("cards.lost_revenue")}
-          value={formatCompactMoney(lostRevenue)}
-          suffix={t("currency_sum")}
-          icon={<TrendingDown size={20} />}
-          tone="danger"
-          compact
-          hint={t("cards.lost_revenue_hint")}
-        />
+        {showFinancialMetrics ? (
+          <MetricCard
+            title={t("cards.lost_revenue")}
+            value={formatCompactMoney(lostRevenue)}
+            suffix={t("currency_sum")}
+            icon={<TrendingDown size={20} />}
+            tone="danger"
+            compact
+            hint={t("cards.lost_revenue_hint")}
+          />
+        ) : null}
       </div>
       </div>
     );

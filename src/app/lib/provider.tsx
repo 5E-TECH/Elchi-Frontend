@@ -10,6 +10,7 @@ import { NotificationProvider } from "../providers/notification/NotificationProv
 import PageLoader from "../../shared/ui/PageLoader";
 import i18n from "../../i18n";
 import AuthBootstrap from "../../auth/AuthBootstrap";
+import SessionExpiryCountdown from "../../auth/SessionExpiryCountdown";
 import SettingsSync from "../providers/SettingsSync";
 import ScanFeedbackOverlay from "../../shared/components/ScanFeedbackOverlay";
 
@@ -49,6 +50,7 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
                 <ScanFeedbackOverlay />
                 <AuthBootstrap>
                   <SettingsSync />
+                  <SessionExpiryCountdown />
                   <GlobalLoader>
                     <Suspense fallback={<PageLoader />}>
                       {children}

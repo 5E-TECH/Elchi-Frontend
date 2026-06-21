@@ -24,11 +24,14 @@
   "page_title_filtered": "Statistics for the selected period",
   "page_subtitle_today": "Today's metrics",
   "page_subtitle_filtered": "Based on the selected date range",
+  "page_title_all": "Overall statistics",
+  "page_subtitle_all": "Metrics for all time",
   "load_error": "Dashboard data could not be loaded.",
   "quickRanges": {
     "today": "Today",
     "week": "This week",
     "month": "This month",
+    "all": "All",
     "clear": "Clear"
   },
   "datePicker": {
@@ -60,6 +63,8 @@
     "in_progress": "In progress",
     "in_progress_hint": "Orders still on the way, not yet delivered",
     "profit": "Net profit",
+    "total_revenue": "Total revenue",
+    "total_revenue_hint": "Value of all sold orders",
     "profit_hint": "Market tariff − courier tariff (sold only)",
     "avg_order_value": "Average order value",
     "avg_order_value_hint": "Average revenue per sold order",

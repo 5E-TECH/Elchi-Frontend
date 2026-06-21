@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AreaChart,
@@ -202,16 +202,22 @@ export interface FinancialAnalysisProps {
   startDate?: string;
   endDate?: string;
   analyticsScope?: string;
+  isAllTime?: boolean;
 }
 
 const FinancialAnalysis = memo(({
   startDate,
   endDate,
   analyticsScope,
+  isAllTime = false,
 }: FinancialAnalysisProps) => {
   const { t } = useTranslation("dashboard");
   const { getRevenue } = useDashboard();
   const [period, setPeriod] = useState<RevenuePeriod>("daily");
+
+  useEffect(() => {
+    if (isAllTime) setPeriod("yearly");
+  }, [isAllTime]);
 
   const revenueParams = useMemo(() => {
     const params: RevenueParams = { period };
@@ -303,7 +309,7 @@ const FinancialAnalysis = memo(({
         </div>
 
         <div className="el-segmented">
-          {PERIODS.map((p) => (
+          {PERIODS.filter((p) => !isAllTime || p === "monthly" || p === "yearly").map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}

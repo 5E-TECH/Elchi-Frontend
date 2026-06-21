@@ -14,10 +14,22 @@ type LoginCredentials = {
 
 type LoginResponse = {
   accessToken: string;
+  accessTokenExpiresAt?: number | null;
+  refreshTokenExpiresAt?: number | null;
+  refreshTokenWarnAt?: number | null;
+  access_token_expires_at?: number | null;
+  refresh_token_expires_at?: number | null;
+  refresh_token_warn_at?: number | null;
 };
 
 type RefreshResponse = {
   accessToken: string;
+  accessTokenExpiresAt?: number | null;
+  refreshTokenExpiresAt?: number | null;
+  refreshTokenWarnAt?: number | null;
+  access_token_expires_at?: number | null;
+  refresh_token_expires_at?: number | null;
+  refresh_token_warn_at?: number | null;
 };
 
 type AuthenticatedUser = User & {
@@ -92,6 +104,14 @@ const resetClientAuthState = () => {
   }
 };
 
+const persistSessionMetadata = (response: LoginResponse | RefreshResponse) => {
+  tokenStorage.setSessionMetadata({
+    accessTokenExpiresAt: response.accessTokenExpiresAt ?? response.access_token_expires_at ?? null,
+    refreshTokenExpiresAt: response.refreshTokenExpiresAt ?? response.refresh_token_expires_at ?? null,
+    refreshTokenWarnAt: response.refreshTokenWarnAt ?? response.refresh_token_warn_at ?? null,
+  });
+};
+
 export const fetchMyProfile = async (accessToken?: string) => {
   const resolvedAccessToken = accessToken ?? tokenStorage.getAccessToken();
 
@@ -124,6 +144,7 @@ export const refreshAccessToken = async () => {
   }
 
   tokenStorage.setAccessToken(nextAccessToken);
+  persistSessionMetadata(response.data);
   store.dispatch(loginSuccess({ accessToken: nextAccessToken }));
 
   return nextAccessToken;
@@ -139,6 +160,7 @@ export const login = async (credentials: LoginCredentials) => {
     }
 
     tokenStorage.setAccessToken(accessToken);
+    persistSessionMetadata(response.data);
     store.dispatch(loginSuccess({ accessToken }));
 
     const user = await fetchMyProfile(accessToken);

@@ -17,6 +17,7 @@ import type { RootState } from "../../../app/config/store";
 export interface RegionStatsCardProps {
   startDate?: string;
   endDate?: string;
+  showFinancialMetrics?: boolean;
 }
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -134,7 +135,11 @@ const DistrictStatRow = ({
   );
 };
 
-const RegionStatsCard = memo(({ startDate, endDate }: RegionStatsCardProps) => {
+const RegionStatsCard = memo(({
+  startDate,
+  endDate,
+  showFinancialMetrics = true,
+}: RegionStatsCardProps) => {
   const { t } = useTranslation("dashboard");
   const { t: regionT } = useTranslation("region");
   const role = useSelector((state: RootState) => state.role.role);
@@ -216,7 +221,9 @@ const RegionStatsCard = memo(({ startDate, endDate }: RegionStatsCardProps) => {
               <MetricCard icon={<XCircle size={18} />} label={regionT("map.metrics.cancelled")} value={(scopedSummary?.totalCancelled ?? 0).toLocaleString("uz-UZ")} tone="rose" />
               <MetricCard icon={<Clock3 size={18} />} label={regionT("map.metrics.pending")} value={(scopedSummary?.pendingOrders ?? 0).toLocaleString("uz-UZ")} tone="amber" />
               <MetricCard icon={<TrendingUp size={18} />} label={regionT("map.metrics.success")} value={`${scopedSummary?.successRate ?? 0}%`} tone="cyan" />
-              <MetricCard icon={<Wallet size={18} />} label={regionT("map.metrics.totalRevenue")} value={`${(scopedSummary?.totalRevenue ?? 0).toLocaleString("uz-UZ")} ${regionT("currencySum")}`} tone="purple" />
+              {showFinancialMetrics ? (
+                <MetricCard icon={<Wallet size={18} />} label={regionT("map.metrics.totalRevenue")} value={`${(scopedSummary?.totalRevenue ?? 0).toLocaleString("uz-UZ")} ${regionT("currencySum")}`} tone="purple" />
+              ) : null}
             </div>
 
             <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-[#2A263D]">
@@ -266,6 +273,7 @@ const RegionStatsCard = memo(({ startDate, endDate }: RegionStatsCardProps) => {
           summary={summary}
           startDate={params.startDate}
           endDate={params.endDate}
+          showFinancialMetrics={showFinancialMetrics}
         />
       )}
     </section>

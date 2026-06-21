@@ -24,11 +24,14 @@
   "page_title_filtered": "Tanlangan davr statistikasi",
   "page_subtitle_today": "Bugungi ko'rsatkichlar",
   "page_subtitle_filtered": "Sana oralig'i bo'yicha",
+  "page_title_all": "Umumiy statistika",
+  "page_subtitle_all": "Barcha davr ko'rsatkichlari",
   "load_error": "Dashboard ma'lumotlarini yuklab bo'lmadi.",
   "quickRanges": {
     "today": "Bugun",
     "week": "Bu hafta",
     "month": "Bu oy",
+    "all": "All",
     "clear": "Tozalash"
   },
   "datePicker": {
@@ -60,6 +63,8 @@
     "in_progress": "Jarayonda",
     "in_progress_hint": "Hali yetkazilmagan, yo'ldagi buyurtmalar",
     "profit": "Sof foyda",
+    "total_revenue": "Jami daromad",
+    "total_revenue_hint": "Barcha sotilgan buyurtmalar qiymati",
     "profit_hint": "Market tarifi − kuryer tarifi (sotilganlar)",
     "avg_order_value": "O'rtacha buyurtma qiymati",
     "avg_order_value_hint": "Bitta sotilgan buyurtmaga o'rtacha daromad",
