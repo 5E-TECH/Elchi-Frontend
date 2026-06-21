@@ -22,6 +22,7 @@ interface QuickDateRangeFilterProps {
   clearClassName?: string;
   size?: "sm" | "md";
   showPicker?: boolean;
+  includeAll?: boolean;
 }
 
 const QuickDateRangeFilter = ({
@@ -36,6 +37,7 @@ const QuickDateRangeFilter = ({
   clearClassName = "",
   size = "md",
   showPicker = true,
+  includeAll = false,
 }: QuickDateRangeFilterProps) => {
   const { t } = useTranslation("common");
   const ranges = useMemo(
@@ -43,6 +45,7 @@ const QuickDateRangeFilter = ({
       today: getPresetDateRange("today"),
       week: getPresetDateRange("week"),
       month: getPresetDateRange("month"),
+      all: getPresetDateRange("all"),
     }),
     [],
   );
@@ -51,6 +54,7 @@ const QuickDateRangeFilter = ({
     if (fromDate === ranges.today.from && toDate === ranges.today.to) return "today";
     if (fromDate === ranges.week.from && toDate === ranges.week.to) return "week";
     if (fromDate === ranges.month.from && toDate === ranges.month.to) return "month";
+    if (fromDate === ranges.all.from && toDate === ranges.all.to) return "all";
     return null;
   }, [fromDate, ranges, toDate]);
 
@@ -60,6 +64,7 @@ const QuickDateRangeFilter = ({
       today: t("today"),
       week: t("thisWeek"),
       month: t("thisMonth"),
+      all: t("all"),
     }),
     [t],
   );
@@ -73,7 +78,7 @@ const QuickDateRangeFilter = ({
   return (
     <div className={`flex w-full flex-col gap-2 ${className}`}>
       <div className="flex flex-wrap gap-1.5">
-        {(["today", "week", "month"] as const).map((key) => {
+        {(["today", "week", "month", ...(includeAll ? ["all" as const] : [])] as const).map((key) => {
           const isActive = activeQuick === key;
 
           return (

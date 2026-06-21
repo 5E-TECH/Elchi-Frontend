@@ -7,6 +7,7 @@ const dashboard = "dashboard";
 export interface AnalyticsDateParams {
   start_day?: string;
   end_day?: string;
+  all?: boolean;
 }
 
 export interface RevenueParams extends AnalyticsDateParams {
@@ -18,6 +19,7 @@ export interface DashboardOrdersSummary {
   cancelled: number;
   soldAndPaid: number;
   profit: number;
+  totalRevenue: number;
   from?: number;
   to?: number;
 }
@@ -302,6 +304,7 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
         cancelled: toNumber(orders.cancelled ?? orders.cancelledCount ?? orders.cancelled_count),
         soldAndPaid: toNumber(orders.soldAndPaid ?? orders.sold_and_paid),
         profit: toNumber(orders.profit),
+        totalRevenue: toNumber(orders.totalRevenue ?? orders.total_revenue),
         from: orders.from === undefined ? undefined : toNumber(orders.from),
         to: orders.to === undefined ? undefined : toNumber(orders.to),
       },

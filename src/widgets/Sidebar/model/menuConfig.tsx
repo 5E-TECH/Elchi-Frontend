@@ -186,5 +186,9 @@ export const getSidebarConfigForUser = (
     return MANAGER_HYBRID_CONFIG;
   }
 
+  if (role === "registrator" && branchType === "HQ") {
+    return SIDEBAR_CONFIG.registrator.filter((item) => item.to !== "/dispatch");
+  }
+
   return SIDEBAR_CONFIG[role] ?? SIDEBAR_CONFIG.admin;
 };

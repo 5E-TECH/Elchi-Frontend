@@ -390,8 +390,8 @@ const RegionPage = () => {
                     className="w-[220px]"
                     size="sm"
                     placeholder={t("common:dateRangePlaceholder", {
-                      from: t("common:from"),
-                      to: t("common:to"),
+                      from: t("common:startDate"),
+                      to: t("common:endDate"),
                     })}
                   />
                 </div>

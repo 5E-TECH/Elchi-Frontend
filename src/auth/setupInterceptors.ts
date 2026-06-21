@@ -8,6 +8,21 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & {
 
 let refreshPromise: Promise<string> | null = null;
 
+const getRefreshedAccessToken = () => {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+};
+
+const hasRefreshTokenExpired = () => {
+  const { refreshTokenExpiresAt } = tokenStorage.getSessionMetadata();
+  return Boolean(refreshTokenExpiresAt && Date.now() >= refreshTokenExpiresAt);
+};
+
 const shouldAttemptRefresh = (error: AxiosError) => {
   const status = error.response?.status;
   const requestConfig = error.config as RetryableRequestConfig | undefined;
@@ -39,8 +54,23 @@ const emitNetworkError = (error: AxiosError) => {
 };
 
 export const setupAuthInterceptors = (api: AxiosInstance) => {
-  api.interceptors.request.use((config) => {
-    const accessToken = tokenStorage.getAccessToken();
+  api.interceptors.request.use(async (config) => {
+    if (hasRefreshTokenExpired()) {
+      await logoutAndRedirect();
+      return Promise.reject(new Error("Refresh token expired"));
+    }
+
+    let accessToken = tokenStorage.getAccessToken();
+    const { accessTokenExpiresAt } = tokenStorage.getSessionMetadata();
+
+    if (accessToken && accessTokenExpiresAt && Date.now() >= accessTokenExpiresAt) {
+      try {
+        accessToken = await getRefreshedAccessToken();
+      } catch (refreshError) {
+        await logoutAndRedirect();
+        return Promise.reject(refreshError);
+      }
+    }
 
     if (accessToken) {
       config.headers = config.headers ?? {};
@@ -63,13 +93,11 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
       originalRequest._retry = true;
 
       try {
-        if (!refreshPromise) {
-          refreshPromise = refreshAccessToken().finally(() => {
-            refreshPromise = null;
-          });
+        if (hasRefreshTokenExpired()) {
+          throw new Error("Refresh token expired");
         }
 
-        const nextAccessToken = await refreshPromise;
+        const nextAccessToken = await getRefreshedAccessToken();
         originalRequest.headers = originalRequest.headers ?? {};
         (originalRequest.headers as Record<string, string>).Authorization = `Bearer ${nextAccessToken}`;
 

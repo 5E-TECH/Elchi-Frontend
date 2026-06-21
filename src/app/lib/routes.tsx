@@ -129,7 +129,12 @@ const canViewDispatch = (state: RootState) => {
     return branchType !== "PICKUP";
   }
 
-  return role === "registrator" || role === "branch";
+  if (role === "registrator") {
+    const branchType = getUserBranchType(state.user.user);
+    return branchType !== "HQ";
+  }
+
+  return role === "branch";
 };
 
 const canViewBatches = (state: RootState) => {
