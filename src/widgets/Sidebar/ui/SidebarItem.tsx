@@ -20,7 +20,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, end, isOpen 
       onTouchStart={() => preloadRoute(to)}
       className={({ isActive }) =>
         `flex items-center rounded-xl capitalize transition-all duration-300 text-[15px] font-semibold ${isOpen
-          ? "mx-1 gap-3.5 px-4 py-2.5"
+          ? "mx-1 gap-3.5 px-4 py-2"
           : "mx-auto h-12 w-12 justify-center p-0"
         } ${isActive
           ? "bg-main text-primary shadow-lg shadow-main/30"

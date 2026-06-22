@@ -32,6 +32,10 @@ const shouldAttemptRefresh = (error: AxiosError) => {
     return false;
   }
 
+  if (!tokenStorage.getAccessToken()) {
+    return false;
+  }
+
   return !requestUrl.includes("/auth/login") && !requestUrl.includes("/auth/refresh");
 };
 

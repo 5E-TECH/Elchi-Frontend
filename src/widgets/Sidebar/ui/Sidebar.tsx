@@ -48,7 +48,7 @@ const Sidebar = () => {
         }`}
     >
       {/* Header with Logo */}
-      <div className="flex h-22 items-center justify-start overflow-hidden bg-sidebar pl-4 dark:bg-maindark">
+      <div className="flex h-18 shrink-0 items-center justify-start overflow-hidden bg-sidebar pl-4 dark:bg-maindark">
         <div
           className={`transition-all duration-300 flex items-center justify-start ${!isOpen ? "w-full px-2" : "w-full px-4"
             }`}
@@ -63,7 +63,7 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1.5 overflow-y-auto bg-sidebar px-3 py-4 custom-scrollbar dark:bg-maindark">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto bg-sidebar px-3 py-3 custom-scrollbar dark:bg-maindark">
         {links.map((link) => (
           <SidebarLink
             key={link.to}
@@ -78,7 +78,7 @@ const Sidebar = () => {
 
       {/* Footer with Toggle Button */}
       <div
-        className={`p-3 flex bg-primary/5 dark:bg-maindark/50 ${!isOpen ? "flex-col space-y-3 items-center" : "items-center justify-between"
+        className={`shrink-0 p-3 flex bg-primary/5 dark:bg-maindark/50 ${!isOpen ? "flex-col space-y-3 items-center" : "items-center justify-between"
           }`}
       >
         <button

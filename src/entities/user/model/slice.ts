@@ -3,7 +3,7 @@ import type { UserState, User } from "./types";
 
 const initialAccessToken =
   typeof window !== "undefined"
-    ? window.localStorage.getItem("accessToken")
+    ? window.sessionStorage.getItem("accessToken")
     : null;
 
 const startsOnLoginPage =
@@ -33,10 +33,12 @@ export const userSlice = createSlice({
       state.error = null;
 
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("accessToken", action.payload.accessToken);
+        window.sessionStorage.setItem("accessToken", action.payload.accessToken);
+        window.localStorage.removeItem("accessToken");
 
         if (action.payload.user?.role) {
-          window.localStorage.setItem("role", action.payload.user.role);
+          window.sessionStorage.setItem("role", action.payload.user.role);
+          window.localStorage.removeItem("role");
         }
       }
     },
@@ -49,8 +51,10 @@ export const userSlice = createSlice({
       }
 
       if (action.payload) {
-        window.localStorage.setItem("accessToken", action.payload);
+        window.sessionStorage.setItem("accessToken", action.payload);
+        window.localStorage.removeItem("accessToken");
       } else {
+        window.sessionStorage.removeItem("accessToken");
         window.localStorage.removeItem("accessToken");
       }
     },
@@ -76,6 +80,8 @@ export const userSlice = createSlice({
       state.error = null;
 
       if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem("accessToken");
+        window.sessionStorage.removeItem("role");
         window.localStorage.removeItem("accessToken");
         window.localStorage.removeItem("role");
       }

@@ -5,11 +5,11 @@ import type { Notification, NotificationParams } from "../model/types";
 
 const normalizeNotification = (value: unknown): Notification => {
   const item = value as Notification & {
-    user_id?: string | number;
-    user?: {
+    market_id?: string | number;
+    group_id?: string | number;
+    group_type?: "cancel" | "create";
+    market?: {
       id?: string | number;
-      fullName?: string;
-      full_name?: string;
       name?: string;
       username?: string;
       phone_number?: string;
@@ -17,18 +17,16 @@ const normalizeNotification = (value: unknown): Notification => {
     createdAt?: string;
     updatedAt?: string;
   };
-  const user = item.user ?? null;
-  const username = user?.username ?? user?.phone_number ?? "—";
+  const market = item.market ?? null;
+  const marketId = String(item.market_id ?? market?.id ?? "");
+  const marketName = market?.name ?? market?.username ?? market?.phone_number ?? (marketId ? `#${marketId}` : "—");
 
   return {
     id: String(item.id),
-    user: {
-      id: String(user?.id ?? item.user_id ?? ""),
-      fullName: user?.fullName ?? user?.full_name ?? user?.name ?? username,
-      username,
-    },
-    chat_id: String(item.chat_id ?? ""),
-    status: item.status === "inactive" ? "inactive" : "active",
+    market_id: marketId,
+    market_name: marketName,
+    group_id: String(item.group_id ?? ""),
+    group_type: item.group_type === "cancel" ? "cancel" : "create",
     created_at: item.created_at ?? item.createdAt ?? item.updatedAt ?? new Date().toISOString(),
   };
 };
