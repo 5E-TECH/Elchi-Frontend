@@ -651,6 +651,7 @@ const NewOrderUpdate = () => {
 
   // ─── Handlers — Order popup ───────────────────────────────────────────────
   const handleOpenOrderPopup = useCallback(() => {
+    if (productsLocked) return;
     setOrderForm({
       where_deliver: order?.where_deliver ?? "",
       total_price: String(order?.total_price ?? ""),
@@ -658,7 +659,7 @@ const NewOrderUpdate = () => {
       items: order?.items.map((i) => ({ ...i })) ?? [],
     });
     setOrderPopupOpen(true);
-  }, [order]);
+  }, [order, productsLocked]);
 
   const handleCloseOrderPopup = useCallback(() => setOrderPopupOpen(false), []);
 
@@ -856,7 +857,13 @@ const NewOrderUpdate = () => {
                   icon={<ShoppingBag size={16} />}
                   title={t("orderProducts")}
                   sub={t("productsCount", { count: order.items.length })}
-                  action={<EditBtn onClick={handleOpenOrderPopup} />}
+                  action={
+                    <EditBtn
+                      onClick={handleOpenOrderPopup}
+                      disabled={productsLocked}
+                      reason={PRODUCTS_LOCK_REASON}
+                    />
+                  }
                 />
                 {productsLocked && <LockNotice>{PRODUCTS_LOCK_REASON}</LockNotice>}
                 <div className="hidden border-b border-gray-100 pb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:border-white/6 dark:text-white sm:grid sm:grid-cols-[1fr_auto]">

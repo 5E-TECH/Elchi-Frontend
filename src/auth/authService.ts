@@ -82,6 +82,7 @@ const shouldSkipRefreshAfterLogout = () => {
 };
 
 const syncUserContext = (user: AuthenticatedUser) => {
+  tokenStorage.setAuthIdentity({ id: user.id, role: user.role });
   store.dispatch(setProfile(user));
   store.dispatch(setRole(user.role));
   store.dispatch(setId(user.id));
@@ -141,6 +142,10 @@ export const refreshAccessToken = async () => {
 
   if (!nextAccessToken) {
     throw new Error("Refresh response does not include accessToken");
+  }
+
+  if (!tokenStorage.tokenMatchesCurrentSession(nextAccessToken)) {
+    throw new Error("Refreshed token belongs to another browser tab session");
   }
 
   tokenStorage.setAccessToken(nextAccessToken);
@@ -214,16 +219,11 @@ export const initAuth = async () => {
       let accessToken = tokenStorage.getAccessToken();
 
       if (!accessToken) {
-        if (typeof window !== "undefined" && window.location.pathname === "/login") {
-          resetClientAuthState();
-          return;
-        }
-
-        store.dispatch(setAppInitializing(true));
-        accessToken = await refreshAccessToken();
-      } else {
-        store.dispatch(setAppInitializing(true));
+        resetClientAuthState();
+        return;
       }
+
+      store.dispatch(setAppInitializing(true));
 
       await fetchMyProfile(accessToken);
     } catch {

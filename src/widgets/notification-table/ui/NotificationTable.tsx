@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { EditOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import {
-  NotificationStatusBadge,
   useNotifications,
   type Notification,
   type NotificationParams,
@@ -32,28 +31,32 @@ const NotificationTable = ({ onEdit }: NotificationTableProps) => {
   const columns: ColumnConfig<Notification>[] = useMemo(
     () => [
       {
-        key: "user",
-        label: t("notificationUser"),
+        key: "market_name",
+        label: t("market"),
         sortable: true,
-        sortValue: (row) => row.user?.fullName ?? "",
+        sortValue: (row) => row.market_name,
         render: (_, record) => (
           <div className="flex flex-col">
-            <span className="font-medium text-gray-900 dark:text-white">{record.user?.fullName ?? "—"}</span>
-            <span className="text-xs text-[var(--color-text-muted)]">@{record.user?.username ?? "—"}</span>
+            <span className="font-medium text-gray-900 dark:text-white">{record.market_name}</span>
+            <span className="text-xs text-[var(--color-text-muted)]">#{record.market_id}</span>
           </div>
         ),
       },
       {
-        key: "chat_id",
-        label: t("notificationChatId"),
+        key: "group_id",
+        label: "Telegram group",
         sortable: true,
         className: "font-mono text-xs sm:text-sm text-gray-600 dark:text-gray-300",
       },
       {
-        key: "status",
-        label: t("status"),
+        key: "group_type",
+        label: "Xabar turi",
         sortable: true,
-        render: (status: Notification["status"]) => <NotificationStatusBadge status={status} />,
+        render: (type: Notification["group_type"]) => (
+          <span className="rounded-full bg-main/10 px-2.5 py-1 text-xs font-semibold capitalize text-main">
+            {type === "create" ? "Yangi buyurtma" : "Bekor qilingan"}
+          </span>
+        ),
       },
       {
         key: "created_at",

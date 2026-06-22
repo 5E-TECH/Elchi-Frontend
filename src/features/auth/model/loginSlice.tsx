@@ -13,7 +13,7 @@ const getStoredAuthField = (key: "region" | "name") => {
   }
 
   try {
-    return window.localStorage.getItem(key) || null;
+    return window.sessionStorage.getItem(key) || null;
   } catch {
     return null;
   }
@@ -25,7 +25,8 @@ const setStoredAuthField = (key: "region" | "name", value: string) => {
   }
 
   try {
-    window.localStorage.setItem(key, value);
+    window.sessionStorage.setItem(key, value);
+    window.localStorage.removeItem(key);
   } catch {
     // Ignore storage failures and keep auth state usable.
   }
@@ -37,6 +38,7 @@ const removeStoredAuthField = (key: "region" | "name") => {
   }
 
   try {
+    window.sessionStorage.removeItem(key);
     window.localStorage.removeItem(key);
   } catch {
     // Ignore storage failures and keep auth state usable.
