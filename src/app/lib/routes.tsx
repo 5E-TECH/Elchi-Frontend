@@ -149,10 +149,19 @@ const canViewReturns = (state: RootState) => {
 
 const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
   const role = state.role.role;
-  if (role !== "manager") return true;
+  if (role === "admin" || role === "superadmin" || role === "market" || role === "registrator") {
+    return true;
+  }
+
+  if (role !== "manager") return false;
 
   const branchType = getUserBranchType(state.user.user);
   return branchType !== "REGIONAL";
+};
+
+const canManageProducts = (state: RootState) => {
+  const role = state.role.role;
+  return role === "admin" || role === "superadmin" || role === "market" || role === "registrator";
 };
 
 const DashboardEntry = () => {
@@ -293,13 +302,18 @@ const AppRouter = () => {
             {
               path: "products",
               children: [
-                { index: true, element: <ProductTable /> },
+                {
+                  index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canManageProducts}>
+                      <ProductTable />
+                    </ProtectedRoute>
+                  ),
+                },
                 {
                   path: "create-product/:id",
                   element: (
-                    <ProtectedRoute
-                      canActivate={() => true}
-                    >
+                    <ProtectedRoute canActivate={canManageProducts}>
                       <ProductCreate />
                     </ProtectedRoute>
                   ),

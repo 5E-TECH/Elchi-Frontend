@@ -6,7 +6,7 @@ export const useIdentityCoverage = () => {
   const client = useQueryClient();
 
   // ── GET · ADMINS.BASE ──────────────────────────────────────────────────────
-  const getAdmins = (params?: any) =>
+  const useGetAdmins = (params?: any) =>
     useQuery({
       queryKey: ["identity-cov", "admins", params],
       queryFn: () =>
@@ -14,7 +14,7 @@ export const useIdentityCoverage = () => {
     });
 
   // ── GET · MANAGERS.BASE ───────────────────────────────────────────────────
-  const getManagers = (params?: any) =>
+  const useGetManagers = (params?: any) =>
     useQuery({
       queryKey: ["identity-cov", "managers", params],
       queryFn: () =>
@@ -22,7 +22,7 @@ export const useIdentityCoverage = () => {
     });
 
   // ── GET · REGISTRATORS.BASE ───────────────────────────────────────────────
-  const getRegistrators = (params?: any) =>
+  const useGetRegistrators = (params?: any) =>
     useQuery({
       queryKey: ["identity-cov", "registrators", params],
       queryFn: () =>
@@ -30,7 +30,7 @@ export const useIdentityCoverage = () => {
     });
 
   // ── GET · COURIERS.BY_REGION ──────────────────────────────────────────────
-  const getCouriersByRegion = (regionId: string, enabled: boolean = true) =>
+  const useGetCouriersByRegion = (regionId: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["identity-cov", "couriers", "region", regionId],
       queryFn: () =>
@@ -57,10 +57,10 @@ export const useIdentityCoverage = () => {
   });
 
   return {
-    getAdmins,
-    getManagers,
-    getRegistrators,
-    getCouriersByRegion,
+    useGetAdmins,
+    useGetManagers,
+    useGetRegistrators,
+    useGetCouriersByRegion,
     addOrderToMarket,
     updateMarketExpenseProof,
   };

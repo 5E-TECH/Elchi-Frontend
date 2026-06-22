@@ -11,8 +11,8 @@ import BackButton from '../../../shared/ui/BackButton';
 export const UserDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation("users");
-  const { getUserById } = useUser();
-  const { data, isLoading, isError, error } = getUserById(id || '');
+  const { useGetUserById } = useUser();
+  const { data, isLoading, isError, error } = useGetUserById(id || '');
   const user = unwrapUserResponse(data);
 
   return (

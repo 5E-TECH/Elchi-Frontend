@@ -179,27 +179,27 @@ const MainCashbox = () => {
   const user = useSelector((state: RootState) => state.user.user);
   const branchType = getUserBranchType(user);
 
-  const { getUser, getCouriers } = useUser();
-  const { getMarkets } = useMarkets();
+  const { useGetUser, useGetCouriers } = useUser();
+  const { useGetMarkets } = useMarkets();
   const {
     cashboxSpand,
     cashboxFill,
     closeShift,
-    getCashBoxInfo,
-    getFinanceHistory,
-    getCashBoxMain,
+    useGetCashBoxInfo,
+    useGetFinanceHistory,
+    useGetCashBoxMain,
   } = useCashBox();
 
   // ── Data fetching ──────────────────────────────────────────────────────────
-  const { data: usersData, isLoading: usersLoading } = getUser(
+  const { data: usersData, isLoading: usersLoading } = useGetUser(
     { limit: 100 },
     isSalaryPopupOpen,
   );
-  const { data: couriersData, isLoading: couriersLoading } = getCouriers(
+  const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
     { status: "active", limit: 0 },
     isCourierPopupOpen,
   );
-  const { data: marketsData, isLoading: marketsLoading } = getMarkets(
+  const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
     { status: "active", limit: 0 },
     isMarketPopupOpen,
   );
@@ -210,8 +210,8 @@ const MainCashbox = () => {
     [draftHistoryFrom, draftHistoryTo],
   );
 
-  const { data: cashboxInfoRes, isLoading: cashboxInfoLoading } = getCashBoxInfo();
-  const { data: mainCashboxRes, isLoading: mainCashboxLoading } = getCashBoxMain(mainCashboxParams);
+  const { data: cashboxInfoRes, isLoading: cashboxInfoLoading } = useGetCashBoxInfo();
+  const { data: mainCashboxRes, isLoading: mainCashboxLoading } = useGetCashBoxMain(mainCashboxParams);
   const historyParams = useMemo(
     () => ({
       page: 1,
@@ -224,7 +224,7 @@ const MainCashbox = () => {
     data: historyRes,
     isLoading: historyLoading,
     isFetching: historyFetching,
-  } = getFinanceHistory(historyParams);
+  } = useGetFinanceHistory(historyParams);
 
   const employees = useMemo(
     () =>
@@ -465,7 +465,7 @@ const MainCashbox = () => {
             <p className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-3">
               {t("quickActions")}
             </p>
-            <div className="grid grid-cols-5 gap-1.5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5 xl:gap-1.5">
               {visibleActions.map(({ icon, label, shortLabelKey, color, bg }) => (
                 <button
                   key={label}

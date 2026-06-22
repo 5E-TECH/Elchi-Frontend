@@ -116,7 +116,7 @@ const BranchListWidget = ({
         </div>
       </div>
 
-      <div className="p-4 sm:p-5">
+      <div className="min-w-0 p-2.5 sm:p-5">
         <Spin spinning={isLoading}>
           {viewMode === "table" ? (
             <BranchTable data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />

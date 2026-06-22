@@ -91,10 +91,10 @@ const RefusedMails = () => {
   const { role } = useSelector((state: RootState) => state.role);
   const isCourierLike = role === "courier";
 
-  const { getRefusedMails, getRefusedMailsCourier } = useMails();
+  const { useGetRefusedMails, useGetRefusedMailsCourier } = useMails();
 
-  const courierQuery = getRefusedMailsCourier({ enabled: isCourierLike });
-  const defaultQuery = getRefusedMails({ enabled: !isCourierLike });
+  const courierQuery = useGetRefusedMailsCourier({ enabled: isCourierLike });
+  const defaultQuery = useGetRefusedMails({ enabled: !isCourierLike });
   const response = isCourierLike ? courierQuery.data : defaultQuery.data;
   const isLoading = isCourierLike ? courierQuery.isLoading : defaultQuery.isLoading;
   const isError = isCourierLike ? courierQuery.isError : defaultQuery.isError;

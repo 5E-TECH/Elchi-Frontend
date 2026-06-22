@@ -125,7 +125,7 @@ export const useCashBox = () => {
     onSuccess: refreshCashboxQueries,
   });
 
-  const getCashBoxById = (
+  const useGetCashBoxById = (
     id: string | undefined,
     bool: boolean = true,
     params?: any,
@@ -136,24 +136,24 @@ export const useCashBox = () => {
         api
           .get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(id as string), { params })
           .then((res) => res.data),
-      enabled: bool,
+      enabled: bool && Boolean(id),
     });
 
-  const getCashBoxHistoryById = (id: string | null, bool: boolean = true) =>
+  const useGetCashBoxHistoryById = (id: string | null, bool: boolean = true) =>
     useQuery({
       queryKey: [cashbox, "history-by-id", id],
       queryFn: () => api.get(API_ENDPOINTS.CASHBOX_HISTORY.BY_ID(id as string)).then((res) => res.data),
-      enabled: bool,
+      enabled: bool && Boolean(id),
     });
 
-  const getCashboxMyCashbox = (params?: any) =>
+  const useGetCashboxMyCashbox = (params?: any) =>
     useQuery({
       queryKey: [cashbox, "my-cashbox", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.MY_CASHBOX, { params }).then((res) => res.data),
     });
 
-  const getCashBoxInfo = (bool: boolean = true, params?: any) =>
+  const useGetCashBoxInfo = (bool: boolean = true, params?: any) =>
     useQuery({
       queryKey: [cashbox, "all-info", params],
       queryFn: () =>
@@ -163,7 +163,7 @@ export const useCashBox = () => {
       enabled: bool,
     });
 
-  const getCashBoxMain = (params?: any) =>
+  const useGetCashBoxMain = (params?: any) =>
     useQuery({
       queryKey: [cashbox, "main", params],
       queryFn: () =>
@@ -184,14 +184,14 @@ export const useCashBox = () => {
     },
   });
 
-  const getFinanceHistory = (params?: any) =>
+  const useGetFinanceHistory = (params?: any) =>
     useQuery({
       queryKey: [cashbox, "finance-history", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.HISTORY, { params }).then((res) => res.data),
     });
 
-  const getFinanceHistoryById = (id: string | null, enabled: boolean = true) =>
+  const useGetFinanceHistoryById = (id: string | null, enabled: boolean = true) =>
     useQuery<FinanceHistoryDetailResponse>({
       queryKey: [financeHistory, id],
       queryFn: () =>
@@ -203,7 +203,7 @@ export const useCashBox = () => {
 
   // ==================== SHIFT (SMENA) HOOKS ====================
 
-  const getCurrentShift = () =>
+  const useGetCurrentShift = () =>
     useQuery({
       queryKey: [shift, "current"],
       queryFn: () => api.get(API_ENDPOINTS.CASHBOX.SHIFT_CURRENT).then((res) => res.data),
@@ -225,37 +225,37 @@ export const useCashBox = () => {
     },
   });
 
-  const getShiftHistory = (params?: { page?: number; limit?: number }) =>
+  const useGetShiftHistory = (params?: { page?: number; limit?: number }) =>
     useQuery({
       queryKey: [shift, "history", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.SHIFT_HISTORY, { params }).then((res) => res.data),
     });
 
-  const getFinancialBalance = () =>
+  const useGetFinancialBalance = () =>
     useQuery({
       queryKey: [cashbox, "financial-balance"],
       queryFn: () => api.get(API_ENDPOINTS.FINANCE.CASHBOX_FINANCIAL_BALANCE).then((res) => res.data),
     });
 
   return {
-    getCashBoxById,
-    getCashBoxInfo,
-    getCashboxMyCashbox,
-    getCashBoxHistoryById,
-    getCashBoxMain,
+    useGetCashBoxById,
+    useGetCashBoxInfo,
+    useGetCashboxMyCashbox,
+    useGetCashBoxHistoryById,
+    useGetCashBoxMain,
     createPaymentCourier,
     createPaymentBranchToMain,
     createPaymentMarket,
     cashboxSpand,
     cashboxFill,
-    getFinanceHistory,
-    getFinanceHistoryById,
+    useGetFinanceHistory,
+    useGetFinanceHistoryById,
     // Shift hooks
-    getCurrentShift,
+    useGetCurrentShift,
     openShift,
     closeShift,
-    getShiftHistory,
-    getFinancialBalance,
+    useGetShiftHistory,
+    useGetFinancialBalance,
   };
 };

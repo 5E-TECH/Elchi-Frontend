@@ -1,6 +1,7 @@
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { extractScannerToken } from "../../../shared/lib/scanToken";
+export { getBackendErrorMessage } from "../../../shared/lib/backendError";
 
 export type ScanResourceType = "order" | "package" | "returned-package" | "post";
 
@@ -56,45 +57,3 @@ export const receiveScannedPackage = async (packageIdOrToken: string) =>
   api
     .patch(API_ENDPOINTS.BATCHES.RECEIVE(encodeURIComponent(packageIdOrToken)))
     .then((res) => res.data);
-
-export const getBackendErrorMessage = (error: unknown) => {
-  if (typeof error !== "object" || error === null) {
-    return undefined;
-  }
-
-  const axiosError = error as {
-    response?: {
-      data?: {
-        message?: string | string[];
-        error?: string | string[];
-        detail?: string;
-      };
-    };
-    message?: string;
-  };
-
-  const pick = (value: unknown) => {
-    if (typeof value === "string") {
-      const normalized = value.trim();
-      return normalized || undefined;
-    }
-
-    if (Array.isArray(value)) {
-      const normalized = value
-        .map((item) => (typeof item === "string" ? item.trim() : ""))
-        .filter(Boolean)
-        .join(", ");
-
-      return normalized || undefined;
-    }
-
-    return undefined;
-  };
-
-  return (
-    pick(axiosError.response?.data?.message) ??
-    pick(axiosError.response?.data?.error) ??
-    pick(axiosError.response?.data?.detail) ??
-    pick(axiosError.message)
-  );
-};

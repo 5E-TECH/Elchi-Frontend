@@ -114,7 +114,7 @@ const StatCard = ({ icon, label, value, iconCls }: {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const Markets = () => {
   const { t } = useTranslation("newOrders");
-  const { getTodayOrders } = useOrders();
+  const { useGetTodayOrders } = useOrders();
   const navigate = useNavigate();
   const roleState = useSelector((state: RootState) => state.role);
   const isMarketRole = roleState.role === "market";
@@ -142,7 +142,7 @@ const Markets = () => {
   }, [isMarketRole, marketId, navigate]);
 
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
-  const { data: response, isLoading } = getTodayOrders(params, !isMarketRole);
+  const { data: response, isLoading } = useGetTodayOrders(params, !isMarketRole);
 
   // API dan kelgan array ni jadval uchun flat qilamiz
   const rows: TableRow[] = useMemo(() => {

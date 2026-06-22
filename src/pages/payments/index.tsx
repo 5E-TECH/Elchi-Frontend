@@ -238,22 +238,22 @@ const Payments = () => {
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   const navigate = useNavigate();
-  const { getFinanceHistory, getCashBoxInfo } = useCashBox();
-  const { getManagerSettlement, getManagerPayableToHq } = useFinanceCoverage();
-  const { getUser, getCouriers } = useUser();
-  const { getMarkets } = useMarkets();
+  const { useGetFinanceHistory, useGetCashBoxInfo } = useCashBox();
+  const { useGetManagerSettlement, useGetManagerPayableToHq } = useFinanceCoverage();
+  const { useGetUser, useGetCouriers } = useUser();
+  const { useGetMarkets } = useMarkets();
 
   // ── API dan cashbox ma'lumotlarini olish ──────────────────────────────────
-  const { data: cashboxInfo, isLoading: cashboxLoading } = getCashBoxInfo();
-  const { data: managerSettlementInfo } = getManagerSettlement(isManagerRole);
-  const { data: managerPayableInfo } = getManagerPayableToHq(isManagerRole);
+  const { data: cashboxInfo, isLoading: cashboxLoading } = useGetCashBoxInfo();
+  const { data: managerSettlementInfo } = useGetManagerSettlement(isManagerRole);
+  const { data: managerPayableInfo } = useGetManagerPayableToHq(isManagerRole);
 
   // Faqat popup ochiq bo'lganda yuklanadi
-  const { data: marketsData, isLoading: marketsLoading } = getMarkets(
+  const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
     { status: "active", limit: 0 },
     isGivenPopupOpen && !isManagerRole,
   );
-  const { data: couriersData, isLoading: couriersLoading } = getCouriers(
+  const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
     { status: "active", limit: 0 },
     isReceivedPopupOpen,
   );
@@ -477,8 +477,8 @@ const Payments = () => {
   }, [filtersKey, limit, resetPagination]);
 
   const { data: historyData, isLoading: historyLoading } =
-    getFinanceHistory(queryParams);
-  const { data: creatorsData, isLoading: creatorsLoading } = getUser({
+    useGetFinanceHistory(queryParams);
+  const { data: creatorsData, isLoading: creatorsLoading } = useGetUser({
     limit: 100,
   });
   const creatorOptions = useMemo(
@@ -582,7 +582,7 @@ const Payments = () => {
             <div
               key={label}
               onClick={() => handleCardClick(path, showPopup)}
-              className={`relative flex-1 overflow-hidden rounded-2xl p-4 sm:p-5 lg:p-6 border border-glass-border shadow-lg hover:scale-[1.02] transition-transform duration-300 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
+              className={`relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-glass-border p-4 shadow-lg transition-transform duration-300 hover:scale-[1.02] sm:p-5 lg:p-4 xl:p-6 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
             >
               <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white opacity-[0.06]" />
               <div className="mb-4 flex items-start justify-between sm:mb-5">
@@ -591,16 +591,16 @@ const Payments = () => {
                 >
                   {icon}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-1.5 xl:gap-2">
                   {badge && (
-                    <div className="flex items-center gap-1.5 bg-glass px-2.5 py-1 rounded-lg border border-glass-border">
-                      <TrendingUp size={11} className="text-white/80" />
-                      <span className="text-white text-xs font-semibold">
+                    <div className="flex min-w-0 items-center gap-1 rounded-lg border border-glass-border bg-glass px-2 py-1 xl:gap-1.5 xl:px-2.5">
+                      <TrendingUp size={11} className="hidden shrink-0 text-white/80 xl:block" />
+                      <span className="whitespace-nowrap text-[10px] font-semibold text-white xl:text-xs">
                         {badge}
                       </span>
                     </div>
                   )}
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white/70 sm:h-8 sm:w-8">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70 sm:h-8 sm:w-8">
                     {action}
                   </div>
                 </div>

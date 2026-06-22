@@ -185,9 +185,9 @@ const MarketNewOrdersTable = ({
   onRowClick,
 }: MarketNewOrdersTableProps) => {
   const { t } = useTranslation("orders");
-  const { getTodayOrdersByMarket } = useIncomingOrders();
+  const { useGetTodayOrdersByMarket } = useIncomingOrders();
   const enabled = Boolean(marketId);
-  const { data, isLoading } = getTodayOrdersByMarket(marketId ?? 0, undefined, enabled);
+  const { data, isLoading } = useGetTodayOrdersByMarket(marketId ?? 0, undefined, enabled);
   const orders = useMemo<ApiOrder[]>(
     () => (Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []),
     [data],

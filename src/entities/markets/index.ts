@@ -12,22 +12,22 @@ export const useMarkets = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [markets] }),
   });
 
-  const getMarkets = (params?: any, enabled: boolean = true) =>
+  const useGetMarkets = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [markets, params],
       queryFn: () => api.get(API_ENDPOINTS.MARKETS.BASE, { params }).then((res) => res.data),
       enabled,
     });
 
-  const getMarketById = (id: number, enabled: boolean = true) => useQuery({
+  const useGetMarketById = (id: number, enabled: boolean = true) => useQuery({
       queryKey: [markets, id],
       queryFn: () => api.get(API_ENDPOINTS.USERS.BY_ID(id)).then((res) => res.data),
-      enabled,
+      enabled: enabled && Number.isFinite(id) && id > 0,
     });
 
   return {
     createMarket,
-    getMarkets,
-    getMarketById,
+    useGetMarkets,
+    useGetMarketById,
   };
 };

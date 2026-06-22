@@ -369,8 +369,8 @@ const SettingsPage = () => {
 
 // ─── Profil tabi ───────────────────────────────────────────────────────────────
 const ProfileTab = memo(() => {
-  const { getMyProfile } = useUser();
-  const { data, isLoading, isError, error } = getMyProfile();
+  const { useGetMyProfile } = useUser();
+  const { data, isLoading, isError, error } = useGetMyProfile();
   const user = unwrapUserResponse(data);
   return (
     <UserDetailWidget user={user} isLoading={isLoading} isError={isError} error={error} isOwnProfile />

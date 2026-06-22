@@ -11,9 +11,9 @@ const columns = [
 ];
 
 const LogisticsOpsPage = () => {
-  const { getReturnRequestsList, approveReturnRequest } = useLogisticsCoverage();
+  const { useGetReturnRequestsList, approveReturnRequest } = useLogisticsCoverage();
 
-  const returnRequests = getReturnRequestsList();
+  const returnRequests = useGetReturnRequestsList();
 
   const [payload, setPayload] = useState("");
 
@@ -34,7 +34,7 @@ const LogisticsOpsPage = () => {
   };
 
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
+    <div className="mx-auto w-full max-w-[900px] px-4 pt-4 pb-28 md:pb-4">
       <Title level={3}>Logistika — qaytarish so'rovlari</Title>
       <Text type="secondary">
         Qaytarish so'rovlari ro'yxati va ularni tasdiqlash paneli.
@@ -48,6 +48,7 @@ const LogisticsOpsPage = () => {
           dataSource={dataSource as any[]}
           loading={returnRequests.isLoading}
           pagination={false}
+          scroll={{ x: "max-content" }}
         />
 
         <Space direction="vertical" style={{ display: "flex" }}>
