@@ -228,8 +228,8 @@ const ProductTable = () => {
 
   // ─── Data Fetching ──────────────────────────────────────────────────────
 
-  const { getMarkets } = useMarkets();
-  const { data } = getMarkets(
+  const { useGetMarkets } = useMarkets();
+  const { data } = useGetMarkets(
     { status: "active", limit: 100 },
     isRoleResolved && !isMarketRole,
   );
@@ -288,17 +288,17 @@ const ProductTable = () => {
     return params;
   }, [filterValue, isMarketRole, limit, page, searchValue]);
 
-  const { getProducts, getMyProducts, getProductById, deleteProduct, updateProduct } = useProducts();
-  const { data: productsData, isLoading: isProductsLoading } = getProducts(
+  const { useGetProducts, useGetMyProducts, useGetProductById, deleteProduct, updateProduct } = useProducts();
+  const { data: productsData, isLoading: isProductsLoading } = useGetProducts(
     apiParams,
     isRoleResolved && !isMarketRole,
   );
-  const { data: myProductsData, isLoading: isMyProductsLoading } = getMyProducts(
+  const { data: myProductsData, isLoading: isMyProductsLoading } = useGetMyProducts(
     isRoleResolved && isMarketRole,
   );
   const products = isMarketRole ? myProductsData : productsData;
   const isLoading = isMarketRole ? isMyProductsLoading : isProductsLoading;
-  const { data: editProductResponse } = getProductById(editTarget?.id, Boolean(editTarget));
+  const { data: editProductResponse } = useGetProductById(editTarget?.id, Boolean(editTarget));
   const editProductDetail = useMemo(
     () => getProductPayload(editProductResponse),
     [editProductResponse],

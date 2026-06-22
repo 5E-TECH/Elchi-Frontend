@@ -112,7 +112,7 @@ const MailDetailPage = () => {
   const isOldDetail = viewRaw === "old" || isAllBatchesDetail;
   const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
   const fromTab = fromTabRaw;
-  const { getRefusedMailsCourierByPostId } = useMails();
+  const { useGetRefusedMailsCourierByPostId } = useMails();
   const {
     data: regularResponse,
     isLoading: regularLoading,
@@ -127,7 +127,7 @@ const MailDetailPage = () => {
     data: refusedResponse,
     isLoading: refusedLoading,
     isError: refusedError,
-  } = getRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
+  } = useGetRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
   const {
     data: transferBatchResponse,
     isLoading: transferBatchLoading,

@@ -9,7 +9,7 @@ export const useInvestors = () => {
 
   // ==================== INVESTORS ====================
 
-  const getInvestors = (params?: any) =>
+  const useGetInvestors = (params?: any) =>
     useQuery({
       queryKey: [investors, "list", params],
       queryFn: () =>
@@ -21,7 +21,7 @@ export const useInvestors = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
-  const getInvestorById = (id: string, enabled: boolean = true) =>
+  const useGetInvestorById = (id: string, enabled: boolean = true) =>
     useQuery({
       queryKey: [investors, id],
       queryFn: () =>
@@ -40,7 +40,7 @@ export const useInvestors = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
-  const getInvestorInvestments = (investorId: string, params?: any, enabled: boolean = true) =>
+  const useGetInvestorInvestments = (investorId: string, params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [investors, investorId, "investments", params],
       queryFn: () =>
@@ -49,7 +49,7 @@ export const useInvestors = () => {
       enabled: enabled && !!investorId,
     });
 
-  const getInvestorProfits = (investorId: string, params?: any, enabled: boolean = true) =>
+  const useGetInvestorProfits = (investorId: string, params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [investors, investorId, "profits", params],
       queryFn: () =>
@@ -60,7 +60,7 @@ export const useInvestors = () => {
 
   // ==================== INVESTMENTS ====================
 
-  const getInvestments = (params?: any) =>
+  const useGetInvestments = (params?: any) =>
     useQuery({
       queryKey: [investors, "investments", "list", params],
       queryFn: () =>
@@ -72,7 +72,7 @@ export const useInvestors = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
-  const getInvestmentById = (id: string, enabled: boolean = true) =>
+  const useGetInvestmentById = (id: string, enabled: boolean = true) =>
     useQuery({
       queryKey: [investors, "investments", id],
       queryFn: () =>
@@ -93,7 +93,7 @@ export const useInvestors = () => {
 
   // ==================== PROFITS ====================
 
-  const getProfits = (params?: any) =>
+  const useGetProfits = (params?: any) =>
     useQuery({
       queryKey: [investors, "profits", "list", params],
       queryFn: () =>
@@ -118,21 +118,21 @@ export const useInvestors = () => {
 
   return {
     // Investors
-    getInvestors,
+    useGetInvestors,
     createInvestor,
-    getInvestorById,
+    useGetInvestorById,
     updateInvestor,
     deleteInvestor,
-    getInvestorInvestments,
-    getInvestorProfits,
+    useGetInvestorInvestments,
+    useGetInvestorProfits,
     // Investments
-    getInvestments,
+    useGetInvestments,
     createInvestment,
-    getInvestmentById,
+    useGetInvestmentById,
     updateInvestment,
     deleteInvestment,
     // Profits
-    getProfits,
+    useGetProfits,
     createProfit,
     calculateProfits,
     markProfitPaid,

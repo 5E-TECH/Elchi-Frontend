@@ -17,6 +17,7 @@ import {
   playScanFeedback,
 } from "../../scan/lib/scanShared";
 import BackButton from "../../../shared/ui/BackButton";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
@@ -41,7 +42,7 @@ const NewOrderDetail = () => {
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
   const selectedOrdersKeyRef = useRef("");
 
-  const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } = useOrders();
+  const { useGetTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } = useOrders();
   const receiveMutation = shouldUseBranchTransferReceive
     ? createTransferBatch
     : createReceiveOrder;
@@ -61,7 +62,7 @@ const NewOrderDetail = () => {
   }, [searchQuery, applyDebounce]);
 
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
-  const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
+  const { data: res, isLoading, refetch } = useGetTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
   const rawOrders = useMemo<ApiOrder[]>(() => res?.data ?? res ?? [], [res]);
   const orders = useMemo(
     () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
@@ -93,12 +94,12 @@ const NewOrderDetail = () => {
   const handleMissingScannedOrder = useCallback(() => {
     playMissingOrderFeedback();
     notifApi.warning({
-      message: "QR topilmadi",
-      description: "Bu QR kod ushbu ro'yxatdagi orderlarga mos kelmadi.",
+      message: t("qrNotFound"),
+      description: t("newOrderScanMissing"),
       placement: "topRight",
       duration: 3,
     });
-  }, [notifApi]);
+  }, [notifApi, t]);
 
   const receiveScannedOrder = useCallback((order: ApiOrder) => {
     const orderId = order.id;
@@ -125,16 +126,15 @@ const NewOrderDetail = () => {
           });
           void refetch();
           notifApi.success({
-            message: "Order qabul qilindi",
-            description: `#${orderId} mailga o'tkazildi.`,
+            message: t("newOrderReceiveSuccess"),
+            description: t("newOrderReceiveDescription"),
             placement: "topRight",
             duration: 2,
           });
         },
         onError: (err: unknown) => {
           void playScanFeedback("error");
-          const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
-          const msg = apiErr?.response?.data?.message ?? apiErr?.message ?? t("receiveError");
+          const msg = getBackendErrorMessage(err) ?? t("receiveError");
           notifApi.error({
             message: t("receiveError"),
             description: msg,
@@ -202,8 +202,7 @@ const NewOrderDetail = () => {
       },
       onError: (err: unknown) => {
         setIsReceiveConfirmOpen(false);
-        const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
-        const msg = apiErr?.response?.data?.message ?? apiErr?.message ?? t("receiveError");
+        const msg = getBackendErrorMessage(err) ?? t("receiveError");
         notifApi.error({ message: t("receiveError"), description: msg, placement: "topRight", duration: 5 });
       },
     });
@@ -231,7 +230,7 @@ const NewOrderDetail = () => {
       } catch {
         notifApi.error({
           message: t("print"),
-          description: "PDF yaratishda xatolik yuz berdi.",
+          description: t("printError"),
           placement: "topRight",
           duration: 5,
         });
@@ -246,7 +245,7 @@ const NewOrderDetail = () => {
     } catch {
       notifApi.error({
         message: t("print"),
-        description: "PDF yaratishda xatolik yuz berdi.",
+        description: t("printError"),
         placement: "topRight",
         duration: 5,
       });

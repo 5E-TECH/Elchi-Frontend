@@ -296,7 +296,7 @@ const DispatchPage = () => {
   const { t } = useTranslation("dispatch");
   const { api: notificationApi } = useAppNotification();
   const { assignCourier } = useOrders();
-  const { getCouriers } = useUser();
+  const { useGetCouriers } = useUser();
   const courierParams = useMemo(
     () => ({
       page: 1,
@@ -309,7 +309,7 @@ const DispatchPage = () => {
     isLoading: isCouriersLoading,
     isError: isCouriersError,
     refetch: refetchCouriers,
-  } = getCouriers(courierParams);
+  } = useGetCouriers(courierParams);
 
   const couriers = useMemo(
     () =>

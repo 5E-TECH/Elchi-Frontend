@@ -34,7 +34,7 @@ const parseIsoDate = (value: string) => {
 const MyCashboxPage = () => {
   const { t } = useTranslation("payments");
   const role = useSelector((state: RootState) => state.role.role);
-  const { getCashboxMyCashbox } = useCashBox();
+  const { useGetCashboxMyCashbox } = useCashBox();
 
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
@@ -48,7 +48,7 @@ const MyCashboxPage = () => {
     [selectedDateFrom, selectedDateTo],
   );
 
-  const { data: cashboxResponse, isLoading } = getCashboxMyCashbox(params);
+  const { data: cashboxResponse, isLoading } = useGetCashboxMyCashbox(params);
 
   const detailData = cashboxResponse?.data;
   const cashbox = detailData?.cashbox ?? detailData?.myCashbox;

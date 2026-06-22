@@ -11,9 +11,9 @@ const columns = [
 ];
 
 const BranchOpsPage = () => {
-  const { getNewOrders, cancelBatch } = useBranchCoverage();
+  const { useGetNewOrders, cancelBatch } = useBranchCoverage();
 
-  const newOrders = getNewOrders();
+  const newOrders = useGetNewOrders();
 
   const [batchId, setBatchId] = useState("");
 

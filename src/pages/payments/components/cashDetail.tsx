@@ -113,8 +113,8 @@ const CashDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
   const navigate = useNavigate();
-  const { getCashBoxById, createPaymentCourier, createPaymentBranchToMain, createPaymentMarket } = useCashBox();
-  const { getMarkets } = useMarkets();
+  const { useGetCashBoxById, createPaymentCourier, createPaymentBranchToMain, createPaymentMarket } = useCashBox();
+  const { useGetMarkets } = useMarkets();
   const { apiRequest } = useAppNotification();
 
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
@@ -132,7 +132,7 @@ const CashDetail = () => {
     }),
     [selectedDateFrom, selectedDateTo],
   );
-  const { data: cashboxResponse, isLoading, refetch: refetchCashbox } = getCashBoxById(
+  const { data: cashboxResponse, isLoading, refetch: refetchCashbox } = useGetCashBoxById(
     id || "",
     Boolean(id),
     detailParams,
@@ -214,7 +214,7 @@ const CashDetail = () => {
     createPaymentCourier.isPending ||
     createPaymentBranchToMain.isPending ||
     createPaymentMarket.isPending;
-  const { data: marketsData, isLoading: marketsLoading } = getMarkets(
+  const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
     { status: "active", limit: 0 },
     isStoreTransfer,
   );

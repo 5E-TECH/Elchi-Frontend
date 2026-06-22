@@ -58,8 +58,8 @@ const Step1Market = ({
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { getMarkets } = useMarkets();
-  const { data, isLoading } = getMarkets({ search: debouncedSearch, status: "active", limit: 20 });
+  const { useGetMarkets } = useMarkets();
+  const { data, isLoading } = useGetMarkets({ search: debouncedSearch, status: "active", limit: 20 });
 
   const toArray = (value: unknown): MarketOption[] => {
     if (Array.isArray(value)) return value as MarketOption[];

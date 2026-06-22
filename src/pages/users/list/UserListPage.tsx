@@ -128,8 +128,8 @@ const UserListPage = memo(() => {
     [roleFromUrl, statusFromUrl, searchFromUrl],
   );
 
-  const { getUser } = useUser();
-  const { data, isLoading, isError, error } = getUser(apiParams);
+  const { useGetUser } = useUser();
+  const { data, isLoading, isError, error } = useGetUser(apiParams);
   const meta = data?.data?.meta;
 
   useEffect(() => {

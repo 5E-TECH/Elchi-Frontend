@@ -7,7 +7,7 @@ export const useOrdersCoverage = () => {
 
   // ── GET hooks ─────────────────────────────────────────────────────────────
 
-  const getOrderTracking = (id: string, enabled: boolean = true) =>
+  const useGetOrderTracking = (id: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["orders-cov", "tracking", id],
       queryFn: () =>
@@ -15,7 +15,7 @@ export const useOrdersCoverage = () => {
       enabled,
     });
 
-  const getSettlementState = (id: string, enabled: boolean = true) =>
+  const useGetSettlementState = (id: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["orders-cov", "settlement-state", id],
       queryFn: () =>
@@ -24,7 +24,7 @@ export const useOrdersCoverage = () => {
       enabled,
     });
 
-  const getOrdersByMarket = (marketId: string, enabled: boolean = true) =>
+  const useGetOrdersByMarket = (marketId: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["orders-cov", "by-market", marketId],
       queryFn: () =>
@@ -33,7 +33,7 @@ export const useOrdersCoverage = () => {
       enabled,
     });
 
-  const getMarketNewOrders = (marketId: string, enabled: boolean = true) =>
+  const useGetMarketNewOrders = (marketId: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["orders-cov", "market-new", marketId],
       queryFn: () =>
@@ -42,7 +42,7 @@ export const useOrdersCoverage = () => {
       enabled,
     });
 
-  const getQrCode = (token: string, enabled: boolean = true) =>
+  const useGetQrCode = (token: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["orders-cov", "qr-code", token],
       queryFn: () =>
@@ -137,11 +137,11 @@ export const useOrdersCoverage = () => {
 
   return {
     // GET
-    getOrderTracking,
-    getSettlementState,
-    getOrdersByMarket,
-    getMarketNewOrders,
-    getQrCode,
+    useGetOrderTracking,
+    useGetSettlementState,
+    useGetOrdersByMarket,
+    useGetMarketNewOrders,
+    useGetQrCode,
     // PATCH
     updateOrder,
     // POST

@@ -9,7 +9,7 @@ export const useLogisticsCoverage = () => {
 
   // ── DISTRICTS ──────────────────────────────────────────────────────────────
 
-  const getDistricts = (params?: any) =>
+  const useGetDistricts = (params?: any) =>
     useQuery({
       queryKey: [logiCov, "districts", params],
       queryFn: () =>
@@ -21,7 +21,7 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
   });
 
-  const getDistrictById = (id: string | number, enabled: boolean = true) =>
+  const useGetDistrictById = (id: string | number, enabled: boolean = true) =>
     useQuery({
       queryKey: [logiCov, "districts", id],
       queryFn: () =>
@@ -47,7 +47,7 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
   });
 
-  const getDistrictSatoMatchPreview = (params?: any) =>
+  const useGetDistrictSatoMatchPreview = (params?: any) =>
     useQuery({
       queryKey: [logiCov, "districts", "sato-match-preview", params],
       queryFn: () =>
@@ -61,7 +61,7 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
   });
 
-  const getDistrictBySatoCode = (satoCode: string | number, enabled: boolean = true) =>
+  const useGetDistrictBySatoCode = (satoCode: string | number, enabled: boolean = true) =>
     useQuery({
       queryKey: [logiCov, "districts", "sato", satoCode],
       queryFn: () =>
@@ -72,14 +72,14 @@ export const useLogisticsCoverage = () => {
 
   // ── POSTS ──────────────────────────────────────────────────────────────────
 
-  const getPosts = (params?: any) =>
+  const useGetPosts = (params?: any) =>
     useQuery({
       queryKey: [logiCov, "posts", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.POSTS.BASE, { params }).then((res) => res.data),
     });
 
-  const getPostById = (postId: string | number, enabled: boolean = true) =>
+  const useGetPostById = (postId: string | number, enabled: boolean = true) =>
     useQuery({
       queryKey: [logiCov, "posts", postId],
       queryFn: () =>
@@ -110,7 +110,7 @@ export const useLogisticsCoverage = () => {
       api.post(API_ENDPOINTS.POSTS.COURIERS_BY_POST(id), data),
   });
 
-  const getCourierOldPosts = (params?: any) =>
+  const useGetCourierOldPosts = (params?: any) =>
     useQuery({
       queryKey: [logiCov, "posts", "courier-old", params],
       queryFn: () =>
@@ -141,7 +141,7 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
 
-  const getReturnRequestsList = (params?: any) =>
+  const useGetReturnRequestsList = (params?: any) =>
     useQuery({
       queryKey: [logiCov, "posts", "return-requests", params],
       queryFn: () =>
@@ -155,7 +155,7 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
 
-  const getPostByScan = (id: string | number, enabled: boolean = true) =>
+  const useGetPostByScan = (id: string | number, enabled: boolean = true) =>
     useQuery({
       queryKey: [logiCov, "posts", "scan", id],
       queryFn: () =>
@@ -184,30 +184,30 @@ export const useLogisticsCoverage = () => {
 
   return {
     // Districts
-    getDistricts,
+    useGetDistricts,
     createDistrict,
-    getDistrictById,
+    useGetDistrictById,
     deleteDistrict,
     updateDistrictName,
     applyDistrictSatoMatch,
-    getDistrictSatoMatchPreview,
+    useGetDistrictSatoMatchPreview,
     updateDistrictSato,
-    getDistrictBySatoCode,
+    useGetDistrictBySatoCode,
     // Posts
-    getPosts,
-    getPostById,
+    useGetPosts,
+    useGetPostById,
     deletePost,
     checkPost,
     checkCancelPost,
     getCouriersByPost,
-    getCourierOldPosts,
+    useGetCourierOldPosts,
     reassignPost,
     receivePostOrder,
     receivePostScan,
     approveReturnRequest,
-    getReturnRequestsList,
+    useGetReturnRequestsList,
     rejectReturnRequest,
-    getPostByScan,
+    useGetPostByScan,
     // Regions
     createRegion,
     updateRegion,

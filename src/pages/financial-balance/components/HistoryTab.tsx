@@ -92,7 +92,7 @@ const toSourceTypeLabel = (value: string, t: (key: string) => string) => {
 const HistoryTab = () => {
   const { t } = useTranslation("payments");
   const currencyLabel = t("currency");
-  const { getFinanceHistory } = useCashBox();
+  const { useGetFinanceHistory } = useCashBox();
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "payments",
     defaultLimit: 10,
@@ -132,7 +132,7 @@ const HistoryTab = () => {
     resetPagination(limit);
   }, [fromDate, toDate, sourceType, limit, resetPagination]);
 
-  const { data, isLoading } = getFinanceHistory(queryParams);
+  const { data, isLoading } = useGetFinanceHistory(queryParams);
 
   const rows = useMemo<HistoryRow[]>(
     () =>

@@ -81,10 +81,10 @@ const TodaysMails = () => {
   const isCourierLike = role === "courier";
   const [selectedRegionId, setSelectedRegionId] = useState("");
 
-  const { getNewMails, getNewMailsCourier } = useMails();
+  const { useGetNewMails, useGetNewMailsCourier } = useMails();
 
-  const courierQuery = getNewMailsCourier({ enabled: isCourierLike });
-  const defaultQuery = getNewMails({ enabled: !isCourierLike });
+  const courierQuery = useGetNewMailsCourier({ enabled: isCourierLike });
+  const defaultQuery = useGetNewMails({ enabled: !isCourierLike });
   const response = isCourierLike ? courierQuery.data : defaultQuery.data;
   const isLoading = isCourierLike ? courierQuery.isLoading : defaultQuery.isLoading;
   const isError = isCourierLike ? courierQuery.isError : defaultQuery.isError;

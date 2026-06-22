@@ -46,8 +46,8 @@ const subLabelColor = {
 
 const FinancialBalance = () => {
   const { t } = useTranslation("payments");
-  const { getFinancialBalance } = useCashBox();
-  const { data: response, isLoading } = getFinancialBalance();
+  const { useGetFinancialBalance } = useCashBox();
+  const { data: response, isLoading } = useGetFinancialBalance();
   const data = normalizeFinancialBalance(response);
   const currencyLabel = t("currency");
   const [activeTab, setActiveTab] = useState<"overview" | "history" | "analysis">("overview");

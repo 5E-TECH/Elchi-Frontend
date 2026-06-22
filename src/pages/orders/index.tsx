@@ -142,9 +142,9 @@ const Orders = () => {
   const { t } = useTranslation("orders");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { getOrders } = useOrders();
+  const { useGetOrders } = useOrders();
   const { SellOrder, PartlySellOrder, CancelOrder, RollbackOrder, SendToPost } = useOrderActions();
-  const { getMarkets } = useMarkets();
+  const { useGetMarkets } = useMarkets();
   const { getAllParams, setMultipleParams } = useQueryParams();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -317,8 +317,8 @@ const Orders = () => {
     resetPagination(LIMIT);
   }, [filtersKey, resetPagination]);
 
-  const { data, isLoading } = getOrders(apiParams);
-  const { data: marketsResponse, isLoading: isMarketsLoading } = getMarkets(
+  const { data, isLoading } = useGetOrders(apiParams);
+  const { data: marketsResponse, isLoading: isMarketsLoading } = useGetMarkets(
     { status: "active", limit: 100 },
     showMarketSelect,
   );
@@ -368,14 +368,6 @@ const Orders = () => {
       return next.size === previous.size ? previous : next;
     });
   }, [canSendCancelledToHq, items]);
-
-  if (role === "courier") {
-    return (
-      <div>
-        <CourierOrders />
-      </div>
-    );
-  }
 
   const handleOpenNewOrder = () => {
     if (!canCreateOrder) return;
@@ -611,6 +603,14 @@ const Orders = () => {
       setIsExporting(false);
     }
   };
+
+  if (role === "courier") {
+    return (
+      <div>
+        <CourierOrders />
+      </div>
+    );
+  }
 
   return (
     <PageContainer className="flex flex-col gap-4 sm:gap-5">

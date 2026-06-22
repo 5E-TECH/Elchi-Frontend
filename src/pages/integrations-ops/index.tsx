@@ -11,14 +11,14 @@ const receivablesColumns = [
 ];
 
 const IntegrationsOpsPage = () => {
-  const { getReceivables, sync } = useIntegrationsCoverage();
+  const { useGetReceivables, sync } = useIntegrationsCoverage();
 
-  const receivables = getReceivables();
+  const receivables = useGetReceivables();
 
   const [integrationId, setIntegrationId] = useState("");
 
   return (
-    <div style={{ padding: 16, maxWidth: 920, margin: "0 auto" }}>
+    <div className="mx-auto w-full max-w-[920px] px-4 pt-4 pb-28 md:pb-4">
       <Title level={3}>Integratsiyalar</Title>
       <Text type="secondary">
         Integratsiya operatsiyalari: debitorlik qarzlari va sinxronizatsiya.
@@ -32,6 +32,7 @@ const IntegrationsOpsPage = () => {
           columns={receivablesColumns}
           dataSource={(receivables.data as any[]) ?? []}
           loading={receivables.isLoading}
+          scroll={{ x: "max-content" }}
         />
 
         <Space direction="vertical" style={{ display: "flex" }}>

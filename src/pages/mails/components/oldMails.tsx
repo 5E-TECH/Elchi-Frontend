@@ -109,12 +109,12 @@ const OldMails = () => {
   const location = useLocation();
   const selectedBatchId = new URLSearchParams(location.search).get("batch_mode") ?? "";
   const isAllBatchMode = canUseBatchMode && selectedBatchId === "all";
-  const { getOldMails } = useMails();
+  const { useGetOldMails } = useMails();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "mails",
     defaultLimit: 8,
   });
-  const { data, isLoading, isError } = getOldMails(
+  const { data, isLoading, isError } = useGetOldMails(
     isCourier,
     { page, limit },
     { enabled: !isAllBatchMode },

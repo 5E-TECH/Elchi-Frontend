@@ -104,6 +104,10 @@
     ]
   },
   "retry": "Retry",
+  "networkError": "Network error",
+  "networkCheckConnection": "Check your internet connection",
+  "operationCompleted": "Completed successfully",
+  "serverRequestError": "A server error occurred",
   "refresh": "Refresh",
   "scannerTitle": "QR Scanner",
   "scannerAction": "Scan",
