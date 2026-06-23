@@ -322,8 +322,8 @@ const buildListParams = (params?: BatchListParams) => {
   if (params.destinationBranchId) requestParams.destination_branch_id = params.destinationBranchId;
   if (params.from) requestParams.from = params.from;
   if (params.to) requestParams.to = params.to;
-  if (params.page !== undefined) requestParams.page = String(params.page);
-  if (params.limit !== undefined) requestParams.limit = String(params.limit);
+  if (params.page) requestParams.page = String(params.page);
+  if (params.limit) requestParams.limit = String(params.limit);
 
   return requestParams;
 };
