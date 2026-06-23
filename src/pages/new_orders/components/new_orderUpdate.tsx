@@ -42,11 +42,16 @@ import {
   buildAddressUpdatePayload,
   buildCustomerUpdatePayload,
   buildOrderUpdatePayload,
-  getBackend400Message,
+  getAddressUpdateValidationError,
+  getCustomerUpdateValidationError,
+  isActionableOrderStatus,
   isOrderReceivedOrLater,
   isOrderSentToBranch,
+  normalizeOrderStatus,
+  parseOrderTotalPrice,
   type EditableOrderSnapshot,
 } from "./newOrderUpdateRules";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -161,7 +166,14 @@ interface OrderForm {
 }
 
 // ─── Constants (module-level — re-render da qayta yaratilmaydi) ───────────────
-const fmt = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
+const LOCALE_BY_LANGUAGE: Record<string, string> = {
+  uz: "uz-UZ",
+  en: "en-US",
+  ru: "ru-RU",
+};
+
+const resolveLocale = (language: string) =>
+  LOCALE_BY_LANGUAGE[language.split("-")[0]] ?? "uz-UZ";
 
 const DELIVER_LABELS: Record<string, string> = {
   center: "deliverCenter",
@@ -173,12 +185,7 @@ const DELIVER_OPTIONS = [
   { value: "address", labelKey: "deliverAddress" },
 ] as const;
 const BRANCH_TYPES = new Set(["HQ", "PICKUP", "REGIONAL", "HYBRID"]);
-const ACTIONABLE_STATUSES = new Set(["waiting", "on the road", "new", "received"]);
 const DEFAULT_STATUS_CLS = "bg-slate-500/20 text-slate-300 border border-slate-500/30";
-const PRODUCTS_LOCK_REASON =
-  "HQ qabul qilgandan keyin summa va mahsulotlarni o‘zgartirib bo‘lmaydi.";
-const DESTINATION_LOCK_REASON =
-  "Branchga jo‘natilgandan keyin mijoz va manzilni o‘zgartirib bo‘lmaydi.";
 
 const getOrderPageBranchType = (
   user: RootState["user"]["user"],
@@ -262,12 +269,17 @@ const STATUS_CONFIG: Record<string, { labelKey: string; cls: string; ns?: "newOr
     ns: "orders",
     cls: "bg-teal-500/20 text-teal-400 border border-teal-500/30",
   },
-  partly_paid: {
+  "partly paid": {
     labelKey: "statusPartlyPaid",
     ns: "orders",
     cls: "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30",
   },
   cancelled: {
+    labelKey: "statusCancelled",
+    ns: "orders",
+    cls: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
+  },
+  "cancelled (sent)": {
     labelKey: "statusCancelled",
     ns: "orders",
     cls: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
@@ -284,10 +296,10 @@ const FIELD_CLS =
 const ICON_CLS =
   "absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white pointer-events-none";
 
-const PAYMENT_ROWS = (order: OrderDetail) => [
-  { labelKey: "total", value: fmt(order.total_price), cls: "text-gray-900 dark:text-white font-bold" },
-  { labelKey: "toBePaid", value: fmt(order.to_be_paid), cls: "text-amber-500 font-bold" },
-  { labelKey: "paid", value: fmt(order.paid_amount), cls: "text-emerald-500 font-bold" },
+const getPaymentRows = (order: OrderDetail, formatMoney: (value: number) => string) => [
+  { labelKey: "total", value: formatMoney(order.total_price), cls: "text-gray-900 dark:text-white font-bold" },
+  { labelKey: "toBePaid", value: formatMoney(order.to_be_paid), cls: "text-amber-500 font-bold" },
+  { labelKey: "paid", value: formatMoney(order.paid_amount), cls: "text-emerald-500 font-bold" },
 ];
 
 // ─── Pure UI Subcomponents (memo ile — props o'zgarmasa re-render bo'lmaydi) ──
@@ -443,7 +455,7 @@ const InputField = memo(({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderUpdate = () => {
-  const { t } = useTranslation(["newOrders", "orders"]);
+  const { t, i18n } = useTranslation(["newOrders", "orders"]);
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const queryClient = useQueryClient();
@@ -451,6 +463,17 @@ const NewOrderUpdate = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   const branchType = getOrderPageBranchType(user);
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(resolveLocale(i18n.resolvedLanguage ?? i18n.language)),
+    [i18n.language, i18n.resolvedLanguage],
+  );
+  const currencyLabel = t("currency", { ns: "orders" });
+  const formatMoney = useCallback(
+    (value: number) => `${numberFormatter.format(value)} ${currencyLabel}`,
+    [currencyLabel, numberFormatter],
+  );
+  const productsLockReason = t("productsLockReason");
+  const destinationLockReason = t("destinationLockReason");
 
   // ─── State ──────────────────────────────────────────────────────────────────
   const [addressPopupOpen, setAddressPopupOpen] = useState(false);
@@ -471,7 +494,7 @@ const NewOrderUpdate = () => {
 
   // ─── Data fetching ───────────────────────────────────────────────────────────
   const {
-    getOrderById,
+    useGetOrderById,
     updateNewOrder,
     SellOrder,
     PartlySellOrder,
@@ -479,9 +502,9 @@ const NewOrderUpdate = () => {
     RollbackOrder,
   } = useOrders();
   const { updateUser } = useUser();
-  const { getRegions, getDistricts } = useLogistics();
+  const { useGetRegions, useGetDistricts } = useLogistics();
 
-  const { data: res, isLoading } = getOrderById(orderId ?? "", !!orderId);
+  const { data: res, isLoading } = useGetOrderById(orderId ?? "", !!orderId);
   const order = useMemo<OrderDetail | null>(() => {
     if (!res) return null;
     if ("data" in (res as Record<string, unknown>) && (res as { data?: OrderDetail }).data) {
@@ -491,8 +514,8 @@ const NewOrderUpdate = () => {
   }, [res]);
   const userId = order?.customer?.id;
 
-  const { data: regionsData } = getRegions();
-  const { data: districtsData } = getDistricts(addressForm.region_id || undefined);
+  const { data: regionsData } = useGetRegions();
+  const { data: districtsData } = useGetDistricts(addressForm.region_id || undefined);
 
   // ─── Memoized derived state ──────────────────────────────────────────────────
   const regions = useMemo(
@@ -509,44 +532,38 @@ const NewOrderUpdate = () => {
     [districtsData],
   );
 
-  const statusCfg = useMemo(() => {
-    if (!order) return null;
-    return STATUS_CONFIG[order.status] ?? null;
-  }, [order]);
+  const normalizedStatus = normalizeOrderStatus(order?.status ?? "");
+  const statusCfg = STATUS_CONFIG[normalizedStatus] ?? null;
   const productsLocked = Boolean(order && isOrderReceivedOrLater(order.status));
   const destinationLocked = Boolean(order && isOrderSentToBranch(order));
   const showUpdateError = useCallback((error: unknown) => {
     notificationApi.error({
-      message: t("error", { ns: "common", defaultValue: "Xatolik" }),
+      message: t("error", { ns: "common" }),
       description:
-        getBackend400Message(error) ??
-        t("updateError", { ns: "newOrders", defaultValue: "Ma'lumotlarni yangilab bo'lmadi" }),
+        getBackendErrorMessage(error) ??
+        t("updateError"),
       placement: "topRight",
       duration: 5,
     });
   }, [notificationApi, t]);
-  const canUseCourierActions = useMemo(
-    () =>
-      role === "manager" &&
-      (branchType === "REGIONAL" || branchType === "HYBRID") &&
-      Boolean(order?.status) &&
-      ACTIONABLE_STATUSES.has(order?.status ?? ""),
-    [role, branchType, order?.status],
-  );
-  const canRollbackSoldOrder = useMemo(
-    () =>
-      role === "manager" &&
-      (branchType === "REGIONAL" || branchType === "HYBRID") &&
-      order?.status === "sold",
-    [role, branchType, order?.status],
-  );
+  const showActionError = useCallback((error: unknown) => {
+    notificationApi.error({
+      message: t("error", { ns: "common" }),
+      description: getBackendErrorMessage(error) ?? t("orderActionError"),
+      placement: "topRight",
+      duration: 5,
+    });
+  }, [notificationApi, t]);
+  const isRegionalManager =
+    role === "manager" &&
+    (branchType === "REGIONAL" || branchType === "HYBRID");
+  const canUseCourierActions =
+    isRegionalManager && isActionableOrderStatus(order?.status ?? "");
+  const canRollbackSoldOrder = isRegionalManager && normalizedStatus === "sold";
 
-  const regionName = useMemo(
-    () => order?.district?.region?.name ?? order?.region?.name ?? "—",
-    [order],
-  );
-  const districtName = useMemo(() => order?.district?.name ?? "—", [order]);
-  const addressText = useMemo(() => order?.address ?? "—", [order]);
+  const regionName = order?.district?.region?.name ?? order?.region?.name ?? "—";
+  const districtName = order?.district?.name ?? "—";
+  const addressText = order?.address ?? "—";
   const trackingContext = useMemo(() => {
     const source = order as (OrderDetail & {
       branch?: { name?: string | null } | null;
@@ -572,7 +589,7 @@ const NewOrderUpdate = () => {
         source?.post_name ??
         null,
     };
-  }, [districtName, order]);
+  }, [order]);
 
   // ─── Handlers — Address popup ─────────────────────────────────────────────
   const handleOpenAddressPopup = useCallback(() => {
@@ -598,6 +615,18 @@ const NewOrderUpdate = () => {
 
   const handleSaveAddress = useCallback(() => {
     if (!orderId || !order || destinationLocked) return;
+    const validationError = getAddressUpdateValidationError(addressForm);
+    if (validationError) {
+      notificationApi.error({
+        message: t("error", { ns: "common" }),
+        description: t(validationError === "region" ? "validationRegion" : "validationDistrict", {
+          ns: "orders",
+        }),
+        placement: "topRight",
+      });
+      return;
+    }
+
     const data = buildAddressUpdatePayload(order, addressForm);
     if (!Object.keys(data).length) {
       setAddressPopupOpen(false);
@@ -610,7 +639,7 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [addressForm, destinationLocked, order, orderId, showUpdateError, updateNewOrder]);
+  }, [addressForm, destinationLocked, notificationApi, order, orderId, showUpdateError, t, updateNewOrder]);
 
   // ─── Handlers — Customer popup ────────────────────────────────────────────
   const handleOpenCustomerPopup = useCallback(() => {
@@ -632,6 +661,22 @@ const NewOrderUpdate = () => {
 
   const handleSaveCustomer = useCallback(() => {
     if (!userId || !order || destinationLocked) return;
+    const validationError = getCustomerUpdateValidationError(customerForm);
+    if (validationError) {
+      const validationKey = {
+        name: "validationCustomerName",
+        phoneRequired: "validationPhoneRequired",
+        phoneFormat: "validationPhoneFormat",
+      }[validationError];
+
+      notificationApi.error({
+        message: t("error", { ns: "common" }),
+        description: t(validationKey, { ns: "orders" }),
+        placement: "topRight",
+      });
+      return;
+    }
+
     const data = buildCustomerUpdatePayload(order, customerForm);
     if (!Object.keys(data).length) {
       setCustomerPopupOpen(false);
@@ -647,7 +692,7 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [customerForm, destinationLocked, order, queryClient, showUpdateError, updateUser, userId]);
+  }, [customerForm, destinationLocked, notificationApi, order, queryClient, showUpdateError, t, updateUser, userId]);
 
   // ─── Handlers — Order popup ───────────────────────────────────────────────
   const handleOpenOrderPopup = useCallback(() => {
@@ -677,6 +722,15 @@ const NewOrderUpdate = () => {
 
   const handleSaveOrder = useCallback(() => {
     if (!orderId || !order) return;
+    if (!productsLocked && parseOrderTotalPrice(orderForm.total_price) === null) {
+      notificationApi.error({
+        message: t("error", { ns: "common" }),
+        description: t("totalAmountValidation"),
+        placement: "topRight",
+      });
+      return;
+    }
+
     const data = buildOrderUpdatePayload(order, orderForm, {
       products: productsLocked,
       destination: destinationLocked,
@@ -692,7 +746,7 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [destinationLocked, order, orderForm, orderId, productsLocked, showUpdateError, updateNewOrder]);
+  }, [destinationLocked, notificationApi, order, orderForm, orderId, productsLocked, showUpdateError, t, updateNewOrder]);
 
   const adjustQty = useCallback((itemId: string, delta: number) => {
     if (productsLocked) return;
@@ -720,10 +774,13 @@ const NewOrderUpdate = () => {
     (id: string, payload: { comment: string; extraCost: number; proof?: File }) => {
       SellOrder.mutate(
         { orderId: id, data: payload },
-        { onSuccess: () => setIsSellModalOpen(false) },
+        {
+          onSuccess: () => setIsSellModalOpen(false),
+          onError: showActionError,
+        },
       );
     },
-    [SellOrder],
+    [SellOrder, showActionError],
   );
 
   const handlePartlySell = useCallback(
@@ -739,27 +796,34 @@ const NewOrderUpdate = () => {
     ) => {
       PartlySellOrder.mutate(
         { orderId: id, data: payload },
-        { onSuccess: () => setIsSellModalOpen(false) },
+        {
+          onSuccess: () => setIsSellModalOpen(false),
+          onError: showActionError,
+        },
       );
     },
-    [PartlySellOrder],
+    [PartlySellOrder, showActionError],
   );
 
   const handleCancelOrder = useCallback(
     (id: string, payload: { comment: string; extraCost: number; paidAmount: number; proof?: File }) => {
       CancelOrder.mutate(
         { orderId: id, data: payload },
-        { onSuccess: () => setIsCancelModalOpen(false) },
+        {
+          onSuccess: () => setIsCancelModalOpen(false),
+          onError: showActionError,
+        },
       );
     },
-    [CancelOrder],
+    [CancelOrder, showActionError],
   );
   const handleRollbackConfirm = useCallback(() => {
     if (!order?.id) return;
     RollbackOrder.mutate(order.id, {
       onSuccess: () => setIsRollbackConfirmOpen(false),
+      onError: showActionError,
     });
-  }, [RollbackOrder, order]);
+  }, [RollbackOrder, order, showActionError]);
 
   const sellModalOrder = useMemo(() => {
     if (!order) return null;
@@ -879,7 +943,7 @@ const NewOrderUpdate = () => {
                     />
                   }
                 />
-                {productsLocked && <LockNotice>{PRODUCTS_LOCK_REASON}</LockNotice>}
+                {productsLocked && <LockNotice>{productsLockReason}</LockNotice>}
                 <div className="hidden border-b border-gray-100 pb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:border-white/6 dark:text-white sm:grid sm:grid-cols-[1fr_auto]">
                   <span>{t("product")}</span>
                   <span>{t("quantity")}</span>
@@ -893,14 +957,13 @@ const NewOrderUpdate = () => {
                       <div className="flex items-center gap-3">
                         <ProductThumbnail
                           item={item}
-                          alt={item.product?.name ?? t("productFallback", { id: item.id })}
+                          alt={item.product?.name ?? t("productFallback")}
                           className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-white/8 dark:bg-white/5"
                         />
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {item.product?.name ?? t("productFallback", { id: item.id })}
+                            {item.product?.name ?? t("productFallback")}
                           </p>
-                          <p className="text-xs text-gray-400 dark:text-white">ID: {item.id}</p>
                         </div>
                       </div>
                       <div className="flex items-center justify-between sm:block">
@@ -934,7 +997,7 @@ const NewOrderUpdate = () => {
                     iconCls="bg-emerald-500/15 text-emerald-500"
                   />
                 </div>
-                {PAYMENT_ROWS(order).map(({ labelKey, value, cls }) => (
+                {getPaymentRows(order, formatMoney).map(({ labelKey, value, cls }) => (
                   <div
                     key={labelKey}
                     className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/6 last:border-0"
@@ -964,14 +1027,14 @@ const NewOrderUpdate = () => {
                     <button
                       onClick={handleOpenCustomerPopup}
                       disabled={destinationLocked}
-                      title={destinationLocked ? DESTINATION_LOCK_REASON : undefined}
+                      title={destinationLocked ? destinationLockReason : undefined}
                       className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       <Edit2 size={14} />
                     </button>
                   }
                 />
-                {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
+                {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
                 <div
                   onClick={handleNavigateToCustomer}
                   className="flex items-center gap-3 p-3.5 rounded-xl bg-main/8 dark:bg-main/10 border border-main/20 cursor-pointer"
@@ -1014,11 +1077,11 @@ const NewOrderUpdate = () => {
                     <EditBtn
                       onClick={handleOpenAddressPopup}
                       disabled={destinationLocked}
-                      reason={DESTINATION_LOCK_REASON}
+                      reason={destinationLockReason}
                     />
                   }
                 />
-                {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
+                {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
                 <div>
                   <InfoRow
                     icon={<Map size={15} />}
@@ -1062,7 +1125,7 @@ const NewOrderUpdate = () => {
         title={t("editAddress")}
         icon={<MapPin size={20} />}
       >
-        {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
+        {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
         <SelectField
           label={t("region")}
           icon={Map}
@@ -1100,7 +1163,7 @@ const NewOrderUpdate = () => {
         title={t("editCustomer")}
         icon={<User size={20} />}
       >
-        {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
+        {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
         <InputField
           label={t("name")}
           icon={User}
@@ -1128,8 +1191,8 @@ const NewOrderUpdate = () => {
         title={t("editOrder")}
         icon={<ShoppingBag size={20} />}
       >
-        {productsLocked && <LockNotice>{PRODUCTS_LOCK_REASON}</LockNotice>}
-        {destinationLocked && <LockNotice>{DESTINATION_LOCK_REASON}</LockNotice>}
+        {productsLocked && <LockNotice>{productsLockReason}</LockNotice>}
+        {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
         {/* Mahsulotlar */}
         <div className="space-y-2">
           {orderForm.items.map((item) => (

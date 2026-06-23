@@ -132,11 +132,11 @@ export const UpdateUserModal = memo(({
 }: UpdateUserModalProps) => {
   const { t } = useTranslation("users");
   const authRole = useSelector((state: RootState) => state.role.role);
-  const { getUserById, updateUser, updateMyProfile, getRegions } = useUser();
+  const { useGetUserById, updateUser, updateMyProfile, useGetRegions } = useUser();
   const { apiRequest } = useAppNotification();
 
   const shouldFetchUser = Boolean(userId && !initialUser);
-  const { data: rawUser, isLoading: isUserLoading } = getUserById(shouldFetchUser ? userId ?? "" : "");
+  const { data: rawUser, isLoading: isUserLoading } = useGetUserById(shouldFetchUser ? userId ?? "" : "");
 
   const methods = useForm<UpdateUserFormValues>({
     defaultValues: INITIAL_VALUES,
@@ -154,7 +154,7 @@ export const UpdateUserModal = memo(({
   const userData = initialUser ?? unwrapUserResponse(rawUser) ?? null;
   const isLoading = shouldFetchUser ? isUserLoading : false;
 
-  const { data: regionsData } = getRegions();
+  const { data: regionsData } = useGetRegions();
   const regionList: RegionOption[] = (() => {
     const data = regionsData as any;
     if (Array.isArray(data)) return data;

@@ -104,6 +104,10 @@
     ]
   },
   "retry": "Повторить",
+  "networkError": "Ошибка сети",
+  "networkCheckConnection": "Проверьте подключение к интернету",
+  "operationCompleted": "Успешно выполнено",
+  "serverRequestError": "Произошла ошибка сервера",
   "refresh": "Обновить",
   "scannerTitle": "QR Scanner",
   "scannerAction": "Scan",

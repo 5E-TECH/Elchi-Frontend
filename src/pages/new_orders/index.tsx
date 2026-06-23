@@ -77,14 +77,6 @@ const NewOrders = () => {
           >
             <Store size={20} />
             <h4 className="font-semibold">{t("marketsTab")}</h4>
-            <strong
-              className={`ml-auto text-sm px-2.5 py-0.5 rounded-lg ${activeTab === "markets"
-                ? "bg-white/20 text-white"
-                : "bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400"
-                }`}
-            >
-              2
-            </strong>
           </div>
 
           {/* Tashqi Buyurtmalar tab */}

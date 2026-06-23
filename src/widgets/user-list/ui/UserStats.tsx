@@ -60,7 +60,7 @@ export const UserStats = memo(({
     ];
 
     return (
-        <div className={`mb-4 grid gap-2 sm:mb-6 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 ${onAdd ? "grid-cols-4" : "grid-cols-3"}`}>
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:mb-6 sm:gap-4 lg:grid-cols-3">
             {stats.map((stat, index) => {
                 const IconComponent = stat.icon;
                 return (

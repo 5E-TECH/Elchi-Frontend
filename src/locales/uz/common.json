@@ -104,6 +104,10 @@
     ]
   },
   "retry": "Qayta urinish",
+  "networkError": "Tarmoq xatosi",
+  "networkCheckConnection": "Internet aloqangizni tekshiring",
+  "operationCompleted": "Muvaffaqiyatli bajarildi",
+  "serverRequestError": "Serverda xatolik yuz berdi",
   "refresh": "Yangilash",
   "scannerTitle": "QR Scanner",
   "scannerAction": "Scan",

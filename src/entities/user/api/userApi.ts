@@ -53,7 +53,7 @@ export interface IUserFilter {
 export const useUser = () => {
   const client = useQueryClient();
 
-  const getUser = (params?: IUserFilter, enabled: boolean = true) =>
+  const useGetUser = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
       queryKey: [user, params],
       queryFn: () => api.get(API_ENDPOINTS.USERS.BASE, { params }).then((res: any) => res.data),
@@ -61,7 +61,7 @@ export const useUser = () => {
       placeholderData: (prev: any) => prev,
     });
 
-  const getCouriers = (params?: IUserFilter, enabled: boolean = true) =>
+  const useGetCouriers = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
       queryKey: ["couriers", params],
       queryFn: () => api.get(API_ENDPOINTS.COURIERS.BASE, { params }).then((res: any) => res.data),
@@ -103,7 +103,8 @@ export const useUser = () => {
           throw error;
         }
 
-        const { region_id: _regionId, ...payloadWithoutRegion } = data;
+        const payloadWithoutRegion = { ...data };
+        delete payloadWithoutRegion.region_id;
         return api.post(API_ENDPOINTS.COURIERS.BASE, payloadWithoutRegion);
       }
     },
@@ -111,7 +112,7 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
-  const getRegions = (enabled: boolean = true) =>
+  const useGetRegions = (enabled: boolean = true) =>
     useQuery({
       queryKey: ["regions"],
       queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res: any) => res.data),
@@ -119,7 +120,7 @@ export const useUser = () => {
       enabled,
     });
 
-  const getUserById = (id: string, params?: Pick<IUserFilter, "fromDate" | "toDate">) =>
+  const useGetUserById = (id: string, params?: Pick<IUserFilter, "fromDate" | "toDate">) =>
     useQuery({
       queryKey: [user, "detail", id, params],
       queryFn: () =>
@@ -127,7 +128,7 @@ export const useUser = () => {
       enabled: !!id,
     });
 
-  const getMyProfile = () =>
+  const useGetMyProfile = () =>
     useQuery({
       queryKey: [user, "profile"],
       queryFn: () =>
@@ -238,11 +239,11 @@ export const useUser = () => {
     createManager,
     createMarket,
     createCourier,
-    getRegions,
-    getUser,
-    getCouriers,
-    getUserById,
-    getMyProfile,
+    useGetRegions,
+    useGetUser,
+    useGetCouriers,
+    useGetUserById,
+    useGetMyProfile,
     updateUserStatus,
     updateUser,
     updateMyProfile,

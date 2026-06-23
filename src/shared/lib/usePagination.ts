@@ -22,7 +22,6 @@ const parsePositiveInt = (value: string | null) => {
 };
 
 export const usePagination = ({
-  key: _key,
   defaultPage = 1,
   defaultLimit,
   pageParam = "page",

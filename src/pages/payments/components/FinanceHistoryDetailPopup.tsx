@@ -184,9 +184,9 @@ interface Props {
 
 const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   const { t } = useTranslation("payments");
-  const { getFinanceHistoryById } = useCashBox();
+  const { useGetFinanceHistoryById } = useCashBox();
   const rowId = row?.id ?? null;
-  const { data, isLoading, isError } = getFinanceHistoryById(rowId, !!rowId);
+  const { data, isLoading, isError } = useGetFinanceHistoryById(rowId, !!rowId);
 
   const detail = data?.data;
   const display = detail ?? row;

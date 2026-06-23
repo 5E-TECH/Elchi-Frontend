@@ -119,7 +119,7 @@ const MailDetailPage = () => {
   const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
   const canReceiveRefusedPost = isCourierLikeReceiver || isHqRefusedReceiver;
   const fromTab = fromTabRaw;
-  const { getRefusedMailsCourierByPostId } = useMails();
+  const { useGetRefusedMailsCourierByPostId } = useMails();
   const {
     data: regularResponse,
     isLoading: regularLoading,
@@ -137,6 +137,7 @@ const MailDetailPage = () => {
   } = getRefusedMailsCourierByPostId(
     isRefusedDetail || regularError ? postId ?? "" : "",
   );
+  } = useGetRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
   const {
     data: transferBatchResponse,
     isLoading: transferBatchLoading,

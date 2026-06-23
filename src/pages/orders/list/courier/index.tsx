@@ -52,7 +52,7 @@ const CourierOrders = () => {
   };
 
   const {
-    getOrderCourier,
+    useGetOrderCourier,
     SellOrder,
     PartlySellOrder,
     RollbackOrder,
@@ -63,7 +63,7 @@ const CourierOrders = () => {
   const statusParam = getParam("status") ?? undefined;
   const params = statusParam ? { status: statusParam } : undefined;
 
-  const { data, isLoading } = getOrderCourier(params);
+  const { data, isLoading } = useGetOrderCourier(params);
 
   const { mutate: sellMutate, isPending: isSelling } = SellOrder;
   const { mutate: partlySellMutate, isPending: isPartlySelling } = PartlySellOrder;

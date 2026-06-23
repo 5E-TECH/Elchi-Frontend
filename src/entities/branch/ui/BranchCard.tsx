@@ -21,10 +21,18 @@ const BranchCard = ({ branch, onEdit }: BranchCardProps) => {
   const branchLabel = branch.code || branch.type || "—";
 
   return (
-    <button
-      type="button"
+    <article
+      role="link"
+      tabIndex={0}
+      aria-label={branch.name}
       onClick={() => navigate(`/branches/${branch.id}`)}
-      className="group relative w-full overflow-hidden rounded-xl border border-border-soft bg-card-surface-strong text-left shadow-[0_10px_24px_rgba(39,44,82,0.07)] transition-all duration-300 hover:-translate-y-0.5 hover:border-border-strong hover:bg-card-surface hover:shadow-[0_14px_30px_rgba(39,44,82,0.12)] dark:border-white/10 dark:bg-surface-elevated-dark dark:hover:border-main/50 dark:hover:bg-surface-dark"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          navigate(`/branches/${branch.id}`);
+        }
+      }}
+      className="group relative w-full cursor-pointer overflow-hidden rounded-xl border border-border-soft bg-card-surface-strong text-left shadow-[0_10px_24px_rgba(39,44,82,0.07)] transition-all duration-300 hover:-translate-y-0.5 hover:border-border-strong hover:bg-card-surface hover:shadow-[0_14px_30px_rgba(39,44,82,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main dark:border-white/10 dark:bg-surface-elevated-dark dark:hover:border-main/50 dark:hover:bg-surface-dark"
     >
       <div className="absolute inset-x-0 top-0 h-1 bg-main" />
 
@@ -108,7 +116,7 @@ const BranchCard = ({ branch, onEdit }: BranchCardProps) => {
           </div>
         </div>
       </div>
-    </button>
+    </article>
   );
 };
 

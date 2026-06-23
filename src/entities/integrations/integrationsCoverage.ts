@@ -13,7 +13,7 @@ export const useIntegrationsCoverage = () => {
   });
 
   // ── GET · INTEGRATIONS.RECEIVABLE_BALANCE ──────────────────────────────────
-  const getReceivableBalance = (id: string, enabled: boolean = true) =>
+  const useGetReceivableBalance = (id: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["integ-cov", "receivable-balance", id],
       queryFn: () =>
@@ -45,7 +45,7 @@ export const useIntegrationsCoverage = () => {
   });
 
   // ── GET · INTEGRATIONS.SYNC_HISTORY_BY_ID ──────────────────────────────────
-  const getSyncHistoryById = (id: string, enabled: boolean = true) =>
+  const useGetSyncHistoryById = (id: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["integ-cov", "sync-history", id],
       queryFn: () =>
@@ -91,7 +91,7 @@ export const useIntegrationsCoverage = () => {
   });
 
   // ── GET · INTEGRATIONS.RECEIVABLES ─────────────────────────────────────────
-  const getReceivables = (params?: any) =>
+  const useGetReceivables = (params?: any) =>
     useQuery({
       queryKey: ["integ-cov", "receivables", params],
       queryFn: () =>
@@ -100,7 +100,7 @@ export const useIntegrationsCoverage = () => {
     });
 
   // ── GET · INTEGRATIONS.SHIPMENT_BY_ORDER ───────────────────────────────────
-  const getShipmentByOrder = (orderId: string, enabled: boolean = true) =>
+  const useGetShipmentByOrder = (orderId: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["integ-cov", "shipment", orderId],
       queryFn: () =>
@@ -110,7 +110,7 @@ export const useIntegrationsCoverage = () => {
     });
 
   // ── GET · INTEGRATIONS.SYNC_HISTORY ────────────────────────────────────────
-  const getSyncHistory = (params?: any) =>
+  const useGetSyncHistory = (params?: any) =>
     useQuery({
       queryKey: ["integ-cov", "sync-history", params],
       queryFn: () =>
@@ -120,18 +120,18 @@ export const useIntegrationsCoverage = () => {
 
   return {
     healthcheck,
-    getReceivableBalance,
+    useGetReceivableBalance,
     createRemittance,
     retry,
     sync,
-    getSyncHistoryById,
+    useGetSyncHistoryById,
     syncQueue,
     test,
     dispatch,
     request,
     searchByQr,
-    getReceivables,
-    getShipmentByOrder,
-    getSyncHistory,
+    useGetReceivables,
+    useGetShipmentByOrder,
+    useGetSyncHistory,
   };
 };

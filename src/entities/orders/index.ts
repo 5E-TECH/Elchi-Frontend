@@ -85,7 +85,7 @@ export const useOrders = () => {
     },
   });
 
-  const getTodayOrders = (params?: any, enabled: boolean = true) =>
+  const useGetTodayOrders = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [orders, params],
       queryFn: () =>
@@ -93,7 +93,7 @@ export const useOrders = () => {
       enabled,
     });
 
-  const getTodayOrdersByMarket = (
+  const useGetTodayOrdersByMarket = (
     marketId: string | number,
     params?: any,
     enabled: boolean = true,
@@ -104,17 +104,17 @@ export const useOrders = () => {
         api
           .get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId), { params })
           .then((res) => res.data),
-      enabled,
+      enabled: enabled && Boolean(marketId),
     });
 
-  const getOrderById = (orderId: string, enabled: boolean = true) =>
+  const useGetOrderById = (orderId: string, enabled: boolean = true) =>
     useQuery({
       queryKey: [orders, orderId],
       queryFn: () => api.get(API_ENDPOINTS.ORDERS.BY_ID(orderId)).then((res) => res.data),
-      enabled,
+      enabled: enabled && Boolean(orderId),
     });
 
-  const getOrderCourier = (params?: { status?: string; page?: number; limit?: number }) =>
+  const useGetOrderCourier = (params?: { status?: string; page?: number; limit?: number }) =>
     useQuery({
       queryKey: [orders, "courier", params],
       queryFn: () =>
@@ -252,10 +252,10 @@ export const useOrders = () => {
   return {
     createReceiveOrder,
     createTransferBatch,
-    getTodayOrders,
-    getTodayOrdersByMarket,
-    getOrderById,
-    getOrderCourier,
+    useGetTodayOrders,
+    useGetTodayOrdersByMarket,
+    useGetOrderById,
+    useGetOrderCourier,
     useCancelledMarkets,
     useCancelledOrdersByMarket,
     SendToPost,

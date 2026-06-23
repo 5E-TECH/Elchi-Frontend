@@ -107,13 +107,13 @@ const Step2Combined = () => {
   const isMarketRole = role === "market";
   const productSourceMarketId = market ? String(market.id) : "";
 
-  const { getRegions, getDistricts } = useLogistics();
-  const { data: regions, isLoading: regLoading } = getRegions();
-  const { data: districts, isLoading: distLoading } = getDistricts(selectedRegionId);
+  const { useGetRegions, useGetDistricts } = useLogistics();
+  const { data: regions, isLoading: regLoading } = useGetRegions();
+  const { data: districts, isLoading: distLoading } = useGetDistricts(selectedRegionId);
 
-  const { getByMarketId, getMyProducts } = useProducts();
-  const marketProductsQuery = getByMarketId(productSourceMarketId, !isMarketRole);
-  const myProductsQuery = getMyProducts(isMarketRole);
+  const { useGetByMarketId, useGetMyProducts } = useProducts();
+  const marketProductsQuery = useGetByMarketId(productSourceMarketId, !isMarketRole);
+  const myProductsQuery = useGetMyProducts(isMarketRole);
   const productsData = isMarketRole ? myProductsQuery.data : marketProductsQuery.data;
   const prodLoading = isMarketRole ? myProductsQuery.isLoading : marketProductsQuery.isLoading;
 

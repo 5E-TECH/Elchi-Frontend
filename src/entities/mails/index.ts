@@ -342,7 +342,7 @@ export const useMails = () => {
       })
       .then((res) => res.data);
 
-  const getNewMails = (options?: { enabled?: boolean }) =>
+  const useGetNewMails = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "new", role, branchId],
       queryFn: () =>
@@ -352,28 +352,28 @@ export const useMails = () => {
       enabled: options?.enabled ?? true,
     });
 
-  const getNewMailsCourier = (options?: { enabled?: boolean }) =>
+  const useGetNewMailsCourier = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "new"],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.ON_THE_ROAD).then((res) => res.data),
       enabled: options?.enabled ?? true,
     });
 
-  const getTodayMailsCourier = (id: string) =>
+  const useGetTodayMailsCourier = (id: string) =>
     useQuery({
       queryKey: [MAILS_KEY, "new", id],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(id)).then((res) => res.data),
       enabled: !!id,
     });
 
-  const getRefusedMailsCourierByPostId = (id: string) =>
+  const useGetRefusedMailsCourierByPostId = (id: string) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-detail", id],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED_ORDERS_BY_POST_ID(id)).then((res) => res.data),
       enabled: !!id,
     });
 
-  const getRefusedMails = (options?: { enabled?: boolean }) =>
+  const useGetRefusedMails = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused", role, branchId],
       queryFn: () =>
@@ -383,7 +383,7 @@ export const useMails = () => {
       enabled: options?.enabled ?? true,
     });
 
-  const getReturnMails = (params?: GetOldMailsParams) =>
+  const useGetReturnMails = (params?: GetOldMailsParams) =>
     useQuery<PaginatedPostsResponse>({
       queryKey: [MAILS_KEY, "return", role, branchId, params?.page ?? 1, params?.limit ?? 8],
       queryFn: () =>
@@ -397,14 +397,14 @@ export const useMails = () => {
           .then((res) => toPaginatedMailResponse(res.data, mapReturnRequestToMailItem)),
     });
 
-  const getRefusedMailsCourier = (options?: { enabled?: boolean }) =>
+  const useGetRefusedMailsCourier = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-courier"],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.COURIER_REJECTED).then((res) => res.data),
       enabled: options?.enabled ?? true,
     });
 
-  const getOldMails = (
+  const useGetOldMails = (
     isCourier = false,
     params?: GetOldMailsParams,
     options?: { enabled?: boolean },
@@ -434,14 +434,14 @@ export const useMails = () => {
     });
 
   return {
-    getNewMails,
-    getRefusedMails,
-    getReturnMails,
-    getOldMails,
-    getNewMailsCourier,
-    getTodayMailsCourier,
-    getRefusedMailsCourier,
-    getRefusedMailsCourierByPostId
+    useGetNewMails,
+    useGetRefusedMails,
+    useGetReturnMails,
+    useGetOldMails,
+    useGetNewMailsCourier,
+    useGetTodayMailsCourier,
+    useGetRefusedMailsCourier,
+    useGetRefusedMailsCourierByPostId
   };
 };
 

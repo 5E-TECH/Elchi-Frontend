@@ -13,7 +13,7 @@ export const useFinanceCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getCashboxAllInfo = (enabled: boolean = true, params?: any) =>
+  const useGetCashboxAllInfo = (enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "cashbox-all-info", params],
       queryFn: () =>
@@ -28,7 +28,7 @@ export const useFinanceCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getManagerPayableToHq = (enabled: boolean = true, params?: any) =>
+  const useGetManagerPayableToHq = (enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "manager-payable-to-hq", params],
       queryFn: () =>
@@ -37,7 +37,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getManagerSettlement = (enabled: boolean = true, params?: any) =>
+  const useGetManagerSettlement = (enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "manager-settlement", params],
       queryFn: () =>
@@ -46,7 +46,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getCashboxUserMain = (id: string, enabled: boolean = true, params?: any) =>
+  const useGetCashboxUserMain = (id: string, enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "cashbox-user-main", id, params],
       queryFn: () =>
@@ -55,7 +55,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getCashboxByUser = (id: string, enabled: boolean = true, params?: any) =>
+  const useGetCashboxByUser = (id: string, enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "cashbox-by-user", id, params],
       queryFn: () =>
@@ -73,7 +73,7 @@ export const useFinanceCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getFinancialBalanceHistory = (enabled: boolean = true, params?: any) =>
+  const useGetFinancialBalanceHistory = (enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "financial-balance-history", params],
       queryFn: () =>
@@ -84,7 +84,7 @@ export const useFinanceCoverage = () => {
 
   // ── Health ────────────────────────────────────────────────────────────────
 
-  const getFinanceHealth = (enabled: boolean = true) =>
+  const useGetFinanceHealth = (enabled: boolean = true) =>
     useQuery({
       queryKey: ["finance-cov", "health"],
       queryFn: () =>
@@ -101,7 +101,7 @@ export const useFinanceCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getOperatorBalance = (operatorId: string, enabled: boolean = true) =>
+  const useGetOperatorBalance = (operatorId: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["finance-cov", "operator-balance", operatorId],
       queryFn: () =>
@@ -110,7 +110,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getOperatorEarnings = (operatorId: string, enabled: boolean = true, params?: any) =>
+  const useGetOperatorEarnings = (operatorId: string, enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "operator-earnings", operatorId, params],
       queryFn: () =>
@@ -119,7 +119,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getOperatorPayouts = (operatorId: string, enabled: boolean = true, params?: any) =>
+  const useGetOperatorPayouts = (operatorId: string, enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "operator-payouts", operatorId, params],
       queryFn: () =>
@@ -142,7 +142,7 @@ export const useFinanceCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getSalaryByUser = (userId: string, enabled: boolean = true, params?: any) =>
+  const useGetSalaryByUser = (userId: string, enabled: boolean = true, params?: any) =>
     useQuery({
       queryKey: ["finance-cov", "salary-by-user", userId, params],
       queryFn: () =>
@@ -154,25 +154,25 @@ export const useFinanceCoverage = () => {
   return {
     // Cashbox
     createCashbox,
-    getCashboxAllInfo,
+    useGetCashboxAllInfo,
     updateCashboxBalance,
-    getManagerPayableToHq,
-    getManagerSettlement,
-    getCashboxUserMain,
-    getCashboxByUser,
+    useGetManagerPayableToHq,
+    useGetManagerSettlement,
+    useGetCashboxUserMain,
+    useGetCashboxByUser,
     // Financial ledger
     createFinancialBalanceEntry,
-    getFinancialBalanceHistory,
+    useGetFinancialBalanceHistory,
     // Health
-    getFinanceHealth,
+    useGetFinanceHealth,
     // Operator
     createOperatorPayment,
-    getOperatorBalance,
-    getOperatorEarnings,
-    getOperatorPayouts,
+    useGetOperatorBalance,
+    useGetOperatorEarnings,
+    useGetOperatorPayouts,
     // Salary
     createSalary,
     updateSalary,
-    getSalaryByUser,
+    useGetSalaryByUser,
   };
 };

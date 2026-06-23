@@ -175,9 +175,9 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     }, [isMobile, isMobilePanelOpen]);
 
     // ─── API lar ───────────────────────────────────────────────────────────
-    const { getRegions, getCouriers, getMyProfile } = useUser();
-    const { getDistricts } = useLogistics();
-    const { getMarkets } = useMarkets();
+    const { useGetRegions, useGetCouriers, useGetMyProfile } = useUser();
+    const { useGetDistricts } = useLogistics();
+    const { useGetMarkets } = useMarkets();
 
     const toItems = (value: unknown): { id: string | number; name: string }[] => {
         if (Array.isArray(value)) return value as { id: string | number; name: string }[];
@@ -200,7 +200,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         return [];
     };
 
-    const { data: marketsData, isLoading: marketsLoading } = getMarkets(
+    const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
         { status: "active", limit: 100 },
         canLoadRoleDependentOptions,
     );
@@ -217,7 +217,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         ? (branchesData?.data ?? []).map((b) => ({ value: String(b.id), label: b.name }))
         : [];
 
-    const { data: myProfileData } = getMyProfile();
+    const { data: myProfileData } = useGetMyProfile();
 
     const managerRegionId = useMemo(() => {
         if (!isManagerRole) return "";
@@ -258,7 +258,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         return "";
     }, [currentUser, isManagerRole, myProfileData]);
 
-    const { data: couriersData, isLoading: couriersLoading } = getCouriers(
+    const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
         {
             status: "active",
             limit: 100,
@@ -268,11 +268,11 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     );
     const couriers = toItems(couriersData).map((c) => ({ value: String(c.id), label: c.name }));
 
-    const { data: regionsData, isLoading: regionsLoading } = getRegions(!isManagerRole);
+    const { data: regionsData, isLoading: regionsLoading } = useGetRegions(!isManagerRole);
     const regions = ((regionsData?.data ?? regionsData ?? []) as { id: string | number; name: string }[]).map(
         (r) => ({ value: String(r.id), label: r.name })
     );
-    const { data: districtsData, isLoading: districtsLoading } = getDistricts(managerRegionId || undefined);
+    const { data: districtsData, isLoading: districtsLoading } = useGetDistricts(managerRegionId || undefined);
     const managerDistricts = ((districtsData ?? []) as { id: string | number; name: string }[]).map((d) => ({
         value: String(d.id),
         label: d.name,

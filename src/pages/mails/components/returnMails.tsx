@@ -50,12 +50,12 @@ ReturnCard.displayName = "ReturnCard";
 
 const ReturnMails = () => {
   const { t } = useTranslation("mails");
-  const { getReturnMails } = useMails();
+  const { useGetReturnMails } = useMails();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "mails",
     defaultLimit: 8,
   });
-  const { data: response, isLoading, isError } = getReturnMails({ page, limit });
+  const { data: response, isLoading, isError } = useGetReturnMails({ page, limit });
 
   const mails: MailItem[] = response?.data?.data ?? [];
   const pagination = response?.data;
