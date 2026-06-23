@@ -80,7 +80,7 @@ const CourierOrders = () => {
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleSell = (
     orderId: string,
-    payload: { comment: string; extraCost: number },
+    payload: { comment: string; extraCost: number; proof?: File },
   ) => {
     sellMutate(
       { orderId, data: payload },
@@ -95,6 +95,7 @@ const CourierOrders = () => {
       totalPrice: number;
       extraCost: number;
       comment: string;
+      proof?: File;
     },
   ) => {
     partlySellMutate(
@@ -105,7 +106,7 @@ const CourierOrders = () => {
 
   const handleCancel = (
     orderId: string,
-    payload: { comment: string; extraCost: number; paidAmount: number },
+    payload: { comment: string; extraCost: number; paidAmount: number; proof?: File },
   ) => {
     cancelMutate(
       { orderId, data: payload },

@@ -47,10 +47,18 @@ const subLabelColor = {
 const FinancialBalance = () => {
   const { t } = useTranslation("payments");
   const { getFinancialBalance } = useCashBox();
-  const { data: response, isLoading } = getFinancialBalance();
+  const { data: response, isLoading, isError } = getFinancialBalance();
   const data = normalizeFinancialBalance(response);
   const currencyLabel = t("currency");
   const [activeTab, setActiveTab] = useState<"overview" | "history" | "analysis">("overview");
+
+  if (!isLoading && (isError || !data)) {
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
 
   const total = data.currentSituation;
   const isNegative = total < 0;

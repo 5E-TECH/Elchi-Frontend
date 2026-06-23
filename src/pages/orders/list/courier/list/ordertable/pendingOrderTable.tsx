@@ -17,8 +17,9 @@ type OrderItem = { id: string; quantity: number; product: { name: string; image_
 export type Order = {
   id: string; created_at: string; status: string; total_price: number;
   where_deliver: string; product_quantity: number;
-  market: { name: string }; customer: { name: string; phone_number: string };
+  market: { name: string; expense_proof_conditions?: string[] | null }; customer: { name: string; phone_number: string };
   district: { name: string }; region: { name: string }; items: OrderItem[];
+  sell_requires_media?: boolean; cancel_requires_media?: boolean;
 };
 
 type Props = {

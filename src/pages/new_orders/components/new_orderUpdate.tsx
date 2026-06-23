@@ -717,7 +717,7 @@ const NewOrderUpdate = () => {
     [navigate, userId],
   );
   const handleSell = useCallback(
-    (id: string, payload: { comment: string; extraCost: number }) => {
+    (id: string, payload: { comment: string; extraCost: number; proof?: File }) => {
       SellOrder.mutate(
         { orderId: id, data: payload },
         { onSuccess: () => setIsSellModalOpen(false) },
@@ -734,6 +734,7 @@ const NewOrderUpdate = () => {
         totalPrice: number;
         extraCost: number;
         comment: string;
+        proof?: File;
       },
     ) => {
       PartlySellOrder.mutate(
@@ -745,7 +746,7 @@ const NewOrderUpdate = () => {
   );
 
   const handleCancelOrder = useCallback(
-    (id: string, payload: { comment: string; extraCost: number; paidAmount: number }) => {
+    (id: string, payload: { comment: string; extraCost: number; paidAmount: number; proof?: File }) => {
       CancelOrder.mutate(
         { orderId: id, data: payload },
         { onSuccess: () => setIsCancelModalOpen(false) },
@@ -762,6 +763,7 @@ const NewOrderUpdate = () => {
 
   const sellModalOrder = useMemo(() => {
     if (!order) return null;
+    const orderFlags = order as OrderDetail & Record<string, unknown>;
     return {
       id: order.id,
       created_at: "",
@@ -773,6 +775,18 @@ const NewOrderUpdate = () => {
       customer: { name: order.customer.name, phone_number: order.customer.phone_number },
       district: { name: districtName },
       region: { name: regionName },
+      sell_requires_media: Boolean(
+        orderFlags.sell_requires_media ??
+        orderFlags.sellRequiresMedia ??
+        orderFlags.require_sell_proof ??
+        orderFlags.sell_proof_required,
+      ),
+      cancel_requires_media: Boolean(
+        orderFlags.cancel_requires_media ??
+        orderFlags.cancelRequiresMedia ??
+        orderFlags.require_cancel_proof ??
+        orderFlags.cancel_proof_required,
+      ),
       items: order.items.map((item) => ({
         id: item.id,
         quantity: item.quantity,
