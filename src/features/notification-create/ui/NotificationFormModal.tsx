@@ -48,8 +48,8 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
   const addBotToGroupUrl = notificationBotUsername
     ? `https://t.me/${notificationBotUsername}?startgroup=notification`
     : "";
-  const { getMarkets } = useMarkets();
-  const marketsQuery = getMarkets({ status: "active", limit: 100 }, open);
+  const { useGetMarkets } = useMarkets();
+  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, open);
   const createNotification = useCreateNotification();
   const connectNotification = useConnectNotificationByToken();
   const {

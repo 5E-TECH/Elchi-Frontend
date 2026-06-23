@@ -939,7 +939,7 @@ const NewOrderUpdate = () => {
                     <EditBtn
                       onClick={handleOpenOrderPopup}
                       disabled={productsLocked}
-                      reason={PRODUCTS_LOCK_REASON}
+                      reason={productsLockReason}
                     />
                   }
                 />

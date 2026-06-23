@@ -42,8 +42,8 @@ const getMarketItems = (value: unknown): MarketOption[] => {
 
 const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditModalProps) => {
   const { t } = useTranslation("common");
-  const { getMarkets } = useMarkets();
-  const marketsQuery = getMarkets({ status: "active", limit: 100 }, open);
+  const { useGetMarkets } = useMarkets();
+  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, open);
   const updateNotification = useUpdateNotification();
   const {
     control,
