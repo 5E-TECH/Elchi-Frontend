@@ -197,10 +197,27 @@
       "region": "Region",
       "product": "Product",
       "user": "User",
-      "phone": "Phone"
+      "phone": "Phone",
+      "holder_type": "Holder type",
+      "holder_branch": "Holder branch",
+      "source_branch": "Source branch",
+      "destination_branch": "Destination branch",
+      "target_branch": "Destination branch",
+      "from_label": "From",
+      "to_label": "To"
     },
     "dynamic": {
-      "dispatchToBranch": "{{post}} was dispatched from HQ to {{branch}} branch"
+      "acceptedAtHq": "{{actor}} accepted the order at HQ",
+      "dispatchToBranch": "{{actor}} dispatched {{post}} from HQ to {{branch}} branch",
+      "sentToCourier": "{{actor}} assigned the order to a courier and sent it on the road",
+      "assignedToCourier": "{{actor}} assigned the order to a courier",
+      "returnedToWaiting": "{{actor}} returned the order to waiting",
+      "cancelledByActor": "{{actor}} cancelled the order",
+      "soldByActor": "{{actor}} sold the order",
+      "cancelledPostCreated": "{{actor}} added the cancelled order to the return post and sent it",
+      "cancelledPostReceivedAtBranch": "{{actor}} received the cancelled order from the courier",
+      "cancelledPostReceivedAtHq": "{{actor}} received the cancelled order at HQ for market handover",
+      "cancelledOrderHandedToMarket": "{{actor}} handed the cancelled order over to {{market}} with QR confirmation"
     },
     "roleValue": {
       "superadmin": "Super Admin",
@@ -245,7 +262,10 @@
       "received": "Received",
       "rollback": "Rolled back",
       "sent": "Sent",
-      "waiting": "Waiting"
+      "waiting": "Waiting",
+      "courierAssigned": "Assigned to courier",
+      "cancelledPostCreated": "Cancelled order sent",
+      "cancelledPostReceived": "Cancelled order received"
     }
   },
   "branch": "Branch",

@@ -197,10 +197,27 @@
       "region": "Viloyat",
       "product": "Mahsulot",
       "user": "Foydalanuvchi",
-      "phone": "Telefon"
+      "phone": "Telefon",
+      "holder_type": "Saqlovchi turi",
+      "holder_branch": "Saqlovchi filial",
+      "source_branch": "Qayerdan",
+      "destination_branch": "Qayerga",
+      "target_branch": "Qayerga",
+      "from_label": "Qayerdan",
+      "to_label": "Qayerga"
     },
     "dynamic": {
-      "dispatchToBranch": "{{post}} HQ’dan {{branch}} filialiga jo‘natildi"
+      "acceptedAtHq": "{{actor}} buyurtmani HQ’da qabul qildi",
+      "dispatchToBranch": "{{actor}} {{post}}ni HQ’dan {{branch}} filialiga jo‘natdi",
+      "sentToCourier": "{{actor}} buyurtmani courierga biriktirib, yo‘lga chiqardi",
+      "assignedToCourier": "{{actor}} buyurtmani courierga biriktirdi",
+      "returnedToWaiting": "{{actor}} buyurtmani kutilmoqda holatiga qaytardi",
+      "cancelledByActor": "{{actor}} buyurtmani bekor qildi",
+      "soldByActor": "{{actor}} buyurtmani sotdi",
+      "cancelledPostCreated": "{{actor}} bekor qilingan buyurtmani qaytarish pochtasiga qo‘shib jo‘natdi",
+      "cancelledPostReceivedAtBranch": "{{actor}} bekor qilingan buyurtmani courierdan qabul qildi",
+      "cancelledPostReceivedAtHq": "{{actor}} bekor qilingan buyurtmani marketga topshirish uchun HQ’da qabul qildi",
+      "cancelledOrderHandedToMarket": "{{actor}} bekor qilingan buyurtmani {{market}}ga QR tasdiq bilan topshirdi"
     },
     "roleValue": {
       "superadmin": "Super Admin",
@@ -245,7 +262,10 @@
       "received": "Qabul qilindi",
       "rollback": "Qaytarildi",
       "sent": "Jo'natildi",
-      "waiting": "Kutilmoqda"
+      "waiting": "Kutilmoqda",
+      "courierAssigned": "Courierga biriktirildi",
+      "cancelledPostCreated": "Bekor buyurtma jo‘natildi",
+      "cancelledPostReceived": "Bekor buyurtma qabul qilindi"
     }
   },
   "branch": "Filial",

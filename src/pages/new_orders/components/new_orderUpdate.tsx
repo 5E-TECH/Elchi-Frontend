@@ -566,15 +566,47 @@ const NewOrderUpdate = () => {
   const addressText = order?.address ?? "—";
   const trackingContext = useMemo(() => {
     const source = order as (OrderDetail & {
-      branch?: { name?: string | null } | null;
-      destination_branch?: { name?: string | null } | null;
-      target_branch?: { name?: string | null } | null;
+      branch?: { id?: string | number | null; name?: string | null } | null;
+      destination_branch?: { id?: string | number | null; name?: string | null } | null;
+      target_branch?: { id?: string | number | null; name?: string | null } | null;
+      market?: { id?: string | number | null; name?: string | null; title?: string | null } | null;
       post?: { name?: string | null; title?: string | null } | null;
+      branch_id?: string | number | null;
+      destination_branch_id?: string | number | null;
+      target_branch_id?: string | number | null;
+      market_id?: string | number | null;
       branch_name?: string | null;
       destination_branch_name?: string | null;
       target_branch_name?: string | null;
+      market_name?: string | null;
       post_name?: string | null;
     }) | null;
+    const branchNamesById: Record<string, string> = {};
+    const marketNamesById: Record<string, string> = {};
+    const addBranchName = (id?: string | number | null, name?: string | null) => {
+      if (id != null && name) {
+        branchNamesById[String(id)] = name;
+      }
+    };
+    const addMarketName = (id?: string | number | null, name?: string | null) => {
+      if (id != null && name) {
+        marketNamesById[String(id)] = name;
+      }
+    };
+
+    addBranchName(source?.branch?.id ?? source?.branch_id, source?.branch?.name ?? source?.branch_name);
+    addBranchName(
+      source?.destination_branch?.id ?? source?.destination_branch_id,
+      source?.destination_branch?.name ?? source?.destination_branch_name,
+    );
+    addBranchName(
+      source?.target_branch?.id ?? source?.target_branch_id,
+      source?.target_branch?.name ?? source?.target_branch_name,
+    );
+    addMarketName(
+      source?.market?.id ?? source?.market_id,
+      source?.market?.name ?? source?.market?.title ?? source?.market_name,
+    );
 
     return {
       branchName:
@@ -588,6 +620,13 @@ const NewOrderUpdate = () => {
         source?.post?.title ??
         source?.post_name ??
         null,
+      marketName:
+        source?.market?.name ??
+        source?.market?.title ??
+        source?.market_name ??
+        null,
+      branchNamesById,
+      marketNamesById,
     };
   }, [order]);
 
