@@ -166,6 +166,11 @@ export interface PaginatedPostsResponse {
 interface GetOldMailsParams {
   page?: number;
   limit?: number;
+  region_id?: string;
+  courier_id?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const BRANCH_TRANSFER_BATCH_STATUS = {
@@ -189,6 +194,11 @@ export interface MailItem {
   qr_code_token: string;
   region_id: string;
   region: Region;
+  courier?: {
+    id?: string;
+    name?: string;
+    phone_number?: string;
+  } | null;
   status: string;
 }
 
@@ -338,6 +348,10 @@ export const useMails = () => {
           page: params?.page ?? 1,
           limit: params?.limit ?? 8,
           ...(status ? { status } : {}),
+          ...(params?.region_id ? { region_id: params.region_id } : {}),
+          ...(params?.courier_id ? { courier_id: params.courier_id } : {}),
+          ...(params?.startDate ? { startDate: params.startDate } : {}),
+          ...(params?.endDate ? { endDate: params.endDate } : {}),
         },
       })
       .then((res) => res.data);
@@ -416,17 +430,24 @@ export const useMails = () => {
         role,
         branchId,
         isCourier ? "courier" : "default",
-        params?.page ?? 1,
-        params?.limit ?? 8,
+        params,
       ],
       queryFn: () =>
         isManagerRole
-          ? getManagerScopedPosts("received", params)
+          ? getManagerScopedPosts(
+              (params?.status as "new" | "sent" | "received" | "canceled" | "canceled_received" | undefined) ?? "received",
+              params,
+            )
           : api
             .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
               params: {
                 page: params?.page ?? 1,
                 limit: params?.limit ?? 8,
+                ...(params?.region_id ? { region_id: params.region_id } : {}),
+                ...(params?.courier_id ? { courier_id: params.courier_id } : {}),
+                ...(params?.status ? { status: params.status } : {}),
+                ...(params?.startDate ? { startDate: params.startDate } : {}),
+                ...(params?.endDate ? { endDate: params.endDate } : {}),
               },
             })
             .then((res) => res.data),
