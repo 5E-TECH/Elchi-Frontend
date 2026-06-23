@@ -134,10 +134,9 @@ const MailDetailPage = () => {
     data: refusedResponse,
     isLoading: refusedLoading,
     isError: refusedError,
-  } = getRefusedMailsCourierByPostId(
+  } = useGetRefusedMailsCourierByPostId(
     isRefusedDetail || regularError ? postId ?? "" : "",
   );
-  } = useGetRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
   const {
     data: transferBatchResponse,
     isLoading: transferBatchLoading,
