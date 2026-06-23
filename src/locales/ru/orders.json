@@ -197,10 +197,27 @@
       "region": "Область",
       "product": "Товар",
       "user": "Пользователь",
-      "phone": "Телефон"
+      "phone": "Телефон",
+      "holder_type": "Тип держателя",
+      "holder_branch": "Филиал держателя",
+      "source_branch": "Откуда",
+      "destination_branch": "Куда",
+      "target_branch": "Куда",
+      "from_label": "Откуда",
+      "to_label": "Куда"
     },
     "dynamic": {
-      "dispatchToBranch": "{{post}} отправлена из HQ в филиал {{branch}}"
+      "acceptedAtHq": "{{actor}} принял заказ в HQ",
+      "dispatchToBranch": "{{actor}} отправил {{post}} из HQ в филиал {{branch}}",
+      "sentToCourier": "{{actor}} назначил заказ курьеру и отправил в путь",
+      "assignedToCourier": "{{actor}} назначил заказ курьеру",
+      "returnedToWaiting": "{{actor}} вернул заказ в ожидание",
+      "cancelledByActor": "{{actor}} отменил заказ",
+      "soldByActor": "{{actor}} продал заказ",
+      "cancelledPostCreated": "{{actor}} добавил отмененный заказ в возвратную почту и отправил",
+      "cancelledPostReceivedAtBranch": "{{actor}} принял отмененный заказ от курьера",
+      "cancelledPostReceivedAtHq": "{{actor}} принял отмененный заказ в HQ для передачи маркету",
+      "cancelledOrderHandedToMarket": "{{actor}} передал отмененный заказ маркету {{market}} с QR-подтверждением"
     },
     "roleValue": {
       "superadmin": "Super Admin",
@@ -245,7 +262,10 @@
       "received": "Принят",
       "rollback": "Возвращен",
       "sent": "Отправлен",
-      "waiting": "Ожидает"
+      "waiting": "Ожидает",
+      "courierAssigned": "Назначен курьеру",
+      "cancelledPostCreated": "Отмененный заказ отправлен",
+      "cancelledPostReceived": "Отмененный заказ принят"
     }
   },
   "branch": "Филиал",

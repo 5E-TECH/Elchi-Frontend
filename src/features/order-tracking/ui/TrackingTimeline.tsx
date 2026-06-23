@@ -8,7 +8,9 @@ type TrackingTimelineProps = {
   context?: {
     branchName?: string | null;
     postName?: string | null;
+    marketName?: string | null;
     branchNamesById?: Record<string, string>;
+    marketNamesById?: Record<string, string>;
   };
 };
 

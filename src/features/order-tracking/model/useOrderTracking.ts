@@ -13,6 +13,7 @@ type UseOrderTrackingResult = {
 };
 
 const DEFAULT_LIMIT = 20;
+const HIDDEN_TRACKING_ACTIONS = new Set(["custody_change", "custody_changed"]);
 
 const sortEvents = (items: TrackingEvent[]) =>
   [...items].sort((left, right) => {
@@ -36,6 +37,63 @@ const normalizeEvent = (event: TrackingEvent): TrackingEvent => {
     old_value: oldStatus ? { ...(event.old_value ?? {}), status: oldStatus } : event.old_value,
     new_value: newStatus ? { ...(event.new_value ?? {}), status: newStatus } : event.new_value,
   };
+};
+
+const normalizeAction = (value?: string | null) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+
+const shouldShowEvent = (event: TrackingEvent) =>
+  !HIDDEN_TRACKING_ACTIONS.has(normalizeAction(event.action));
+
+const isSystemStatusActorEvent = (event: TrackingEvent) => {
+  const oldStatus = normalizeAction(event.old_value?.status ?? event.from_status);
+  const newStatus = normalizeAction(event.new_value?.status ?? event.to_status);
+  const transition = `${oldStatus}->${newStatus}`;
+
+  return transition === "new->received" || transition === "on_the_road->waiting";
+};
+
+const isSystemActor = (event: TrackingEvent) => {
+  const actorName = normalizeAction(event.actor?.name ?? event.actor?.username);
+  const actorRole = normalizeAction(event.actor?.role);
+  const changedByRole = normalizeAction(event.changed_by_role);
+
+  return actorName === "system" || actorRole === "system" || changedByRole === "system";
+};
+
+const isHumanActor = (event: TrackingEvent) => {
+  const actorName = normalizeAction(event.actor?.name ?? event.actor?.username ?? event.user_name);
+  const actorRole = normalizeAction(event.actor?.role ?? event.changed_by_role);
+
+  return Boolean(actorName && actorName !== "system" && actorRole && actorRole !== "system");
+};
+
+const withInferredActor = (event: TrackingEvent, source: TrackingEvent): TrackingEvent => ({
+  ...event,
+  changed_by: source.changed_by,
+  changed_by_role: source.actor?.role ?? source.changed_by_role,
+  actor: source.actor ?? event.actor,
+  user_name: source.user_name,
+});
+
+const inferSystemStatusActors = (items: TrackingEvent[]) => {
+  const chronologicalEvents = [...items].sort(
+    (left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
+  );
+
+  return chronologicalEvents.map((event, index) => {
+    if (!isSystemStatusActorEvent(event) || !isSystemActor(event)) {
+      return event;
+    }
+
+    const nextHumanEvent = chronologicalEvents.slice(index + 1).find(isHumanActor);
+
+    return nextHumanEvent ? withInferredActor(event, nextHumanEvent) : event;
+  });
 };
 
 const getPayloadMeta = (payload: ActivityLogResponse | TrackingEvent[]) => {
@@ -78,7 +136,7 @@ export const useOrderTracking = (orderId: string | number): UseOrderTrackingResu
         });
         const payload = response.data;
         const { items, total, limit } = getPayloadMeta(payload);
-        const incomingEvents = items.map(normalizeEvent);
+        const incomingEvents = items.map(normalizeEvent).filter(shouldShowEvent);
 
         if (requestIdRef.current !== currentRequestId) {
           return;
@@ -91,7 +149,7 @@ export const useOrderTracking = (orderId: string | number): UseOrderTrackingResu
               collection.findIndex((item) => item.id === event.id) === index,
           );
 
-          return sortEvents(uniqueEvents);
+          return sortEvents(inferSystemStatusActors(uniqueEvents));
         });
 
         setPage(nextPage);

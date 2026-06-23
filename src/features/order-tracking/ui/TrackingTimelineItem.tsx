@@ -13,6 +13,9 @@ type TrackingTimelineItemProps = {
   context?: {
     branchName?: string | null;
     postName?: string | null;
+    marketName?: string | null;
+    branchNamesById?: Record<string, string>;
+    marketNamesById?: Record<string, string>;
   };
 };
 
@@ -188,7 +191,7 @@ const getRelatedDetails = (event: TrackingEvent) => {
   return details;
 };
 
-const getAdditionalDetails = (event: TrackingEvent) => {
+const getAdditionalDetails = (event: TrackingEvent, context?: TrackingTimelineItemProps["context"]) => {
   const ignoredKeys = new Set(["status"]);
   const details: Array<{ label: string; value: string }> = [];
   const seen = new Set<string>();
@@ -203,7 +206,14 @@ const getAdditionalDetails = (event: TrackingEvent) => {
         continue;
       }
 
-      const resolvedValue = getNameForIdKey(event, key, value);
+      const normalizedKey = normalizeKey(key);
+      const isIdKey = normalizedKey.endsWith("_id") || normalizedKey.endsWith("id");
+      const resolvedValue = getNameForIdKey(event, key, value, context);
+
+      if (isIdKey && !resolvedValue) {
+        continue;
+      }
+
       const displayValue = resolvedValue || (isRecord(value)
         ? asDisplayString(value.name ?? value.full_name ?? value.fullName ?? value.title ?? value.id)
         : asDisplayString(value));
@@ -232,6 +242,10 @@ const getAdditionalDetails = (event: TrackingEvent) => {
 
 const ID_NAME_PREFIXES: Record<string, string[]> = {
   branch: ["branch_name", "branchName", "destination_branch_name", "destinationBranchName", "target_branch_name", "targetBranchName"],
+  source_branch: ["source_branch_name", "sourceBranchName", "source_branch", "sourceBranch"],
+  destination_branch: ["destination_branch_name", "destinationBranchName", "destination_branch", "destinationBranch"],
+  target_branch: ["target_branch_name", "targetBranchName", "target_branch", "targetBranch"],
+  holder_branch: ["holder_branch_name", "holderBranchName", "holder_branch", "holderBranch"],
   market: ["market_name", "marketName"],
   courier: ["courier_name", "courierName", "courier_user_name", "courierUserName"],
   post: ["post_name", "postName", "post_title", "postTitle", "mail_name", "mailName"],
@@ -247,7 +261,12 @@ const getIdPrefix = (key: string) =>
     .replace(/_?id$/, "")
     .replace(/_?uuid$/, "");
 
-const getNameForIdKey = (event: TrackingEvent, key: string, value: unknown) => {
+const getNameForIdKey = (
+  event: TrackingEvent,
+  key: string,
+  value: unknown,
+  context?: TrackingTimelineItemProps["context"],
+) => {
   const normalizedKey = normalizeKey(key);
 
   if (!normalizedKey.endsWith("_id") && !normalizedKey.endsWith("id")) {
@@ -263,6 +282,33 @@ const getNameForIdKey = (event: TrackingEvent, key: string, value: unknown) => {
   }
 
   const prefix = getIdPrefix(key);
+
+  if (prefix.includes("branch")) {
+    const id = asDisplayString(value);
+    const contextBranchName = id ? context?.branchNamesById?.[id] : "";
+
+    if (contextBranchName) {
+      return contextBranchName;
+    }
+
+    if (prefix !== "source_branch" && context?.branchName) {
+      return context.branchName;
+    }
+  }
+
+  if (prefix.includes("market")) {
+    const id = asDisplayString(value);
+    const contextMarketName = id ? context?.marketNamesById?.[id] : "";
+
+    if (contextMarketName) {
+      return contextMarketName;
+    }
+
+    if (context?.marketName) {
+      return context.marketName;
+    }
+  }
+
   const nameKeys = ID_NAME_PREFIXES[prefix] ?? [`${prefix}_name`, `${prefix}Name`];
 
   for (const source of getEventSources(event)) {
@@ -364,7 +410,7 @@ const translateNote = (t: ReturnType<typeof useTranslation>["t"], note?: string 
   return translated || note;
 };
 
-const getTrackingName = (event: TrackingEvent, entity: "branch" | "post") => {
+const getTrackingName = (event: TrackingEvent, entity: "branch" | "post" | "market") => {
   const branchKeys = [
     "branch_name",
     "branchName",
@@ -376,7 +422,8 @@ const getTrackingName = (event: TrackingEvent, entity: "branch" | "post") => {
     "toBranchName",
   ];
   const postKeys = ["post_name", "postName", "post_title", "postTitle", "mail_name", "mailName"];
-  const keys = entity === "branch" ? branchKeys : postKeys;
+  const marketKeys = ["market_name", "marketName", "market"];
+  const keys = entity === "branch" ? branchKeys : entity === "post" ? postKeys : marketKeys;
 
   for (const source of getEventSources(event)) {
     const name = readNameByKeys(source, keys);
@@ -398,10 +445,17 @@ const formatNoteWithNames = (
   let formattedNote = note;
   const branchName = getTrackingName(event, "branch") || context?.branchName || "";
   const postName = getTrackingName(event, "post") || context?.postName || "";
+  const marketName = getTrackingName(event, "market") || context?.marketName || "";
 
   formattedNote = formattedNote.replace(/\bbranch\s*#?(\d+)\b/gi, (match, branchId: string) =>
-    branchName || match.replace(`#${branchId}`, branchId),
+    context?.branchNamesById?.[branchId] || branchName || match.replace(`#${branchId}`, branchId),
   );
+
+  formattedNote = formattedNote.replace(/\bmarket\s*#?(\d+)(ga|da|dan)?\b/gi, (match, marketId: string, suffix = "") => {
+    const resolvedMarket = context?.marketNamesById?.[marketId] || marketName;
+
+    return resolvedMarket ? `${resolvedMarket}${suffix}` : match;
+  });
 
   if (postName) {
     formattedNote = formattedNote.replace(
@@ -422,21 +476,91 @@ const formatNoteWithNames = (
   return formattedNote;
 };
 
+const getProfessionalNote = (
+  event: TrackingEvent,
+  t: ReturnType<typeof useTranslation>["t"],
+  actor: string,
+  context?: TrackingTimelineItemProps["context"],
+) => {
+  const oldStatus = normalizeKey(event.old_value?.status ?? event.from_status);
+  const newStatus = normalizeKey(event.new_value?.status ?? event.to_status);
+  const transition = `${oldStatus}->${newStatus}`;
+  const branchName = getTrackingName(event, "branch") || context?.branchName || t("tracking.entity.branch");
+  const postName = getTrackingName(event, "post") || context?.postName || t("tracking.entity.post");
+  const marketName = getTrackingName(event, "market") || context?.marketName || t("tracking.entity.market");
+
+  if (isBulkCourierAssignEvent(event)) {
+    return t("tracking.dynamic.assignedToCourier", { actor });
+  }
+
+  if (isCancelledPostCreatedEvent(event)) {
+    return t("tracking.dynamic.cancelledPostCreated", { actor });
+  }
+
+  if (isCancelledPostReceivedEvent(event)) {
+    const role = normalizeKey(event.actor?.role ?? event.changed_by_role);
+    const note = normalizeKey(event.note ?? event.description);
+    const isHqReceiver = ["admin", "superadmin", "registrator"].includes(role) || note.includes("market_handover");
+
+    return isHqReceiver
+      ? t("tracking.dynamic.cancelledPostReceivedAtHq", { actor })
+      : t("tracking.dynamic.cancelledPostReceivedAtBranch", { actor });
+  }
+
+  if (transition === "new->received") {
+    return t("tracking.dynamic.acceptedAtHq", { actor });
+  }
+
+  if (transition === "received->on_the_road") {
+    return t("tracking.dynamic.dispatchToBranch", { actor, post: postName, branch: branchName });
+  }
+
+  if (transition === "waiting->on_the_road") {
+    return t("tracking.dynamic.sentToCourier", { actor });
+  }
+
+  if (transition === "on_the_road->waiting") {
+    return t("tracking.dynamic.returnedToWaiting", { actor });
+  }
+
+  if (newStatus === "cancelled") {
+    return t("tracking.dynamic.cancelledByActor", { actor });
+  }
+
+  if (newStatus === "sold") {
+    return t("tracking.dynamic.soldByActor", { actor });
+  }
+
+  if (oldStatus === "cancelled_sent" && newStatus === "closed") {
+    return t("tracking.dynamic.cancelledOrderHandedToMarket", { actor, market: marketName });
+  }
+
+  const fallbackNote = translateNote(t, event.note || event.description);
+
+  return formatNoteWithNames(fallbackNote, event, t, context);
+};
+
 const getActorName = (event: TrackingEvent, currentUser?: User | null) => {
   const actorName = asCleanString(event.actor?.name) || asCleanString(event.actor?.username);
   const currentUserName = getCurrentUserName(currentUser);
+  const eventUserName = asCleanString(event.user_name);
+  const changedByRole = normalizeKey(event.changed_by_role);
 
   if (actorName && normalizeKey(actorName) !== "system") {
     return actorName;
   }
 
+  if (eventUserName && normalizeKey(eventUserName) !== "system") {
+    return eventUserName;
+  }
+
   const isCurrentUserAction = Boolean(currentUser?.id) && String(event.changed_by) === String(currentUser?.id);
 
-  if ((isCurrentUserAction || normalizeKey(actorName) === "system" || normalizeKey(event.changed_by_role) === "system") && currentUserName) {
+  if (isCurrentUserAction && changedByRole !== "system" && currentUserName) {
     return currentUserName;
   }
 
-  return event.user_name || humanize(event.changed_by_role);
+  return humanize(event.changed_by_role || actorName || "system");
 };
 
 const getActorRole = (event: TrackingEvent, currentUser?: User | null) => {
@@ -447,11 +571,15 @@ const getActorRole = (event: TrackingEvent, currentUser?: User | null) => {
     return actorRole;
   }
 
-  if ((isCurrentUserAction || normalizeKey(actorRole) === "system" || normalizeKey(event.changed_by_role) === "system") && currentUser?.role) {
+  if (event.changed_by_role && normalizeKey(event.changed_by_role) !== "system") {
+    return event.changed_by_role;
+  }
+
+  if (isCurrentUserAction && currentUser?.role) {
     return currentUser.role;
   }
 
-  return event.changed_by_role;
+  return actorRole || event.changed_by_role;
 };
 
 const getActorPhone = (event: TrackingEvent, currentUser?: User | null) => {
@@ -461,28 +589,64 @@ const getActorPhone = (event: TrackingEvent, currentUser?: User | null) => {
     return actorPhone;
   }
 
-  if (normalizeKey(event.actor?.name) === "system" || normalizeKey(event.actor?.role) === "system") {
+  if (
+    Boolean(currentUser?.id) &&
+    String(event.changed_by) === String(currentUser?.id) &&
+    normalizeKey(event.actor?.name) !== "system" &&
+    normalizeKey(event.actor?.role) !== "system"
+  ) {
     return asCleanString(currentUser?.phone_number);
   }
 
   return "";
 };
 
+const isBulkCourierAssignEvent = (event: TrackingEvent) => {
+  const note = normalizeKey(event.note ?? event.description);
+  const action = normalizeKey(event.action);
+
+  return action === "sent" && note.includes("courier") && note.includes("biriktirish");
+};
+
+const isCancelledPostCreatedEvent = (event: TrackingEvent) => {
+  const action = normalizeKey(event.action);
+  const note = normalizeKey(event.note ?? event.description);
+
+  return action === "cancelled_sent" || note === "canceled_post_created" || note === "cancelled_post_created";
+};
+
+const isCancelledPostReceivedEvent = (event: TrackingEvent) => {
+  const action = normalizeKey(event.action);
+  const note = normalizeKey(event.note ?? event.description);
+
+  return action === "canceled_post_received" ||
+    action === "cancelled_post_received" ||
+    note.includes("canceled_order_received") ||
+    note.includes("cancelled_order_received");
+};
+
 export const TrackingTimelineItem = ({ event, index, total, currentUser, context }: TrackingTimelineItemProps) => {
   const { t } = useTranslation("orders");
-  const actionLabelKey = event.action ? actionLabelMap[event.action] : undefined;
+  const actionKey = normalizeKey(event.action);
+  const actionLabelKey = event.action ? actionLabelMap[event.action] ?? actionLabelMap[actionKey] : undefined;
   const oldStatus = event.old_value?.status;
   const newStatus = event.new_value?.status;
-  const actionName = actionLabelKey ? t(actionLabelKey) : humanize(event.action);
-  const note = formatNoteWithNames(translateNote(t, event.note || event.description), event, t, context);
+  const actionName = isBulkCourierAssignEvent(event)
+    ? t("tracking.action.courierAssigned")
+    : isCancelledPostCreatedEvent(event)
+      ? t("tracking.action.cancelledPostCreated")
+      : isCancelledPostReceivedEvent(event)
+        ? t("tracking.action.cancelledPostReceived")
+        : actionLabelKey ? t(actionLabelKey) : humanize(event.action);
   const relatedEntity = getRelatedEntity(event);
   const actor = getActorName(event, currentUser);
+  const note = getProfessionalNote(event, t, actor, context);
   const actorPhone = getActorPhone(event, currentUser);
   const role = getRoleLabel(t, getActorRole(event, currentUser));
   const relatedDetails = getRelatedDetails(event).filter(
     (detail) => !(normalizeKey(detail.value) === normalizeKey(actor) && detail.type === relatedEntity?.type),
   );
-  const additionalDetails = getAdditionalDetails(event);
+  const additionalDetails = getAdditionalDetails(event, context);
   const hasTransition = Boolean(oldStatus || newStatus);
   const tone = getEventTone(event);
   const NodeIcon = tone.icon;
