@@ -9,8 +9,9 @@ import {
     Building2,
     MapPin,
     Package,
+    Camera,
 } from 'lucide-react';
-import type { User } from '../types/user';
+import type { ExpenseProofCondition, User } from '../types/user';
 import { useTranslation } from 'react-i18next';
 import { getUserRoleLabelKey } from '../lib/role';
 
@@ -18,6 +19,8 @@ interface UserInfoCardsProps {
     user: User;
     onToggleMarketAddOrder?: () => void;
     isMarketAddOrderPending?: boolean;
+    onToggleMarketProof?: (condition: ExpenseProofCondition) => void;
+    isMarketProofPending?: boolean;
     headerAction?: React.ReactNode;
 }
 
@@ -62,14 +65,53 @@ const Divider = ({ title }: { title: string }) => (
     </div>
 );
 
+interface ToggleButtonProps {
+    checked?: boolean;
+    disabled?: boolean;
+    label: string;
+    onClick?: () => void;
+}
+
+const ToggleButton = ({ checked = false, disabled = false, label, onClick }: ToggleButtonProps) => (
+    <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`relative inline-flex h-8 w-16 items-center rounded-full border px-1 transition-all ${
+            checked
+                ? "border-emerald-500/50 bg-emerald-500/20"
+                : "border-slate-300 bg-slate-200/70 dark:border-white/15 dark:bg-white/10"
+        } ${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+        aria-label={label}
+        aria-pressed={checked}
+    >
+        <span
+            className={`h-6 w-6 rounded-full bg-white shadow-sm transition-transform dark:bg-slate-100 ${
+                checked ? "translate-x-8" : "translate-x-0"
+            }`}
+        />
+        <span className="sr-only">{label}</span>
+    </button>
+);
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const UserInfoCards = memo(({ user, onToggleMarketAddOrder, isMarketAddOrderPending = false, headerAction }: UserInfoCardsProps) => {
+export const UserInfoCards = memo(({
+    user,
+    onToggleMarketAddOrder,
+    isMarketAddOrderPending = false,
+    onToggleMarketProof,
+    isMarketProofPending = false,
+    headerAction,
+}: UserInfoCardsProps) => {
     const { t } = useTranslation("users");
     const hasPaymentInfo = user.role === 'admin' || user.role === 'manager' || user.role === 'registrator';
     const isCourier = user.role === 'courier';
     const isMarket = user.role === 'market' || user.role === 'marketing';
     const isCustomer = user.role === 'customer';
+    const proofConditions = Array.isArray(user.expense_proof_conditions)
+        ? user.expense_proof_conditions
+        : [];
 
     // const StatusIcon = sc.icon;
 
@@ -217,30 +259,44 @@ export const UserInfoCards = memo(({ user, onToggleMarketAddOrder, isMarketAddOr
                             iconColor="text-indigo-500"
                             label={t("marketAddOrderPermission", { defaultValue: "Buyurtma qo'shish" })}
                             value={
-                                <button
-                                    type="button"
-                                    onClick={onToggleMarketAddOrder}
+                                <ToggleButton
+                                    checked={Boolean(user.add_order)}
                                     disabled={!onToggleMarketAddOrder || isMarketAddOrderPending}
-                                    className={`relative inline-flex h-8 w-16 items-center rounded-full border px-1 transition-all ${
-                                        user.add_order
-                                            ? "border-emerald-500/50 bg-emerald-500/20"
-                                            : "border-slate-300 bg-slate-200/70 dark:border-white/15 dark:bg-white/10"
-                                    } ${
-                                        !onToggleMarketAddOrder || isMarketAddOrderPending
-                                            ? "cursor-not-allowed opacity-70"
-                                            : "cursor-pointer"
-                                    }`}
-                                    aria-label={t("marketAddOrderPermission", { defaultValue: "Buyurtma qo'shish" })}
-                                >
-                                    <span
-                                        className={`h-6 w-6 rounded-full bg-white shadow-sm transition-transform dark:bg-slate-100 ${
-                                            user.add_order ? "translate-x-8" : "translate-x-0"
-                                        }`}
-                                    />
-                                    <span className="sr-only">
-                                        {user.add_order ? t("enabled", { defaultValue: "Yoqilgan" }) : t("disabled", { defaultValue: "O'chirilgan" })}
-                                    </span>
-                                </button>
+                                    label={t("marketAddOrderPermission", { defaultValue: "Buyurtma qo'shish" })}
+                                    onClick={onToggleMarketAddOrder}
+                                />
+                            }
+                        />
+
+                        <Divider title={t("proofPolicy", { defaultValue: "Rasm/video isbot" })} />
+
+                        <InfoChip
+                            icon={Camera}
+                            iconBg="bg-emerald-50 dark:bg-emerald-500/10"
+                            iconColor="text-emerald-500"
+                            label={t("sellMediaProofRequired", { defaultValue: "Sotishda isbot" })}
+                            value={
+                                <ToggleButton
+                                    checked={proofConditions.includes('sell_any')}
+                                    disabled={!onToggleMarketProof || isMarketProofPending}
+                                    label={t("sellMediaProofRequired", { defaultValue: "Sotishda isbot" })}
+                                    onClick={() => onToggleMarketProof?.('sell_any')}
+                                />
+                            }
+                        />
+
+                        <InfoChip
+                            icon={Camera}
+                            iconBg="bg-rose-50 dark:bg-rose-500/10"
+                            iconColor="text-rose-500"
+                            label={t("cancelMediaProofRequired", { defaultValue: "Bekor qilishda isbot" })}
+                            value={
+                                <ToggleButton
+                                    checked={proofConditions.includes('cancel_any')}
+                                    disabled={!onToggleMarketProof || isMarketProofPending}
+                                    label={t("cancelMediaProofRequired", { defaultValue: "Bekor qilishda isbot" })}
+                                    onClick={() => onToggleMarketProof?.('cancel_any')}
+                                />
                             }
                         />
                     </>

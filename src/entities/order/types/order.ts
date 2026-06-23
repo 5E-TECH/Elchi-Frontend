@@ -44,6 +44,8 @@ export interface OrderListItem {
     comment: string | null;
     post_id: string | null;
     qr_code_token?: string | null;
+    sell_requires_media?: boolean;
+    cancel_requires_media?: boolean;
     createdAt: string;
     updatedAt: string;
     deleted: boolean;
@@ -70,6 +72,7 @@ export interface OrderListItem {
         id: string;
         name: string;
         phone_number?: string;
+        expense_proof_conditions?: string[] | null;
     };
     branch?: {
         id: string;
@@ -178,4 +181,6 @@ export interface CreateOrderRequest {
     paid_amount?: number;
     post_id?: string;
     qr_code_token?: string;
+    sell_requires_media?: boolean;
+    cancel_requires_media?: boolean;
 }

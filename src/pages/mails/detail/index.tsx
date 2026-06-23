@@ -87,12 +87,18 @@ const MailDetailPage = () => {
   const { role } = useSelector((state: RootState) => state.role);
   const user = useSelector((state: RootState) => state.user.user);
   const managerBranchType = getUserBranchType(user);
-  const isRegionalOrHybridManager =
+  const isBranchReceiverManager =
     role === "manager" &&
-    (managerBranchType === "REGIONAL" || managerBranchType === "HYBRID");
+    (managerBranchType === "PICKUP" ||
+      managerBranchType === "REGIONAL" ||
+      managerBranchType === "HYBRID");
   const isCourier = role === "courier";
-  const isCourierLikeReceiver = isCourier || isRegionalOrHybridManager;
+  const isCourierLikeReceiver = isCourier || isBranchReceiverManager;
   const isSuperAdmin = role === "superadmin";
+  const isHqRefusedReceiver =
+    role === "admin" ||
+    role === "superadmin" ||
+    ((role === "manager" || role === "registrator") && managerBranchType === "HQ");
   const isBranchTransferRole = false;
   const navState = location.state as {
     fromTab?: string;
@@ -111,6 +117,7 @@ const MailDetailPage = () => {
   const isAllBatchesDetail = viewRaw === "old-all-batches";
   const isOldDetail = viewRaw === "old" || isAllBatchesDetail;
   const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
+  const canReceiveRefusedPost = isCourierLikeReceiver || isHqRefusedReceiver;
   const fromTab = fromTabRaw;
   const { useGetRefusedMailsCourierByPostId } = useMails();
   const {
@@ -127,6 +134,9 @@ const MailDetailPage = () => {
     data: refusedResponse,
     isLoading: refusedLoading,
     isError: refusedError,
+  } = getRefusedMailsCourierByPostId(
+    isRefusedDetail || regularError ? postId ?? "" : "",
+  );
   } = useGetRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
   const {
     data: transferBatchResponse,
@@ -148,6 +158,8 @@ const MailDetailPage = () => {
   }, []);
 
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
+  const isEffectiveRefusedDetail = isRefusedDetail || Boolean(regularError && refusedResponse);
+  const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
   const rawOrders = useMemo<PostOrder[]>(() => {
     if (isAllBatchesDetail) {
       return [];
@@ -157,14 +169,14 @@ const MailDetailPage = () => {
       return mapBatchOrdersToPostOrders(transferBatchResponse);
     }
 
-    return isRefusedDetail
+    return isEffectiveRefusedDetail
       ? refusedResponse?.data ?? []
       : regularResponse?.data?.allOrdersByPostId ?? [];
   }, [
     isAllBatchesDetail,
     isBranchTransferRole,
     transferBatchResponse,
-    isRefusedDetail,
+    isEffectiveRefusedDetail,
     refusedResponse,
     regularResponse,
   ]);
@@ -209,7 +221,7 @@ const MailDetailPage = () => {
   // ─── Receive post hook (faqat courier uchun) ──────────────────────────────
   const receivePost = useReceivePost();
   const receiveCanceledPost = useReceiveCanceledPost();
-  const isReceiving = isRefusedDetail
+  const isReceiving = isEffectiveRefusedDetail
     ? receiveCanceledPost.isPending
     : receivePost.isPending;
   const { SendToPost } = useOrders();
@@ -224,7 +236,7 @@ const MailDetailPage = () => {
         : null) ??
       orders[0]?.district?.region?.name ??
       orders[0]?.region?.name ??
-      (isRefusedDetail
+      (isEffectiveRefusedDetail
         ? t("refusedMailNumber", { id: postId })
         : t("mailNumberWithId", { id: postId })),
     [
@@ -232,7 +244,7 @@ const MailDetailPage = () => {
       transferBatchResponse,
       orders,
       postId,
-      isRefusedDetail,
+      isEffectiveRefusedDetail,
       t,
     ],
   );
@@ -282,14 +294,14 @@ const MailDetailPage = () => {
 
     apiRequest({
       request: () =>
-        (isRefusedDetail ? receiveCanceledPost : receivePost).mutateAsync({
+        (isEffectiveRefusedDetail ? receiveCanceledPost : receivePost).mutateAsync({
           postId,
           payload: { order_ids: receivedIds },
         }),
-      successMessage: isRefusedDetail
+      successMessage: isEffectiveRefusedDetail
         ? t("receiveRefusedSuccess")
         : t("receiveSuccess"),
-      errorMessage: isRefusedDetail
+      errorMessage: isEffectiveRefusedDetail
         ? t("receiveRefusedError")
         : t("receiveError"),
       onSuccess: () => {
@@ -305,7 +317,7 @@ const MailDetailPage = () => {
   }, [
     selectedIds,
     postId,
-    isRefusedDetail,
+    isEffectiveRefusedDetail,
     receiveCanceledPost,
     receivePost,
     apiRequest,
@@ -467,7 +479,9 @@ const MailDetailPage = () => {
   }, [deleteTargetIds, apiRequest, SendToPost, t, clearSelection, refetchRegularDetail, navigate]);
 
   // ─── Loading ──────────────────────────────────────────────────────────────
-  if (regularLoading || refusedLoading || transferBatchLoading)
+  const isRefusedFallbackPending = regularError && !refusedResponse && !refusedError;
+
+  if (regularLoading || refusedLoading || transferBatchLoading || isRefusedFallbackPending)
     return (
       <PageContainer>
         <MailDetailSkeleton />
@@ -475,7 +489,7 @@ const MailDetailPage = () => {
     );
 
   // ─── Error ────────────────────────────────────────────────────────────────
-  if (regularError || refusedError || transferBatchError)
+  if ((regularError && !refusedResponse) || refusedError || transferBatchError)
     return (
       <PageContainer>
         <ErrorState />
@@ -494,12 +508,12 @@ const MailDetailPage = () => {
             description={
               isOldDetail
                 ? t("oldOrdersCount", { count: orders.length })
-                : isRefusedDetail
+                : isEffectiveRefusedDetail
                 ? t("refusedOrdersCount", { count: orders.length })
                 : t("ordersCount", { count: orders.length })
             }
             icon={
-              isRefusedDetail ? (
+              isEffectiveRefusedDetail ? (
                 <Ban size={20} className="text-white" />
               ) : (
                 <MapPin size={20} className="text-white" />
@@ -528,7 +542,7 @@ const MailDetailPage = () => {
         showSelectionCard={!isOldDetail}
       />
 
-      {role === "manager" && isRefusedDetail && !isOldDetail ? (
+      {role === "manager" && isEffectiveRefusedDetail && !isOldDetail ? (
         <div className="flex items-center gap-3 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-main dark:text-white">
           <ScanLine size={20} className="shrink-0" />
           <p className="m-0 text-sm font-semibold">{t("refusedScanHint")}</p>
@@ -545,7 +559,7 @@ const MailDetailPage = () => {
         onToggleOne={toggleOne}
         onPrintOne={handlePrintOne}
         onDeleteOne={handleDeleteOne}
-        canDelete={isSuperAdmin && !isRefusedDetail && !isOldDetail}
+        canDelete={isSuperAdmin && !isEffectiveRefusedDetail && !isOldDetail}
         variant={isOldDetail ? "history" : "default"}
         readOnly={isOldDetail || isReadOnlyRefusedCourier}
       />
@@ -555,13 +569,13 @@ const MailDetailPage = () => {
         <div className="flex flex-col gap-3">
           <SendButton
             selectedCount={selectedIds.size}
-            isCourier={isCourierLikeReceiver}
-            mode={isRefusedDetail ? "receive" : "send"}
+            isCourier={shouldReceiveCurrentPost}
+            mode={isEffectiveRefusedDetail ? "receive" : "send"}
             onSend={handleSend}
             onReceive={handleReceive}
-            disabled={isRefusedDetail}
+            disabled={isEffectiveRefusedDetail && !canReceiveRefusedPost}
             isBusy={
-              isCourierLikeReceiver || isRefusedDetail
+              shouldReceiveCurrentPost || isEffectiveRefusedDetail
                 ? isReceiving
                 : isBranchTransferRole
                   ? sendTransferBatch.isPending
@@ -572,7 +586,7 @@ const MailDetailPage = () => {
       )}
 
       {/* Pochta jo'natish modali — filial tanlash */}
-      {!isCourierLikeReceiver && !isRefusedDetail && !isOldDetail && !isBranchTransferRole && (
+      {!isCourierLikeReceiver && !isEffectiveRefusedDetail && !isOldDetail && !isBranchTransferRole && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

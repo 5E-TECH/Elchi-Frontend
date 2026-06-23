@@ -207,6 +207,25 @@ export const useUser = () => {
     },
   });
 
+  const updateMarketExpenseProof = useMutation({
+    mutationFn: ({
+      id,
+      expense_proof_conditions,
+    }: {
+      id: string;
+      expense_proof_conditions: string[];
+    }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.EXPENSE_PROOF(id), {
+          expense_proof_conditions,
+        })
+        .then((res: any) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
+    },
+  });
+
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
       api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
@@ -229,6 +248,7 @@ export const useUser = () => {
     updateUser,
     updateMyProfile,
     updateMarketAddOrder,
+    updateMarketExpenseProof,
     deleteUser,
   };
 };

@@ -406,6 +406,24 @@ const Orders = () => {
         }
       >;
     };
+    const orderFlags = selectedActionOrder as OrderListItem & Record<string, unknown>;
+    const proofConditions = Array.isArray(selectedActionOrder.market?.expense_proof_conditions)
+      ? selectedActionOrder.market.expense_proof_conditions
+      : [];
+    const sellRequiresMedia = Boolean(
+      orderFlags.sell_requires_media ??
+      orderFlags.sellRequiresMedia ??
+      orderFlags.require_sell_proof ??
+      orderFlags.sell_proof_required ??
+      proofConditions.includes("sell_any"),
+    );
+    const cancelRequiresMedia = Boolean(
+      orderFlags.cancel_requires_media ??
+      orderFlags.cancelRequiresMedia ??
+      orderFlags.require_cancel_proof ??
+      orderFlags.cancel_proof_required ??
+      proofConditions.includes("cancel_any"),
+    );
 
     return {
       id: selectedActionOrder.id,
@@ -414,13 +432,18 @@ const Orders = () => {
       total_price: selectedActionOrder.total_price,
       where_deliver: selectedActionOrder.where_deliver,
       product_quantity: selectedActionOrder.product_quantity,
-      market: { name: selectedActionOrder.market?.name ?? "—" },
+      market: {
+        name: selectedActionOrder.market?.name ?? "—",
+        expense_proof_conditions: selectedActionOrder.market?.expense_proof_conditions ?? null,
+      },
       customer: {
         name: selectedActionOrder.customer?.name ?? "—",
         phone_number: selectedActionOrder.customer?.phone_number ?? "",
       },
       district: { name: selectedActionOrder.district?.name ?? "—" },
       region: { name: selectedActionOrder.district?.region?.name ?? "—" },
+      sell_requires_media: sellRequiresMedia,
+      cancel_requires_media: cancelRequiresMedia,
       items: (orderWithProducts.items ?? []).map((item) => {
         const orderItem = item as OrderListItem["items"][number] & {
           product?: { id?: string; name?: string; image_url?: string | null } | null;
@@ -441,7 +464,7 @@ const Orders = () => {
   }, [selectedActionOrder]);
 
   const handleSellOrder = useCallback(
-    (orderId: string, payload: { comment: string; extraCost: number }) => {
+    (orderId: string, payload: { comment: string; extraCost: number; proof?: File }) => {
       SellOrder.mutate(
         { orderId, data: payload },
         { onSuccess: () => setSellOrder(null) },
@@ -458,6 +481,7 @@ const Orders = () => {
         totalPrice: number;
         extraCost: number;
         comment: string;
+        proof?: File;
       },
     ) => {
       PartlySellOrder.mutate(
@@ -471,7 +495,7 @@ const Orders = () => {
   const handleCancelOrder = useCallback(
     (
       orderId: string,
-      payload: { comment: string; extraCost: number; paidAmount: number },
+      payload: { comment: string; extraCost: number; paidAmount: number; proof?: File },
     ) => {
       CancelOrder.mutate(
         { orderId, data: payload },

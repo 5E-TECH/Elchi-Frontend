@@ -17,6 +17,38 @@ export type UpdateNewOrderPayload = Partial<{
 export const useOrders = () => {
   const client = useQueryClient();
 
+  const uploadProofFile = async (proof: File) => {
+    const formData = new FormData();
+    formData.append("file", proof);
+    formData.append("folder", "proof");
+
+    const response = await api.post(API_ENDPOINTS.FILES.UPLOAD, formData);
+    const key =
+      response.data?.data?.key ??
+      response.data?.key;
+
+    if (!key) {
+      throw new Error("Proof file upload did not return a key");
+    }
+
+    return String(key);
+  };
+
+  const toOrderActionBody = async (data: Record<string, unknown>) => {
+    if (!(data.proof instanceof File)) return data;
+
+    const { proof, proofFileKeys, ...rest } = data;
+    const uploadedKey = await uploadProofFile(proof);
+    const existingKeys = Array.isArray(proofFileKeys)
+      ? proofFileKeys.map(String).filter(Boolean)
+      : [];
+
+    return {
+      ...rest,
+      proofFileKeys: Array.from(new Set([...existingKeys, uploadedKey])),
+    };
+  };
+
   // A sell/cancel/rollback/partly-sell moves COD cash across cashboxes, so the
   // finance/cashbox caches (separate key space, 30s staleTime) must be refreshed
   // too — otherwise balances shown right after the action are stale. (Audit P1-3.)
@@ -119,8 +151,11 @@ export const useOrders = () => {
       data,
     }: {
       orderId: string;
-      data: { comment: string; extraCost: number };
-    }) => api.post(API_ENDPOINTS.ORDERS.SELL(orderId), data).then((res) => res.data),
+      data: { comment: string; extraCost: number; proof?: File };
+    }) =>
+      toOrderActionBody(data).then((body) =>
+        api.post(API_ENDPOINTS.ORDERS.SELL(orderId), body).then((res) => res.data),
+      ),
     onSuccess: invalidateMoney,
   });
 
@@ -135,9 +170,12 @@ export const useOrders = () => {
         totalPrice: number;
         extraCost: number;
         comment: string;
+        proof?: File;
       };
     }) =>
-      api.post(API_ENDPOINTS.ORDERS.PARTLY_SELL(orderId), data).then((res) => res.data),
+      toOrderActionBody(data).then((body) =>
+        api.post(API_ENDPOINTS.ORDERS.PARTLY_SELL(orderId), body).then((res) => res.data),
+      ),
     onSuccess: invalidateMoney,
   });
 
@@ -194,8 +232,11 @@ export const useOrders = () => {
       data,
     }: {
       orderId: string;
-      data: { comment: string; extraCost: number; paidAmount: number };
-    }) => api.post(API_ENDPOINTS.ORDERS.CANCEL(orderId), data).then((res) => res.data),
+      data: { comment: string; extraCost: number; paidAmount: number; proof?: File };
+    }) =>
+      toOrderActionBody(data).then((body) =>
+        api.post(API_ENDPOINTS.ORDERS.CANCEL(orderId), body).then((res) => res.data),
+      ),
     onSuccess: invalidateMoney,
   });
 

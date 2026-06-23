@@ -45,7 +45,7 @@ const pickNumber = (source: UnknownRecord, keys: string[]): number | undefined =
   return undefined;
 };
 
-export const normalizeFinancialBalance = (response: unknown): FinancialBalanceData => {
+export const normalizeFinancialBalance = (response: unknown): FinancialBalanceData | null => {
   const responseRecord = toRecord(response);
   const payload = toRecord(responseRecord.data ?? responseRecord);
   const main = toRecord(payload.main ?? payload.cashbox ?? payload.mainCashbox);
@@ -53,13 +53,12 @@ export const normalizeFinancialBalance = (response: unknown): FinancialBalanceDa
   const markets = toRecord(payload.markets ?? payload.market);
   const couriers = toRecord(payload.couriers ?? payload.courier);
 
-  const cashBalance =
+  const cashBalanceValue =
     pickNumber(main, ["balance", "totalBalance", "total_balans", "totalBalanceUz"]) ??
     pickNumber(mainCashbox, ["balance", "totalBalance"]) ??
-    pickNumber(payload, ["cashboxBalance", "mainBalance", "mainCashboxTotal"]) ??
-    0;
+    pickNumber(payload, ["cashboxBalance", "mainBalance", "mainCashboxTotal"]);
 
-  const marketsBalance =
+  const marketsBalanceValue =
     pickNumber(markets, [
       "marketsTotalBalans",
       "marketsTotalBalance",
@@ -69,10 +68,9 @@ export const normalizeFinancialBalance = (response: unknown): FinancialBalanceDa
       "balance",
       "amount",
     ]) ??
-    pickNumber(payload, ["marketsTotalBalans", "marketsTotalBalance", "marketCashboxTotal"]) ??
-    0;
+    pickNumber(payload, ["marketsTotalBalans", "marketsTotalBalance", "marketCashboxTotal"]);
 
-  const couriersBalance =
+  const couriersBalanceValue =
     pickNumber(couriers, [
       "couriersTotalBalanse",
       "couriersTotalBalance",
@@ -82,19 +80,31 @@ export const normalizeFinancialBalance = (response: unknown): FinancialBalanceDa
       "balance",
       "amount",
     ]) ??
-    pickNumber(payload, ["couriersTotalBalanse", "couriersTotalBalance", "courierCashboxTotal"]) ??
-    0;
+    pickNumber(payload, ["couriersTotalBalanse", "couriersTotalBalance", "courierCashboxTotal"]);
 
+  const totalValue = pickNumber(payload, [
+    "currentSituation",
+    "current_situation",
+    "difference",
+    "totalBalance",
+    "totalBalans",
+    "balance",
+  ]);
+
+  if (
+    cashBalanceValue === undefined &&
+    marketsBalanceValue === undefined &&
+    couriersBalanceValue === undefined &&
+    totalValue === undefined
+  ) {
+    return null;
+  }
+
+  const cashBalance = cashBalanceValue ?? 0;
+  const marketsBalance = marketsBalanceValue ?? 0;
+  const couriersBalance = couriersBalanceValue ?? 0;
   const computedTotal = cashBalance + marketsBalance + couriersBalance;
-  const total =
-    pickNumber(payload, [
-      "currentSituation",
-      "current_situation",
-      "difference",
-      "totalBalance",
-      "totalBalans",
-      "balance",
-    ]) ?? computedTotal;
+  const total = totalValue ?? computedTotal;
 
   return {
     currentSituation: total,

@@ -2,6 +2,14 @@ export type UserRole = 'admin' | 'manager' | 'registrator' | 'marketing' | 'oper
 
 export type UserStatus = 'active' | 'inactive' | 'blocked';
 
+export type ExpenseProofCondition =
+    | 'sell_any'
+    | 'sell_extra_cost'
+    | 'sell_zero_total'
+    | 'cancel_any'
+    | 'cancel_extra_cost'
+    | 'cancel_zero_total';
+
 export interface OrderItem {
     id: string;
     product_id: string;
@@ -54,6 +62,7 @@ export interface User {
     tariff_home: number | null;
     tariff_center: number | null;
     add_order?: boolean;
+    expense_proof_conditions?: ExpenseProofCondition[] | null;
     default_tariff: 'home' | 'center';
     region_id?: string | null;
     region?: Region | null;
