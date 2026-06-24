@@ -4,7 +4,11 @@ import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
-import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
+import {
+  getSidebarConfigForUser,
+  getUserBranchType,
+  type SidebarUserRole,
+} from "../../widgets/Sidebar/model/menuConfig";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -164,6 +168,41 @@ const canManageProducts = (state: RootState) => {
   return role === "admin" || role === "superadmin" || role === "market" || role === "registrator";
 };
 
+const canViewAdminNewOrderTabs = (state: RootState) => {
+  const role = state.role.role;
+  return role === "admin" || role === "superadmin";
+};
+
+const canViewSidebarPath = (path: string) => (state: RootState) => {
+  const role = state.role.role;
+  if (!role) return false;
+
+  return getSidebarConfigForUser(role as SidebarUserRole, state.user.user).some(
+    (item) => item.to === path,
+  );
+};
+
+const canViewOrders = canViewSidebarPath("/orders");
+const canViewMails = canViewSidebarPath("/mails");
+const canViewUsers = canViewSidebarPath("/all-users");
+const canViewFinancialBalance = canViewSidebarPath("/financial-balance");
+const canViewNotifications = canViewSidebarPath("/notifications");
+const canViewBranches = canViewSidebarPath("/branches");
+const canViewLogs = canViewSidebarPath("/logs");
+
+const canViewRegionStats = (state: RootState) => {
+  const role = state.role.role;
+  return (
+    role === "admin" ||
+    role === "superadmin" ||
+    role === "operator" ||
+    role === "manager" ||
+    role === "courier"
+  );
+};
+
+const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
+
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
 
@@ -187,6 +226,20 @@ const LegacyBranchBatchRedirect = () => {
       to={`/new-orders/branches/${branchId ?? ""}/batches/${batchId ?? ""}`}
     />
   );
+};
+
+const NewOrdersCancelledDetailEntry = () => {
+  const { marketId } = useParams();
+  const role = useSelector((state: RootState) => state.role.role);
+  const roleId = useSelector((state: RootState) => state.role.id);
+  const isAdminRole = role === "admin" || role === "superadmin";
+  const isOwnMarket = role === "market" && Boolean(roleId) && String(roleId) === String(marketId);
+
+  if (!isAdminRole && !isOwnMarket) {
+    return <Navigate replace to="/403" />;
+  }
+
+  return <NewOrdersCancelledDetail />;
 };
 
 const AppRouter = () => {
@@ -268,27 +321,118 @@ const AppRouter = () => {
             },
             { path: "profile", element: <Profile /> },
             { path: "settings", element: <SettingsPage /> },
-            { path: "settlement", element: <SettlementPage /> },
-            { path: "finance-operators", element: <FinanceOperatorsPage /> },
-            { path: "integrations-ops", element: <IntegrationsOpsPage /> },
-            { path: "investors-ops", element: <InvestorsOpsPage /> },
-            { path: "logistics-ops", element: <LogisticsOpsPage /> },
-            { path: "branch-ops", element: <BranchOpsPage /> },
-            { path: "identity-ops", element: <IdentityOpsPage /> },
-            { path: "system-ops", element: <SystemOpsPage /> },
+            {
+              path: "settlement",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <SettlementPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "finance-operators",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <FinanceOperatorsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "integrations-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <IntegrationsOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "investors-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <InvestorsOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "logistics-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <LogisticsOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "branch-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <BranchOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "identity-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <IdentityOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "system-ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <SystemOpsPage />
+                </ProtectedRoute>
+              ),
+            },
             {
               path: "all-users",
               children: [
-                { index: true, element: <UserListPage /> },
-                { path: "create-user", element: <CreateUserPage /> },
-                { path: ":id", element: <UserDetailPage /> },
+                {
+                  index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canViewUsers}>
+                      <UserListPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "create-user",
+                  element: (
+                    <ProtectedRoute canActivate={canViewUsers}>
+                      <CreateUserPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: ":id",
+                  element: (
+                    <ProtectedRoute canActivate={canViewUsers}>
+                      <UserDetailPage />
+                    </ProtectedRoute>
+                  ),
+                },
               ],
             },
             {
               path: "orders",
               children: [
-                { index: true, element: <Orders /> },
-                { path: "edit/:orderId", element: <NewOrderUpdate /> },
+                {
+                  index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canViewOrders}>
+                      <Orders />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "edit/:orderId",
+                  element: (
+                    <ProtectedRoute canActivate={canViewOrders}>
+                      <NewOrderUpdate />
+                    </ProtectedRoute>
+                  ),
+                },
                 {
                   path: "add",
                   element: (
@@ -333,12 +477,47 @@ const AppRouter = () => {
                 { path: "external/:id", element: <Navigate replace to="/new-orders/integrations" /> },
                 { path: "integrations", element: <NewOrdersExternalList /> },
                 { path: "integrations/create", element: <ExternalIntegrationCreate /> },
-                { path: "branches", element: <NewOrdersBranches /> },
-                { path: "branches/:branchId", element: <NewOrdersBranchBatches /> },
-                { path: "branches/:branchId/batches/:batchId", element: <NewOrdersBranchBatchDetail /> },
-                { path: "branches/:branchId/:batchId", element: <LegacyBranchBatchRedirect /> },
-                { path: "cancelled", element: <NewOrdersCancelled /> },
-                { path: "cancelled/:marketId", element: <NewOrdersCancelledDetail /> },
+                {
+                  path: "branches",
+                  element: (
+                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                      <NewOrdersBranches />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "branches/:branchId",
+                  element: (
+                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                      <NewOrdersBranchBatches />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "branches/:branchId/batches/:batchId",
+                  element: (
+                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                      <NewOrdersBranchBatchDetail />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "branches/:branchId/:batchId",
+                  element: (
+                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                      <LegacyBranchBatchRedirect />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "cancelled",
+                  element: (
+                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                      <NewOrdersCancelled />
+                    </ProtectedRoute>
+                  ),
+                },
+                { path: "cancelled/:marketId", element: <NewOrdersCancelledDetailEntry /> },
                 { path: "integrations/:id", element: <ExternalIntegrationDetail /> },
                 { path: ":marketId", element: <NewOrderDetail /> },
                 { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
@@ -348,12 +527,54 @@ const AppRouter = () => {
             {
               path: "mails",
               children: [
-                { index: true, element: <Mails /> },
-                { path: "today", element: <Mails /> },
-                { path: "return", element: <Mails /> },
-                { path: "refused", element: <Mails /> },
-                { path: "old", element: <Mails /> },
-                { path: ":id", element: <MailDetail /> },
+                {
+                  index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canViewMails}>
+                      <Mails />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "today",
+                  element: (
+                    <ProtectedRoute canActivate={canViewMails}>
+                      <Mails />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "return",
+                  element: (
+                    <ProtectedRoute canActivate={canViewMails}>
+                      <Mails />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "refused",
+                  element: (
+                    <ProtectedRoute canActivate={canViewMails}>
+                      <Mails />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "old",
+                  element: (
+                    <ProtectedRoute canActivate={canViewMails}>
+                      <Mails />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: ":id",
+                  element: (
+                    <ProtectedRoute canActivate={canViewMails}>
+                      <MailDetail />
+                    </ProtectedRoute>
+                  ),
+                },
               ],
             },
             {
@@ -407,11 +628,19 @@ const AppRouter = () => {
             },
             {
               path: "financial-balance",
-              element: <FinancialBalance />,
+              element: (
+                <ProtectedRoute canActivate={canViewFinancialBalance}>
+                  <FinancialBalance />
+                </ProtectedRoute>
+              ),
             },
             {
               path: "regions",
-              element: <Region />,
+              element: (
+                <ProtectedRoute canActivate={canViewRegionStats}>
+                  <Region />
+                </ProtectedRoute>
+              ),
               children: [
                 { path: "districts", element: <RegionDistrictsPage /> },
                 { path: "sato-management", element: <RegionSatoManagementPage /> },
@@ -420,7 +649,11 @@ const AppRouter = () => {
             },
             {
               path: "notifications",
-              element: <NotificationsPage />,
+              element: (
+                <ProtectedRoute canActivate={canViewNotifications}>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              ),
             },
             {
               path: "notification",
@@ -429,13 +662,31 @@ const AppRouter = () => {
             {
               path: "branches",
               children: [
-                { index: true, element: <BranchesPage /> },
-                { path: ":id", element: <BranchDetailPage /> },
+                {
+                  index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canViewBranches}>
+                      <BranchesPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: ":id",
+                  element: (
+                    <ProtectedRoute canActivate={canViewBranches}>
+                      <BranchDetailPage />
+                    </ProtectedRoute>
+                  ),
+                },
               ],
             },
             {
               path: "logs",
-              element: <LogsPage />,
+              element: (
+                <ProtectedRoute canActivate={canViewLogs}>
+                  <LogsPage />
+                </ProtectedRoute>
+              ),
             },
             {
               path: "403",

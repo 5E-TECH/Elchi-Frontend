@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { RootState } from "../../app/config/store";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { useRegionDetailStats } from "../../entities/region";
 import { parseISODate, toISODate } from "../../shared/lib/dateRange";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import DateRangePicker from "../../shared/ui/DateRangePicker";
@@ -38,6 +39,38 @@ type DateRangeType = "today" | "week" | "month" | "all" | "custom";
 const toNumber = (value: unknown, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const getNestedRecord = (source: Record<string, unknown>, key: string) => asRecord(source[key]);
+
+const getProfileRegionId = (profile: unknown): string => {
+  const user = asRecord(profile);
+  const region = getNestedRecord(user, "region");
+  const branch = getNestedRecord(user, "branch");
+  const branchRegion = getNestedRecord(branch, "region");
+  const nestedBranch = getNestedRecord(branch, "branch");
+  const nestedBranchRegion = getNestedRecord(nestedBranch, "region");
+  const id =
+    user.region_id ??
+    region.id ??
+    branch.region_id ??
+    branchRegion.id ??
+    nestedBranch.region_id ??
+    nestedBranchRegion.id;
+
+  return id == null ? "" : String(id);
+};
+
+const getProfileBranchId = (profile: unknown): string => {
+  const user = asRecord(profile);
+  const branch = getNestedRecord(user, "branch");
+  const nestedBranch = getNestedRecord(branch, "branch");
+  const id = user.branch_id ?? branch.id ?? nestedBranch.id;
+
+  return id == null ? "" : String(id);
 };
 
 const normalizeRegionItem = (raw: unknown): RegionItem | null => {
@@ -188,6 +221,7 @@ const RegionPage = () => {
   const { pathname } = useLocation();
   const { getParam, setMultipleParams, removeParam } = useQueryParams();
   const role = useSelector((state: RootState) => state.role.role);
+  const profile = useSelector((state: RootState) => state.user.user);
   const userRegionName = useSelector((state: RootState) => state.role.region);
 
   const [regions, setRegions] = useState<RegionItem[]>([]);
@@ -215,8 +249,11 @@ const RegionPage = () => {
   const isSuperadmin = role === "superadmin";
   const isAdmin = role === "admin";
   const isLogist = role === "operator";
+  const isManager = role === "manager";
   const isCourier = role === "courier";
   const canViewStats = isAdmin || isSuperadmin || isLogist;
+  const canViewScopedStats = isManager || isCourier;
+  const canUseDateFilter = canViewStats || canViewScopedStats;
 
   const isChildRoute =
     pathname.includes("/regions/districts") ||
@@ -227,6 +264,13 @@ const RegionPage = () => {
     let active = true;
 
     const fetchRegions = async () => {
+      if (!canViewStats) {
+        setRegions([]);
+        setSummary(null);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const params: Record<string, string> = {};
@@ -263,7 +307,7 @@ const RegionPage = () => {
     return () => {
       active = false;
     };
-  }, [dateRange, customRange]);
+  }, [canViewStats, dateRange, customRange]);
 
   const detailDateParams = useMemo<{ startDate?: string; endDate?: string }>(() => {
     const now = dayjs();
@@ -299,6 +343,22 @@ const RegionPage = () => {
     return {};
   }, [dateRange, customRange]);
 
+  const scopedRegionId = getProfileRegionId(profile);
+  const scopedBranchId = getProfileBranchId(profile);
+  const scopedStatsParams = useMemo(
+    () => ({
+      ...detailDateParams,
+      ...(isCourier && profile?.id ? { courier_id: String(profile.id) } : {}),
+      ...(isManager && scopedBranchId ? { branch_id: scopedBranchId } : {}),
+    }),
+    [detailDateParams, isCourier, isManager, profile?.id, scopedBranchId],
+  );
+  const scopedStatsQuery = useRegionDetailStats(
+    scopedRegionId,
+    scopedStatsParams,
+    canViewScopedStats && Boolean(scopedRegionId),
+  );
+
   useEffect(() => {
     if (dateRange === "custom" && customRange?.start && customRange?.end) {
       setMultipleParams({
@@ -318,7 +378,7 @@ const RegionPage = () => {
     return <Outlet />;
   }
 
-  if (!canViewStats && !isCourier) {
+  if (!canViewStats && !canViewScopedStats) {
     return <Navigate to="/403" replace />;
   }
 
@@ -339,7 +399,7 @@ const RegionPage = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {canViewStats && (
+              {canUseDateFilter && (
                 <div className="flex items-center gap-1 rounded-xl border border-primarydark/20 bg-primary p-1 shadow-sm dark:border-white/10 dark:bg-primarydark/55">
                   <Calendar className="ml-2 h-4 w-4 text-main/55 dark:text-primary/70" />
                   {[
@@ -435,10 +495,74 @@ const RegionPage = () => {
           </div>
         </div>
 
-        {isCourier ? (
-          <div className="rounded-2xl border border-primarydark/20 bg-primary p-5 dark:border-white/10 dark:bg-primarydark/45">
-            <p className="text-sm text-main/70 dark:text-primary/70 mb-2">{t("assignedRegion")}</p>
-            <h3 className="text-2xl font-bold text-main dark:text-primary">{userRegionName || "—"}</h3>
+        {canViewScopedStats ? (
+          <div className="space-y-4 rounded-2xl border border-primarydark/20 bg-primary p-5 dark:border-white/10 dark:bg-primarydark/45">
+            <div>
+              <p className="text-sm text-main/70 dark:text-primary/70 mb-2">{t("assignedRegion")}</p>
+              <h3 className="text-2xl font-bold text-main dark:text-primary">
+                {scopedStatsQuery.data?.name || userRegionName || "—"}
+              </h3>
+              <p className="mt-1 text-sm text-main/60 dark:text-primary/60">
+                {isCourier ? t("map.scopedCourierSubtitle") : t("map.scopedManagerSubtitle")}
+              </p>
+            </div>
+
+            {!scopedRegionId ? (
+              <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-700 dark:text-rose-100">
+                {t("map.regionNotFound")}
+              </div>
+            ) : scopedStatsQuery.isLoading ? (
+              <div className="text-sm text-main/60 dark:text-primary/60">{t("common:loading")}</div>
+            ) : scopedStatsQuery.isError ? (
+              <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-700 dark:text-rose-100">
+                {t("map.loadingError")}
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  {[
+                    { label: t("map.metrics.totalOrders"), value: scopedStatsQuery.data?.summary.totalOrders ?? 0 },
+                    { label: t("map.metrics.delivered"), value: scopedStatsQuery.data?.summary.totalDelivered ?? 0 },
+                    { label: t("map.metrics.cancelled"), value: scopedStatsQuery.data?.summary.totalCancelled ?? 0 },
+                    { label: t("map.metrics.pending"), value: scopedStatsQuery.data?.summary.pendingOrders ?? 0 },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-xl border border-primarydark/10 bg-sidebar p-4 dark:border-white/10 dark:bg-primarydark/45">
+                      <p className="text-xs font-semibold text-main/60 dark:text-primary/60">{item.label}</p>
+                      <p className="mt-1 text-xl font-black text-main dark:text-primary">{item.value.toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-2xl border border-primarydark/10 bg-sidebar p-4 dark:border-white/10 dark:bg-primarydark/45">
+                  <h3 className="mb-3 text-lg font-black text-main dark:text-primary">
+                    {t("map.districtsTitle", { count: scopedStatsQuery.data?.districts.length ?? 0 })}
+                  </h3>
+                  {scopedStatsQuery.data?.districts.length ? (
+                    <div className="space-y-2">
+                      {scopedStatsQuery.data.districts.map((district) => (
+                        <div key={district.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primarydark/10 bg-primary p-3 dark:border-white/10 dark:bg-maindark/45">
+                          <div>
+                            <p className="font-bold text-main dark:text-primary">{district.name}</p>
+                            {district.satoCode ? (
+                              <p className="text-xs text-main/55 dark:text-primary/55">{district.satoCode}</p>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-main/70 dark:text-primary/70">
+                            <span>{district.totalOrders.toLocaleString()} {t("map.metrics.orderUnit")}</span>
+                            <span>{district.successRate}%</span>
+                            <span>{t("map.metrics.courier")}: {district.activeCouriers}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-primarydark/10 bg-primary p-3 text-sm text-main/60 dark:border-white/10 dark:bg-maindark/45 dark:text-primary/60">
+                      {t("map.districtsNotFound")}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <UzbekistanRegionMap

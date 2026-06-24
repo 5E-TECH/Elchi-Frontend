@@ -37,6 +37,7 @@ import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 
 const fmt = (n: number) =>
   n.toLocaleString("uz-UZ", { maximumFractionDigits: 0 });
+const FULL_LIST_LIMIT = 10000;
 
 const toNumber = (v: unknown, fallback = 0): number => {
   const n = typeof v === "number" ? v : Number(v);
@@ -196,11 +197,11 @@ const MainCashbox = () => {
     isSalaryPopupOpen,
   );
   const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
-    { status: "active", limit: 0 },
+    { status: "active", limit: FULL_LIST_LIMIT },
     isCourierPopupOpen,
   );
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
-    { status: "active", limit: 0 },
+    { status: "active", limit: FULL_LIST_LIMIT },
     isMarketPopupOpen,
   );
   const mainCashboxParams = useMemo(
@@ -215,7 +216,7 @@ const MainCashbox = () => {
   const historyParams = useMemo(
     () => ({
       page: 1,
-      limit: 0,
+      limit: FULL_LIST_LIMIT,
       ...(draftHistoryFrom && draftHistoryTo && { fromDate: draftHistoryFrom, toDate: draftHistoryTo }),
     }),
     [draftHistoryFrom, draftHistoryTo],
@@ -258,16 +259,23 @@ const MainCashbox = () => {
   );
   const markets = useMemo(
     () =>
-      (marketsData?.data?.items ?? []).map((market: any) => ({
-        ...market,
-        amount: toNumber(
-          market.berilishi_kerak ??
-            market.cashbox?.berilishi_kerak ??
-            market.cashbox?.balance ??
-            market.amount,
-        ),
-      })).filter((market: any) => market.amount !== 0),
-    [marketsData?.data?.items],
+      toDataItems(marketsData).map((market) => {
+        const item = asRecord(market);
+        const cashbox = asRecord(item.cashbox);
+
+        return {
+          ...item,
+          id: String(item.id ?? ""),
+          name: String(item.name ?? ""),
+          amount: toNumber(
+            item.berilishi_kerak ??
+              cashbox.berilishi_kerak ??
+              cashbox.balance ??
+              item.amount,
+          ),
+        };
+      }).filter((market) => market.id),
+    [marketsData],
   );
 
   // ── Cashbox balances ───────────────────────────────────────────────────────
@@ -637,9 +645,8 @@ const MainCashbox = () => {
         searchKeys={["name"]}
         labelKey="name"
         secondaryLabelKey="role"
-        onSelect={(emp) => {
+        onSelect={() => {
           setIsSalaryPopupOpen(false);
-          console.log("Salary employee:", emp);
         }}
         placeholder={t("searchPlaceholder")}
         selectLabel={t("selectLabel")}

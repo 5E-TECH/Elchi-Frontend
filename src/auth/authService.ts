@@ -216,7 +216,7 @@ export const initAuth = async () => {
         return;
       }
 
-      let accessToken = tokenStorage.getAccessToken();
+      const accessToken = tokenStorage.getAccessToken();
 
       if (!accessToken) {
         resetClientAuthState();

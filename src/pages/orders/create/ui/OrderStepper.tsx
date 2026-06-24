@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronRight, Sparkles } from "lucide-react";
 
 interface Step {
@@ -15,6 +16,7 @@ interface OrderStepperProps {
 }
 
 const OrderStepper = ({ steps, currentStep, stepNotes, hiddenDescriptions }: OrderStepperProps) => {
+    const { t } = useTranslation("orders");
     const totalSteps = steps.length;
     const completedSteps = steps.filter((step) => currentStep > step.id).length;
     const progressPercent =
@@ -32,28 +34,28 @@ const OrderStepper = ({ steps, currentStep, stepNotes, hiddenDescriptions }: Ord
                     <div className="min-w-0">
                         <div className="inline-flex items-center gap-2 rounded-full border border-main/15 bg-main/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-main">
                             <Sparkles size={13} />
-                            Order Flow
+                            {t("orderStepperFlow")}
                         </div>
                         <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-1">
                             <h3 className="text-base font-extrabold text-gray-900 dark:text-white sm:text-lg">
-                                Buyurtma yaratish bosqichlari
+                                {t("orderStepperTitle")}
                             </h3>
                             <span className="text-sm font-medium text-gray-500 dark:text-white/45">
-                                {completedSteps} / {totalSteps} completed
+                                {t("orderStepperCompletedCount", { completed: completedSteps, total: totalSteps })}
                             </span>
                         </div>
                     </div>
 
                     <div className="min-w-[170px] rounded-2xl border border-white/50 bg-white/70 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-white/8 dark:bg-white/5">
                         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400 dark:text-white/35">
-                            Progress
+                            {t("orderStepperProgress")}
                         </p>
                         <div className="mt-2 flex items-end justify-between gap-3">
                             <strong className="text-2xl font-black leading-none text-main">
                                 {Math.round(progressPercent)}%
                             </strong>
                             <span className="text-xs font-medium text-gray-500 dark:text-white/45">
-                                Step {Math.min(currentStep, totalSteps)} of {totalSteps}
+                                {t("orderStepperStepOf", { current: Math.min(currentStep, totalSteps), total: totalSteps })}
                             </span>
                         </div>
                     </div>
@@ -121,7 +123,11 @@ const OrderStepper = ({ steps, currentStep, stepNotes, hiddenDescriptions }: Ord
                                                             : "bg-gray-100 text-gray-500 dark:bg-white/6 dark:text-white/35"
                                                 }`}
                                             >
-                                                {isDone ? "Completed" : isActive ? "Current" : "Pending"}
+                                                {isDone
+                                                    ? t("orderStepperStatusCompleted")
+                                                    : isActive
+                                                        ? t("orderStepperStatusCurrent")
+                                                        : t("orderStepperStatusPending")}
                                             </span>
                                         </div>
 

@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { getSidebarConfigForUser, type SidebarUserRole } from "../model/menuConfig";
+import { SIDEBAR_CONFIG, getSidebarConfigForUser, type SidebarUserRole } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -23,7 +23,7 @@ const Sidebar = () => {
   // ─── User role'ni Redux dan oling ────────────────────────────────────────
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
-  const userRole = (role as SidebarUserRole) || "admin";
+  const userRole = role && role in SIDEBAR_CONFIG ? (role as SidebarUserRole) : null;
 
   // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
   // navItems va links alohida memoized — role/user o'zgarmasa qayta hisoblanmaydi

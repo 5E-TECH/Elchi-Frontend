@@ -6,7 +6,7 @@ import { Globe, FileText, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { GlobalSearchInput, useDebounce } from "../../../features/search";
 import { useOrders } from "../../../entities/orders";
-import { OrderCard, Checkbox, fmt } from "./OrderCard";
+import { OrderCard, Checkbox } from "./OrderCard";
 import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -21,7 +21,7 @@ import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
-  const { t } = useTranslation("newOrders");
+  const { t, i18n } = useTranslation(["newOrders", "orders"]);
   const navigate = useNavigate();
   const { marketId } = useParams();
   const roleState = useSelector((state: RootState) => state.role);
@@ -178,6 +178,8 @@ const NewOrderDetail = () => {
 
   const allSelected = selectedIds.size === orders.length && orders.length > 0;
   const totalSum = orders.reduce((s, o) => s + o.total_price, 0);
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+  const formattedTotalSum = `${totalSum.toLocaleString(locale)} ${t("currency", { ns: "orders" })}`;
 
 
   const handleAccepted = useCallback(() => {
@@ -288,7 +290,7 @@ const NewOrderDetail = () => {
                     {t("ordersHeader")}
                   </h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-maindark/65 dark:text-primary/70 sm:text-sm">
-                    {t("totalCount", { count: orders.length })} • {fmt(totalSum)} so'm
+                    {t("totalCount", { count: orders.length })} • {formattedTotalSum}
                   </p>
                 </div>
               </div>

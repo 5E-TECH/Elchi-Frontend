@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Clock3 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -17,15 +17,11 @@ const SessionExpiryCountdown = () => {
   const { t } = useTranslation("common");
   const location = useLocation();
   const [now, setNow] = useState(() => Date.now());
-  const [metadataVersion, setMetadataVersion] = useState(0);
-  const metadata = useMemo(
-    () => tokenStorage.getSessionMetadata(),
-    [metadataVersion],
-  );
+  const [metadata, setMetadata] = useState(() => tokenStorage.getSessionMetadata());
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    const onMetadataChange = () => setMetadataVersion((value) => value + 1);
+    const onMetadataChange = () => setMetadata(tokenStorage.getSessionMetadata());
 
     window.addEventListener(AUTH_SESSION_METADATA_EVENT, onMetadataChange);
     return () => {

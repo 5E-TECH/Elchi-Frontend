@@ -1,4 +1,4 @@
-import { memo, type MouseEvent, type ReactNode } from "react";
+import { memo, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { ChevronRight, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -60,13 +60,20 @@ const MailGridCard = ({
     event.stopPropagation();
     onAction?.();
   };
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    onOpen();
+  };
 
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onOpen}
-      onKeyDown={(event) => event.key === "Enter" && onOpen()}
+      onKeyDown={handleCardKeyDown}
       className={`group relative min-h-[172px] cursor-pointer overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl ${variantClassName[variant]}`}
     >
       <div className="mail-card-shimmer" />
@@ -103,7 +110,7 @@ const MailGridCard = ({
               {t("ordersLabel")}:
             </span>
             <span className="text-sm font-black text-white">
-              {orders} <span className="font-semibold text-white/75">ta</span>
+              {orders} <span className="font-semibold text-white/75">{t("piece")}</span>
             </span>
           </div>
           <div className="flex items-center justify-between gap-4">
