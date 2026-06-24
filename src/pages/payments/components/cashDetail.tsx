@@ -20,6 +20,24 @@ const toNumber = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+const FULL_LIST_LIMIT = 10000;
+
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const toDataItems = (value: unknown): unknown[] => {
+  if (Array.isArray(value)) return value;
+
+  const record = asRecord(value);
+  if (Array.isArray(record.items)) return record.items;
+  if (Array.isArray(record.data)) return record.data;
+
+  const data = asRecord(record.data);
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.data)) return data.data;
+
+  return [];
+};
 
 const reduceBalanceTowardsZero = (balance: number, amount: number) =>
   balance < 0 ? Math.min(0, balance + amount) : Math.max(0, balance - amount);
@@ -215,15 +233,21 @@ const CashDetail = () => {
     createPaymentBranchToMain.isPending ||
     createPaymentMarket.isPending;
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
-    { status: "active", limit: 0 },
+    { status: "active", limit: FULL_LIST_LIMIT },
     isStoreTransfer,
   );
   const marketOptions = useMemo(
     () =>
-      (marketsData?.data?.items ?? []).map((item: { id: string | number; name: string }) => ({
-        value: String(item.id),
-        label: item.name,
-      })),
+      toDataItems(marketsData)
+        .map((item) => {
+          const market = asRecord(item);
+
+          return {
+            value: String(market.id ?? ""),
+            label: String(market.name ?? ""),
+          };
+        })
+        .filter((item) => item.value && item.label),
     [marketsData],
   );
 

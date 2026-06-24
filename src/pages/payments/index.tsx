@@ -31,6 +31,7 @@ import type { RootState } from "../../app/config/store";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const DEFAULT_PAYMENTS_LIMIT = 10;
+const FULL_LIST_LIMIT = 10000;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -250,11 +251,11 @@ const Payments = () => {
 
   // Faqat popup ochiq bo'lganda yuklanadi
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
-    { status: "active", limit: 0 },
+    { status: "active", limit: FULL_LIST_LIMIT },
     isGivenPopupOpen && !isManagerRole,
   );
   const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
-    { status: "active", limit: 0 },
+    { status: "active", limit: FULL_LIST_LIMIT },
     isReceivedPopupOpen,
   );
 

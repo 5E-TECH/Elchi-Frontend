@@ -84,6 +84,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
+    { to: "/regions", icon: MapPinned, label: "regions" },
   ],
   manager: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
@@ -92,6 +93,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/batches", icon: PackageCheck, label: "batches" },
     { to: "/returns", icon: RotateCcw, label: "returns" },
+    { to: "/regions", icon: MapPinned, label: "regions" },
   ],
   operator: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
@@ -110,6 +112,7 @@ const MANAGER_REGIONAL_CONFIG: NavItem[] = [
   { to: "/mails", icon: MailOpen, label: "mails" },
   { to: "/all-users", icon: UserRound, label: "users" },
   { to: "/payments", icon: CreditCard, label: "payments" },
+  { to: "/regions", icon: MapPinned, label: "regions" },
 ];
 
 const MANAGER_PICKUP_CONFIG: NavItem[] = [
@@ -118,6 +121,7 @@ const MANAGER_PICKUP_CONFIG: NavItem[] = [
   { to: "/new-orders", icon: Calendar1, label: "newOrders" },
   { to: "/batches", icon: PackageCheck, label: "batches" },
   { to: "/returns", icon: RotateCcw, label: "returns" },
+  { to: "/regions", icon: MapPinned, label: "regions" },
 ];
 
 const MANAGER_HYBRID_CONFIG: NavItem[] = [
@@ -130,6 +134,7 @@ const MANAGER_HYBRID_CONFIG: NavItem[] = [
   { to: "/returns", icon: RotateCcw, label: "returns" },
   { to: "/all-users", icon: UserRound, label: "users" },
   { to: "/payments", icon: CreditCard, label: "payments" },
+  { to: "/regions", icon: MapPinned, label: "regions" },
 ];
 
 const toBranchType = (value: unknown): BranchType | null => {
@@ -169,9 +174,11 @@ export const getUserBranchType = (user: User | null | undefined): BranchType | n
 };
 
 export const getSidebarConfigForUser = (
-  role: SidebarUserRole,
+  role: SidebarUserRole | null | undefined,
   user?: User | null,
 ): NavItem[] => {
+  if (!role || !(role in SIDEBAR_CONFIG)) return [];
+
   const branchType = getUserBranchType(user);
 
   if (role === "manager" && branchType === "REGIONAL") {
@@ -190,5 +197,5 @@ export const getSidebarConfigForUser = (
     return SIDEBAR_CONFIG.registrator.filter((item) => item.to !== "/dispatch");
   }
 
-  return SIDEBAR_CONFIG[role] ?? SIDEBAR_CONFIG.admin;
+  return SIDEBAR_CONFIG[role];
 };

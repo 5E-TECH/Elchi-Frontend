@@ -66,14 +66,16 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
     showCheckbox?: boolean;
     showOrderId?: boolean;
 }) => {
-    const { t } = useTranslation("newOrders");
+    const { t, i18n } = useTranslation(["newOrders", "orders"]);
+    const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
     const location = order.customer?.district?.name
         ? `${order.customer?.region?.name ?? ""} • ${order.customer.district.name}`
         : order.address ?? "—";
 
-    const date = new Date(order.createdAt).toLocaleString("uz-UZ", {
+    const date = new Date(order.createdAt).toLocaleString(locale, {
         day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
     });
+    const formatMoney = (value: number) => value.toLocaleString(locale);
 
     return (
         <div
@@ -148,10 +150,10 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
                 <div className="flex w-full shrink-0 items-center justify-between gap-3 border-t border-gray-100 pt-3 dark:border-white/6 sm:w-auto sm:flex-col sm:items-end sm:justify-between sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                     <div className="text-left sm:text-right">
                         <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1">{t("total")}</p>
-                        <p className="text-lg font-black text-gray-900 dark:text-white tabular-nums leading-tight">{fmt(order.total_price)}</p>
-                        <p className="text-[10px] text-main font-bold">UZS</p>
+                        <p className="text-lg font-black text-gray-900 dark:text-white tabular-nums leading-tight">{formatMoney(order.total_price)}</p>
+                        <p className="text-[10px] text-main font-bold">{t("currency", { ns: "orders" })}</p>
                         {order.paid_amount > 0 && (
-                            <p className="text-[10px] text-emerald-500 font-semibold mt-1">✓ {fmt(order.paid_amount)} {t("paid").toLowerCase()}</p>
+                            <p className="text-[10px] text-emerald-500 font-semibold mt-1">✓ {formatMoney(order.paid_amount)} {t("paid").toLowerCase()}</p>
                         )}
                     </div>
                     {(onEdit || onDelete) && (
