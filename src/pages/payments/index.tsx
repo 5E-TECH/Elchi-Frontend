@@ -194,6 +194,9 @@ const INIT = {
 
 type PaymentsFilterFormValues = typeof INIT;
 
+const normalizeCashboxTypeFilter = (value: string) =>
+  value === "couriers" || value === "courier" ? "branch" : value;
+
 const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
   yup.object({
     operation_type: yup.string().defined(),
@@ -457,7 +460,11 @@ const Payments = () => {
     const params: Record<string, string | number> = { page, limit };
     (Object.entries(filters) as [keyof typeof INIT, string][]).forEach(
       ([key, value]) => {
-        if (value) params[key] = value;
+        const normalizedValue = key === "cashbox_type"
+          ? normalizeCashboxTypeFilter(value)
+          : value;
+
+        if (normalizedValue) params[key] = normalizedValue;
       },
     );
     return params;
@@ -498,7 +505,7 @@ const Payments = () => {
   const cashboxTypeOptions = useMemo<FilterSelectOption[]>(
     () => [
       { value: "main", label: t("mainCashbox"), icon: Landmark },
-      { value: "couriers", label: t("courierShort"), icon: Truck },
+      { value: "branch", label: t("branchMainCashboxLabel"), icon: Landmark },
       { value: "markets", label: t("marketShort"), icon: Store },
     ],
     [t],

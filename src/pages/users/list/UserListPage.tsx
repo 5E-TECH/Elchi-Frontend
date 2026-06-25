@@ -25,7 +25,7 @@ const UserListPage = memo(() => {
 
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "users",
-    defaultLimit: 10,
+    defaultLimit: 100,
   });
   const previousFiltersKeyRef = useRef("");
   const isUrlHydratedRef = useRef(false);
