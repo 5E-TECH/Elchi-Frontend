@@ -49,6 +49,19 @@ export default defineConfig({
           if (id.includes("html2canvas")) {
             return "vendor-html2canvas";
           }
+
+          // ─── Qo'shimcha chunk ajratmalar ────────────────────────────────
+          if (id.includes("lucide-react")) {
+            return "vendor-icons";
+          }
+
+          if (id.includes("i18next") || id.includes("react-i18next")) {
+            return "vendor-i18n";
+          }
+
+          if (id.includes("qrcode") || id.includes("jsqr")) {
+            return "vendor-qrcode";
+          }
         },
       },
     },
