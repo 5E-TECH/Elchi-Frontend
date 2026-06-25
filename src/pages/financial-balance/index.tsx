@@ -210,7 +210,7 @@ const FinancialBalance = () => {
       </div>
 
       <div className="shrink-0 px-4 pb-3">
-        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-primary p-2 dark:border-primarydark/60 dark:bg-maindark sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-purple-200/80 bg-purple-50/80 p-2 shadow-sm dark:border-purple-400/25 dark:bg-[#201a33] sm:grid-cols-3">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
 
@@ -219,9 +219,9 @@ const FinancialBalance = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
-                  ? "bg-[var(--color-main-soft)] text-[var(--color-main)] dark:bg-primarydark/70 dark:text-primary"
-                  : "text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:bg-[var(--color-table-row-alt)] dark:hover:bg-primarydark/70 hover:text-[var(--color-maindark)] dark:hover:text-[var(--color-primary)]"
+                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
+                  ? "border-purple-500 bg-gradient-to-r from-purple-600 to-violet-500 text-white shadow-lg shadow-purple-500/25 dark:border-purple-300 dark:from-purple-500 dark:to-violet-500 dark:text-white"
+                  : "border-purple-200 bg-white text-purple-700 shadow-sm hover:border-purple-400 hover:bg-purple-100 hover:text-purple-900 dark:border-purple-400/25 dark:bg-[#2f2946] dark:text-purple-100 dark:hover:border-purple-300/70 dark:hover:bg-[#3b3158] dark:hover:text-white"
                   }`}
               >
                 {tab.icon}

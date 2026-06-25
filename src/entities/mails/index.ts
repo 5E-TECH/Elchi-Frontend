@@ -435,7 +435,7 @@ export const useMails = () => {
       queryFn: () =>
         isManagerRole
           ? getManagerScopedPosts(
-              (params?.status as "new" | "sent" | "received" | "canceled" | "canceled_received" | undefined) ?? "received",
+              params?.status as "new" | "sent" | "received" | "canceled" | "canceled_received" | undefined,
               params,
             )
           : api

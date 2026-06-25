@@ -313,7 +313,7 @@ const OldMails = () => {
     isLoading: isBatchLoading,
     isError: isBatchError,
   } = useBatches(
-    isAllBatchMode ? { page: 1, limit: OLD_MAILS_COLLECTION_LIMIT, statusRaw: "RECEIVED" } : undefined,
+    isAllBatchMode ? { page: 1, limit: OLD_MAILS_COLLECTION_LIMIT } : undefined,
     { enabled: isAllBatchMode },
   );
   const { data: regionsData, isLoading: regionsLoading } = useGetRegions(true);

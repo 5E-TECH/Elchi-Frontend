@@ -2,9 +2,26 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
+const usePolling = process.env.VITE_USE_POLLING !== "false";
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    watch: {
+      ignored: [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/.git/**",
+        "**/.vite/**",
+        "**/coverage/**",
+        "**/playwright-report/**",
+        "**/test-results/**",
+      ],
+      usePolling,
+      interval: 500,
+    },
+  },
   build: {
     outDir: "dist",
     rollupOptions: {
