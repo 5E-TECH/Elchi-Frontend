@@ -6,6 +6,7 @@ import * as yup from "yup";
 import { ArrowDownLeft, ArrowUpRight, Landmark, Loader2, Store, Truck, WalletCards } from "lucide-react";
 import type { PaymentRow } from "./patmentHistoryTable";
 import { useCashBox } from "../../../entities/payments";
+import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { useMarkets } from "../../../entities/markets";
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
@@ -21,6 +22,22 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const toOptionalString = (value: unknown) => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return undefined;
+};
+
+const toActor = (value: unknown): PaymentRow["user"] => {
+  if (!value || typeof value !== "object") return null;
+  return value as PaymentRow["user"];
+};
+
+const getActorDisplayName = (actor: PaymentRow["user"]) =>
+  actor?.name?.trim() ||
+  actor?.full_name?.trim() ||
+  [actor?.first_name, actor?.last_name].filter(Boolean).join(" ").trim();
+
 const reduceBalanceTowardsZero = (balance: number, amount: number) =>
   balance < 0 ? Math.min(0, balance + amount) : Math.max(0, balance - amount);
 
@@ -35,6 +52,35 @@ const parseIsoDate = (value: string) => {
   const [year, month, day] = value.split("-").map(Number);
   if (!year || !month || !day) return null;
   return new Date(year, month - 1, day);
+};
+
+const getArrayFromResponse = (value: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(value)) return value as Record<string, unknown>[];
+
+  if (!value || typeof value !== "object") return [];
+
+  const record = value as Record<string, unknown>;
+  const data = record.data as Record<string, unknown> | Record<string, unknown>[] | undefined;
+
+  if (Array.isArray(record.items)) return record.items as Record<string, unknown>[];
+  if (Array.isArray(record.history)) return record.history as Record<string, unknown>[];
+  if (Array.isArray(record.cashboxHistory)) return record.cashboxHistory as Record<string, unknown>[];
+  if (Array.isArray(data)) return data;
+
+  if (data && typeof data === "object") {
+    if (Array.isArray(data.items)) return data.items as Record<string, unknown>[];
+    if (Array.isArray(data.history)) return data.history as Record<string, unknown>[];
+    if (Array.isArray(data.cashboxHistory)) return data.cashboxHistory as Record<string, unknown>[];
+  }
+
+  return [];
+};
+
+const isBranchToHqHistoryItem = (item: Record<string, unknown>) => {
+  const sourceType = toOptionalString(item["source_type"]) ?? toOptionalString(item["type"]);
+  const normalizedSourceType = sourceType?.trim().toLowerCase().replaceAll("-", "_");
+
+  return normalizedSourceType === "branch_to_main" || normalizedSourceType === "branch_to_hq";
 };
 
 type CashDetailType = "market" | "courier" | "branch";
@@ -113,7 +159,14 @@ const CashDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
   const navigate = useNavigate();
-  const { useGetCashBoxById, createPaymentCourier, createPaymentBranchToMain, createPaymentMarket } = useCashBox();
+  const {
+    useGetCashBoxById,
+    useGetFinanceHistory,
+    createPaymentCourier,
+    createPaymentBranchToMain,
+    createPaymentMarket,
+  } = useCashBox();
+  const { useGetManagerPayableToHq } = useFinanceCoverage();
   const { useGetMarkets } = useMarkets();
   const { apiRequest } = useAppNotification();
 
@@ -122,21 +175,45 @@ const CashDetail = () => {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [balanceOverride, setBalanceOverride] = useState<number | null>(null);
 
-  const detailParams = useMemo(
+  const isBranchDetailRequest = state?.type === "branch";
+  const dateParams = useMemo(
     () => ({
-      with_history: true,
-      page: 1,
-      limit: 100,
       ...(selectedDateFrom && { fromDate: selectedDateFrom }),
       ...(selectedDateTo && { toDate: selectedDateTo }),
     }),
     [selectedDateFrom, selectedDateTo],
   );
-  const { data: cashboxResponse, isLoading, refetch: refetchCashbox } = useGetCashBoxById(
+  const detailParams = useMemo(
+    () => ({
+      with_history: true,
+      page: 1,
+      limit: 100,
+      ...dateParams,
+    }),
+    [dateParams],
+  );
+  const branchHistoryParams = useMemo(
+    () => ({
+      page: 1,
+      limit: 100,
+      source_type: "branch_to_main",
+      ...dateParams,
+    }),
+    [dateParams],
+  );
+  const byUserCashboxQuery = useGetCashBoxById(
     id || "",
-    Boolean(id),
+    Boolean(id) && !isBranchDetailRequest,
     detailParams,
   );
+  const managerPayableQuery = useGetManagerPayableToHq(isBranchDetailRequest, dateParams);
+  const branchHistoryQuery = useGetFinanceHistory(branchHistoryParams, isBranchDetailRequest);
+  const activeCashboxQuery = isBranchDetailRequest ? managerPayableQuery : byUserCashboxQuery;
+  const {
+    data: cashboxResponse,
+    isLoading,
+    refetch: refetchCashbox,
+  } = activeCashboxQuery;
 
   const detailData = cashboxResponse?.data;
   const detailEntry = Array.isArray(detailData) ? detailData[0] : detailData;
@@ -156,13 +233,14 @@ const CashDetail = () => {
         : "—",
   };
   const cashboxHistory = useMemo(
-    () =>
-      Array.isArray(detailEntry?.cashboxHistory)
-        ? detailEntry.cashboxHistory
-        : Array.isArray(detailEntry?.history)
-          ? detailEntry.history
-          : [],
-    [detailEntry],
+    () => {
+      if (isBranchDetailRequest) {
+        return getArrayFromResponse(branchHistoryQuery.data);
+      }
+
+      return getArrayFromResponse(detailEntry);
+    },
+    [branchHistoryQuery.data, detailEntry, isBranchDetailRequest],
   );
   const user = detailEntry?.user ?? cashbox?.user ?? state?.entity;
 
@@ -246,7 +324,10 @@ const CashDetail = () => {
     setBalanceOverride(reduceBalanceTowardsZero(settlementBalance, amount));
     resetActionForm();
 
-    const refreshed = await refetchCashbox();
+    const [refreshed] = await Promise.all([
+      refetchCashbox(),
+      isBranchDetailRequest ? branchHistoryQuery.refetch() : Promise.resolve(),
+    ]);
     const refreshedData = refreshed.data?.data;
     const refreshedEntry = Array.isArray(refreshedData) ? refreshedData[0] : refreshedData;
     const refreshedBalance =
@@ -266,10 +347,30 @@ const CashDetail = () => {
   };
 
   const historyRows = useMemo<PaymentRow[]>(() => {
-    return cashboxHistory.map((item: Record<string, unknown>, index: number) => {
+    const visibleHistory = isBranchDetailRequest
+      ? cashboxHistory.filter(isBranchToHqHistoryItem)
+      : cashboxHistory;
+
+    return visibleHistory.map((item: Record<string, unknown>, index: number) => {
       const amount = toNumber(item["amount"]);
+      const createdByUser =
+        toActor(item["created_by_user"]) ??
+        toActor(item["createdByUser"]) ??
+        toActor(item["createdBy"]);
+      const sourceUser =
+        toActor(item["source_user"]) ??
+        toActor(item["sourceUser"]);
+      const rowUser = toActor(item["user"]);
+      const actorName =
+        getActorDisplayName(createdByUser) ||
+        getActorDisplayName(sourceUser) ||
+        getActorDisplayName(rowUser);
       const operationType =
-        item["operation_type"] ?? (amount >= 0 ? "income" : "expense");
+        typeof item["operation_type"] === "string"
+          ? item["operation_type"]
+          : amount >= 0
+            ? "income"
+            : "expense";
 
       return {
         id: String(
@@ -277,23 +378,32 @@ const CashDetail = () => {
         ),
         amount,
         operation_type: operationType,
-        source_type: (item["source_type"] as string | undefined) ?? (item["type"] as string | undefined),
-        source_id: item["source_id"],
-        cashbox_type: (item["cashbox_type"] as string | undefined) ?? cashbox?.cashbox_type,
+        source_type: toOptionalString(item["source_type"]) ?? toOptionalString(item["type"]),
+        source_id: toOptionalString(item["source_id"]),
+        cashbox_type: toOptionalString(item["cashbox_type"]) ?? toOptionalString(cashbox?.cashbox_type),
         created_by:
-          (item["created_by"] as string | undefined) ??
-          (item["createdBy"] as string | undefined) ??
-          ((item["user"] as { name?: string } | undefined)?.name) ??
-          entityName,
+          actorName ||
+          (
+            toOptionalString(item["created_by"]) ??
+            toOptionalString(item["createdBy"]) ??
+            entityName
+          ),
+        created_by_user: createdByUser,
+        createdByUser: toActor(item["createdByUser"]),
+        user: rowUser,
+        source_user: sourceUser,
+        sourceUser: toActor(item["sourceUser"]),
         payment_method:
-          (item["payment_method"] as string | undefined) ??
-          (item["method"] as string | undefined),
+          toOptionalString(item["payment_method"]) ??
+          toOptionalString(item["method"]),
         payment_date:
-          (item["payment_date"] as string | undefined) ?? (item["createdAt"] as string | undefined) ?? (item["created_at"] as string | undefined),
-        comment: item["comment"],
-        createdAt: item["createdAt"],
-        created_at: item["created_at"],
-        cashbox: item["cashbox"],
+          toOptionalString(item["payment_date"]) ??
+          toOptionalString(item["createdAt"]) ??
+          toOptionalString(item["created_at"]),
+        comment: toOptionalString(item["comment"]),
+        createdAt: toOptionalString(item["createdAt"]),
+        created_at: toOptionalString(item["created_at"]),
+        cashbox: item["cashbox"] as PaymentRow["cashbox"],
       };
     });
   }, [cashbox?.cashbox_type, cashboxHistory, entityName]);

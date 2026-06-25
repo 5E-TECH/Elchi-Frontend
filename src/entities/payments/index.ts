@@ -184,11 +184,12 @@ export const useCashBox = () => {
     },
   });
 
-  const useGetFinanceHistory = (params?: any) =>
+  const useGetFinanceHistory = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [cashbox, "finance-history", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.HISTORY, { params }).then((res) => res.data),
+      enabled,
     });
 
   const useGetFinanceHistoryById = (id: string | null, enabled: boolean = true) =>

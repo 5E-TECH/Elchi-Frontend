@@ -168,6 +168,7 @@
     "empty": "No tracking history found",
     "error": "An error occurred while loading data",
     "loadMore": "Load more",
+    "adminOnly": "Admin only",
     "by": "Changed by",
     "role": "Role",
     "note": "Note",
