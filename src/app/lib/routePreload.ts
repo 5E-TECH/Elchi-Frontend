@@ -18,22 +18,31 @@ const routeImporters: Record<string, RouteImporter> = {
   "/notifications": () => import("../../pages/notifications"),
   "/branches": () => import("../../pages/branches"),
   "/logs": () => import("../../pages/logs/index"),
+  // ─── Qo'shimcha route'lar ────────────────────────────────────────────────
+  "/scan": () => import("../../pages/scan"),
+  "/settings": () => import("../../pages/settings/ui/SettingsPage"),
+  "/profile": () => import("../../pages/profile/ui/ProfilePage"),
 };
 
 const routePreloadCache = new Map<string, Promise<unknown>>();
 
-export const preloadRoute = (path: string) => {
+export const preloadRoute = (path: string): Promise<unknown> | undefined => {
   const importer = routeImporters[path];
   if (!importer) return;
 
   if (!routePreloadCache.has(path)) {
-    routePreloadCache.set(path, importer());
+    // Network xatolarida unhandled rejection oldini olish
+    const promise = importer().catch(() => {
+      // Preload muvaffaqiyatsiz bo'lsa — keshdan o'chirib, keyingi urinishga ruxsat berish
+      routePreloadCache.delete(path);
+    });
+    routePreloadCache.set(path, promise);
   }
 
   return routePreloadCache.get(path);
 };
 
-export const preloadRoutes = (paths: string[]) => {
+export const preloadRoutes = (paths: string[]): void => {
   paths.forEach((path) => {
     void preloadRoute(path);
   });

@@ -25,7 +25,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const { logout } = useLogout();
     const { theme } = useTheme();
     const roleState = useSelector((state: RootState) => state.role);
-    const { control } = useForm<MobileMenuSearchValues>({
+    const { control, handleSubmit } = useForm<MobileMenuSearchValues>({
         defaultValues: { search: "" },
     });
     const navigate = useNavigate();
@@ -33,6 +33,13 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const currentLogo = theme === "dark" ? LogoTextdark : LogoText;
 
     if (!isOpen) return null;
+
+    const onSearch = ({ search }: MobileMenuSearchValues) => {
+        const trimmed = search.trim();
+        if (!trimmed) return;
+        onClose();
+        navigate(`/orders?search=${encodeURIComponent(trimmed)}`);
+    };
 
     return (
         <div className="fixed inset-0 z-60 overflow-hidden lg:hidden">
@@ -49,31 +56,35 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                     <div className="flex items-center justify-between">
                         <img src={currentLogo} alt="Logo" className="h-12 w-auto object-contain" />
                         <button
+                            type="button"
                             onClick={onClose}
                             className="rounded-xl bg-black/5 p-2 text-maindark/60 transition-colors hover:text-maindark dark:bg-white/5 dark:text-white/60 dark:hover:text-white"
+                            aria-label={t("close")}
                         >
                             <X size={28} />
                         </button>
                     </div>
 
                     {/* Search in Menu */}
-                    <Controller
-                        control={control}
-                        name="search"
-                        render={({ field }) => (
-                            <GlobalSearchInput
-                                name={field.name}
-                                value={field.value}
-                                onBlur={field.onBlur}
-                                placeholder={t("search")}
-                                className="w-full"
-                                inputClassName="rounded-2xl border border-black/10 bg-black/5 py-3.5 text-maindark placeholder:text-maindark/35 focus:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30 dark:focus:bg-white/10"
-                                iconClassName="text-maindark/40 group-focus-within:text-main dark:text-white/40"
-                                clearButtonClassName="text-maindark/40 hover:text-maindark dark:text-white/40 dark:hover:text-white"
-                                onValueChange={field.onChange}
-                            />
-                        )}
-                    />
+                    <form onSubmit={handleSubmit(onSearch)}>
+                        <Controller
+                            control={control}
+                            name="search"
+                            render={({ field }) => (
+                                <GlobalSearchInput
+                                    name={field.name}
+                                    value={field.value}
+                                    onBlur={field.onBlur}
+                                    placeholder={t("search")}
+                                    className="w-full"
+                                    inputClassName="rounded-2xl border border-black/10 bg-black/5 py-3.5 text-maindark placeholder:text-maindark/35 focus:bg-black/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30 dark:focus:bg-white/10"
+                                    iconClassName="text-maindark/40 group-focus-within:text-main dark:text-white/40"
+                                    clearButtonClassName="text-maindark/40 hover:text-maindark dark:text-white/40 dark:hover:text-white"
+                                    onValueChange={field.onChange}
+                                />
+                            )}
+                        />
+                    </form>
                 </div>
 
                 {/* Menu Links intentionally removed for mobile as requested */}
@@ -114,8 +125,15 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                         </div>
                     </button>
 
-                    {/* Notifications in Menu - Just UI for now */}
-                    <button className="group flex w-full items-center justify-between rounded-2xl px-4 py-4 text-maindark/65 transition-all hover:bg-black/5 hover:text-maindark dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white">
+                    {/* Notifications — profile sahifasiga yo'naltirish */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onClose();
+                            navigate("/notifications");
+                        }}
+                        className="group flex w-full items-center justify-between rounded-2xl px-4 py-4 text-maindark/65 transition-all hover:bg-black/5 hover:text-maindark dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
+                    >
                         <div className="flex items-center gap-4">
                             <span className="relative rounded-xl bg-black/5 p-2 transition-colors group-hover:bg-main/20 dark:bg-white/5">
                                 <Bell size={20} />
@@ -129,15 +147,22 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 
                 {/* Footer Section - Profile & Logout */}
                 <div className="space-y-4 border-t border-black/10 bg-black/5 p-6 dark:border-white/5 dark:bg-white/[0.02]">
-                    <div className="flex items-center gap-3 rounded-2xl border border-black/10 bg-black/5 p-4 dark:border-white/5 dark:bg-white/5">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onClose();
+                            navigate("/profile");
+                        }}
+                        className="flex w-full items-center gap-3 rounded-2xl border border-black/10 bg-black/5 p-4 transition-all hover:bg-black/8 dark:border-white/5 dark:bg-white/5 dark:hover:bg-white/8"
+                    >
                         <div className="w-12 h-12 rounded-2xl bg-main flex items-center justify-center shadow-lg shadow-main/20">
                             <User size={24} className="text-white" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 text-left">
                             <p className="text-sm font-black uppercase tracking-tight text-maindark dark:text-white">{roleState.name || "Admin User"}</p>
                             <p className="mt-1 text-[10px] font-bold uppercase leading-none tracking-widest text-maindark/45 dark:text-white/40">{roleState.role || "Super Admin"}</p>
                         </div>
-                    </div>
+                    </button>
 
                     <button
                         onClick={logout}
@@ -153,3 +178,4 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 };
 
 export default memo(MobileMenu);
+

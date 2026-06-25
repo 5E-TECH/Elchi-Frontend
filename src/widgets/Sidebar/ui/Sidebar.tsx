@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { SIDEBAR_CONFIG, getSidebarConfigForUser, type SidebarUserRole } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, User } from "lucide-react";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoIcon from "../../../shared/assets/logo qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
@@ -22,6 +22,7 @@ const Sidebar = () => {
 
   // ─── User role'ni Redux dan oling ────────────────────────────────────────
   const role = useSelector((state: RootState) => state.role.role);
+  const roleName = useSelector((state: RootState) => state.role.name);
   const user = useSelector((state: RootState) => state.user.user);
   const userRole = role && role in SIDEBAR_CONFIG ? (role as SidebarUserRole) : null;
 
@@ -41,6 +42,14 @@ const Sidebar = () => {
   // ─── Logo rasmlarini tanlash ──────────────────────────────────────────────
   const currentLogoText = isDarkMode ? LogoTextdark : LogoText;
   const currentLogoIcon = isDarkMode ? LogoIcondark : LogoIcon;
+
+  // ─── User initials (avatar uchun) ────────────────────────────────────────
+  const userInitials = useMemo(() => {
+    if (!roleName) return null;
+    const parts = roleName.trim().split(" ");
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return roleName.slice(0, 2).toUpperCase();
+  }, [roleName]);
 
   return (
     <aside
@@ -76,14 +85,43 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Footer with Toggle Button */}
+      {/* Footer — User info + Toggle */}
       <div
-        className={`shrink-0 p-3 flex bg-primary/5 dark:bg-maindark/50 ${!isOpen ? "flex-col space-y-3 items-center" : "items-center justify-between"
+        className={`shrink-0 border-t border-black/5 dark:border-white/5 p-3 flex bg-primary/5 dark:bg-maindark/50 ${!isOpen ? "flex-col space-y-3 items-center" : "items-center justify-between gap-2"
           }`}
       >
+        {/* User Info */}
+        {isOpen ? (
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden rounded-xl px-2 py-1.5">
+            {/* Avatar */}
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-main text-[11px] font-black text-white shadow-md shadow-main/30">
+              {userInitials ?? <User size={14} />}
+            </div>
+            {/* Name + Role */}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12px] font-black uppercase tracking-tight text-maindark dark:text-white">
+                {roleName || "—"}
+              </p>
+              <p className="truncate text-[10px] font-bold uppercase tracking-widest text-maindark/45 dark:text-white/40">
+                {role || "—"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Collapsed: faqat avatar */
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-main text-[11px] font-black text-white shadow-md shadow-main/30"
+            title={roleName ?? undefined}
+          >
+            {userInitials ?? <User size={14} />}
+          </div>
+        )}
+
+        {/* Toggle Button */}
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className="flex items-center justify-center rounded-lg p-2 transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10"
+          aria-label={isOpen ? t("collapse") : t("expand")}
+          className="flex shrink-0 items-center justify-center rounded-lg p-2 transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10"
         >
           {isOpen ? (
             <>
@@ -100,3 +138,4 @@ const Sidebar = () => {
 };
 
 export default memo(Sidebar);
+

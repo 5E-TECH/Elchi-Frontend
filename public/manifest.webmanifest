@@ -1,14 +1,23 @@
 {
   "name": "Elchi Pochta",
   "short_name": "Elchi",
-  "description": "Elchi Pochta — logistika va pochta xizmati",
+  "description": "O'zbekiston bo'ylab tezkor va ishonchli kuryer va logistika xizmati. Buyurtmalarni kuzatish, pochta jo'natish.",
+  "lang": "uz",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#202954",
   "theme_color": "#202954",
+  "categories": ["business", "productivity", "logistics"],
   "icons": [
+    {
+      "src": "/favicon-48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
@@ -26,6 +35,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buyurtmalar",
+      "short_name": "Buyurtmalar",
+      "description": "Buyurtmalar ro'yxatini ko'rish",
+      "url": "/orders",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Yangi buyurtmalar",
+      "short_name": "Yangi",
+      "description": "Yangi buyurtmalarni ko'rish",
+      "url": "/new-orders",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

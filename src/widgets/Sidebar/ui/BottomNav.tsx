@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -22,18 +22,24 @@ const BottomNav = () => {
     const user = useSelector((state: RootState) => state.user.user);
     const userRole = (role as SidebarUserRole) || "admin";
 
-    // ─── Mobil uchun admin/superadmin da faqat 5 bo'lim ──────────────────────
-    const sourceItems = getSidebarConfigForUser(userRole, user);
-    const navItems =
-        userRole === "admin" || userRole === "superadmin"
-            ? sourceItems.filter((item) =>
+    // ─── navItems memoized — role/user o'zgarmasa qayta hisoblanmaydi ─────────
+    const navItems = useMemo(() => {
+        const sourceItems = getSidebarConfigForUser(userRole, user);
+
+        if (userRole === "admin" || userRole === "superadmin") {
+            return sourceItems.filter((item) =>
                 MOBILE_ADMIN_ALLOWED_LABELS.includes(
                     item.label as (typeof MOBILE_ADMIN_ALLOWED_LABELS)[number],
                 ),
-            )
-            : userRole === "courier"
-                ? sourceItems.slice(0, 4)
-                : sourceItems;
+            );
+        }
+
+        if (userRole === "courier") {
+            return sourceItems.slice(0, 4);
+        }
+
+        return sourceItems;
+    }, [userRole, user]);
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up lg:hidden">
