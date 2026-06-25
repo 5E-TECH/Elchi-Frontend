@@ -19,9 +19,15 @@ type OrderTrackingProps = {
 
 export const OrderTracking = ({ orderId, currentStatus, context }: OrderTrackingProps) => {
   const { t } = useTranslation("orders");
-  const { events, isLoading, isError, errorMessage, hasMore, loadMore } = useOrderTracking(orderId);
   const currentUser = useSelector((state: RootState) => state.user.user);
+  const currentRole = useSelector((state: RootState) => state.role.role);
+  const canViewTracking = currentRole === "admin" || currentRole === "superadmin";
+  const { events, isLoading, isError, errorMessage, hasMore, loadMore } = useOrderTracking(orderId, canViewTracking);
   void currentStatus;
+
+  if (!canViewTracking) {
+    return null;
+  }
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/8 dark:bg-white/4 sm:p-6">
@@ -34,6 +40,9 @@ export const OrderTracking = ({ orderId, currentStatus, context }: OrderTracking
             <h2 className="text-[18px] font-medium text-[var(--color-maindark)] dark:text-primary">
               {t("tracking.title")}
             </h2>
+            <span className="mt-1 inline-flex rounded-md bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-500">
+              {t("tracking.adminOnly")}
+            </span>
             {events.length > 0 ? (
               <p className="mt-1 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 {t("tracking.oldToNew", { count: events.length })}

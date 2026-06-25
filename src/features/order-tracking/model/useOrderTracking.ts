@@ -112,7 +112,7 @@ const getPayloadMeta = (payload: ActivityLogResponse | TrackingEvent[]) => {
   };
 };
 
-export const useOrderTracking = (orderId: string | number): UseOrderTrackingResult => {
+export const useOrderTracking = (orderId: string | number, enabled = true): UseOrderTrackingResult => {
   const [events, setEvents] = useState<TrackingEvent[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -124,6 +124,11 @@ export const useOrderTracking = (orderId: string | number): UseOrderTrackingResu
   const fetchPage = useCallback(
     async (nextPage: number, replace: boolean) => {
       const currentRequestId = ++requestIdRef.current;
+
+      if (!enabled) {
+        setIsLoading(false);
+        return;
+      }
 
       setIsLoading(true);
       setIsError(false);
@@ -178,15 +183,23 @@ export const useOrderTracking = (orderId: string | number): UseOrderTrackingResu
         }
       }
     },
-    [orderId],
+    [enabled, orderId],
   );
 
   useEffect(() => {
     setEvents([]);
     setPage(1);
     setHasMore(false);
+
+    if (!enabled) {
+      setIsLoading(false);
+      setIsError(false);
+      setErrorMessage("");
+      return;
+    }
+
     void fetchPage(1, true);
-  }, [fetchPage, orderId]);
+  }, [enabled, fetchPage, orderId]);
 
   const loadMore = useCallback(() => {
     if (isLoading || !hasMore) {

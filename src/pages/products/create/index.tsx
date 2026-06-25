@@ -26,11 +26,18 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
 import BackButton from "../../../shared/ui/BackButton";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 
 interface ExistingProduct {
   id: number;
   name: string;
-  image: string;
+  image?: string | null;
+  image_url?: string | null;
+  imageUrl?: string | null;
+  photo?: string | null;
+  photo_url?: string | null;
+  file?: string | null;
+  url?: string | null;
 }
 
 interface CreateProductFormValues {
@@ -45,21 +52,38 @@ const createProductSchema: yup.ObjectSchema<CreateProductFormValues> = yup.objec
 
 // ─── Cell Components ────────────────────────────────────────────────────────────
 
-const ProductNameCell = memo(({ item }: { item: ExistingProduct }) => (
-  <div className="flex items-center gap-2">
-    {item.image ? (
-      <img
-        src={item.image}
-        alt={item.name}
-        className="w-8 h-8 rounded object-cover"
-        loading="lazy"
-      />
-    ) : (
-      <Box className="w-8 h-8 text-gray-400" />
-    )}
-    <span>{item.name}</span>
-  </div>
-));
+const getProductImageUrl = (product: ExistingProduct): string | undefined =>
+  resolveAssetUrl(
+    product.image_url
+      ?? product.imageUrl
+      ?? product.image
+      ?? product.photo_url
+      ?? product.photo
+      ?? product.file
+      ?? product.url,
+  );
+
+const ProductNameCell = memo(({ item }: { item: ExistingProduct }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+  const imageUrl = getProductImageUrl(item);
+
+  return (
+    <div className="flex items-center gap-2">
+      {imageUrl && !hasImageError ? (
+        <img
+          src={imageUrl}
+          alt={item.name}
+          className="w-8 h-8 rounded-lg object-cover border border-white/10 bg-main/10"
+          loading="lazy"
+          onError={() => setHasImageError(true)}
+        />
+      ) : (
+        <Box className="w-8 h-8 text-gray-400" />
+      )}
+      <span>{item.name}</span>
+    </div>
+  );
+});
 ProductNameCell.displayName = "ProductNameCell";
 
 
