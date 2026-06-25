@@ -176,6 +176,7 @@
     "empty": "Tracking tarix topilmadi",
     "error": "Ma'lumotlarni yuklashda xatolik yuz berdi",
     "loadMore": "Ko'proq yuklash",
+    "adminOnly": "Faqat admin",
     "by": "Kim tomonidan",
     "role": "Rol",
     "note": "Izoh",
