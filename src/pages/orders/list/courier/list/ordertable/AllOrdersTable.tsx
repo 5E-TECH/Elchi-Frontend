@@ -59,12 +59,13 @@ const renderHarakat = (
 type Props = {
   orders: Order[];
   loading?: boolean;
+  onRowClick?: (order: Order) => void;
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
   onRestore?: (order: Order) => void;
 };
 
-const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Props) => {
+const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRestore }: Props) => {
   const { t } = useTranslation("orders");
   const formatDate = (value: string) =>
     new Date(value).toLocaleString("uz-UZ", {
@@ -178,6 +179,7 @@ const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Pro
       keyExtractor={(row) => row.id}
       loading={loading}
       emptyMessage={t("orderEmpty")}
+      onRowClick={onRowClick}
       mobileRowRender={(row) => (
         <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/4">
           <div className="flex items-start justify-between gap-3">

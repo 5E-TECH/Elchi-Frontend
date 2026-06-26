@@ -347,6 +347,31 @@ const normalizeKey = (value?: string | null) =>
     .replaceAll("-", "_")
     .replaceAll(" ", "_");
 
+const isCourierReturnToWaitingEvent = (event: TrackingEvent) => {
+  const oldStatus = normalizeKey(event.old_value?.status ?? event.from_status);
+  const newStatus = normalizeKey(event.new_value?.status ?? event.to_status);
+
+  return oldStatus === "on_the_road" && newStatus === "waiting";
+};
+
+const getCourierActorName = (event: TrackingEvent) => {
+  for (const source of getEventSources(event)) {
+    const courierName = readNameByKeys(source, [
+      "courier_name",
+      "courierName",
+      "courier_user_name",
+      "courierUserName",
+      "courier",
+    ]);
+
+    if (courierName) {
+      return courierName;
+    }
+  }
+
+  return "";
+};
+
 const getStatusTone = (status?: string | null) => {
   const normalizedStatus = normalizeKey(status);
 
@@ -545,6 +570,22 @@ const getActorName = (event: TrackingEvent, currentUser?: User | null) => {
   const currentUserName = getCurrentUserName(currentUser);
   const eventUserName = asCleanString(event.user_name);
   const changedByRole = normalizeKey(event.changed_by_role);
+  const isSystemActor =
+    normalizeKey(actorName) === "system" ||
+    normalizeKey(event.actor?.role) === "system" ||
+    changedByRole === "system";
+
+  if (isSystemActor && isCourierReturnToWaitingEvent(event)) {
+    const courierName = getCourierActorName(event);
+
+    if (courierName) {
+      return courierName;
+    }
+
+    if (normalizeKey(currentUser?.role) === "courier" && currentUserName) {
+      return currentUserName;
+    }
+  }
 
   if (actorName && normalizeKey(actorName) !== "system") {
     return actorName;
@@ -566,6 +607,17 @@ const getActorName = (event: TrackingEvent, currentUser?: User | null) => {
 const getActorRole = (event: TrackingEvent, currentUser?: User | null) => {
   const actorRole = asCleanString(event.actor?.role);
   const isCurrentUserAction = Boolean(currentUser?.id) && String(event.changed_by) === String(currentUser?.id);
+  const isSystemActor =
+    normalizeKey(actorRole) === "system" ||
+    normalizeKey(event.changed_by_role) === "system";
+
+  if (isSystemActor && isCourierReturnToWaitingEvent(event)) {
+    const courierName = getCourierActorName(event);
+
+    if (courierName || normalizeKey(currentUser?.role) === "courier") {
+      return "courier";
+    }
+  }
 
   if (actorRole && normalizeKey(actorRole) !== "system") {
     return actorRole;
@@ -587,6 +639,14 @@ const getActorPhone = (event: TrackingEvent, currentUser?: User | null) => {
 
   if (actorPhone) {
     return actorPhone;
+  }
+
+  if (
+    isCourierReturnToWaitingEvent(event) &&
+    normalizeKey(event.actor?.role ?? event.changed_by_role) === "system" &&
+    normalizeKey(currentUser?.role) === "courier"
+  ) {
+    return asCleanString(currentUser?.phone_number);
   }
 
   if (
