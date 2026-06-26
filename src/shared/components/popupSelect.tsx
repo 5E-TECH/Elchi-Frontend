@@ -24,6 +24,7 @@ interface PopupSelectProps<T> {
   className?: string; // For modal container
   labelKey?: keyof T; // For default item title
   secondaryLabelKey?: keyof T; // For default item subtitle
+  immediateSelection?: boolean;
 }
 
 const PopupSelect = <T extends object>({
@@ -43,6 +44,7 @@ const PopupSelect = <T extends object>({
   className = "",
   labelKey,
   secondaryLabelKey,
+  immediateSelection = false,
 }: PopupSelectProps<T>) => {
   const { t } = useTranslation("common");
   const resolvedPlaceholder = placeholder ?? t("searchPlaceholder");
@@ -72,6 +74,12 @@ const PopupSelect = <T extends object>({
   };
 
   const handleItemClick = (item: T) => {
+    if (immediateSelection) {
+      onSelect(item);
+      onClose();
+      return;
+    }
+
     if (selectedItem && keyExtractor(selectedItem) === keyExtractor(item)) {
       // Optional deselect logic
     } else {
@@ -194,7 +202,7 @@ const PopupSelect = <T extends object>({
           })}
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-[color:var(--color-border-soft)] dark:border-white/10">
+        {!immediateSelection && <div className="flex justify-end gap-3 pt-4 border-t border-[color:var(--color-border-soft)] dark:border-white/10">
           <Button
             label={resolvedCancelLabel}
             className="!border !border-[color:var(--color-border-soft)] !bg-white !text-maindark !shadow-sm hover:!bg-[var(--color-main-soft)] dark:!border-white/10 dark:!bg-white/8 dark:!text-primary dark:hover:!bg-white/14"
@@ -209,7 +217,7 @@ const PopupSelect = <T extends object>({
               }`}
             onClick={handleSelect}
           />
-        </div>
+        </div>}
       </div>
     </Popup>
   );

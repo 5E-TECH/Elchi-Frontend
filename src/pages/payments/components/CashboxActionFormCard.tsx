@@ -7,7 +7,6 @@ import type {
   UseFormRegister,
 } from "react-hook-form";
 import { CreditCard, Landmark, PackageCheck, Send } from "lucide-react";
-import Select from "../../../shared/ui/Select";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import { formatAmountInput } from "./lib/amountInput";
 import { useTranslation } from "react-i18next";
@@ -159,20 +158,21 @@ const CashboxActionFormCard = ({
               control={control}
               name="marketId"
               render={({ field }) => (
-                <Select
+                <FilterSelect
                   label={marketLabel}
                   name={field.name}
                   value={field.value}
                   onChange={field.onChange}
                   options={marketOptions}
                   placeholder={marketPlaceholder}
-                  required
                   loading={marketLoading}
-                  error={errors.marketId?.message}
-                  className="border-(--color-border-soft)! !bg-[color:var(--color-card-surface-strong)] !py-3 !text-sm !font-semibold dark:!border-white/10 dark:!bg-white/[0.055] dark:!text-primary"
+                  size="sm"
                 />
               )}
             />
+            {errors.marketId?.message && (
+              <p className="mt-1 text-xs text-error">{errors.marketId.message}</p>
+            )}
           </div>
         )}
 

@@ -1,5 +1,6 @@
 // Migrated to React Hook Form
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -28,6 +29,8 @@ import { useTranslation } from "react-i18next";
 import { usePagination } from "../../shared/lib/usePagination";
 import PageContainer from "../../shared/ui/PageContainer";
 import type { RootState } from "../../app/config/store";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const DEFAULT_PAYMENTS_LIMIT = 10;
@@ -44,15 +47,16 @@ type PaymentMarketOption = {
   amount: number;
 };
 
-type PaymentBranchManagerOption = {
+type PaymentCourierOption = {
   id: string;
   name: string;
   phone_number: string;
   role: string;
-  branch: string;
-  branch_id: string;
+  region: string;
+  region_id: string;
   cashbox?: unknown;
   amount: number;
+  isBalanceLoading?: boolean;
 };
 
 type PaymentBranchToMainOption = {
@@ -126,6 +130,50 @@ const getRecordNumber = (
   return fallback;
 };
 
+const getKnownRecordNumber = (record: UnknownRecord, keys: string[]) => {
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && value !== "") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+
+  return undefined;
+};
+
+const getCashboxBalanceFromResponse = (value: unknown) => {
+  const response = asRecord(value);
+  const rawData = response.data;
+  const entry = Array.isArray(rawData)
+    ? asRecord(rawData[0])
+    : asRecord(rawData);
+  const cashbox = asRecord(entry.cashbox ?? entry);
+
+  return getKnownRecordNumber(cashbox, ["balance"]);
+};
+
+const fetchCourierCashboxBalances = async (courierIds: string[]) => {
+  const balances: Record<string, number> = {};
+  const concurrency = 8;
+
+  for (let index = 0; index < courierIds.length; index += concurrency) {
+    const batch = courierIds.slice(index, index + concurrency);
+    const results = await Promise.all(
+      batch.map(async (courierId) => {
+        const response = await api.get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(courierId));
+        return [courierId, getCashboxBalanceFromResponse(response.data)] as const;
+      }),
+    );
+
+    results.forEach(([courierId, balance]) => {
+      if (balance !== undefined) balances[courierId] = balance;
+    });
+  }
+
+  return balances;
+};
+
 const toDataItems = (value: unknown): unknown[] => {
   if (Array.isArray(value)) return value;
 
@@ -194,9 +242,6 @@ const INIT = {
 
 type PaymentsFilterFormValues = typeof INIT;
 
-const normalizeCashboxTypeFilter = (value: string) =>
-  value === "couriers" || value === "courier" ? "branch" : value;
-
 const paymentsFilterSchema: yup.ObjectSchema<PaymentsFilterFormValues> =
   yup.object({
     operation_type: yup.string().defined(),
@@ -244,7 +289,7 @@ const Payments = () => {
   const navigate = useNavigate();
   const { useGetFinanceHistory, useGetCashBoxInfo } = useCashBox();
   const { useGetManagerSettlement, useGetManagerPayableToHq } = useFinanceCoverage();
-  const { useGetUser, useGetManagers } = useUser();
+  const { useGetUser, useGetCouriers } = useUser();
   const { useGetMarkets } = useMarkets();
 
   // ── API dan cashbox ma'lumotlarini olish ──────────────────────────────────
@@ -252,12 +297,12 @@ const Payments = () => {
   const { data: managerSettlementInfo } = useGetManagerSettlement(isManagerRole);
   const { data: managerPayableInfo } = useGetManagerPayableToHq(isManagerRole);
 
-  // Faqat popup ochiq bo'lganda yuklanadi
+  // Faqat popup ochiq bo'lganda yuklanadi.
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
     { status: "active", limit: FULL_LIST_LIMIT },
     isGivenPopupOpen && !isManagerRole,
   );
-  const { data: managersData, isLoading: managersLoading } = useGetManagers(
+  const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
     { status: "active", limit: FULL_LIST_LIMIT },
     isReceivedPopupOpen,
   );
@@ -368,35 +413,74 @@ const Payments = () => {
     [marketsData],
   );
 
-  // ── To be received popup uchun branch managerlar list ─────────────────────
-  const branchManagersList = useMemo<PaymentBranchManagerOption[]>(
+  // ── To be received popup uchun kuryerlar list ─────────────────────────────
+  const courierCandidates = useMemo<PaymentCourierOption[]>(
     () =>
-      toDataItems(managersData)
-        .map((manager: unknown) => {
-          const m = asRecord(manager);
-          const branch = asRecord(m.branch);
-          const cashbox = asRecord(m.cashbox);
+      toDataItems(couriersData)
+        .map((courier: unknown) => {
+          const c = asRecord(courier);
+          const region = asRecord(c.region);
+          const cashbox = asRecord(c.cashbox ?? c.cashBox ?? c.cash_box ?? c.kassa);
 
           return {
-            id: getRecordString(m, "branch_id", getRecordString(branch, "id", getRecordString(m, "id"))),
-            name: getRecordString(branch, "name", getRecordString(m, "name")),
-            phone_number: getRecordString(m, "phone_number", getRecordString(m, "phone")),
-            role: "branch",
-            branch: getRecordString(branch, "name", t("unknown")),
-            branch_id: getRecordString(m, "branch_id", getRecordString(branch, "id")),
-            cashbox: m.cashbox,
-            amount: toNumber(
-              m.olinishi_kerak ??
-                m.berilishi_kerak ??
-                m.payable_to_hq ??
-                cashbox.olinishi_kerak ??
-                cashbox.balance ??
-                m.amount,
+            id: getRecordString(c, "id"),
+            name: getRecordString(c, "name"),
+            phone_number: getRecordString(c, "phone_number", getRecordString(c, "phone")),
+            role: getRecordString(c, "role", "courier"),
+            region: getRecordString(region, "name", t("unknown")),
+            region_id: getRecordString(region, "id", getRecordString(c, "region_id")),
+            cashbox: c.cashbox,
+            amount: getRecordNumber(
+              c,
+              [
+                "olinishi_kerak",
+                "to_be_received",
+                "toBeReceived",
+                "receivable",
+                "courier_receivable",
+                "balance",
+                "amount",
+              ],
+              getRecordNumber(
+                cashbox,
+                [
+                  "olinishi_kerak",
+                  "to_be_received",
+                  "toBeReceived",
+                  "receivable",
+                  "courier_receivable",
+                  "balance",
+                  "amount",
+                ],
+              ),
             ),
           };
         })
-        .filter((manager: PaymentBranchManagerOption) => manager.id),
-    [managersData, t],
+        .filter((courier: PaymentCourierOption) => courier.id),
+    [couriersData, t],
+  );
+  const courierIds = useMemo(
+    () => courierCandidates.map((courier) => courier.id),
+    [courierCandidates],
+  );
+  const {
+    data: courierCashboxBalances,
+    isLoading: isCourierBalancesLoading,
+  } = useQuery({
+    queryKey: ["courier-cashbox-balances", courierIds],
+    queryFn: () => fetchCourierCashboxBalances(courierIds),
+    enabled: isReceivedPopupOpen && courierIds.length > 0,
+    staleTime: 30_000,
+  });
+  const couriersList = useMemo<PaymentCourierOption[]>(
+    () =>
+      courierCandidates.map((courier) => ({
+        ...courier,
+        amount: courierCashboxBalances?.[courier.id] ?? courier.amount,
+        isBalanceLoading:
+          isCourierBalancesLoading && courierCashboxBalances?.[courier.id] === undefined,
+      })),
+    [courierCandidates, courierCashboxBalances, isCourierBalancesLoading],
   );
 
   // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
@@ -462,11 +546,7 @@ const Payments = () => {
     const params: Record<string, string | number> = { page, limit };
     (Object.entries(filters) as [keyof typeof INIT, string][]).forEach(
       ([key, value]) => {
-        const normalizedValue = key === "cashbox_type"
-          ? normalizeCashboxTypeFilter(value)
-          : value;
-
-        if (normalizedValue) params[key] = normalizedValue;
+        if (value) params[key] = value;
       },
     );
     return params;
@@ -507,7 +587,7 @@ const Payments = () => {
   const cashboxTypeOptions = useMemo<FilterSelectOption[]>(
     () => [
       { value: "main", label: t("mainCashbox"), icon: Landmark },
-      { value: "branch", label: t("branchMainCashboxLabel"), icon: Landmark },
+      { value: "couriers", label: t("courierShort"), icon: Truck },
       { value: "markets", label: t("marketShort"), icon: Store },
     ],
     [t],
@@ -728,15 +808,15 @@ const Payments = () => {
       />
 
       {/* To be received popup */}
-      <PopupSelect<PaymentBranchManagerOption>
+      <PopupSelect<PaymentCourierOption>
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
-        data={branchManagersList}
+        data={couriersList}
         title={t("toBeReceived")}
-        description={managersLoading ? t("loadingLabel") : t("selectBranchManagerDescription")}
-        icon={<Landmark size={20} />}
+        description={couriersLoading ? t("loadingLabel") : t("selectCourierDescription")}
+        icon={<Truck size={20} />}
         keyExtractor={(item) => item.id}
-        searchKeys={["name", "branch"]}
+        searchKeys={["name", "region"]}
         labelKey="name"
         placeholder={t("searchPlaceholder")}
         selectLabel={t("selectLabel")}
@@ -744,7 +824,7 @@ const Payments = () => {
         onSelect={(item) => {
           setIsReceivedPopupOpen(false);
           navigate(`/payments/cash-detail/${item.id}`, {
-            state: { type: "branch", entity: item },
+            state: { type: "courier", entity: item },
           });
         }}
         renderItem={(item, isSelected) => (
@@ -753,7 +833,7 @@ const Payments = () => {
               <div
                 className={`w-9 h-9 rounded-lg flex items-center justify-center ${isSelected ? "bg-white/20" : "bg-orange-500/10"}`}
               >
-                <Landmark
+                <Truck
                   size={16}
                   className={isSelected ? "text-white" : "text-orange-400"}
                 />
@@ -767,15 +847,16 @@ const Payments = () => {
                 <p
                   className={`text-xs ${isSelected ? "text-white/70" : "text-gray-500 dark:text-white/75"}`}
                 >
-                  {"branch" in item ? item.branch : ""}
+                  {"region" in item ? item.region : ""}
                 </p>
               </div>
             </div>
             <span
               className={`text-sm font-semibold ${item.amount < 0 ? "text-rose-400" : isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
             >
-              {item.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(item.amount))} {t("currency")}
+              {item.isBalanceLoading
+                ? t("loadingLabel")
+                : <>{item.amount < 0 ? "-" : ""}{fmt(Math.abs(item.amount))} {t("currency")}</>}
             </span>
           </div>
         )}

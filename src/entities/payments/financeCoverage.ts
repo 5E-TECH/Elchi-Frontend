@@ -133,7 +133,11 @@ export const useFinanceCoverage = () => {
   const createSalary = useMutation({
     mutationFn: (data: any) =>
       api.post(API_ENDPOINTS.FINANCE.SALARY, data).then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: ["finance-cov"] }),
+        client.invalidateQueries({ queryKey: ["cashbox"] }),
+      ]),
   });
 
   const updateSalary = useMutation({

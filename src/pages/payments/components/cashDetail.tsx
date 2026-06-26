@@ -291,7 +291,6 @@ const CashDetail = () => {
       ? [{ value: "click_to_market", label: `🏪 ${t("toMarketTransferOption")}` }]
       : []),
   ];
-
   const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } =
     useForm<CashboxActionFormValues>({
       defaultValues: {
@@ -430,7 +429,7 @@ const CashDetail = () => {
         cashbox: item["cashbox"] as PaymentRow["cashbox"],
       };
     });
-  }, [cashbox?.cashbox_type, cashboxHistory, entityName]);
+  }, [cashbox?.cashbox_type, cashboxHistory, entityName, isBranchDetailRequest]);
 
   const income = useMemo(
     () =>
@@ -478,6 +477,7 @@ const CashDetail = () => {
     if (type === "courier") {
       if (!id) return;
 
+    if (type === "courier") {
       const result = await apiRequest({
         request: () =>
           createPaymentCourier.mutateAsync({
@@ -495,7 +495,6 @@ const CashDetail = () => {
       return;
     }
 
-    if (!id) return;
     const result = await apiRequest({
       request: () =>
         createPaymentMarket.mutateAsync({
@@ -627,6 +626,7 @@ const CashDetail = () => {
             errors={errors}
             handleSubmit={handleSubmit}
             onSubmit={onSubmit}
+        />
           />
       }
     />
