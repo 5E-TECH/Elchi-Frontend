@@ -49,12 +49,15 @@ const normalizeAction = (value?: string | null) =>
 const shouldShowEvent = (event: TrackingEvent) =>
   !HIDDEN_TRACKING_ACTIONS.has(normalizeAction(event.action));
 
-const isSystemStatusActorEvent = (event: TrackingEvent) => {
+const getSystemStatusActorInferenceMode = (event: TrackingEvent) => {
   const oldStatus = normalizeAction(event.old_value?.status ?? event.from_status);
   const newStatus = normalizeAction(event.new_value?.status ?? event.to_status);
   const transition = `${oldStatus}->${newStatus}`;
 
-  return transition === "new->received" || transition === "on_the_road->waiting";
+  if (transition === "new->received") return "nearby";
+  if (transition === "on_the_road->waiting") return "next";
+
+  return null;
 };
 
 const isSystemActor = (event: TrackingEvent) => {
@@ -86,13 +89,24 @@ const inferSystemStatusActors = (items: TrackingEvent[]) => {
   );
 
   return chronologicalEvents.map((event, index) => {
-    if (!isSystemStatusActorEvent(event) || !isSystemActor(event)) {
+    const inferenceMode = getSystemStatusActorInferenceMode(event);
+
+    if (!inferenceMode || !isSystemActor(event)) {
       return event;
     }
 
     const nextHumanEvent = chronologicalEvents.slice(index + 1).find(isHumanActor);
 
-    return nextHumanEvent ? withInferredActor(event, nextHumanEvent) : event;
+    if (nextHumanEvent || inferenceMode === "next") {
+      return nextHumanEvent ? withInferredActor(event, nextHumanEvent) : event;
+    }
+
+    const previousHumanEvent = chronologicalEvents
+      .slice(0, index)
+      .reverse()
+      .find(isHumanActor);
+
+    return previousHumanEvent ? withInferredActor(event, previousHumanEvent) : event;
   });
 };
 

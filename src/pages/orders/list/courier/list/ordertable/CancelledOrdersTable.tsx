@@ -9,6 +9,7 @@ import OrderStatusBadge from "../../../OrderStatusBadge";
 type Props = {
   orders: Order[];
   loading?: boolean;
+  onRowClick?: (order: Order) => void;
   selectedIds: Set<string>;
   onSelectChange: (id: string, checked: boolean) => void;
   onSelectAll: (checked: boolean) => void;
@@ -17,6 +18,7 @@ type Props = {
 const CancelledOrdersTable = ({
   orders,
   loading,
+  onRowClick,
   selectedIds,
   onSelectChange,
   onSelectAll,
@@ -58,6 +60,7 @@ const CancelledOrdersTable = ({
           <input
             type="checkbox"
             checked={selectedIds.has(row.id)}
+            onClick={(e) => e.stopPropagation()}
             onChange={(e) => {
               e.stopPropagation();
               onSelectChange(row.id, e.target.checked);
@@ -171,6 +174,7 @@ const CancelledOrdersTable = ({
         keyExtractor={(row) => row.id}
         loading={loading}
         emptyMessage={t("cancelledOrdersEmpty")}
+        onRowClick={onRowClick}
         mobileRowRender={(row) => (
           <div
             className={`rounded-xl border p-3 ${
@@ -184,6 +188,7 @@ const CancelledOrdersTable = ({
                 <input
                   type="checkbox"
                   checked={selectedIds.has(row.id)}
+                  onClick={(e) => e.stopPropagation()}
                   onChange={(e) => {
                     e.stopPropagation();
                     onSelectChange(row.id, e.target.checked);

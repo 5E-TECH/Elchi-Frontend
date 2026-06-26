@@ -1,6 +1,7 @@
 import { memo, useState, useEffect } from "react";
 import { ListOrdered, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import Tabs from "./list/tabs";
 import SellModal from "./list/SellModal";
 import CancelModal from "./list/CancelModal";
@@ -26,6 +27,7 @@ const STATUS_TAB_MAP: Record<string, string> = {
 
 const CourierOrders = () => {
   const { t } = useTranslation("orders");
+  const navigate = useNavigate();
   const { getParam, setParam, removeParam } = useQueryParams();
 
   const initialStatus = getParam("status");
@@ -144,6 +146,10 @@ const CourierOrders = () => {
     });
   };
 
+  const handleOpenDetail = (order: Order) => {
+    navigate(`edit/${order.id}`);
+  };
+
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="relative">
@@ -163,6 +169,7 @@ const CourierOrders = () => {
             <PendingOrdersTable
               orders={orders}
               loading={isLoading}
+              onRowClick={handleOpenDetail}
               onDeliver={(order) => setSellOrder(order)}
               onCancel={(order) => setCancelOrder(order)}
             />
@@ -172,6 +179,7 @@ const CourierOrders = () => {
             <AllOrdersTable
               orders={orders}
               loading={isLoading}
+              onRowClick={handleOpenDetail}
               onDeliver={(order) => setSellOrder(order)}
               onCancel={(order) => setCancelOrder(order)}
               onRestore={(order) => setRollbackOrder(order)}
@@ -182,6 +190,7 @@ const CourierOrders = () => {
             <CancelledOrdersTable
               orders={orders}
               loading={isLoading}
+              onRowClick={handleOpenDetail}
               selectedIds={selectedIds}
               onSelectChange={handleSelectChange}
               onSelectAll={handleSelectAll}

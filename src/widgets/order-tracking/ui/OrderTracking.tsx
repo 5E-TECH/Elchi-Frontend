@@ -4,10 +4,18 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { Loader } from "../../../shared/ui/Loader";
 import { TrackingEmptyState, TrackingTimeline, useOrderTracking } from "../../../features/order-tracking";
+import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
+
+type TrackingAccessContext = {
+  holderType?: string | null;
+  holderBranchId?: string | number | null;
+  holderCourierId?: string | number | null;
+};
 
 type OrderTrackingProps = {
   orderId: string | number;
   currentStatus?: string | null;
+  access?: TrackingAccessContext | null;
   context?: {
     branchName?: string | null;
     postName?: string | null;
@@ -17,12 +25,23 @@ type OrderTrackingProps = {
   };
 };
 
-export const OrderTracking = ({ orderId, currentStatus, context }: OrderTrackingProps) => {
+const normalize = (value?: string | number | null) => String(value ?? "").trim();
+
+const canRoleViewTracking = (role: string | null | undefined) => {
+  const normalizedRole = normalize(role).toLowerCase();
+  return ["admin", "superadmin", "branch", "manager", "registrator", "courier"].includes(normalizedRole);
+};
+
+export const OrderTracking = ({ orderId, currentStatus, access, context }: OrderTrackingProps) => {
   const { t } = useTranslation("orders");
   const currentUser = useSelector((state: RootState) => state.user.user);
   const currentRole = useSelector((state: RootState) => state.role.role);
-  const canViewTracking = currentRole === "admin" || currentRole === "superadmin";
+  const currentBranchId = useSelector(getCurrentBranchId);
+  const canViewTracking = canRoleViewTracking(currentRole);
   const { events, isLoading, isError, errorMessage, hasMore, loadMore } = useOrderTracking(orderId, canViewTracking);
+  void access;
+  void currentBranchId;
+  void currentUser;
   void currentStatus;
 
   if (!canViewTracking) {
@@ -40,9 +59,6 @@ export const OrderTracking = ({ orderId, currentStatus, context }: OrderTracking
             <h2 className="text-[18px] font-medium text-[var(--color-maindark)] dark:text-primary">
               {t("tracking.title")}
             </h2>
-            <span className="mt-1 inline-flex rounded-md bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-500">
-              {t("tracking.adminOnly")}
-            </span>
             {events.length > 0 ? (
               <p className="mt-1 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 {t("tracking.oldToNew", { count: events.length })}

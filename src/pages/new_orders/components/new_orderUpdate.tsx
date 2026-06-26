@@ -629,6 +629,22 @@ const NewOrderUpdate = () => {
       marketNamesById,
     };
   }, [order]);
+  const trackingAccess = useMemo(() => {
+    const source = order as (OrderDetail & {
+      holder_type?: string | null;
+      holderType?: string | null;
+      holder_branch_id?: string | number | null;
+      holderBranchId?: string | number | null;
+      holder_courier_id?: string | number | null;
+      holderCourierId?: string | number | null;
+    }) | null;
+
+    return {
+      holderType: source?.holder_type ?? source?.holderType ?? null,
+      holderBranchId: source?.holder_branch_id ?? source?.holderBranchId ?? null,
+      holderCourierId: source?.holder_courier_id ?? source?.holderCourierId ?? null,
+    };
+  }, [order]);
 
   // ─── Handlers — Address popup ─────────────────────────────────────────────
   const handleOpenAddressPopup = useCallback(() => {
@@ -1151,6 +1167,7 @@ const NewOrderUpdate = () => {
         <OrderTracking
           orderId={orderId}
           currentStatus={order?.status}
+          access={trackingAccess}
           context={trackingContext}
         />
       ) : null}
