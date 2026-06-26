@@ -44,13 +44,13 @@ type PaymentMarketOption = {
   amount: number;
 };
 
-type PaymentCourierOption = {
+type PaymentBranchManagerOption = {
   id: string;
   name: string;
   phone_number: string;
   role: string;
-  region: string;
-  region_id: string;
+  branch: string;
+  branch_id: string;
   cashbox?: unknown;
   amount: number;
 };
@@ -244,7 +244,7 @@ const Payments = () => {
   const navigate = useNavigate();
   const { useGetFinanceHistory, useGetCashBoxInfo } = useCashBox();
   const { useGetManagerSettlement, useGetManagerPayableToHq } = useFinanceCoverage();
-  const { useGetUser, useGetCouriers } = useUser();
+  const { useGetUser, useGetManagers } = useUser();
   const { useGetMarkets } = useMarkets();
 
   // ── API dan cashbox ma'lumotlarini olish ──────────────────────────────────
@@ -257,7 +257,7 @@ const Payments = () => {
     { status: "active", limit: FULL_LIST_LIMIT },
     isGivenPopupOpen && !isManagerRole,
   );
-  const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
+  const { data: managersData, isLoading: managersLoading } = useGetManagers(
     { status: "active", limit: FULL_LIST_LIMIT },
     isReceivedPopupOpen,
   );
@@ -368,33 +368,35 @@ const Payments = () => {
     [marketsData],
   );
 
-  // ── To be received popup uchun kuryerlar list ─────────────────────────────
-  const couriersList = useMemo<PaymentCourierOption[]>(
+  // ── To be received popup uchun branch managerlar list ─────────────────────
+  const branchManagersList = useMemo<PaymentBranchManagerOption[]>(
     () =>
-      toDataItems(couriersData)
-        .map((courier: unknown) => {
-          const c = asRecord(courier);
-          const region = asRecord(c.region);
-          const cashbox = asRecord(c.cashbox);
+      toDataItems(managersData)
+        .map((manager: unknown) => {
+          const m = asRecord(manager);
+          const branch = asRecord(m.branch);
+          const cashbox = asRecord(m.cashbox);
 
           return {
-            id: getRecordString(c, "id"),
-            name: getRecordString(c, "name"),
-            phone_number: getRecordString(c, "phone_number", getRecordString(c, "phone")),
-            role: getRecordString(c, "role", "courier"),
-            region: getRecordString(region, "name", t("unknown")),
-            region_id: getRecordString(region, "id", getRecordString(c, "region_id")),
-            cashbox: c.cashbox,
+            id: getRecordString(m, "branch_id", getRecordString(branch, "id", getRecordString(m, "id"))),
+            name: getRecordString(branch, "name", getRecordString(m, "name")),
+            phone_number: getRecordString(m, "phone_number", getRecordString(m, "phone")),
+            role: "branch",
+            branch: getRecordString(branch, "name", t("unknown")),
+            branch_id: getRecordString(m, "branch_id", getRecordString(branch, "id")),
+            cashbox: m.cashbox,
             amount: toNumber(
-              c.olinishi_kerak ??
+              m.olinishi_kerak ??
+                m.berilishi_kerak ??
+                m.payable_to_hq ??
                 cashbox.olinishi_kerak ??
                 cashbox.balance ??
-                c.amount,
+                m.amount,
             ),
           };
         })
-        .filter((courier: PaymentCourierOption) => courier.id),
-    [couriersData, t],
+        .filter((manager: PaymentBranchManagerOption) => manager.id),
+    [managersData, t],
   );
 
   // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
@@ -726,15 +728,15 @@ const Payments = () => {
       />
 
       {/* To be received popup */}
-      <PopupSelect<PaymentCourierOption>
+      <PopupSelect<PaymentBranchManagerOption>
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
-        data={couriersList}
+        data={branchManagersList}
         title={t("toBeReceived")}
-        description={couriersLoading ? t("loadingLabel") : t("selectCourierDescription")}
-        icon={<Truck size={20} />}
+        description={managersLoading ? t("loadingLabel") : t("selectBranchManagerDescription")}
+        icon={<Landmark size={20} />}
         keyExtractor={(item) => item.id}
-        searchKeys={["name", "region"]}
+        searchKeys={["name", "branch"]}
         labelKey="name"
         placeholder={t("searchPlaceholder")}
         selectLabel={t("selectLabel")}
@@ -742,7 +744,7 @@ const Payments = () => {
         onSelect={(item) => {
           setIsReceivedPopupOpen(false);
           navigate(`/payments/cash-detail/${item.id}`, {
-            state: { type: "courier", entity: item },
+            state: { type: "branch", entity: item },
           });
         }}
         renderItem={(item, isSelected) => (
@@ -751,7 +753,7 @@ const Payments = () => {
               <div
                 className={`w-9 h-9 rounded-lg flex items-center justify-center ${isSelected ? "bg-white/20" : "bg-orange-500/10"}`}
               >
-                <Truck
+                <Landmark
                   size={16}
                   className={isSelected ? "text-white" : "text-orange-400"}
                 />
@@ -765,7 +767,7 @@ const Payments = () => {
                 <p
                   className={`text-xs ${isSelected ? "text-white/70" : "text-gray-500 dark:text-white/75"}`}
                 >
-                  {"region" in item ? item.region : ""}
+                  {"branch" in item ? item.branch : ""}
                 </p>
               </div>
             </div>

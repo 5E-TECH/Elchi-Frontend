@@ -224,6 +224,13 @@ export const useUser = () => {
       enabled,
     });
 
+  const useGetManagers = (params?: IUserFilter, enabled: boolean = true) =>
+    useQuery({
+      queryKey: ["managers", params],
+      queryFn: () => api.get(API_ENDPOINTS.MANAGERS.BASE, { params }).then((res: any) => res.data),
+      enabled,
+    });
+
   const createAdmin = useMutation({
     mutationFn: (data: CreateAdminRequest) => api.post(API_ENDPOINTS.ADMINS.BASE, data),
     onSuccess: () =>
@@ -398,6 +405,7 @@ export const useUser = () => {
     useGetRegions,
     useGetUser,
     useGetCouriers,
+    useGetManagers,
     useGetUserById,
     useGetMyProfile,
     updateUserStatus,

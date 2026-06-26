@@ -7,9 +7,13 @@ export const shift = "shift";
 export const financeHistory = "finance-history";
 
 export interface FinanceHistoryActor {
-  id: string;
+  id: string | number;
   name?: string | null;
+  full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   phone_number?: string | null;
+  phone?: string | null;
   role?: string | null;
   status?: string | null;
 }
@@ -21,6 +25,7 @@ export interface FinanceHistoryCashbox {
   balance_card?: number;
   cashbox_type: string;
   user_id?: string | null;
+  user?: FinanceHistoryActor | null;
 }
 
 export interface FinanceHistoryOrderProduct {
@@ -88,7 +93,9 @@ export interface FinanceHistoryDetail {
   order?: FinanceHistoryOrder | null;
   user?: FinanceHistoryActor | null;
   source_user?: FinanceHistoryActor | null;
+  sourceUser?: FinanceHistoryActor | null;
   created_by_user?: FinanceHistoryActor | null;
+  createdByUser?: FinanceHistoryActor | null;
 }
 
 export interface FinanceHistoryDetailResponse {
@@ -96,6 +103,17 @@ export interface FinanceHistoryDetailResponse {
   message: string;
   data: FinanceHistoryDetail;
 }
+
+const normalizeFinanceHistoryParams = (params?: any) => {
+  if (!params) return params;
+
+  const { fromDate, toDate, ...rest } = params;
+  return {
+    ...rest,
+    ...(fromDate && { from_date: fromDate }),
+    ...(toDate && { to_date: toDate }),
+  };
+};
 
 export const useCashBox = () => {
   const client = useQueryClient();
@@ -184,13 +202,16 @@ export const useCashBox = () => {
     },
   });
 
-  const useGetFinanceHistory = (params?: any, enabled: boolean = true) =>
-    useQuery({
-      queryKey: [cashbox, "finance-history", params],
+  const useGetFinanceHistory = (params?: any, enabled: boolean = true) => {
+    const normalizedParams = normalizeFinanceHistoryParams(params);
+
+    return useQuery({
+      queryKey: [cashbox, "finance-history", normalizedParams],
       queryFn: () =>
-        api.get(API_ENDPOINTS.FINANCE.HISTORY, { params }).then((res) => res.data),
+        api.get(API_ENDPOINTS.FINANCE.HISTORY, { params: normalizedParams }).then((res) => res.data),
       enabled,
     });
+  };
 
   const useGetFinanceHistoryById = (id: string | null, enabled: boolean = true) =>
     useQuery<FinanceHistoryDetailResponse>({

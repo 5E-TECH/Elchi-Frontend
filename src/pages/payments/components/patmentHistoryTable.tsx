@@ -44,6 +44,7 @@ export interface PaymentRow {
   amount: number;
   balance_after?: number;
   operation_type?: string;
+  cashbox_id?: string | number;
   source_type?: string;
   source_id?: string;
   cashbox_type?: string;
@@ -73,6 +74,10 @@ export interface PaymentHistoryActor {
   full_name?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  phone_number?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  status?: string | null;
 }
 
 export interface Pagination {

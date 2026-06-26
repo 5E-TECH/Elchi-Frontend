@@ -4,13 +4,17 @@ import { getPaymentSourceTypeLabel } from "./paymentSourceType";
 describe("getPaymentSourceTypeLabel", () => {
   const translate = (key: string) =>
     ({
-      paymentMarket: "Market to'lovi",
+      courierToBranchTransfer: "Kuryerdan filialga o'tkazma",
+      hqToMarketTransfer: "HQdan marketga o'tkazma",
       branchToMainSource: "Filialdan HQga o'tkazma",
     })[key] ?? key;
 
   it("known source type uchun tarjima qaytaradi", () => {
+    expect(getPaymentSourceTypeLabel("courier_payment", translate)).toBe(
+      "Kuryerdan filialga o'tkazma",
+    );
     expect(getPaymentSourceTypeLabel("market_payment", translate)).toBe(
-      "Market to'lovi",
+      "HQdan marketga o'tkazma",
     );
     expect(getPaymentSourceTypeLabel("branch_to_main", translate)).toBe(
       "Filialdan HQga o'tkazma",

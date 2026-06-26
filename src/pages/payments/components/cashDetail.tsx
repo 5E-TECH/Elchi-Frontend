@@ -457,28 +457,26 @@ const CashDetail = () => {
     const normalizedPaymentMethod =
       values.paymentType === "transfer" ? "click" : values.paymentType;
 
+    if (type === "branch") {
+      if (!id) return;
+      const result = await apiRequest({
+        request: () =>
+          createPaymentBranchToMain.mutateAsync({
+            branch_id: id,
+            amount,
+            payment_method: normalizedPaymentMethod,
+            payment_date: paymentDate,
+            comment,
+          }),
+        successMessage: t("branchToMainPaymentSuccess"),
+        errorMessage: t("branchToMainPaymentError"),
+      });
+      if (result) await refreshAfterPayment(amount);
+      return;
+    }
+
     if (type === "courier") {
       if (!id) return;
-      const isBranchToMain =
-        user?.role === "branch" ||
-        (!!state?.entity?.type && state?.entity?.type !== "courier");
-
-      if (isBranchToMain) {
-        const result = await apiRequest({
-          request: () =>
-            createPaymentBranchToMain.mutateAsync({
-              branch_id: id,
-              amount,
-              payment_method: normalizedPaymentMethod,
-              payment_date: paymentDate,
-              comment,
-          }),
-          successMessage: t("receivePaymentSuccess"),
-          errorMessage: t("receivePaymentError"),
-        });
-        if (result) await refreshAfterPayment(amount);
-        return;
-      }
 
       const result = await apiRequest({
         request: () =>
@@ -605,8 +603,7 @@ const CashDetail = () => {
         ) : null
       }
       actionForm={
-        type === "branch" ? null : (
-          <CashboxActionFormCard
+        <CashboxActionFormCard
             type={type}
             actionGradient={cfg.actionGradient}
             actionLabel={t(cfg.actionLabelKey)}
@@ -631,7 +628,6 @@ const CashDetail = () => {
             handleSubmit={handleSubmit}
             onSubmit={onSubmit}
           />
-        )
       }
     />
   );

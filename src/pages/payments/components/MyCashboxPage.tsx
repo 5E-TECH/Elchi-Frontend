@@ -115,9 +115,9 @@ const MyCashboxPage = () => {
       .map((item: Record<string, unknown>, index: number) => {
         const amount = toNumber(item["amount"]);
         const sourceType = String(item["source_type"] ?? item["type"] ?? "");
-        const isMarketPaymentRow =
+        const isMarketIncomePerspective =
           currentRole === "market" && sourceType === "market_payment";
-        const operationType = isMarketPaymentRow
+        const operationType = isMarketIncomePerspective
           ? "income"
           : item["operation_type"] ?? (amount >= 0 ? "income" : "expense");
         const counterpartyLabel = getCounterpartyLabel(currentRole, entityName, item);
@@ -126,8 +126,9 @@ const MyCashboxPage = () => {
           id: String(
             item["id"] ?? `${index}-${item["createdAt"] ?? item["payment_date"] ?? "row"}`,
           ),
-          amount: isMarketPaymentRow ? Math.abs(amount) : amount,
+          amount: isMarketIncomePerspective ? Math.abs(amount) : amount,
           operation_type: operationType,
+          cashbox_id: item["cashbox_id"] ?? (cashbox?.id ? String(cashbox.id) : undefined),
           source_type: sourceType || undefined,
           source_id: item["source_id"],
           cashbox_type: (item["cashbox_type"] as string | undefined) ?? cashbox?.cashbox_type,
