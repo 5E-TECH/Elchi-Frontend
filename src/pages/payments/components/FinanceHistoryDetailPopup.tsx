@@ -50,11 +50,14 @@ const getPaymentMethodLabel = (value: string | null | undefined, t: (key: string
 };
 
 const getRoleLabel = (value: string | null | undefined, t: (key: string) => string) => {
-  if (value === "market") return t("marketShort");
-  if (value === "courier") return t("courierShort");
-  if (value === "customer") return t("customerRole");
-  if (value === "admin") return t("adminRole");
-  if (value === "superadmin") return t("superAdminRole");
+  const normalized = value?.toLowerCase();
+  if (normalized === "market" || normalized === "markets" || normalized === "for_market") return t("marketShort");
+  if (normalized === "courier" || normalized === "couriers" || normalized === "for_courier") return t("courierShort");
+  if (normalized === "branch" || normalized === "branches" || normalized === "for_branch") return t("branchMainCashboxLabel");
+  if (normalized === "main" || normalized === "hq") return t("mainCashbox");
+  if (normalized === "customer") return t("customerRole");
+  if (normalized === "admin") return t("adminRole");
+  if (normalized === "superadmin") return t("superAdminRole");
   return value || t("user");
 };
 
@@ -75,33 +78,56 @@ const getDeliveryLabel = (value: string | null | undefined, t: (key: string) => 
   return value || "—";
 };
 
-const getActorName = (actor?: FinanceHistoryActor | null) =>
-  actor?.name?.trim() || actor?.id || "—";
+const getActorName = (actor?: Partial<FinanceHistoryActor> | null) => {
+  const name =
+    actor?.name?.trim() ||
+    actor?.full_name?.trim() ||
+    [actor?.first_name, actor?.last_name].filter(Boolean).join(" ").trim();
 
-const resolvePrimaryActor = (detail?: FinanceHistoryDetail | null) => {
-  if (!detail) return null;
+  return name || (actor?.id ? `#${actor.id}` : "—");
+};
 
-  return (
-    detail.source_user ||
-    detail.created_by_user ||
-    detail.user ||
-    detail.order?.market ||
-    null
-  );
+const resolvePrimaryActor = (
+  detail?: FinanceHistoryDetail | null,
+  row?: PaymentRow | null,
+) => {
+  const actors = [
+    detail?.source_user,
+    detail?.sourceUser,
+    row?.source_user,
+    row?.sourceUser,
+    detail?.created_by_user,
+    detail?.createdByUser,
+    row?.created_by_user,
+    row?.createdByUser,
+    detail?.cashbox?.user,
+    detail?.user,
+    row?.user,
+    detail?.order?.market,
+  ];
+
+  return actors.find(Boolean) ?? null;
 };
 
 const resolveDirectionValue = (
   detail: FinanceHistoryDetail | null | undefined,
-  actor: FinanceHistoryActor | null,
+  row: PaymentRow | null | undefined,
+  actor: Partial<FinanceHistoryActor> | null,
 ) => {
-  if (actor?.name) return actor.name;
-  if (detail?.source_id) return detail.source_id;
+  const actorName = getActorName(actor);
+  if (actorName !== "—") return actorName;
+  if (detail?.source_user_id) return `#${detail.source_user_id}`;
+  if (row?.source_id) return `#${row.source_id}`;
+  if (detail?.source_id) return `#${detail.source_id}`;
   if (detail?.cashbox?.id) return `#${detail.cashbox.id}`;
   return "—";
 };
 
-const getActorPhone = (actor?: FinanceHistoryActor | null) =>
-  actor?.phone_number?.trim() || "—";
+const getActorPhone = (actor?: Partial<FinanceHistoryActor> | null) =>
+  actor?.phone_number?.trim() || actor?.phone?.trim() || "—";
+
+const getHistoryCashboxId = (item?: Partial<FinanceHistoryDetail | PaymentRow> | null) =>
+  item?.cashbox_id != null ? String(item.cashbox_id) : item?.cashbox?.id != null ? String(item.cashbox.id) : "";
 
 const getDirectionCardClasses = (isIncome: boolean) =>
   isIncome
@@ -188,20 +214,43 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   const rowId = row?.id ?? null;
   const { data, isLoading, isError } = useGetFinanceHistoryById(rowId, !!rowId);
 
-  const detail = data?.data;
-  const display = detail ?? row;
+  const fetchedDetail = data?.data;
+  const rowCashboxId = getHistoryCashboxId(row);
+  const detailCashboxId = getHistoryCashboxId(fetchedDetail);
+  const isMismatchedDetail = Boolean(rowCashboxId && detailCashboxId && rowCashboxId !== detailCashboxId);
+  const detail = isMismatchedDetail ? null : fetchedDetail;
+  const display = detail
+    ? {
+        ...detail,
+        operation_type: row?.operation_type ?? detail.operation_type,
+        amount: row?.amount ?? detail.amount,
+        balance_after: row?.balance_after ?? detail.balance_after,
+        source_type: row?.source_type ?? detail.source_type,
+        payment_method: row?.payment_method ?? detail.payment_method,
+        payment_date: row?.payment_date ?? detail.payment_date,
+        comment: row?.comment ?? detail.comment,
+      }
+    : row;
   const isIncome = display?.operation_type === "income";
-  const actor = useMemo(() => resolvePrimaryActor(detail), [detail]);
+  const actor = useMemo(() => resolvePrimaryActor(detail, row), [detail, row]);
   const actorName = getActorName(actor);
   const actorPhone = getActorPhone(actor);
-  const hasComment = Boolean(detail?.comment);
+  const hasComment = Boolean(display?.comment);
   const actorRole = getRoleLabel(
-    actor?.role ?? detail?.order?.market?.role ?? detail?.cashbox?.cashbox_type,
+    actor?.role ?? detail?.order?.market?.role ?? detail?.cashbox?.cashbox_type ?? row?.cashbox_type,
     t,
   );
   const directionLabel = isIncome ? t("fromWhere") : t("toWhere");
-  const directionValue = resolveDirectionValue(detail, actor);
-  const directionRoleLabel = getRoleLabel(detail?.source_user?.role ?? detail?.cashbox?.cashbox_type, t);
+  const directionValue = resolveDirectionValue(detail, row, actor);
+  const directionRoleLabel = getRoleLabel(
+    detail?.source_user?.role ??
+      detail?.sourceUser?.role ??
+      row?.source_user?.role ??
+      row?.sourceUser?.role ??
+      detail?.cashbox?.cashbox_type ??
+      row?.cashbox_type,
+    t,
+  );
   const order = detail?.order;
   const locationLabel = [
     order?.district?.name ?? order?.customer?.district?.name ?? "",
@@ -315,7 +364,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                         {t("comment")}
                       </p>
                       <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-maindark)] dark:text-primary">
-                        {detail?.comment}
+                        {display?.comment}
                       </p>
                     </div>
                   </div>
@@ -353,19 +402,19 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                 <InfoCard
                   icon={<CreditCard size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                   label={t("sourceType")}
-                  value={getPaymentSourceTypeLabel(detail?.source_type, t)}
+                  value={getPaymentSourceTypeLabel(display?.source_type, t)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
                   icon={<Wallet size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                   label={t("paymentType")}
-                  value={getPaymentMethodLabel(detail?.payment_method, t)}
+                  value={getPaymentMethodLabel(display?.payment_method, t)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
                   icon={<Calendar size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
                   label={t("paymentDate")}
-                  value={formatDate(detail?.payment_date ?? detail?.createdAt)}
+                  value={formatDate(display?.payment_date ?? display?.createdAt)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
