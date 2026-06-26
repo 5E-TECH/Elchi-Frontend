@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import {
   Ban,
   CheckCircle2,
+  Download,
   Filter,
   MapPinned,
   Inbox,
@@ -29,6 +30,7 @@ import FilterDateRange from "../../../shared/ui/FilterDateRange";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { printOrders } from "../detail/lib/printMode";
+import { exportOldMailsToExcel } from "./lib/exportOldMailsToExcel";
 
 interface Region {
   id: string;
@@ -114,6 +116,9 @@ const isInDateRange = (mail: MailItem | BatchMailItem, dateFrom: string, dateTo:
 const normalizeStatus = (status: string) => status.trim().toLowerCase().replaceAll("-", "_");
 
 const hasOrders = (mail: MailItem | BatchMailItem) => Number(mail.order_quantity) > 0;
+
+const isMailItem = (mail: MailItem | BatchMailItem): mail is MailItem =>
+  "courier_id" in mail;
 
 const getStatusKind = (status: string): OldMailStatusKind => {
   const normalizedStatus = normalizeStatus(status).replaceAll(" ", "_");
@@ -416,6 +421,37 @@ const OldMails = () => {
     [filteredMails, limit, page],
   );
 
+  const handleExportExcel = () => {
+    exportOldMailsToExcel({
+      rows: filteredMails.map((mail) => ({
+        id: mail.id,
+        region: mail.region?.name ?? t("regionHashFallback", { id: mail.region_id }),
+        courier: isMailItem(mail) ? mail.courier?.name ?? "" : "",
+        status: t(getStatusMeta(mail.status).labelKey),
+        orders: Number(mail.order_quantity ?? 0),
+        amount: Number(mail.post_total_price ?? 0),
+        createdAt: getMailDate(mail),
+      })),
+      labels: {
+        title: isAllBatchMode ? t("oldBatchExportTitle") : t("oldExportTitle"),
+        generatedAt: t("oldExportGeneratedAt"),
+        no: t("oldExportNo"),
+        mailId: t("mailNumber"),
+        region: t("oldRegionFilterLabel"),
+        courier: t("courier"),
+        status: t("oldStatusFilterLabel"),
+        orders: t("ordersLabel"),
+        amount: t("amountLabel"),
+        date: t("mailDate"),
+        totalMails: t("totalMails"),
+        totalOrders: t("oldExportTotalOrders"),
+        totalAmount: t("oldExportTotalAmount"),
+        currency: t("currency", { ns: "payments" }),
+      },
+    });
+    message.success(t("oldExportSuccess", { count: filteredMails.length }));
+  };
+
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(filteredMails.length / limit));
     if (page > totalPages) {
@@ -478,16 +514,26 @@ const OldMails = () => {
           </div>
         </div>
 
-        {activeFilterCount > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={resetFilters}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/8 px-3 text-sm font-semibold text-white/80 transition hover:bg-white/12"
+            onClick={handleExportExcel}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-main/40 bg-main px-3 text-sm font-semibold text-white transition hover:bg-main/90"
           >
-            <RotateCcw size={15} />
-            {t("oldResetFilters")}
+            <Download size={16} />
+            Excel
           </button>
-        ) : null}
+          {activeFilterCount > 0 ? (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/8 px-3 text-sm font-semibold text-white/80 transition hover:bg-white/12"
+            >
+              <RotateCcw size={15} />
+              {t("oldResetFilters")}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 dark:bg-white/3 md:grid-cols-2 xl:grid-cols-4">

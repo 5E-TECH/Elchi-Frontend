@@ -1,5 +1,6 @@
 // Migrated to React Hook Form
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -28,6 +29,8 @@ import { useTranslation } from "react-i18next";
 import { usePagination } from "../../shared/lib/usePagination";
 import PageContainer from "../../shared/ui/PageContainer";
 import type { RootState } from "../../app/config/store";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const DEFAULT_PAYMENTS_LIMIT = 10;
@@ -53,6 +56,7 @@ type PaymentCourierOption = {
   region_id: string;
   cashbox?: unknown;
   amount: number;
+  isBalanceLoading?: boolean;
 };
 
 type PaymentBranchToMainOption = {
@@ -124,6 +128,50 @@ const getRecordNumber = (
   }
 
   return fallback;
+};
+
+const getKnownRecordNumber = (record: UnknownRecord, keys: string[]) => {
+  for (const key of keys) {
+    const value = record[key];
+    if (value !== undefined && value !== null && value !== "") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+
+  return undefined;
+};
+
+const getCashboxBalanceFromResponse = (value: unknown) => {
+  const response = asRecord(value);
+  const rawData = response.data;
+  const entry = Array.isArray(rawData)
+    ? asRecord(rawData[0])
+    : asRecord(rawData);
+  const cashbox = asRecord(entry.cashbox ?? entry);
+
+  return getKnownRecordNumber(cashbox, ["balance"]);
+};
+
+const fetchCourierCashboxBalances = async (courierIds: string[]) => {
+  const balances: Record<string, number> = {};
+  const concurrency = 8;
+
+  for (let index = 0; index < courierIds.length; index += concurrency) {
+    const batch = courierIds.slice(index, index + concurrency);
+    const results = await Promise.all(
+      batch.map(async (courierId) => {
+        const response = await api.get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(courierId));
+        return [courierId, getCashboxBalanceFromResponse(response.data)] as const;
+      }),
+    );
+
+    results.forEach(([courierId, balance]) => {
+      if (balance !== undefined) balances[courierId] = balance;
+    });
+  }
+
+  return balances;
 };
 
 const toDataItems = (value: unknown): unknown[] => {
@@ -249,7 +297,7 @@ const Payments = () => {
   const { data: managerSettlementInfo } = useGetManagerSettlement(isManagerRole);
   const { data: managerPayableInfo } = useGetManagerPayableToHq(isManagerRole);
 
-  // Faqat popup ochiq bo'lganda yuklanadi
+  // Faqat popup ochiq bo'lganda yuklanadi.
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
     { status: "active", limit: FULL_LIST_LIMIT },
     isGivenPopupOpen && !isManagerRole,
@@ -366,13 +414,13 @@ const Payments = () => {
   );
 
   // ── To be received popup uchun kuryerlar list ─────────────────────────────
-  const couriersList = useMemo<PaymentCourierOption[]>(
+  const courierCandidates = useMemo<PaymentCourierOption[]>(
     () =>
       toDataItems(couriersData)
         .map((courier: unknown) => {
           const c = asRecord(courier);
           const region = asRecord(c.region);
-          const cashbox = asRecord(c.cashbox);
+          const cashbox = asRecord(c.cashbox ?? c.cashBox ?? c.cash_box ?? c.kassa);
 
           return {
             id: getRecordString(c, "id"),
@@ -382,16 +430,57 @@ const Payments = () => {
             region: getRecordString(region, "name", t("unknown")),
             region_id: getRecordString(region, "id", getRecordString(c, "region_id")),
             cashbox: c.cashbox,
-            amount: toNumber(
-              c.olinishi_kerak ??
-                cashbox.olinishi_kerak ??
-                cashbox.balance ??
-                c.amount,
+            amount: getRecordNumber(
+              c,
+              [
+                "olinishi_kerak",
+                "to_be_received",
+                "toBeReceived",
+                "receivable",
+                "courier_receivable",
+                "balance",
+                "amount",
+              ],
+              getRecordNumber(
+                cashbox,
+                [
+                  "olinishi_kerak",
+                  "to_be_received",
+                  "toBeReceived",
+                  "receivable",
+                  "courier_receivable",
+                  "balance",
+                  "amount",
+                ],
+              ),
             ),
           };
         })
         .filter((courier: PaymentCourierOption) => courier.id),
     [couriersData, t],
+  );
+  const courierIds = useMemo(
+    () => courierCandidates.map((courier) => courier.id),
+    [courierCandidates],
+  );
+  const {
+    data: courierCashboxBalances,
+    isLoading: isCourierBalancesLoading,
+  } = useQuery({
+    queryKey: ["courier-cashbox-balances", courierIds],
+    queryFn: () => fetchCourierCashboxBalances(courierIds),
+    enabled: isReceivedPopupOpen && courierIds.length > 0,
+    staleTime: 30_000,
+  });
+  const couriersList = useMemo<PaymentCourierOption[]>(
+    () =>
+      courierCandidates.map((courier) => ({
+        ...courier,
+        amount: courierCashboxBalances?.[courier.id] ?? courier.amount,
+        isBalanceLoading:
+          isCourierBalancesLoading && courierCashboxBalances?.[courier.id] === undefined,
+      })),
+    [courierCandidates, courierCashboxBalances, isCourierBalancesLoading],
   );
 
   // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
@@ -765,8 +854,9 @@ const Payments = () => {
             <span
               className={`text-sm font-semibold ${item.amount < 0 ? "text-rose-400" : isSelected ? "text-white/85" : "text-gray-500 dark:text-white/80"}`}
             >
-              {item.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(item.amount))} {t("currency")}
+              {item.isBalanceLoading
+                ? t("loadingLabel")
+                : <>{item.amount < 0 ? "-" : ""}{fmt(Math.abs(item.amount))} {t("currency")}</>}
             </span>
           </div>
         )}

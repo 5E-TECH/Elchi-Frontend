@@ -291,7 +291,6 @@ const CashDetail = () => {
       ? [{ value: "click_to_market", label: `🏪 ${t("toMarketTransferOption")}` }]
       : []),
   ];
-
   const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } =
     useForm<CashboxActionFormValues>({
       defaultValues: {
@@ -430,7 +429,7 @@ const CashDetail = () => {
         cashbox: item["cashbox"] as PaymentRow["cashbox"],
       };
     });
-  }, [cashbox?.cashbox_type, cashboxHistory, entityName]);
+  }, [cashbox?.cashbox_type, cashboxHistory, entityName, isBranchDetailRequest]);
 
   const income = useMemo(
     () =>
@@ -457,29 +456,26 @@ const CashDetail = () => {
     const normalizedPaymentMethod =
       values.paymentType === "transfer" ? "click" : values.paymentType;
 
-    if (type === "courier") {
-      if (!id) return;
-      const isBranchToMain =
-        user?.role === "branch" ||
-        (!!state?.entity?.type && state?.entity?.type !== "courier");
+    if (!id) return;
 
-      if (isBranchToMain) {
-        const result = await apiRequest({
-          request: () =>
-            createPaymentBranchToMain.mutateAsync({
-              branch_id: id,
-              amount,
-              payment_method: normalizedPaymentMethod,
-              payment_date: paymentDate,
-              comment,
+    if (type === "branch") {
+      const result = await apiRequest({
+        request: () =>
+          createPaymentBranchToMain.mutateAsync({
+            branch_id: id,
+            amount,
+            payment_method: normalizedPaymentMethod,
+            payment_date: paymentDate,
+            comment,
           }),
-          successMessage: t("receivePaymentSuccess"),
-          errorMessage: t("receivePaymentError"),
-        });
-        if (result) await refreshAfterPayment(amount);
-        return;
-      }
+        successMessage: t("branchToMainPaymentSuccess"),
+        errorMessage: t("branchToMainPaymentError"),
+      });
+      if (result) await refreshAfterPayment(amount);
+      return;
+    }
 
+    if (type === "courier") {
       const result = await apiRequest({
         request: () =>
           createPaymentCourier.mutateAsync({
@@ -497,7 +493,6 @@ const CashDetail = () => {
       return;
     }
 
-    if (!id) return;
     const result = await apiRequest({
       request: () =>
         createPaymentMarket.mutateAsync({
@@ -605,8 +600,7 @@ const CashDetail = () => {
         ) : null
       }
       actionForm={
-        type === "branch" ? null : (
-          <CashboxActionFormCard
+        <CashboxActionFormCard
             type={type}
             actionGradient={cfg.actionGradient}
             actionLabel={t(cfg.actionLabelKey)}
@@ -630,8 +624,7 @@ const CashDetail = () => {
             errors={errors}
             handleSubmit={handleSubmit}
             onSubmit={onSubmit}
-          />
-        )
+        />
       }
     />
   );

@@ -23,6 +23,7 @@ import PopupSelect from "../../../shared/components/popupSelect";
 import CashboxFormPopup from "./CashboxFormPopup";
 import CloseShiftPopup from "./CloseShiftPopup";
 import CashboxSummaryCard from "./CashboxSummaryCard";
+import SalaryPaymentPopup from "./SalaryPaymentPopup";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useMarkets } from "../../../entities/markets";
 import { useCashBox } from "../../../entities/payments";
@@ -32,6 +33,7 @@ import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -168,6 +170,7 @@ const MainCashbox = () => {
   const { t } = useTranslation("payments");
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [isSalaryPopupOpen, setIsSalaryPopupOpen] = useState(false);
+  const [selectedSalaryEmployee, setSelectedSalaryEmployee] = useState<any>(null);
   const [isCourierPopupOpen, setIsCourierPopupOpen] = useState(false);
   const [isMarketPopupOpen, setIsMarketPopupOpen] = useState(false);
   const [isSpendPopupOpen, setIsSpendPopupOpen] = useState(false);
@@ -179,6 +182,7 @@ const MainCashbox = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   const branchType = getUserBranchType(user);
+  const { apiRequest } = useAppNotification();
 
   const { useGetUser, useGetCouriers } = useUser();
   const { useGetMarkets } = useMarkets();
@@ -280,8 +284,14 @@ const MainCashbox = () => {
 
   // ── Cashbox balances ───────────────────────────────────────────────────────
   const cashboxInfoData = cashboxInfoRes?.data ?? {};
-  const mainCashboxData = mainCashboxRes?.data ?? {};
-  const mainCashbox = mainCashboxData?.cashbox ?? {};
+  const mainCashboxData = useMemo(
+    () => mainCashboxRes?.data ?? {},
+    [mainCashboxRes?.data],
+  );
+  const mainCashbox = useMemo(
+    () => mainCashboxData?.cashbox ?? {},
+    [mainCashboxData],
+  );
   const totalBalance = toNumber(
     (mainCashbox as any)?.balance ??
       (mainCashboxData as any)?.balance ??
@@ -300,7 +310,6 @@ const MainCashbox = () => {
       (mainCashboxData as any)?.balanceCard ??
       (mainCashboxData as any)?.transfer,
   );
-
   // ── History ────────────────────────────────────────────────────────────────
   const historyRows: PaymentRow[] = useMemo(
     () => ((historyRes?.data?.items ?? []) as PaymentRow[]),
@@ -410,6 +419,45 @@ const MainCashbox = () => {
     draftHistoryTo,
     t,
   ]);
+
+  const handleSpend = useCallback(
+    async ({ amount, type, comment }: { amount: number; type?: string; comment: string }) => {
+      const result = await apiRequest({
+        request: () => cashboxSpand.mutateAsync({ data: { amount, type, comment } }),
+        successMessage: t("spendSuccess"),
+        errorMessage: t("spendError"),
+      });
+      if (result) setIsSpendPopupOpen(false);
+    },
+    [apiRequest, cashboxSpand, t],
+  );
+
+  const handleRefill = useCallback(
+    async ({ amount, type, comment }: { amount: number; type?: string; comment: string }) => {
+      const result = await apiRequest({
+        request: () => cashboxFill.mutateAsync({ data: { amount, type, comment } }),
+        successMessage: t("fillSuccess"),
+        errorMessage: t("fillError"),
+      });
+      if (result) setIsRefillPopupOpen(false);
+    },
+    [apiRequest, cashboxFill, t],
+  );
+
+  const handleCloseShift = useCallback(
+    async (comment: string) => {
+      const result = await apiRequest({
+        request: () => closeShift.mutateAsync(comment || undefined),
+        successMessage: t("closeShiftSuccess"),
+        errorMessage: t("closeShiftError"),
+      });
+      if (!result) return;
+
+      setIsCloseShiftPopupOpen(false);
+      handleExportExcel();
+    },
+    [apiRequest, closeShift, handleExportExcel, t],
+  );
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -645,9 +693,11 @@ const MainCashbox = () => {
         searchKeys={["name"]}
         labelKey="name"
         secondaryLabelKey="role"
-        onSelect={() => {
+        onSelect={(employee: any) => {
+          setSelectedSalaryEmployee(employee);
           setIsSalaryPopupOpen(false);
         }}
+        immediateSelection
         placeholder={t("searchPlaceholder")}
         selectLabel={t("selectLabel")}
         cancelLabel={t("cancelShort")}
@@ -672,6 +722,12 @@ const MainCashbox = () => {
             </div>
           </div>
         )}
+      />
+
+      <SalaryPaymentPopup
+        employee={selectedSalaryEmployee}
+        isOpen={Boolean(selectedSalaryEmployee)}
+        onClose={() => setSelectedSalaryEmployee(null)}
       />
 
       {/* Receive from courier */}
@@ -800,12 +856,7 @@ const MainCashbox = () => {
         requireType
         requireComment
         isLoading={cashboxSpand.isPending}
-        onSubmit={({ amount, type, comment }) => {
-          cashboxSpand.mutate(
-            { data: { amount, type, comment } },
-            { onSuccess: () => setIsSpendPopupOpen(false) },
-          );
-        }}
+        onSubmit={handleSpend}
       />
 
       {/* Refill cashbox */}
@@ -827,26 +878,14 @@ const MainCashbox = () => {
         requireType
         requireComment
         isLoading={cashboxFill.isPending}
-        onSubmit={({ amount, type, comment }) => {
-          cashboxFill.mutate(
-            { data: { amount, type, comment } },
-            { onSuccess: () => setIsRefillPopupOpen(false) },
-          );
-        }}
+        onSubmit={handleRefill}
       />
 
       <CloseShiftPopup
         isOpen={isCloseShiftPopupOpen}
         onClose={() => setIsCloseShiftPopupOpen(false)}
         isLoading={closeShift.isPending}
-        onConfirm={(comment) => {
-          closeShift.mutate(comment || undefined, {
-            onSuccess: () => {
-              setIsCloseShiftPopupOpen(false);
-              handleExportExcel();
-            },
-          });
-        }}
+        onConfirm={handleCloseShift}
       />
     </div>
   );

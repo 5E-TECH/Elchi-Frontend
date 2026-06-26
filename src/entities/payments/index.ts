@@ -106,6 +106,7 @@ export const useCashBox = () => {
       client.invalidateQueries({ queryKey: ["finance-cov"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["couriers"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["courier-cashbox-balances"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["branches"], refetchType: "active" }),
     ]);
   };
@@ -172,16 +173,12 @@ export const useCashBox = () => {
 
   const cashboxSpand = useMutation({
     mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [cashbox] });
-    },
+    onSuccess: refreshCashboxQueries,
   });
 
   const cashboxFill = useMutation({
     mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: ["cashbox"] });
-    },
+    onSuccess: refreshCashboxQueries,
   });
 
   const useGetFinanceHistory = (params?: any, enabled: boolean = true) =>
@@ -222,7 +219,7 @@ export const useCashBox = () => {
       api.post(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, { comment }),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [shift] });
-      client.invalidateQueries({ queryKey: [cashbox] });
+      refreshCashboxQueries();
     },
   });
 
