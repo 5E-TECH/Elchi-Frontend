@@ -18,7 +18,6 @@ const defaultRoles: UserRole[] = [
     "registrator",
     "courier",
     "market",
-    "marketing",
     "operator",
     "superadmin",
     "customer",
@@ -26,7 +25,8 @@ const defaultRoles: UserRole[] = [
 
 const normalizeRoles = (roles?: string[]) => {
     const normalized = roles
-        ?.filter((role): role is UserRole =>
+        ?.map((role) => (role === "marketing" ? "market" : role))
+        .filter((role): role is UserRole =>
             typeof role === "string" && defaultRoles.includes(role as UserRole),
         ) ?? defaultRoles;
 

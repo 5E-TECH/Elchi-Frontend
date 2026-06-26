@@ -456,9 +456,8 @@ const CashDetail = () => {
     const normalizedPaymentMethod =
       values.paymentType === "transfer" ? "click" : values.paymentType;
 
-    if (!id) return;
-
     if (type === "branch") {
+      if (!id) return;
       const result = await apiRequest({
         request: () =>
           createPaymentBranchToMain.mutateAsync({
@@ -474,6 +473,9 @@ const CashDetail = () => {
       if (result) await refreshAfterPayment(amount);
       return;
     }
+
+    if (type === "courier") {
+      if (!id) return;
 
     if (type === "courier") {
       const result = await apiRequest({
@@ -625,6 +627,7 @@ const CashDetail = () => {
             handleSubmit={handleSubmit}
             onSubmit={onSubmit}
         />
+          />
       }
     />
   );

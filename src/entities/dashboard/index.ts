@@ -178,6 +178,32 @@ type UnknownRecord = Record<string, unknown>;
 const asRecord = (value: unknown): UnknownRecord =>
   value && typeof value === "object" ? (value as UnknownRecord) : {};
 
+const firstDefined = (...values: unknown[]): unknown =>
+  values.find((value) => value !== undefined && value !== null);
+
+const getDashboardOrdersRecord = (data: UnknownRecord): UnknownRecord => {
+  const directOrders = asRecord(data.orders);
+  if (Object.keys(directOrders).length) return directOrders;
+
+  const summary = asRecord(data.summary);
+  const summaryOrders = asRecord(summary.orders);
+  if (Object.keys(summaryOrders).length) return summaryOrders;
+  if (Object.keys(summary).length) return summary;
+
+  const myStat = asRecord(data.myStat ?? data.my_stat);
+  if (Object.keys(myStat).length) return myStat;
+
+  const orderSummary = asRecord(data.orderSummary ?? data.order_summary);
+  if (Object.keys(orderSummary).length) return orderSummary;
+
+  const marketDashboard = asRecord(data.marketDashboard ?? data.market_dashboard);
+  const marketOrders = asRecord(marketDashboard.orders);
+  if (Object.keys(marketOrders).length) return marketOrders;
+  if (Object.keys(marketDashboard).length) return marketDashboard;
+
+  return data;
+};
+
 const normalizePerformerMetrics = (value: unknown) => {
   const item = asRecord(value);
   return {
@@ -289,7 +315,7 @@ const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null
 export const normalizeDashboardResponse = (payload: unknown): DashboardResponse => {
   const response = asRecord(payload);
   const data = asRecord(response.data);
-  const orders = asRecord(data.orders);
+  const orders = getDashboardOrdersRecord(data);
   const topMarkets = data.topMarkets ?? data.top_markets;
   const topCouriers = data.topCouriers ?? data.top_couriers;
   const branchDashboard = data.branchDashboard ?? data.branch_dashboard;
@@ -300,11 +326,71 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
     data: {
       ...data,
       orders: {
-        acceptedCount: toNumber(orders.acceptedCount ?? orders.accepted_count),
-        cancelled: toNumber(orders.cancelled ?? orders.cancelledCount ?? orders.cancelled_count),
-        soldAndPaid: toNumber(orders.soldAndPaid ?? orders.sold_and_paid),
-        profit: toNumber(orders.profit),
-        totalRevenue: toNumber(orders.totalRevenue ?? orders.total_revenue),
+        acceptedCount: toNumber(
+          firstDefined(
+            orders.acceptedCount,
+            orders.accepted_count,
+            orders.accepted,
+            orders.totalAccepted,
+            orders.total_accepted,
+            orders.acceptedOrders,
+            orders.accepted_orders,
+            orders.totalOrders,
+            orders.total_orders,
+          ),
+        ),
+        cancelled: toNumber(
+          firstDefined(
+            orders.cancelled,
+            orders.cancelledCount,
+            orders.cancelled_count,
+            orders.canceled,
+            orders.canceledCount,
+            orders.canceled_count,
+            orders.cancelledOrders,
+            orders.cancelled_orders,
+            orders.canceledOrders,
+            orders.canceled_orders,
+          ),
+        ),
+        soldAndPaid: toNumber(
+          firstDefined(
+            orders.soldAndPaid,
+            orders.sold_and_paid,
+            orders.soldAndPaidCount,
+            orders.sold_and_paid_count,
+            orders.soldOrders,
+            orders.sold_orders,
+            orders.sold,
+            orders.soldCount,
+            orders.sold_count,
+            orders.paid,
+            orders.paidCount,
+            orders.paid_count,
+            orders.successfulOrders,
+            orders.successful_orders,
+          ),
+        ),
+        profit: toNumber(
+          firstDefined(
+            orders.profit,
+            orders.marketProfit,
+            orders.market_profit,
+            orders.netProfit,
+            orders.net_profit,
+            orders.profitSum,
+            orders.profit_sum,
+          ),
+        ),
+        totalRevenue: toNumber(
+          firstDefined(
+            orders.totalRevenue,
+            orders.total_revenue,
+            orders.revenue,
+            orders.totalAmount,
+            orders.total_amount,
+          ),
+        ),
         from: orders.from === undefined ? undefined : toNumber(orders.from),
         to: orders.to === undefined ? undefined : toNumber(orders.to),
       },

@@ -31,6 +31,33 @@ const parseIsoDate = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
+const getActorName = (actor: unknown) => {
+  const record = actor && typeof actor === "object" ? actor as Record<string, unknown> : {};
+  return String(
+    record["name"] ??
+    record["full_name"] ??
+    [record["first_name"], record["last_name"]].filter(Boolean).join(" ") ??
+    "",
+  ).trim();
+};
+
+const getCounterpartyLabel = (
+  role: "market" | "manager" | "courier",
+  entityName: string,
+  item: Record<string, unknown>,
+) => {
+  if (role === "market" || role === "manager") {
+    return `HQ → ${entityName}`;
+  }
+
+  const managerName =
+    getActorName(item["createdByUser"]) ||
+    getActorName(item["created_by_user"]) ||
+    "Manager";
+
+  return `${managerName} → ${entityName}`;
+};
+
 const MyCashboxPage = () => {
   const { t } = useTranslation("payments");
   const role = useSelector((state: RootState) => state.role.role);
@@ -52,58 +79,89 @@ const MyCashboxPage = () => {
 
   const detailData = cashboxResponse?.data;
   const cashbox = detailData?.cashbox ?? detailData?.myCashbox;
-  const currentRole = role === "market" ? "market" : "courier";
+  const currentRole: "market" | "manager" | "courier" =
+    role === "market" ? "market" : role === "manager" ? "manager" : "courier";
+  const expectedCashboxType =
+    currentRole === "market" ? "markets" : currentRole === "manager" ? "branch" : "couriers";
   const entityName =
     cashbox?.user?.name?.trim() ||
-    (currentRole === "market" ? t("marketCashboxLabel") : t("courierCashboxLabel"));
+    (currentRole === "market"
+      ? t("marketCashboxLabel")
+      : currentRole === "manager"
+        ? t("branchMainCashboxLabel")
+        : t("courierCashboxLabel"));
+  const roleCashboxLabel =
+    currentRole === "market"
+      ? t("marketCashboxLabel")
+      : currentRole === "manager"
+        ? t("branchMainCashboxLabel")
+        : t("courierCashboxLabel");
   const totalBalance = toNumber(cashbox?.balance);
-  const incomeAmount = toNumber(detailData?.income);
-  const outcomeAmount = toNumber(detailData?.outcome);
 
   const historyRows = useMemo<PaymentRow[]>(() => {
     const rows = Array.isArray(detailData?.cashboxHistory)
       ? detailData.cashboxHistory
       : [];
 
-    return rows.map((item: Record<string, unknown>, index: number) => {
-      const amount = toNumber(item["amount"]);
-      const operationType =
-        item["operation_type"] ?? (amount >= 0 ? "income" : "expense");
+    return rows
+      .filter((item: Record<string, unknown>) => {
+        const rowCashbox = item["cashbox"] as { cashbox_type?: string } | undefined;
+        const rowCashboxType = String(
+          item["cashbox_type"] ?? rowCashbox?.cashbox_type ?? cashbox?.cashbox_type ?? "",
+        );
 
-      return {
-        id: String(
-          item["id"] ?? `${index}-${item["createdAt"] ?? item["payment_date"] ?? "row"}`,
-        ),
-        amount,
-        operation_type: operationType,
-        source_type: (item["source_type"] ?? item["type"]) as string | undefined,
-        source_id: item["source_id"],
-        cashbox_type: (item["cashbox_type"] as string | undefined) ?? cashbox?.cashbox_type,
-        created_by:
-          ((item["createdByUser"] as { name?: string } | undefined)?.name) ??
-          ((item["created_by_user"] as { name?: string } | undefined)?.name) ??
-          (item["created_by"] as string | undefined) ??
-          (item["createdBy"] as string | undefined) ??
-          ((item["user"] as { name?: string } | undefined)?.name) ??
-          entityName,
-        payment_method: (item["payment_method"] ?? item["method"]) as string | undefined,
-        payment_date:
-          (item["payment_date"] as string | undefined) ?? (item["createdAt"] as string | undefined) ?? (item["created_at"] as string | undefined),
-        comment: item["comment"],
-        balance_after: item["balance_after"],
-        createdAt: item["createdAt"],
-        created_at: item["created_at"],
-        cashbox: item["cashbox"],
-      };
-    });
-  }, [cashbox?.cashbox_type, detailData, entityName]);
+        return !rowCashboxType || rowCashboxType === expectedCashboxType;
+      })
+      .map((item: Record<string, unknown>, index: number) => {
+        const amount = toNumber(item["amount"]);
+        const sourceType = String(item["source_type"] ?? item["type"] ?? "");
+        const isMarketIncomePerspective =
+          currentRole === "market" && sourceType === "market_payment";
+        const operationType = isMarketIncomePerspective
+          ? "income"
+          : item["operation_type"] ?? (amount >= 0 ? "income" : "expense");
+        const counterpartyLabel = getCounterpartyLabel(currentRole, entityName, item);
+
+        return {
+          id: String(
+            item["id"] ?? `${index}-${item["createdAt"] ?? item["payment_date"] ?? "row"}`,
+          ),
+          amount: isMarketIncomePerspective ? Math.abs(amount) : amount,
+          operation_type: operationType,
+          cashbox_id: item["cashbox_id"] ?? (cashbox?.id ? String(cashbox.id) : undefined),
+          source_type: sourceType || undefined,
+          source_id: item["source_id"],
+          cashbox_type: (item["cashbox_type"] as string | undefined) ?? cashbox?.cashbox_type,
+          created_by: counterpartyLabel,
+          payment_method: (item["payment_method"] ?? item["method"]) as string | undefined,
+          payment_date:
+            (item["payment_date"] as string | undefined) ?? (item["createdAt"] as string | undefined) ?? (item["created_at"] as string | undefined),
+          comment: item["comment"],
+          balance_after: item["balance_after"],
+          createdAt: item["createdAt"],
+          created_at: item["created_at"],
+          cashbox: item["cashbox"],
+          createdByUser: null,
+          created_by_user: null,
+          user: null,
+        };
+      });
+  }, [cashbox?.cashbox_type, currentRole, detailData, entityName, expectedCashboxType]);
+
+  const incomeAmount = historyRows.reduce(
+    (sum, row) => row.operation_type === "income" ? sum + Math.abs(toNumber(row.amount)) : sum,
+    0,
+  );
+  const outcomeAmount = historyRows.reduce(
+    (sum, row) => row.operation_type === "expense" ? sum + Math.abs(toNumber(row.amount)) : sum,
+    0,
+  );
 
   const headerIcon = currentRole === "market" ? <Store size={20} /> : <Truck size={20} />;
   const accentIcon = currentRole === "market" ? <Store size={18} /> : <Truck size={18} />;
   const accentClass =
     currentRole === "market" ? "bg-main/30" : "bg-success/25";
-  const description =
-    currentRole === "market" ? t("marketCashboxLabel") : t("courierCashboxLabel");
+  const description = roleCashboxLabel;
 
   if (isLoading) {
     return (
@@ -120,7 +178,7 @@ const MyCashboxPage = () => {
       headerIcon={headerIcon}
       accentClass={accentClass}
       accentIcon={accentIcon}
-      summarySubtitle={currentRole === "market" ? t("marketCashboxLabel") : t("courierCashboxLabel")}
+      summarySubtitle={roleCashboxLabel}
       balance={totalBalance}
       balanceVisible={balanceVisible}
       onToggleBalanceVisibility={() => setBalanceVisible((prev) => !prev)}

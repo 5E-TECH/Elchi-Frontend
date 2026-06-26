@@ -1,6 +1,6 @@
 const SOURCE_TYPE_KEYS: Record<string, string> = {
-  courier_payment: "paymentCourier",
-  market_payment: "paymentMarket",
+  courier_payment: "courierToBranchTransfer",
+  market_payment: "hqToMarketTransfer",
   branch_to_main: "branchToMainSource",
   manual_income: "financialBalanceSourceManualIncome",
   manual_expense: "financialBalanceSourceManualExpense",
