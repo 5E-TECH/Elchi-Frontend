@@ -168,6 +168,7 @@
   "validationCustomerName": "Введите имя клиента",
   "validationRegion": "Выберите область",
   "validationDistrict": "Выберите район",
+  "validationAddressRequired": "Введите адрес для доставки на дом",
   "validationSelectProduct": "Выберите хотя бы один товар",
   "validationTotalPriceRequired": "Введите общую сумму заказа",
   "district": "Район",

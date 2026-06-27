@@ -151,8 +151,15 @@ export const useFinanceCoverage = () => {
       queryKey: ["finance-cov", "salary-by-user", userId, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.SALARY_BY_USER(userId), { params })
-          .then((res) => res.data),
+          .then((res) => res.data)
+          .catch((error) => {
+            if (error?.response?.status === 404) {
+              return { data: [] };
+            }
+            throw error;
+          }),
       enabled,
+      retry: false,
     });
 
   return {

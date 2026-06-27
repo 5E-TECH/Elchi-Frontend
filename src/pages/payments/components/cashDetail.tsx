@@ -8,6 +8,7 @@ import type { PaymentRow } from "./patmentHistoryTable";
 import { useCashBox } from "../../../entities/payments";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { useMarkets } from "../../../entities/markets";
+import { useUser } from "../../../entities/user/api/userApi";
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
 import { parseAmountInput } from "./lib/amountInput";
@@ -39,6 +40,15 @@ const toDataItems = (value: unknown): unknown[] => {
 
   return [];
 };
+
+const getPersonName = (item: Record<string, unknown>, fallback: string) =>
+  String(
+    item.name ??
+      item.full_name ??
+      item.fullName ??
+      [item.first_name, item.last_name].filter(Boolean).join(" ") ??
+      fallback,
+  ).trim() || fallback;
 
 const toOptionalString = (value: unknown) => {
   if (typeof value === "string") return value;
@@ -169,6 +179,11 @@ const cashDetailSchema: yup.ObjectSchema<CashboxActionFormValues> = yup.object({
     then: (schema) => schema.required(i18n.t("payments:marketRequired")),
     otherwise: (schema) => schema.defined(),
   }),
+  transferSourceId: yup.string().defined().when("paymentType", {
+    is: "click",
+    then: (schema) => schema.required(i18n.t("payments:transferSourceRequired")),
+    otherwise: (schema) => schema.defined(),
+  }),
   comment: yup.string().defined(),
 });
 
@@ -186,6 +201,7 @@ const CashDetail = () => {
   } = useCashBox();
   const { useGetManagerPayableToHq } = useFinanceCoverage();
   const { useGetMarkets } = useMarkets();
+  const { useGetUser } = useUser();
   const { apiRequest } = useAppNotification();
 
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
@@ -285,10 +301,10 @@ const CashDetail = () => {
   }, [id, settlementBalance]);
 
   const paymentTypeOptions = [
-    { value: "cash", label: `💵 ${t("cash")}` },
-    { value: "click", label: `💳 ${t("transferOption")}` },
+    { value: "cash", label: t("cash") },
+    { value: "click", label: t("transferOption") },
     ...(type === "courier"
-      ? [{ value: "click_to_market", label: `🏪 ${t("toMarketTransferOption")}` }]
+      ? [{ value: "click_to_market", label: t("toMarketTransferOption") }]
       : []),
   ];
   const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } =
@@ -297,6 +313,7 @@ const CashDetail = () => {
         amount: "",
         paymentType: "",
         marketId: "",
+        transferSourceId: "",
         comment: "",
       },
       resolver: yupResolver(cashDetailSchema) as Resolver<CashboxActionFormValues>,
@@ -304,7 +321,9 @@ const CashDetail = () => {
 
   const selectedPaymentType = watch("paymentType");
   const selectedMarketId = watch("marketId");
+  const selectedTransferSourceId = watch("transferSourceId");
   const isStoreTransfer = selectedPaymentType === "click_to_market";
+  const isTransferSourceSelectVisible = selectedPaymentType === "click";
   const isSubmitting =
     createPaymentCourier.isPending ||
     createPaymentBranchToMain.isPending ||
@@ -312,6 +331,10 @@ const CashDetail = () => {
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
     { status: "active", limit: FULL_LIST_LIMIT },
     isStoreTransfer,
+  );
+  const { data: transferUsersData, isLoading: transferUsersLoading } = useGetUser(
+    { limit: FULL_LIST_LIMIT },
+    isTransferSourceSelectVisible,
   );
   const marketOptions = useMemo(
     () =>
@@ -327,6 +350,38 @@ const CashDetail = () => {
         .filter((item) => item.value && item.label),
     [marketsData],
   );
+  const transferSourceOptions = useMemo(() => {
+    const adminRoles = new Set(["admin", "superadmin", "manager", "registrator"]);
+    const sourceMap = new Map<string, { value: string; label: string }>();
+
+    sourceMap.set("main", {
+      value: "main",
+      label: `${t("mainCard")} — ${toNumber(cashbox?.balance_card ?? cashbox?.balance).toLocaleString("uz-UZ")} ${t("currency")}`,
+    });
+
+    toDataItems(transferUsersData).forEach((source) => {
+      const item = asRecord(source);
+      const id = String(item.id ?? "");
+      const role = String(item.role ?? "").toLowerCase();
+      if (!id || !adminRoles.has(role)) return;
+
+      const sourceCashbox = asRecord(item.cashbox ?? item.cashBox ?? item.cash_box ?? item.kassa);
+      const balance = toNumber(
+        sourceCashbox.balance_card ??
+          item.balance_card ??
+          sourceCashbox.balance ??
+          item.balance ??
+          item.amount,
+      );
+
+      sourceMap.set(id, {
+        value: id,
+        label: `${getPersonName(item, t("userFallback"))} — ${balance.toLocaleString("uz-UZ")} ${t("currency")}`,
+      });
+    });
+
+    return Array.from(sourceMap.values());
+  }, [cashbox?.balance, cashbox?.balance_card, t, transferUsersData]);
 
   useEffect(() => {
     if (!isStoreTransfer) {
@@ -334,11 +389,23 @@ const CashDetail = () => {
     }
   }, [isStoreTransfer, setValue]);
 
+  useEffect(() => {
+    if (!isTransferSourceSelectVisible) {
+      setValue("transferSourceId", "");
+      return;
+    }
+
+    if (!selectedTransferSourceId && transferSourceOptions[0]?.value) {
+      setValue("transferSourceId", transferSourceOptions[0].value);
+    }
+  }, [isTransferSourceSelectVisible, selectedTransferSourceId, setValue, transferSourceOptions]);
+
   const resetActionForm = () => {
     reset({
       amount: "",
       paymentType: "",
       marketId: "",
+      transferSourceId: "",
       comment: "",
     });
   };
@@ -453,6 +520,10 @@ const CashDetail = () => {
     const amount = parseAmountInput(values.amount);
     const paymentDate = new Date().toISOString();
     const comment = values.comment?.trim() || "";
+    const sourceUserId =
+      values.paymentType === "click" && values.transferSourceId !== "main"
+        ? values.transferSourceId
+        : undefined;
     const normalizedPaymentMethod =
       values.paymentType === "transfer" ? "click" : values.paymentType;
 
@@ -466,6 +537,7 @@ const CashDetail = () => {
             payment_method: normalizedPaymentMethod,
             payment_date: paymentDate,
             comment,
+            source_user_id: sourceUserId,
           }),
         successMessage: t("branchToMainPaymentSuccess"),
         errorMessage: t("branchToMainPaymentError"),
@@ -476,8 +548,6 @@ const CashDetail = () => {
 
     if (type === "courier") {
       if (!id) return;
-
-    if (type === "courier") {
       const result = await apiRequest({
         request: () =>
           createPaymentCourier.mutateAsync({
@@ -487,7 +557,8 @@ const CashDetail = () => {
             market_id: isStoreTransfer ? values.marketId : null,
             payment_date: paymentDate,
             comment,
-        }),
+            source_user_id: sourceUserId,
+          }),
         successMessage: t("receivePaymentSuccess"),
         errorMessage: t("receivePaymentError"),
       });
@@ -503,7 +574,8 @@ const CashDetail = () => {
           payment_method: normalizedPaymentMethod,
           payment_date: paymentDate,
           comment,
-      }),
+          source_user_id: sourceUserId,
+        }),
       successMessage: t("marketPaymentSuccess"),
       errorMessage: t("marketPaymentError"),
     });
@@ -616,8 +688,16 @@ const CashDetail = () => {
             marketPlaceholder={t("selectMarket")}
             marketOptions={marketOptions}
             marketLoading={marketsLoading}
+            showTransferSourceSelect={isTransferSourceSelectVisible}
+            transferSourceLabel={t("selectCard")}
+            transferSourcePlaceholder={t("selectCard")}
+            transferSourceOptions={transferSourceOptions}
+            transferSourceLoading={transferUsersLoading}
             submitLoading={isSubmitting}
-            submitDisabled={isStoreTransfer && !selectedMarketId}
+            submitDisabled={
+              (isStoreTransfer && !selectedMarketId) ||
+              (isTransferSourceSelectVisible && !selectedTransferSourceId)
+            }
             commentLabel={t("comment")}
             commentPlaceholder={t("commentPlaceholder")}
             paymentTypeOptions={paymentTypeOptions}
@@ -627,7 +707,6 @@ const CashDetail = () => {
             handleSubmit={handleSubmit}
             onSubmit={onSubmit}
         />
-          />
       }
     />
   );

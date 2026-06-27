@@ -9,6 +9,7 @@ import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
+import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
 import { removeFilterValue, setMultipleFilters } from "../../features/Select/model/FilterSlice";
 import {
@@ -40,6 +41,8 @@ const MarketDashboardPage = () => {
   );
 
   const hasDateFilter = Boolean(fromDate && toDate);
+  const allTimeRange = getAllTimeRange();
+  const isAllTime = fromDate === allTimeRange.from && toDate === allTimeRange.to;
 
   // ─── Scope: re-render minimizatsiya uchun ─────────────────────────────────────
   const analyticsScope = useMemo(
@@ -48,11 +51,14 @@ const MarketDashboardPage = () => {
   );
 
   const analyticsParams = useMemo(
-    () => ({
-      start_day: hasDateFilter ? fromDate : "",
-      end_day: hasDateFilter ? toDate : "",
-    }),
-    [fromDate, hasDateFilter, toDate],
+    () =>
+      isAllTime
+        ? { all: true }
+        : {
+            start_day: hasDateFilter ? fromDate : "",
+            end_day: hasDateFilter ? toDate : "",
+          },
+    [fromDate, hasDateFilter, isAllTime, toDate],
   );
 
   // ─── API so'rovlari ───────────────────────────────────────────────────────────
@@ -108,8 +114,8 @@ const MarketDashboardPage = () => {
       {/* Sahifa sarlavhasi */}
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <HeaderName
-          name={hasDateFilter ? t("page_title_filtered") : t("market.page_title")}
-          description={hasDateFilter ? t("page_subtitle_filtered") : t("market.page_subtitle")}
+          name={isAllTime ? t("page_title_all") : hasDateFilter ? t("page_title_filtered") : t("market.page_title")}
+          description={isAllTime ? t("page_subtitle_all") : hasDateFilter ? t("page_subtitle_filtered") : t("market.page_subtitle")}
           icon={<LayoutDashboard />}
         />
 

@@ -168,6 +168,7 @@
   "validationCustomerName": "Mijoz ismini kiriting",
   "validationRegion": "Viloyatni tanlang",
   "validationDistrict": "Tumanni tanlang",
+  "validationAddressRequired": "Uygacha yetkazishda manzilni kiriting",
   "validationSelectProduct": "Kamida bitta mahsulot tanlang",
   "validationTotalPriceRequired": "Buyurtmaning umumiy summasini kiriting",
   "district": "Tuman",

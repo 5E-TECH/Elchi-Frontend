@@ -1,12 +1,17 @@
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../shared/components/headerName";
-import { Scale, Briefcase, Store, Truck, History, ChartColumn } from "lucide-react";
+import { Scale, Briefcase, Store, Truck, History, ChartColumn, MapPin } from "lucide-react";
 import Statistics from "./components/Statistics";
 import HistoryTab from "./components/HistoryTab";
+import AnalysisTab from "./components/AnalysisTab";
 import { useCashBox } from "../../entities/payments";
 import PageContainer from "../../shared/ui/PageContainer";
-import { formatFinancialAmount, normalizeFinancialBalance } from "./lib/financialBalance";
+import {
+  formatFinancialAmount,
+  normalizeFinancialBalance,
+  type FinancialBalanceParty,
+} from "./lib/financialBalance";
 
 interface BalanceCard {
   label: string;
@@ -42,6 +47,91 @@ const subLabelColor = {
   negative: "text-red-500 dark:text-red-400",
   positive: "text-emerald-600 dark:text-emerald-400",
 };
+
+interface SettlementListCardProps {
+  title: string;
+  description: string;
+  count: number;
+  icon: React.ReactNode;
+  iconClassName: string;
+  total: number;
+  rows: FinancialBalanceParty[];
+  amountClassName: string;
+  emptyText: string;
+  countSuffix: string;
+  totalLabel: string;
+  currencyLabel: string;
+}
+
+const SettlementListCard = ({
+  title,
+  description,
+  count,
+  icon,
+  iconClassName,
+  total,
+  rows,
+  amountClassName,
+  emptyText,
+  countSuffix,
+  totalLabel,
+  currencyLabel,
+}: SettlementListCardProps) => (
+  <div className="overflow-hidden rounded-2xl border border-glass-border bg-primary dark:bg-maindark">
+    <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-[#36324A]">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconClassName}`}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-base font-bold text-maindark dark:text-white">{title}</p>
+          <p className="truncate text-xs text-maindark/50 dark:text-slate-400">{description}</p>
+        </div>
+      </div>
+      <p className="shrink-0 text-sm font-semibold text-maindark/45 dark:text-slate-500">
+        {count} {countSuffix}
+      </p>
+    </div>
+
+    <div className="max-h-72 overflow-y-auto">
+      {rows.length ? (
+        rows.map((row, index) => (
+          <div
+            key={`${row.id}-${index}`}
+            className="flex items-center gap-3 border-b border-gray-100 px-5 py-3 last:border-b-0 dark:border-[#2A273B]"
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200/70 text-sm font-bold text-slate-600 dark:bg-[#1d3340] dark:text-slate-300">
+              {index + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-maindark dark:text-white">{row.name}</p>
+              {row.location ? (
+                <p className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-maindark/45 dark:text-slate-400">
+                  <MapPin size={12} className="shrink-0" />
+                  <span className="truncate">{row.location}</span>
+                </p>
+              ) : null}
+            </div>
+            <p className={`shrink-0 text-right text-sm font-black tabular-nums ${amountClassName}`}>
+              {formatFinancialAmount(row.balance, "comma")}
+            </p>
+          </div>
+        ))
+      ) : (
+        <div className="px-5 py-10 text-center text-sm text-maindark/50 dark:text-slate-400">
+          {emptyText}
+        </div>
+      )}
+    </div>
+
+    <div className="flex items-center justify-between gap-4 border-t border-gray-200 bg-slate-50 px-5 py-4 dark:border-[#36324A] dark:bg-[#202437]">
+      <p className="text-base font-bold text-maindark dark:text-white">{totalLabel}</p>
+      <p className={`text-right text-base font-black tabular-nums sm:text-lg ${amountClassName}`}>
+        {formatFinancialAmount(total, "comma")} {currencyLabel}
+      </p>
+    </div>
+  </div>
+);
 
 
 const FinancialBalance = () => {
@@ -233,17 +323,44 @@ const FinancialBalance = () => {
       </div>
 
       <div className="px-4 pb-4">
-        {activeTab === "overview" ? <Statistics data={data} /> : activeTab === "history" ? (
+        {activeTab === "overview" ? (
+          <div className="flex flex-col gap-3">
+            <Statistics data={data} />
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <SettlementListCard
+                title={t("financialBalanceMarkets")}
+                description={t("financialBalanceMarketsSettlement")}
+                count={data.markets.items.length}
+                icon={<Store size={18} />}
+                iconClassName="bg-purple-600/20 text-purple-500 dark:text-purple-300"
+                total={data.markets.marketsTotalBalans}
+                rows={data.markets.items}
+                amountClassName="text-red-500 dark:text-red-400"
+                emptyText={t("financialBalanceListEmpty")}
+                countSuffix={t("financialBalanceCountSuffix")}
+                totalLabel={t("total")}
+                currencyLabel={currencyLabel}
+              />
+              <SettlementListCard
+                title={t("financialBalanceCouriers")}
+                description={t("financialBalanceCouriersSettlement")}
+                count={data.couriers.items.length}
+                icon={<Truck size={18} />}
+                iconClassName="bg-blue-600/20 text-blue-600 dark:text-blue-300"
+                total={data.couriers.couriersTotalBalanse}
+                rows={data.couriers.items}
+                amountClassName="text-emerald-600 dark:text-emerald-400"
+                emptyText={t("financialBalanceListEmpty")}
+                countSuffix={t("financialBalanceCountSuffix")}
+                totalLabel={t("total")}
+                currencyLabel={currencyLabel}
+              />
+            </div>
+          </div>
+        ) : activeTab === "history" ? (
           <HistoryTab />
         ) : (
-          <div className="rounded-2xl border border-gray-200 dark:border-glass-border bg-white dark:bg-maindark px-6 py-10 text-center">
-            <p className="text-base font-semibold text-maindark dark:text-white/85">
-              {t("financialBalanceAnalysis")}
-            </p>
-            <p className="mt-2 text-sm text-maindark/50 dark:text-slate-400">
-              {t("financialBalanceComingSoon")}
-            </p>
-          </div>
+          <AnalysisTab />
         )}
       </div>
       </div>

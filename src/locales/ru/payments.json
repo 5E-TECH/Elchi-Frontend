@@ -137,6 +137,18 @@
   "financialBalanceDistribution": "Распределение",
   "financialBalanceTotal": "Общий баланс",
   "financialBalanceTotalFormula": "Касса + Курьеры + Маркеты",
+  "financialBalanceMarketsSettlement": "Расчеты с маркетами",
+  "financialBalanceCouriersSettlement": "Расчеты с курьерами",
+  "financialBalanceListEmpty": "Данные не найдены",
+  "financialBalanceCountSuffix": "шт.",
+  "financialBalancePositiveImpact": "Положительное влияние (+)",
+  "financialBalanceNegativeImpact": "Отрицательное влияние (-)",
+  "financialBalanceNetChange": "Чистое изменение",
+  "financialBalanceTransactionsCount": "{{count}} транзакций",
+  "financialBalancePositiveSources": "Источники роста",
+  "financialBalanceNegativeSources": "Источники снижения",
+  "financialBalanceTopTransactions": "Транзакции с наибольшим влиянием",
+  "financialBalanceTotalTransactions": "Всего {{count}}",
   "financialBalanceComingSoon": "Интерфейс для этого раздела будет добавлен на следующем этапе.",
   "financialBalanceDate": "Дата",
   "financialBalanceSource": "Источник",
@@ -202,6 +214,7 @@
   ,"salaryPaymentError": "Не удалось выплатить зарплату"
   ,"mainCard": "Основная карта"
   ,"selectCard": "Выберите карту"
+  ,"cardRequired": "Выберите карту"
   ,"courierShort": "Курьер"
   ,"marketShort": "Маркет"
   ,"expenseShort": "Расход"

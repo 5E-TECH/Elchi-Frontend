@@ -168,6 +168,7 @@
   "validationCustomerName": "Enter customer name",
   "validationRegion": "Select a region",
   "validationDistrict": "Select a district",
+  "validationAddressRequired": "Enter the address for home delivery",
   "validationSelectProduct": "Select at least one product",
   "validationTotalPriceRequired": "Enter the total order amount",
   "district": "District",
