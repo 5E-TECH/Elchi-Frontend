@@ -186,6 +186,9 @@ export type BranchTransferBatchStatus =
 // ─── Mail list item (post/new, post/old, post/rejected) ───────────────────────
 export interface MailItem {
   id: string;
+  request_id?: string;
+  order_id?: string;
+  post_id?: string;
   createdAt: string;
   updatedAt: string;
   courier_id: string;
@@ -199,6 +202,17 @@ export interface MailItem {
     name?: string;
     phone_number?: string;
   } | null;
+  customer?: {
+    id?: string;
+    name?: string;
+    phone_number?: string;
+    extra_number?: string | null;
+  } | null;
+  district?: {
+    id?: string;
+    name?: string;
+  } | null;
+  action?: string;
   status: string;
 }
 
@@ -271,6 +285,10 @@ const mapTransferBatchToMailItem = (batch: any): MailItem => {
 const mapReturnRequestToMailItem = (request: any): MailItem => {
   const post = request?.post ?? request?.mail ?? request?.batch ?? request;
   const region = post?.region ?? request?.region;
+  const district = request?.district ?? request?.order?.district ?? request?.customer?.district ?? post?.district;
+  const courier = request?.courier ?? post?.courier ?? request?.user ?? request?.courier_user;
+  const order = request?.order ?? request;
+  const customer = order?.customer ?? request?.customer;
   const orders = post?.orders ?? request?.orders ?? post?.allOrdersByPostId ?? request?.allOrdersByPostId;
   const orderCount =
     request?.order_quantity ??
@@ -284,6 +302,11 @@ const mapReturnRequestToMailItem = (request: any): MailItem => {
     request?.post_total_price ??
     request?.total_price ??
     request?.totalPrice ??
+    request?.amount ??
+    order?.total_price ??
+    order?.totalPrice ??
+    order?.to_be_paid ??
+    order?.price ??
     post?.post_total_price ??
     post?.total_price ??
     post?.totalPrice;
@@ -291,18 +314,37 @@ const mapReturnRequestToMailItem = (request: any): MailItem => {
 
   return {
     id: toText(post?.id ?? request?.post_id ?? request?.postId ?? request?.id ?? request?._id),
+    request_id: toText(request?.id ?? request?._id),
+    order_id: toText(request?.order_id ?? request?.orderId ?? order?.id),
+    post_id: toText(post?.id ?? request?.post_id ?? request?.postId),
     createdAt: toText(post?.createdAt ?? post?.created_at ?? request?.createdAt ?? request?.created_at, new Date().toISOString()),
     updatedAt: toText(post?.updatedAt ?? post?.updated_at ?? request?.updatedAt ?? request?.updated_at, new Date().toISOString()),
-    courier_id: toText(post?.courier_id ?? request?.courier_id),
+    courier_id: toText(post?.courier_id ?? request?.courier_id ?? courier?.id),
     post_total_price: toNumber(totalPrice),
     order_quantity: toNumber(orderCount),
     qr_code_token: toText(post?.qr_code_token ?? post?.qrCodeToken ?? request?.qr_code_token ?? request?.qrCodeToken),
     region_id: regionId,
     region: {
       id: regionId,
-      name: toText(region?.name ?? region?.title, "Qaytarish"),
+      name: toText(region?.name ?? region?.title),
       sato_code: toText(region?.sato_code),
     },
+    courier: courier ? {
+      id: toText(courier?.id),
+      name: toText(courier?.name ?? courier?.full_name ?? courier?.username),
+      phone_number: toText(courier?.phone_number ?? courier?.phone),
+    } : null,
+    customer: customer ? {
+      id: toText(customer?.id),
+      name: toText(customer?.name ?? customer?.full_name ?? customer?.username),
+      phone_number: toText(customer?.phone_number ?? customer?.phone),
+      extra_number: customer?.extra_number ?? null,
+    } : null,
+    district: district ? {
+      id: toText(district?.id),
+      name: toText(district?.name ?? district?.title),
+    } : null,
+    action: toText(request?.action ?? request?.return_action ?? request?.destination, "center"),
     status: toText(request?.status ?? post?.status, "return"),
   };
 };
@@ -334,6 +376,7 @@ const toPaginatedMailResponse = (
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 export const useMails = () => {
+  const queryClient = useQueryClient();
   const role = useSelector((state: RootState) => state.role.role);
   const branchId = useSelector((state: RootState) => state.user.user?.branch_id);
   const isManagerRole = role === "manager";
@@ -411,6 +454,24 @@ export const useMails = () => {
           .then((res) => toPaginatedMailResponse(res.data, mapReturnRequestToMailItem)),
     });
 
+  const approveReturnRequests = useMutation({
+    mutationFn: (data: any) =>
+      api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_APPROVE, data).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+    },
+  });
+
+  const rejectReturnRequests = useMutation({
+    mutationFn: (data: any) =>
+      api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_REJECT, data).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+    },
+  });
+
   const useGetRefusedMailsCourier = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-courier"],
@@ -458,6 +519,8 @@ export const useMails = () => {
     useGetNewMails,
     useGetRefusedMails,
     useGetReturnMails,
+    approveReturnRequests,
+    rejectReturnRequests,
     useGetOldMails,
     useGetNewMailsCourier,
     useGetTodayMailsCourier,

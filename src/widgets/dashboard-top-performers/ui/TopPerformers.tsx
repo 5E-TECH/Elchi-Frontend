@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Store, Bike, Trophy, Inbox } from "lucide-react";
 import type { TopMarket, TopCourier } from "../../../entities/dashboard";
@@ -26,6 +26,14 @@ interface LeaderboardRow {
 }
 
 const RANK_COLORS = ["#f59e0b", "#94a3b8", "#b45309"]; // oltin / kumush / bronza
+const MAX_ROWS = 5;
+
+const toFiniteNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const clampPercent = (value: number): number => Math.min(100, Math.max(0, value));
 
 interface LeaderboardProps {
   title: string;
@@ -63,6 +71,7 @@ const Leaderboard = memo(
           <ul className="flex flex-1 flex-col gap-2.5">
             {rows.map((row, i) => {
               const medal = RANK_COLORS[i];
+              const progress = clampPercent(row.rate);
               return (
                 <li key={row.id} className="flex items-center gap-3">
                   {/* Reyting raqami */}
@@ -93,7 +102,7 @@ const Leaderboard = memo(
                     >
                       <div
                         className="h-full rounded-full"
-                        style={{ width: `${Math.min(100, row.rate)}%`, background: accent }}
+                        style={{ width: `${progress}%`, background: accent }}
                       />
                     </div>
                     <p className="mt-1 text-[10px] font-medium" style={{ color: TEXT.soft }}>
@@ -120,21 +129,29 @@ export interface TopPerformersProps {
 const TopPerformers = memo(({ markets, couriers }: TopPerformersProps) => {
   const { t } = useTranslation("dashboard");
 
-  const marketRows: LeaderboardRow[] = (markets ?? []).slice(0, 5).map((m, i) => ({
-    id: String(m.market_id ?? i),
-    name: m.market_name ?? "—",
-    rate: Number(m.success_rate ?? 0),
-    total: Number(m.total_orders ?? 0),
-    successful: Number(m.successful_orders ?? 0),
-  }));
+  const marketRows: LeaderboardRow[] = useMemo(
+    () =>
+      (markets ?? []).slice(0, MAX_ROWS).map((m, i) => ({
+        id: `market-${m.market_id || "unknown"}-${i}`,
+        name: m.market_name || "—",
+        rate: clampPercent(toFiniteNumber(m.success_rate)),
+        total: toFiniteNumber(m.total_orders),
+        successful: toFiniteNumber(m.successful_orders),
+      })),
+    [markets],
+  );
 
-  const courierRows: LeaderboardRow[] = (couriers ?? []).slice(0, 5).map((c, i) => ({
-    id: String(c.courier_id ?? i),
-    name: c.courier_name ?? "—",
-    rate: Number(c.success_rate ?? 0),
-    total: Number(c.total_orders ?? 0),
-    successful: Number(c.successful_orders ?? 0),
-  }));
+  const courierRows: LeaderboardRow[] = useMemo(
+    () =>
+      (couriers ?? []).slice(0, MAX_ROWS).map((c, i) => ({
+        id: `courier-${c.courier_id || "unknown"}-${i}`,
+        name: c.courier_name || "—",
+        rate: clampPercent(toFiniteNumber(c.success_rate)),
+        total: toFiniteNumber(c.total_orders),
+        successful: toFiniteNumber(c.successful_orders),
+      })),
+    [couriers],
+  );
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

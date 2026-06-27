@@ -5,7 +5,6 @@ import {
   BadgeCheck,
   Calendar,
   CreditCard,
-  ExternalLink,
   Loader2,
   MapPin,
   MessageSquare,
@@ -70,12 +69,6 @@ const getStatusLabel = (value: string | null | undefined, t: (key: string) => st
   if (value === "new") return t("statusNew");
   if (value === "received") return t("statusReceived");
   return value;
-};
-
-const getDeliveryLabel = (value: string | null | undefined, t: (key: string) => string) => {
-  if (value === "address") return t("deliveryAddress");
-  if (value === "center") return t("deliveryCenter");
-  return value || "—";
 };
 
 const getActorName = (actor?: Partial<FinanceHistoryActor> | null) => {
@@ -258,6 +251,19 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   ]
     .filter(Boolean)
     .join(", ");
+  const orderTitle =
+    order?.market?.name ||
+    order?.items?.[0]?.product?.name ||
+    order?.customer?.name ||
+    (order?.id ? `#${order.id}` : "—");
+  const orderPhone =
+    order?.customer?.phone_number ||
+    order?.customer?.phone ||
+    order?.customer?.extra_number ||
+    "—";
+  const orderTotal = Number(order?.total_price ?? 0);
+  const orderToBePaid = Number(order?.to_be_paid ?? 0);
+  const orderPaid = Number(order?.paid_amount ?? 0);
 
   if (!row) return null;
 
@@ -433,121 +439,73 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
               </div>
 
               {order && (
-                <div className="overflow-hidden rounded-2xl border border-[color:color-mix(in_srgb,var(--color-success)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--color-success)_9%,var(--color-primary))] dark:border-white/10 dark:bg-primarydark/55">
-                  <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-4 py-3 dark:border-white/10">
+                <>
+                  <div className="rounded-2xl border border-success/35 bg-linear-to-br from-success/14 to-success/7 p-4 dark:border-success/35 dark:from-success/20 dark:to-success/10">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-2xl"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, var(--color-success) 0%, color-mix(in srgb, var(--color-success) 62%, var(--color-maindark)) 100%)",
-                        }}
-                      >
-                        <ShoppingCart size={17} className="text-primary" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-success to-info text-primary shadow-sm">
+                        <ShoppingCart size={17} />
                       </div>
-                      <div>
-                        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[var(--color-success)] dark:text-white/85">
+                      <div className="min-w-0 flex-1">
+                        <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-success dark:text-primary/85">
                           {t("order")}
                         </p>
-                        <p className="text-[15px] font-bold text-[var(--color-maindark)] dark:text-white">#{order.id}</p>
+                        <p className="truncate text-sm font-bold text-[var(--color-maindark)] dark:text-primary">
+                          {orderTitle}
+                        </p>
+                        {order.id && (
+                          <p className="mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-primary/65">
+                            #{String(order.id).slice(0, 8)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3 px-4 py-3 text-[14px]">
-                    {hasComment && (
-                      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-sidebar/70 p-3 dark:border-white/10 dark:bg-maindark/40">
-                        <div className="mb-2 flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <MessageSquare size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>{t("comment")}</span>
-                        </div>
-                        <p className="whitespace-pre-line text-[var(--color-maindark)] dark:text-white">
-                          {detail?.comment}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-[1fr_auto] gap-y-2.5">
-                      <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                        <MapPin size={12} className="text-[var(--color-main)] dark:text-white" />
-                        <span>{t("region")}</span>
-                      </div>
-                      <span className="text-right font-medium text-[var(--color-maindark)] dark:text-white">
-                        {locationLabel || "—"}
-                      </span>
-
-                      <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                        <Phone size={12} className="text-[var(--color-main)] dark:text-white" />
-                        <span>{t("phoneNumber")}</span>
-                      </div>
-                      <span className="text-right font-medium text-[var(--color-maindark)] dark:text-white">
-                        {order.customer?.phone_number || "—"}
-                      </span>
-                    </div>
-
-                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <Wallet size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>{t("totalPrice")}</span>
-                        </div>
-                        <span className="font-bold text-[var(--color-main)] dark:text-white">
-                          {fmt(order.total_price ?? order.to_be_paid ?? 0)} {t("currency")}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <BadgeCheck size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>{t("transactionStatus")}</span>
-                        </div>
-                        <span
-                          className="rounded-full border px-2 py-0.5 text-[10px] font-bold dark:border-white/10 dark:text-white"
-                          style={{
-                            color:
-                              order.status === "sold" || order.status === "paid"
-                                ? "var(--color-success)"
-                                : "var(--color-error)",
-                            background:
-                              order.status === "sold" || order.status === "paid"
-                                ? "color-mix(in srgb, var(--color-success) 15%, var(--color-primary))"
-                                : "color-mix(in srgb, var(--color-error) 15%, var(--color-primary))",
-                            borderColor:
-                              order.status === "sold" || order.status === "paid"
-                                ? "color-mix(in srgb, var(--color-success) 26%, transparent)"
-                                : "color-mix(in srgb, var(--color-error) 26%, transparent)",
-                          }}
-                        >
+                  <div className="grid grid-cols-2 gap-3">
+                    <InfoCard
+                      icon={<MapPin size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("district")}
+                      value={locationLabel || "—"}
+                    />
+                    <InfoCard
+                      icon={<Phone size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("phoneNumber")}
+                      value={orderPhone}
+                    />
+                    <InfoCard
+                      icon={<Wallet size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("totalPrice")}
+                      value={`${fmt(orderTotal || orderToBePaid)} ${t("currency")}`}
+                    />
+                    <InfoCard
+                      icon={<Receipt size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("toBePaid")}
+                      value={`${fmt(orderToBePaid)} ${t("currency")}`}
+                    />
+                    <InfoCard
+                      icon={<CreditCard size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("paid")}
+                      value={`${fmt(orderPaid)} ${t("currency")}`}
+                    />
+                    <InfoCard
+                      icon={<BadgeCheck size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("transactionStatus")}
+                      value={
+                        <span className="inline-flex w-fit rounded-md border border-success/20 bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success dark:text-white">
                           {getStatusLabel(order.status, t)}
                         </span>
-                      </div>
-                    </div>
-
+                      }
+                    />
                     {order.address && (
-                      <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
-                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <MapPin size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>{t("address")}</span>
-                        </div>
-                        <p className="mt-1 leading-5 text-[var(--color-maindark)] dark:text-white">{order.address}</p>
-                      </div>
+                      <InfoCard
+                        icon={<MapPin size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                        label={t("address")}
+                        value={order.address}
+                        fullWidth
+                      />
                     )}
-
-                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <ExternalLink size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>{t("delivery")}</span>
-                        </div>
-                        <span className="font-medium text-[var(--color-maindark)] dark:text-white">
-                          {getDeliveryLabel(order.where_deliver, t)}
-                        </span>
-                      </div>
-                    </div>
                   </div>
-                </div>
+                </>
               )}
             </>
           )}

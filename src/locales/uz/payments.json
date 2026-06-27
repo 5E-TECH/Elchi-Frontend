@@ -68,11 +68,11 @@
   "user": "Foydalanuvchi",
   "phoneNumber": "Telefon raqami",
   "type": "Turi",
-  "order": "Order",
-  "district": "District",
+  "order": "Buyurtma",
+  "district": "Tuman",
   "totalPrice": "Jami summa",
   "toBePaid": "To'lanishi kerak",
-  "paid": "Paid",
+  "paid": "To'langan",
   "address": "Manzil",
   "qty": "Qty",
   "detailLoading": "Detail yuklanmoqda",
@@ -137,6 +137,18 @@
   "financialBalanceDistribution": "Taqsimot",
   "financialBalanceTotal": "Umumiy balans",
   "financialBalanceTotalFormula": "Kassa + Kuryerlar + Marketlar",
+  "financialBalanceMarketsSettlement": "Marketlar bilan hisob-kitob",
+  "financialBalanceCouriersSettlement": "Kuryerlar bilan hisob-kitob",
+  "financialBalanceListEmpty": "Ma'lumot topilmadi",
+  "financialBalanceCountSuffix": "ta",
+  "financialBalancePositiveImpact": "Musbat ta'sir (+)",
+  "financialBalanceNegativeImpact": "Manfiy ta'sir (-)",
+  "financialBalanceNetChange": "Sof o'zgarish",
+  "financialBalanceTransactionsCount": "{{count}} ta tranzaksiya",
+  "financialBalancePositiveSources": "Musbatga tortuvchi manbalar",
+  "financialBalanceNegativeSources": "Manfiyga tortuvchi manbalar",
+  "financialBalanceTopTransactions": "Eng katta ta'sir ko'rsatgan tranzaksiyalar",
+  "financialBalanceTotalTransactions": "{{count}} ta jami",
   "financialBalanceComingSoon": "Bu bo'lim uchun UI keyingi bosqichda qo'shiladi.",
   "financialBalanceDate": "Sana",
   "financialBalanceSource": "Manba",
@@ -174,7 +186,7 @@
   "balanceVisible": "Balans ko'rinadi",
   "balanceHidden": "Balans yashirilgan",
   "cashboxUser": "Kassa foydalanuvchisi",
-  "transactionStatus": "Status",
+  "transactionStatus": "Holat",
   "delivery": "Yetkazish",
   "orderProducts": "Mahsulotlar",
   "financeHistory": "Moliyaviy tarix",
@@ -202,6 +214,7 @@
   ,"salaryPaymentError": "Maosh to'lovida xatolik yuz berdi"
   ,"mainCard": "Asosiy karta"
   ,"selectCard": "Kartani tanlang"
+  ,"cardRequired": "Kartani tanlang"
   ,"courierShort": "Kuryer"
   ,"marketShort": "Market"
   ,"expenseShort": "Chiqim"

@@ -4,6 +4,7 @@ import { Banknote, CreditCard, History, WalletCards, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import Popup from "../../../shared/ui/Popup";
+import FilterSelect, { type FilterSelectOption } from "../../../shared/ui/FilterSelect";
 
 type Employee = {
   id: string;
@@ -16,6 +17,13 @@ type SalaryPaymentPopupProps = {
   employee: Employee | null;
   isOpen: boolean;
   onClose: () => void;
+  cardSources?: SalaryCardSource[];
+};
+
+export type SalaryCardSource = {
+  id: string;
+  name: string;
+  balance: number;
 };
 
 const toNumber = (value: unknown) => {
@@ -49,11 +57,13 @@ const SalaryPaymentPopup = ({
   employee,
   isOpen,
   onClose,
+  cardSources = [],
 }: SalaryPaymentPopupProps) => {
   const { t } = useTranslation("payments");
   const [amount, setAmount] = useState("");
   const [comment, setComment] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
+  const [selectedCardId, setSelectedCardId] = useState("");
   const { createSalary, useGetSalaryByUser } = useFinanceCoverage();
   const { data: salaryResponse, isLoading: isHistoryLoading } = useGetSalaryByUser(
     employee?.id ?? "",
@@ -65,7 +75,14 @@ const SalaryPaymentPopup = ({
     setAmount(formatAmount(toNumber(employee?.salary)));
     setComment("");
     setPaymentMethod("cash");
+    setSelectedCardId("");
   }, [employee?.id, employee?.salary, isOpen]);
+
+  useEffect(() => {
+    if (paymentMethod !== "card") return;
+    if (selectedCardId) return;
+    setSelectedCardId(cardSources[0]?.id ?? "");
+  }, [cardSources, paymentMethod, selectedCardId]);
 
   const historyItems = useMemo(
     () => toHistoryItems(salaryResponse),
@@ -79,6 +96,15 @@ const SalaryPaymentPopup = ({
   const unpaidAmount = Math.max(monthlySalary - paidAmount, 0);
   const parsedAmount = Number(amount.replace(/[^0-9]/g, ""));
   const isValidAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
+  const cardOptions = useMemo<FilterSelectOption[]>(
+    () =>
+      cardSources.map((source) => ({
+        value: source.id,
+        label: `${source.name} — ${formatAmount(source.balance)} ${t("currency")}`,
+      })),
+    [cardSources, t],
+  );
+  const isCardPaymentReady = paymentMethod !== "card" || Boolean(selectedCardId);
 
   const handleAmountChange = (value: string) => {
     const digits = value.replace(/[^0-9]/g, "");
@@ -86,7 +112,7 @@ const SalaryPaymentPopup = ({
   };
 
   const handleSubmit = () => {
-    if (!employee || !isValidAmount) return;
+    if (!employee || !isValidAmount || !isCardPaymentReady) return;
 
     createSalary.mutate(
       {
@@ -94,6 +120,10 @@ const SalaryPaymentPopup = ({
         amount: parsedAmount,
         type: paymentMethod === "card" ? "click" : "cash",
         comment: comment.trim() || undefined,
+        source_user_id:
+          paymentMethod === "card" && selectedCardId !== "main"
+            ? selectedCardId
+            : undefined,
       },
       {
         onSuccess: () => {
@@ -163,6 +193,7 @@ const SalaryPaymentPopup = ({
                 type="button"
                 onClick={() => {
                   setPaymentMethod("cash");
+                  setSelectedCardId("");
                 }}
                 className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${paymentMethod === "cash" ? "border-main bg-main text-white" : "border-main/20 bg-main/5 hover:border-main/45 dark:border-white/10 dark:bg-white/5"}`}
               >
@@ -178,6 +209,26 @@ const SalaryPaymentPopup = ({
             </div>
           </div>
 
+          {paymentMethod === "card" && (
+            <div>
+              <FilterSelect
+                label={`${t("card")} *`}
+                name="salary-card-source"
+                value={selectedCardId}
+                onChange={setSelectedCardId}
+                options={cardOptions}
+                placeholder={t("selectCard")}
+                icon={CreditCard}
+                loading={cardSources.length === 0}
+              />
+              {!selectedCardId && (
+                <p className="mt-1.5 text-xs font-semibold text-rose-500">
+                  {t("cardRequired")}
+                </p>
+              )}
+            </div>
+          )}
+
           <label className="block">
             <span className="mb-2 block text-sm font-medium">{t("optionalComment")}</span>
             <input
@@ -190,7 +241,7 @@ const SalaryPaymentPopup = ({
 
           <button
             type="button"
-            disabled={!isValidAmount || createSalary.isPending}
+            disabled={!isValidAmount || !isCardPaymentReady || createSalary.isPending}
             onClick={handleSubmit}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-main px-4 font-semibold text-white transition hover:bg-main/90 disabled:cursor-not-allowed disabled:opacity-50"
           >

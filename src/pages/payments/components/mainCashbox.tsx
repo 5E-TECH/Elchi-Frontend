@@ -23,7 +23,7 @@ import PopupSelect from "../../../shared/components/popupSelect";
 import CashboxFormPopup from "./CashboxFormPopup";
 import CloseShiftPopup from "./CloseShiftPopup";
 import CashboxSummaryCard from "./CashboxSummaryCard";
-import SalaryPaymentPopup from "./SalaryPaymentPopup";
+import SalaryPaymentPopup, { type SalaryCardSource } from "./SalaryPaymentPopup";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useMarkets } from "../../../entities/markets";
 import { useCashBox } from "../../../entities/payments";
@@ -74,6 +74,15 @@ const parseIsoDate = (value: string) => {
   if (!year || !month || !day) return null;
   return new Date(year, month - 1, day);
 };
+
+const getPersonName = (item: Record<string, unknown>, fallback: string) =>
+  String(
+    item.name ??
+      item.full_name ??
+      item.fullName ??
+      [item.first_name, item.last_name].filter(Boolean).join(" ") ??
+      fallback,
+  ).trim() || fallback;
 
 const buildRangeStart = (type: "today" | "week" | "month") => {
   const today = new Date();
@@ -197,7 +206,7 @@ const MainCashbox = () => {
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   const { data: usersData, isLoading: usersLoading } = useGetUser(
-    { limit: 100 },
+    { limit: FULL_LIST_LIMIT },
     isSalaryPopupOpen,
   );
   const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
@@ -310,6 +319,39 @@ const MainCashbox = () => {
       (mainCashboxData as any)?.balanceCard ??
       (mainCashboxData as any)?.transfer,
   );
+  const salaryCardSources = useMemo<SalaryCardSource[]>(() => {
+    const adminRoles = new Set(["admin", "superadmin", "manager", "registrator"]);
+    const selectedEmployeeId = String(selectedSalaryEmployee?.id ?? "");
+    const sourceMap = new Map<string, SalaryCardSource>();
+
+    sourceMap.set("main", {
+      id: "main",
+      name: t("mainCard"),
+      balance: transferBalance,
+    });
+
+    (usersData?.data?.items ?? []).forEach((source: any) => {
+      const item = asRecord(source);
+      const id = String(item.id ?? "");
+      const role = String(item.role ?? "").toLowerCase();
+      if (!id || id === selectedEmployeeId || !adminRoles.has(role)) return;
+
+      const cashbox = asRecord(item.cashbox ?? item.cashBox ?? item.cash_box ?? item.kassa);
+      sourceMap.set(id, {
+        id,
+        name: getPersonName(item, t("userFallback")),
+        balance: toNumber(
+          cashbox.balance_card ??
+            item.balance_card ??
+            cashbox.balance ??
+            item.balance ??
+            item.amount,
+        ),
+      });
+    });
+
+    return Array.from(sourceMap.values());
+  }, [selectedSalaryEmployee?.id, t, transferBalance, usersData?.data?.items]);
   // ── History ────────────────────────────────────────────────────────────────
   const historyRows: PaymentRow[] = useMemo(
     () => ((historyRes?.data?.items ?? []) as PaymentRow[]),
@@ -728,6 +770,7 @@ const MainCashbox = () => {
         employee={selectedSalaryEmployee}
         isOpen={Boolean(selectedSalaryEmployee)}
         onClose={() => setSelectedSalaryEmployee(null)}
+        cardSources={salaryCardSources}
       />
 
       {/* Receive from courier */}

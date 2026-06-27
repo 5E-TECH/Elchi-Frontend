@@ -33,6 +33,7 @@ import { setFilterValue } from "../../features/Select/model/FilterSlice";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
+const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
@@ -156,7 +157,10 @@ const Orders = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const branchType = getUserBranchType(currentUser);
-  const canCreateOrder = !(role === "manager" && branchType === "REGIONAL");
+  const canCreateOrder =
+    role === "manager"
+      ? Boolean(branchType && MANAGER_ORDER_CREATE_BRANCH_TYPES.has(branchType))
+      : true;
   const canUseManagerTableActions =
     role === "manager" && Boolean(branchType && MANAGER_TABLE_ACTION_BRANCH_TYPES.has(branchType));
   const canUseManagerTabs =

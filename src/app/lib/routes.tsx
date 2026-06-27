@@ -104,6 +104,8 @@ const NotFound = lazy(() => import("../../shared/ui/NotFound"));
 const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
 const ErrorBoundaryPage = lazy(() => import("../../shared/ui/ErrorBoundaryPage"));
 
+const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
+
 const isPaymentsManager = (state: RootState) => {
   const role = state.role.role;
   if (role === "admin" || role === "superadmin") return true;
@@ -160,7 +162,12 @@ const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
   if (role !== "manager") return false;
 
   const branchType = getUserBranchType(state.user.user);
-  return branchType !== "REGIONAL";
+  return Boolean(branchType && MANAGER_ORDER_CREATE_BRANCH_TYPES.has(branchType));
+};
+
+const canManageExternalIntegrations = (state: RootState) => {
+  if (state.role.role === "market") return false;
+  return canCreateOrdersByRoleAndBranchType(state);
 };
 
 const canManageProducts = (state: RootState) => {
@@ -475,8 +482,22 @@ const AppRouter = () => {
                 { index: true, element: <NewOrdersMarkets /> },
                 { path: "external", element: <Navigate replace to="/new-orders/integrations" /> },
                 { path: "external/:id", element: <Navigate replace to="/new-orders/integrations" /> },
-                { path: "integrations", element: <NewOrdersExternalList /> },
-                { path: "integrations/create", element: <ExternalIntegrationCreate /> },
+                {
+                  path: "integrations",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <NewOrdersExternalList />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "integrations/create",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ExternalIntegrationCreate />
+                    </ProtectedRoute>
+                  ),
+                },
                 {
                   path: "branches",
                   element: (
@@ -518,7 +539,14 @@ const AppRouter = () => {
                   ),
                 },
                 { path: "cancelled/:marketId", element: <NewOrdersCancelledDetailEntry /> },
-                { path: "integrations/:id", element: <ExternalIntegrationDetail /> },
+                {
+                  path: "integrations/:id",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ExternalIntegrationDetail />
+                    </ProtectedRoute>
+                  ),
+                },
                 { path: ":marketId", element: <NewOrderDetail /> },
                 { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
                 { path: "userDetail/:id", element: <UserDetailPage /> },

@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import MarketDashboardPage from "./MarketDashboardPage";
@@ -46,5 +47,23 @@ describe("MarketDashboardPage", () => {
     );
     expect(getKpiMock).not.toHaveBeenCalled();
     expect(screen.getByText("4")).toBeInTheDocument();
+  });
+
+  it("sends all=true when market selects all-time range", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<MarketDashboardPage />, {
+      preloadedState: {
+        role: { id: "market-1", role: "market", region: null, name: "Market" },
+      },
+    });
+
+    await user.click(screen.getByRole("button", { name: "All" }));
+
+    expect(getDashboardMock).toHaveBeenLastCalledWith(
+      { all: true },
+      true,
+      "market:unknown",
+    );
+    expect(getKpiMock).not.toHaveBeenCalled();
   });
 });

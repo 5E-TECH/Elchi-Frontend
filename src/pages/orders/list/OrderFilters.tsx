@@ -258,13 +258,15 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         return "";
     }, [currentUser, isManagerRole, myProfileData]);
 
+    const courierRegionId = isManagerRole ? managerRegionId : regionId;
+    const canLoadCouriers = canLoadRoleDependentOptions && (!isManagerRole || Boolean(managerRegionId));
     const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
         {
             status: "active",
             limit: 100,
-            ...(!isManagerRole && regionId ? { region_id: regionId } : {}),
+            ...(courierRegionId ? { region_id: courierRegionId } : {}),
         },
-        canLoadRoleDependentOptions,
+        canLoadCouriers,
     );
     const couriers = toItems(couriersData).map((c) => ({ value: String(c.id), label: c.name }));
 

@@ -137,6 +137,18 @@
   "financialBalanceDistribution": "Distribution",
   "financialBalanceTotal": "Total balance",
   "financialBalanceTotalFormula": "Cashbox + Couriers + Markets",
+  "financialBalanceMarketsSettlement": "Settlements with markets",
+  "financialBalanceCouriersSettlement": "Settlements with couriers",
+  "financialBalanceListEmpty": "No data found",
+  "financialBalanceCountSuffix": "items",
+  "financialBalancePositiveImpact": "Positive impact (+)",
+  "financialBalanceNegativeImpact": "Negative impact (-)",
+  "financialBalanceNetChange": "Net change",
+  "financialBalanceTransactionsCount": "{{count}} transactions",
+  "financialBalancePositiveSources": "Positive source drivers",
+  "financialBalanceNegativeSources": "Negative source drivers",
+  "financialBalanceTopTransactions": "Transactions with the biggest impact",
+  "financialBalanceTotalTransactions": "{{count}} total",
   "financialBalanceComingSoon": "UI for this section will be added in the next stage.",
   "financialBalanceDate": "Date",
   "financialBalanceSource": "Source",
@@ -202,6 +214,7 @@
   ,"salaryPaymentError": "Could not pay salary"
   ,"mainCard": "Main card"
   ,"selectCard": "Select a card"
+  ,"cardRequired": "Please select a card"
   ,"courierShort": "Courier"
   ,"marketShort": "Market"
   ,"expenseShort": "Expense"

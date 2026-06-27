@@ -108,6 +108,19 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
         comment: yup.string().optional(),
       }),
     })
+    .test(
+      "address-required-for-home-delivery",
+      i18n.t("orders:validationAddressRequired"),
+      function validateAddressForHomeDelivery(value) {
+        if (value?.details?.where_deliver !== "address") return true;
+        if (value.customer?.address?.trim()) return true;
+
+        return this.createError({
+          path: "customer.address",
+          message: i18n.t("orders:validationAddressRequired"),
+        });
+      },
+    )
     .required();
 
 export const orderCreateSchema = createOrderSchema();
