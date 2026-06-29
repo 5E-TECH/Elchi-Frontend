@@ -30,7 +30,8 @@ import type { RootState } from "../../../app/config/store";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { OrderCard, type ApiOrder } from "../components/OrderCard";
 
-const formatMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
+const formatMoney = (value: number, currencyLabel: string) =>
+  `${value.toLocaleString("uz-UZ")} ${currencyLabel}`;
 
 type CancelledMarketQr = {
   image?: string;
@@ -208,7 +209,8 @@ const formatCountdown = (seconds: number) => {
 };
 
 const CancelledMarketDetail = () => {
-  const { t } = useTranslation("newOrders");
+  const { t } = useTranslation(["newOrders", "orders"]);
+  const currencyLabel = t("currency", { ns: "orders" });
   const { api: notificationApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const { marketId = "" } = useParams();
@@ -502,7 +504,7 @@ const CancelledMarketDetail = () => {
             </span>
             <div className="min-w-0">
               <p className="m-0 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200/80">
-                QR-code aktiv vaqti
+                {t("cancelledQrActiveTime")}
               </p>
               <p className="m-0 mt-1 font-mono text-3xl font-black leading-none tracking-normal text-white">
                 {formatCountdown(authorizationRemainingSeconds)}
@@ -588,7 +590,7 @@ const CancelledMarketDetail = () => {
                 key: "amount",
                 icon: <WalletCards size={18} />,
                 label: t("totalAmount"),
-                value: formatMoney(totalAmount),
+                value: formatMoney(totalAmount, currencyLabel),
                 tone: "text-main bg-main/10 dark:bg-main/20 dark:text-white",
               },
             ].map((item) => (

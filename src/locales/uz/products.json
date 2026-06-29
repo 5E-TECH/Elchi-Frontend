@@ -27,6 +27,8 @@
   "deleteSuccess": "Mahsulot muvaffaqiyatli o'chirildi",
   "createError": "Mahsulot yaratishda xatolik yuz berdi",
   "inactiveMarketCreateBlocked": "Bu market faol emas. Faol emas market uchun yangi mahsulot yaratib bo'lmaydi.",
+  "marketNotResolved": "Market aniqlanmadi",
+  "marketNotResolvedDescription": "Sahifani qayta yuklab ko'ring yoki profil qayta yuklanishini kuting.",
   "updateError": "Mahsulotni yangilashda xatolik yuz berdi",
   "deleteError": "Mahsulotni o'chirishda xatolik yuz berdi",
   "empty": "Mahsulotlar mavjud emas",
