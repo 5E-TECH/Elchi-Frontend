@@ -132,6 +132,7 @@
   "noOrdersToday": "Сегодня заказов нет",
   "marketName": "Название маркета",
   "orders": "Заказы",
+  "orderCountValue": "{{count}} заказов",
   "integrationsLoadError": "Ошибка при загрузке интеграций",
   "integration": "Интеграция",
   "apiUrl": "API URL",
@@ -254,6 +255,7 @@
   "branchInfoOrderCount": "{{count}} шт.",
   "branchInfoAmount": "Сумма",
   "branchBatchLoadError": "Не удалось загрузить детали батча",
+  "cancelledQrActiveTime": "Время активности QR-кода",
   "batchStatus": {
     "new": "Новый",
     "on_the_way": "В пути",

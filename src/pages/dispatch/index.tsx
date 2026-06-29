@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import {
   Building2,
   CheckCircle2,
@@ -24,6 +25,7 @@ import type { OrderStatus } from "../../entities/order/types/order";
 import { useUser } from "../../entities/user/api/userApi";
 import PageContainer from "../../shared/ui/PageContainer";
 import OrderStatusBadge from "../orders/list/OrderStatusBadge";
+import type { RootState } from "../../app/config/store";
 
 type PendingOrder = {
   id: string;
@@ -59,6 +61,26 @@ type UnknownRecord = Record<string, unknown>;
 const asRecord = (value: unknown): UnknownRecord =>
   value && typeof value === "object" ? value as UnknownRecord : {};
 
+const getProfileRegionId = (profile: unknown): string => {
+  const user = asRecord(profile);
+  const branch = asRecord(user.branch);
+  const nestedBranch = asRecord(branch.branch);
+  const region = asRecord(user.region);
+  const branchRegion = asRecord(branch.region);
+  const nestedBranchRegion = asRecord(nestedBranch.region);
+  const id =
+    user.region_id ??
+    region.id ??
+    branch.region_id ??
+    branch.regionId ??
+    branchRegion.id ??
+    nestedBranch.region_id ??
+    nestedBranch.regionId ??
+    nestedBranchRegion.id;
+
+  return id == null ? "" : String(id);
+};
+
 const safe = (value: unknown, fallback = "—") => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
@@ -66,7 +88,8 @@ const safe = (value: unknown, fallback = "—") => {
   return fallback;
 };
 
-const formatMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
+const formatMoney = (value: number, currencyLabel: string) =>
+  `${value.toLocaleString("uz-UZ")} ${currencyLabel}`;
 
 const formatDate = (value: unknown) => {
   if (typeof value !== "string" || !value) return "—";
@@ -293,23 +316,32 @@ const getDispatchErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const DispatchPage = () => {
-  const { t } = useTranslation("dispatch");
+  const { t } = useTranslation(["dispatch", "orders"]);
+  const currencyLabel = t("currency", { ns: "orders" });
   const { api: notificationApi } = useAppNotification();
   const { assignCourier } = useOrders();
   const { useGetCouriers } = useUser();
+  const role = useSelector((state: RootState) => state.role.role);
+  const profile = useSelector((state: RootState) => state.user.user);
+  const managerRegionId = useMemo(
+    () => role === "manager" ? getProfileRegionId(profile) : "",
+    [profile, role],
+  );
   const courierParams = useMemo(
     () => ({
       page: 1,
       limit: 100,
+      ...(managerRegionId ? { region_id: managerRegionId } : {}),
     }),
-    [],
+    [managerRegionId],
   );
+  const canLoadCouriers = role !== "manager" || Boolean(managerRegionId);
   const {
     data: couriersResponse,
     isLoading: isCouriersLoading,
     isError: isCouriersError,
     refetch: refetchCouriers,
-  } = useGetCouriers(courierParams);
+  } = useGetCouriers(courierParams, canLoadCouriers);
 
   const couriers = useMemo(
     () =>
@@ -638,7 +670,9 @@ const DispatchPage = () => {
               <div>
                 <p className="m-0 text-xs font-bold text-(--color-text-muted) dark:text-text-muted-dark">{t("statHome")}</p>
                 <p className="m-0 text-lg font-black">{homeOrders.length} {t("piece")}</p>
-                <p className="m-0 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">{formatMoney(homeTotal)}</p>
+                <p className="m-0 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
+                  {formatMoney(homeTotal, currencyLabel)}
+                </p>
               </div>
             </div>
           </div>
@@ -650,7 +684,9 @@ const DispatchPage = () => {
               <div>
                 <p className="m-0 text-xs font-bold text-(--color-text-muted) dark:text-text-muted-dark">{t("statCenter")}</p>
                 <p className="m-0 text-lg font-black">{centerOrders.length} {t("piece")}</p>
-                <p className="m-0 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">{formatMoney(centerTotal)}</p>
+                <p className="m-0 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
+                  {formatMoney(centerTotal, currencyLabel)}
+                </p>
               </div>
             </div>
           </div>

@@ -37,66 +37,8 @@ interface TableRow {
 }
 
 // ─── Format helpers ──────────────────────────────────────────────────────────
-const fmt = (n: number) => n.toLocaleString("uz-UZ") + " so'm";
-
-// ─── Columns ─────────────────────────────────────────────────────────────────
-const columns: ColumnConfig<TableRow>[] = [
-  {
-    key: "market_id",
-    label: "#",
-    width: "6%",
-    render: (_v, _row, index) => (
-      <span className="font-medium text-maindark dark:text-gray-500">{index + 1}</span>
-    ),
-  },
-  {
-    key: "name",
-    label: "Market nomi",
-    width: "22%",
-    sortable: true,
-    render: (v) => (
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
-          <Store size={14} className="text-main" />
-        </div>
-        <span className="font-semibold text-maindark dark:text-white">{v}</span>
-      </div>
-    ),
-  },
-  {
-    key: "phone_number",
-    label: "Telefon",
-    width: "18%",
-    render: (v) => (
-      <span className="font-medium text-maindark dark:text-slate-300">{v}</span>
-    ),
-  },
-  {
-    key: "orders_count",
-    label: "Buyurtmalar",
-    width: "25%",
-    sortable: true,
-    render: (v) => (
-      <div className="flex items-center gap-2">
-        <span className="w-6 h-6 rounded-md bg-main/10 dark:bg-main/20 flex items-center justify-center">
-          <ShoppingCart size={12} className="text-main" />
-        </span>
-        <span className="font-bold text-maindark dark:text-white">{v} ta</span>
-      </div>
-    ),
-  },
-  {
-    key: "total_price_sum",
-    label: "Jami summa",
-    width: "28%",
-    sortable: true,
-    render: (v) => (
-      <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-        {fmt(v)}
-      </span>
-    ),
-  },
-];
+const fmt = (n: number, currencyLabel: string) =>
+  `${n.toLocaleString("uz-UZ")} ${currencyLabel}`;
 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
 const StatCard = ({ icon, label, value, iconCls }: {
@@ -113,7 +55,8 @@ const StatCard = ({ icon, label, value, iconCls }: {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const Markets = () => {
-  const { t } = useTranslation("newOrders");
+  const { t } = useTranslation(["newOrders", "common", "orders"]);
+  const currencyLabel = t("currency", { ns: "orders" });
   const { useGetTodayOrders } = useOrders();
   const navigate = useNavigate();
   const roleState = useSelector((state: RootState) => state.role);
@@ -144,6 +87,69 @@ const Markets = () => {
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
   const { data: response, isLoading } = useGetTodayOrders(params, !isMarketRole);
 
+  const columns = useMemo<ColumnConfig<TableRow>[]>(
+    () => [
+      {
+        key: "market_id",
+        label: "#",
+        width: "6%",
+        render: (_v, _row, index) => (
+          <span className="font-medium text-maindark dark:text-gray-500">{index + 1}</span>
+        ),
+      },
+      {
+        key: "name",
+        label: t("marketName"),
+        width: "22%",
+        sortable: true,
+        render: (v) => (
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
+              <Store size={14} className="text-main" />
+            </div>
+            <span className="font-semibold text-maindark dark:text-white">{v}</span>
+          </div>
+        ),
+      },
+      {
+        key: "phone_number",
+        label: t("phone"),
+        width: "18%",
+        render: (v) => (
+          <span className="font-medium text-maindark dark:text-slate-300">{v}</span>
+        ),
+      },
+      {
+        key: "orders_count",
+        label: t("orders"),
+        width: "25%",
+        sortable: true,
+        render: (v) => (
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-md bg-main/10 dark:bg-main/20 flex items-center justify-center">
+              <ShoppingCart size={12} className="text-main" />
+            </span>
+            <span className="font-bold text-maindark dark:text-white">
+              {t("orderCountValue", { count: Number(v) || 0 })}
+            </span>
+          </div>
+        ),
+      },
+      {
+        key: "total_price_sum",
+        label: t("totalAmount"),
+        width: "28%",
+        sortable: true,
+        render: (v) => (
+          <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+            {fmt(Number(v) || 0, currencyLabel)}
+          </span>
+        ),
+      },
+    ],
+    [currencyLabel, t],
+  );
+
   // API dan kelgan array ni jadval uchun flat qilamiz
   const rows: TableRow[] = useMemo(() => {
     const list: TodayOrder[] = response?.data ?? response ?? [];
@@ -160,7 +166,7 @@ const Markets = () => {
     return (
       <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-primary dark:border-primarydark/50 dark:bg-primarydark">
         <span className="text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-          Yuklanmoqda...
+          {t("loading", { ns: "common" })}
         </span>
       </div>
     );
@@ -194,11 +200,15 @@ const Markets = () => {
         </div>
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-semibold uppercase tracking-[0.08em] text-maindark dark:text-gray-300">{t("orders")}</span>
-          <span className="font-bold text-maindark dark:text-primary">{t("totalCount", { count: row.orders_count })}</span>
+          <span className="font-bold text-maindark dark:text-primary">
+            {t("orderCountValue", { count: row.orders_count })}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-semibold uppercase tracking-[0.08em] text-maindark dark:text-gray-300">{t("totalAmount")}</span>
-          <span className="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400">{fmt(row.total_price_sum)}</span>
+          <span className="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400">
+            {fmt(row.total_price_sum, currencyLabel)}
+          </span>
         </div>
       </div>
     </div>
@@ -226,7 +236,7 @@ const Markets = () => {
         <StatCard
           icon={<TrendingUp size={20} />}
           label={t("totalAmount")}
-          value={fmt(totalSum)}
+          value={fmt(totalSum, currencyLabel)}
           iconCls="bg-amber-500/10 dark:bg-amber-500/20 text-amber-500"
         />
       </div>
@@ -235,26 +245,7 @@ const Markets = () => {
       <Table<TableRow>
         data={rows}
         loading={isLoading}
-        columns={columns.map((column) => {
-          if (column.key === "name") return { ...column, label: t("marketName") };
-          if (column.key === "phone_number") return { ...column, label: t("phone") };
-          if (column.key === "orders_count") {
-            return {
-              ...column,
-              label: t("orders"),
-              render: (v: number) => (
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-main/10 dark:bg-main/20 flex items-center justify-center">
-                    <ShoppingCart size={12} className="text-main" />
-                  </span>
-                  <span className="font-bold text-maindark dark:text-white">{t("totalCount", { count: v })}</span>
-                </div>
-              ),
-            };
-          }
-          if (column.key === "total_price_sum") return { ...column, label: t("totalAmount") };
-          return column;
-        })}
+        columns={columns}
         keyExtractor={(item) => item.market_id}
         onRowClick={(row) => navigate(`/new-orders/${row.market_id}`)}
         mobileRowRender={renderMobileCard}

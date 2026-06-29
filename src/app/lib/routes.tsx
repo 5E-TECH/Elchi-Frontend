@@ -1,4 +1,4 @@
-import { lazy, memo } from "react";
+import { lazy, memo, type ReactNode } from "react";
 import { Navigate, useParams, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
@@ -247,6 +247,24 @@ const NewOrdersCancelledDetailEntry = () => {
   }
 
   return <NewOrdersCancelledDetail />;
+};
+
+const NewOrdersMarketAccessEntry = ({ children }: { children: ReactNode }) => {
+  const { marketId } = useParams();
+  const role = useSelector((state: RootState) => state.role.role);
+  const roleId = useSelector((state: RootState) => state.role.id);
+  const profileId = useSelector((state: RootState) => state.user.user?.id);
+  const ownMarketId = roleId ?? profileId;
+  const isOwnMarket =
+    role === "market" &&
+    Boolean(ownMarketId) &&
+    String(ownMarketId) === String(marketId);
+
+  if (role === "market" && !isOwnMarket) {
+    return <Navigate replace to="/403" />;
+  }
+
+  return <>{children}</>;
 };
 
 const AppRouter = () => {
@@ -547,8 +565,22 @@ const AppRouter = () => {
                     </ProtectedRoute>
                   ),
                 },
-                { path: ":marketId", element: <NewOrderDetail /> },
-                { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
+                {
+                  path: ":marketId",
+                  element: (
+                    <NewOrdersMarketAccessEntry>
+                      <NewOrderDetail />
+                    </NewOrdersMarketAccessEntry>
+                  ),
+                },
+                {
+                  path: ":marketId/edit/:orderId",
+                  element: (
+                    <NewOrdersMarketAccessEntry>
+                      <NewOrderUpdate />
+                    </NewOrdersMarketAccessEntry>
+                  ),
+                },
                 { path: "userDetail/:id", element: <UserDetailPage /> },
               ],
             },
