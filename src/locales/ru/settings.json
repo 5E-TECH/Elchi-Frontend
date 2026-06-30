@@ -35,7 +35,23 @@
   },
   "interface": {
     "sidebar": "Боковая панель открыта",
-    "sidebar_hint": "Открывать боковую панель при запуске"
+    "sidebar_hint": "Открывать боковую панель при запуске",
+    "scanner_sounds": "Звуки сканера",
+    "scanner_sounds_hint": "Выберите звук для успешного сканирования и ошибки",
+    "success_sound": "Звук успеха",
+    "success_sound_hint": "Звучит после успешного сканирования заказа или QR",
+    "error_sound": "Звук ошибки",
+    "error_sound_hint": "Звучит, когда QR не найден или произошла ошибка",
+    "preview": "Прослушать",
+    "selected": "Выбрано",
+    "success_preview": "Принято",
+    "error_preview": "Ошибка",
+    "sound_classic": "Классика",
+    "sound_soft": "Мягкий",
+    "sound_digital": "Цифровой",
+    "sound_bell": "Звонок",
+    "sound_pulse": "Пульс",
+    "sound_bright": "Яркий"
   },
   "saved": "Сохранено",
   "save_error": "Ошибка сохранения"

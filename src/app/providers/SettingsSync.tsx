@@ -9,6 +9,8 @@ import {
   readStoredLanguage,
   readStoredSidebar,
   readStoredTheme,
+  writeStoredScannerErrorSound,
+  writeStoredScannerSuccessSound,
 } from "../../shared/lib/preferencesStorage";
 
 /**
@@ -39,6 +41,8 @@ const SettingsSync = () => {
     if (readStoredSidebar() === null) {
       dispatch(setSidebar(data.interface.sidebarOpen));
     }
+    writeStoredScannerSuccessSound(data.scanner.sounds.success);
+    writeStoredScannerErrorSound(data.scanner.sounds.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 

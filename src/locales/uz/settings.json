@@ -35,7 +35,23 @@
   },
   "interface": {
     "sidebar": "Yon panel ochiq turishi",
-    "sidebar_hint": "Ilova ochilganda yon panel ochiq bo'lsinmi"
+    "sidebar_hint": "Ilova ochilganda yon panel ochiq bo'lsinmi",
+    "scanner_sounds": "Scanner ovozlari",
+    "scanner_sounds_hint": "Skan muvaffaqiyatli yoki xato bo'lganda chalinadigan ovozni tanlang",
+    "success_sound": "Success ovozi",
+    "success_sound_hint": "Order yoki QR muvaffaqiyatli skan qilinganda",
+    "error_sound": "Error ovozi",
+    "error_sound_hint": "QR topilmaganda yoki xatolik bo'lganda",
+    "preview": "Eshitish",
+    "selected": "Tanlangan",
+    "success_preview": "Qabul qilindi",
+    "error_preview": "Xatolik",
+    "sound_classic": "Classic",
+    "sound_soft": "Yumshoq",
+    "sound_digital": "Digital",
+    "sound_bell": "Qo'ng'iroq",
+    "sound_pulse": "Pulse",
+    "sound_bright": "Yorqin"
   },
   "saved": "Saqlandi",
   "save_error": "Saqlashda xatolik"

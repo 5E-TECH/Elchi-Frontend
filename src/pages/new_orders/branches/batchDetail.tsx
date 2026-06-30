@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { CheckCircle2, FileText, Loader2, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -48,7 +48,6 @@ const BranchBatchDetailPage = () => {
   const { data: branch } = useBranchDetail(branchId);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
-  const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
 
   const data = useMemo<BatchDetail | undefined>(
     () => detailQuery.data ?? remainingQuery.data,
@@ -136,40 +135,15 @@ const BranchBatchDetailPage = () => {
     });
   }, [api, t]);
 
-  const receiveScannedOrder = useCallback((order: BatchOrder) => {
-    if (!batchId || receiveBatchOrders.isPending || pendingScanOrderIdsRef.current.has(order.id)) return;
-
-    pendingScanOrderIdsRef.current.add(order.id);
-    receiveBatchOrders.mutate(
-      { batchId, orderIds: [order.id] },
-      {
-        onSuccess: async () => {
-          void playScanFeedback("success");
-          markOrdersReceived([order.id]);
-          api.success({
-            message: t("branchOrderReceiveSuccess"),
-            description: t("branchOrderReceiveOneDescription", { id: order.id }),
-            placement: "topRight",
-            duration: 2,
-          });
-          await refetchBatchData();
-        },
-        onError: (error: unknown) => {
-          void playScanFeedback("error");
-          const msg = getBackendErrorMessage(error) ?? t("receiveError");
-          api.error({
-            message: t("receiveError"),
-            description: msg,
-            placement: "topRight",
-            duration: 5,
-          });
-        },
-        onSettled: () => {
-          pendingScanOrderIdsRef.current.delete(order.id);
-        },
-      },
-    );
-  }, [api, batchId, receiveBatchOrders, markOrdersReceived, refetchBatchData, t]);
+  const selectScannedOrder = useCallback((order: BatchOrder) => {
+    void playScanFeedback("success");
+    setSelectedOrderIds((prev) => {
+      if (prev.has(order.id)) return prev;
+      const next = new Set(prev);
+      next.add(order.id);
+      return next;
+    });
+  }, []);
 
   const translatedBatchStatus = data ? t(`batchStatus.${data.status}`) : "";
   const translatedBatchDirection = data ? t(`batchDirection.${data.direction}`) : "";
@@ -178,7 +152,7 @@ const BranchBatchDetailPage = () => {
   useOrderQrScanner({
     orders,
     enabled: orders.length > 0 && !receiveBatchOrders.isPending,
-    onMatch: receiveScannedOrder,
+    onMatch: selectScannedOrder,
     onMissing: handleMissingScannedOrder,
   });
 

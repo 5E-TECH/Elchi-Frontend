@@ -1,10 +1,13 @@
 export type StoredTheme = "light" | "dark";
 export type StoredLanguage = "uz" | "ru" | "en";
+export type StoredScannerSound = "classic" | "soft" | "digital" | "bell" | "pulse" | "bright";
 
 export const PREFERENCE_STORAGE_KEYS = {
   theme: "theme",
   language: "app-language",
   sidebar: "sidebarIsOpen",
+  scannerSuccessSound: "scanner-success-sound",
+  scannerErrorSound: "scanner-error-sound",
 } as const;
 
 const read = (key: string) => {
@@ -54,4 +57,32 @@ export const readStoredSidebar = (): boolean | null => {
 
 export const writeStoredSidebar = (isOpen: boolean) => {
   write(PREFERENCE_STORAGE_KEYS.sidebar, String(isOpen));
+};
+
+const normalizeScannerSound = (value: string | null): StoredScannerSound | null => {
+  if (
+    value === "classic" ||
+    value === "soft" ||
+    value === "digital" ||
+    value === "bell" ||
+    value === "pulse" ||
+    value === "bright"
+  ) {
+    return value;
+  }
+  return null;
+};
+
+export const readStoredScannerSuccessSound = (): StoredScannerSound | null =>
+  normalizeScannerSound(read(PREFERENCE_STORAGE_KEYS.scannerSuccessSound));
+
+export const writeStoredScannerSuccessSound = (sound: StoredScannerSound) => {
+  write(PREFERENCE_STORAGE_KEYS.scannerSuccessSound, sound);
+};
+
+export const readStoredScannerErrorSound = (): StoredScannerSound | null =>
+  normalizeScannerSound(read(PREFERENCE_STORAGE_KEYS.scannerErrorSound));
+
+export const writeStoredScannerErrorSound = (sound: StoredScannerSound) => {
+  write(PREFERENCE_STORAGE_KEYS.scannerErrorSound, sound);
 };
