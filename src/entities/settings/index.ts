@@ -14,6 +14,7 @@ import { tokenStorage } from "../../auth/tokenStorage";
 
 export type ThemeMode = "light" | "dark";
 export type Language = "uz" | "ru" | "en";
+export type ScannerSoundId = "classic" | "soft" | "digital" | "bell" | "pulse" | "bright";
 
 /** Dashboard widget identifikatorlari (ko'rsatish/yashirish uchun). */
 export const DASHBOARD_WIDGET_IDS = [
@@ -35,6 +36,12 @@ export interface AppSettings {
   interface: {
     sidebarOpen: boolean;
   };
+  scanner: {
+    sounds: {
+      success: ScannerSoundId;
+      error: ScannerSoundId;
+    };
+  };
 }
 
 export interface AppSettingsPatch {
@@ -43,6 +50,9 @@ export interface AppSettingsPatch {
     widgets?: Partial<AppSettings["dashboard"]["widgets"]>;
   };
   interface?: Partial<AppSettings["interface"]>;
+  scanner?: {
+    sounds?: Partial<AppSettings["scanner"]["sounds"]>;
+  };
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -56,6 +66,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
   },
   interface: { sidebarOpen: true },
+  scanner: {
+    sounds: {
+      success: "classic",
+      error: "classic",
+    },
+  },
 };
 
 /** Backend'dan kelgan qisman/eski sozlamani default bilan chuqur birlashtirish. */
@@ -76,6 +92,13 @@ export const mergeSettings = (raw: unknown): AppSettings => {
       sidebarOpen:
         s.interface?.sidebarOpen ?? DEFAULT_SETTINGS.interface.sidebarOpen,
     },
+    scanner: {
+      sounds: {
+        success:
+          s.scanner?.sounds?.success ?? DEFAULT_SETTINGS.scanner.sounds.success,
+        error: s.scanner?.sounds?.error ?? DEFAULT_SETTINGS.scanner.sounds.error,
+      },
+    },
   };
 };
 
@@ -88,6 +111,9 @@ const applySettingsPatch = (
     widgets: { ...current.dashboard.widgets, ...patch.dashboard?.widgets },
   },
   interface: { ...current.interface, ...patch.interface },
+  scanner: {
+    sounds: { ...current.scanner.sounds, ...patch.scanner?.sounds },
+  },
 });
 
 const SETTINGS_KEY = ["app-settings"];
@@ -116,8 +142,10 @@ export const useUpdateSettings = () => {
   return useMutation({
     scope: { id: "app-settings" },
     mutationFn: async (patch: AppSettingsPatch) => {
-      await api.patch(API_ENDPOINTS.AUTH.MY_SETTINGS, { settings: patch });
-      return patch;
+      const current = qc.getQueryData<AppSettings>(SETTINGS_KEY) ?? DEFAULT_SETTINGS;
+      const next = applySettingsPatch(current, patch);
+      await api.patch(API_ENDPOINTS.AUTH.MY_SETTINGS, { settings: next });
+      return next;
     },
     onMutate: async (patch: AppSettingsPatch) => {
       await qc.cancelQueries({ queryKey: SETTINGS_KEY });

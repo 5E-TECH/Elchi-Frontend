@@ -11,6 +11,8 @@ import {
   Moon,
   Check,
   ChevronRight,
+  Volume2,
+  Play,
 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import PageContainer from "../../../shared/ui/PageContainer";
@@ -28,7 +30,13 @@ import {
   type ThemeMode,
   type Language,
   type DashboardWidgetId,
+  type ScannerSoundId,
 } from "../../../entities/settings";
+import { playScanFeedback, SCANNER_SOUND_IDS } from "../../scan/lib/scanShared";
+import {
+  writeStoredScannerErrorSound,
+  writeStoredScannerSuccessSound,
+} from "../../../shared/lib/preferencesStorage";
 import { useUser } from "../../../entities/user/api/userApi";
 import { unwrapUserResponse } from "../../../entities/user/lib/normalizeUser";
 import { UserDetailWidget } from "../../../widgets/user-detail/ui/UserDetailWidget";
@@ -55,6 +63,11 @@ const WIDGET_META: { id: DashboardWidgetId; label: string; hint: string }[] = [
   { id: "financial", label: "w_financial", hint: "w_financial_hint" },
   { id: "region", label: "w_region", hint: "w_region_hint" },
 ];
+
+const SOUND_META: { id: ScannerSoundId; label: string }[] = SCANNER_SOUND_IDS.map((id) => ({
+  id,
+  label: `sound_${id}`,
+}));
 
 // ─── Bo'lim sarlavhasi ─────────────────────────────────────────────────────────
 const SectionTitle = ({ icon, title, hint }: { icon: ReactNode; title: string; hint?: string }) => (
@@ -135,6 +148,75 @@ const ThemeChoiceCard = ({
   );
 };
 
+const SoundChoiceButton = ({
+  id,
+  label,
+  active,
+  tone,
+  onSelect,
+  onPreview,
+  selectedLabel,
+}: {
+  id: ScannerSoundId;
+  label: string;
+  active: boolean;
+  tone: "success" | "error";
+  onSelect: (id: ScannerSoundId) => void;
+  onPreview: (id: ScannerSoundId) => void;
+  selectedLabel: string;
+}) => (
+  <button
+    type="button"
+    onClick={() => onSelect(id)}
+    className="group flex min-h-16 items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition-all hover:-translate-y-0.5"
+    style={{
+      borderColor: active ? "var(--color-main)" : "var(--color-border-soft)",
+      background: active ? toneSoftBg(tone === "error" ? "danger" : "success", 10) : "var(--color-card-surface)",
+      boxShadow: active ? "0 8px 20px color-mix(in srgb, var(--color-main) 16%, transparent)" : "none",
+    }}
+  >
+    <span className="flex min-w-0 items-center gap-2.5">
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+        style={{
+          background: active ? "var(--color-main)" : toneSoftBg(tone === "error" ? "danger" : "success", 14),
+          color: active ? "#fff" : tone === "success" ? "var(--color-success)" : "var(--color-danger)",
+        }}
+      >
+        <Volume2 size={16} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-bold text-maindark dark:text-primary">{label}</span>
+        {active ? (
+          <span className="mt-0.5 block text-[11px] font-semibold text-main">{selectedLabel}</span>
+        ) : null}
+      </span>
+    </span>
+    <span
+      role="button"
+      tabIndex={0}
+      onClick={(event) => {
+        event.stopPropagation();
+        onPreview(id);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        event.stopPropagation();
+        onPreview(id);
+      }}
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors hover:border-main hover:text-main"
+      style={{
+        borderColor: "var(--color-border-soft)",
+        color: "var(--color-dashboard-text-muted)",
+      }}
+      aria-label={label}
+    >
+      {active ? <Check size={16} /> : <Play size={15} />}
+    </span>
+  </button>
+);
+
 const SettingsPage = () => {
   const { t, i18n } = useTranslation("settings");
   const dispatch = useDispatch();
@@ -165,6 +247,21 @@ const SettingsPage = () => {
   const onSidebar = (open: boolean) => {
     dispatch(setSidebar(open));
     persist({ interface: { sidebarOpen: open } });
+  };
+  const onScannerSound = (type: "success" | "error", sound: ScannerSoundId) => {
+    if (type === "success") writeStoredScannerSuccessSound(sound);
+    else writeStoredScannerErrorSound(sound);
+    persist({ scanner: { sounds: { [type]: sound } } });
+  };
+  const previewScannerSound = (type: "success" | "error", sound: ScannerSoundId) => {
+    const previous = settings.scanner.sounds[type];
+    if (type === "success") writeStoredScannerSuccessSound(sound);
+    else writeStoredScannerErrorSound(sound);
+    void playScanFeedback(type, t(`interface.${type === "success" ? "success_preview" : "error_preview"}`));
+    window.setTimeout(() => {
+      if (type === "success") writeStoredScannerSuccessSound(previous);
+      else writeStoredScannerErrorSound(previous);
+    }, 350);
   };
 
   return (
@@ -343,19 +440,64 @@ const SettingsPage = () => {
           )}
 
           {activeTab === "interface" && (
-            <div className="el-card rounded-2xl p-5">
-              <SectionTitle icon={<PanelLeft size={18} />} title={t("tabs.interface")} hint={t("tabs_desc.interface")} />
-              <div
-                className="flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5"
-                style={{ borderColor: "var(--color-border-soft)" }}
-              >
-                <div>
-                  <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>{t("interface.sidebar")}</p>
-                  <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
-                    {t("interface.sidebar_hint")}
-                  </p>
+            <div className="space-y-4">
+              <div className="el-card rounded-2xl p-5">
+                <SectionTitle icon={<PanelLeft size={18} />} title={t("tabs.interface")} hint={t("tabs_desc.interface")} />
+                <div
+                  className="flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5"
+                  style={{ borderColor: "var(--color-border-soft)" }}
+                >
+                  <div>
+                    <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>{t("interface.sidebar")}</p>
+                    <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
+                      {t("interface.sidebar_hint")}
+                    </p>
+                  </div>
+                  <Toggle checked={sidebarOpen} onChange={onSidebar} aria-label={t("interface.sidebar")} />
                 </div>
-                <Toggle checked={sidebarOpen} onChange={onSidebar} aria-label={t("interface.sidebar")} />
+              </div>
+
+              <div className="el-card rounded-2xl p-5">
+                <SectionTitle icon={<Volume2 size={18} />} title={t("interface.scanner_sounds")} hint={t("interface.scanner_sounds_hint")} />
+                <div className="grid gap-5 xl:grid-cols-2">
+                  {(["success", "error"] as const).map((type) => (
+                    <div key={type} className="rounded-2xl border p-3" style={{ borderColor: "var(--color-border-soft)" }}>
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>
+                            {t(`interface.${type}_sound`)}
+                          </p>
+                          <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
+                            {t(`interface.${type}_sound_hint`)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => previewScannerSound(type, settings.scanner.sounds[type])}
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold transition-colors hover:border-main hover:text-main"
+                          style={{ borderColor: "var(--color-border-soft)", color: "var(--color-dashboard-text-muted)" }}
+                        >
+                          <Play size={14} />
+                          {t("interface.preview")}
+                        </button>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {SOUND_META.map((sound) => (
+                          <SoundChoiceButton
+                            key={`${type}-${sound.id}`}
+                            id={sound.id}
+                            label={t(`interface.${sound.label}`)}
+                            active={settings.scanner.sounds[type] === sound.id}
+                            tone={type}
+                            onSelect={(id) => onScannerSound(type, id)}
+                            onPreview={(id) => previewScannerSound(type, id)}
+                            selectedLabel={t("interface.selected")}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

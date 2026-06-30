@@ -6,13 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint . --quiet --max-warnings 266",
+    "lint": "eslint . --quiet",
     "lint:report": "eslint .",
-    "preview": "npm run build && wrangler dev",
+    "preview": "npm run build && wrangler pages dev dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler pages deploy dist"
   },
   "dependencies": {
     "@highcharts/map-collection": "^2.3.2",

@@ -13,6 +13,7 @@ import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
+  normalizeScannerCandidates,
   playMissingOrderFeedback,
   playScanFeedback,
 } from "../../scan/lib/scanShared";
@@ -40,6 +41,7 @@ const NewOrderDetail = () => {
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
+  const receivedScanKeysRef = useRef<Set<string>>(new Set());
   const selectedOrdersKeyRef = useRef("");
 
   const { useGetTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } = useOrders();
@@ -91,18 +93,55 @@ const NewOrderDetail = () => {
     setSelectedIds(new Set(orders.map((order) => order.id)));
   }, [isMarketRole, orders, ordersKey]);
 
-  const handleMissingScannedOrder = useCallback(() => {
-    playMissingOrderFeedback();
+  const rememberReceivedScan = useCallback((order: ApiOrder, rawValue?: string) => {
+    const keys = receivedScanKeysRef.current;
+    keys.add(String(order.id).toLowerCase());
+
+    const token = order.qr_code_token?.trim();
+    if (token) keys.add(token.toLowerCase());
+
+    if (rawValue) {
+      normalizeScannerCandidates(rawValue, window.location.origin).forEach((candidate) => {
+        keys.add(candidate);
+      });
+    }
+  }, []);
+
+  const showAlreadyReceivedFeedback = useCallback((orderId?: string | number) => {
+    void playScanFeedback("success", t("newOrderAlreadyReceived"));
     notifApi.warning({
-      message: t("qrNotFound"),
-      description: t("newOrderScanMissing"),
+      message: t("newOrderAlreadyReceived"),
+      description: orderId ? `#${orderId}` : t("newOrderAlreadyReceivedDescription"),
       placement: "topRight",
-      duration: 3,
+      duration: 2,
     });
   }, [notifApi, t]);
 
-  const receiveScannedOrder = useCallback((order: ApiOrder) => {
+  const handleMissingScannedOrder = useCallback((rawValue: string) => {
+    const isAlreadyReceived = normalizeScannerCandidates(rawValue, window.location.origin)
+      .some((candidate) => receivedScanKeysRef.current.has(candidate));
+
+    if (isAlreadyReceived) {
+      showAlreadyReceivedFeedback();
+      return;
+    }
+
+    playMissingOrderFeedback();
+    notifApi.warning({
+      message: t("newOrderScanMissing"),
+      placement: "topRight",
+      duration: 3,
+    });
+  }, [notifApi, showAlreadyReceivedFeedback, t]);
+
+  const receiveScannedOrder = useCallback((order: ApiOrder, rawValue: string) => {
     const orderId = order.id;
+    if (receivedOrderIds.has(orderId)) {
+      rememberReceivedScan(order, rawValue);
+      showAlreadyReceivedFeedback(orderId);
+      return;
+    }
+
     if (pendingScanOrderIdsRef.current.has(orderId)) {
       return;
     }
@@ -112,7 +151,8 @@ const NewOrderDetail = () => {
       { orderIds: [orderId] },
       {
         onSuccess: () => {
-          void playScanFeedback("success");
+          rememberReceivedScan(order, rawValue);
+          void playScanFeedback("success", t("newOrderReceiveSuccess"));
           setReceivedOrderIds((prev) => {
             const next = new Set(prev);
             next.add(orderId);
@@ -133,8 +173,25 @@ const NewOrderDetail = () => {
           });
         },
         onError: (err: unknown) => {
-          void playScanFeedback("error");
           const msg = getBackendErrorMessage(err) ?? t("receiveError");
+          const lowerMsg = msg.toLowerCase();
+          const isAlreadyReceived =
+            lowerMsg.includes("already") ||
+            lowerMsg.includes("allaqachon") ||
+            lowerMsg.includes("qabul qilingan");
+
+          if (isAlreadyReceived) {
+            rememberReceivedScan(order, rawValue);
+            setReceivedOrderIds((prev) => {
+              const next = new Set(prev);
+              next.add(orderId);
+              return next;
+            });
+            showAlreadyReceivedFeedback(orderId);
+            return;
+          }
+
+          void playScanFeedback("error");
           notifApi.error({
             message: t("receiveError"),
             description: msg,
@@ -147,10 +204,11 @@ const NewOrderDetail = () => {
         },
       },
     );
-  }, [receiveMutation, notifApi, refetch, t]);
+  }, [receiveMutation, notifApi, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t]);
 
   useOrderQrScanner({
-    orders,
+    orders: rawOrders,
+    enabled: rawOrders.length > 0,
     onMatch: receiveScannedOrder,
     onMissing: handleMissingScannedOrder,
   });

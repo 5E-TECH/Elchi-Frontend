@@ -26,7 +26,10 @@
     "orders": "Orderlar",
     "piece": "ta",
     "amount": "Summa",
-    "direction": "Yo'nalish"
+    "direction": "Yo'nalish",
+    "region": "Viloyat",
+    "route": "Yo'nalish",
+    "created": "Yaratilgan"
   },
   "loadError": "Paketlar ro'yxatini yuklab bo'lmadi",
   "emptyTitle": "Paketlar yo'q",

@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Building2, CalendarClock, CheckSquare, MapPin, PackageCheck, Search, Square, TrendingUp } from "lucide-react";
 import { useBatches, useReceiveTransferBatch, type Batch } from "../../../entities/batch";
@@ -11,7 +11,6 @@ import { Checkbox } from "../components/OrderCard";
 import BackButton from "../../../shared/ui/BackButton";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
-import { getBackendErrorMessage } from "../../scan/lib/scanResource";
 
 type ScannableBatch = Batch & { qr_code_token?: string | null };
 
@@ -22,7 +21,6 @@ const BranchSentBatchesPage = () => {
   const [selectedBatchIds, setSelectedBatchIds] = useState<Set<string>>(new Set());
   const [receivedBatchIds, setReceivedBatchIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
-  const pendingScanBatchIdsRef = useRef<Set<string>>(new Set());
   const receiveTransferBatch = useReceiveTransferBatch();
   const { data: branch } = useBranchDetail(branchId);
 
@@ -135,41 +133,20 @@ const BranchSentBatchesPage = () => {
     });
   }, [api]);
 
-  const receiveScannedBatch = useCallback((batch: ScannableBatch) => {
-    if (receiveTransferBatch.isPending || pendingScanBatchIdsRef.current.has(batch.id)) return;
-
-    pendingScanBatchIdsRef.current.add(batch.id);
-    receiveTransferBatch.mutate(batch.id, {
-      onSuccess: () => {
-        void playScanFeedback("success");
-        markBatchesReceived([batch.id]);
-        api.success({
-          message: "Batch qabul qilindi",
-          description: `#${batch.id} asosiy filialga qabul qilindi.`,
-          placement: "topRight",
-          duration: 2,
-        });
-      },
-      onError: (error: unknown) => {
-        void playScanFeedback("error");
-        const msg = getBackendErrorMessage(error) ?? "Batchni qabul qilishda xatolik yuz berdi";
-        api.error({
-          message: "Batch qabul qilinmadi",
-          description: msg,
-          placement: "topRight",
-          duration: 5,
-        });
-      },
-      onSettled: () => {
-        pendingScanBatchIdsRef.current.delete(batch.id);
-      },
+  const selectScannedBatch = useCallback((batch: ScannableBatch) => {
+    void playScanFeedback("success");
+    setSelectedBatchIds((prev) => {
+      if (prev.has(batch.id)) return prev;
+      const next = new Set(prev);
+      next.add(batch.id);
+      return next;
     });
-  }, [api, markBatchesReceived, receiveTransferBatch]);
+  }, []);
 
   useOrderQrScanner({
     orders: scannableRows,
     enabled: scannableRows.length > 0 && !receiveTransferBatch.isPending,
-    onMatch: receiveScannedBatch,
+    onMatch: selectScannedBatch,
     onMissing: handleMissingScannedBatch,
   });
 

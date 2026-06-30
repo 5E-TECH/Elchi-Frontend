@@ -35,7 +35,23 @@
   },
   "interface": {
     "sidebar": "Sidebar open",
-    "sidebar_hint": "Open the sidebar on app start"
+    "sidebar_hint": "Open the sidebar on app start",
+    "scanner_sounds": "Scanner sounds",
+    "scanner_sounds_hint": "Choose the sound played when a scan succeeds or fails",
+    "success_sound": "Success sound",
+    "success_sound_hint": "Played after an order or QR is scanned successfully",
+    "error_sound": "Error sound",
+    "error_sound_hint": "Played when the QR is missing or an error happens",
+    "preview": "Preview",
+    "selected": "Selected",
+    "success_preview": "Received",
+    "error_preview": "Error",
+    "sound_classic": "Classic",
+    "sound_soft": "Soft",
+    "sound_digital": "Digital",
+    "sound_bell": "Bell",
+    "sound_pulse": "Pulse",
+    "sound_bright": "Bright"
   },
   "saved": "Saved",
   "save_error": "Failed to save"
