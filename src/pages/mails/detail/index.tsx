@@ -257,23 +257,23 @@ const MailDetailPage = () => {
   const handleMissingScannedOrder = useCallback(() => {
     playMissingOrderFeedback();
     notifApi.warning({
-      message: "QR topilmadi",
-      description: "Bu QR kod ushbu pochta orderlariga mos kelmadi.",
+      message: t("qrNotFound"),
+      description: t("mailScanMissing"),
       placement: "topRight",
       duration: 3,
     });
-  }, [notifApi]);
+  }, [notifApi, t]);
 
   const selectScannedOrder = useCallback((order: PostOrder) => {
     selectOne(order.id);
     void playScanFeedback("success");
     notifApi.success({
-      message: "Order tanlandi",
+      message: t("orderSelected"),
       description: `#${order.id}`,
       placement: "topRight",
       duration: 2,
     });
-  }, [notifApi, selectOne]);
+  }, [notifApi, selectOne, t]);
 
   useOrderQrScanner({
     orders,
@@ -355,8 +355,8 @@ const MailDetailPage = () => {
             batchId: postId,
             orderIds: Array.from(selectedIds),
           }),
-        successMessage: "Batch asosiy filialga yuborildi",
-        errorMessage: "Batch yuborishda xatolik bo'ldi",
+        successMessage: t("batchSendMainSuccess"),
+        errorMessage: t("batchSendMainError"),
         onSuccess: async () => {
           clearSelection();
           await refetchTransferBatchDetail();

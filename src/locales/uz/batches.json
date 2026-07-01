@@ -31,6 +31,21 @@
     "route": "Yo'nalish",
     "created": "Yaratilgan"
   },
+  "detail": {
+    "title": "Paket {{id}}",
+    "notFound": "Paket topilmadi",
+    "branch": "Filial",
+    "destination": "Qayerga",
+    "orderCount": "{{count}} ta",
+    "insideOrders": "Ichidagi orderlar"
+  },
+  "print": {
+    "branch": "FILIAL:",
+    "region": "VILOYAT:",
+    "orders": "ORDER:",
+    "total": "JAMI:",
+    "date": "SANA:"
+  },
   "loadError": "Paketlar ro'yxatini yuklab bo'lmadi",
   "emptyTitle": "Paketlar yo'q",
   "emptyDescription": "Hozircha bu filterlar bo'yicha paketlar topilmadi."

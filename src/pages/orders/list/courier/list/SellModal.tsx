@@ -51,10 +51,10 @@ type SellModalProps = {
   isLoading?: boolean;
 };
 
-const formatAmountInput = (value: string) => {
+const formatAmountInput = (value: string, locale: string) => {
   if (!value) return "";
 
-  return Number(value).toLocaleString("uz-UZ");
+  return Number(value).toLocaleString(locale);
 };
 
 const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
@@ -309,7 +309,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={formatAmountInput(totalPrice)}
+                  value={formatAmountInput(totalPrice, locale)}
                   onChange={(e) =>
                     setTotalPrice(sanitizeAmountInput(e.target.value))
                   }
@@ -331,7 +331,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               <input
                 type="text"
                 inputMode="numeric"
-                value={formatAmountInput(extraCost)}
+                value={formatAmountInput(extraCost, locale)}
                 onChange={(e) =>
                   setExtraCost(sanitizeAmountInput(e.target.value))
                 }

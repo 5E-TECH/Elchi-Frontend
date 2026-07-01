@@ -3,6 +3,8 @@
   "description": "Filial bo'yicha qaytish oqimidagi paketlar ro'yxati",
   "totalBatches": "{{count}} paket",
   "empty": "Qaytarish paketlari topilmadi",
+  "emptyDescription": "Hozircha qaytarilgan orderlar topilmadi.",
+  "orderCountValue": "{{count}} ta",
   "columns": {
     "id": "ID",
     "from": "Filialdan",

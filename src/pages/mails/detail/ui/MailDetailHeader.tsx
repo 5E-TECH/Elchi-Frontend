@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { MapPin } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import BackButton from "../../../../shared/ui/BackButton";
 
 interface MailDetailHeaderProps {
@@ -8,6 +9,8 @@ interface MailDetailHeaderProps {
 }
 
 const MailDetailHeader = memo(({ regionName, orderCount }: MailDetailHeaderProps) => {
+    const { t } = useTranslation("mails");
+
     return (
         <div className="flex items-center gap-4">
             <BackButton className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
@@ -18,11 +21,11 @@ const MailDetailHeader = memo(({ regionName, orderCount }: MailDetailHeaderProps
                         <MapPin size={14} className="text-white" />
                     </div>
                     <h1 className="text-lg font-bold text-gray-800 dark:text-white">
-                        {regionName} Buyurtmalar
+                        {t("regionOrdersTitle", { region: regionName })}
                     </h1>
                 </div>
                 <p className="text-gray-400 dark:text-white/60 text-xs ml-9">
-                    {orderCount} ta buyurtma mavjud
+                    {t("ordersCount", { count: orderCount })}
                 </p>
             </div>
         </div>

@@ -19,7 +19,8 @@ type MarketRow = {
   total_price_sum: number;
 };
 
-const formatMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
+const formatMoney = (value: number, currencyLabel: string) =>
+  `${value.toLocaleString("uz-UZ")} ${currencyLabel}`;
 
 const StatCard = ({
   icon,
@@ -46,7 +47,8 @@ const StatCard = ({
 );
 
 const CancelledMarkets = () => {
-  const { t } = useTranslation("newOrders");
+  const { t } = useTranslation(["newOrders", "orders"]);
+  const currencyLabel = t("currency", { ns: "orders" });
   const navigate = useNavigate();
   const { useCancelledMarkets } = useOrders();
   const search = useSelector((state: RootState) => (state.search.cancelled_market_search as string) || "");
@@ -87,7 +89,7 @@ const CancelledMarkets = () => {
         label: t("orders"),
         render: (value) => (
           <span className="font-bold text-maindark dark:text-white">
-            {t("totalCount", { count: value })}
+            {t("orderCountValue", { count: value })}
           </span>
         ),
       },
@@ -96,12 +98,12 @@ const CancelledMarkets = () => {
         label: t("totalAmount"),
         render: (value) => (
           <span className="tabular-nums font-bold text-red-600 dark:text-red-300">
-            {formatMoney(Number(value))}
+            {formatMoney(Number(value), currencyLabel)}
           </span>
         ),
       },
     ],
-    [t],
+    [currencyLabel, t],
   );
 
   const totalOrders = rows.reduce((sum, row) => sum + row.orders_count, 0);
@@ -129,7 +131,7 @@ const CancelledMarkets = () => {
             <StatCard
               icon={<TrendingDown size={20} />}
               label={t("totalAmount")}
-              value={formatMoney(totalAmount)}
+              value={formatMoney(totalAmount, currencyLabel)}
             />
           </div>
 
@@ -152,10 +154,10 @@ const CancelledMarkets = () => {
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3 border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
                   <span className="font-semibold text-maindark dark:text-white/80">
-                    {t("totalCount", { count: row.orders_count })}
+                    {t("orderCountValue", { count: row.orders_count })}
                   </span>
                   <span className="tabular-nums font-bold text-red-600 dark:text-red-300">
-                    {formatMoney(row.total_price_sum)}
+                    {formatMoney(row.total_price_sum, currencyLabel)}
                   </span>
                 </div>
               </div>

@@ -31,6 +31,21 @@
     "route": "Маршрут",
     "created": "Создан"
   },
+  "detail": {
+    "title": "Пакет {{id}}",
+    "notFound": "Пакет не найден",
+    "branch": "Филиал",
+    "destination": "Куда",
+    "orderCount": "{{count}} шт",
+    "insideOrders": "Заказы внутри"
+  },
+  "print": {
+    "branch": "ФИЛИАЛ:",
+    "region": "ОБЛАСТЬ:",
+    "orders": "ЗАКАЗЫ:",
+    "total": "ИТОГО:",
+    "date": "ДАТА:"
+  },
   "loadError": "Не удалось загрузить список пакетов",
   "emptyTitle": "Пакетов нет",
   "emptyDescription": "По этим фильтрам пакеты пока не найдены."
