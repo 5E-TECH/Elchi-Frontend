@@ -66,9 +66,11 @@ type Props = {
 };
 
 const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRestore }: Props) => {
-  const { t } = useTranslation("orders");
+  const { t, i18n } = useTranslation("orders");
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+  const formatMoney = (value: number) => `${value.toLocaleString(locale)} ${t("currency")}`;
   const formatDate = (value: string) =>
-    new Date(value).toLocaleString("uz-UZ", {
+    new Date(value).toLocaleString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -134,7 +136,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
         sortable: true,
         render: (val) => (
           <span className="font-bold text-sm">
-            {Number(val).toLocaleString("uz-UZ")}
+            {formatMoney(Number(val))}
           </span>
         ),
       },
@@ -153,13 +155,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
         sortable: true,
         render: (val) => (
           <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-            {new Date(val as string).toLocaleString("uz-UZ", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatDate(val as string)}
           </span>
         ),
       },
@@ -169,7 +165,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
         render: (_, row) => renderHarakat(row, onDeliver, onCancel, onRestore, t),
       },
     ],
-    [onDeliver, onCancel, onRestore, t]
+    [formatDate, formatMoney, onDeliver, onCancel, onRestore, t]
   );
 
   return (
@@ -211,7 +207,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
 
           <div className="mt-2 flex items-center justify-between gap-2">
             <span className="text-base font-bold text-slate-900 dark:text-white">
-              {Number(row.total_price).toLocaleString("uz-UZ")}
+              {formatMoney(Number(row.total_price))}
             </span>
             <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-white/65">
               <Calendar size={11} className="shrink-0" />

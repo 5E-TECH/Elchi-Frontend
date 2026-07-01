@@ -71,8 +71,8 @@ type OldMailStatusKind = "received" | "cancelled" | "returned" | "sent";
 
 const OLD_MAILS_COLLECTION_LIMIT = 10000;
 
-const formatPrice = (price: number): string =>
-  price.toLocaleString("uz-UZ") + " so'm";
+const formatPrice = (price: number, currencyLabel: string): string =>
+  `${price.toLocaleString("uz-UZ")} ${currencyLabel}`;
 
 const toItems = <T extends { id: string | number; name?: string }>(value: unknown): T[] => {
   if (Array.isArray(value)) return value as T[];
@@ -209,6 +209,7 @@ const getStatusMeta = (status: string) => {
 
 const OldMailCard = memo(({ item, mode }: { item: MailItem | BatchMailItem; mode: "mail" | "batch" }) => {
   const { t } = useTranslation("mails");
+  const currencyLabel = t("currencyLabel");
   const navigate = useNavigate();
   const location = useLocation();
   const [isPrinting, setIsPrinting] = useState(false);
@@ -254,7 +255,7 @@ const OldMailCard = memo(({ item, mode }: { item: MailItem | BatchMailItem; mode
       statusIcon={status.icon}
       leadingIcon={isBatchCard ? <Package size={20} /> : <Inbox size={20} />}
       orders={item.order_quantity}
-      amount={formatPrice(item.post_total_price)}
+      amount={formatPrice(item.post_total_price, currencyLabel)}
       onOpen={openDetail}
       variant={isBatchCard ? "batch" : "old"}
       subtitle={courierName ? t("oldCourierLabel", { name: courierName }) : undefined}

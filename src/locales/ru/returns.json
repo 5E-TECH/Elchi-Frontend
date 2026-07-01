@@ -3,6 +3,8 @@
   "description": "Список пакетов возвратного потока для текущего филиала",
   "totalBatches": "{{count}} пакет",
   "empty": "Возвратные батчи не найдены",
+  "emptyDescription": "Возвращенные заказы пока не найдены.",
+  "orderCountValue": "{{count}} заказов",
   "columns": {
     "id": "ID",
     "from": "Откуда",
