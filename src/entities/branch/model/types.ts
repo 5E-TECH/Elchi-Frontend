@@ -3,6 +3,9 @@ export type BranchType = "HQ" | "PICKUP" | "REGIONAL" | "HYBRID";
 export interface Branch {
   id: string;
   name: string;
+  manager_id?: string;
+  manager?: { id: string; name?: string; fullName?: string } | null;
+  has_manager?: boolean;
   parent_id?: string;
   parent?: { id: string; name: string } | null;
   type?: BranchType;
