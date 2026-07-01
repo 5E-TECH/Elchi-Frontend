@@ -1,5 +1,5 @@
 export type { Branch, BranchParams, BranchType, Employee, BranchSetting } from "./model/types";
-export { getBranches, getBranchById, getBranchEmployees, getBranchSettings } from "./api/branchApi";
+export { getBranches, getBranchById, getBranchEmployees, getBranchSettings, getActiveManagerBranchIds } from "./api/branchApi";
 export { useBranches } from "./api/useBranches";
 export { useBranchDetail } from "./api/useBranchDetail";
 export { useBranchEmployees } from "./api/useBranchEmployees";

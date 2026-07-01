@@ -29,7 +29,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import { useOrders } from "../../../entities/orders";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
-import { getBranches, type Branch } from "../../../entities/branch";
+import { getActiveManagerBranchIds, getBranches, type Branch } from "../../../entities/branch";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 import {
   playMissingOrderFeedback,
@@ -369,11 +369,17 @@ const MailDetailPage = () => {
 
     setIsCheckingCouriers(true);
 
-    getBranches({ page: 1, limit: 500, status: "active" })
-      .then((response) => {
+    Promise.all([
+      getBranches({ page: 1, limit: 500, status: "active" }),
+      getActiveManagerBranchIds(),
+    ])
+      .then(([response, managerBranchIds]) => {
         const branches = (response?.data ?? []).filter(
           (branch) => branch.region?.id === regionId && branch.status === "active",
-        );
+        ).map((branch) => ({
+          ...branch,
+          has_manager: Boolean(branch.has_manager || managerBranchIds.has(branch.id)),
+        }));
 
         if (branches.length === 0) {
           apiRequest({
