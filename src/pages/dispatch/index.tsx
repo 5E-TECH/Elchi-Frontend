@@ -88,8 +88,8 @@ const safe = (value: unknown, fallback = "—") => {
   return fallback;
 };
 
-const formatMoney = (value: number, currencyLabel: string) =>
-  `${value.toLocaleString("uz-UZ")} ${currencyLabel}`;
+const formatMoney = (value: number, currencyLabel: string, locale: string) =>
+  `${value.toLocaleString(locale)} ${currencyLabel}`;
 
 const formatDate = (value: unknown) => {
   if (typeof value !== "string" || !value) return "—";
@@ -255,26 +255,27 @@ const getDispatchErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const DispatchPage = () => {
-  const { t } = useTranslation(["dispatch", "orders"]);
+  const { t, i18n } = useTranslation(["dispatch", "orders"]);
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const currencyLabel = t("currency", { ns: "orders" });
   const { api: notificationApi } = useAppNotification();
   const { assignCourier } = useOrders();
   const { useGetCouriers } = useUser();
   const role = useSelector((state: RootState) => state.role.role);
   const profile = useSelector((state: RootState) => state.user.user);
-  const managerRegionId = useMemo(
-    () => role === "manager" ? getProfileRegionId(profile) : "",
+  const scopedRegionId = useMemo(
+    () => role === "manager" || role === "registrator" ? getProfileRegionId(profile) : "",
     [profile, role],
   );
   const courierParams = useMemo(
     () => ({
       page: 1,
       limit: 100,
-      ...(managerRegionId ? { region_id: managerRegionId } : {}),
+      ...(scopedRegionId ? { region_id: scopedRegionId } : {}),
     }),
-    [managerRegionId],
+    [scopedRegionId],
   );
-  const canLoadCouriers = role !== "manager" || Boolean(managerRegionId);
+  const canLoadCouriers = (role !== "manager" && role !== "registrator") || Boolean(scopedRegionId);
   const {
     data: couriersResponse,
     isLoading: isCouriersLoading,
@@ -610,7 +611,7 @@ const DispatchPage = () => {
                 <p className="m-0 text-xs font-bold text-(--color-text-muted) dark:text-text-muted-dark">{t("statHome")}</p>
                 <p className="m-0 text-lg font-black">{homeOrders.length} {t("piece")}</p>
                 <p className="m-0 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
-                  {formatMoney(homeTotal, currencyLabel)}
+                  {formatMoney(homeTotal, currencyLabel, locale)}
                 </p>
               </div>
             </div>
@@ -624,7 +625,7 @@ const DispatchPage = () => {
                 <p className="m-0 text-xs font-bold text-(--color-text-muted) dark:text-text-muted-dark">{t("statCenter")}</p>
                 <p className="m-0 text-lg font-black">{centerOrders.length} {t("piece")}</p>
                 <p className="m-0 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
-                  {formatMoney(centerTotal, currencyLabel)}
+                  {formatMoney(centerTotal, currencyLabel, locale)}
                 </p>
               </div>
             </div>

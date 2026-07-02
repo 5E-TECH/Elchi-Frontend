@@ -37,7 +37,10 @@
     "branch": "Филиал",
     "destination": "Куда",
     "orderCount": "{{count}} шт",
-    "insideOrders": "Заказы внутри"
+    "insideOrders": "Заказы внутри",
+    "history": "История",
+    "historyEmpty": "Истории пока нет",
+    "qrCode": "QR-код"
   },
   "print": {
     "branch": "ФИЛИАЛ:",
