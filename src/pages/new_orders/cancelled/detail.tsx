@@ -6,7 +6,6 @@ import { useOrders } from "../../../entities/orders";
 import BackButton from "../../../shared/ui/BackButton";
 import HeaderName from "../../../shared/components/headerName";
 import {
-  CheckCircle2,
   ClipboardCheck,
   Loader2,
   PackageX,
@@ -14,6 +13,7 @@ import {
   ScanLine,
   Send,
   WalletCards,
+  AlertTriangle,
   XCircle,
 } from "lucide-react";
 import { extractCancelledOrders } from "./utils";
@@ -29,6 +29,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import type { RootState } from "../../../app/config/store";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { OrderCard, type ApiOrder } from "../components/OrderCard";
+import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 
 const formatMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
 
@@ -207,10 +208,18 @@ const formatCountdown = (seconds: number) => {
   return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
 };
 
+const getOrderProductNames = (order: OrderListItem) =>
+  order.items
+    .map((item) => item.product?.name ?? `#${item.product_id}`)
+    .filter(Boolean)
+    .join(", ");
+
 const CancelledMarketDetail = () => {
   const { t } = useTranslation("newOrders");
   const { api: notificationApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
+  const user = useSelector((state: RootState) => state.user.user);
+  const branchType = getUserBranchType(user);
   const { marketId = "" } = useParams();
   const {
     useCancelledOrdersByMarket,
@@ -220,6 +229,10 @@ const CancelledMarketDetail = () => {
   } = useOrders();
   const query = useCancelledOrdersByMarket(marketId);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [manualSelectedIds, setManualSelectedIds] = useState<Set<string>>(new Set());
+  const [manualOverrideReasons, setManualOverrideReasons] = useState<Record<string, string>>({});
+  const [manualConfirmOrder, setManualConfirmOrder] = useState<OrderListItem | null>(null);
+  const [manualReason, setManualReason] = useState("");
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
@@ -238,9 +251,6 @@ const CancelledMarketDetail = () => {
     () => orders,
     [orders],
   );
-  const allSelectableSelected =
-    selectableOrders.length > 0 &&
-    selectableOrders.every((order) => selectedIds.has(order.id));
   const totalAmount = useMemo(
     () => orders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0),
     [orders],
@@ -258,7 +268,22 @@ const CancelledMarketDetail = () => {
     return index;
   }, [selectableOrders]);
   const marketName = rawOrders[0]?.market?.name ?? t("marketName");
+  const isCancelledHandoverQrRequired =
+    rawOrders[0]?.market?.cancelled_handover_qr_required !== false;
   const isMarketRole = role === "market";
+  const canManualSelectDamagedQr =
+    role === "superadmin" ||
+    role === "admin" ||
+    (role === "registrator" && branchType === "HQ");
+  const manualReasonOptions = useMemo(
+    () => [
+      t("cancelledManualReasonTorn"),
+      t("cancelledManualReasonUnreadable"),
+      t("cancelledManualReasonMissing"),
+      t("cancelledManualReasonWet"),
+    ],
+    [t],
+  );
   const handoverQrValue = handoverQr?.payload || handoverQr?.token || "";
   const handoverQrImage = handoverQr?.image || createQrImageUrl(handoverQrValue);
   const { canAcceptScan } = useScannerGate({
@@ -290,7 +315,16 @@ const CancelledMarketDetail = () => {
   }, [authorizationExpiresAt, authorizationToken]);
 
   const selectOrder = useCallback((order: OrderListItem) => {
-    if (selectedIds.has(order.id)) return;
+    if (selectedIds.has(order.id)) {
+      void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+      notificationApi.warning({
+        message: t("common:scannerFeedbackDuplicate"),
+        description: `#${order.id}`,
+        placement: "topRight",
+        duration: 2,
+      });
+      return;
+    }
 
     setSelectedIds((previous) => {
       const next = new Set(previous);
@@ -299,7 +333,7 @@ const CancelledMarketDetail = () => {
     });
     setScanError("");
     void playScanFeedback("success");
-  }, [selectedIds]);
+  }, [notificationApi, selectedIds, t]);
 
   const isGeneratedQrMatch = useCallback((rawValue: string) => {
     if (!handoverQr) return false;
@@ -415,18 +449,43 @@ const CancelledMarketDetail = () => {
     selectOrder(matchedOrder);
   }, [canAcceptScan, handleMissingOrder, scanIndex, selectOrder, verifyHandoverQr]);
 
-  const handleSelectChange = useCallback((id: string, checked: boolean) => {
+  const confirmManualSelect = useCallback(() => {
+    if (!manualConfirmOrder || !canManualSelectDamagedQr || selectedIds.has(manualConfirmOrder.id)) return;
+
     setSelectedIds((previous) => {
       const next = new Set(previous);
-      if (checked) next.add(id);
-      else next.delete(id);
+      next.add(manualConfirmOrder.id);
       return next;
     });
-  }, []);
+    setManualSelectedIds((previous) => {
+      const next = new Set(previous);
+      next.add(manualConfirmOrder.id);
+      return next;
+    });
+    setManualOverrideReasons((previous) => ({
+      ...previous,
+      [manualConfirmOrder.id]: manualReason,
+    }));
+    notificationApi.warning({
+      message: t("cancelledManualSelectSuccess"),
+      description: `#${manualConfirmOrder.id}${manualReason ? ` · ${manualReason}` : ""}`,
+      placement: "topRight",
+      duration: 3,
+    });
+    setManualConfirmOrder(null);
+    setManualReason("");
+  }, [canManualSelectDamagedQr, manualConfirmOrder, manualReason, notificationApi, selectedIds, t]);
 
-  const handleSelectAll = useCallback((checked: boolean) => {
-    setSelectedIds(checked ? new Set(selectableOrders.map((order) => order.id)) : new Set());
-  }, [selectableOrders]);
+  const openManualSelectModal = useCallback((order: OrderListItem) => {
+    if (!canManualSelectDamagedQr || selectedIds.has(order.id)) return;
+    setManualConfirmOrder(order);
+    setManualReason(manualReasonOptions[0] ?? "");
+  }, [canManualSelectDamagedQr, manualReasonOptions, selectedIds]);
+
+  const closeManualSelectModal = useCallback(() => {
+    setManualConfirmOrder(null);
+    setManualReason("");
+  }, []);
 
   const handleGenerateQr = useCallback(() => {
     if (!marketId || generateCancelledMarketQr.isPending) return;
@@ -452,15 +511,27 @@ const CancelledMarketDetail = () => {
       selectedIds.size === 0 ||
       handoverCancelledOrders.isPending ||
       !marketId ||
-      !isHandoverQrScanned ||
-      !authorizationToken
+      (isCancelledHandoverQrRequired && (!isHandoverQrScanned || !authorizationToken))
     ) return;
     const orderIds = Array.from(selectedIds);
+    const manualOverrides = orderIds
+      .filter((orderId) => manualSelectedIds.has(orderId))
+      .map((orderId) => ({
+        order_id: orderId,
+        reason: manualOverrideReasons[orderId] || t("cancelledManualSelect"),
+      }));
 
-    handoverCancelledOrders.mutate({ marketId, orderIds, authorizationToken }, {
+    handoverCancelledOrders.mutate({
+      marketId,
+      orderIds,
+      authorizationToken: isCancelledHandoverQrRequired ? authorizationToken : undefined,
+      manualOverrides,
+    }, {
       onSuccess: () => {
         setSentIds((previous) => new Set([...previous, ...orderIds]));
         setSelectedIds(new Set());
+        setManualSelectedIds(new Set());
+        setManualOverrideReasons({});
         setAuthorizationToken("");
         setAuthorizationExpiresAt(null);
         setIsHandoverQrScanned(false);
@@ -483,8 +554,11 @@ const CancelledMarketDetail = () => {
   }, [
     authorizationToken,
     handoverCancelledOrders,
+    isCancelledHandoverQrRequired,
     isHandoverQrScanned,
     marketId,
+    manualOverrideReasons,
+    manualSelectedIds,
     notificationApi,
     query,
     selectedIds,
@@ -547,7 +621,7 @@ const CancelledMarketDetail = () => {
                 setScanError("");
                 setIsCameraOpen(true);
               }}
-              label={t("scanCancelledHandoverQr")}
+              label={isCancelledHandoverQrRequired ? t("scanCancelledHandoverQr") : t("scanCancelledOrder")}
               showLabel
               className="w-full border-red-300/25! bg-red-500! text-white! shadow-lg! shadow-red-500/20! hover:bg-red-600! dark:text-white! lg:w-auto"
             />
@@ -634,7 +708,9 @@ const CancelledMarketDetail = () => {
                   </span>
                   {isMarketRole
                     ? t("cancelledQrReady")
-                    : isHandoverQrScanned
+                    : !isCancelledHandoverQrRequired
+                      ? t("cancelledQrNotRequired")
+                      : isHandoverQrScanned
                       ? `${t("cancelledQrScanned")} · ${formatCountdown(authorizationRemainingSeconds)}`
                       : t("cancelledQrRequired")}
                 </div>
@@ -648,22 +724,13 @@ const CancelledMarketDetail = () => {
 
             <div className="space-y-3 p-3 sm:p-4">
               {!isMarketRole ? (
-                <button
-                  type="button"
-                  onClick={() => handleSelectAll(!allSelectableSelected)}
-                  disabled={selectableOrders.length === 0 || handoverCancelledOrders.isPending}
-                  className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-3 py-3 text-left transition hover:border-main/30 hover:bg-main/5 disabled:cursor-not-allowed disabled:opacity-45 dark:border-white/5 dark:bg-maindark dark:hover:bg-white/5 sm:px-4"
-                >
+                <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-3 py-3 text-left dark:border-white/5 dark:bg-maindark sm:px-4">
                   <span className="flex min-w-0 items-center gap-3">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-all ${
-                      allSelectableSelected
-                        ? "border-main bg-main text-white shadow-sm shadow-main/30"
-                        : "border-white/10 bg-white/5 text-gray-300 dark:text-white/45"
-                    }`}>
-                      <CheckCircle2 size={18} />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-gray-300 dark:text-white/45">
+                      <ScanLine size={18} />
                     </span>
                     <span className="truncate text-sm font-bold text-maindark dark:text-white">
-                      {allSelectableSelected ? t("deselectAll") : t("selectAll")}
+                      {canManualSelectDamagedQr ? t("cancelledScannerOnlyWithManual") : t("cancelledScannerOnly")}
                     </span>
                   </span>
                   {selectedIds.size > 0 ? (
@@ -671,7 +738,7 @@ const CancelledMarketDetail = () => {
                       {t("cancelledSelectedCount", { count: selectedIds.size })}
                     </span>
                   ) : null}
-                </button>
+                </div>
               ) : null}
               {query.isLoading ? (
                 <div className="flex h-64 items-center justify-center">
@@ -682,8 +749,15 @@ const CancelledMarketDetail = () => {
                   key={order.id}
                   order={toOrderCardData(order)}
                   isSelected={selectedIds.has(order.id)}
-                  onToggle={() => handleSelectChange(order.id, !selectedIds.has(order.id))}
+                  onToggle={() => undefined}
                   showCheckbox={!isMarketRole}
+                  checkboxDisabled
+                  manualSelectLabel={t("cancelledManualSelect")}
+                  onManualSelect={
+                    canManualSelectDamagedQr && !manualSelectedIds.has(order.id)
+                      ? () => openManualSelectModal(order)
+                      : undefined
+                  }
                 />
               )) : (
                 <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-[color:var(--color-border-soft)] text-sm font-bold text-[color:var(--color-text-muted)] dark:border-white/10 dark:text-[color:var(--color-text-muted-dark)]">
@@ -707,19 +781,105 @@ const CancelledMarketDetail = () => {
                   {t("cancelledSelectedCount", { count: selectedIds.size })}
                 </p>
                 <p className="m-0 mt-0.5 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {isHandoverQrScanned ? t("cancelledSendHint") : t("cancelledSendDisabledHint")}
+                  {!isCancelledHandoverQrRequired || isHandoverQrScanned
+                    ? t("cancelledSendHint")
+                    : t("cancelledSendDisabledHint")}
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={handleSendToMarket}
-              disabled={handoverCancelledOrders.isPending || !isHandoverQrScanned || !authorizationToken}
+              disabled={
+                handoverCancelledOrders.isPending ||
+                (isCancelledHandoverQrRequired && (!isHandoverQrScanned || !authorizationToken))
+              }
               className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-red-500 to-red-600 px-5 text-sm font-black text-white shadow-lg shadow-red-500/25 transition hover:-translate-y-0.5 hover:from-red-600 hover:to-red-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:w-auto"
             >
               {handoverCancelledOrders.isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               {t("sendCancelledToMarket", { count: selectedIds.size })}
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {manualConfirmOrder ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-[28px] border border-amber-300/20 bg-primary shadow-2xl shadow-amber-500/10 dark:bg-primarydark">
+            <div className="flex items-start justify-between gap-4 border-b border-[color:var(--color-border-soft)] bg-amber-500/10 px-5 py-4 dark:border-white/10">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-200">
+                  <AlertTriangle size={21} />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="m-0 text-lg font-black text-maindark dark:text-white">
+                    {t("cancelledManualModalTitle")}
+                  </h3>
+                  <p className="m-0 mt-1 text-sm font-semibold leading-5 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                    {t("cancelledManualModalDescription")}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeManualSelectModal}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-[color:var(--color-text-muted)] transition hover:border-red-300/40 hover:text-red-500 dark:border-white/10 dark:text-white/70"
+                aria-label={t("closeScanner")}
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+            <div className="space-y-4 p-5">
+              <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+                <p className="m-0 text-xs font-black uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                  {t("orderProducts")}
+                </p>
+                <h4 className="m-0 mt-2 text-xl font-black text-maindark dark:text-white">
+                  {manualConfirmOrder.customer?.name ?? "—"}
+                </h4>
+                <p className="m-0 mt-1 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                  {getOrderProductNames(manualConfirmOrder) || t("productFallback")} · {formatMoney(Number(manualConfirmOrder.total_price) || 0)}
+                </p>
+              </div>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.13em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                  {t("cancelledManualReasonLabel")}
+                </span>
+                <select
+                  value={manualReason}
+                  onChange={(event) => setManualReason(event.target.value)}
+                  className="min-h-12 w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 text-sm font-bold text-maindark outline-none transition focus:border-main focus:ring-4 focus:ring-main/10 dark:border-white/10 dark:bg-maindark dark:text-white"
+                >
+                  {manualReasonOptions.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="rounded-2xl border border-amber-300/25 bg-amber-500/10 px-4 py-3 text-sm font-semibold leading-5 text-amber-700 dark:text-amber-100">
+                {t("cancelledManualAuditHint")}
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeManualSelectModal}
+                  className="min-h-11 cursor-pointer rounded-2xl border border-[color:var(--color-border-soft)] px-5 text-sm font-black text-[color:var(--color-text-muted)] transition hover:border-red-300/40 hover:text-red-500 dark:border-white/10 dark:text-white/70"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmManualSelect}
+                  className="min-h-11 cursor-pointer rounded-2xl bg-amber-500 px-5 text-sm font-black text-white shadow-lg shadow-amber-500/20 transition hover:bg-amber-400"
+                >
+                  {t("cancelledManualConfirmButton")}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}

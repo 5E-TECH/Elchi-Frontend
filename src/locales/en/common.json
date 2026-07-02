@@ -18,6 +18,7 @@
   "scannerFeedbackSuccess": "Scanned",
   "scannerFeedbackError": "Error",
   "scannerFeedbackMissing": "Not found",
+  "scannerFeedbackDuplicate": "Already found",
   "warning": "Warning",
   "info": "Information",
   "yes": "Yes",

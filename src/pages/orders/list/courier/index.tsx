@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { ListOrdered, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,117 @@ import CancelledOrdersTable from "./list/ordertable/CancelledOrdersTable";
 import { useOrders } from "../../../../entities/orders";
 import { useQueryParams } from "../../../../shared/lib/useQueryParams";
 import type { Order } from "./list/ordertable/pendingOrderTable";
+import { useOrderQrScanner } from "../../../../shared/lib/useOrderQrScanner";
+import { fetchScanDetail, getBackendErrorMessage } from "../../../scan/lib/scanResource";
+import { playScanFeedback } from "../../../scan/lib/scanShared";
+import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
+
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? value as Record<string, unknown> : {};
+
+const toText = (value: unknown) => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number") return String(value);
+  return "";
+};
+
+const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
+
+const unwrapScannedOrder = (payload: unknown) => {
+  const source = asRecord(payload);
+  const data = asRecord(source.data ?? source);
+  const nestedData = asRecord(data.data ?? data);
+  return asRecord(nestedData.order ?? data.order ?? nestedData);
+};
+
+const addOrderIdentifiers = (target: Set<string>, value: unknown) => {
+  const record = asRecord(value);
+  const directKeys = [
+    "id",
+    "qr_code_token",
+    "qrCodeToken",
+    "token",
+    "order_token",
+    "orderToken",
+    "parent_order_id",
+    "parentOrderId",
+    "original_order_id",
+    "originalOrderId",
+    "source_order_id",
+    "sourceOrderId",
+    "split_from_order_id",
+    "splitFromOrderId",
+    "cancelled_from_order_id",
+    "cancelledFromOrderId",
+    "partly_sold_order_id",
+    "partlySoldOrderId",
+    "root_order_id",
+    "rootOrderId",
+    "base_order_id",
+    "baseOrderId",
+  ];
+
+  directKeys.forEach((key) => {
+    const text = normalizeMatchText(record[key]);
+    if (text) target.add(text);
+  });
+
+  [
+    "order",
+    "parent_order",
+    "parentOrder",
+    "original_order",
+    "originalOrder",
+    "source_order",
+    "sourceOrder",
+    "split_from_order",
+    "splitFromOrder",
+    "cancelled_from_order",
+    "cancelledFromOrder",
+  ].forEach((key) => {
+    const nested = asRecord(record[key]);
+    ["id", "qr_code_token", "qrCodeToken", "token"].forEach((nestedKey) => {
+      const text = normalizeMatchText(nested[nestedKey]);
+      if (text) target.add(text);
+    });
+  });
+};
+
+const getOrderIdentifiers = (value: unknown) => {
+  const identifiers = new Set<string>();
+  addOrderIdentifiers(identifiers, value);
+  return identifiers;
+};
+
+const getComparableOrderInfo = (value: unknown) => {
+  const order = asRecord(value);
+  const customer = asRecord(order.customer);
+  const market = asRecord(order.market);
+  const district = asRecord(order.district);
+
+  return {
+    customerId: normalizeMatchText(order.customer_id ?? order.customerId ?? customer.id),
+    phone: normalizeMatchText(customer.phone_number ?? customer.phone ?? order.phone_number ?? order.phone),
+    marketId: normalizeMatchText(order.market_id ?? order.marketId ?? market.id),
+    marketName: normalizeMatchText(market.name),
+    districtId: normalizeMatchText(order.district_id ?? order.districtId ?? district.id),
+    districtName: normalizeMatchText(district.name),
+  };
+};
+
+const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
+  const a = getComparableOrderInfo(left);
+  const b = getComparableOrderInfo(right);
+  const sameCustomer = Boolean(a.customerId && a.customerId === b.customerId) || Boolean(a.phone && a.phone === b.phone);
+  const sameMarket = Boolean(a.marketId && a.marketId === b.marketId) || Boolean(a.marketName && a.marketName === b.marketName);
+  const sameDistrict =
+    !a.districtId && !a.districtName && !b.districtId && !b.districtName
+      ? true
+      : Boolean(a.districtId && a.districtId === b.districtId) ||
+        Boolean(a.districtName && a.districtName === b.districtName);
+
+  return sameCustomer && sameMarket && sameDistrict;
+};
 
 const TAB_STATUS_MAP: Record<string, string | undefined> = {
   pending: "waiting",
@@ -27,6 +138,7 @@ const STATUS_TAB_MAP: Record<string, string> = {
 
 const CourierOrders = () => {
   const { t } = useTranslation("orders");
+  const { api: notificationApi } = useAppNotification();
   const navigate = useNavigate();
   const { getParam, setParam, removeParam } = useQueryParams();
 
@@ -40,6 +152,7 @@ const CourierOrders = () => {
   const [cancelOrder, setCancelOrder] = useState<Order | null>(null);
   const [rollbackOrder, setRollbackOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const scanLookupTokensRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!getParam("status")) setParam("status", "waiting");
@@ -78,6 +191,89 @@ const CourierOrders = () => {
     : Array.isArray(data?.data)
       ? data.data
       : [];
+
+  const selectScannedOrder = useCallback((order: Order) => {
+    if (selectedIds.has(order.id)) {
+      notificationApi.warning({
+        message: t("scanAlreadySelectedTitle"),
+        description: t("scanAlreadySelectedDescription", {
+          name: order.customer?.name ?? `#${order.id}`,
+        }),
+        placement: "topRight",
+        duration: 2.5,
+      });
+      void playScanFeedback("duplicate");
+      return;
+    }
+
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.add(order.id);
+      return next;
+    });
+    notificationApi.success({
+      message: t("scanSelectedTitle"),
+      description: t("scanSelectedDescription", {
+        name: order.customer?.name ?? `#${order.id}`,
+      }),
+      placement: "topRight",
+      duration: 2,
+    });
+    void playScanFeedback("success");
+  }, [notificationApi, selectedIds, t]);
+
+  const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
+    const tokenKey = rawValue.trim().toLowerCase();
+    if (!tokenKey || scanLookupTokensRef.current.has(tokenKey)) return;
+
+    scanLookupTokensRef.current.add(tokenKey);
+
+    try {
+      const detail = await fetchScanDetail(rawValue);
+      const scannedOrder = detail.type === "order" ? unwrapScannedOrder(detail.data) : {};
+      const scannedIdentifiers = getOrderIdentifiers(scannedOrder);
+      const matchedByIdentifier = orders.find((order) => {
+        const orderIdentifiers = getOrderIdentifiers(order);
+        return [...scannedIdentifiers].some((identifier) => orderIdentifiers.has(identifier));
+      });
+      const comparableMatches = matchedByIdentifier
+        ? []
+        : orders.filter((order) => isSameCustomerMarketOrder(scannedOrder, order));
+      const matchedOrder = matchedByIdentifier ?? (comparableMatches.length === 1 ? comparableMatches[0] : undefined);
+
+      if (matchedOrder) {
+        selectScannedOrder(matchedOrder);
+        return;
+      }
+
+      notificationApi.error({
+        message: t("scanNotFoundTitle"),
+        description: t("scanNotFoundDescription"),
+        placement: "topRight",
+        duration: 3,
+      });
+      void playScanFeedback("missing");
+    } catch (error) {
+      notificationApi.error({
+        message: t("scanNotFoundTitle"),
+        description: getBackendErrorMessage(error) ?? t("scanNotFoundDescription"),
+        placement: "topRight",
+        duration: 3,
+      });
+      void playScanFeedback("error");
+    } finally {
+      scanLookupTokensRef.current.delete(tokenKey);
+    }
+  }, [notificationApi, orders, selectScannedOrder, t]);
+
+  useOrderQrScanner({
+    orders,
+    enabled: activeTab === "cancelled" && !isLoading,
+    onMatch: (order) => selectScannedOrder(order),
+    onMissing: (rawValue) => {
+      void handleMissingScannedOrder(rawValue);
+    },
+  });
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleSell = (
@@ -187,14 +383,19 @@ const CourierOrders = () => {
           )}
 
           {activeTab === "cancelled" && (
-            <CancelledOrdersTable
-              orders={orders}
-              loading={isLoading}
-              onRowClick={handleOpenDetail}
-              selectedIds={selectedIds}
-              onSelectChange={handleSelectChange}
-              onSelectAll={handleSelectAll}
-            />
+            <>
+              <div className="mb-3 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-sm font-semibold text-maindark dark:border-white/10 dark:bg-white/6 dark:text-white">
+                {t("scanSelectHint")}
+              </div>
+              <CancelledOrdersTable
+                orders={orders}
+                loading={isLoading}
+                onRowClick={handleOpenDetail}
+                selectedIds={selectedIds}
+                onSelectChange={handleSelectChange}
+                onSelectAll={handleSelectAll}
+              />
+            </>
           )}
         </div>
       </div>

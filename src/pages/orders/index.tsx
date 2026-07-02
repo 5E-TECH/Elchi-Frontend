@@ -30,6 +30,9 @@ import CancelModal from "./list/courier/list/CancelModal";
 import PopupConfirm from "../../shared/components/popupConfirm";
 import OrderTabs from "./list/courier/list/tabs";
 import { setFilterValue } from "../../features/Select/model/FilterSlice";
+import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
+import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResource";
+import { playScanFeedback } from "../scan/lib/scanShared";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
@@ -39,6 +42,129 @@ const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
 const TABLE_ROLLBACK_STATUSES = new Set<OrderStatus>(["sold", "cancelled"]);
 const isUnsentCancelledOrder = (order: OrderListItem) => order.status === "cancelled";
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? value as Record<string, unknown> : {};
+
+const toText = (value: unknown) => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number") return String(value);
+  return "";
+};
+
+const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
+
+const unwrapScannedOrder = (payload: unknown) => {
+  const source = asRecord(payload);
+  const data = asRecord(source.data ?? source);
+  const nestedData = asRecord(data.data ?? data);
+  return asRecord(nestedData.order ?? data.order ?? nestedData);
+};
+
+const addOrderIdentifiers = (target: Set<string>, value: unknown) => {
+  const record = asRecord(value);
+  [
+    "id",
+    "qr_code_token",
+    "qrCodeToken",
+    "token",
+    "order_token",
+    "orderToken",
+    "parent_order_id",
+    "parentOrderId",
+    "original_order_id",
+    "originalOrderId",
+    "source_order_id",
+    "sourceOrderId",
+    "split_from_order_id",
+    "splitFromOrderId",
+    "cancelled_from_order_id",
+    "cancelledFromOrderId",
+    "partly_sold_order_id",
+    "partlySoldOrderId",
+    "root_order_id",
+    "rootOrderId",
+    "base_order_id",
+    "baseOrderId",
+  ].forEach((key) => {
+    const text = normalizeMatchText(record[key]);
+    if (text) target.add(text);
+  });
+
+  [
+    "order",
+    "parent_order",
+    "parentOrder",
+    "original_order",
+    "originalOrder",
+    "source_order",
+    "sourceOrder",
+    "split_from_order",
+    "splitFromOrder",
+    "cancelled_from_order",
+    "cancelledFromOrder",
+  ].forEach((key) => {
+    const nested = asRecord(record[key]);
+    ["id", "qr_code_token", "qrCodeToken", "token"].forEach((nestedKey) => {
+      const text = normalizeMatchText(nested[nestedKey]);
+      if (text) target.add(text);
+    });
+  });
+};
+
+const getOrderIdentifiers = (value: unknown) => {
+  const identifiers = new Set<string>();
+  addOrderIdentifiers(identifiers, value);
+  return identifiers;
+};
+
+const getComparableOrderInfo = (value: unknown) => {
+  const order = asRecord(value);
+  const customer = asRecord(order.customer);
+  const market = asRecord(order.market);
+  const district = asRecord(order.district);
+
+  return {
+    customerId: normalizeMatchText(order.customer_id ?? order.customerId ?? customer.id),
+    name: normalizeMatchText(
+      customer.name ??
+        customer.full_name ??
+        customer.fullName ??
+        order.customer_name ??
+        order.customerName ??
+        order.name,
+    ),
+    phone: normalizeMatchText(
+      customer.phone_number ??
+        customer.phoneNumber ??
+        customer.phone ??
+        order.customer_phone ??
+        order.customerPhone ??
+        order.phone_number ??
+        order.phone,
+    ),
+    marketId: normalizeMatchText(order.market_id ?? order.marketId ?? market.id),
+    marketName: normalizeMatchText(market.name),
+    districtId: normalizeMatchText(order.district_id ?? order.districtId ?? district.id),
+    districtName: normalizeMatchText(district.name),
+  };
+};
+
+const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
+  const a = getComparableOrderInfo(left);
+  const b = getComparableOrderInfo(right);
+  const sameCustomer =
+    Boolean(a.customerId && a.customerId === b.customerId) ||
+    Boolean(a.phone && a.phone === b.phone) ||
+    Boolean(a.name && a.name === b.name);
+  const sameMarket = Boolean(a.marketId && a.marketId === b.marketId) || Boolean(a.marketName && a.marketName === b.marketName);
+  const sameDistrict =
+    !a.districtId && !a.districtName && !b.districtId && !b.districtName
+      ? true
+      : Boolean(a.districtId && a.districtId === b.districtId) ||
+        Boolean(a.districtName && a.districtName === b.districtName);
+
+  return sameCustomer && sameMarket && sameDistrict;
+};
 const isOrderStatus = (value: string): value is OrderStatus =>
   [
     "created",
@@ -526,6 +652,68 @@ const Orders = () => {
     });
   }, []);
 
+  const selectScannedCancelledOrder = useCallback((order: OrderListItem) => {
+    if (!isUnsentCancelledOrder(order)) {
+      message.warning(t("scanNotFoundDescription"));
+      void playScanFeedback("missing");
+      return;
+    }
+
+    if (selectedCancelledIds.has(order.id)) {
+      message.warning(t("scanAlreadySelectedDescription", {
+        name: order.customer?.name ?? `#${order.id}`,
+      }));
+      void playScanFeedback("duplicate");
+      return;
+    }
+
+    setSelectedCancelledIds((previous) => {
+      const next = new Set(previous);
+      next.add(order.id);
+      return next;
+    });
+    message.success(t("scanSelectedDescription", {
+      name: order.customer?.name ?? `#${order.id}`,
+    }));
+    void playScanFeedback("success");
+  }, [selectedCancelledIds, t]);
+
+  const handleMissingScannedCancelledOrder = useCallback(async (rawValue: string) => {
+    try {
+      const detail = await fetchScanDetail(rawValue);
+      const scannedOrder = detail.type === "order" ? unwrapScannedOrder(detail.data) : {};
+      const scannedIdentifiers = getOrderIdentifiers(scannedOrder);
+      const matchedByIdentifier = items.find((order) => {
+        const orderIdentifiers = getOrderIdentifiers(order);
+        return [...scannedIdentifiers].some((identifier) => orderIdentifiers.has(identifier));
+      });
+      const comparableMatches = matchedByIdentifier
+        ? []
+        : items.filter((order) => isUnsentCancelledOrder(order) && isSameCustomerMarketOrder(scannedOrder, order));
+      const matchedOrder = matchedByIdentifier ?? (comparableMatches.length === 1 ? comparableMatches[0] : undefined);
+
+      if (matchedOrder) {
+        selectScannedCancelledOrder(matchedOrder);
+        return;
+      }
+
+      message.error(t("scanNotFoundDescription"));
+      void playScanFeedback("missing");
+    } catch (error) {
+      message.error(getBackendErrorMessage(error) ?? t("scanNotFoundDescription"));
+      void playScanFeedback("error");
+    }
+  }, [items, selectScannedCancelledOrder, t]);
+
+  useOrderQrScanner({
+    orders: items,
+    enabled: canSendCancelledToHq && !isLoading,
+    onMatch: selectScannedCancelledOrder,
+    onMissing: (rawValue) => {
+      void handleMissingScannedCancelledOrder(rawValue);
+    },
+  });
+
   const handleSelectAllCancelled = useCallback((checked: boolean) => {
     setSelectedCancelledIds(
       checked
@@ -676,6 +864,12 @@ const Orders = () => {
 
         {/* Divider */}
         <div className="border-t border-gray-100 dark:border-primarydark/60" />
+
+        {canSendCancelledToHq ? (
+          <div className="rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-sm font-semibold text-maindark dark:border-white/10 dark:bg-white/6 dark:text-white">
+            {t("scanSelectHint")}
+          </div>
+        ) : null}
 
         {/* Table */}
         <OrdersTable

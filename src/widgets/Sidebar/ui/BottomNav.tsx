@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { getSidebarConfigForUser, type SidebarUserRole } from "../model/menuConfig";
+import { getSidebarConfigForUser, normalizeSidebarRole } from "../model/menuConfig";
 import type { RootState } from "../../../app/config/store";
 import { preloadRoute } from "../../../app/lib/routePreload";
 const MOBILE_ADMIN_ALLOWED_LABELS = [
@@ -20,7 +20,7 @@ const BottomNav = () => {
     // ─── Redux dan haqiqiy rolni oling ───────────────────────────────────────
     const { role } = useSelector((state: RootState) => state.role);
     const user = useSelector((state: RootState) => state.user.user);
-    const userRole = (role as SidebarUserRole) || "admin";
+    const userRole = normalizeSidebarRole(role, user) ?? "admin";
 
     // ─── navItems memoized — role/user o'zgarmasa qayta hisoblanmaydi ─────────
     const navItems = useMemo(() => {

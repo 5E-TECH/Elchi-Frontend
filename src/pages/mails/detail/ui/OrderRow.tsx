@@ -42,8 +42,43 @@ const OrderRow = memo(({
   readOnly = false,
 }: OrderRowProps) => {
   const { t } = useTranslation(["mails", "orders", "common"]);
-  const customerName = order.customer?.name ?? "—";
-  const customerPhone = order.customer?.phone_number ?? t("mails:phoneUnavailable");
+  const orderRecord = order as unknown as Record<string, unknown>;
+  const customerRecord =
+    order.customer && typeof order.customer === "object"
+      ? (order.customer as unknown as Record<string, unknown>)
+      : {};
+  const getText = (...values: unknown[]) => {
+    for (const value of values) {
+      if (typeof value === "string" && value.trim()) return value.trim();
+      if (typeof value === "number") return String(value);
+    }
+
+    return "";
+  };
+  const customerName =
+    getText(
+      customerRecord.name,
+      customerRecord.full_name,
+      customerRecord.fullName,
+      orderRecord.customer_name,
+      orderRecord.customerName,
+      orderRecord.client_name,
+      orderRecord.clientName,
+      orderRecord.receiver_name,
+      orderRecord.receiverName,
+      orderRecord.name,
+    ) || "—";
+  const customerPhone =
+    getText(
+      customerRecord.phone_number,
+      customerRecord.phoneNumber,
+      customerRecord.phone,
+      orderRecord.customer_phone,
+      orderRecord.customerPhone,
+      orderRecord.phone_number,
+      orderRecord.phoneNumber,
+      orderRecord.phone,
+    ) || t("mails:phoneUnavailable");
   const districtName = order.district?.name ?? "—";
   const marketName = order.market?.name ?? "—";
   const isAddressDelivery = order.where_deliver === "address";

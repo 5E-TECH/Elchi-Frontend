@@ -389,6 +389,26 @@ export const useUser = () => {
     },
   });
 
+  const updateMarketCancelledHandoverQr = useMutation({
+    mutationFn: ({
+      id,
+      cancelled_handover_qr_required,
+    }: {
+      id: string;
+      cancelled_handover_qr_required: boolean;
+    }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.CANCELLED_HANDOVER_QR(id), {
+          cancelled_handover_qr_required,
+        })
+        .then((res: any) => res.data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
+      client.invalidateQueries({ queryKey: ["orders", "markets", "cancelled"], refetchType: "active" });
+    },
+  });
+
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
       api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
@@ -413,6 +433,7 @@ export const useUser = () => {
     updateMyProfile,
     updateMarketAddOrder,
     updateMarketExpenseProof,
+    updateMarketCancelledHandoverQr,
     deleteUser,
   };
 };

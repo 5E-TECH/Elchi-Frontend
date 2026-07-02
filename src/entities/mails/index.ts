@@ -3,6 +3,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
+import { getCurrentBranchId } from "../../shared/lib/currentBranch";
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 const MAILS_KEY = "mails";
@@ -87,6 +88,8 @@ export interface Customer {
 export type OrderStatus =
   | "new"
   | "received"
+  | "waiting"
+  | "on the road"
   | "delivered"
   | "cancelled"
   | "cancelled (sent)";
@@ -172,6 +175,8 @@ interface GetOldMailsParams {
   startDate?: string;
   endDate?: string;
 }
+
+type ManagerPostStatus = "new" | "sent" | "received" | "canceled" | "canceled_received";
 
 export const BRANCH_TRANSFER_BATCH_STATUS = {
   PENDING: "PENDING",
@@ -378,11 +383,11 @@ const toPaginatedMailResponse = (
 export const useMails = () => {
   const queryClient = useQueryClient();
   const role = useSelector((state: RootState) => state.role.role);
-  const branchId = useSelector((state: RootState) => state.user.user?.branch_id);
+  const branchId = useSelector(getCurrentBranchId);
   const isManagerRole = role === "manager";
 
   const getManagerScopedPosts = (
-    status?: "new" | "sent" | "received" | "canceled" | "canceled_received",
+    status?: ManagerPostStatus,
     params?: GetOldMailsParams,
   ) =>
     api
@@ -391,6 +396,7 @@ export const useMails = () => {
           page: params?.page ?? 1,
           limit: params?.limit ?? 8,
           ...(status ? { status } : {}),
+          ...(branchId ? { branch_id: branchId } : {}),
           ...(params?.region_id ? { region_id: params.region_id } : {}),
           ...(params?.courier_id ? { courier_id: params.courier_id } : {}),
           ...(params?.startDate ? { startDate: params.startDate } : {}),
@@ -421,6 +427,7 @@ export const useMails = () => {
       queryKey: [MAILS_KEY, "new", id],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(id)).then((res) => res.data),
       enabled: !!id,
+      retry: false,
     });
 
   const useGetRefusedMailsCourierByPostId = (id: string) =>
@@ -428,6 +435,7 @@ export const useMails = () => {
       queryKey: [MAILS_KEY, "refused-detail", id],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED_ORDERS_BY_POST_ID(id)).then((res) => res.data),
       enabled: !!id,
+      retry: false,
     });
 
   const useGetRefusedMails = (options?: { enabled?: boolean }) =>
@@ -496,7 +504,7 @@ export const useMails = () => {
       queryFn: () =>
         isManagerRole
           ? getManagerScopedPosts(
-              params?.status as "new" | "sent" | "received" | "canceled" | "canceled_received" | undefined,
+              params?.status as ManagerPostStatus | undefined,
               params,
             )
           : api
@@ -534,6 +542,7 @@ export const useMailDetail = (postId: string) =>
     queryKey: [MAILS_KEY, "detail", postId],
     queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(postId)).then((res) => res.data),
     enabled: !!postId,
+    retry: false,
   });
 
 export const useRefusedMailDetail = (postId: string) =>
@@ -541,6 +550,7 @@ export const useRefusedMailDetail = (postId: string) =>
     queryKey: [MAILS_KEY, "refused-detail", postId],
     queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED_ORDERS_BY_POST_ID(postId)).then((res) => res.data),
     enabled: !!postId,
+    retry: false,
   });
 
 // ─── Courier Types ────────────────────────────────────────────────────────────
@@ -686,6 +696,12 @@ export const useReceiveCanceledPost = () => {
       });
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "refused-courier"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["orders"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["orders", "markets", "cancelled"],
       });
     },
   });

@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Building2, CalendarClock, CheckSquare, MapPin, PackageCheck, Search, Square, TrendingUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useBatches, useReceiveTransferBatch, type Batch } from "../../../entities/batch";
 import { useBranchDetail } from "../../../entities/branch";
 import { Table } from "../../../shared/components/Table/Table";
@@ -17,6 +18,7 @@ type ScannableBatch = Batch & { qr_code_token?: string | null };
 const BranchSentBatchesPage = () => {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation("newOrders");
   const { api } = useAppNotification();
   const [selectedBatchIds, setSelectedBatchIds] = useState<Set<string>>(new Set());
   const [receivedBatchIds, setReceivedBatchIds] = useState<Set<string>>(new Set());
@@ -134,14 +136,23 @@ const BranchSentBatchesPage = () => {
   }, [api]);
 
   const selectScannedBatch = useCallback((batch: ScannableBatch) => {
-    void playScanFeedback("success");
     setSelectedBatchIds((prev) => {
-      if (prev.has(batch.id)) return prev;
+      if (prev.has(batch.id)) {
+        void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+        api.warning({
+          message: t("common:scannerFeedbackDuplicate"),
+          description: `#${batch.id}`,
+          placement: "topRight",
+          duration: 2,
+        });
+        return prev;
+      }
       const next = new Set(prev);
       next.add(batch.id);
+      void playScanFeedback("success");
       return next;
     });
-  }, []);
+  }, [api, t]);
 
   useOrderQrScanner({
     orders: scannableRows,

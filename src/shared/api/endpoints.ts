@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
   MARKETS: {
     BASE: "markets", // GET list / POST create
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
+    CANCELLED_HANDOVER_QR: (id: string | number) => `markets/${id}/cancelled-handover-qr`, // PATCH
     EXPENSE_PROOF: (id: string | number) => `markets/${id}/expense-proof`, // PATCH proof conditions (guide §5)
   },
   COURIERS: {

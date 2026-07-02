@@ -10,6 +10,7 @@ import {
     MapPin,
     Package,
     Camera,
+    QrCode,
 } from 'lucide-react';
 import type { ExpenseProofCondition, User } from '../types/user';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +22,8 @@ interface UserInfoCardsProps {
     isMarketAddOrderPending?: boolean;
     onToggleMarketProof?: (condition: ExpenseProofCondition) => void;
     isMarketProofPending?: boolean;
+    onToggleMarketCancelledHandoverQr?: () => void;
+    isMarketCancelledHandoverQrPending?: boolean;
     headerAction?: React.ReactNode;
 }
 
@@ -102,6 +105,8 @@ export const UserInfoCards = memo(({
     isMarketAddOrderPending = false,
     onToggleMarketProof,
     isMarketProofPending = false,
+    onToggleMarketCancelledHandoverQr,
+    isMarketCancelledHandoverQrPending = false,
     headerAction,
 }: UserInfoCardsProps) => {
     const { t } = useTranslation("users");
@@ -264,6 +269,21 @@ export const UserInfoCards = memo(({
                                     disabled={!onToggleMarketAddOrder || isMarketAddOrderPending}
                                     label={t("marketAddOrderPermission", { defaultValue: "Buyurtma qo'shish" })}
                                     onClick={onToggleMarketAddOrder}
+                                />
+                            }
+                        />
+
+                        <InfoChip
+                            icon={QrCode}
+                            iconBg="bg-amber-50 dark:bg-amber-500/10"
+                            iconColor="text-amber-500"
+                            label={t("cancelledHandoverQrRequired", { defaultValue: "Bekor qilinganlar uchun QR" })}
+                            value={
+                                <ToggleButton
+                                    checked={user.cancelled_handover_qr_required !== false}
+                                    disabled={!onToggleMarketCancelledHandoverQr || isMarketCancelledHandoverQrPending}
+                                    label={t("cancelledHandoverQrRequired", { defaultValue: "Bekor qilinganlar uchun QR" })}
+                                    onClick={onToggleMarketCancelledHandoverQr}
                                 />
                             }
                         />

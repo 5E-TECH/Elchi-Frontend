@@ -1,16 +1,24 @@
 import { memo } from "react";
-import { Phone, MapPin, SquarePen, Trash2, Package, CheckSquare, Square } from "lucide-react";
+import { Phone, MapPin, SquarePen, Trash2, Package, CheckSquare, Square, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
-export const Checkbox = memo(({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+export const Checkbox = memo(({ checked, onChange, disabled = false }: { checked: boolean; onChange: () => void; disabled?: boolean }) => (
     <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); onChange(); }}
+        onClick={(e) => {
+            e.stopPropagation();
+            if (!disabled) onChange();
+        }}
         aria-pressed={checked}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition-all hover:border-main/40 hover:bg-main/10 focus:outline-none focus:ring-2 focus:ring-main/35"
+        disabled={disabled}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition-all focus:outline-none focus:ring-2 focus:ring-main/35 ${
+            disabled
+                ? "cursor-not-allowed opacity-45"
+                : "hover:border-main/40 hover:bg-main/10"
+        }`}
     >
         {checked
             ? <div className="rounded-lg bg-main p-0.5 shadow-sm shadow-main/40"><CheckSquare size={18} className="text-white" /></div>
@@ -60,11 +68,14 @@ const StatusBadge = memo(({ status }: { status: string }) => {
 });
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
-export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, showCheckbox = true, showOrderId = true }: {
+export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, showCheckbox = true, showOrderId = true, checkboxDisabled = false, manualSelectLabel, onManualSelect }: {
     order: ApiOrder; isSelected: boolean;
     onToggle?: () => void; onEdit?: (id: string) => void; onDelete?: (id: string) => void;
     showCheckbox?: boolean;
     showOrderId?: boolean;
+    checkboxDisabled?: boolean;
+    manualSelectLabel?: string;
+    onManualSelect?: () => void;
 }) => {
     const { t, i18n } = useTranslation(["newOrders", "orders"]);
     const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
@@ -79,8 +90,10 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
 
     return (
         <div
-            onClick={showCheckbox && onToggle ? onToggle : undefined}
-            className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${showCheckbox ? "cursor-pointer" : "cursor-default"} ${isSelected
+            onClick={showCheckbox && onToggle && !checkboxDisabled ? onToggle : undefined}
+            className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${
+                showCheckbox && onToggle && !checkboxDisabled ? "cursor-pointer" : "cursor-default"
+            } ${isSelected
                 ? "border-emerald-500 bg-emerald-50/65 shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400/70 dark:bg-emerald-500/8"
                 : "border-gray-100 bg-white shadow-sm hover:border-main/25 hover:shadow-md dark:border-white/5 dark:bg-maindark"}`}>
 
@@ -92,7 +105,7 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
                 {/* Chap: checkbox + ID */}
                 <div className="flex min-w-fit items-center gap-2 sm:flex-col sm:items-center sm:pt-0.5">
                     {showCheckbox && onToggle && (
-                        <Checkbox checked={isSelected} onChange={onToggle} />
+                        <Checkbox checked={isSelected} onChange={onToggle} disabled={checkboxDisabled} />
                     )}
                     {showOrderId ? (
                         <>
@@ -172,6 +185,19 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
                             )}
                         </div>
                     )}
+                    {onManualSelect && !isSelected ? (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onManualSelect();
+                            }}
+                            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-amber-300/35 bg-amber-500/10 px-3 text-xs font-black text-amber-700 transition hover:border-amber-400/60 hover:bg-amber-500/15 dark:text-amber-200"
+                        >
+                            <AlertTriangle size={14} />
+                            {manualSelectLabel}
+                        </button>
+                    ) : null}
                 </div>
             </div>
         </div>

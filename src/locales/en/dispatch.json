@@ -59,8 +59,8 @@
   "courierOptionHint": "Courier from this branch",
   "cancel": "Cancel",
   "selectCourierFirst": "Select a courier first",
-  "oldUiTitle": "Rejected mail #{{count}} orders",
-  "oldUiSubtitle": "{{count}} rejected orders available",
+  "oldUiTitle": "Orders to assign to courier",
+  "oldUiSubtitle": "{{count}} orders added",
   "printSelected": "Print ({{count}})",
   "statSelected": "Selected",
   "statHome": "To home",
@@ -69,5 +69,5 @@
   "piece": "pcs",
   "selectAll": "Select all",
   "deselectAll": "Deselect all",
-  "oldUiAction": "Receive mail {{count}}"
+  "oldUiAction": "Assign to courier {{count}}"
 }
