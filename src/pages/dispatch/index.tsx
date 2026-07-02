@@ -229,7 +229,7 @@ const normalizeOrder = (payload: unknown, token: string, t: (key: string) => str
       { key: "phone", label: t("tablePhone"), value: phone },
       { key: "district", label: t("tableDistrict"), value: districtName },
       { key: "market", label: t("tableMarket"), value: marketName },
-      { key: "amount", label: t("tablePrice"), value: formatMoney(amount) },
+      { key: "amount", label: t("tablePrice"), value: formatMoney(amount, t("orders:currency")) },
       { key: "deliveryType", label: t("tableDeliveryType"), value: deliveryType },
       { key: "createdAt", label: t("tableDate"), value: createdAt },
       { key: "status", label: t("tableStatus"), value: status || "—" },
