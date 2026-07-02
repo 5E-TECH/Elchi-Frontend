@@ -29,7 +29,7 @@ const CancelledOrdersTable = ({
   const allChecked = orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
   const someChecked = orders.some((o) => selectedIds.has(o.id));
   const formatDate = (value: string) =>
-    new Date(value).toLocaleString("uz-UZ", {
+    new Date(value).toLocaleString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -148,15 +148,12 @@ const CancelledOrdersTable = ({
         sortable: true,
         render: (val) => (
           <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-            {new Date(val as string).toLocaleString("uz-UZ", {
-              day: "2-digit", month: "2-digit", year: "numeric",
-              hour: "2-digit", minute: "2-digit",
-            })}
+            {formatDate(val as string)}
           </span>
         ),
       },
     ],
-    [selectedIds, allChecked, someChecked, onSelectChange, onSelectAll, t, locale]
+    [selectedIds, allChecked, someChecked, onSelectChange, onSelectAll, t, locale, formatDate, formatMoney]
   );
 
   return (

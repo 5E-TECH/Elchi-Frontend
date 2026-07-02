@@ -28,7 +28,7 @@ import BackButton from "../../../shared/ui/BackButton";
 import PageContainer from "../../../shared/ui/PageContainer";
 
 const BatchDetailPage = () => {
-  const { t } = useTranslation("mails");
+  const { t } = useTranslation(["mails", "batches", "common"]);
   const { id } = useParams();
   const { data: batchDetail, isLoading: isDetailLoading, isError: isDetailError } = useBatchDetail(id);
   const {
@@ -136,7 +136,7 @@ const BatchDetailPage = () => {
     return (
       <PageContainer>
         <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-(--color-text-muted) dark:bg-primarydark dark:text-white/70">
-          Yuklanmoqda...
+          {t("loading", { ns: "common" })}
         </div>
       </PageContainer>
     );
@@ -146,7 +146,7 @@ const BatchDetailPage = () => {
     return (
       <PageContainer>
         <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-(--color-text-muted) dark:bg-primarydark dark:text-white/70">
-          Paket topilmadi
+          {t("detail.notFound", { ns: "batches" })}
         </div>
       </PageContainer>
     );
@@ -160,12 +160,12 @@ const BatchDetailPage = () => {
         <div className="flex items-start gap-3">
           <BackButton to="/batches" className="mt-1 h-10 min-w-10 rounded-xl px-2" label="" />
           <HeaderName
-            name={`Paket ${batch.id}`}
+            name={t("detail.title", { ns: "batches", id: batch.id })}
             description={`${batch.from_branch.name} -> ${batch.to_branch.name}`}
             icon={<PackageCheck />}
           />
         </div>
-        <Button label="Chop etish" icon={<Printer size={17} />} onClick={() => window.print()} />
+        <Button label={t("print", { ns: "common" })} icon={<Printer size={17} />} onClick={() => window.print()} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
@@ -174,18 +174,18 @@ const BatchDetailPage = () => {
             <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {[
                 {
-                  label: "Filial",
+                  label: t("detail.branch", { ns: "batches" }),
                   value: `${batch.from_branch.code ?? batch.from_branch.id} • ${batch.from_branch.name}`,
                   icon: <MapPin size={14} />,
                 },
-                { label: "Qayerga", value: batch.to_branch.name, icon: <MapPin size={14} /> },
-                { label: "Viloyat", value: batch.to_branch.region ?? batch.to_branch.name ?? "—", icon: <MapPin size={14} /> },
-                { label: "Yo'nalish", value: batchDirectionLabel[batch.direction], icon: <Truck size={14} /> },
-                { label: "Order", value: `${batch.orders_count} ta`, icon: <PackageCheck size={14} /> },
-                { label: "Narx", value: formatBatchMoney(batch.total_price), icon: <PackageCheck size={14} /> },
-                { label: "Yaratilgan", value: formatBatchDateTime(batch.created_at), icon: <PackageCheck size={14} /> },
+                { label: t("detail.destination", { ns: "batches" }), value: batch.to_branch.name, icon: <MapPin size={14} /> },
+                { label: t("card.region", { ns: "batches" }), value: batch.to_branch.region ?? batch.to_branch.name ?? "—", icon: <MapPin size={14} /> },
+                { label: t("card.direction", { ns: "batches" }), value: batchDirectionLabel[batch.direction], icon: <Truck size={14} /> },
+                { label: t("card.orders", { ns: "batches" }), value: t("detail.orderCount", { ns: "batches", count: batch.orders_count }), icon: <PackageCheck size={14} /> },
+                { label: t("card.amount", { ns: "batches" }), value: formatBatchMoney(batch.total_price), icon: <PackageCheck size={14} /> },
+                { label: t("card.created", { ns: "batches" }), value: formatBatchDateTime(batch.created_at), icon: <PackageCheck size={14} /> },
                 {
-                  label: "Holat",
+                  label: t("filter.status", { ns: "batches" }),
                   value: (
                     <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold ${batchStatusClass[batch.status]}`}>
                       {batchStatusLabel[batch.status]}
@@ -210,7 +210,9 @@ const BatchDetailPage = () => {
 
           <section>
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-xl font-black text-maindark dark:text-white md:text-2xl">Ichidagi orderlar</h3>
+              <h3 className="text-xl font-black text-maindark dark:text-white md:text-2xl">
+                {t("detail.insideOrders", { ns: "batches" })}
+              </h3>
             </div>
             <MailStatCards
               totalOrders={orders.length}
@@ -284,7 +286,7 @@ const BatchDetailPage = () => {
             />
           </div>
           <Button
-            label="Chop etish"
+            label={t("print", { ns: "common" })}
             icon={<Printer size={17} />}
             onClick={() => window.print()}
             className="mt-4 w-full"

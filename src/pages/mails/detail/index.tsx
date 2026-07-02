@@ -395,6 +395,16 @@ const MailDetailPage = () => {
     [orders],
   );
 
+  const handleMissingScannedOrder = useCallback(() => {
+    playMissingOrderFeedback();
+    notifApi.warning({
+      message: t("qrNotFound"),
+      description: t("mailScanMissing"),
+      placement: "topRight",
+      duration: 3,
+    });
+  }, [notifApi, t]);
+
   const selectScannedOrder = useCallback((order: PostOrder) => {
     if (selectedIds.has(order.id)) {
       void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
@@ -410,56 +420,12 @@ const MailDetailPage = () => {
     selectOne(order.id);
     void playScanFeedback("success");
     notifApi.success({
-      message: "Order tanlandi",
+      message: t("orderSelected"),
       description: `#${order.id}`,
       placement: "topRight",
       duration: 2,
     });
-  }, [notifApi, selectOne, selectedIds, t]);
-
-  const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
-    const rawCandidates = normalizeScannerCandidates(rawValue, window.location.origin);
-
-    try {
-      const detail = await fetchScanDetail(rawValue);
-      const scannedOrder = detail.type === "order" ? unwrapScannedOrder(detail.data) : {};
-      const scannedIdentifiers = getOrderIdentifiers(scannedOrder);
-      rawCandidates.forEach((candidate) => {
-        const text = normalizeMatchText(candidate);
-        if (text) scannedIdentifiers.add(text);
-      });
-
-      const matchedByIdentifier = orders.find((order) => {
-        const orderIdentifiers = getOrderIdentifiers(order);
-        return [...scannedIdentifiers].some((identifier) => orderIdentifiers.has(identifier));
-      });
-      const comparableMatches = matchedByIdentifier
-        ? []
-        : orders.filter((order) => isSameCustomerMarketOrder(scannedOrder, order));
-      const matchedOrder = matchedByIdentifier ?? (comparableMatches.length === 1 ? comparableMatches[0] : undefined);
-
-      if (matchedOrder) {
-        selectScannedOrder(matchedOrder);
-        return;
-      }
-
-      playMissingOrderFeedback();
-      notifApi.warning({
-        message: "QR topilmadi",
-        description: "Bu QR kod ushbu pochta orderlariga mos kelmadi.",
-        placement: "topRight",
-        duration: 3,
-      });
-    } catch (error) {
-      void playScanFeedback("error");
-      notifApi.error({
-        message: "QR topilmadi",
-        description: getBackendErrorMessage(error) ?? "Bu QR kod ushbu pochta orderlariga mos kelmadi.",
-        placement: "topRight",
-        duration: 3,
-      });
-    }
-  }, [notifApi, orders, selectScannedOrder]);
+  }, [notifApi, selectOne, t]);
 
   useOrderQrScanner({
     orders,
@@ -543,8 +509,8 @@ const MailDetailPage = () => {
             batchId: postId,
             orderIds: Array.from(selectedIds),
           }),
-        successMessage: "Batch asosiy filialga yuborildi",
-        errorMessage: "Batch yuborishda xatolik bo'ldi",
+        successMessage: t("batchSendMainSuccess"),
+        errorMessage: t("batchSendMainError"),
         onSuccess: async () => {
           clearSelection();
           await refetchTransferBatchDetail();

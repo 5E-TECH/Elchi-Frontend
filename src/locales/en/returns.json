@@ -3,6 +3,8 @@
   "description": "List of return-flow packages for the current branch",
   "totalBatches": "{{count}} batch",
   "empty": "No return batches found",
+  "emptyDescription": "No returned orders found yet.",
+  "orderCountValue": "{{count}} orders",
   "columns": {
     "id": "ID",
     "from": "From branch",

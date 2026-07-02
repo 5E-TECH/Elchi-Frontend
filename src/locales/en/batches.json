@@ -31,6 +31,21 @@
     "route": "Route",
     "created": "Created"
   },
+  "detail": {
+    "title": "Batch {{id}}",
+    "notFound": "Batch not found",
+    "branch": "Branch",
+    "destination": "Destination",
+    "orderCount": "{{count}} pcs",
+    "insideOrders": "Orders inside"
+  },
+  "print": {
+    "branch": "BRANCH:",
+    "region": "REGION:",
+    "orders": "ORDERS:",
+    "total": "TOTAL:",
+    "date": "DATE:"
+  },
   "loadError": "Could not load batches",
   "emptyTitle": "No batches",
   "emptyDescription": "No batches found for these filters yet."

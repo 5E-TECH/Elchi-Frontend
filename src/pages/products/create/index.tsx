@@ -303,7 +303,7 @@ const CreateProductPage = () => {
 
       const formData = new FormData();
       formData.append("name", values.name.trim());
-      if (!editTarget && effectiveMarketId) {
+      if (!editTarget && !isMarketRole && effectiveMarketId) {
         formData.append("market_id", effectiveMarketId);
       }
       if (values.image) formData.append("image", values.image);

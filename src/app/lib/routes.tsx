@@ -1,4 +1,4 @@
-import { lazy, memo } from "react";
+import { lazy, memo, type ReactNode } from "react";
 import { Navigate, useParams, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
@@ -105,6 +105,8 @@ const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
 const ErrorBoundaryPage = lazy(() => import("../../shared/ui/ErrorBoundaryPage"));
 
 const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
+const MANAGER_DISPATCH_BRANCH_TYPES = new Set(["REGIONAL", "HYBRID"]);
+const MANAGER_BATCH_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
 
 const isPaymentsManager = (state: RootState) => {
   const role = state.role.role;
@@ -132,7 +134,7 @@ const canViewDispatch = (state: RootState) => {
   const role = state.role.role;
   if (role === "manager") {
     const branchType = getUserBranchType(state.user.user);
-    return branchType !== "PICKUP";
+    return Boolean(branchType && MANAGER_DISPATCH_BRANCH_TYPES.has(branchType));
   }
 
   if (role === "registrator") {
@@ -145,12 +147,22 @@ const canViewDispatch = (state: RootState) => {
 
 const canViewBatches = (state: RootState) => {
   const role = state.role.role;
-  return role === "manager" || role === "operator" || role === "admin" || role === "superadmin" || role === "registrator";
+  if (role === "manager") {
+    const branchType = getUserBranchType(state.user.user);
+    return Boolean(branchType && MANAGER_BATCH_BRANCH_TYPES.has(branchType));
+  }
+
+  return role === "operator" || role === "admin" || role === "superadmin" || role === "registrator";
 };
 
 const canViewReturns = (state: RootState) => {
   const role = state.role.role;
-  return role === "manager" || role === "operator" || role === "admin" || role === "superadmin";
+  if (role === "manager") {
+    const branchType = getUserBranchType(state.user.user);
+    return Boolean(branchType && MANAGER_BATCH_BRANCH_TYPES.has(branchType));
+  }
+
+  return role === "operator" || role === "admin" || role === "superadmin";
 };
 
 const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
@@ -239,14 +251,37 @@ const NewOrdersCancelledDetailEntry = () => {
   const { marketId } = useParams();
   const role = useSelector((state: RootState) => state.role.role);
   const roleId = useSelector((state: RootState) => state.role.id);
+  const profileId = useSelector((state: RootState) => state.user.user?.id);
+  const ownMarketId = roleId ?? profileId;
   const isAdminRole = role === "admin" || role === "superadmin";
-  const isOwnMarket = role === "market" && Boolean(roleId) && String(roleId) === String(marketId);
+  const isOwnMarket =
+    role === "market" &&
+    Boolean(ownMarketId) &&
+    String(ownMarketId) === String(marketId);
 
   if (!isAdminRole && !isOwnMarket) {
     return <Navigate replace to="/403" />;
   }
 
   return <NewOrdersCancelledDetail />;
+};
+
+const NewOrdersMarketAccessEntry = ({ children }: { children: ReactNode }) => {
+  const { marketId } = useParams();
+  const role = useSelector((state: RootState) => state.role.role);
+  const roleId = useSelector((state: RootState) => state.role.id);
+  const profileId = useSelector((state: RootState) => state.user.user?.id);
+  const ownMarketId = roleId ?? profileId;
+  const isOwnMarket =
+    role === "market" &&
+    Boolean(ownMarketId) &&
+    String(ownMarketId) === String(marketId);
+
+  if (role === "market" && !isOwnMarket) {
+    return <Navigate replace to="/403" />;
+  }
+
+  return <>{children}</>;
 };
 
 const AppRouter = () => {
@@ -547,8 +582,22 @@ const AppRouter = () => {
                     </ProtectedRoute>
                   ),
                 },
-                { path: ":marketId", element: <NewOrderDetail /> },
-                { path: ":marketId/edit/:orderId", element: <NewOrderUpdate /> },
+                {
+                  path: ":marketId",
+                  element: (
+                    <NewOrdersMarketAccessEntry>
+                      <NewOrderDetail />
+                    </NewOrdersMarketAccessEntry>
+                  ),
+                },
+                {
+                  path: ":marketId/edit/:orderId",
+                  element: (
+                    <NewOrdersMarketAccessEntry>
+                      <NewOrderUpdate />
+                    </NewOrdersMarketAccessEntry>
+                  ),
+                },
                 { path: "userDetail/:id", element: <UserDetailPage /> },
               ],
             },

@@ -567,8 +567,8 @@ const ProductTable = () => {
             if (isMarketRole) {
               if (!marketUserId) {
                 notificationApi.warning({
-                  message: "Market aniqlanmadi",
-                  description: "Sahifani qayta yuklab ko'ring yoki profil qayta yuklanishini kuting.",
+                  message: t("marketNotResolved"),
+                  description: t("marketNotResolvedDescription"),
                   placement: "topRight",
                 });
                 return;

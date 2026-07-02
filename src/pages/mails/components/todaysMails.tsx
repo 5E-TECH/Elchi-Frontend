@@ -92,10 +92,10 @@ const buildFallbackMailsFromOrders = (orders: OrderListItem[]): MailItem[] => {
 };
 
 // ─── Pul formati ─────────────────────────────────────────────────────────────
-const formatPrice = (price: number): string =>
-  price.toLocaleString("uz-UZ") + " so'm";
+const formatPrice = (price: number, currencyLabel: string): string =>
+  `${price.toLocaleString("uz-UZ")} ${currencyLabel}`;
 
-const MailCard = memo(({ item }: { item: MailItem }) => {
+const MailCard = memo(({ item, currencyLabel }: { item: MailItem; currencyLabel: string }) => {
   const { t } = useTranslation("mails");
   const navigate = useNavigate();
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
@@ -119,7 +119,7 @@ const MailCard = memo(({ item }: { item: MailItem }) => {
       statusIcon={<TrendingUp size={11} />}
       leadingIcon={<MapPin size={20} />}
       orders={item.order_quantity}
-      amount={formatPrice(item.post_total_price)}
+      amount={formatPrice(item.post_total_price, currencyLabel)}
       onOpen={openDetail}
       variant="today"
     />
@@ -138,6 +138,7 @@ MailCardSkeleton.displayName = "MailCardSkeleton";
 // ─── Asosiy Komponent ─────────────────────────────────────────────────────────
 const TodaysMails = () => {
   const { t } = useTranslation("mails");
+  const currencyLabel = t("currencyLabel");
   const { role } = useSelector((state: RootState) => state.role);
   const branchId = useSelector(getCurrentBranchId);
   const isCourierLike = role === "courier";
@@ -237,7 +238,7 @@ const TodaysMails = () => {
         <MailSummaryStats
           totalRegions={stats.totalRegions}
           totalOrders={stats.totalOrders}
-          totalPrice={formatPrice(stats.totalPrice)}
+          totalPrice={formatPrice(stats.totalPrice, currencyLabel)}
           isCourier={isCourierLike}
           accent="success"
         />
@@ -269,7 +270,7 @@ const TodaysMails = () => {
       ) : (
         <div className={MAIL_CARD_GRID_CLASS}>
           {filteredMails.map((mail) => (
-            <MailCard key={mail.id} item={mail} />
+            <MailCard key={mail.id} item={mail} currencyLabel={currencyLabel} />
           ))}
         </div>
       )}

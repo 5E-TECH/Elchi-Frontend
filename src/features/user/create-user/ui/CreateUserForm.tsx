@@ -173,14 +173,22 @@ export const CreateUserForm = memo(() => {
         id?: string | null;
         branch_id?: string | null;
         branch_type?: string | null;
+        region_id?: string | null;
+        region?: { id?: string | null } | null;
         branch?: {
           id?: string | null;
           type?: string | null;
           branch_type?: string | null;
+          region_id?: string | null;
+          regionId?: string | null;
+          region?: { id?: string | null } | null;
           branch?: {
             id?: string | null;
             type?: string | null;
             branch_type?: string | null;
+            region_id?: string | null;
+            regionId?: string | null;
+            region?: { id?: string | null } | null;
           } | null;
         } | null;
       }
@@ -201,6 +209,16 @@ export const CreateUserForm = memo(() => {
     authUser?.branch?.branch?.id ??
     authUser?.branch?.id ??
     authUser?.branch_id ??
+    "";
+  const currentRegionId =
+    authUser?.region_id ??
+    authUser?.region?.id ??
+    authUser?.branch?.branch?.region_id ??
+    authUser?.branch?.branch?.regionId ??
+    authUser?.branch?.branch?.region?.id ??
+    authUser?.branch?.region_id ??
+    authUser?.branch?.regionId ??
+    authUser?.branch?.region?.id ??
     "";
   const isManagerRegionalCreator =
     authRole === "manager" && currentBranchType === "REGIONAL";
@@ -482,6 +500,10 @@ export const CreateUserForm = memo(() => {
         phone_number: rawPhone,
         password: values.password,
       };
+      if (authRole === "manager") {
+        if (currentBranchId) payload.branch_id = currentBranchId;
+        if (currentRegionId) payload.region_id = currentRegionId;
+      }
       if (values.salary.trim()) {
         payload.salary = parseAmount(values.salary);
         if (values.paymentDay) {
