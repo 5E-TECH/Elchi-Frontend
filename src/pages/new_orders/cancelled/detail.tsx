@@ -840,7 +840,7 @@ const CancelledMarketDetail = () => {
                   {manualConfirmOrder.customer?.name ?? "—"}
                 </h4>
                 <p className="m-0 mt-1 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {getOrderProductNames(manualConfirmOrder) || t("productFallback")} · {formatMoney(Number(manualConfirmOrder.total_price) || 0)}
+                  {getOrderProductNames(manualConfirmOrder) || t("productFallback")} · {formatMoney(Number(manualConfirmOrder.total_price) || 0, t("orders:currency"))}
                 </p>
               </div>
 
