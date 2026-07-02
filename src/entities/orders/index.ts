@@ -198,15 +198,18 @@ export const useOrders = () => {
       marketId,
       orderIds,
       authorizationToken,
+      manualOverrides,
     }: {
       marketId: string | number;
       orderIds: string[];
-      authorizationToken: string;
+      authorizationToken?: string;
+      manualOverrides?: Array<{ order_id: string; reason: string }>;
     }) =>
       api
         .post(API_ENDPOINTS.ORDERS.MARKET_CANCELLED_HANDOVER(marketId), {
           order_ids: orderIds,
-          authorization_token: authorizationToken,
+          ...(authorizationToken ? { authorization_token: authorizationToken } : {}),
+          ...(manualOverrides?.length ? { manual_overrides: manualOverrides } : {}),
         })
         .then((res) => res.data),
     onSuccess: (_data, variables) => {

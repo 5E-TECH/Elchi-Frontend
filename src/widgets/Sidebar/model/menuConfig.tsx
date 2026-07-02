@@ -32,6 +32,25 @@ export interface NavItem {
 
 export type BranchType = "HQ" | "PICKUP" | "REGIONAL" | "HYBRID";
 
+export const normalizeSidebarRole = (
+  role: unknown,
+  user?: User | null,
+): SidebarUserRole | null => {
+  const rawRole =
+    typeof role === "string" && role.trim()
+      ? role
+      : typeof user?.role === "string"
+        ? user.role
+        : "";
+  const normalized = rawRole.trim().toLowerCase();
+
+  if (normalized in SIDEBAR_CONFIG) {
+    return normalized as SidebarUserRole;
+  }
+
+  return null;
+};
+
 /**
  * Barcha roller uchun static navigation configuration
  * Icon'lar component'ga JSX sifatida ishlatiladi
@@ -137,6 +156,15 @@ const MANAGER_HYBRID_CONFIG: NavItem[] = [
   { to: "/regions", icon: MapPinned, label: "regions" },
 ];
 
+const MANAGER_HQ_CONFIG: NavItem[] = [
+  { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
+  { to: "/orders", icon: ShoppingBag, label: "orders" },
+  { to: "/new-orders", icon: Calendar1, label: "newOrders" },
+  { to: "/mails", icon: MailOpen, label: "mails" },
+  { to: "/payments", icon: CreditCard, label: "payments" },
+  { to: "/regions", icon: MapPinned, label: "regions" },
+];
+
 const toBranchType = (value: unknown): BranchType | null => {
   if (typeof value !== "string") return null;
   const normalized = value.toUpperCase();
@@ -174,28 +202,33 @@ export const getUserBranchType = (user: User | null | undefined): BranchType | n
 };
 
 export const getSidebarConfigForUser = (
-  role: SidebarUserRole | null | undefined,
+  role: SidebarUserRole | string | null | undefined,
   user?: User | null,
 ): NavItem[] => {
-  if (!role || !(role in SIDEBAR_CONFIG)) return [];
+  const normalizedRole = normalizeSidebarRole(role, user);
+  if (!normalizedRole) return [];
 
   const branchType = getUserBranchType(user);
 
-  if (role === "manager" && branchType === "REGIONAL") {
+  if (normalizedRole === "manager" && branchType === "REGIONAL") {
     return MANAGER_REGIONAL_CONFIG;
   }
 
-  if (role === "manager" && branchType === "PICKUP") {
+  if (normalizedRole === "manager" && branchType === "PICKUP") {
     return MANAGER_PICKUP_CONFIG;
   }
 
-  if (role === "manager" && branchType === "HYBRID") {
+  if (normalizedRole === "manager" && branchType === "HYBRID") {
     return MANAGER_HYBRID_CONFIG;
   }
 
-  if (role === "registrator" && branchType === "HQ") {
+  if (normalizedRole === "manager" && branchType === "HQ") {
+    return MANAGER_HQ_CONFIG;
+  }
+
+  if (normalizedRole === "registrator" && branchType === "HQ") {
     return SIDEBAR_CONFIG.registrator.filter((item) => item.to !== "/dispatch");
   }
 
-  return SIDEBAR_CONFIG[role];
+  return SIDEBAR_CONFIG[normalizedRole];
 };

@@ -80,7 +80,16 @@ const BatchDetailPage = () => {
 
   const selectScannedOrder = useCallback((order: (typeof orders)[number]) => {
     if (!canSendToMainBranch) return;
-    if (selectedIds.has(order.id)) return;
+    if (selectedIds.has(order.id)) {
+      void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+      notifApi.warning({
+        message: t("common:scannerFeedbackDuplicate"),
+        description: `#${order.id}`,
+        placement: "topRight",
+        duration: 2,
+      });
+      return;
+    }
 
     selectOne(order.id);
     notifApi.success({

@@ -18,6 +18,7 @@
   "scannerFeedbackSuccess": "Отсканировано",
   "scannerFeedbackError": "Ошибка",
   "scannerFeedbackMissing": "Не найдено",
+  "scannerFeedbackDuplicate": "Уже найдено",
   "warning": "Предупреждение",
   "info": "Информация",
   "yes": "Да",

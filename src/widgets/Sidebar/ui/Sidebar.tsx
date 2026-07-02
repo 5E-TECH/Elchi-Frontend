@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { SIDEBAR_CONFIG, getSidebarConfigForUser, type SidebarUserRole } from "../model/menuConfig";
+import { getSidebarConfigForUser, normalizeSidebarRole } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import { ChevronLeft, ChevronRight, User } from "lucide-react";
@@ -24,7 +24,7 @@ const Sidebar = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const roleName = useSelector((state: RootState) => state.role.name);
   const user = useSelector((state: RootState) => state.user.user);
-  const userRole = role && role in SIDEBAR_CONFIG ? (role as SidebarUserRole) : null;
+  const userRole = normalizeSidebarRole(role, user);
 
   // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
   // navItems va links alohida memoized — role/user o'zgarmasa qayta hisoblanmaydi
@@ -138,4 +138,3 @@ const Sidebar = () => {
 };
 
 export default memo(Sidebar);
-

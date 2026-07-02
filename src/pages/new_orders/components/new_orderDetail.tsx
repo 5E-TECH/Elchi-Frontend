@@ -108,9 +108,9 @@ const NewOrderDetail = () => {
   }, []);
 
   const showAlreadyReceivedFeedback = useCallback((orderId?: string | number) => {
-    void playScanFeedback("success", t("newOrderAlreadyReceived"));
+    void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
     notifApi.warning({
-      message: t("newOrderAlreadyReceived"),
+      message: t("common:scannerFeedbackDuplicate"),
       description: orderId ? `#${orderId}` : t("newOrderAlreadyReceivedDescription"),
       placement: "topRight",
       duration: 2,

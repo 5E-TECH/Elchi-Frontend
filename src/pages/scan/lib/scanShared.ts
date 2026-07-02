@@ -85,7 +85,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("touchstart", unlockOnce);
 }
 
-export type ScanFeedbackType = "success" | "error" | "missing";
+export type ScanFeedbackType = "success" | "error" | "missing" | "duplicate";
 export type ScannerSoundId = StoredScannerSound;
 
 export type ScanFeedbackDetail = {
@@ -182,6 +182,7 @@ const MISSING_TONES: Tone[] = [
 
 const getFeedbackTones = (type: ScanFeedbackType): Tone[] => {
   if (type === "success") return SUCCESS_TONES[readStoredScannerSuccessSound() ?? "classic"];
+  if (type === "duplicate") return SUCCESS_TONES[readStoredScannerSuccessSound() ?? "classic"];
   if (type === "error") return ERROR_TONES[readStoredScannerErrorSound() ?? "classic"];
   return MISSING_TONES;
 };
@@ -190,6 +191,7 @@ const FEEDBACK_VIBRATION: Record<ScanFeedbackType, number | number[]> = {
   success: 40,
   error: [60, 45, 80],
   missing: [35, 55, 35, 55, 70],
+  duplicate: [35, 55, 35, 55, 70],
 };
 
 const stopActiveFeedback = () => {

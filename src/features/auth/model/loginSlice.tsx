@@ -7,7 +7,7 @@ interface IState {
   name: string | null
 }
 
-const getStoredAuthField = (key: "region" | "name") => {
+const getStoredAuthField = (key: "region" | "name" | "role") => {
   if (typeof window === "undefined") {
     return null;
   }
@@ -19,7 +19,7 @@ const getStoredAuthField = (key: "region" | "name") => {
   }
 };
 
-const setStoredAuthField = (key: "region" | "name", value: string) => {
+const setStoredAuthField = (key: "region" | "name" | "role", value: string) => {
   if (typeof window === "undefined") {
     return;
   }
@@ -32,7 +32,7 @@ const setStoredAuthField = (key: "region" | "name", value: string) => {
   }
 };
 
-const removeStoredAuthField = (key: "region" | "name") => {
+const removeStoredAuthField = (key: "region" | "name" | "role") => {
   if (typeof window === "undefined") {
     return;
   }
@@ -47,7 +47,7 @@ const removeStoredAuthField = (key: "region" | "name") => {
 
 const initialState: IState = {
   id: null,
-  role: null,
+  role: getStoredAuthField("role"),
   region: getStoredAuthField("region"),
   name: getStoredAuthField("name")
 };
@@ -57,7 +57,9 @@ export const roleSlice = createSlice({
   initialState,
   reducers: {
     setRole: (state, action: PayloadAction<string>) => {
-      state.role = action.payload;
+      const role = action.payload.trim().toLowerCase();
+      state.role = role;
+      setStoredAuthField("role", role);
     },
     setName: (state, action: PayloadAction<string>) => {
       state.name = action.payload;
@@ -74,6 +76,7 @@ export const roleSlice = createSlice({
       state.name = null;
       removeStoredAuthField("region");
       removeStoredAuthField("name");
+      removeStoredAuthField("role");
     },
     setId: (state, action: PayloadAction<string>) => {
       state.id = action.payload;

@@ -59,8 +59,8 @@
   "courierOptionHint": "Shu filial courieri",
   "cancel": "Bekor qilish",
   "selectCourierFirst": "Avval courier tanlang",
-  "oldUiTitle": "Rad etilgan pochta #{{count}} buyurtmalari",
-  "oldUiSubtitle": "{{count}} ta rad etilgan buyurtma mavjud",
+  "oldUiTitle": "Courierga biriktiriladigan buyurtmalar",
+  "oldUiSubtitle": "{{count}} ta buyurtma qo'shilgan",
   "printSelected": "Chop etish ({{count}})",
   "statSelected": "Tanlangan",
   "statHome": "Uygacha",
@@ -69,5 +69,5 @@
   "piece": "ta",
   "selectAll": "Barchasini tanlash",
   "deselectAll": "Barchasini bekor qilish",
-  "oldUiAction": "Pochta qabul qilish {{count}}"
+  "oldUiAction": "Courierga biriktirish {{count}}"
 }

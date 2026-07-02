@@ -2,13 +2,18 @@ import { memo, useMemo, useState } from "react";
 import { MapPin, Package, TrendingUp, MapPinned } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { useMails } from "../../../entities/mails";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
+import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
 import MailSummaryStats from "./MailSummaryStats";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
 import MailGridCard, { MAIL_CARD_GRID_CLASS, MAIL_CARD_SKELETON_CLASS } from "./MailGridCard";
+import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
+import type { OrderListItem } from "../../../entities/order/types/order";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Region {
@@ -29,6 +34,62 @@ interface MailItem {
   region: Region;
   status: string;
 }
+
+const extractOrderItems = (payload: unknown): OrderListItem[] => {
+  const response = payload as
+    | OrderListItem[]
+    | {
+      data?: OrderListItem[] | { items?: OrderListItem[]; data?: OrderListItem[] };
+      items?: OrderListItem[];
+    };
+
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (!Array.isArray(response?.data) && Array.isArray(response?.data?.items)) return response.data.items;
+  if (!Array.isArray(response?.data) && Array.isArray(response?.data?.data)) return response.data.data;
+  if (Array.isArray(response?.items)) return response.items;
+
+  return [];
+};
+
+const buildFallbackMailsFromOrders = (orders: OrderListItem[]): MailItem[] => {
+  const groups = new Map<string, MailItem>();
+
+  orders.forEach((order) => {
+    const postId = String(order.post_id ?? "").trim();
+    if (!postId || order.status !== "on the road") return;
+
+    const regionId = String(order.region_id ?? order.district?.region?.id ?? order.branch?.id ?? "branch");
+    const existing = groups.get(postId);
+
+    if (existing) {
+      existing.order_quantity += 1;
+      existing.post_total_price += Number(order.total_price ?? 0);
+      if (order.createdAt && order.createdAt < existing.createdAt) {
+        existing.createdAt = order.createdAt;
+      }
+      return;
+    }
+
+    groups.set(postId, {
+      id: postId,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      courier_id: "",
+      post_total_price: Number(order.total_price ?? 0),
+      order_quantity: 1,
+      qr_code_token: "",
+      region_id: regionId,
+      region: {
+        id: regionId,
+        name: order.district?.region?.name ?? order.branch?.name ?? "Filial",
+      },
+      status: "sent",
+    });
+  });
+
+  return Array.from(groups.values());
+};
 
 // ─── Pul formati ─────────────────────────────────────────────────────────────
 const formatPrice = (price: number, currencyLabel: string): string =>
@@ -79,6 +140,7 @@ const TodaysMails = () => {
   const { t } = useTranslation("mails");
   const currencyLabel = t("currencyLabel");
   const { role } = useSelector((state: RootState) => state.role);
+  const branchId = useSelector(getCurrentBranchId);
   const isCourierLike = role === "courier";
   const [selectedRegionId, setSelectedRegionId] = useState("");
 
@@ -89,8 +151,29 @@ const TodaysMails = () => {
   const response = isCourierLike ? courierQuery.data : defaultQuery.data;
   const isLoading = isCourierLike ? courierQuery.isLoading : defaultQuery.isLoading;
   const isError = isCourierLike ? courierQuery.isError : defaultQuery.isError;
+  const fallbackOrdersQuery = useQuery({
+    queryKey: ["mails", "today-fallback-orders", role, branchId],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.ORDERS.BASE, {
+          params: {
+            page: 1,
+            limit: 100,
+            status: "on the road",
+            ...(branchId ? { branch_id: branchId } : {}),
+          },
+        })
+        .then((res) => res.data),
+    enabled: role === "manager" && !isCourierLike,
+    staleTime: 10_000,
+  });
 
-  const mails: MailItem[] = response?.data?.data ?? response?.data ?? [];
+  const apiMails: MailItem[] = response?.data?.data ?? response?.data ?? [];
+  const fallbackMails = useMemo(
+    () => buildFallbackMailsFromOrders(extractOrderItems(fallbackOrdersQuery.data)),
+    [fallbackOrdersQuery.data],
+  );
+  const mails = apiMails.length > 0 ? apiMails : fallbackMails;
   const regionOptions = useMemo(() => buildRegionFilterOptions(mails), [mails]);
   const filteredMails = useMemo(
     () =>

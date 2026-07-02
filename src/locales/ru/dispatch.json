@@ -59,8 +59,8 @@
   "courierOptionHint": "Курьер этого филиала",
   "cancel": "Отмена",
   "selectCourierFirst": "Сначала выберите курьера",
-  "oldUiTitle": "Заказы отклоненной почты #{{count}}",
-  "oldUiSubtitle": "Отклоненных заказов: {{count}}",
+  "oldUiTitle": "Заказы для назначения курьеру",
+  "oldUiSubtitle": "Добавлено заказов: {{count}}",
   "printSelected": "Печать ({{count}})",
   "statSelected": "Выбрано",
   "statHome": "До дома",
@@ -69,5 +69,5 @@
   "piece": "шт.",
   "selectAll": "Выбрать все",
   "deselectAll": "Снять выбор",
-  "oldUiAction": "Принять почту {{count}}"
+  "oldUiAction": "Назначить курьеру {{count}}"
 }

@@ -116,90 +116,6 @@ const unwrapOrderPayload = (payload: unknown) => {
   return asRecord(responsePayload.order ?? responseData.order ?? responsePayload);
 };
 
-const formatFieldLabel = (key: string) =>
-  key
-    .replace(/\./g, " ")
-    .replace(/_/g, " ")
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^./, (letter) => letter.toUpperCase());
-
-const isHiddenOrderField = (key: string) => {
-  const lastPart = key.split(".").at(-1) ?? key;
-  const normalized = lastPart.toLowerCase();
-
-  return (
-    normalized === "id" ||
-    normalized === "uuid" ||
-    normalized.endsWith("_id") ||
-    /Id$/.test(lastPart)
-  );
-};
-
-const formatFieldValue = (value: unknown): string => {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return safe(value);
-  }
-  if (Array.isArray(value)) {
-    return value
-      .map(formatFieldValue)
-      .filter((item) => item !== "—")
-      .join(", ") || "—";
-  }
-
-  const record = asRecord(value);
-  const readableValue =
-    record.name ??
-    record.fullName ??
-    record.full_name ??
-    record.title ??
-    record.phone_number ??
-    record.phone;
-
-  if (readableValue !== undefined) return safe(readableValue);
-
-  const values = Object.entries(record)
-    .filter(([key]) => !isHiddenOrderField(key))
-    .map(([, item]) => formatFieldValue(item))
-    .filter((item) => item !== "—");
-
-  return values.join(", ") || "—";
-};
-
-const flattenOrderFields = (order: UnknownRecord) => {
-  const fields: PendingOrder["fields"] = [];
-
-  const walk = (record: UnknownRecord, prefix = "", depth = 0) => {
-    Object.entries(record).forEach(([key, value]) => {
-      const nextKey = prefix ? `${prefix}.${key}` : key;
-
-      if (isHiddenOrderField(nextKey)) return;
-
-      if (
-        value &&
-        typeof value === "object" &&
-        !Array.isArray(value) &&
-        depth < 1
-      ) {
-        walk(asRecord(value), nextKey, depth + 1);
-        return;
-      }
-
-      fields.push({
-        key: nextKey,
-        label: formatFieldLabel(nextKey),
-        value: formatFieldValue(value),
-      });
-    });
-  };
-
-  walk(order);
-
-  return fields.filter((field) => field.value !== "—");
-};
-
 const ORDER_STATUS_KEYS = new Set([
   "created",
   "new",
@@ -280,21 +196,44 @@ const normalizeOrder = (payload: unknown, token: string, t: (key: string) => str
   const district = asRecord(order.district ?? customerDistrict);
   const region = asRecord(order.region ?? district.region ?? customer.region);
   const status = safe(order.status, "");
+  const customerName = safe(
+    customer.fullName ??
+      customer.full_name ??
+      customer.name ??
+      order.customer_name ??
+      order.name,
+    "",
+  );
+  const phone = safe(customer.phone_number ?? customer.phone ?? order.phone_number ?? order.phone);
+  const marketName = safe(market.name ?? sender.name);
+  const districtName = safe(district.name ?? order.district_name);
+  const deliveryType = getDeliveryLabel(order.where_deliver ?? order.delivery_type ?? order.deliveryType, t);
+  const amount = Number(order?.total_price ?? 0) || 0;
+  const createdAt = formatDate(order.createdAt ?? order.created_at ?? order.updatedAt ?? order.updated_at);
 
   return {
     id,
     token,
-    market: safe(market.name ?? sender.name),
-    name: safe(order.name, ""),
-    phone: safe(customer.phone_number ?? customer.phone ?? order.phone_number ?? order.phone),
-    district: safe(district.name ?? order.district_name),
+    market: marketName,
+    name: customerName,
+    phone,
+    district: districtName,
     region: safe(region.name ?? order.region_name),
     address: safe(order.address ?? customer.address, ""),
-    amount: Number(order?.total_price ?? 0) || 0,
-    deliveryType: getDeliveryLabel(order.where_deliver ?? order.delivery_type ?? order.deliveryType, t),
-    createdAt: formatDate(order.createdAt ?? order.created_at ?? order.updatedAt ?? order.updated_at),
+    amount,
+    deliveryType,
+    createdAt,
     status: status || "—",
-    fields: flattenOrderFields(order),
+    fields: [
+      { key: "name", label: t("tableName"), value: customerName || "—" },
+      { key: "phone", label: t("tablePhone"), value: phone },
+      { key: "district", label: t("tableDistrict"), value: districtName },
+      { key: "market", label: t("tableMarket"), value: marketName },
+      { key: "amount", label: t("tablePrice"), value: formatMoney(amount) },
+      { key: "deliveryType", label: t("tableDeliveryType"), value: deliveryType },
+      { key: "createdAt", label: t("tableDate"), value: createdAt },
+      { key: "status", label: t("tableStatus"), value: status || "—" },
+    ],
   };
 };
 

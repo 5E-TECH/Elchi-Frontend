@@ -34,7 +34,9 @@ import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 import {
   playMissingOrderFeedback,
   playScanFeedback,
+  normalizeScannerCandidates,
 } from "../../scan/lib/scanShared";
+import { fetchScanDetail, getBackendErrorMessage } from "../../scan/lib/scanResource";
 import { getMailTabPath, normalizeMailTab } from "../lib/navigation";
 import BackButton from "../../../shared/ui/BackButton";
 import PageContainer from "../../../shared/ui/PageContainer";
@@ -54,6 +56,130 @@ const MailDetailSkeleton = memo(() => (
   </div>
 ));
 MailDetailSkeleton.displayName = "MailDetailSkeleton";
+
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? value as Record<string, unknown> : {};
+
+const toText = (value: unknown) => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number") return String(value);
+  return "";
+};
+
+const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
+
+const unwrapScannedOrder = (payload: unknown) => {
+  const source = asRecord(payload);
+  const data = asRecord(source.data ?? source);
+  const nestedData = asRecord(data.data ?? data);
+  return asRecord(nestedData.order ?? data.order ?? nestedData);
+};
+
+const addOrderIdentifiers = (target: Set<string>, value: unknown) => {
+  const record = asRecord(value);
+  [
+    "id",
+    "qr_code_token",
+    "qrCodeToken",
+    "token",
+    "order_token",
+    "orderToken",
+    "parent_order_id",
+    "parentOrderId",
+    "original_order_id",
+    "originalOrderId",
+    "source_order_id",
+    "sourceOrderId",
+    "split_from_order_id",
+    "splitFromOrderId",
+    "cancelled_from_order_id",
+    "cancelledFromOrderId",
+    "partly_sold_order_id",
+    "partlySoldOrderId",
+    "root_order_id",
+    "rootOrderId",
+    "base_order_id",
+    "baseOrderId",
+  ].forEach((key) => {
+    const text = normalizeMatchText(record[key]);
+    if (text) target.add(text);
+  });
+
+  [
+    "order",
+    "parent_order",
+    "parentOrder",
+    "original_order",
+    "originalOrder",
+    "source_order",
+    "sourceOrder",
+    "split_from_order",
+    "splitFromOrder",
+    "cancelled_from_order",
+    "cancelledFromOrder",
+  ].forEach((key) => {
+    const nested = asRecord(record[key]);
+    ["id", "qr_code_token", "qrCodeToken", "token"].forEach((nestedKey) => {
+      const text = normalizeMatchText(nested[nestedKey]);
+      if (text) target.add(text);
+    });
+  });
+};
+
+const getOrderIdentifiers = (value: unknown) => {
+  const identifiers = new Set<string>();
+  addOrderIdentifiers(identifiers, value);
+  return identifiers;
+};
+
+const getComparableOrderInfo = (value: unknown) => {
+  const order = asRecord(value);
+  const customer = asRecord(order.customer);
+  const market = asRecord(order.market);
+  const district = asRecord(order.district);
+
+  return {
+    customerId: normalizeMatchText(order.customer_id ?? order.customerId ?? customer.id),
+    name: normalizeMatchText(
+      customer.name ??
+        customer.full_name ??
+        customer.fullName ??
+        order.customer_name ??
+        order.customerName ??
+        order.name,
+    ),
+    phone: normalizeMatchText(
+      customer.phone_number ??
+        customer.phoneNumber ??
+        customer.phone ??
+        order.customer_phone ??
+        order.customerPhone ??
+        order.phone_number ??
+        order.phone,
+    ),
+    marketId: normalizeMatchText(order.market_id ?? order.marketId ?? market.id),
+    marketName: normalizeMatchText(market.name),
+    districtId: normalizeMatchText(order.district_id ?? order.districtId ?? district.id),
+    districtName: normalizeMatchText(district.name),
+  };
+};
+
+const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
+  const a = getComparableOrderInfo(left);
+  const b = getComparableOrderInfo(right);
+  const sameCustomer =
+    Boolean(a.customerId && a.customerId === b.customerId) ||
+    Boolean(a.phone && a.phone === b.phone) ||
+    Boolean(a.name && a.name === b.name);
+  const sameMarket = Boolean(a.marketId && a.marketId === b.marketId) || Boolean(a.marketName && a.marketName === b.marketName);
+  const sameDistrict =
+    !a.districtId && !a.districtName && !b.districtId && !b.districtName
+      ? true
+      : Boolean(a.districtId && a.districtId === b.districtId) ||
+        Boolean(a.districtName && a.districtName === b.districtName);
+
+  return sameCustomer && sameMarket && sameDistrict;
+};
 
 // ─── Xatolik holati ───────────────────────────────────────────────────────────
 const ErrorState = memo(() => {
@@ -89,7 +215,8 @@ const MailDetailPage = () => {
   const managerBranchType = getUserBranchType(user);
   const isBranchReceiverManager =
     role === "manager" &&
-    (managerBranchType === "PICKUP" ||
+    (managerBranchType === "HQ" ||
+      managerBranchType === "PICKUP" ||
       managerBranchType === "REGIONAL" ||
       managerBranchType === "HYBRID");
   const isCourier = role === "courier";
@@ -135,7 +262,7 @@ const MailDetailPage = () => {
     isLoading: refusedLoading,
     isError: refusedError,
   } = useGetRefusedMailsCourierByPostId(
-    isRefusedDetail || regularError ? postId ?? "" : "",
+    isRefusedDetail ? postId ?? "" : "",
   );
   const {
     data: transferBatchResponse,
@@ -157,7 +284,7 @@ const MailDetailPage = () => {
   }, []);
 
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
-  const isEffectiveRefusedDetail = isRefusedDetail || Boolean(regularError && refusedResponse);
+  const isEffectiveRefusedDetail = isRefusedDetail;
   const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
   const rawOrders = useMemo<PostOrder[]>(() => {
     if (isAllBatchesDetail) {
@@ -180,8 +307,22 @@ const MailDetailPage = () => {
     regularResponse,
   ]);
   const orders = useMemo(
-    () => rawOrders.filter((order) => !sentOrderIds.has(order.id)),
-    [rawOrders, sentOrderIds],
+    () =>
+      rawOrders.filter((order) => {
+        if (sentOrderIds.has(order.id)) return false;
+
+        if (
+          !isEffectiveRefusedDetail &&
+          !isOldDetail &&
+          !isBranchTransferRole &&
+          order.status !== "on the road"
+        ) {
+          return false;
+        }
+
+        return true;
+      }),
+    [rawOrders, sentOrderIds, isEffectiveRefusedDetail, isOldDetail, isBranchTransferRole],
   );
   const homeStats = useMemo(() => {
     const homeOrders = orders.filter(
@@ -265,6 +406,17 @@ const MailDetailPage = () => {
   }, [notifApi, t]);
 
   const selectScannedOrder = useCallback((order: PostOrder) => {
+    if (selectedIds.has(order.id)) {
+      void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+      notifApi.warning({
+        message: t("common:scannerFeedbackDuplicate"),
+        description: `#${order.id}`,
+        placement: "topRight",
+        duration: 2,
+      });
+      return;
+    }
+
     selectOne(order.id);
     void playScanFeedback("success");
     notifApi.success({
@@ -279,7 +431,9 @@ const MailDetailPage = () => {
     orders,
     enabled: orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier,
     onMatch: selectScannedOrder,
-    onMissing: handleMissingScannedOrder,
+    onMissing: (rawValue) => {
+      void handleMissingScannedOrder(rawValue);
+    },
   });
 
   const handleBack = useCallback(() => {
@@ -484,7 +638,7 @@ const MailDetailPage = () => {
   }, [deleteTargetIds, apiRequest, SendToPost, t, clearSelection, refetchRegularDetail, navigate]);
 
   // ─── Loading ──────────────────────────────────────────────────────────────
-  const isRefusedFallbackPending = regularError && !refusedResponse && !refusedError;
+  const isRefusedFallbackPending = false;
 
   if (regularLoading || refusedLoading || transferBatchLoading || isRefusedFallbackPending)
     return (
@@ -494,7 +648,7 @@ const MailDetailPage = () => {
     );
 
   // ─── Error ────────────────────────────────────────────────────────────────
-  if ((regularError && !refusedResponse) || refusedError || transferBatchError)
+  if (regularError || refusedError || transferBatchError)
     return (
       <PageContainer>
         <ErrorState />

@@ -41,7 +41,11 @@ export const UserDetailWidget = memo(({
 }: UserDetailWidgetProps) => {
   const { t } = useTranslation("users");
   const [showEdit, setShowEdit] = useState(false);
-  const { updateMarketAddOrder, updateMarketExpenseProof } = useUser();
+  const {
+    updateMarketAddOrder,
+    updateMarketExpenseProof,
+    updateMarketCancelledHandoverQr,
+  } = useUser();
   const { apiRequest } = useAppNotification();
   const isMarket = user?.role === "market" || user?.role === "marketing";
 
@@ -137,6 +141,24 @@ export const UserDetailWidget = memo(({
     });
   };
 
+  const handleToggleMarketCancelledHandoverQr = async () => {
+    if (!user || !isMarket) return;
+
+    const nextValue = user.cancelled_handover_qr_required === false;
+
+    await apiRequest({
+      request: () =>
+        updateMarketCancelledHandoverQr.mutateAsync({
+          id: user.id,
+          cancelled_handover_qr_required: nextValue,
+        }),
+      successMessage: nextValue
+        ? t("cancelledHandoverQrEnabled", { defaultValue: "Bekor qilingan orderlarni topshirishda market QR talabi yoqildi" })
+        : t("cancelledHandoverQrDisabled", { defaultValue: "Bekor qilingan orderlarni topshirishda market QR talabi o'chirildi" }),
+      errorMessage: t("editUserError"),
+    });
+  };
+
   return (
     <>
       <div className="flex flex-col items-start gap-4 lg:flex-row lg:gap-5">
@@ -153,6 +175,8 @@ export const UserDetailWidget = memo(({
             isMarketAddOrderPending={updateMarketAddOrder.isPending}
             onToggleMarketProof={isMarket ? handleToggleMarketProof : undefined}
             isMarketProofPending={updateMarketExpenseProof.isPending}
+            onToggleMarketCancelledHandoverQr={isMarket ? handleToggleMarketCancelledHandoverQr : undefined}
+            isMarketCancelledHandoverQrPending={updateMarketCancelledHandoverQr.isPending}
             headerAction={
               <button
                 type="button"

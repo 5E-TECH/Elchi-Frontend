@@ -136,14 +136,23 @@ const BranchBatchDetailPage = () => {
   }, [api, t]);
 
   const selectScannedOrder = useCallback((order: BatchOrder) => {
-    void playScanFeedback("success");
     setSelectedOrderIds((prev) => {
-      if (prev.has(order.id)) return prev;
+      if (prev.has(order.id)) {
+        void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+        api.warning({
+          message: t("common:scannerFeedbackDuplicate"),
+          description: `#${order.id}`,
+          placement: "topRight",
+          duration: 2,
+        });
+        return prev;
+      }
       const next = new Set(prev);
       next.add(order.id);
+      void playScanFeedback("success");
       return next;
     });
-  }, []);
+  }, [api, t]);
 
   const translatedBatchStatus = data ? t(`batchStatus.${data.status}`) : "";
   const translatedBatchDirection = data ? t(`batchDirection.${data.direction}`) : "";

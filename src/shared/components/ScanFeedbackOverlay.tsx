@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { Check, SearchX, X } from "lucide-react";
+import { Check, SearchCheck, SearchX, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,7 +12,7 @@ const feedbackConfig: Record<
   ScanFeedbackType,
   {
     icon: React.ReactNode;
-    labelKey: "scannerFeedbackSuccess" | "scannerFeedbackError" | "scannerFeedbackMissing";
+    labelKey: "scannerFeedbackSuccess" | "scannerFeedbackError" | "scannerFeedbackMissing" | "scannerFeedbackDuplicate";
     surface: string;
     glow: string;
   }
@@ -32,8 +32,14 @@ const feedbackConfig: Record<
   missing: {
     icon: <SearchX className="h-[42%] w-[42%]" strokeWidth={3} />,
     labelKey: "scannerFeedbackMissing",
-    surface: "from-amber-400 to-orange-500",
-    glow: "shadow-[0_0_90px_rgba(245,158,11,0.48)]",
+    surface: "from-red-400 to-red-600",
+    glow: "shadow-[0_0_90px_rgba(239,68,68,0.48)]",
+  },
+  duplicate: {
+    icon: <SearchCheck className="h-[42%] w-[42%]" strokeWidth={3} />,
+    labelKey: "scannerFeedbackDuplicate",
+    surface: "from-amber-300 to-yellow-500",
+    glow: "shadow-[0_0_90px_rgba(234,179,8,0.5)]",
   },
 };
 

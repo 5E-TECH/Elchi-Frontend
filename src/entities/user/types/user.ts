@@ -62,6 +62,7 @@ export interface User {
     tariff_home: number | null;
     tariff_center: number | null;
     add_order?: boolean;
+    cancelled_handover_qr_required?: boolean;
     expense_proof_conditions?: ExpenseProofCondition[] | null;
     default_tariff: 'home' | 'center';
     region_id?: string | null;

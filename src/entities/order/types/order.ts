@@ -73,6 +73,7 @@ export interface OrderListItem {
         name: string;
         phone_number?: string;
         expense_proof_conditions?: string[] | null;
+        cancelled_handover_qr_required?: boolean | null;
     };
     branch?: {
         id: string;
