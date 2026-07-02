@@ -241,7 +241,9 @@ const BatchDetailPage = () => {
           </section>
 
           <section className="rounded-[28px] border border-(--color-border-soft) bg-primary p-5 shadow-sm dark:bg-primarydark">
-            <h3 className="mb-5 text-lg font-black text-maindark dark:text-white">Tarix</h3>
+            <h3 className="mb-5 text-lg font-black text-maindark dark:text-white">
+              {t("detail.history", { ns: "batches" })}
+            </h3>
             {batch.history.length ? (
               <div className="relative space-y-5 pl-7 before:absolute before:bottom-2 before:left-2.25 before:top-2 before:w-px before:bg-main/30">
                 {batch.history.map((item) => (
@@ -256,7 +258,7 @@ const BatchDetailPage = () => {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-(--color-border-soft) px-4 py-8 text-center text-sm font-semibold text-(--color-text-muted) dark:text-white/60">
-                Tarix hozircha mavjud emas
+                {t("detail.historyEmpty", { ns: "batches" })}
               </div>
             )}
           </section>
@@ -265,7 +267,7 @@ const BatchDetailPage = () => {
         <aside className="h-max rounded-[22px] border border-(--color-border-soft) bg-primary p-4 shadow-sm dark:bg-primarydark">
           <div className="mb-3 flex items-center gap-2 text-base font-black text-maindark dark:text-white">
             <QrCode size={17} />
-            QR kod
+            {t("detail.qrCode", { ns: "batches" })}
           </div>
           <div className="rounded-[20px] border border-dashed border-(--color-border-soft) bg-white p-3.5 dark:bg-white">
             <BatchQrCode

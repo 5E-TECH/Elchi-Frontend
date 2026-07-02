@@ -36,6 +36,7 @@ const EXPORT_PAGE_SIZE = 100;
 const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
+const ORDER_CREATE_ROLES = new Set(["admin", "superadmin", "market", "registrator"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
 const TABLE_ROLLBACK_STATUSES = new Set<OrderStatus>(["sold", "cancelled"]);
 const isUnsentCancelledOrder = (order: OrderListItem) => order.status === "cancelled";
@@ -160,7 +161,7 @@ const Orders = () => {
   const canCreateOrder =
     role === "manager"
       ? Boolean(branchType && MANAGER_ORDER_CREATE_BRANCH_TYPES.has(branchType))
-      : true;
+      : Boolean(role && ORDER_CREATE_ROLES.has(role));
   const canUseManagerTableActions =
     role === "manager" && Boolean(branchType && MANAGER_TABLE_ACTION_BRANCH_TYPES.has(branchType));
   const canUseManagerTabs =

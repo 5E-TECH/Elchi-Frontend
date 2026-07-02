@@ -37,7 +37,10 @@
     "branch": "Filial",
     "destination": "Qayerga",
     "orderCount": "{{count}} ta",
-    "insideOrders": "Ichidagi orderlar"
+    "insideOrders": "Ichidagi orderlar",
+    "history": "Tarix",
+    "historyEmpty": "Tarix hozircha mavjud emas",
+    "qrCode": "QR kod"
   },
   "print": {
     "branch": "FILIAL:",

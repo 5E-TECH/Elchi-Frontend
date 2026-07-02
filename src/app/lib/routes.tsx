@@ -139,10 +139,10 @@ const canViewDispatch = (state: RootState) => {
 
   if (role === "registrator") {
     const branchType = getUserBranchType(state.user.user);
-    return branchType !== "HQ";
+    return Boolean(branchType && branchType !== "HQ");
   }
 
-  return role === "branch";
+  return role === "operator" || role === "branch";
 };
 
 const canViewBatches = (state: RootState) => {
@@ -152,7 +152,7 @@ const canViewBatches = (state: RootState) => {
     return Boolean(branchType && MANAGER_BATCH_BRANCH_TYPES.has(branchType));
   }
 
-  return role === "operator" || role === "admin" || role === "superadmin" || role === "registrator";
+  return role === "operator" || role === "admin" || role === "superadmin";
 };
 
 const canViewReturns = (state: RootState) => {
@@ -214,7 +214,6 @@ const canViewRegionStats = (state: RootState) => {
   return (
     role === "admin" ||
     role === "superadmin" ||
-    role === "operator" ||
     role === "manager" ||
     role === "courier"
   );

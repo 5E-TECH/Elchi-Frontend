@@ -37,7 +37,10 @@
     "branch": "Branch",
     "destination": "Destination",
     "orderCount": "{{count}} pcs",
-    "insideOrders": "Orders inside"
+    "insideOrders": "Orders inside",
+    "history": "History",
+    "historyEmpty": "No history yet",
+    "qrCode": "QR code"
   },
   "print": {
     "branch": "BRANCH:",
