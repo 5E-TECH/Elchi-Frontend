@@ -43,6 +43,24 @@ const RefusedMailCard = memo(({ item, currencyLabel }: { item: MailItem; currenc
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const courierName = item.courier?.name;
   const openDetail = () =>
+    navigate(`/mails/${item.id}`, {
+      state: {
+        fromTab: "refused",
+        type: "refused",
+        fallbackRegionId: item.region?.id ?? item.region_id,
+        fallbackRegionName: regionName,
+        expectedOrderCount: item.order_quantity,
+      },
+    });
+  const title = isCourierLike
+    ? new Date(item.createdAt).toLocaleString("uz-UZ", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : regionName;
     navigate(`/mails/${item.id}`, { state: { fromTab: "refused", type: "refused" } });
 
   return (
