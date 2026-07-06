@@ -273,6 +273,74 @@ export const normalizeFinancialBalance = (response: unknown): FinancialBalanceDa
   };
 };
 
+export const extractFinancialLedgerItems = (response: unknown): unknown[] => {
+  const responseRecord = toRecord(response);
+  const body = responseRecord.data ?? response;
+
+  if (Array.isArray(body)) {
+    return body;
+  }
+
+  const payload = toRecord(body);
+  const directItems = pickArray(payload, [
+    "items",
+    "data",
+    "list",
+    "entries",
+    "transactions",
+    "topImpacts",
+    "top_impacts",
+    "impacts",
+    "history",
+    "ledger",
+  ]);
+
+  if (directItems.length) {
+    return directItems;
+  }
+
+  for (const key of ["history", "ledger", "records", "result"]) {
+    const nested = toRecord(payload[key]);
+    const nestedItems = pickArray(nested, [
+      "items",
+      "data",
+      "list",
+      "entries",
+      "transactions",
+      "topImpacts",
+      "top_impacts",
+      "impacts",
+    ]);
+
+    if (nestedItems.length) {
+      return nestedItems;
+    }
+  }
+
+  return [];
+};
+
+export const extractFinancialLedgerPagination = (response: unknown): Record<string, unknown> | undefined => {
+  const responseRecord = toRecord(response);
+  const payload = toRecord(responseRecord.data ?? responseRecord);
+
+  for (const source of [
+    payload,
+    toRecord(payload.history),
+    toRecord(payload.ledger),
+    toRecord(payload.records),
+    toRecord(payload.result),
+  ]) {
+    const pagination = toRecord(source.pagination ?? source.meta);
+
+    if (Object.keys(pagination).length) {
+      return pagination;
+    }
+  }
+
+  return undefined;
+};
+
 export const formatFinancialAmount = (value: number, separator: "space" | "comma" = "space") => {
   const formatted = value.toLocaleString("ru-RU");
   return separator === "comma" ? formatted.replace(/\s/g, ",") : formatted.replace(/\s/g, " ");

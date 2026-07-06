@@ -171,6 +171,8 @@ export const API_ENDPOINTS = {
     // Financial ledger
     FINANCIAL_BALANCE_ENTRIES: "finance/financial-balance/entries", // POST manual ledger entry
     FINANCIAL_BALANCE_HISTORY: "finance/financial-balance/history", // GET ledger + current balance
+    FINANCIAL_BALANCE_ANALYTICS: "finance/financial-balance/analytics",
+    FINANCIAL_BALANCE_TOP_IMPACTS: "finance/financial-balance/top-impacts",
     // Salary
     SALARY: "finance/salary", // POST create / PATCH update
     SALARY_BY_USER: (userId: string | number) => `finance/salary/${userId}`,
