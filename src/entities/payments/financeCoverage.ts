@@ -82,6 +82,24 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
+  const useGetFinancialBalanceAnalytics = (enabled: boolean = true, params?: any) =>
+    useQuery({
+      queryKey: ["finance-cov", "financial-balance-analytics", params],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.FINANCE.FINANCIAL_BALANCE_ANALYTICS, { params })
+          .then((res) => res.data),
+      enabled,
+    });
+
+  const useGetFinancialBalanceTopImpacts = (enabled: boolean = true, params?: any) =>
+    useQuery({
+      queryKey: ["finance-cov", "financial-balance-top-impacts", params],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.FINANCE.FINANCIAL_BALANCE_TOP_IMPACTS, { params })
+          .then((res) => res.data),
+      enabled,
+    });
+
   // ── Health ────────────────────────────────────────────────────────────────
 
   const useGetFinanceHealth = (enabled: boolean = true) =>
@@ -174,6 +192,8 @@ export const useFinanceCoverage = () => {
     // Financial ledger
     createFinancialBalanceEntry,
     useGetFinancialBalanceHistory,
+    useGetFinancialBalanceAnalytics,
+    useGetFinancialBalanceTopImpacts,
     // Health
     useGetFinanceHealth,
     // Operator

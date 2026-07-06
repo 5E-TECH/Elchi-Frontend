@@ -6,12 +6,16 @@ import type { ColumnConfig } from "../../../shared/components/Table/Table.types"
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import FilterDateInput from "../../../shared/ui/FilterDateInput";
 import Pagination from "../../../shared/components/pagination";
-import { useCashBox } from "../../../entities/payments";
+import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { usePagination } from "../../../shared/lib/usePagination";
+import {
+  extractFinancialLedgerItems,
+  extractFinancialLedgerPagination,
+} from "../lib/financialBalance";
 
 interface HistoryRow {
   id: string;
-  date: string;
+  date: unknown;
   sourceType: string;
   changeAmount: number;
   previousBalance: number;
@@ -60,11 +64,12 @@ const normalizePagination = (
   };
 };
 
-const formatDateTime = (value?: string | null) => {
+const formatDateTime = (value?: unknown) => {
   if (!value) return "-";
 
   try {
-    const date = new Date(value);
+    const date = new Date(typeof value === "number" ? value : String(value));
+    if (Number.isNaN(date.getTime())) return String(value);
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
@@ -72,8 +77,27 @@ const formatDateTime = (value?: string | null) => {
     const minutes = String(date.getMinutes()).padStart(2, "0");
     return `${day}.${month}.${year} ${hours}:${minutes}`;
   } catch {
-    return value;
+    return String(value);
   }
+};
+
+const getSignedChange = (item: Record<string, unknown>) => {
+  const amount = Math.abs(Number(item.amount ?? 0));
+  const before = Number(item.balance_before ?? item.balanceBefore);
+  const after = Number(item.balance_after ?? item.balanceAfter);
+
+  if (Number.isFinite(before) && Number.isFinite(after) && before !== after) {
+    return after - before;
+  }
+
+  const operationType = String(item.operation_type ?? item.operationType ?? "").toLowerCase();
+  const sourceType = String(item.source_type ?? item.sourceType ?? "").toLowerCase();
+
+  if (operationType === "expense" || ["manual_expense", "salary", "correction"].includes(sourceType)) {
+    return -amount;
+  }
+
+  return amount;
 };
 
 const toDisplayAmount = (value: number) =>
@@ -92,7 +116,7 @@ const toSourceTypeLabel = (value: string, t: (key: string) => string) => {
 const HistoryTab = () => {
   const { t } = useTranslation("payments");
   const currencyLabel = t("currency");
-  const { useGetFinanceHistory } = useCashBox();
+  const { useGetFinancialBalanceHistory } = useFinanceCoverage();
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "payments",
     defaultLimit: 10,
@@ -113,8 +137,8 @@ const HistoryTab = () => {
     const params: Record<string, string | number> = { page, limit };
 
     if (sourceType) params.source_type = sourceType;
-    if (fromDate) params.from_date = `${fromDate}T00:00:00.000Z`;
-    if (toDate) params.to_date = `${toDate}T23:59:59.999Z`;
+    if (fromDate) params.fromDate = `${fromDate}T00:00:00.000Z`;
+    if (toDate) params.toDate = `${toDate}T23:59:59.999Z`;
 
     return params;
   }, [fromDate, limit, page, sourceType, toDate]);
@@ -132,37 +156,35 @@ const HistoryTab = () => {
     resetPagination(limit);
   }, [fromDate, toDate, sourceType, limit, resetPagination]);
 
-  const { data, isLoading } = useGetFinanceHistory(queryParams);
+  const { data, isLoading } = useGetFinancialBalanceHistory(true, queryParams);
 
   const rows = useMemo<HistoryRow[]>(
     () =>
-      ((data?.data?.items ?? []) as Record<string, unknown>[]).map((item) => {
-        const amount = Math.abs(Number(item.amount ?? 0));
-        const operationType = String(item.operation_type ?? "");
-        const signedChange = operationType === "expense" ? -amount : amount;
-        const nextBalance = Number(item.balance_after ?? 0);
-        const previousBalance = nextBalance - signedChange;
+      (extractFinancialLedgerItems(data) as Record<string, unknown>[]).map((item) => {
+        const signedChange = getSignedChange(item);
+        const previousBalance = Number(item.balance_before ?? item.balanceBefore ?? 0);
+        const nextBalance = Number(item.balance_after ?? item.balanceAfter ?? previousBalance + signedChange);
 
         return {
           id: String(item.id ?? ""),
-          date: String(item.payment_date ?? item.createdAt ?? item.created_at ?? ""),
+          date: item.payment_date ?? item.paymentDate ?? item.createdAt ?? item.created_at ?? "",
           sourceType: String(item.source_type ?? ""),
           changeAmount: signedChange,
           previousBalance,
           nextBalance,
         };
       }),
-    [data?.data?.items],
+    [data],
   );
 
   const pagination = useMemo(
     () =>
       normalizePagination(
-        (data?.data?.pagination ?? data?.data?.meta) as Record<string, unknown> | undefined,
+        extractFinancialLedgerPagination(data),
         page,
         limit,
       ),
-    [data?.data?.meta, data?.data?.pagination, limit, page],
+    [data, limit, page],
   );
 
   const columns = useMemo<ColumnConfig<HistoryRow>[]>(

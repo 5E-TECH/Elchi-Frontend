@@ -11,13 +11,17 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { useCashBox } from "../../../entities/payments";
+import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import FilterDateInput from "../../../shared/ui/FilterDateInput";
-import { formatFinancialAmount, toFinancialNumber } from "../lib/financialBalance";
+import {
+  extractFinancialLedgerItems,
+  formatFinancialAmount,
+  toFinancialNumber,
+} from "../lib/financialBalance";
 
 interface LedgerRow {
   id: string;
-  date: string;
+  date: unknown;
   sourceType: string;
   operationType: string;
   actor: string;
@@ -42,11 +46,11 @@ const toDateInputValue = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const formatDateTime = (value: string) => {
+const formatDateTime = (value: unknown) => {
   if (!value) return "-";
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = new Date(typeof value === "number" ? value : String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
 
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -73,6 +77,20 @@ const sourceTypeLabel = (value: string, t: (key: string) => string) => {
 const getRecord = (value: unknown): Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {};
 
+const getPayload = (value: unknown) => {
+  const response = getRecord(value);
+  return getRecord(response.data ?? response);
+};
+
+const getArray = (source: Record<string, unknown>, keys: string[]): unknown[] => {
+  for (const key of keys) {
+    const value = source[key];
+    if (Array.isArray(value)) return value;
+  }
+
+  return [];
+};
+
 const pickName = (value: unknown) => {
   const record = getRecord(value);
 
@@ -90,19 +108,40 @@ const getActorName = (item: Record<string, unknown>) =>
   pickName(item.user) ||
   pickName(item.source_user) ||
   pickName(item.created_by) ||
+  pickName(item.created_by_user) ||
+  pickName(item.createdByUser) ||
   pickName(getRecord(item.cashbox).user) ||
   String(item.source_id ?? "").trim();
+
+const getSignedAmount = (record: Record<string, unknown>) => {
+  const amount = Math.abs(toFinancialNumber(record.amount ?? record.total_amount ?? record.totalAmount));
+  const before = toFinancialNumber(record.balance_before ?? record.balanceBefore);
+  const after = toFinancialNumber(record.balance_after ?? record.balanceAfter);
+
+  if (before !== after) {
+    return after - before;
+  }
+
+  const operationType = String(record.operation_type ?? record.operationType ?? "").toLowerCase();
+  const sourceType = String(record.source_type ?? record.sourceType ?? "").toLowerCase();
+
+  if (operationType === "expense" || ["manual_expense", "salary", "correction"].includes(sourceType)) {
+    return -amount;
+  }
+
+  return amount;
+};
 
 const normalizeRows = (items: unknown[]): LedgerRow[] =>
   items.map((item, index) => {
     const record = getRecord(item);
-    const amount = Math.abs(toFinancialNumber(record.amount));
+    const amount = Math.abs(toFinancialNumber(record.amount ?? record.total_amount ?? record.totalAmount));
     const operationType = String(record.operation_type ?? record.operationType ?? "");
-    const signedAmount = operationType === "expense" ? -amount : amount;
+    const signedAmount = getSignedAmount(record);
 
     return {
       id: String(record.id ?? index),
-      date: String(record.payment_date ?? record.paymentDate ?? record.createdAt ?? record.created_at ?? ""),
+      date: record.payment_date ?? record.paymentDate ?? record.createdAt ?? record.created_at ?? "",
       sourceType: String(record.source_type ?? record.sourceType ?? ""),
       operationType,
       actor: getActorName(record),
@@ -133,6 +172,65 @@ const buildBuckets = (
       percent: total > 0 ? (amount / total) * 100 : 0,
     }))
     .sort((a, b) => b.amount - a.amount);
+};
+
+const normalizeApiBuckets = (
+  response: unknown,
+  direction: "positive" | "negative",
+  t: (key: string) => string,
+): SourceBucket[] => {
+  const payload = getPayload(response);
+  const rows = getArray(
+    payload,
+    direction === "positive"
+      ? ["positiveImpact", "positive_impact", "positiveSources", "positive_sources"]
+      : ["negativeImpact", "negative_impact", "negativeSources", "negative_sources"],
+  );
+
+  return rows
+    .map((item) => {
+      const record = getRecord(item);
+      const sourceType = String(record.source_type ?? record.sourceType ?? record.type ?? "");
+      const amount = Math.abs(toFinancialNumber(record.total_amount ?? record.totalAmount ?? record.amount));
+      const percent = toFinancialNumber(record.percentage ?? record.percent);
+
+      return {
+        sourceType,
+        label: sourceTypeLabel(sourceType, t),
+        amount,
+        percent,
+      };
+    })
+    .filter((item) => item.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+};
+
+const normalizeAnalyticsSummary = (response: unknown, fallbackRows: LedgerRow[]) => {
+  const payload = getPayload(response);
+  const summary = getRecord(payload.summary);
+  const positiveTotal = toFinancialNumber(summary.totalPositive ?? summary.total_positive ?? payload.totalPositive);
+  const negativeTotal = toFinancialNumber(summary.totalNegative ?? summary.total_negative ?? payload.totalNegative);
+  const netTotal = toFinancialNumber(summary.netChange ?? summary.net_change ?? payload.netChange);
+  const totalCount = toFinancialNumber(summary.totalCount ?? summary.total_count ?? payload.totalCount);
+
+  if (positiveTotal || negativeTotal || netTotal || totalCount) {
+    return {
+      positiveTotal,
+      negativeTotal,
+      netTotal,
+      totalCount,
+    };
+  }
+
+  const fallbackPositive = fallbackRows.reduce((sum, row) => row.signedAmount > 0 ? sum + row.signedAmount : sum, 0);
+  const fallbackNegative = fallbackRows.reduce((sum, row) => row.signedAmount < 0 ? sum + Math.abs(row.signedAmount) : sum, 0);
+
+  return {
+    positiveTotal: fallbackPositive,
+    negativeTotal: fallbackNegative,
+    netTotal: fallbackPositive - fallbackNegative,
+    totalCount: fallbackRows.length,
+  };
 };
 
 const StatCard = ({
@@ -220,37 +318,52 @@ const SourcePanel = ({
 const AnalysisTab = () => {
   const { t } = useTranslation("payments");
   const currencyLabel = t("currency");
-  const { useGetFinanceHistory } = useCashBox();
+  const { useGetFinancialBalanceAnalytics, useGetFinancialBalanceTopImpacts } = useFinanceCoverage();
   const today = useMemo(() => new Date(), []);
   const [fromDate, setFromDate] = useState(toDateInputValue(today));
   const [toDate, setToDate] = useState(toDateInputValue(today));
   const [page, setPage] = useState(1);
 
   const queryParams = useMemo(() => {
-    const params: Record<string, string | number> = { page: 1, limit: 10000 };
+    const params: Record<string, string | number> = {};
 
-    if (fromDate) params.from_date = `${fromDate}T00:00:00.000Z`;
-    if (toDate) params.to_date = `${toDate}T23:59:59.999Z`;
+    if (fromDate) params.fromDate = `${fromDate}T00:00:00.000Z`;
+    if (toDate) params.toDate = `${toDate}T23:59:59.999Z`;
 
     return params;
   }, [fromDate, toDate]);
 
-  const { data, isLoading } = useGetFinanceHistory(queryParams);
-  const rows = useMemo(
-    () => normalizeRows(((data?.data?.items ?? []) as unknown[])),
-    [data?.data?.items],
+  const topImpactParams = useMemo(
+    () => ({ ...queryParams, page: 1, limit: 10000 }),
+    [queryParams],
   );
-  const positiveTotal = rows.reduce((sum, row) => row.signedAmount > 0 ? sum + row.signedAmount : sum, 0);
-  const negativeTotal = rows.reduce((sum, row) => row.signedAmount < 0 ? sum + Math.abs(row.signedAmount) : sum, 0);
-  const netTotal = positiveTotal - negativeTotal;
-  const positiveBuckets = useMemo(() => buildBuckets(rows, "positive", t), [rows, t]);
-  const negativeBuckets = useMemo(() => buildBuckets(rows, "negative", t), [rows, t]);
+  const { data: analyticsData, isLoading: isAnalyticsLoading } =
+    useGetFinancialBalanceAnalytics(true, queryParams);
+  const { data: topImpactsData, isLoading: isTopImpactsLoading } =
+    useGetFinancialBalanceTopImpacts(true, topImpactParams);
+  const rows = useMemo(
+    () => normalizeRows(extractFinancialLedgerItems(topImpactsData)),
+    [topImpactsData],
+  );
+  const summary = useMemo(
+    () => normalizeAnalyticsSummary(analyticsData, rows),
+    [analyticsData, rows],
+  );
+  const positiveBuckets = useMemo(() => {
+    const apiBuckets = normalizeApiBuckets(analyticsData, "positive", t);
+    return apiBuckets.length ? apiBuckets : buildBuckets(rows, "positive", t);
+  }, [analyticsData, rows, t]);
+  const negativeBuckets = useMemo(() => {
+    const apiBuckets = normalizeApiBuckets(analyticsData, "negative", t);
+    return apiBuckets.length ? apiBuckets : buildBuckets(rows, "negative", t);
+  }, [analyticsData, rows, t]);
   const topRows = useMemo(
     () => [...rows].sort((a, b) => Math.abs(b.signedAmount) - Math.abs(a.signedAmount)),
     [rows],
   );
   const totalPages = Math.max(1, Math.ceil(topRows.length / PAGE_SIZE));
   const paginatedRows = topRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const isLoading = isAnalyticsLoading || isTopImpactsLoading;
 
   const setPeriod = (period: "today" | "week" | "month" | "year") => {
     const end = new Date();
@@ -308,15 +421,15 @@ const AnalysisTab = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <StatCard icon={<TrendingUp size={20} />} label={t("financialBalancePositiveImpact")} value={positiveTotal} currencyLabel={currencyLabel} tone="positive" />
-        <StatCard icon={<TrendingDown size={20} />} label={t("financialBalanceNegativeImpact")} value={-negativeTotal} currencyLabel={currencyLabel} tone="negative" />
+        <StatCard icon={<TrendingUp size={20} />} label={t("financialBalancePositiveImpact")} value={summary.positiveTotal} currencyLabel={currencyLabel} tone="positive" />
+        <StatCard icon={<TrendingDown size={20} />} label={t("financialBalanceNegativeImpact")} value={-summary.negativeTotal} currencyLabel={currencyLabel} tone="negative" />
         <StatCard
           icon={<Bolt size={20} />}
           label={t("financialBalanceNetChange")}
-          value={netTotal}
+          value={summary.netTotal}
           currencyLabel={currencyLabel}
           tone="neutral"
-          description={t("financialBalanceTransactionsCount", { count: rows.length })}
+          description={t("financialBalanceTransactionsCount", { count: summary.totalCount })}
         />
       </div>
 
@@ -331,7 +444,7 @@ const AnalysisTab = () => {
             <Sigma size={17} className="text-main" />
             <p className="text-base font-bold text-maindark dark:text-white">{t("financialBalanceTopTransactions")}</p>
           </div>
-          <p className="text-xs font-semibold text-maindark/45 dark:text-slate-400">{t("financialBalanceTotalTransactions", { count: rows.length })}</p>
+          <p className="text-xs font-semibold text-maindark/45 dark:text-slate-400">{t("financialBalanceTotalTransactions", { count: summary.totalCount })}</p>
         </div>
 
         <div className="min-h-64">

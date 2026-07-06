@@ -184,7 +184,12 @@ const normalizeCourierOption = (value: unknown) => {
   };
 };
 
-const normalizeOrder = (payload: unknown, token: string, t: (key: string) => string): PendingOrder | null => {
+const normalizeOrder = (
+  payload: unknown,
+  token: string,
+  t: (key: string) => string,
+  locale: string,
+): PendingOrder | null => {
   const order = unwrapOrderPayload(payload);
   const id = safe(order.id, "");
   if (!id) return null;
@@ -229,7 +234,7 @@ const normalizeOrder = (payload: unknown, token: string, t: (key: string) => str
       { key: "phone", label: t("tablePhone"), value: phone },
       { key: "district", label: t("tableDistrict"), value: districtName },
       { key: "market", label: t("tableMarket"), value: marketName },
-      { key: "amount", label: t("tablePrice"), value: formatMoney(amount, t("orders:currency")) },
+      { key: "amount", label: t("tablePrice"), value: formatMoney(amount, t("orders:currency"), locale) },
       { key: "deliveryType", label: t("tableDeliveryType"), value: deliveryType },
       { key: "createdAt", label: t("tableDate"), value: createdAt },
       { key: "status", label: t("tableStatus"), value: status || "—" },
@@ -443,7 +448,7 @@ const DispatchPage = () => {
         throw new Error(t("wrongType"));
       }
 
-      const nextOrder = normalizeOrder(detail.data, normalizedToken, t);
+      const nextOrder = normalizeOrder(detail.data, normalizedToken, t, locale);
       if (!nextOrder) {
         throw new Error(t("orderLookupError"));
       }
@@ -475,7 +480,7 @@ const DispatchPage = () => {
       lookupTokensRef.current.delete(tokenKey);
       setActiveLookupCount((count) => Math.max(0, count - 1));
     }
-  }, [blockScans, canAcceptScan, t]);
+  }, [blockScans, canAcceptScan, locale, t]);
 
   useKeyboardScanner({
     enabled: true,
