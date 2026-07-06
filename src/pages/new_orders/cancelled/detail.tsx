@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import QRCode from "qrcode";
 import { useOrders } from "../../../entities/orders";
 import BackButton from "../../../shared/ui/BackButton";
 import HeaderName from "../../../shared/components/headerName";
@@ -69,12 +70,6 @@ const normalizeQrImage = (value: string) => {
   return /^[A-Za-z0-9+/=]+$/.test(value) && value.length > 120
     ? `data:image/png;base64,${value}`
     : "";
-};
-
-const createQrImageUrl = (value: string) => {
-  if (!value.trim()) return "";
-
-  return `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(value)}`;
 };
 
 const normalizeCancelledMarketQr = (response: unknown): CancelledMarketQr => {
@@ -240,6 +235,7 @@ const CancelledMarketDetail = () => {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [scanError, setScanError] = useState("");
   const [handoverQr, setHandoverQr] = useState<CancelledMarketQr | null>(null);
+  const [generatedHandoverQrImage, setGeneratedHandoverQrImage] = useState("");
   const [isHandoverQrScanned, setIsHandoverQrScanned] = useState(false);
   const [authorizationToken, setAuthorizationToken] = useState("");
   const [authorizationExpiresAt, setAuthorizationExpiresAt] = useState<number | null>(null);
@@ -270,9 +266,10 @@ const CancelledMarketDetail = () => {
     return index;
   }, [selectableOrders]);
   const marketName = rawOrders[0]?.market?.name ?? t("marketName");
-  const isCancelledHandoverQrRequired =
-    rawOrders[0]?.market?.cancelled_handover_qr_required !== false;
   const isMarketRole = role === "market";
+  const isCancelledHandoverQrRequired = isMarketRole
+    ? user?.cancelled_handover_qr_required !== false
+    : rawOrders[0]?.market?.cancelled_handover_qr_required !== false;
   const canManualSelectDamagedQr =
     role === "superadmin" ||
     role === "admin" ||
@@ -287,11 +284,39 @@ const CancelledMarketDetail = () => {
     [t],
   );
   const handoverQrValue = handoverQr?.payload || handoverQr?.token || "";
-  const handoverQrImage = handoverQr?.image || createQrImageUrl(handoverQrValue);
+  const handoverQrImage = handoverQr?.image || generatedHandoverQrImage;
   const { canAcceptScan } = useScannerGate({
     cooldownMs: 200,
     duplicateCooldownMs: 1800,
   });
+
+  useEffect(() => {
+    let isMounted = true;
+    setGeneratedHandoverQrImage("");
+
+    if (handoverQr?.image || !handoverQrValue.trim()) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    QRCode.toDataURL(handoverQrValue, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      scale: 8,
+      width: 320,
+    })
+      .then((image) => {
+        if (isMounted) setGeneratedHandoverQrImage(image);
+      })
+      .catch(() => {
+        if (isMounted) setGeneratedHandoverQrImage("");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [handoverQr?.image, handoverQrValue]);
 
   useEffect(() => {
     if (!authorizationToken || !authorizationExpiresAt) {
@@ -603,7 +628,7 @@ const CancelledMarketDetail = () => {
               icon={<XCircle />}
             />
           </div>
-          {isMarketRole ? (
+          {isMarketRole && isCancelledHandoverQrRequired ? (
             <button
               type="button"
               onClick={handleGenerateQr}
@@ -617,7 +642,7 @@ const CancelledMarketDetail = () => {
               )}
               {t("cancelledReceiveQrButton")}
             </button>
-          ) : (
+          ) : !isMarketRole ? (
             <ScannerActionButton
               onClick={() => {
                 setScanError("");
@@ -627,7 +652,7 @@ const CancelledMarketDetail = () => {
               showLabel
               className="w-full border-red-300/25! bg-red-500! text-white! shadow-lg! shadow-red-500/20! hover:bg-red-600! dark:text-white! lg:w-auto"
             />
-          )}
+          ) : null}
         </div>
       </section>
 
@@ -695,10 +720,18 @@ const CancelledMarketDetail = () => {
                 </span>
                 <div className="min-w-0">
                   <h3 className="m-0 text-base font-black text-maindark dark:text-white sm:text-lg">
-                    {isMarketRole ? t("cancelledMarketQrTitle") : t("cancelledWorkflowTitle")}
+                    {isMarketRole
+                      ? isCancelledHandoverQrRequired
+                        ? t("cancelledMarketQrTitle")
+                        : t("cancelledQrNotRequired")
+                      : t("cancelledWorkflowTitle")}
                   </h3>
                   <p className="m-0 mt-1 text-xs font-semibold leading-5 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] sm:text-sm">
-                    {isMarketRole ? t("cancelledMarketQrHint") : t("cancelledScanHint")}
+                    {isMarketRole
+                      ? isCancelledHandoverQrRequired
+                        ? t("cancelledMarketQrHint")
+                        : t("cancelledQrNotRequiredHint")
+                      : t("cancelledScanHint")}
                   </p>
                 </div>
               </div>
@@ -708,7 +741,7 @@ const CancelledMarketDetail = () => {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
                   </span>
-                  {isMarketRole
+                  {isMarketRole && isCancelledHandoverQrRequired
                     ? t("cancelledQrReady")
                     : !isCancelledHandoverQrRequired
                       ? t("cancelledQrNotRequired")

@@ -126,14 +126,14 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("button", { name: "Bugun" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bu hafta" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bu oy" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Barchasi" })).toBeInTheDocument();
   });
 
   it("loads all-time totals when All is selected", async () => {
     const user = userEvent.setup();
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
-    await user.click(screen.getByRole("button", { name: "All" }));
+    await user.click(screen.getByRole("button", { name: "Barchasi" }));
 
     expect(screen.getByText("Umumiy statistika")).toBeInTheDocument();
     expect(getDashboardMock).toHaveBeenLastCalledWith(

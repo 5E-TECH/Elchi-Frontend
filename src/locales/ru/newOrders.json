@@ -50,6 +50,7 @@
   "cancelledQrAcceptedDescription": "Отмененных заказов готово к отправке: {{count}}.",
   "cancelledQrRequired": "Нужен QR маркета",
   "cancelledQrNotRequired": "QR маркета не требуется",
+  "cancelledQrNotRequiredHint": "Сотрудники HQ могут передать отмененные заказы без сканирования QR маркета.",
   "cancelledQrScanned": "QR маркета отсканирован",
   "cancelledQrReady": "QR готов к созданию",
   "cancelledMarketQrTitle": "Передача отмененных заказов на почту",
