@@ -9,6 +9,7 @@ export interface User {
     createdAt: string;
     updatedAt: string;
     add_order?: boolean;
+    cancelled_handover_qr_required?: boolean;
 }
 
 export interface UserState {

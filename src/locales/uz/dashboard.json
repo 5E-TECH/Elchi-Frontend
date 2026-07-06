@@ -31,7 +31,8 @@
     "today": "Bugun",
     "week": "Bu hafta",
     "month": "Bu oy",
-    "all": "All",
+    "year": "Yil",
+    "all": "Barchasi",
     "clear": "Tozalash"
   },
   "datePicker": {

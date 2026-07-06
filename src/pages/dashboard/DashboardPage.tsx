@@ -120,6 +120,7 @@ const DashboardPage = () => {
               today: t("quickRanges.today"),
               week: t("quickRanges.week"),
               month: t("quickRanges.month"),
+              year: t("quickRanges.year"),
               all: t("quickRanges.all"),
             }}
             placeholder={`${t("datePicker.from")} → ${t("datePicker.to")}`}

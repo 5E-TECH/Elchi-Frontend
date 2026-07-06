@@ -50,6 +50,7 @@
   "cancelledQrAcceptedDescription": "{{count}} cancelled orders are ready to send.",
   "cancelledQrRequired": "Market QR required",
   "cancelledQrNotRequired": "Market QR not required",
+  "cancelledQrNotRequiredHint": "HQ staff can hand over cancelled orders without scanning the market QR.",
   "cancelledQrScanned": "Market QR scanned",
   "cancelledQrReady": "QR ready to generate",
   "cancelledMarketQrTitle": "Hand over cancelled orders to post",

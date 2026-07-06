@@ -40,25 +40,14 @@ const formatPrice = (price: number, currencyLabel: string): string =>
 const RefusedMailCard = memo(({ item, currencyLabel }: { item: MailItem; currencyLabel: string }) => {
   const { t } = useTranslation("mails");
   const navigate = useNavigate();
-  const { role } = useSelector((state: RootState) => state.role);
-  const isCourierLike = role === "courier";
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const courierName = item.courier?.name;
   const openDetail = () =>
     navigate(`/mails/${item.id}`, { state: { fromTab: "refused", type: "refused" } });
-  const title = isCourierLike
-    ? new Date(item.createdAt).toLocaleString("uz-UZ", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : regionName;
 
   return (
     <MailGridCard
-      title={title}
+      title={regionName}
       subtitle={courierName ? (
         <span className="inline-flex items-center gap-1.5">
           <User size={13} />
