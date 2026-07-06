@@ -101,7 +101,15 @@ const MailCard = memo(({ item, currencyLabel }: { item: MailItem; currencyLabel:
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const { role } = useSelector((state: RootState) => state.role);
   const isCourierLike = role === "courier";
-  const openDetail = () => navigate(`/mails/${item.id}`, { state: { fromTab: "today" } });
+  const openDetail = () =>
+    navigate(`/mails/${item.id}`, {
+      state: {
+        fromTab: "today",
+        fallbackRegionId: item.region?.id ?? item.region_id,
+        fallbackRegionName: regionName,
+        expectedOrderCount: item.order_quantity,
+      },
+    });
   const title = isCourierLike
     ? new Date(item?.createdAt).toLocaleString("uz-UZ", {
         year: "numeric",

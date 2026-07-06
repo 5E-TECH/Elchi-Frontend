@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Ban, FileText, Globe, MapPin, ScanLine } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -40,6 +41,8 @@ import { fetchScanDetail, getBackendErrorMessage } from "../../scan/lib/scanReso
 import { getMailTabPath, normalizeMailTab } from "../lib/navigation";
 import BackButton from "../../../shared/ui/BackButton";
 import PageContainer from "../../../shared/ui/PageContainer";
+import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const MailDetailSkeleton = memo(() => (
@@ -181,6 +184,25 @@ const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
   return sameCustomer && sameMarket && sameDistrict;
 };
 
+const extractOrderItems = (payload: unknown): PostOrder[] => {
+  const response = payload as
+    | PostOrder[]
+    | {
+      data?: PostOrder[] | { items?: PostOrder[]; data?: PostOrder[] };
+      items?: PostOrder[];
+    };
+
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (!Array.isArray(response?.data) && Array.isArray(response?.data?.items)) return response.data.items;
+  if (!Array.isArray(response?.data) && Array.isArray(response?.data?.data)) return response.data.data;
+  if (Array.isArray(response?.items)) return response.items;
+
+  return [];
+};
+
+const TODAY_MAIL_ORDER_STATUSES = new Set(["on the road", "new", "received", "waiting"]);
+
 // ─── Xatolik holati ───────────────────────────────────────────────────────────
 const ErrorState = memo(() => {
   const { t } = useTranslation("mails");
@@ -232,6 +254,9 @@ const MailDetailPage = () => {
     type?: string;
     view?: string;
     fromSearch?: string;
+    fallbackRegionId?: string;
+    fallbackRegionName?: string;
+    expectedOrderCount?: number;
   } | null;
 
   const search = location.search ? new URLSearchParams(location.search) : null;
@@ -286,6 +311,39 @@ const MailDetailPage = () => {
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
   const isEffectiveRefusedDetail = isRefusedDetail;
   const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
+  const regularOrdersFromPost = regularResponse?.data?.allOrdersByPostId ?? [];
+  const fallbackRegionId = toText(navState?.fallbackRegionId);
+  const fallbackRegionName = toText(navState?.fallbackRegionName);
+  const shouldLoadRegionFallback =
+    !isAllBatchesDetail &&
+    !isBranchTransferRole &&
+    !isEffectiveRefusedDetail &&
+    !isOldDetail &&
+    !regularLoading &&
+    regularOrdersFromPost.length === 0 &&
+    Boolean(fallbackRegionId);
+  const { data: regionFallbackResponse, isLoading: regionFallbackLoading } = useQuery({
+    queryKey: ["mails", "detail-region-fallback", fallbackRegionId, postId],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.ORDERS.BASE, {
+          params: {
+            page: 1,
+            limit: Math.max(100, Number(navState?.expectedOrderCount ?? 0) || 0),
+            region_id: fallbackRegionId,
+          },
+        })
+        .then((res) => res.data),
+    enabled: shouldLoadRegionFallback,
+    staleTime: 10_000,
+  });
+  const regionFallbackOrders = useMemo(
+    () =>
+      extractOrderItems(regionFallbackResponse).filter((order) =>
+        TODAY_MAIL_ORDER_STATUSES.has(order.status),
+      ),
+    [regionFallbackResponse],
+  );
   const rawOrders = useMemo<PostOrder[]>(() => {
     if (isAllBatchesDetail) {
       return [];
@@ -297,14 +355,17 @@ const MailDetailPage = () => {
 
     return isEffectiveRefusedDetail
       ? refusedResponse?.data ?? []
-      : regularResponse?.data?.allOrdersByPostId ?? [];
+      : regularOrdersFromPost.length > 0
+        ? regularOrdersFromPost
+        : regionFallbackOrders;
   }, [
     isAllBatchesDetail,
     isBranchTransferRole,
     transferBatchResponse,
     isEffectiveRefusedDetail,
     refusedResponse,
-    regularResponse,
+    regularOrdersFromPost,
+    regionFallbackOrders,
   ]);
   const orders = useMemo(
     () =>
@@ -312,6 +373,7 @@ const MailDetailPage = () => {
         if (sentOrderIds.has(order.id)) return false;
 
         if (
+          shouldReceiveCurrentPost &&
           !isEffectiveRefusedDetail &&
           !isOldDetail &&
           !isBranchTransferRole &&
@@ -322,7 +384,14 @@ const MailDetailPage = () => {
 
         return true;
       }),
-    [rawOrders, sentOrderIds, isEffectiveRefusedDetail, isOldDetail, isBranchTransferRole],
+    [
+      rawOrders,
+      sentOrderIds,
+      shouldReceiveCurrentPost,
+      isEffectiveRefusedDetail,
+      isOldDetail,
+      isBranchTransferRole,
+    ],
   );
   const homeStats = useMemo(() => {
     const homeOrders = orders.filter(
@@ -376,13 +445,15 @@ const MailDetailPage = () => {
         : null) ??
       orders[0]?.district?.region?.name ??
       orders[0]?.region?.name ??
+      (fallbackRegionName ||
       (isEffectiveRefusedDetail
         ? t("refusedMailNumber", { id: postId })
-        : t("mailNumberWithId", { id: postId })),
+        : t("mailNumberWithId", { id: postId }))),
     [
       isBranchTransferRole,
       transferBatchResponse,
       orders,
+      fallbackRegionName,
       postId,
       isEffectiveRefusedDetail,
       t,
@@ -674,7 +745,7 @@ const MailDetailPage = () => {
   // ─── Loading ──────────────────────────────────────────────────────────────
   const isRefusedFallbackPending = false;
 
-  if (regularLoading || refusedLoading || transferBatchLoading || isRefusedFallbackPending)
+  if (regularLoading || refusedLoading || transferBatchLoading || regionFallbackLoading || isRefusedFallbackPending)
     return (
       <PageContainer>
         <MailDetailSkeleton />
