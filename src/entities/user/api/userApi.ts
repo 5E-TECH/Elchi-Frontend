@@ -402,10 +402,27 @@ export const useUser = () => {
           cancelled_handover_qr_required,
         })
         .then((res: any) => res.data),
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
       client.invalidateQueries({ queryKey: ["orders", "markets", "cancelled"], refetchType: "active" });
+
+      const currentProfile = store.getState().user.user;
+      if (!currentProfile || currentProfile.id !== variables.id) {
+        return;
+      }
+
+      const responseProfile = unwrapUserResponse(response);
+      const updatedProfile = {
+        ...currentProfile,
+        ...(responseProfile ?? {}),
+        id: currentProfile.id,
+        role: currentProfile.role,
+        name: responseProfile?.name ?? currentProfile.name,
+        cancelled_handover_qr_required: variables.cancelled_handover_qr_required,
+      };
+
+      store.dispatch(setProfile(updatedProfile as any));
     },
   });
 

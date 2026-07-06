@@ -57,7 +57,7 @@ describe("MarketDashboardPage", () => {
       },
     });
 
-    await user.click(screen.getByRole("button", { name: "All" }));
+    await user.click(screen.getByRole("button", { name: "Barchasi" }));
 
     expect(getDashboardMock).toHaveBeenLastCalledWith(
       { all: true },

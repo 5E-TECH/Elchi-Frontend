@@ -4,6 +4,7 @@ import DateRangePicker from "./DateRangePicker";
 import FilterClearButton from "./FilterClearButton";
 import {
   getPresetDateRange,
+  getYearRange,
   parseISODate,
   toISODate,
   type DateRangePreset,
@@ -45,6 +46,7 @@ const QuickDateRangeFilter = ({
       today: getPresetDateRange("today"),
       week: getPresetDateRange("week"),
       month: getPresetDateRange("month"),
+      year: getPresetDateRange("year"),
       all: getPresetDateRange("all"),
     }),
     [],
@@ -58,12 +60,26 @@ const QuickDateRangeFilter = ({
     return null;
   }, [fromDate, ranges, toDate]);
 
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 12 }, (_, index) => currentYear - index);
+  }, []);
+
+  const selectedYear = useMemo(() => {
+    const match = /^(\d{4})-01-01$/.exec(fromDate);
+    if (!match) return "";
+
+    const year = Number(match[1]);
+    return toDate === `${year}-12-31` ? String(year) : "";
+  }, [fromDate, toDate]);
+
   const hasDateFilter = Boolean(fromDate || toDate);
   const defaultLabels = useMemo<Record<DateRangePreset, string>>(
     () => ({
       today: t("today"),
       week: t("thisWeek"),
       month: t("thisMonth"),
+      year: t("thisYear"),
       all: t("all"),
     }),
     [t],
@@ -96,6 +112,25 @@ const QuickDateRangeFilter = ({
             </button>
           );
         })}
+        <select
+          value={selectedYear}
+          onChange={(event) => {
+            const year = Number(event.target.value);
+            if (year) onChange(getYearRange(year));
+          }}
+          className={`rounded-lg border px-3 py-1.5 text-xs font-semibold outline-none transition-all ${
+            selectedYear
+              ? "border-main bg-main text-white shadow-[0_8px_18px_rgba(87,106,219,0.24)]"
+              : "el-glass-control border-transparent text-maindark/70 hover:text-main dark:text-primary/70 dark:hover:text-primary"
+          }`}
+        >
+          <option value="">{labels?.year ?? defaultLabels.year}</option>
+          {yearOptions.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
       </div>
 
       {showPicker ? (
