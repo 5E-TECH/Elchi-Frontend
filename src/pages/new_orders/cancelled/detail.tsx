@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import QRCode from "qrcode";
+import { QRCode } from "antd";
 import { useOrders } from "../../../entities/orders";
 import BackButton from "../../../shared/ui/BackButton";
 import HeaderName from "../../../shared/components/headerName";
@@ -235,7 +235,6 @@ const CancelledMarketDetail = () => {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [scanError, setScanError] = useState("");
   const [handoverQr, setHandoverQr] = useState<CancelledMarketQr | null>(null);
-  const [generatedHandoverQrImage, setGeneratedHandoverQrImage] = useState("");
   const [isHandoverQrScanned, setIsHandoverQrScanned] = useState(false);
   const [authorizationToken, setAuthorizationToken] = useState("");
   const [authorizationExpiresAt, setAuthorizationExpiresAt] = useState<number | null>(null);
@@ -284,39 +283,11 @@ const CancelledMarketDetail = () => {
     [t],
   );
   const handoverQrValue = handoverQr?.payload || handoverQr?.token || "";
-  const handoverQrImage = handoverQr?.image || generatedHandoverQrImage;
+  const handoverQrImage = handoverQr?.image || "";
   const { canAcceptScan } = useScannerGate({
     cooldownMs: 200,
     duplicateCooldownMs: 1800,
   });
-
-  useEffect(() => {
-    let isMounted = true;
-    setGeneratedHandoverQrImage("");
-
-    if (handoverQr?.image || !handoverQrValue.trim()) {
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    QRCode.toDataURL(handoverQrValue, {
-      errorCorrectionLevel: "M",
-      margin: 2,
-      scale: 8,
-      width: 320,
-    })
-      .then((image) => {
-        if (isMounted) setGeneratedHandoverQrImage(image);
-      })
-      .catch(() => {
-        if (isMounted) setGeneratedHandoverQrImage("");
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [handoverQr?.image, handoverQrValue]);
 
   useEffect(() => {
     if (!authorizationToken || !authorizationExpiresAt) {
@@ -947,6 +918,15 @@ const CancelledMarketDetail = () => {
                     src={handoverQrImage}
                     alt={t("cancelledReceiveQrTitle")}
                     className="h-64 w-64 max-w-full rounded-2xl bg-white object-contain p-3"
+                  />
+                ) : handoverQrValue.trim() ? (
+                  <QRCode
+                    value={handoverQrValue}
+                    size={256}
+                    errorLevel="M"
+                    bgColor="#ffffff"
+                    color="#111827"
+                    className="rounded-2xl bg-white p-3"
                   />
                 ) : (
                   <div className="text-center">

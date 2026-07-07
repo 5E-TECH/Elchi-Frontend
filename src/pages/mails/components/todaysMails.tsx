@@ -119,11 +119,10 @@ const MailCard = memo(({ item, currencyLabel }: { item: MailItem; currencyLabel:
         minute: "2-digit",
       })
     : regionName;
-  const openDetail = () => navigate(`/mails/${item.id}`, { state: { fromTab: "today" } });
 
   return (
     <MailGridCard
-      title={regionName}
+      title={title}
       statusLabel={t("statusNew")}
       statusIcon={<TrendingUp size={11} />}
       leadingIcon={<MapPin size={20} />}
