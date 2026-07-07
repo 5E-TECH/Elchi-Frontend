@@ -51,7 +51,11 @@ export default defineConfig({
             return "vendor-react";
           }
 
-          if (id.includes("antd") || id.includes("@ant-design")) {
+          if (
+            id.includes("antd") ||
+            id.includes("@ant-design") ||
+            id.includes("@rc-component/qrcode")
+          ) {
             return "vendor-antd";
           }
 
