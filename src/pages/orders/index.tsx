@@ -10,7 +10,7 @@ import { useOrders } from "../../entities/order/api/orderApi";
 import { useOrders as useOrderActions } from "../../entities/orders";
 import { useMarkets } from "../../entities/markets";
 import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
-import OrderFilters, { ORDER_FILTER_KEYS } from "./list/OrderFilters";
+import OrderFilters, { ORDER_FILTER_KEYS, ORDER_STATUS_URL_KEY } from "./list/OrderFilters";
 import OrdersTable from "./list/OrdersTable";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
@@ -36,6 +36,7 @@ import { playScanFeedback } from "../scan/lib/scanShared";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
+const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
 const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
@@ -308,11 +309,21 @@ const Orders = () => {
   const urlRegionId = urlParams[ORDER_FILTER_KEYS.regionId] ?? "";
   const urlDistrictId = urlParams[ORDER_FILTER_KEYS.districtId] ?? "";
   const urlCourierId = urlParams[ORDER_FILTER_KEYS.courierId] ?? "";
-  const urlStatusRaw = urlParams[ORDER_FILTER_KEYS.status] ?? "";
+  const urlStatusRaw = urlParams[ORDER_STATUS_URL_KEY] ?? urlParams[LEGACY_ORDER_STATUS_URL_KEY] ?? "";
+  const urlDeliveryType = urlParams[ORDER_FILTER_KEYS.deliveryType] ?? "";
   const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams.orderDateFrom ?? "";
   const urlDateTo = urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams.orderDateTo ?? "";
   const urlSearch = urlParams[ORDER_FILTER_KEYS.search] ?? "";
   const activeManagerTab = getManagerOrdersTab(parseStatusFilterValue(urlStatusRaw));
+
+  useEffect(() => {
+    if (!urlParams[ORDER_STATUS_URL_KEY] && urlParams[LEGACY_ORDER_STATUS_URL_KEY]) {
+      setMultipleParams({
+        [ORDER_STATUS_URL_KEY]: urlParams[LEGACY_ORDER_STATUS_URL_KEY],
+        [LEGACY_ORDER_STATUS_URL_KEY]: "",
+      });
+    }
+  }, [setMultipleParams, urlParams]);
 
   const handleManagerTabChange = useCallback(
     (tabId: string) => {
@@ -322,12 +333,13 @@ const Orders = () => {
         value: tabId === "pending" ? ["waiting"] : tabId === "cancelled" ? ["cancelled"] : [],
       }));
       setMultipleParams({
-        [ORDER_FILTER_KEYS.status]:
+        [ORDER_STATUS_URL_KEY]:
           tabId === "pending"
             ? "waiting"
             : tabId === "cancelled"
               ? "cancelled,cancelled (sent)"
               : "",
+        [LEGACY_ORDER_STATUS_URL_KEY]: "",
         page: "1",
       });
     },
@@ -373,6 +385,10 @@ const Orders = () => {
       params.status = status;
     }
 
+    if (urlDeliveryType === "center" || urlDeliveryType === "address") {
+      params.where_deliver = urlDeliveryType;
+    }
+
     // Sana oralig'i
     const dateFrom = urlDateFrom;
     if (dateFrom) params.start_day = String(dateFrom);
@@ -396,6 +412,7 @@ const Orders = () => {
     urlBranchId,
     urlCourierId,
     urlStatusRaw,
+    urlDeliveryType,
     urlDateFrom,
     urlDateTo,
     urlSearch,
@@ -413,6 +430,7 @@ const Orders = () => {
         districtId: role === "manager" ? urlDistrictId : "",
         courierId: role !== "market" ? urlCourierId : "",
         status: Array.isArray(status) ? status.join(",") : status,
+        deliveryType: urlDeliveryType,
         dateFrom: urlDateFrom,
         dateTo: urlDateTo,
         search: urlSearch,
@@ -427,6 +445,7 @@ const Orders = () => {
       urlBranchId,
       urlCourierId,
       urlStatusRaw,
+      urlDeliveryType,
       urlDateFrom,
       urlDateTo,
       urlSearch,

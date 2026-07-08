@@ -4,6 +4,7 @@ import {
   MailOpen,
   Apple,
   UserRound,
+  UsersRound,
   MapPinned,
   Calendar1,
   PackageCheck,
@@ -89,6 +90,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
+    { to: "/market-operators", icon: UsersRound, label: "operators" },
   ],
   registrator: [
     { to: "/", icon: House, label: "dashboard", end: true },

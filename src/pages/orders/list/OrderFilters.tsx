@@ -16,7 +16,7 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useMarkets } from "../../../entities/markets";
 import { useBranches } from "../../../entities/branch";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
-import type { OrderStatus } from "../../../entities/order/types/order";
+import type { DeliveryType, OrderStatus } from "../../../entities/order/types/order";
 import { resetFilters, setFilterValue } from "../../../features/Select/model/FilterSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import FilterSearch from "../../../shared/ui/FilterSearch";
@@ -49,10 +49,14 @@ export const ORDER_FILTER_KEYS = {
     districtId: "orderDistrictId",
     courierId: "orderCourierId",
     status: "orderStatus",
+    deliveryType: "where_deliver",
     dateFrom: "startDay",
     dateTo: "endDay",
     search: "orderSearch",
 } as const;
+
+export const ORDER_STATUS_URL_KEY = "status";
+const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
 
 // ── Props ─────────────────────────────────────────────────────────────────
 interface Props {
@@ -75,6 +79,9 @@ const parseStatusValues = (value: unknown): OrderStatus[] => {
         .filter((item): item is OrderStatus => item.length > 0);
 };
 
+const isDeliveryType = (value: string): value is DeliveryType =>
+    value === "center" || value === "address";
+
 const getStringFilterValue = (value: unknown, fallback = "") =>
     typeof value === "string" ? value : fallback;
 
@@ -92,9 +99,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const shouldShowBranchFilter = !isMarketRole && !isManagerRole;
     const canUseBranchFilter = role === "admin" || role === "superadmin";
     const canLoadRoleDependentOptions = role !== null && !isMarketRole;
-    const selectGridClassName = canUseBranchFilter
-        ? "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
-        : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4";
+    const selectGridClassName = "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3";
     const [isMobile, setIsMobile] = useState(
         typeof window !== "undefined" ? window.innerWidth < 640 : false,
     );
@@ -108,7 +113,8 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const urlRegionId = getParam(ORDER_FILTER_KEYS.regionId) ?? "";
     const urlDistrictId = getParam(ORDER_FILTER_KEYS.districtId) ?? "";
     const urlCourierId = getParam(ORDER_FILTER_KEYS.courierId) ?? "";
-    const urlStatus = getParam(ORDER_FILTER_KEYS.status) ?? "";
+    const urlStatus = getParam(ORDER_STATUS_URL_KEY) ?? getParam(LEGACY_ORDER_STATUS_URL_KEY) ?? "";
+    const urlDeliveryType = getParam(ORDER_FILTER_KEYS.deliveryType) ?? "";
     const urlDateFrom = getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam("orderDateFrom") ?? "";
     const urlDateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? getParam("orderDateTo") ?? "";
     const urlSearch = getParam(ORDER_FILTER_KEYS.search) ?? "";
@@ -118,6 +124,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const regionId = getStringFilterValue(filters[ORDER_FILTER_KEYS.regionId], urlRegionId);
     const districtId = getStringFilterValue(filters[ORDER_FILTER_KEYS.districtId], urlDistrictId);
     const courierId = getStringFilterValue(filters[ORDER_FILTER_KEYS.courierId], urlCourierId);
+    const deliveryType = getStringFilterValue(filters[ORDER_FILTER_KEYS.deliveryType], urlDeliveryType);
     const dateFrom = getStringFilterValue(filters[ORDER_FILTER_KEYS.dateFrom], urlDateFrom);
     const dateTo = getStringFilterValue(filters[ORDER_FILTER_KEYS.dateTo], urlDateTo);
     const search = getStringFilterValue(searchFilters[ORDER_FILTER_KEYS.search], urlSearch);
@@ -128,11 +135,10 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
 
     const hasFilter = !!(
         (!isMarketRole && marketId) ||
-        (shouldShowBranchFilter && branchId) ||
+        branchId ||
         (isManagerRole ? districtId : regionId) ||
-        (canUseBranchFilter && branchId) ||
-        regionId ||
         (!isMarketRole && courierId) ||
+        deliveryType ||
         statusValues.length > 0 ||
         dateFrom ||
         dateTo ||
@@ -140,11 +146,10 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     );
     const activeFilterCount =
         Number(Boolean(!isMarketRole && marketId))
-        + Number(Boolean(shouldShowBranchFilter && branchId))
+        + Number(Boolean(branchId))
         + Number(Boolean(isManagerRole ? districtId : regionId))
-        + Number(Boolean(canUseBranchFilter && branchId))
-        + Number(Boolean(regionId))
         + Number(Boolean(!isMarketRole && courierId))
+        + Number(Boolean(deliveryType))
         + Number(statusValues.length > 0)
         + Number(Boolean(dateFrom || dateTo))
         + Number(Boolean(search));
@@ -283,6 +288,10 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         ...statusOption,
         label: t(statusOption.label, { ns: "orders" }),
     }));
+    const deliveryTypes = [
+        { value: "center", label: t("deliveryCenter") },
+        { value: "address", label: t("deliveryHome") },
+    ];
 
     // ─── Update: Redux + URL ───────────────────────────────────────────────
     const update = (reduxKey: string, urlKey: string, value: string) => {
@@ -335,9 +344,11 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: normalizedValue }));
 
         if (normalizedValue.length > 0) {
-            setParam(ORDER_FILTER_KEYS.status, normalizedValue.join(","));
+            setParam(ORDER_STATUS_URL_KEY, normalizedValue.join(","));
+            removeParam(LEGACY_ORDER_STATUS_URL_KEY);
         } else {
-            removeParam(ORDER_FILTER_KEYS.status);
+            removeParam(ORDER_STATUS_URL_KEY);
+            removeParam(LEGACY_ORDER_STATUS_URL_KEY);
         }
 
         if (isMobile) {
@@ -365,7 +376,9 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
             [ORDER_FILTER_KEYS.regionId]: "",
             [ORDER_FILTER_KEYS.districtId]: "",
             [ORDER_FILTER_KEYS.courierId]: "",
-            [ORDER_FILTER_KEYS.status]: "",
+            [ORDER_FILTER_KEYS.deliveryType]: "",
+            [ORDER_STATUS_URL_KEY]: "",
+            [LEGACY_ORDER_STATUS_URL_KEY]: "",
             [ORDER_FILTER_KEYS.dateFrom]: "",
             [ORDER_FILTER_KEYS.dateTo]: "",
             [ORDER_FILTER_KEYS.search]: "",
@@ -415,17 +428,16 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                         <div className="overflow-hidden">
                             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-primarydark/70 dark:bg-primarydark/60">
                                 <div className="flex flex-col gap-4">
-                                    {/* ── 1-qator: sarlavha | date range | search ── */}
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        {/* Sarlavha */}
-                                        <div className="flex shrink-0 items-center gap-2 text-xs font-bold uppercase tracking-wider text-maindark/60 dark:text-primary/60">
-                                            <Filter size={13} className="text-main" />
-                                            {t("filters", { ns: "common" })}
-                                        </div>
+                                    {/* ── 1-qator: search | date range ── */}
+                                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
+                                        <FilterSearch
+                                            key={`mobile-search-${searchResetKey}`}
+                                            value={search}
+                                            onChange={updateSearch}
+                                            placeholder={t("filterSearchPlaceholder")}
+                                            className="w-full"
+                                        />
 
-                                        <div className="flex-1" />
-
-                                        {/* Date range picker */}
                                         <FilterDateRange
                                             dateFrom={dateFrom}
                                             dateTo={dateTo}
@@ -435,15 +447,6 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                             onChangeDateTo={(v) =>
                                                 update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, v)
                                             }
-                                        />
-
-                                        {/* Search */}
-                                        <FilterSearch
-                                            key={`mobile-search-${searchResetKey}`}
-                                            value={search}
-                                            onChange={updateSearch}
-                                            placeholder={t("filterSearchPlaceholder")}
-                                            className="w-full sm:w-56"
                                         />
                                     </div>
 
@@ -522,6 +525,22 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         )}
 
                                         {/* HOLAT */}
+                                        <SearchableSelect
+                                            label={t("deliveryType")}
+                                            name={ORDER_FILTER_KEYS.deliveryType}
+                                            value={deliveryType}
+                                            onChange={(value) =>
+                                                update(
+                                                    ORDER_FILTER_KEYS.deliveryType,
+                                                    ORDER_FILTER_KEYS.deliveryType,
+                                                    isDeliveryType(value) ? value : "",
+                                                )
+                                            }
+                                            options={deliveryTypes}
+                                            placeholder={t("deliveryType")}
+                                            icon={Truck}
+                                        />
+
                                         <FilterMultiSelect
                                             label={t("filterStatus")}
                                             name={ORDER_FILTER_KEYS.status}
@@ -586,6 +605,14 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                                         label={`${t("chipCourier")}: ${couriers.find((c) => c.value === courierId)?.label ?? `#${courierId}`}`}
                                                         onRemove={() =>
                                                             update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "")
+                                                        }
+                                                    />
+                                                )}
+                                                {deliveryType && (
+                                                    <FilterChip
+                                                        label={`${t("deliveryType")}: ${deliveryTypes.find((item) => item.value === deliveryType)?.label ?? deliveryType}`}
+                                                        onRemove={() =>
+                                                            update(ORDER_FILTER_KEYS.deliveryType, ORDER_FILTER_KEYS.deliveryType, "")
                                                         }
                                                     />
                                                 )}
@@ -657,17 +684,16 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
 
             <div className={`${isMobile ? "hidden sm:flex sm:flex-col sm:gap-4" : "flex flex-col gap-4"}`}>
 
-            {/* ── 1-qator: sarlavha | date range | search ── */}
-            <div className="flex flex-wrap items-center gap-3">
-                {/* Sarlavha */}
-                <div className="flex shrink-0 items-center gap-2 text-xs font-bold uppercase tracking-wider text-maindark/60 dark:text-primary/60">
-                    <Filter size={13} className="text-main" />
-                    {t("filters", { ns: "common" })}
-                </div>
+            {/* ── 1-qator: search | date range ── */}
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
+                <FilterSearch
+                    key={`desktop-search-${searchResetKey}`}
+                    value={search}
+                    onChange={updateSearch}
+                    placeholder={t("filterSearchPlaceholder")}
+                    className="w-full"
+                />
 
-                <div className="flex-1" />
-
-                {/* Date range picker */}
                 <FilterDateRange
                     dateFrom={dateFrom}
                     dateTo={dateTo}
@@ -677,15 +703,6 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                     onChangeDateTo={(v) =>
                         update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, v)
                     }
-                />
-
-                {/* Search */}
-                <FilterSearch
-                    key={`desktop-search-${searchResetKey}`}
-                    value={search}
-                    onChange={updateSearch}
-                    placeholder={t("filterSearchPlaceholder")}
-                    className="w-full sm:w-56"
                 />
             </div>
 
@@ -764,6 +781,22 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 )}
 
                 {/* HOLAT */}
+                <SearchableSelect
+                    label={t("deliveryType")}
+                    name={ORDER_FILTER_KEYS.deliveryType}
+                    value={deliveryType}
+                    onChange={(value) =>
+                        update(
+                            ORDER_FILTER_KEYS.deliveryType,
+                            ORDER_FILTER_KEYS.deliveryType,
+                            isDeliveryType(value) ? value : "",
+                        )
+                    }
+                    options={deliveryTypes}
+                    placeholder={t("deliveryType")}
+                    icon={Truck}
+                />
+
                 <FilterMultiSelect
                     label={t("filterStatus")}
                     name={ORDER_FILTER_KEYS.status}
@@ -828,6 +861,14 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                 label={`${t("chipCourier")}: ${couriers.find((c) => c.value === courierId)?.label ?? `#${courierId}`}`}
                                 onRemove={() =>
                                     update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "")
+                                }
+                            />
+                        )}
+                        {deliveryType && (
+                            <FilterChip
+                                label={`${t("deliveryType")}: ${deliveryTypes.find((item) => item.value === deliveryType)?.label ?? deliveryType}`}
+                                onRemove={() =>
+                                    update(ORDER_FILTER_KEYS.deliveryType, ORDER_FILTER_KEYS.deliveryType, "")
                                 }
                             />
                         )}
