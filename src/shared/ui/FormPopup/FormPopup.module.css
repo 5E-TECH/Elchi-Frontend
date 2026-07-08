@@ -35,12 +35,29 @@
     linear-gradient(180deg, var(--color-surface-elevated-dark) 0%, var(--color-surface-dark) 100%);
 }
 
+.panel[data-theme="market"] {
+  background: linear-gradient(180deg, #31284a 0%, #2b2442 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 28px 64px rgba(5, 7, 22, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+:global(.dark) .panel[data-theme="market"] {
+  background: linear-gradient(180deg, #31284a 0%, #2b2442 100%);
+}
+
 .header {
   background: linear-gradient(180deg, rgba(124, 92, 255, 0.12) 0%, rgba(124, 92, 255, 0.03) 100%);
 }
 
 :global(.dark) .header {
   background: linear-gradient(180deg, rgba(124, 92, 255, 0.18) 0%, rgba(124, 92, 255, 0.05) 100%);
+}
+
+.panel[data-theme="market"] .header {
+  background: #3a2c63;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .body {
@@ -53,6 +70,10 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.008) 100%);
 }
 
+.panel[data-theme="market"] .body {
+  background: #2f2848;
+}
+
 .footer {
   background:
     linear-gradient(180deg, rgba(124, 92, 255, 0.06) 0%, rgba(255, 255, 255, 0.78) 100%);
@@ -61,6 +82,11 @@
 :global(.dark) .footer {
   background:
     linear-gradient(180deg, rgba(124, 92, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.panel[data-theme="market"] .footer {
+  background: #342a52;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .label {

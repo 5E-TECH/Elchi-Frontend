@@ -18,6 +18,7 @@ const Profile = lazy(() => import("../../pages/profile/ui/ProfilePage"));
 const SettingsPage = lazy(() => import("../../pages/settings/ui/SettingsPage"));
 const SettlementPage = lazy(() => import("../../pages/settlement"));
 const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
+const MarketOperatorsPage = lazy(() => import("../../pages/market-operators"));
 const IntegrationsOpsPage = lazy(() => import("../../pages/integrations-ops"));
 const InvestorsOpsPage = lazy(() => import("../../pages/investors-ops"));
 const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
@@ -220,6 +221,7 @@ const canViewRegionStats = (state: RootState) => {
 };
 
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
+const canViewMarketOperators = (state: RootState) => state.role.role === "market";
 
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
@@ -699,6 +701,14 @@ const AppRouter = () => {
                   redirectTo="/payments"
                 >
                   <MyCashboxPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "market-operators",
+              element: (
+                <ProtectedRoute canActivate={canViewMarketOperators}>
+                  <MarketOperatorsPage />
                 </ProtectedRoute>
               ),
             },

@@ -17,7 +17,7 @@ interface FormPopupProps {
   isLoading?: boolean;
   children: ReactNode;
   widthClassName?: string;
-  theme?: "default" | "branch";
+  theme?: "default" | "branch" | "market";
 }
 
 export const popupLabelClassName = styles.label;
