@@ -7,6 +7,7 @@ const dashboard = "dashboard";
 export interface AnalyticsDateParams {
   start_day?: string;
   end_day?: string;
+  branch_id?: string;
   all?: boolean;
 }
 

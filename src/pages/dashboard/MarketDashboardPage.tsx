@@ -52,13 +52,11 @@ const MarketDashboardPage = () => {
 
   const analyticsParams = useMemo(
     () =>
-      isAllTime
-        ? { all: true }
-        : {
-            start_day: hasDateFilter ? fromDate : "",
-            end_day: hasDateFilter ? toDate : "",
-          },
-    [fromDate, hasDateFilter, isAllTime, toDate],
+      ({
+        start_day: hasDateFilter ? fromDate : "",
+        end_day: hasDateFilter ? toDate : "",
+      }),
+    [fromDate, hasDateFilter, toDate],
   );
 
   // ─── API so'rovlari ───────────────────────────────────────────────────────────

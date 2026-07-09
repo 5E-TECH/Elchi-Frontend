@@ -30,10 +30,11 @@ export const useOrders = () => {
         },
     });
 
-    const useGetOrders = (params?: OrderListParams) =>
+    const useGetOrders = (params?: OrderListParams, enabled = true) =>
         useQuery<OrderListResponse>({
             queryKey: [ORDER_KEY, params],
             queryFn: () => api.get(API_ENDPOINTS.ORDERS.BASE, { params }).then((res) => res.data),
+            enabled,
             placeholderData: (prev) => prev,
         });
 

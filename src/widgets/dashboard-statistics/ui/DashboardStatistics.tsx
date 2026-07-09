@@ -5,10 +5,8 @@ import {
   Truck,
   Wallet,
   Receipt,
-  Timer,
   Send,
   ArrowUpRight,
-  Clock,
   TrendingDown,
 } from "lucide-react";
 import MetricCard, { MetricCardSkeleton } from "../../../shared/ui/MetricCard";
@@ -16,7 +14,6 @@ import OrderStatusDonut from "./OrderStatusDonut";
 import SuccessGauge from "./SuccessGauge";
 import {
   formatCompactMoney,
-  formatHours,
   formatPercent,
   formatNumber,
   ratio,
@@ -51,8 +48,6 @@ const DashboardStatistics = memo(
     profit,
     totalRevenue,
     avgOrderValue,
-    avgFulfillmentHours,
-    onTimeRate,
     showFinancialMetrics = true,
     loading = false,
   }: DashboardStatisticsProps) => {
@@ -77,144 +72,122 @@ const DashboardStatistics = memo(
     const profitTone: Tone = profit < 0 ? "danger" : "success";
     // Yo'qotilgan daromad: bekor qilingan buyurtmalarning taxminiy qiymati
     const lostRevenue = cancelled * avgOrderValue;
-    const slaTone: Tone =
-      onTimeRate >= 70 ? "success" : onTimeRate >= 40 ? "warning" : "danger";
 
     return (
       <div className="space-y-4">
-      <div className={gridClass}>
-        {/* ── Donut: buyurtma holati (katta, chap) ── */}
-        <div className="col-span-2 lg:col-span-4 lg:row-span-2">
-          <OrderStatusDonut
-            accepted={accepted}
-            sold={sold}
-            inProgress={inProgress}
-            cancelled={cancelled}
-            title={t("status.title")}
-            centerLabel={t("status.center")}
-            legend={{
-              sold: t("cards.sold"),
-              inProgress: t("cards.in_progress"),
-              cancelled: t("cards.cancelled"),
-            }}
-          />
-        </div>
-
-        {/* ── Gauge: muvaffaqiyat darajasi (katta, markaz) ── */}
-        <div className="col-span-2 lg:col-span-4 lg:row-span-2">
-          <SuccessGauge
-            successRate={successRate}
-            sold={sold}
-            cancelled={cancelled}
-            title={t("cards.success_rate")}
-            soldLabel={t("cards.sold")}
-            cancelledLabel={t("cards.cancelled")}
-          />
-        </div>
-
-        {/* ── Featured: yetkazib berilgan (ajralib turadi) ── */}
-        <div className="col-span-2 lg:col-span-4 lg:row-span-1">
-          <FeaturedDeliveredCard
-            sold={sold}
-            successRate={successRate}
-            title={t("featured.delivered")}
-            hint={t("featured.delivered_hint")}
-            unit={t("unit.orders")}
-            rateLabel={t("cards.success_rate")}
-          />
-        </div>
-
-        {/* ── Bekor qilingan ── */}
-        <div className="col-span-1 lg:col-span-2 lg:row-span-1">
-          <MetricCard
-            title={t("cards.cancelled")}
-            value={formatNumber(cancelled)}
-            suffix={t("unit.orders")}
-            icon={<XCircle size={20} />}
-            tone="danger"
-            badge={formatPercent(cancelRate)}
-            badgeUp={false}
-          />
-        </div>
-
-        {/* ── Jarayonda ── */}
-        <div className="col-span-1 lg:col-span-2 lg:row-span-1">
-          <MetricCard
-            title={t("cards.in_progress")}
-            value={formatNumber(inProgress)}
-            suffix={t("unit.orders")}
-            icon={<Truck size={20} />}
-            tone="warning"
-          />
-        </div>
-
-      </div>
-
-      {/* ── Ikkilamchi metrikalar qatori ── */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        {showFinancialMetrics ? (
-          <>
-            <MetricCard
-              title={t("cards.total_revenue")}
-              value={formatCompactMoney(totalRevenue)}
-              suffix={t("currency_sum")}
-              icon={<Receipt size={20} />}
-              tone="brand"
-              compact
-              hint={t("cards.total_revenue_hint")}
+        <div className={gridClass}>
+          {/* ── Donut: buyurtma holati (katta, chap) ── */}
+          <div className="col-span-2 lg:col-span-4 lg:row-span-2">
+            <OrderStatusDonut
+              accepted={accepted}
+              sold={sold}
+              inProgress={inProgress}
+              cancelled={cancelled}
+              title={t("status.title")}
+              centerLabel={t("status.center")}
+              legend={{
+                sold: t("cards.sold"),
+                inProgress: t("cards.in_progress"),
+                cancelled: t("cards.cancelled"),
+              }}
             />
-            <MetricCard
-              title={t("cards.profit")}
-              value={formatCompactMoney(profit)}
-              suffix={t("currency_sum")}
-              icon={<Wallet size={20} />}
-              tone={profitTone}
-              compact
-              hint={t("cards.profit_hint")}
+          </div>
+
+          {/* ── Gauge: muvaffaqiyat darajasi (katta, markaz) ── */}
+          <div className="col-span-2 lg:col-span-4 lg:row-span-2">
+            <SuccessGauge
+              successRate={successRate}
+              sold={sold}
+              cancelled={cancelled}
+              title={t("cards.success_rate")}
+              soldLabel={t("cards.sold")}
+              cancelledLabel={t("cards.cancelled")}
             />
-            <MetricCard
-              title={t("cards.avg_order_value")}
-              value={formatCompactMoney(avgOrderValue)}
-              suffix={t("currency_sum")}
-              icon={<Receipt size={20} />}
-              tone="brand"
-              compact
-              hint={t("cards.avg_order_value_hint")}
+          </div>
+
+          {/* ── Featured: yetkazib berilgan (ajralib turadi) ── */}
+          <div className="col-span-2 lg:col-span-4 lg:row-span-1">
+            <FeaturedDeliveredCard
+              sold={sold}
+              successRate={successRate}
+              title={t("featured.delivered")}
+              hint={t("featured.delivered_hint")}
+              unit={t("unit.orders")}
+              rateLabel={t("cards.success_rate")}
             />
-          </>
-        ) : null}
-        <MetricCard
-          title={t("cards.avg_fulfillment")}
-          value={formatHours(avgFulfillmentHours)}
-          icon={<Timer size={20} />}
-          tone="neutral"
-          compact
-          hint={t("cards.avg_fulfillment_hint")}
-        />
-        {/* SLA — 24 soat ichida yetkazilgan % */}
-        <MetricCard
-          title={t("cards.on_time")}
-          value={formatPercent(onTimeRate)}
-          icon={<Clock size={20} />}
-          tone={slaTone}
-          badge={t("cards.on_time_badge")}
-          progress={onTimeRate}
-          compact
-          hint={t("cards.on_time_hint")}
-        />
-        {/* Yo'qotilgan daromad */}
-        {showFinancialMetrics ? (
-          <MetricCard
-            title={t("cards.lost_revenue")}
-            value={formatCompactMoney(lostRevenue)}
-            suffix={t("currency_sum")}
-            icon={<TrendingDown size={20} />}
-            tone="danger"
-            compact
-            hint={t("cards.lost_revenue_hint")}
-          />
-        ) : null}
-      </div>
+          </div>
+
+          {/* ── Bekor qilingan ── */}
+          <div className="col-span-1 lg:col-span-2 lg:row-span-1">
+            <MetricCard
+              title={t("cards.cancelled")}
+              value={formatNumber(cancelled)}
+              suffix={t("unit.orders")}
+              icon={<XCircle size={20} />}
+              tone="danger"
+              badge={formatPercent(cancelRate)}
+              badgeUp={false}
+            />
+          </div>
+
+          {/* ── Jarayonda ── */}
+          <div className="col-span-1 lg:col-span-2 lg:row-span-1">
+            <MetricCard
+              title={t("cards.in_progress")}
+              value={formatNumber(inProgress)}
+              suffix={t("unit.orders")}
+              icon={<Truck size={20} />}
+              tone="warning"
+            />
+          </div>
+        </div>
+
+        {/* ── Ikkilamchi metrikalar qatori ── */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+          {showFinancialMetrics ? (
+            <>
+              <MetricCard
+                title={t("cards.total_revenue")}
+                value={formatCompactMoney(totalRevenue)}
+                suffix={t("currency_sum")}
+                icon={<Receipt size={20} />}
+                tone="brand"
+                compact
+                hint={t("cards.total_revenue_hint")}
+              />
+              <MetricCard
+                title={t("cards.profit")}
+                value={formatCompactMoney(profit)}
+                suffix={t("currency_sum")}
+                icon={<Wallet size={20} />}
+                tone={profitTone}
+                compact
+                hint={t("cards.profit_hint")}
+              />
+              <MetricCard
+                title={t("cards.avg_order_value")}
+                value={formatCompactMoney(avgOrderValue)}
+                suffix={t("currency_sum")}
+                icon={<Receipt size={20} />}
+                tone="brand"
+                compact
+                hint={t("cards.avg_order_value_hint")}
+              />
+            </>
+          ) : null}
+          {/* Yo'qotilgan daromad */}
+          {showFinancialMetrics ? (
+            <MetricCard
+              title={t("cards.lost_revenue")}
+              value={formatCompactMoney(lostRevenue)}
+              suffix={t("currency_sum")}
+              icon={<TrendingDown size={20} />}
+              tone="danger"
+              compact
+              hint={t("cards.lost_revenue_hint")}
+            />
+          ) : null}
+        </div>
       </div>
     );
   },

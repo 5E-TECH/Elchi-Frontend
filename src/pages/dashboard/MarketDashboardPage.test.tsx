@@ -49,7 +49,7 @@ describe("MarketDashboardPage", () => {
     expect(screen.getByText("4")).toBeInTheDocument();
   });
 
-  it("sends all=true when market selects all-time range", async () => {
+  it("sends explicit dates when market selects all-time range", async () => {
     const user = userEvent.setup();
     renderWithProviders(<MarketDashboardPage />, {
       preloadedState: {
@@ -59,11 +59,17 @@ describe("MarketDashboardPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Barchasi" }));
 
+    const lastParams = getDashboardMock.mock.lastCall?.[0];
+
     expect(getDashboardMock).toHaveBeenLastCalledWith(
-      { all: true },
+      expect.objectContaining({
+        start_day: "1970-01-01",
+        end_day: expect.any(String),
+      }),
       true,
       "market:unknown",
     );
+    expect(lastParams).not.toHaveProperty("all");
     expect(getKpiMock).not.toHaveBeenCalled();
   });
 });
