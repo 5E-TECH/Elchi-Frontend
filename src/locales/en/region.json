@@ -1,6 +1,8 @@
 {
   "title": "Regions",
   "subtitle": "Order statistics by region",
+  "scopedTitle": "{{region}} — district statistics",
+  "scopedSubtitle": "Select a district to view detailed statistics",
   "assignedRegion": "Your assigned region",
   "unknown": "Unknown",
   "unknownDistrict": "Unknown district",

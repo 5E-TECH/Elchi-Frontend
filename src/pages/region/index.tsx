@@ -1,68 +1,36 @@
 import { memo, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { Calendar, HeadphonesIcon, MapPin, Settings } from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../app/config/store";
+import {
+  mergeRegionDistrictStats,
+  useRegionDetailStats,
+  useRegionDistrictCatalog,
+  useRegionStats,
+} from "../../entities/region";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
-import { useRegionDetailStats } from "../../entities/region";
 import { parseISODate, toISODate } from "../../shared/lib/dateRange";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import DateRangePicker from "../../shared/ui/DateRangePicker";
 import PageContainer from "../../shared/ui/PageContainer";
+import ScopedRegionStatistics from "./ui/ScopedRegionStatistics";
 import UzbekistanRegionMap from "./ui/UzbekistanRegionMap";
-
-type RegionItem = {
-  id: string;
-  name: string;
-  districtCount: number;
-  activeCouriers: number;
-  ordersCount: number;
-  deliveredOrders: number;
-  cancelledOrders: number;
-  pendingOrders: number;
-  totalRevenue: number;
-  successRate: number;
-};
-
-type RegionSummary = {
-  totalOrders: number;
-  totalDelivered: number;
-  totalCancelled: number;
-  totalRevenue: number;
-};
+import {
+  findOrderRegionScope,
+  resolveRegionScope,
+} from "./model/regionScope";
 
 type DateRangeType = "today" | "week" | "month" | "all" | "custom";
-
-const toNumber = (value: unknown, fallback = 0) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 
 const getNestedRecord = (source: Record<string, unknown>, key: string) => asRecord(source[key]);
-
-const getProfileRegionId = (profile: unknown): string => {
-  const user = asRecord(profile);
-  const region = getNestedRecord(user, "region");
-  const branch = getNestedRecord(user, "branch");
-  const branchRegion = getNestedRecord(branch, "region");
-  const nestedBranch = getNestedRecord(branch, "branch");
-  const nestedBranchRegion = getNestedRecord(nestedBranch, "region");
-  const id =
-    user.region_id ??
-    region.id ??
-    branch.region_id ??
-    branchRegion.id ??
-    nestedBranch.region_id ??
-    nestedBranchRegion.id;
-
-  return id == null ? "" : String(id);
-};
 
 const getProfileBranchId = (profile: unknown): string => {
   const user = asRecord(profile);
@@ -71,148 +39,6 @@ const getProfileBranchId = (profile: unknown): string => {
   const id = user.branch_id ?? branch.id ?? nestedBranch.id;
 
   return id == null ? "" : String(id);
-};
-
-const normalizeRegionItem = (raw: unknown): RegionItem | null => {
-  const item = raw as {
-    id?: string | number;
-    regionId?: string | number;
-    region_id?: string | number;
-    name?: string;
-    regionName?: string;
-    region_name?: string;
-    districtCount?: number | string;
-    district_count?: number | string;
-    districts_count?: number | string;
-    districtsCount?: number | string;
-    activeCouriers?: number | string;
-    active_couriers?: number | string;
-    ordersCount?: number | string;
-    orders_count?: number | string;
-    orderCount?: number | string;
-    order_count?: number | string;
-    totalOrders?: number | string;
-    total_orders?: number | string;
-    totalOrderCount?: number | string;
-    total_order_count?: number | string;
-    allOrders?: number | string;
-    all_orders?: number | string;
-    deliveredOrders?: number | string;
-    delivered_orders?: number | string;
-    cancelledOrders?: number | string;
-    cancelled_orders?: number | string;
-    pendingOrders?: number | string;
-    pending_orders?: number | string;
-    totalRevenue?: number | string;
-    total_revenue?: number | string;
-    revenue?: number | string;
-    successRate?: number | string;
-    success_rate?: number | string;
-  };
-
-  const id = item?.id ?? item?.regionId ?? item?.region_id;
-  const name = item?.name ?? item?.regionName ?? item?.region_name;
-  if (!id || !name) return null;
-
-  return {
-    id: String(id),
-    name,
-    districtCount: toNumber(
-      item.districtCount ?? item.district_count ?? item.districtsCount ?? item.districts_count,
-      0,
-    ),
-    activeCouriers: toNumber(item.activeCouriers ?? item.active_couriers, 0),
-    ordersCount: toNumber(
-      item.ordersCount ??
-        item.orders_count ??
-        item.orderCount ??
-        item.order_count ??
-        item.totalOrders ??
-        item.total_orders ??
-        item.totalOrderCount ??
-        item.total_order_count ??
-        item.allOrders ??
-        item.all_orders,
-      0,
-    ),
-    deliveredOrders: toNumber(item.deliveredOrders ?? item.delivered_orders, 0),
-    cancelledOrders: toNumber(item.cancelledOrders ?? item.cancelled_orders, 0),
-    pendingOrders: toNumber(item.pendingOrders ?? item.pending_orders, 0),
-    totalRevenue: toNumber(item.totalRevenue ?? item.total_revenue ?? item.revenue, 0),
-    successRate: toNumber(item.successRate ?? item.success_rate, 0),
-  };
-};
-
-const unwrapRegions = (payload: unknown): RegionItem[] => {
-  const data = payload as {
-    data?:
-      | unknown[]
-      | {
-          data?: unknown[];
-          items?: unknown[];
-          regions?: unknown[];
-        };
-    items?: unknown[];
-    regions?: unknown[];
-  };
-  const arrayCandidate = Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data?.items)
-      ? data.items
-      : Array.isArray(data?.regions)
-        ? data.regions
-        : Array.isArray((data?.data as { regions?: unknown[] })?.regions)
-          ? (data.data as { regions: unknown[] }).regions
-      : Array.isArray((data?.data as { items?: unknown[] })?.items)
-        ? (data.data as { items: unknown[] }).items
-        : Array.isArray((data?.data as { data?: unknown[] })?.data)
-          ? (data.data as { data: unknown[] }).data
-          : [];
-
-  return arrayCandidate
-    .map(normalizeRegionItem)
-    .filter((region): region is RegionItem => Boolean(region));
-};
-
-const normalizeSummary = (payload: unknown): RegionSummary => {
-  const data = payload as {
-    summary?: unknown;
-    data?: { summary?: unknown };
-  };
-
-  const summary = (data?.summary ?? data?.data?.summary ?? {}) as {
-    totalOrders?: number | string;
-    total_orders?: number | string;
-    ordersCount?: number | string;
-    orders_count?: number | string;
-    totalDelivered?: number | string;
-    total_delivered?: number | string;
-    deliveredOrders?: number | string;
-    delivered_orders?: number | string;
-    totalCancelled?: number | string;
-    total_cancelled?: number | string;
-    cancelledOrders?: number | string;
-    cancelled_orders?: number | string;
-    totalRevenue?: number | string;
-    total_revenue?: number | string;
-    revenue?: number | string;
-  };
-
-  return {
-    totalOrders: toNumber(
-      summary.totalOrders ?? summary.total_orders ?? summary.ordersCount ?? summary.orders_count,
-      0,
-    ),
-    totalDelivered: toNumber(
-      summary.totalDelivered ?? summary.total_delivered ?? summary.deliveredOrders ?? summary.delivered_orders,
-      0,
-    ),
-    totalCancelled: toNumber(
-      summary.totalCancelled ?? summary.total_cancelled ?? summary.cancelledOrders ?? summary.cancelled_orders,
-      0,
-    ),
-    totalRevenue: toNumber(summary.totalRevenue ?? summary.total_revenue ?? summary.revenue, 0),
-  };
 };
 
 const RegionPage = () => {
@@ -224,9 +50,6 @@ const RegionPage = () => {
   const profile = useSelector((state: RootState) => state.user.user);
   const userRegionName = useSelector((state: RootState) => state.role.region);
 
-  const [regions, setRegions] = useState<RegionItem[]>([]);
-  const [summary, setSummary] = useState<RegionSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [customRange, setCustomRange] = useState<{ start: string; end: string } | null>(() => {
     const start = getParam("startDate");
     const end = getParam("endDate");
@@ -259,55 +82,6 @@ const RegionPage = () => {
     pathname.includes("/regions/districts") ||
     pathname.includes("/regions/sato-management") ||
     pathname.includes("/regions/logist-assignment");
-
-  useEffect(() => {
-    let active = true;
-
-    const fetchRegions = async () => {
-      if (!canViewStats) {
-        setRegions([]);
-        setSummary(null);
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const params: Record<string, string> = {};
-        const now = dayjs();
-
-        if (dateRange === "today") {
-          params.startDate = now.startOf("day").format("YYYY-MM-DD");
-          params.endDate = now.endOf("day").format("YYYY-MM-DD");
-        } else if (dateRange === "week") {
-          params.startDate = now.startOf("week").format("YYYY-MM-DD");
-          params.endDate = now.endOf("week").format("YYYY-MM-DD");
-        } else if (dateRange === "month") {
-          params.startDate = now.startOf("month").format("YYYY-MM-DD");
-          params.endDate = now.endOf("month").format("YYYY-MM-DD");
-        } else if (dateRange === "custom" && customRange) {
-          params.startDate = customRange.start;
-          params.endDate = customRange.end;
-        }
-
-        const response = await api.get(API_ENDPOINTS.REGIONS.STATS_ALL, { params });
-        if (!active) return;
-        setRegions(unwrapRegions(response.data));
-        setSummary(normalizeSummary(response.data));
-      } catch {
-        if (!active) return;
-        setRegions([]);
-        setSummary(null);
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    };
-
-    void fetchRegions();
-    return () => {
-      active = false;
-    };
-  }, [canViewStats, dateRange, customRange]);
 
   const detailDateParams = useMemo<{ startDate?: string; endDate?: string }>(() => {
     const now = dayjs();
@@ -343,7 +117,58 @@ const RegionPage = () => {
     return {};
   }, [dateRange, customRange]);
 
-  const scopedRegionId = getProfileRegionId(profile);
+  const regionStatsQuery = useRegionStats(
+    detailDateParams,
+    canViewStats || canViewScopedStats,
+  );
+  const regions = regionStatsQuery.data?.regions ?? [];
+  const summary = regionStatsQuery.data?.summary ?? null;
+  const endpointScopedDetail = regionStatsQuery.data?.scopedDetail ?? null;
+  const profileRegionScope = resolveRegionScope(profile);
+  const courierRegionQuery = useQuery({
+    queryKey: ["courier-region-scope", profile?.id],
+    queryFn: async () => {
+      const response = await api.get(API_ENDPOINTS.ORDERS.BASE, {
+        params: { page: 1, limit: 10 },
+      });
+      return findOrderRegionScope(response.data);
+    },
+    enabled:
+      isCourier &&
+      Boolean(profile?.id) &&
+      !profileRegionScope.id &&
+      !profileRegionScope.name,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const effectiveRegionScope =
+    profileRegionScope.id || profileRegionScope.name
+      ? profileRegionScope
+      : courierRegionQuery.data ?? profileRegionScope;
+  const profileRegionId = effectiveRegionScope.id;
+  const scopedRegion = useMemo(() => {
+    if (profileRegionId) {
+      return regions.find((region) => region.id === profileRegionId) ?? null;
+    }
+
+    const normalizedProfileRegionName = (
+      effectiveRegionScope.name ||
+      String(userRegionName ?? "")
+    ).trim().toLowerCase();
+    if (normalizedProfileRegionName) {
+      const matchedRegion = regions.find(
+        (region) => region.name.trim().toLowerCase() === normalizedProfileRegionName,
+      );
+      if (matchedRegion) return matchedRegion;
+    }
+
+    return regions.length === 1 ? regions[0] : null;
+  }, [effectiveRegionScope.name, profileRegionId, regions, userRegionName]);
+  const scopedRegionId =
+    profileRegionId ||
+    scopedRegion?.id ||
+    endpointScopedDetail?.id ||
+    "";
   const scopedBranchId = getProfileBranchId(profile);
   const scopedStatsParams = useMemo(
     () => ({
@@ -356,7 +181,53 @@ const RegionPage = () => {
   const scopedStatsQuery = useRegionDetailStats(
     scopedRegionId,
     scopedStatsParams,
+    canViewScopedStats && !isCourier && Boolean(scopedRegionId),
+  );
+  const districtCatalogQuery = useRegionDistrictCatalog(
+    scopedRegionId,
     canViewScopedStats && Boolean(scopedRegionId),
+  );
+  const scopedStats = useMemo(
+    () => {
+      const courierFallback = isCourier && scopedRegion
+        ? {
+            id: scopedRegion.id,
+            name: scopedRegion.name,
+            summary: {
+              totalOrders: scopedRegion.ordersCount,
+              totalDelivered: scopedRegion.deliveredOrders,
+              totalCancelled: scopedRegion.cancelledOrders,
+              totalRevenue: scopedRegion.totalRevenue,
+              pendingOrders: scopedRegion.pendingOrders,
+              activeCouriers: scopedRegion.activeCouriers,
+              successRate: scopedRegion.successRate,
+            },
+            districts: [],
+          }
+        : null;
+
+      return mergeRegionDistrictStats(
+        scopedStatsQuery.data ?? endpointScopedDetail ?? courierFallback,
+        districtCatalogQuery.data ?? [],
+        {
+          id: scopedRegionId,
+          name:
+            scopedRegion?.name ||
+            effectiveRegionScope.name ||
+            String(userRegionName ?? ""),
+        },
+      );
+    },
+    [
+      districtCatalogQuery.data,
+      effectiveRegionScope.name,
+      endpointScopedDetail,
+      isCourier,
+      scopedRegion,
+      scopedRegionId,
+      scopedStatsQuery.data,
+      userRegionName,
+    ],
   );
 
   useEffect(() => {
@@ -391,10 +262,14 @@ const RegionPage = () => {
                 <span className="w-10 h-10 rounded-xl bg-main flex items-center justify-center shadow-lg">
                   <MapPin className="w-5 h-5 text-primary" />
                 </span>
-                {t("title")}
+                {canViewScopedStats && (scopedStats?.name || scopedRegion?.name || userRegionName)
+                  ? t("scopedTitle", {
+                      region: scopedStats?.name || scopedRegion?.name || userRegionName,
+                    })
+                  : t("title")}
               </h1>
               <p className="text-sm text-main/65 dark:text-primary/65 mt-1">
-                {t("subtitle")}
+                {canViewScopedStats ? t("scopedSubtitle") : t("subtitle")}
               </p>
             </div>
 
@@ -496,74 +371,25 @@ const RegionPage = () => {
         </div>
 
         {canViewScopedStats ? (
-          <div className="space-y-4 rounded-2xl border border-primarydark/20 bg-primary p-5 dark:border-white/10 dark:bg-primarydark/45">
-            <div>
-              <p className="text-sm text-main/70 dark:text-primary/70 mb-2">{t("assignedRegion")}</p>
-              <h3 className="text-2xl font-bold text-main dark:text-primary">
-                {scopedStatsQuery.data?.name || userRegionName || "—"}
-              </h3>
-              <p className="mt-1 text-sm text-main/60 dark:text-primary/60">
-                {isCourier ? t("map.scopedCourierSubtitle") : t("map.scopedManagerSubtitle")}
-              </p>
+          regionStatsQuery.isLoading ||
+          courierRegionQuery.isLoading ||
+          (scopedRegionId && districtCatalogQuery.isLoading) ||
+          (!isCourier && scopedRegionId && scopedStatsQuery.isLoading) ? (
+            <div className="rounded-2xl border border-primarydark/20 bg-primary p-8 text-center text-sm text-main/60 dark:border-white/10 dark:bg-primarydark/45 dark:text-primary/60">
+              {t("common:loading")}
             </div>
-
-            {!scopedRegionId ? (
-              <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-700 dark:text-rose-100">
-                {t("map.regionNotFound")}
-              </div>
-            ) : scopedStatsQuery.isLoading ? (
-              <div className="text-sm text-main/60 dark:text-primary/60">{t("common:loading")}</div>
-            ) : scopedStatsQuery.isError ? (
-              <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-700 dark:text-rose-100">
-                {t("map.loadingError")}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  {[
-                    { label: t("map.metrics.totalOrders"), value: scopedStatsQuery.data?.summary.totalOrders ?? 0 },
-                    { label: t("map.metrics.delivered"), value: scopedStatsQuery.data?.summary.totalDelivered ?? 0 },
-                    { label: t("map.metrics.cancelled"), value: scopedStatsQuery.data?.summary.totalCancelled ?? 0 },
-                    { label: t("map.metrics.pending"), value: scopedStatsQuery.data?.summary.pendingOrders ?? 0 },
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-xl border border-primarydark/10 bg-sidebar p-4 dark:border-white/10 dark:bg-primarydark/45">
-                      <p className="text-xs font-semibold text-main/60 dark:text-primary/60">{item.label}</p>
-                      <p className="mt-1 text-xl font-black text-main dark:text-primary">{item.value.toLocaleString()}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="rounded-2xl border border-primarydark/10 bg-sidebar p-4 dark:border-white/10 dark:bg-primarydark/45">
-                  <h3 className="mb-3 text-lg font-black text-main dark:text-primary">
-                    {t("map.districtsTitle", { count: scopedStatsQuery.data?.districts.length ?? 0 })}
-                  </h3>
-                  {scopedStatsQuery.data?.districts.length ? (
-                    <div className="space-y-2">
-                      {scopedStatsQuery.data.districts.map((district) => (
-                        <div key={district.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primarydark/10 bg-primary p-3 dark:border-white/10 dark:bg-maindark/45">
-                          <div>
-                            <p className="font-bold text-main dark:text-primary">{district.name}</p>
-                            {district.satoCode ? (
-                              <p className="text-xs text-main/55 dark:text-primary/55">{district.satoCode}</p>
-                            ) : null}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-main/70 dark:text-primary/70">
-                            <span>{district.totalOrders.toLocaleString()} {t("map.metrics.orderUnit")}</span>
-                            <span>{district.successRate}%</span>
-                            <span>{t("map.metrics.courier")}: {district.activeCouriers}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-primarydark/10 bg-primary p-3 text-sm text-main/60 dark:border-white/10 dark:bg-maindark/45 dark:text-primary/60">
-                      {t("map.districtsNotFound")}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+          ) : regionStatsQuery.isError ||
+            (scopedStatsQuery.isError && districtCatalogQuery.isError) ? (
+            <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-700 dark:text-rose-100">
+              {t("map.loadingError")}
+            </div>
+          ) : !scopedRegionId && !endpointScopedDetail ? (
+            <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-700 dark:text-rose-100">
+              {t("map.regionNotFound")}
+            </div>
+          ) : scopedStats ? (
+            <ScopedRegionStatistics data={scopedStats} />
+          ) : null
         ) : (
           <UzbekistanRegionMap
             regions={regions.map((region) => ({
@@ -586,7 +412,7 @@ const RegionPage = () => {
           />
         )}
 
-        {isLoading ? (
+        {regionStatsQuery.isLoading && !canViewScopedStats ? (
           <div className="mt-4 text-sm text-main/60 dark:text-primary/60">{t("common:loading")}</div>
         ) : null}
     </PageContainer>

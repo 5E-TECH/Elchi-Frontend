@@ -1,6 +1,8 @@
 {
   "title": "Hududlar",
   "subtitle": "Hududlar kesimida buyurtmalar statistikasi",
+  "scopedTitle": "{{region}} — tumanlar statistikasi",
+  "scopedSubtitle": "Tuman ustiga bosib batafsil ma'lumotni ko'ring",
   "assignedRegion": "Siz biriktirilgan hudud",
   "unknown": "Noma'lum",
   "unknownDistrict": "Noma'lum tuman",

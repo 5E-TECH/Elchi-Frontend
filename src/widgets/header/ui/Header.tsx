@@ -6,7 +6,6 @@ import {
   Menu,
   Search,
   Settings,
-  User,
   X,
 } from "lucide-react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -24,6 +23,7 @@ import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 import Popup from "../../../shared/ui/Popup";
 import HeaderSearchPopup from "./HeaderSearchPopup";
 import ScannerActionButton from "../../../shared/components/ScannerActionButton";
+import { getRoleAvatarConfig } from "../model/roleAvatar";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -82,6 +82,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     roleState.name ||
     t("profile");
   const profileRole = tUsers(getUserRoleLabelKey(profileRecord?.role || roleState.role));
+  const roleAvatar = getRoleAvatarConfig(profileRecord?.role || roleState.role);
+  const RoleAvatarIcon = roleAvatar.icon;
   const canOpenBatchesShortcut = roleState.role === "manager";
 
   useEffect(() => {
@@ -408,9 +410,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                   navigate("profile");
                 }
               }}
-              className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20"
+              className={`flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-transform hover:scale-105 lg:h-10 lg:w-10 ${roleAvatar.className}`}
             >
-              <User className="w-4 h-4 text-primary lg:w-5 lg:h-5" />
+              <RoleAvatarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
             </div>
           </div>
         </div>
