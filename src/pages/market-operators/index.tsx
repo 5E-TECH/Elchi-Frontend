@@ -16,14 +16,12 @@ import {
   toUzbekistanPhoneValue,
   UZBEKISTAN_PHONE_PREFIX,
 } from "../../shared/lib/phone";
+import {
+  buildCreateMarketOperatorPayload,
+  type MarketOperatorCreateFormValues,
+} from "./model/createMarketOperator";
 
-type OperatorCreateFormValues = {
-  name: string;
-  phone_number: string;
-  password: string;
-};
-
-const DEFAULT_CREATE_VALUES: OperatorCreateFormValues = {
+const DEFAULT_CREATE_VALUES: MarketOperatorCreateFormValues = {
   name: "",
   phone_number: UZBEKISTAN_PHONE_PREFIX,
   password: "",
@@ -93,7 +91,7 @@ const MarketOperatorsPage = () => {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<OperatorCreateFormValues>({
+  } = useForm<MarketOperatorCreateFormValues>({
     defaultValues: DEFAULT_CREATE_VALUES,
     mode: "onSubmit",
   });
@@ -114,7 +112,8 @@ const MarketOperatorsPage = () => {
     reset(DEFAULT_CREATE_VALUES);
   };
 
-  const handleCreateSubmit = () => {
+  const handleCreateSubmit = (values: MarketOperatorCreateFormValues) => {
+    buildCreateMarketOperatorPayload(values);
     api.warning({
       message: t("createUnavailableTitle"),
       description: t("createUnavailableDescription"),
