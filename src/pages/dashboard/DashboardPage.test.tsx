@@ -79,6 +79,15 @@ const registratorState = {
   },
 } as never;
 
+const courierState = {
+  role: {
+    id: "courier-1",
+    role: "courier",
+    region: null,
+    name: "Courier",
+  },
+} as never;
+
 describe("DashboardPage", () => {
   beforeEach(() => {
     getDashboardMock.mockReturnValue({
@@ -141,6 +150,7 @@ describe("DashboardPage", () => {
       true,
       "admin:unknown",
     );
+    expect(screen.getByTestId("top-performers")).toBeInTheDocument();
   });
 
   it("passes dashboard metrics into child widgets", () => {
@@ -164,6 +174,28 @@ describe("DashboardPage", () => {
       false,
       "registrator:unknown",
     );
+    expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
+  });
+
+  it("shows only courier-relevant dashboard widgets for couriers", () => {
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+
+    expect(screen.getByTestId("dashboard-statistics")).toHaveAttribute(
+      "data-financial",
+      "false",
+    );
+    expect(getDashboardMock).toHaveBeenCalledWith(
+      { start_day: "", end_day: "" },
+      true,
+      "courier:unknown",
+    );
+    expect(getKpiMock).toHaveBeenCalledWith(
+      { start_day: "", end_day: "" },
+      false,
+      "courier:unknown",
+    );
+    expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
     expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
   });
 

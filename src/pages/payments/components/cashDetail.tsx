@@ -278,6 +278,7 @@ const CashDetail = () => {
   const isCurrentManagerRole = String(currentRole).toLowerCase() === "manager";
 
   const isBranchDetailRequest = state?.type === "branch";
+  const isMarketDetailRequest = state?.type === "market";
   const isHqBranchReceiveRequest = isBranchDetailRequest && !isCurrentManagerRole;
   const isCourierReceiveRequest = state?.type === "courier" && isCurrentManagerRole;
   const dateParams = useMemo(
@@ -313,6 +314,26 @@ const CashDetail = () => {
     }),
     [dateParams, id, isHqBranchReceiveRequest],
   );
+  const marketHistoryParams = useMemo(
+    () => ({
+      page: 1,
+      limit: 100,
+      source_type: "market_payment",
+      ...(id ? { source_user_id: id, cashbox_type: "main" } : {}),
+      ...dateParams,
+    }),
+    [dateParams, id],
+  );
+  const marketExtraCostHistoryParams = useMemo(
+    () => ({
+      page: 1,
+      limit: 100,
+      source_type: "extra_cost",
+      ...(id ? { user_id: id, cashbox_type: "markets" } : {}),
+      ...dateParams,
+    }),
+    [dateParams, id],
+  );
   const byUserCashboxQuery = useGetCashBoxById(
     id || "",
     Boolean(id) && !isBranchDetailRequest,
@@ -328,6 +349,11 @@ const CashDetail = () => {
     dateParams,
   );
   const branchHistoryQuery = useGetFinanceHistory(branchHistoryParams, isBranchDetailRequest);
+  const marketHistoryQuery = useGetFinanceHistory(marketHistoryParams, isMarketDetailRequest);
+  const marketExtraCostHistoryQuery = useGetFinanceHistory(
+    marketExtraCostHistoryParams,
+    isMarketDetailRequest,
+  );
   const activeCashboxQuery = isBranchDetailRequest
     ? isCurrentManagerRole
       ? managerPayableQuery
@@ -361,6 +387,19 @@ const CashDetail = () => {
       if (isBranchDetailRequest) {
         return getArrayFromResponse(branchHistoryQuery.data);
       }
+      if (isMarketDetailRequest) {
+        return [
+          ...getArrayFromResponse(marketHistoryQuery.data),
+          ...getArrayFromResponse(marketExtraCostHistoryQuery.data),
+        ].sort((left, right) => {
+          const leftDate = Date.parse(getHistoryDate(left) ?? "");
+          const rightDate = Date.parse(getHistoryDate(right) ?? "");
+          return (
+            (Number.isFinite(rightDate) ? rightDate : 0) -
+            (Number.isFinite(leftDate) ? leftDate : 0)
+          );
+        });
+      }
 
       return getArrayFromResponse(detailEntry);
     },
@@ -368,6 +407,9 @@ const CashDetail = () => {
       branchHistoryQuery.data,
       detailEntry,
       isBranchDetailRequest,
+      isMarketDetailRequest,
+      marketExtraCostHistoryQuery.data,
+      marketHistoryQuery.data,
     ],
   );
   const user = detailEntry?.user ?? cashbox?.user ?? state?.entity;
@@ -392,6 +434,19 @@ const CashDetail = () => {
         ? settlementDetails.amountToReceive
         : contextBalance;
   const displayBalance = balanceOverride ?? settlementBalance;
+  const displayAmountToGive =
+    (type === "market" || type === "branch") &&
+    detailEntry?.berilishi_kerak !== undefined
+      ? displayBalance
+      : settlementDetails.amountToGive;
+  const displayAmountToReceive =
+    detailEntry?.olinishi_kerak !== undefined &&
+    !(
+      (type === "market" || type === "branch") &&
+      detailEntry?.berilishi_kerak !== undefined
+    )
+      ? displayBalance
+      : settlementDetails.amountToReceive;
   const balanceLabel =
     isHqBranchReceiveDetail
       ? t("toBeReceived")
@@ -522,6 +577,8 @@ const CashDetail = () => {
     const [refreshed] = await Promise.all([
       refetchCashbox(),
       isBranchDetailRequest ? branchHistoryQuery.refetch() : Promise.resolve(),
+      isMarketDetailRequest ? marketHistoryQuery.refetch() : Promise.resolve(),
+      isMarketDetailRequest ? marketExtraCostHistoryQuery.refetch() : Promise.resolve(),
     ]);
 
     if ((isCourierReceiveDetail || isHqBranchReceiveDetail) && hasStateAmount) {
@@ -551,6 +608,13 @@ const CashDetail = () => {
     const courierReceivedHistory = courierTransferHistory.filter(isIncomeHistoryItem);
     const visibleHistory = isBranchDetailRequest
       ? cashboxHistory.filter(isActualBranchToHqPaymentItem)
+      : isMarketDetailRequest
+        ? cashboxHistory.filter(
+            (item) => {
+              const sourceType = toOptionalString(item["source_type"]);
+              return sourceType === "market_payment" || sourceType === "extra_cost";
+            },
+          )
       : isCourierReceiveDetail
         ? courierReceivedHistory.length
           ? courierReceivedHistory
@@ -623,7 +687,14 @@ const CashDetail = () => {
         cashbox: item["cashbox"] as PaymentRow["cashbox"],
       };
     });
-  }, [cashbox?.cashbox_type, cashboxHistory, entityName, isBranchDetailRequest, isCourierReceiveDetail]);
+  }, [
+    cashbox?.cashbox_type,
+    cashboxHistory,
+    entityName,
+    isBranchDetailRequest,
+    isCourierReceiveDetail,
+    isMarketDetailRequest,
+  ]);
 
   const income = useMemo(
     () =>
@@ -772,17 +843,17 @@ const CashDetail = () => {
                   icon: <WalletCards size={16} />,
                   className: "border-main/20 bg-main/8 text-main dark:text-primary",
                 },
-                {
-                  label: t("toBeGiven"),
-                  amount: settlementDetails.amountToGive,
-                  icon: <ArrowUpRight size={16} />,
-                  className: "border-rose-500/20 bg-rose-500/8 text-rose-500",
-                },
-                {
-                  label: t("toBeReceived"),
-                  amount: settlementDetails.amountToReceive,
-                  icon: <ArrowDownLeft size={16} />,
-                  className: "border-emerald-500/20 bg-emerald-500/8 text-emerald-500",
+	                {
+	                  label: t("toBeGiven"),
+	                  amount: displayAmountToGive,
+	                  icon: <ArrowUpRight size={16} />,
+	                  className: "border-rose-500/20 bg-rose-500/8 text-rose-500",
+	                },
+	                {
+	                  label: t("toBeReceived"),
+	                  amount: displayAmountToReceive,
+	                  icon: <ArrowDownLeft size={16} />,
+	                  className: "border-emerald-500/20 bg-emerald-500/8 text-emerald-500",
                 },
               ].map((item) => (
                 <div key={item.label} className={`rounded-2xl border p-3 ${item.className}`}>

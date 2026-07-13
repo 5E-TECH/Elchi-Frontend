@@ -14,6 +14,12 @@ vi.mock("../../entities/dashboard", () => ({
   }),
 }));
 
+vi.mock("../../widgets/dashboard-top-performers/ui/TopPerformers", () => ({
+  default: ({ markets }: { markets?: unknown[] }) => (
+    <div data-testid="top-performers">markets:{markets?.length ?? 0}</div>
+  ),
+}));
+
 describe("MarketDashboardPage", () => {
   beforeEach(() => {
     getDashboardMock.mockReturnValue({
@@ -23,8 +29,18 @@ describe("MarketDashboardPage", () => {
             acceptedCount: 4,
             soldAndPaid: 1,
             cancelled: 1,
+            inProgress: 1,
             profit: 120000,
           },
+          topMarkets: [
+            {
+              market_id: "market-1",
+              market_name: "Market",
+              total_orders: 4,
+              successful_orders: 1,
+              success_rate: 25,
+            },
+          ],
         },
       },
       isLoading: false,
@@ -47,6 +63,7 @@ describe("MarketDashboardPage", () => {
     );
     expect(getKpiMock).not.toHaveBeenCalled();
     expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.getByTestId("top-performers")).toHaveTextContent("markets:1");
   });
 
   it("sends explicit dates when market selects all-time range", async () => {
@@ -71,5 +88,6 @@ describe("MarketDashboardPage", () => {
     );
     expect(lastParams).not.toHaveProperty("all");
     expect(getKpiMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId("top-performers")).toHaveTextContent("markets:1");
   });
 });

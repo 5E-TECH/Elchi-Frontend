@@ -9,6 +9,7 @@ import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
+import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
 import { removeFilterValue, setMultipleFilters } from "../../features/Select/model/FilterSlice";
@@ -76,8 +77,9 @@ const MarketDashboardPage = () => {
   const sold = orders?.soldAndPaid ?? 0;
   const cancelled = orders?.cancelled ?? 0;
   const profit = orders?.profit ?? 0;
+  const topMarkets = data?.data?.topMarkets ?? [];
 
-  const inProgress = Math.max(0, accepted - sold - cancelled);
+  const inProgress = orders?.inProgress ?? Math.max(0, accepted - sold - cancelled);
   const successRate = ratio(sold, accepted);
 
   // ─── Market add_order ruxsati ─────────────────────────────────────────────────
@@ -175,6 +177,12 @@ const MarketDashboardPage = () => {
             loading={isDataLoading}
             t={t}
           />
+        </div>
+      )}
+
+      {!dashboardError && !isDataLoading && (
+        <div className="mb-5">
+          <TopPerformers markets={topMarkets} />
         </div>
       )}
 

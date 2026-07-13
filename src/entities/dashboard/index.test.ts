@@ -104,6 +104,7 @@ describe("dashboard response normalization", () => {
           totalOrders: 38,
           soldOrders: 7,
           canceledOrders: 0,
+          inProgress: 12,
           profit: 19060000,
           successRate: 18.42,
         },
@@ -114,7 +115,34 @@ describe("dashboard response normalization", () => {
       acceptedCount: 38,
       soldAndPaid: 7,
       cancelled: 0,
+      inProgress: 12,
       profit: 19060000,
+    });
+  });
+
+  it("normalizes top branches payload", () => {
+    const result = normalizeDashboardResponse({
+      statusCode: 200,
+      message: "Dashboard infos",
+      data: {
+        topBranches: [
+          {
+            branch_id: "9",
+            branch_name: "Qashqadaryo",
+            total_orders: "42",
+            successful_orders: "31",
+            success_rate: "73.81",
+          },
+        ],
+      },
+    });
+
+    expect(result.data.topBranches?.[0]).toMatchObject({
+      branch_id: "9",
+      branch_name: "Qashqadaryo",
+      total_orders: 42,
+      successful_orders: 31,
+      success_rate: 73.81,
     });
   });
 

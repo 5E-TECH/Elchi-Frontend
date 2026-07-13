@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Store, Bike, Trophy, Inbox } from "lucide-react";
-import type { TopMarket, TopCourier } from "../../../entities/dashboard";
+import { Store, Building2, Trophy, Inbox } from "lucide-react";
+import type { TopMarket, TopBranch } from "../../../entities/dashboard";
 import {
   toneAccent,
   toneSoftBg,
@@ -12,8 +12,8 @@ import {
 } from "../../../shared/config/designSystem";
 
 /**
- * TopPerformers — eng yaxshi marketlar va kuryerlar reytingi (leaderboard).
- * Ma'lumot `analytics/dashboard` javobida tayyor keladi (topMarkets/topCouriers),
+ * TopPerformers — eng yaxshi marketlar va filiallar reytingi (leaderboard).
+ * Ma'lumot `analytics/dashboard` javobida tayyor keladi (topMarkets/topBranches),
  * oxirgi 30 kun, kamida 30 buyurtmali, sotuv (success rate) bo'yicha saralangan.
  */
 
@@ -43,14 +43,15 @@ interface LeaderboardProps {
   emptyText: string;
   rateLabel: string;
   ordersLabel: string;
+  compact?: boolean;
 }
 
 const Leaderboard = memo(
-  ({ title, icon, accentTone, rows, emptyText, rateLabel, ordersLabel }: LeaderboardProps) => {
+  ({ title, icon, accentTone, rows, emptyText, rateLabel, ordersLabel, compact = false }: LeaderboardProps) => {
     const accent = toneAccent(accentTone);
     return (
-      <div className="el-card flex h-full min-h-[300px] flex-col rounded-2xl p-5">
-        <div className="mb-4 flex items-center gap-2">
+      <div className={`el-card flex h-full flex-col rounded-2xl p-5 ${compact ? "min-h-[170px]" : "min-h-[300px]"}`}>
+        <div className={`${compact ? "mb-3" : "mb-4"} flex items-center gap-2`}>
           <span
             className="flex h-8 w-8 items-center justify-center rounded-xl"
             style={{ background: toneSoftBg(accentTone, 16), color: accent }}
@@ -61,7 +62,7 @@ const Leaderboard = memo(
         </div>
 
         {rows.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
+          <div className={`flex flex-1 flex-col items-center justify-center gap-2 text-center ${compact ? "py-4" : "py-8"}`}>
             <Inbox size={28} style={{ color: TEXT.soft, opacity: 0.5 }} />
             <p className="text-[12px] font-medium" style={{ color: TEXT.soft }}>
               {emptyText}
@@ -122,11 +123,12 @@ const Leaderboard = memo(
 Leaderboard.displayName = "Leaderboard";
 
 export interface TopPerformersProps {
-  markets: TopMarket[];
-  couriers: TopCourier[];
+  markets?: TopMarket[];
+  branches?: TopBranch[];
+  compact?: boolean;
 }
 
-const TopPerformers = memo(({ markets, couriers }: TopPerformersProps) => {
+const TopPerformers = memo(({ markets, branches, compact = false }: TopPerformersProps) => {
   const { t } = useTranslation("dashboard");
 
   const marketRows: LeaderboardRow[] = useMemo(
@@ -141,38 +143,50 @@ const TopPerformers = memo(({ markets, couriers }: TopPerformersProps) => {
     [markets],
   );
 
-  const courierRows: LeaderboardRow[] = useMemo(
+  const branchRows: LeaderboardRow[] = useMemo(
     () =>
-      (couriers ?? []).slice(0, MAX_ROWS).map((c, i) => ({
-        id: `courier-${c.courier_id || "unknown"}-${i}`,
-        name: c.courier_name || "—",
-        rate: clampPercent(toFiniteNumber(c.success_rate)),
-        total: toFiniteNumber(c.total_orders),
-        successful: toFiniteNumber(c.successful_orders),
+      (branches ?? []).slice(0, MAX_ROWS).map((branch, i) => ({
+        id: `branch-${branch.branch_id || "unknown"}-${i}`,
+        name: branch.branch_name || "—",
+        rate: clampPercent(toFiniteNumber(branch.success_rate)),
+        total: toFiniteNumber(branch.total_orders),
+        successful: toFiniteNumber(branch.successful_orders),
       })),
-    [couriers],
+    [branches],
   );
 
+  const showMarkets = markets !== undefined;
+  const showBranches = branches !== undefined;
+  const sectionCount = Number(showMarkets) + Number(showBranches);
+
+  if (sectionCount === 0) return null;
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <Leaderboard
-        title={t("top.markets_title")}
-        icon={<Store size={16} />}
-        accentTone="info"
-        rows={marketRows}
-        emptyText={t("top.empty")}
-        rateLabel={t("cards.success_rate")}
-        ordersLabel={t("unit.orders")}
-      />
-      <Leaderboard
-        title={t("top.couriers_title")}
-        icon={<Bike size={16} />}
-        accentTone="warning"
-        rows={courierRows}
-        emptyText={t("top.empty")}
-        rateLabel={t("cards.success_rate")}
-        ordersLabel={t("unit.orders")}
-      />
+    <div className={`grid grid-cols-1 gap-4 ${sectionCount > 1 ? "md:grid-cols-2" : ""}`}>
+      {showMarkets ? (
+        <Leaderboard
+          title={t("top.markets_title")}
+          icon={<Store size={16} />}
+          accentTone="info"
+          rows={marketRows}
+          emptyText={t("top.empty")}
+          rateLabel={t("cards.success_rate")}
+          ordersLabel={t("unit.orders")}
+          compact={compact}
+        />
+      ) : null}
+      {showBranches ? (
+        <Leaderboard
+          title={t("top.branches_title")}
+          icon={<Building2 size={16} />}
+          accentTone="warning"
+          rows={branchRows}
+          emptyText={t("top.empty")}
+          rateLabel={t("cards.success_rate")}
+          ordersLabel={t("unit.orders")}
+          compact={compact}
+        />
+      ) : null}
     </div>
   );
 });

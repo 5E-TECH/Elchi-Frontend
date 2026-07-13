@@ -101,7 +101,9 @@ export const adaptBranchDashboard = (
   const soldAndPaid = toNumber(orders?.soldAndPaid);
   const cancelled = toNumber(orders?.cancelled);
   const inProgress = Math.max(0, acceptedCount - soldAndPaid - cancelled);
-  const hasOrderSummary = acceptedCount > 0;
+  const totalOrders =
+    acceptedCount > 0 ? acceptedCount : soldAndPaid + cancelled + inProgress;
+  const hasOrderSummary = totalOrders > 0;
 
   const mergeOrderSummary = (snapshot: BranchDashboardSnapshot): BranchDashboardSnapshot => {
     if (!hasOrderSummary) return snapshot;
@@ -118,14 +120,14 @@ export const adaptBranchDashboard = (
     return {
       ...snapshot,
       orderSummary: {
-        total: acceptedCount,
+        total: totalOrders,
         new: 0,
         onTheRoad: inProgress,
         delivered: soldAndPaid,
         returned: cancelled,
       },
-      todayOrdersCount: acceptedCount,
-      weekOrdersCount: acceptedCount,
+      todayOrdersCount: totalOrders,
+      weekOrdersCount: totalOrders,
     };
   };
 

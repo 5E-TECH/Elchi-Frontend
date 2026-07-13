@@ -160,6 +160,7 @@
   "financialBalanceComment": "Izoh",
   "financialBalanceHistoryEmpty": "Tarix ma'lumotlari topilmadi",
   "financialBalanceSourceProfit": "Pochta foydasi",
+  "financialBalanceSourceExtraCost": "Qo'shimcha xarajat",
   "financialBalanceSourceManualIncome": "Qo'lda kirim",
   "financialBalanceSourceManualExpense": "Qo'lda chiqim",
   "financialBalanceSourceSalary": "Maosh",

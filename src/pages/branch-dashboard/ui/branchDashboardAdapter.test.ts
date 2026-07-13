@@ -70,4 +70,43 @@ describe("branch dashboard adapter", () => {
       returned: 1,
     });
   });
+
+  it("keeps selected total independent from sold and cancelled outcome counts", () => {
+    const result = adaptBranchDashboard(
+      {
+        role: "manager",
+        today_orders_count: 0,
+        week_orders_count: 0,
+        active_batches_count: 0,
+        couriers_count: 1,
+        cards: {
+          orders: {
+            total: 0,
+            new: 0,
+            on_the_road: 0,
+            delivered: 0,
+            returned: 0,
+          },
+          markets: [],
+          packages: null,
+          couriers: null,
+        },
+      },
+      "manager",
+      {
+        acceptedCount: 2,
+        soldAndPaid: 2,
+        cancelled: 2,
+        profit: 0,
+        totalRevenue: 0,
+      },
+    );
+
+    expect(result.orderSummary).toMatchObject({
+      total: 2,
+      onTheRoad: 0,
+      delivered: 2,
+      returned: 2,
+    });
+  });
 });

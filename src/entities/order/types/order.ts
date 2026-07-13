@@ -103,10 +103,12 @@ export interface OrderListParams {
     region_id?: string;
     district_id?: string;
     courier_id?: string;
+    courier_ids?: string[];
     where_deliver?: DeliveryType | "";
     search?: string;
     start_day?: string;
     end_day?: string;
+    fetch_all?: boolean | string;
 }
 
 export interface ExternalOrderItem {

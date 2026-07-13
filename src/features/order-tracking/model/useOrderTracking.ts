@@ -96,15 +96,14 @@ const inferSystemStatusActors = (items: TrackingEvent[]) => {
     }
 
     const nextHumanEvent = chronologicalEvents.slice(index + 1).find(isHumanActor);
-
-    if (nextHumanEvent || inferenceMode === "next") {
-      return nextHumanEvent ? withInferredActor(event, nextHumanEvent) : event;
-    }
-
     const previousHumanEvent = chronologicalEvents
       .slice(0, index)
       .reverse()
       .find(isHumanActor);
+
+    if (nextHumanEvent || inferenceMode === "next") {
+      return nextHumanEvent ? withInferredActor(event, nextHumanEvent) : event;
+    }
 
     return previousHumanEvent ? withInferredActor(event, previousHumanEvent) : event;
   });

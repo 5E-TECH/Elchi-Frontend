@@ -1,14 +1,9 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { Building2, CalendarRange, PackageCheck } from "lucide-react";
-import { useQueries } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import HeaderName from "../../../shared/components/headerName";
 import { useDashboard } from "../../../entities/dashboard";
-import { useOrders } from "../../../entities/order/api/orderApi";
-import { useUser } from "../../../entities/user/api/userApi";
-import { api } from "../../../shared/api/api";
-import { API_ENDPOINTS } from "../../../shared/api";
 import {
   ActivePackagesCard,
   CourierActivityCard,
@@ -19,63 +14,14 @@ import { adaptBranchDashboard } from "./branchDashboardAdapter";
 import PageContainer from "../../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../../shared/ui/QueryErrorState";
+import TopPerformers from "../../../widgets/dashboard-top-performers/ui/TopPerformers";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import { getTodayRange } from "../../../shared/lib/dateRange";
 import { removeFilterValue, setMultipleFilters } from "../../../features/Select/model/FilterSlice";
 import type { RootState } from "../../../app/config/store";
-import type { OrderListParams, OrderListResponse } from "../../../entities/order/types/order";
 
 const statCardClassName =
   "rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.05]";
-
-const getOrdersTotal = (response?: OrderListResponse | null) => Number(response?.total ?? 0);
-
-const SOLD_ORDER_STATUSES = ["sold", "paid"] as const;
-const CANCELLED_ORDER_STATUSES = ["cancelled", "cancelled (sent)"] as const;
-
-const getCourierOrders = (params: OrderListParams) =>
-  api.get(API_ENDPOINTS.ORDERS.BASE, { params }).then((res) => res.data as OrderListResponse);
-
-const asRecord = (value: unknown): Record<string, unknown> =>
-  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-
-const extractList = (payload: unknown): unknown[] => {
-  const source = asRecord(payload);
-  const data = asRecord(source.data);
-
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(data.data)) return data.data;
-  if (Array.isArray(source.data)) return source.data as unknown[];
-  if (Array.isArray(data.items)) return data.items;
-  if (Array.isArray(data.couriers)) return data.couriers;
-  if (Array.isArray(data.rows)) return data.rows;
-  if (Array.isArray(data.results)) return data.results;
-  if (Array.isArray(source.items)) return source.items as unknown[];
-  if (Array.isArray(source.couriers)) return source.couriers as unknown[];
-  if (Array.isArray(source.rows)) return source.rows as unknown[];
-  if (Array.isArray(source.results)) return source.results as unknown[];
-  return [];
-};
-
-const getCourierId = (value: unknown) => {
-  const item = asRecord(value);
-  const user = asRecord(
-    item.user ??
-      item.employee ??
-      item.courier ??
-      item.identity_user ??
-      item.identityUser ??
-      item.profile ??
-      item,
-  );
-  const id = user.id ?? item.user_id ?? item.userId ?? item.courier_id ?? item.courierId ?? item.id;
-
-  return typeof id === "string" && id.trim()
-    ? id
-    : typeof id === "number"
-      ? String(id)
-      : "";
-};
 
 const BranchDashboardPage = () => {
   const { t } = useTranslation("branchDashboard");
@@ -103,135 +49,26 @@ const BranchDashboardPage = () => {
     [branchId, fromDate, hasDateFilter, toDate],
   );
   const { getDashboard } = useDashboard();
-  const { useGetOrders } = useOrders();
-  const { useGetCouriers } = useUser();
   const { data, isLoading, isError, refetch } = getDashboard(
     analyticsParams,
     true,
     analyticsScope,
   );
   const hasBranchScope = Boolean(branchId);
-  const courierParams = useMemo(
-    () => ({
-      status: "active",
-      branch_id: branchId,
-      page: 1,
-      limit: 100,
-    }),
-    [branchId],
-  );
-  const { data: couriersResponse } = useGetCouriers(courierParams, hasBranchScope);
-  const branchOrderParams = useMemo(
-    () => ({
-      branch_id: branchId,
-      start_day: hasDateFilter ? fromDate : "",
-      end_day: hasDateFilter ? toDate : "",
-      page: 1,
-      limit: 10,
-    }),
-    [branchId, fromDate, hasDateFilter, toDate],
-  );
-  const branchOrdersQuery = useGetOrders(branchOrderParams, hasBranchScope);
-  const branchSoldOrdersQuery = useGetOrders({
-    ...branchOrderParams,
-    status: [...SOLD_ORDER_STATUSES],
-  }, hasBranchScope);
-  const branchCancelledOrdersQuery = useGetOrders({
-    ...branchOrderParams,
-    status: [...CANCELLED_ORDER_STATUSES],
-  }, hasBranchScope);
-  const courierIds = useMemo(
-    () =>
-      extractList(couriersResponse)
-        .map(getCourierId)
-        .filter((id, index, items): id is string => Boolean(id) && items.indexOf(id) === index),
-    [couriersResponse],
-  );
-  const courierOrderQueries = useQueries({
-    queries: courierIds.flatMap((courierId) => {
-      const baseParams = {
-        courier_id: courierId,
-        start_day: hasDateFilter ? fromDate : "",
-        end_day: hasDateFilter ? toDate : "",
-        page: 1,
-        limit: 10,
-      };
-
-      return [
-        {
-          queryKey: ["branch-dashboard", "courier-orders", courierId, "all", baseParams],
-          queryFn: () => getCourierOrders(baseParams),
-          enabled: hasBranchScope,
-        },
-        {
-          queryKey: ["branch-dashboard", "courier-orders", courierId, "sold", baseParams],
-          queryFn: () => getCourierOrders({ ...baseParams, status: [...SOLD_ORDER_STATUSES] }),
-          enabled: hasBranchScope,
-        },
-        {
-          queryKey: ["branch-dashboard", "courier-orders", courierId, "cancelled", baseParams],
-          queryFn: () => getCourierOrders({ ...baseParams, status: [...CANCELLED_ORDER_STATUSES] }),
-          enabled: hasBranchScope,
-        },
-      ];
-    }),
-  });
-  const courierOrderSummary = useMemo(
-    () =>
-      courierOrderQueries.reduce(
-        (summary, query, index) => {
-          const bucket = index % 3;
-          const total = getOrdersTotal(query.data as OrderListResponse | undefined);
-
-          if (bucket === 0) summary.acceptedCount += total;
-          if (bucket === 1) summary.soldAndPaid += total;
-          if (bucket === 2) summary.cancelled += total;
-
-          return summary;
-        },
-        {
-          acceptedCount: 0,
-          soldAndPaid: 0,
-          cancelled: 0,
-        },
-      ),
-    [courierOrderQueries],
-  );
-  const branchOrderSummary = useMemo(
-    () => {
-      const orderListCancelled =
-        getOrdersTotal(branchCancelledOrdersQuery.data) + courierOrderSummary.cancelled;
-      const analyticsCancelled = Number(data?.data?.orders?.cancelled ?? 0);
-
-      return {
-        acceptedCount: getOrdersTotal(branchOrdersQuery.data) + courierOrderSummary.acceptedCount,
-        soldAndPaid: getOrdersTotal(branchSoldOrdersQuery.data) + courierOrderSummary.soldAndPaid,
-        cancelled: Math.max(orderListCancelled, analyticsCancelled),
-        profit: 0,
-        totalRevenue: 0,
-      };
-    },
-    [
-      branchCancelledOrdersQuery.data,
-      branchOrdersQuery.data,
-      branchSoldOrdersQuery.data,
-      courierOrderSummary,
-      data?.data?.orders?.cancelled,
-    ],
-  );
-
   const branchDashboard = useMemo(
     () =>
       adaptBranchDashboard(
         data?.data?.branchDashboard,
         userRole || "OPERATOR",
-        hasBranchScope ? branchOrderSummary : data?.data?.orders,
+        data?.data?.orders,
         hasBranchScope || hasDateFilter,
       ),
-    [branchOrderSummary, data?.data?.branchDashboard, data?.data?.orders, hasBranchScope, hasDateFilter, userRole],
+    [data?.data?.branchDashboard, data?.data?.orders, hasBranchScope, hasDateFilter, userRole],
   );
+  const displayDashboard = branchDashboard;
 
-  const isManager = branchDashboard.role === "MANAGER";
+  const isManager = displayDashboard.role === "MANAGER";
+  const topBranches = data?.data?.topBranches ?? [];
   const applyRange = useCallback(
     (range: { from: string; to: string }) => {
       setFromDate(range.from);
@@ -264,7 +101,7 @@ const BranchDashboardPage = () => {
   }
 
   return (
-    <PageContainer className="flex flex-col xl:h-full xl:min-h-0 xl:overflow-hidden">
+    <PageContainer className="flex flex-col">
       <section className="mb-3 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-main)_18%,var(--color-primary)_82%)_0%,color-mix(in_srgb,var(--color-sidebar)_92%,white_8%)_100%)] p-3.5 shadow-[0_18px_40px_rgba(87,106,219,0.12)] xl:shrink-0 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-main)_22%,var(--color-primarydark)_78%)_0%,color-mix(in_srgb,var(--color-maindark)_95%,var(--color-primarydark)_5%)_100%)]">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-3">
@@ -281,7 +118,7 @@ const BranchDashboardPage = () => {
                   <span>{t("totalOrdersCount")}</span>
                 </div>
                 <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                  {branchDashboard.orderSummary.total}
+                  {displayDashboard.orderSummary.total}
                 </p>
               </div>
 
@@ -291,7 +128,7 @@ const BranchDashboardPage = () => {
                   <span>{t("deliveredOrdersCount")}</span>
                 </div>
                 <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                  {branchDashboard.orderSummary.delivered}
+                  {displayDashboard.orderSummary.delivered}
                 </p>
               </div>
 
@@ -301,7 +138,7 @@ const BranchDashboardPage = () => {
                   <span>{t("cancelledOrdersCount")}</span>
                 </div>
                 <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                  {branchDashboard.orderSummary.returned}
+                  {displayDashboard.orderSummary.returned}
                 </p>
               </div>
             </div>
@@ -328,20 +165,26 @@ const BranchDashboardPage = () => {
         </div>
       </section>
 
-      <div className="grid content-start gap-3 xl:min-h-0 xl:flex-1 xl:auto-rows-fr xl:content-stretch xl:grid-cols-2">
-        {branchDashboard.visibility.orders ? (
-          <OrdersOverviewCard summary={branchDashboard.orderSummary} />
+      <div className="grid content-start gap-3 xl:grid-cols-2">
+        {displayDashboard.visibility.orders ? (
+          <OrdersOverviewCard summary={displayDashboard.orderSummary} />
         ) : null}
-        {branchDashboard.visibility.markets ? (
-          <MarketsPerformanceCard markets={branchDashboard.markets} />
+        {displayDashboard.visibility.markets ? (
+          <MarketsPerformanceCard markets={displayDashboard.markets} />
         ) : null}
-        {branchDashboard.visibility.packages ? (
-          <ActivePackagesCard packages={branchDashboard.packages} />
+        {displayDashboard.visibility.packages ? (
+          <ActivePackagesCard packages={displayDashboard.packages} />
         ) : null}
-        {branchDashboard.visibility.couriers ? (
-          <CourierActivityCard couriers={branchDashboard.couriers} />
+        {displayDashboard.visibility.couriers ? (
+          <CourierActivityCard couriers={displayDashboard.couriers} />
         ) : null}
       </div>
+
+      {!isLoading ? (
+        <section className="mt-3 xl:shrink-0">
+          <TopPerformers branches={topBranches} compact />
+        </section>
+      ) : null}
     </PageContainer>
   );
 };
