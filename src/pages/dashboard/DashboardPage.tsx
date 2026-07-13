@@ -32,6 +32,10 @@ const DashboardPage = () => {
   // landing page on every login — gate them client-side too. (Audit P1-2.)
   const isAnalyticsAdmin = ["superadmin", "admin"].includes(normalizedRole);
   const isRegistrator = normalizedRole === "registrator";
+  const isCourier = normalizedRole === "courier";
+  const canShowFinancialMetrics = !isRegistrator && !isCourier;
+  const canShowTopPerformers = !isCourier;
+  const canShowRegionStats = !isCourier;
   const [fromDate, setFromDate] = useState(
     typeof storedFromDate === "string" ? storedFromDate : "",
   );
@@ -91,7 +95,7 @@ const DashboardPage = () => {
   const orders = data?.data?.orders;
   const kpi = kpiData?.data;
   const topMarkets = data?.data?.topMarkets ?? [];
-  const topCouriers = data?.data?.topCouriers ?? [];
+  const topBranches = data?.data?.topBranches ?? [];
 
   const clearRange = useCallback(() => {
     setFromDate("");
@@ -156,7 +160,7 @@ const DashboardPage = () => {
             avgOrderValue={kpi?.averageOrderValue ?? 0}
             avgFulfillmentHours={kpi?.averageFulfillmentHours ?? 0}
             onTimeRate={kpi?.onTimeRate ?? 0}
-            showFinancialMetrics={!isRegistrator}
+            showFinancialMetrics={canShowFinancialMetrics}
             loading={isLoading || (!isAllTime && kpiLoading)}
           />
         </div>
@@ -172,9 +176,9 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {widgets.topPerformers && !isAllTime && !dashboardError && (
+      {widgets.topPerformers && canShowTopPerformers && !dashboardError && (
         <div className="mb-5">
-          <TopPerformers markets={topMarkets} couriers={topCouriers} />
+          <TopPerformers markets={topMarkets} branches={topBranches} />
         </div>
       )}
 
@@ -191,11 +195,11 @@ const DashboardPage = () => {
       )}
 
       {/* Hududlar bo'yicha xarita */}
-      {widgets.region && (
+      {widgets.region && canShowRegionStats && (
         <RegionStatsCard
           startDate={hasDateFilter ? fromDate : ""}
           endDate={hasDateFilter ? toDate : ""}
-          showFinancialMetrics={!isRegistrator}
+          showFinancialMetrics={canShowFinancialMetrics}
         />
       )}
     </PageContainer>

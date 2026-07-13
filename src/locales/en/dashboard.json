@@ -79,7 +79,8 @@
   },
   "top": {
     "markets_title": "Top markets",
-    "couriers_title": "Top couriers",
+    "couriers_title": "Top branches",
+    "branches_title": "Top branches",
     "empty": "Not enough data (min 30 orders required)"
   },
   "region": {
@@ -94,6 +95,8 @@
     "markets_hint": "Amount payable to markets",
     "couriers": "Couriers balance",
     "couriers_hint": "Current amount held by couriers",
+    "branches": "Branches balance",
+    "branches_hint": "Amount receivable from branches",
     "current": "Current state",
     "current_hint": "Overall financial state (cash − debts)"
   },

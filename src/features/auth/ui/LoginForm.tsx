@@ -39,6 +39,7 @@ const LoginForm = () => {
   const error = useSelector((state: RootState) => state.user.error);
 
   const { signinUser } = useLogin();
+  const isSubmitting = loading || signinUser.isPending;
 
   const {
     register,
@@ -55,6 +56,8 @@ const LoginForm = () => {
   });
 
   const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
+    if (isSubmitting) return;
+
     dispatch(setLoading(true));
     dispatch(setAppInitializing(true));
     dispatch(setError(null));
@@ -123,9 +126,9 @@ const LoginForm = () => {
                     autoCorrect="off"
                     spellCheck={false}
                     aria-label={t("phoneLabel")}
-                    disabled={loading}
+                    disabled={isSubmitting}
                     className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 text-sm text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark sm:text-base ${errors.phone_number ? "border-red-500" : "border-gray-200"
-                      } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                      } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                     placeholder={t("phonePlaceholder")}
                   />
                 )}
@@ -148,15 +151,15 @@ const LoginForm = () => {
                 <input
                   {...register("password")}
                   type={show ? "text" : "password"}
-                  disabled={loading}
+                  disabled={isSubmitting}
                   placeholder={t("passwordPlaceholder")}
                   autoComplete="current-password"
                   className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 pr-12 text-sm text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark sm:text-base ${errors.password ? "border-red-500" : "border-gray-200"
-                    } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
                 <button
                   type="button"
-                  disabled={loading}
+                  disabled={isSubmitting}
                   onClick={() => setShow(!show)}
                   aria-label={show ? t("hidePassword", { defaultValue: "Hide password" }) : t("showPassword", { defaultValue: "Show password" })}
                   className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:text-main focus:outline-none disabled:cursor-not-allowed"
@@ -181,13 +184,13 @@ const LoginForm = () => {
             {/* Kirish tugmasi */}
             <button
               type="submit"
-              disabled={loading}
-              className={`mb-1 mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold shadow-lg transition-all duration-200 sm:mb-2 sm:mt-4 sm:h-12 sm:text-lg ${loading
+              disabled={isSubmitting}
+              className={`mb-1 mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold shadow-lg transition-all duration-200 sm:mb-2 sm:mt-4 sm:h-12 sm:text-lg ${isSubmitting
                 ? "bg-maindark/70 text-primary cursor-not-allowed shadow-none translate-y-0"
                 : "bg-maindark text-primary shadow-main/30 hover:shadow-main/40 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                 }`}
             >
-              {loading ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" size={20} />
                   {t("signingIn")}

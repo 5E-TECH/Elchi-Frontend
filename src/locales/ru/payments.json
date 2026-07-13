@@ -160,6 +160,7 @@
   "financialBalanceComment": "Комментарий",
   "financialBalanceHistoryEmpty": "История не найдена",
   "financialBalanceSourceProfit": "Доход почты",
+  "financialBalanceSourceExtraCost": "Дополнительный расход",
   "financialBalanceSourceManualIncome": "Ручное поступление",
   "financialBalanceSourceManualExpense": "Ручной расход",
   "financialBalanceSourceSalary": "Зарплата",

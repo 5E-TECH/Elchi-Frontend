@@ -19,6 +19,7 @@ export interface DashboardOrdersSummary {
   acceptedCount: number;
   cancelled: number;
   soldAndPaid: number;
+  inProgress?: number;
   profit: number;
   totalRevenue: number;
   from?: number;
@@ -93,6 +94,14 @@ export interface TopCourier {
   success_rate: number;
 }
 
+export interface TopBranch {
+  branch_id: string;
+  branch_name: string | null;
+  total_orders: number;
+  successful_orders: number;
+  success_rate: number;
+}
+
 export interface DashboardResponse {
   statusCode: number;
   message: string;
@@ -102,6 +111,7 @@ export interface DashboardResponse {
     couriers?: unknown[];
     topMarkets?: TopMarket[];
     topCouriers?: TopCourier[];
+    topBranches?: TopBranch[];
     branchDashboard?: BranchDashboardPayload | null;
   };
 }
@@ -129,6 +139,9 @@ export interface RevenueResponse {
       markets?: {
         marketsTotalBalans?: number;
       };
+      branches?: {
+        branchReceivable?: number;
+      };
       couriers?: {
         couriersTotalBalanse?: number;
       };
@@ -154,6 +167,12 @@ export interface KpiResponse {
 const toNumber = (value: unknown): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const toOptionalNumber = (value: unknown): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 };
 
 const toOptionalBoolean = (value: unknown): boolean | undefined => {
@@ -243,6 +262,21 @@ const normalizeTopCourier = (value: unknown): TopCourier => {
   };
 };
 
+const normalizeTopBranch = (value: unknown): TopBranch => {
+  const metrics = normalizePerformerMetrics(value);
+  return {
+    branch_id: String(
+      metrics.item.branch_id ?? metrics.item.branchId ?? metrics.item.id ?? "",
+    ),
+    branch_name: String(
+      metrics.item.branch_name ?? metrics.item.branchName ?? metrics.item.name ?? "",
+    ) || null,
+    total_orders: metrics.total_orders,
+    successful_orders: metrics.successful_orders,
+    success_rate: metrics.success_rate,
+  };
+};
+
 const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null => {
   const item = asRecord(value);
   if (!Object.keys(item).length) return null;
@@ -319,6 +353,7 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
   const orders = getDashboardOrdersRecord(data);
   const topMarkets = data.topMarkets ?? data.top_markets;
   const topCouriers = data.topCouriers ?? data.top_couriers;
+  const topBranches = data.topBranches ?? data.top_branches;
   const branchDashboard = data.branchDashboard ?? data.branch_dashboard;
 
   return {
@@ -372,6 +407,16 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
             orders.successful_orders,
           ),
         ),
+        inProgress: toOptionalNumber(
+          firstDefined(
+            orders.inProgress,
+            orders.in_progress,
+            orders.onTheRoad,
+            orders.on_the_road,
+            orders.activeOrders,
+            orders.active_orders,
+          ),
+        ),
         profit: toNumber(
           firstDefined(
             orders.profit,
@@ -400,6 +445,9 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
         : [],
       topCouriers: Array.isArray(topCouriers)
         ? topCouriers.map(normalizeTopCourier)
+        : [],
+      topBranches: Array.isArray(topBranches)
+        ? topBranches.map(normalizeTopBranch)
         : [],
       branchDashboard: normalizeBranchDashboard(branchDashboard),
     },
@@ -434,6 +482,7 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
   const finance = asRecord(data.finance);
   const main = asRecord(finance.main);
   const markets = asRecord(finance.markets);
+  const branches = asRecord(finance.branches);
   const couriers = asRecord(finance.couriers);
 
   return {
@@ -457,6 +506,14 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
                   markets.marketsTotalBalance ??
                   markets.markets_total_balans ??
                   markets.markets_total_balance,
+              ),
+            },
+            branches: {
+              branchReceivable: toNumber(
+                branches.branchReceivable ??
+                  branches.branchReceivableBalance ??
+                  branches.branch_receivable ??
+                  branches.branch_receivable_balance,
               ),
             },
             couriers: {

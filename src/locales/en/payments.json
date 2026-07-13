@@ -160,6 +160,7 @@
   "financialBalanceComment": "Comment",
   "financialBalanceHistoryEmpty": "No history data found",
   "financialBalanceSourceProfit": "Post profit",
+  "financialBalanceSourceExtraCost": "Extra cost",
   "financialBalanceSourceManualIncome": "Manual income",
   "financialBalanceSourceManualExpense": "Manual expense",
   "financialBalanceSourceSalary": "Salary",

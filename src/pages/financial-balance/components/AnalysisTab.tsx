@@ -65,6 +65,8 @@ const sourceTypeLabel = (value: string, t: (key: string) => string) => {
   const normalized = value.trim().toLowerCase();
 
   if (normalized === "sell" || normalized === "sell_profit") return t("financialBalanceSourceProfit");
+  if (normalized === "sell_extra_cost") return t("financialBalanceSourceExtraCost");
+  if (normalized === "cancel_extra_cost") return t("financialBalanceSourceExtraCost");
   if (normalized === "manual_income") return t("financialBalanceSourceManualIncome");
   if (normalized === "manual_expense") return t("financialBalanceSourceManualExpense");
   if (normalized === "salary") return t("financialBalanceSourceSalary");

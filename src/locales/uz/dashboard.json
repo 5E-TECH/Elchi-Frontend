@@ -79,7 +79,8 @@
   },
   "top": {
     "markets_title": "Top marketlar",
-    "couriers_title": "Top kuryerlar",
+    "couriers_title": "Top filiallar",
+    "branches_title": "Top filiallar",
     "empty": "Yetarli ma'lumot yo'q (kamida 30 buyurtma kerak)"
   },
   "region": {
@@ -94,6 +95,8 @@
     "markets_hint": "Marketlarga to'lanishi kerak bo'lgan summa",
     "couriers": "Kuryerlar balansi",
     "couriers_hint": "Kuryerlardagi joriy summa",
+    "branches": "Filiallar balansi",
+    "branches_hint": "Filiallardan olinishi kerak bo'lgan summa",
     "current": "Joriy holat",
     "current_hint": "Umumiy moliyaviy holat (kassa − qarzlar)"
   },

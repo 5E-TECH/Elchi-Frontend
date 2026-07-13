@@ -104,7 +104,9 @@ const toDisplayAmount = (value: number) =>
   value.toLocaleString("ru-RU").replace(/\s/g, " ");
 
 const toSourceTypeLabel = (value: string, t: (key: string) => string) => {
-  if (value === "sell") return t("financialBalanceSourceProfit");
+  if (value === "sell" || value === "sell_profit") return t("financialBalanceSourceProfit");
+  if (value === "sell_extra_cost") return t("financialBalanceSourceExtraCost");
+  if (value === "cancel_extra_cost") return t("financialBalanceSourceExtraCost");
   if (value === "manual_income") return t("financialBalanceSourceManualIncome");
   if (value === "manual_expense") return t("financialBalanceSourceManualExpense");
   if (value === "salary") return t("financialBalanceSourceSalary");
@@ -261,6 +263,8 @@ const HistoryTab = () => {
   const sourceTypeOptions = useMemo(
     () => [
       { value: "sell", label: t("financialBalanceSourceProfit") },
+      { value: "sell_extra_cost", label: t("financialBalanceSourceExtraCost") },
+      { value: "cancel_extra_cost", label: t("financialBalanceSourceExtraCost") },
       { value: "manual_income", label: t("financialBalanceSourceManualIncome") },
       { value: "manual_expense", label: t("financialBalanceSourceManualExpense") },
       { value: "salary", label: t("financialBalanceSourceSalary") },

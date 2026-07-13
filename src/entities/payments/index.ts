@@ -126,6 +126,11 @@ export const useCashBox = () => {
       client.invalidateQueries({ queryKey: ["couriers"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["courier-cashbox-balances"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["branches"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["branch-dashboard"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["revenue"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["kpi"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: [financeHistory], refetchType: "active" }),
     ]);
   };
 

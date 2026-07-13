@@ -6,18 +6,6 @@ import { getTodayRange } from "../../../shared/lib/dateRange";
 import BranchDashboardPage from "./BranchDashboardPage";
 
 const getDashboardMock = vi.hoisted(() => vi.fn());
-const useGetOrdersMock = vi.hoisted(() => vi.fn());
-const useGetCouriersMock = vi.hoisted(() => vi.fn());
-const useQueriesMock = vi.hoisted(() => vi.fn());
-
-vi.mock("@tanstack/react-query", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@tanstack/react-query")>();
-
-  return {
-    ...actual,
-    useQueries: useQueriesMock,
-  };
-});
 
 vi.mock("../../../entities/dashboard", () => ({
   useDashboard: () => ({
@@ -25,16 +13,10 @@ vi.mock("../../../entities/dashboard", () => ({
   }),
 }));
 
-vi.mock("../../../entities/order/api/orderApi", () => ({
-  useOrders: () => ({
-    useGetOrders: useGetOrdersMock,
-  }),
-}));
-
-vi.mock("../../../entities/user/api/userApi", () => ({
-  useUser: () => ({
-    useGetCouriers: useGetCouriersMock,
-  }),
+vi.mock("../../../widgets/dashboard-top-performers/ui/TopPerformers", () => ({
+  default: ({ branches }: { branches?: unknown[] }) => (
+    <div data-testid="top-branches">branches:{branches?.length ?? 0}</div>
+  ),
 }));
 
 describe("BranchDashboardPage", () => {
@@ -75,50 +57,24 @@ describe("BranchDashboardPage", () => {
               },
             },
           },
+          topBranches: [
+            {
+              branch_id: "branch-1",
+              branch_name: "Qashqadaryo",
+              total_orders: 9,
+              successful_orders: 4,
+              success_rate: 44.4,
+            },
+          ],
         },
       },
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
     });
-    useGetOrdersMock.mockImplementation((params: { status?: string[] } | undefined) => {
-      const status = params?.status ?? [];
-      const total = status.includes("sold")
-        ? 3
-        : status.includes("cancelled")
-          ? 1
-          : 7;
-
-      return {
-        data: {
-          data: [],
-          total,
-          page: 1,
-          limit: 10,
-        },
-      };
-    });
-    useGetCouriersMock.mockReturnValue({
-      data: [
-        {
-          id: "courier-user-1",
-          name: "Courier",
-        },
-      ],
-    });
-    useQueriesMock.mockImplementation(({ queries }: { queries: unknown[] }) =>
-      queries.map((_, index) => ({
-        data: {
-          data: [],
-          total: index % 3 === 0 ? 2 : index % 3 === 1 ? 1 : 0,
-          page: 1,
-          limit: 10,
-        },
-      })),
-    );
   });
 
-  it("sends date filters and aggregates all branch orders", async () => {
+  it("sends date filters and renders backend dashboard summary", async () => {
     const user = userEvent.setup();
     const todayRange = getTodayRange();
     renderWithProviders(<BranchDashboardPage />, {
@@ -143,10 +99,6 @@ describe("BranchDashboardPage", () => {
       true,
       "manager:manager-user-1",
     );
-    expect(useGetOrdersMock).toHaveBeenCalledWith(
-      expect.objectContaining({ branch_id: "branch-1", limit: 10 }),
-      true,
-    );
 
     await user.click(screen.getByRole("button", { name: "Barchasi" }));
 
@@ -162,8 +114,9 @@ describe("BranchDashboardPage", () => {
       "manager:manager-user-1",
     );
     expect(lastParams).not.toHaveProperty("all");
-    expect(screen.getAllByText("9").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("4").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("7").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("top-branches")).toHaveTextContent("branches:1");
   });
 });

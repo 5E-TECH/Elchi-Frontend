@@ -331,6 +331,9 @@ const getAdditionalLabel = (key: string) => {
 const getCurrentUserName = (currentUser?: User | null) =>
   currentUser?.name || currentUser?.username || "";
 
+const isBranchWaitingHandlerRole = (role?: string | null) =>
+  ["manager", "branch", "registrator"].includes(normalizeKey(role));
+
 const getRoleLabel = (t: ReturnType<typeof useTranslation>["t"], role?: string | null) => {
   const normalizedRole = normalizeKey(role);
   const translated = t(`tracking.roleValue.${normalizedRole}`, { defaultValue: "" });
@@ -576,6 +579,10 @@ const getActorName = (event: TrackingEvent, currentUser?: User | null) => {
     changedByRole === "system";
 
   if (isSystemActor && isCourierReturnToWaitingEvent(event)) {
+    if (isBranchWaitingHandlerRole(currentUser?.role) && currentUserName) {
+      return currentUserName;
+    }
+
     const courierName = getCourierActorName(event);
 
     if (courierName) {
@@ -612,6 +619,10 @@ const getActorRole = (event: TrackingEvent, currentUser?: User | null) => {
     normalizeKey(event.changed_by_role) === "system";
 
   if (isSystemActor && isCourierReturnToWaitingEvent(event)) {
+    if (isBranchWaitingHandlerRole(currentUser?.role)) {
+      return currentUser?.role;
+    }
+
     const courierName = getCourierActorName(event);
 
     if (courierName || normalizeKey(currentUser?.role) === "courier") {
@@ -639,6 +650,14 @@ const getActorPhone = (event: TrackingEvent, currentUser?: User | null) => {
 
   if (actorPhone) {
     return actorPhone;
+  }
+
+  if (
+    isCourierReturnToWaitingEvent(event) &&
+    normalizeKey(event.actor?.role ?? event.changed_by_role) === "system" &&
+    isBranchWaitingHandlerRole(currentUser?.role)
+  ) {
+    return asCleanString(currentUser?.phone_number);
   }
 
   if (

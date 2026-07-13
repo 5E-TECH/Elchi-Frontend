@@ -16,7 +16,7 @@ import {
 import {
   Wallet,
   Store,
-  Bike,
+  Building2,
   Scale,
   BarChart2,
 } from "lucide-react";
@@ -260,7 +260,9 @@ const FinancialAnalysis = memo(({
   const hasFinance = Boolean(finance);
   const mainBalance = Number(finance?.main?.balance ?? 0);
   const marketsBalance = Number(finance?.markets?.marketsTotalBalans ?? 0);
-  const couriersBalance = Number(finance?.couriers?.couriersTotalBalanse ?? 0);
+  const branchesBalance = Number(
+    finance?.branches?.branchReceivable ?? finance?.couriers?.couriersTotalBalanse ?? 0,
+  );
   const currentSituation = Number(finance?.currentSituation ?? 0);
 
   const balanceRows: Array<{
@@ -271,7 +273,7 @@ const FinancialAnalysis = memo(({
   }> = [
     { title: t("balance.main"), value: mainBalance, icon: <Wallet size={16} />, tone: "brand" },
     { title: t("balance.markets"), value: marketsBalance, icon: <Store size={16} />, tone: "info" },
-    { title: t("balance.couriers"), value: couriersBalance, icon: <Bike size={16} />, tone: "warning" },
+    { title: t("balance.branches"), value: branchesBalance, icon: <Building2 size={16} />, tone: "warning" },
     {
       title: t("balance.current"),
       value: currentSituation,
