@@ -19,6 +19,7 @@ const SettingsPage = lazy(() => import("../../pages/settings/ui/SettingsPage"));
 const SettlementPage = lazy(() => import("../../pages/settlement"));
 const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
 const MarketOperatorsPage = lazy(() => import("../../pages/market-operators"));
+const CourierBulkPage = lazy(() => import("../../pages/courier-bulk"));
 const IntegrationsOpsPage = lazy(() => import("../../pages/integrations-ops"));
 const InvestorsOpsPage = lazy(() => import("../../pages/investors-ops"));
 const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
@@ -222,6 +223,7 @@ const canViewRegionStats = (state: RootState) => {
 
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
 const canViewMarketOperators = (state: RootState) => state.role.role === "market";
+const canViewCourierBulk = (state: RootState) => state.role.role === "courier";
 
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
@@ -709,6 +711,14 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewMarketOperators}>
                   <MarketOperatorsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "courier-bulk",
+              element: (
+                <ProtectedRoute canActivate={canViewCourierBulk}>
+                  <CourierBulkPage />
                 </ProtectedRoute>
               ),
             },

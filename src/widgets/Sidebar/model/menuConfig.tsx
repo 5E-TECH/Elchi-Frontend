@@ -15,6 +15,7 @@ import {
   Bell,
   Building2,
   Truck,
+  Zap,
   type LucideIcon,
   //   LucideIcon,
 } from "lucide-react";
@@ -103,6 +104,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/courier-bulk", icon: Zap, label: "quickAction" },
     { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
     { to: "/regions", icon: MapPinned, label: "regions" },
