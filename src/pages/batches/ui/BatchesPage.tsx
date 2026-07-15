@@ -343,7 +343,7 @@ const BatchesPage = () => {
       ) : null}
 
       {isLoading ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,270px))] gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))] gap-3 xl:grid-cols-[repeat(auto-fill,minmax(230px,270px))]">
           {Array.from({ length: limit }).map((_, index) => (
             <BatchCardSkeleton key={index} tone={activeTab} />
           ))}
@@ -358,7 +358,7 @@ const BatchesPage = () => {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,270px))] gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))] gap-3 xl:grid-cols-[repeat(auto-fill,minmax(230px,270px))]">
           {batches.map((batch) => (
             <BatchCard
               key={batch.id}

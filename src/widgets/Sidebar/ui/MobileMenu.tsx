@@ -50,9 +50,9 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
             />
 
             {/* Content */}
-            <div className="absolute bottom-0 right-0 top-0 flex w-[85%] animate-slide-in-right flex-col border-l border-black/10 bg-sidebar shadow-2xl dark:border-white/10 dark:bg-maindark">
+            <div className="absolute bottom-0 right-0 top-0 flex w-[min(88vw,24rem)] animate-slide-in-right flex-col border-l border-black/10 bg-sidebar shadow-2xl dark:border-white/10 dark:bg-maindark">
                 {/* Header Section */}
-                <div className="flex flex-col gap-4 border-b border-black/10 px-6 py-6 dark:border-white/5">
+                <div className="flex flex-col gap-4 border-b border-black/10 px-4 py-5 sm:px-6 sm:py-6 dark:border-white/5">
                     <div className="flex items-center justify-between">
                         <img src={currentLogo} alt="Logo" className="h-12 w-auto object-contain" />
                         <button
@@ -146,7 +146,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                 </div>
 
                 {/* Footer Section - Profile & Logout */}
-                <div className="space-y-4 border-t border-black/10 bg-black/5 p-6 dark:border-white/5 dark:bg-white/[0.02]">
+                <div className="space-y-4 border-t border-black/10 bg-black/5 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 dark:border-white/5 dark:bg-white/[0.02]">
                     <button
                         type="button"
                         onClick={() => {
@@ -178,4 +178,3 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 };
 
 export default memo(MobileMenu);
-

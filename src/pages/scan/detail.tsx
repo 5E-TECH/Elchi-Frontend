@@ -174,7 +174,7 @@ const ScanDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="rounded-[32px] border border-[color:var(--color-border-soft)] bg-primary p-8 shadow-sm dark:bg-primarydark">
+      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[32px] sm:p-8 dark:bg-primarydark">
         <div className="flex min-h-[360px] items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-maindark dark:text-white">
             <div className="h-11 w-11 animate-spin rounded-full border-2 border-main/20 border-t-main" />
@@ -189,7 +189,7 @@ const ScanDetailPage = () => {
 
   if (isError || !order) {
     return (
-      <div className="rounded-[32px] border border-[color:var(--color-border-soft)] bg-primary p-8 shadow-sm dark:bg-primarydark">
+      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[32px] sm:p-8 dark:bg-primarydark">
         <div className="mx-auto flex min-h-[360px] max-w-xl flex-col items-center justify-center text-center text-maindark dark:text-white">
           <div className="flex h-18 w-18 items-center justify-center rounded-[28px] border border-red-300/20 bg-red-500/12 text-red-200">
             <AlertTriangle size={36} />
@@ -224,8 +224,8 @@ const ScanDetailPage = () => {
   }
 
   return (
-    <div className="rounded-[32px] border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_94%,var(--color-main)_6%)_0%,color-mix(in_srgb,var(--color-sidebar)_88%,var(--color-main)_12%)_100%)] shadow-sm dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
-      <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4 md:px-7">
+    <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_94%,var(--color-main)_6%)_0%,color-mix(in_srgb,var(--color-sidebar)_88%,var(--color-main)_12%)_100%)] shadow-sm sm:rounded-[32px] dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
+      <div className="flex items-center justify-between gap-3 border-b border-[color:var(--color-border-soft)] px-3 py-3 sm:px-5 sm:py-4 md:px-7">
         <div className="flex items-center gap-3">
           <BackButton to="/scan" className="shrink-0 bg-white dark:bg-maindark" label="" />
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/15 dark:text-emerald-100">
@@ -246,9 +246,9 @@ const ScanDetailPage = () => {
         </div>
       </div>
 
-      <div className="grid gap-5 px-5 py-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)] md:px-7 md:py-7">
+      <div className="grid gap-4 px-3 py-3 sm:px-5 sm:py-5 md:px-7 md:py-7 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
         <div className="space-y-4">
-          <div className="rounded-[30px] border border-[color:var(--color-border-soft)] bg-maindark p-6 shadow-sm dark:bg-maindark">
+          <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-maindark p-4 shadow-sm sm:rounded-[30px] sm:p-6 dark:bg-maindark">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="m-0 text-xs font-bold uppercase tracking-[0.22em] text-emerald-200/70">
@@ -296,7 +296,7 @@ const ScanDetailPage = () => {
             </div>
           </div>
 
-          <div className="rounded-[30px] border border-[color:var(--color-border-soft)] bg-white/80 p-6 shadow-sm dark:bg-white/[0.04]">
+          <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 p-4 shadow-sm sm:rounded-[30px] sm:p-6 dark:bg-white/[0.04]">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(14rem,0.8fr)]">
               <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-4 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/55">
@@ -326,7 +326,7 @@ const ScanDetailPage = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-[30px] border border-[color:var(--color-border-soft)] bg-white/80 p-6 shadow-sm dark:bg-white/[0.04]">
+          <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 p-4 shadow-sm sm:rounded-[30px] sm:p-6 dark:bg-white/[0.04]">
             <div className="flex items-center gap-2 text-maindark dark:text-white">
               <Sparkles size={16} className="text-[#a5b4fc]" />
               <p className="m-0 text-sm font-bold uppercase tracking-[0.22em] text-[color:var(--color-text-muted)] dark:text-white/55">
