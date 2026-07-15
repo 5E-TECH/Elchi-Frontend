@@ -12,9 +12,9 @@ const FilterPanel = ({
   gridClassName = "",
 }: FilterPanelProps) => (
   <section
-    className={`mb-5 rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-primarydark ${className}`}
+    className={`mb-4 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 shadow-sm sm:mb-5 sm:p-4 dark:bg-primarydark ${className}`}
   >
-    <div className={`grid gap-3 ${gridClassName}`}>{children}</div>
+    <div className={`grid min-w-0 grid-cols-1 gap-3 ${gridClassName}`}>{children}</div>
   </section>
 );
 

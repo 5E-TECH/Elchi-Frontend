@@ -14,6 +14,8 @@ const MOBILE_ADMIN_ALLOWED_LABELS = [
     "balance",
 ] as const;
 
+const MOBILE_MAX_ITEMS = 5;
+
 const BottomNav = () => {
     const { t } = useTranslation(["sidebar"]);
 
@@ -31,20 +33,20 @@ const BottomNav = () => {
                 MOBILE_ADMIN_ALLOWED_LABELS.includes(
                     item.label as (typeof MOBILE_ADMIN_ALLOWED_LABELS)[number],
                 ),
-            );
+            ).slice(0, MOBILE_MAX_ITEMS);
         }
 
         if (userRole === "courier") {
             return sourceItems.slice(0, 4);
         }
 
-        return sourceItems;
+        return sourceItems.slice(0, MOBILE_MAX_ITEMS);
     }, [userRole, user]);
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up lg:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up pb-[env(safe-area-inset-bottom)] lg:hidden">
             <div
-                className="mx-4 mb-3 grid gap-1 overflow-hidden rounded-2xl border border-white/60 bg-[rgba(255,255,255,0.55)] p-2 shadow-[0_10px_30px_rgba(56,37,135,0.18)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/15 dark:bg-[rgba(33,25,73,0.52)] dark:shadow-[0_12px_34px_rgba(0,0,0,0.42)]"
+                className="mx-2 mb-2 grid gap-1 overflow-hidden rounded-2xl border border-white/60 bg-[rgba(255,255,255,0.72)] p-1.5 shadow-[0_10px_30px_rgba(56,37,135,0.18)] backdrop-blur-xl backdrop-saturate-150 sm:mx-4 sm:mb-3 sm:p-2 dark:border-white/15 dark:bg-[rgba(33,25,73,0.64)] dark:shadow-[0_12px_34px_rgba(0,0,0,0.42)]"
                 style={{ gridTemplateColumns: `repeat(${Math.max(navItems.length, 1)}, minmax(0, 1fr))` }}
             >
                 {navItems.map((item) => (
@@ -57,7 +59,7 @@ const BottomNav = () => {
                         onTouchStart={() => preloadRoute(item.to)}
                         aria-label={t(item.label)}
                         className={({ isActive }) =>
-                            `flex items-center justify-center py-2 rounded-xl transition-all duration-300 min-w-0 ${isActive
+                            `flex min-h-10 min-w-0 items-center justify-center rounded-xl py-2 transition-all duration-300 sm:min-h-11 ${isActive
                                 ? "bg-main/90 text-white shadow-[0_8px_22px_rgba(106,70,255,0.45)] scale-105"
                                 : "text-maindark/65 hover:bg-white/40 hover:text-maindark dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
                             }`

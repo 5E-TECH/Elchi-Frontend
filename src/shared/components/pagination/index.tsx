@@ -149,20 +149,20 @@ const Pagination = ({
   }
 
   return (
-    <div className={`flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between ${className}`}>
+    <div className={`flex min-w-0 flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between ${className}`}>
       <div className="min-h-5 text-center text-xs text-gray-400 sm:text-left">
         {resolvedSummary}
       </div>
 
-      <div className={`flex flex-wrap items-center justify-center sm:justify-end ${compact ? "gap-1.5" : "gap-2"}`}>
+      <div className={`flex min-w-0 flex-wrap items-center justify-center sm:justify-end ${compact ? "gap-1.5" : "gap-2"}`}>
         {onItemsPerPageChange && (
           <div
             ref={limitRef}
-            className={`relative flex items-center gap-2 border border-main/15 bg-white text-xs font-semibold text-maindark/70 shadow-sm shadow-main/5 dark:border-white/10 dark:bg-white/[0.08] dark:text-primary/75 ${
+            className={`relative flex max-w-full items-center gap-2 border border-main/15 bg-white text-xs font-semibold text-maindark/70 shadow-sm shadow-main/5 dark:border-white/10 dark:bg-white/[0.08] dark:text-primary/75 ${
               compact ? "rounded-xl px-2 py-1" : "rounded-full px-2.5 py-1.5"
             }`}
           >
-            <span className="whitespace-nowrap">{t("itemsPerPage")}</span>
+            <span className="hidden whitespace-nowrap sm:inline">{t("itemsPerPage")}</span>
             <button
               type="button"
               onClick={() => {

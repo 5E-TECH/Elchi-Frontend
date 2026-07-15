@@ -82,6 +82,7 @@ export const Table = memo(<T extends Record<string, any>>({
   const isCardMode = responsiveMode === 'cards';
   const isCompactMode = responsiveMode === 'compact';
   const isSmallMobile = viewportWidth <= 560;
+  const isTinyMobile = viewportWidth <= 380;
   const mobileColumns = useMemo(
     () =>
       [...columns]
@@ -169,7 +170,7 @@ export const Table = memo(<T extends Record<string, any>>({
   return (
     <div
       ref={wrapperRef}
-      className={`overflow-hidden rounded-2xl bg-primary shadow-sm dark:bg-white/[0.025] ${bordered ? 'border border-[color:var(--color-border-strong)] dark:border-white/10' : ''}`}
+      className={`min-w-0 overflow-hidden rounded-xl bg-primary shadow-sm sm:rounded-2xl dark:bg-white/[0.025] ${bordered ? 'border border-[color:var(--color-border-strong)] dark:border-white/10' : ''}`}
     >
       <div className={`${isCardMode ? "overflow-visible" : "overflow-x-auto"} custom-scrollbar`}>
         <table className={`w-full min-w-full border-collapse ${isCompactMode ? 'table-fixed' : ''} ${className}`}>
@@ -218,12 +219,12 @@ export const Table = memo(<T extends Record<string, any>>({
                   className={
                     isCardMode
                       ? mobileRowRender
-                        ? `block border-b border-[color:var(--color-border-strong)] px-2 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
+                        ? `block border-b border-[color:var(--color-border-strong)] px-1.5 dark:border-primarydark/40 sm:px-2 ${hoverable ? 'transition-colors duration-200' : ''
                         } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-white/[0.02] ${hoverable
                           ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.06]'
                           : ''
                         } last:border-b-0`
-                        : `block border-b border-[color:var(--color-border-strong)] px-2 dark:border-primarydark/40 ${hoverable ? 'transition-colors duration-200' : ''
+                        : `block border-b border-[color:var(--color-border-strong)] px-1.5 dark:border-primarydark/40 sm:px-2 ${hoverable ? 'transition-colors duration-200' : ''
                         } ${onRowClick ? 'cursor-pointer' : ''} bg-primary dark:bg-white/[0.02] ${hoverable
                           ? 'hover:bg-[color:var(--color-table-row-hover)] dark:hover:bg-white/[0.06]'
                           : ''
@@ -255,7 +256,7 @@ export const Table = memo(<T extends Record<string, any>>({
                         <div
                           className={
                             isCardMode
-                              ? column.mobileFullWidth
+                              ? column.mobileFullWidth || isTinyMobile
                                 ? "flex min-w-0 flex-col items-start gap-1"
                                 : `grid min-w-0 items-start gap-2 ${isSmallMobile ? "grid-cols-[minmax(6rem,7.5rem)_1fr]" : "grid-cols-[minmax(7.5rem,9.5rem)_1fr]"}`
                               : "block min-w-0"
@@ -266,7 +267,7 @@ export const Table = memo(<T extends Record<string, any>>({
                           >
                             {column.mobileLabel ?? column.label}
                           </span>
-                          <div className={`min-w-0 break-words ${isCardMode ? `w-full ${column.mobileFullWidth ? "text-left" : "text-right"}` : 'w-auto text-left'} ${isCompactMode ? 'text-[13px] leading-5' : ''}`}>
+                          <div className={`min-w-0 break-words ${isCardMode ? `w-full ${column.mobileFullWidth || isTinyMobile ? "text-left" : "text-right"}` : 'w-auto text-left'} ${isCompactMode ? 'text-[13px] leading-5' : ''}`}>
                             {column.render
                               ? column.render(row[column.key], row, rowIndex)
                               : String(row[column.key] ?? '—')}

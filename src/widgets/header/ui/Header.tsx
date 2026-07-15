@@ -223,7 +223,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-17.5 items-center justify-between gap-2 bg-sidebar px-3 py-3 transition-colors duration-300 md:h-auto md:px-4 md:py-4 lg:px-6 dark:bg-maindark">
+    <header className="sticky top-0 z-30 flex min-h-[4.25rem] items-center justify-between gap-2 bg-sidebar px-3 py-2 transition-colors duration-300 sm:min-h-[4.5rem] md:h-auto md:px-4 md:py-3 lg:px-6 dark:bg-maindark">
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
         <div className="absolute inset-0 z-50 bg-sidebar px-4 flex items-center animate-fade-in dark:bg-maindark lg:hidden">
@@ -282,7 +282,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <img
           src={theme === "dark" ? LogoTextdark : LogoText}
           alt="Logo"
-          className="h-28 w-auto object-contain"
+          className="h-12 w-auto max-w-[42vw] object-contain sm:h-14"
           onDoubleClick={() => setIsSearchOpen(true)}
         />
       </div>
@@ -348,7 +348,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
           aria-label={t("openSearch")}
         >
           <Search className="w-5.5 h-5.5" />
@@ -358,7 +358,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={onMenuClick}
-          className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
           aria-label={t("openMenu")}
         >
           <Menu className="w-7 h-7" />
