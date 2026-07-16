@@ -72,17 +72,17 @@ const getDistrictName = (order: CourierBulkOrder) =>
 const getMarketName = (order: CourierBulkOrder) => order.market?.name ?? "-";
 
 const actionClasses: Record<CourierBulkAction, string> = {
-  sold: "border-slate-200 bg-white dark:border-slate-700/70 dark:bg-[#202940]",
-  cancel: "border-rose-300 bg-rose-50 dark:border-rose-500/70 dark:bg-rose-500/10",
-  tomorrow: "border-indigo-300 bg-indigo-50 dark:border-indigo-400/70 dark:bg-indigo-500/10",
+  sold: "border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] dark:border-white/10 dark:bg-white/5",
+  cancel: "border-error/30 bg-error/8 dark:border-error/35 dark:bg-error/12",
+  tomorrow: "border-main/30 bg-main/10 dark:border-main/40 dark:bg-main/18",
 };
 
 const surfaceClass =
-  "border border-[color:var(--color-border-soft)] bg-primary shadow-xl shadow-black/5 dark:border-white/5 dark:bg-[#211b35] dark:shadow-black/10";
+  "border border-[color:var(--color-border-soft)] bg-[color:var(--color-page-surface)] shadow-xl shadow-[color:var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:shadow-black/10";
 const controlIdleClass =
-  "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-[#172437] dark:text-slate-300 dark:hover:bg-[#1d2d44]";
+  "border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] text-[color:var(--color-maindark)] hover:border-main/40 hover:bg-main/10 dark:border-white/10 dark:bg-white/5 dark:text-primary dark:hover:bg-white/10";
 const strongTextClass = "text-maindark dark:text-white";
-const mutedTextClass = "text-slate-500 dark:text-slate-400";
+const mutedTextClass = "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]";
 const COURIER_BULK_PAGE_LIMIT = 100;
 const COURIER_BULK_MAX_PAGES = 50;
 
@@ -301,7 +301,7 @@ const CourierBulkPage = () => {
               onClick={() => setScanMode("cancel")}
               className={`flex items-center justify-center gap-2 rounded-xl px-5 py-5 text-base font-bold transition ${
                 scanMode === "cancel"
-                  ? "bg-rose-500 text-white shadow-lg shadow-rose-500/25"
+                  ? "bg-error text-white shadow-lg shadow-error/25"
                   : controlIdleClass
               }`}
             >
@@ -314,7 +314,7 @@ const CourierBulkPage = () => {
               onClick={() => setScanMode("tomorrow")}
               className={`flex items-center justify-center gap-2 rounded-xl px-5 py-5 text-base font-bold transition ${
                 scanMode === "tomorrow"
-                  ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
+                  ? "bg-main text-white shadow-lg shadow-main/25"
                   : controlIdleClass
               }`}
             >
@@ -329,8 +329,8 @@ const CourierBulkPage = () => {
             disabled={isBusy}
             className={`mt-3 flex w-full items-center justify-center gap-3 rounded-xl border border-dashed px-5 py-5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
               scanMode === "cancel"
-                ? "border-rose-500/75 text-rose-500 hover:bg-rose-500/10 dark:text-rose-400"
-                : "border-indigo-500/75 text-indigo-500 hover:bg-indigo-500/10 dark:border-indigo-400/75 dark:text-indigo-300"
+                ? "border-error/75 text-error hover:bg-error/10 dark:text-error"
+                : "border-main/75 text-main hover:bg-main/10 dark:border-main/75 dark:text-primary"
             }`}
           >
             <ScanLine size={18} />
@@ -338,7 +338,7 @@ const CourierBulkPage = () => {
           </button>
 
           {scanError ? (
-            <div className="mt-3 rounded-xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-700 dark:text-rose-100">
+            <div className="mt-3 rounded-xl border border-error/25 bg-error/10 px-4 py-3 text-sm font-semibold text-error dark:text-error">
               {scanError}
             </div>
           ) : null}
@@ -350,9 +350,9 @@ const CourierBulkPage = () => {
               {t("ordersTitle", { count: counts.total })}
             </h2>
             <div className="flex items-center gap-3 text-xs font-bold">
-              <span className="flex items-center gap-1 text-rose-400"><span className="h-2 w-2 rounded-full bg-rose-500" />{counts.cancel}</span>
-              <span className="flex items-center gap-1 text-indigo-500 dark:text-indigo-300"><span className="h-2 w-2 rounded-full bg-indigo-500 dark:bg-indigo-400" />{counts.tomorrow}</span>
-              <span className="flex items-center gap-1 text-emerald-400"><span className="h-2 w-2 rounded-full bg-emerald-500" />{counts.sold}</span>
+              <span className="flex items-center gap-1 text-error"><span className="h-2 w-2 rounded-full bg-error" />{counts.cancel}</span>
+              <span className="flex items-center gap-1 text-main dark:text-primary"><span className="h-2 w-2 rounded-full bg-main dark:bg-primary" />{counts.tomorrow}</span>
+              <span className="flex items-center gap-1 text-success"><span className="h-2 w-2 rounded-full bg-success" />{counts.sold}</span>
             </div>
           </div>
 
@@ -396,14 +396,14 @@ const CourierBulkPage = () => {
                           <h3 className={`truncate text-base font-bold ${strongTextClass}`}>
                             {order.customer?.name ?? `#${order.id}`}
                           </h3>
-                          {action === "cancel" ? <XCircle size={15} className="text-rose-400" /> : null}
-                          {action === "tomorrow" ? <CalendarClock size={15} className="text-indigo-500 dark:text-indigo-300" /> : null}
-                          {action === "sold" ? <CheckCircle2 size={15} className="text-emerald-400" /> : null}
+                          {action === "cancel" ? <XCircle size={15} className="text-error" /> : null}
+                          {action === "tomorrow" ? <CalendarClock size={15} className="text-main dark:text-primary" /> : null}
+                          {action === "sold" ? <CheckCircle2 size={15} className="text-success" /> : null}
                         </div>
                         <p className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium ${mutedTextClass}`}>
-                          <span className="text-slate-700 dark:text-slate-100">{order.customer?.phone_number ?? "-"}</span>
+                          <span className="text-maindark dark:text-primary">{order.customer?.phone_number ?? "-"}</span>
                           <span>{getDistrictName(order)}</span>
-                          <span className="font-bold text-violet-400">{getMarketName(order)}</span>
+                          <span className="font-bold text-main dark:text-primary">{getMarketName(order)}</span>
                           <span>{getOrderDate(order)} {getOrderTime(order)}</span>
                         </p>
                       </div>
@@ -416,11 +416,11 @@ const CourierBulkPage = () => {
               </div>
             )}
           </div>
-          <div className="border-t border-[color:var(--color-border-soft)] bg-slate-50 px-4 py-3 dark:border-white/5 dark:bg-[#241f39]">
+          <div className="border-t border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] px-4 py-3 dark:border-white/10 dark:bg-white/5">
             <div className="mb-3 flex flex-wrap gap-3 text-xs font-bold">
-              <span className="text-rose-400">{t("summaryCancel", { count: counts.cancel })}</span>
-              <span className="text-emerald-400">{t("summarySold", { count: counts.sold })}</span>
-              <span className="text-indigo-500 dark:text-indigo-300">{t("summaryTomorrow", { count: counts.tomorrow })}</span>
+              <span className="text-error">{t("summaryCancel", { count: counts.cancel })}</span>
+              <span className="text-success">{t("summarySold", { count: counts.sold })}</span>
+              <span className="text-main dark:text-primary">{t("summaryTomorrow", { count: counts.tomorrow })}</span>
               {isFetching && !isInitialLoading ? (
                 <span className={mutedTextClass}>{t("refreshing")}</span>
               ) : null}

@@ -7,6 +7,8 @@ import HistoryTab from "./components/HistoryTab";
 import AnalysisTab from "./components/AnalysisTab";
 import { useCashBox } from "../../entities/payments";
 import PageContainer from "../../shared/ui/PageContainer";
+import QueryErrorState from "../../shared/ui/QueryErrorState";
+import EmptyState from "../../shared/ui/EmptyState";
 import {
   formatFinancialAmount,
   normalizeFinancialBalance,
@@ -137,20 +139,39 @@ const SettlementListCard = ({
 const FinancialBalance = () => {
   const { t } = useTranslation("payments");
   const { useGetFinancialBalance } = useCashBox();
-  const { data: response, isLoading, isError } = useGetFinancialBalance();
+  const { data: response, isLoading, isError, refetch } = useGetFinancialBalance();
   const data = normalizeFinancialBalance(response);
   const currencyLabel = t("currency");
   const [activeTab, setActiveTab] = useState<"overview" | "history" | "analysis">("overview");
 
-  if (!isLoading && (isError || !data)) {
-    return null;
+  if (isError) {
+    return (
+      <PageContainer>
+        <QueryErrorState onRetry={() => void refetch()} />
+      </PageContainer>
+    );
   }
 
-  if (!data) {
-    return null;
+  if (!isLoading && !data) {
+    return (
+      <PageContainer>
+        <EmptyState
+          icon={<Scale size={28} />}
+          title={t("financialBalanceCurrentSituation")}
+          description={t("empty", { ns: "common" })}
+        />
+      </PageContainer>
+    );
   }
 
-  const total = data.currentSituation;
+  const balance = data ?? {
+    currentSituation: 0,
+    difference: 0,
+    main: { balance: 0 },
+    markets: { marketsTotalBalans: 0, marketsTotalBalance: 0, items: [] },
+    couriers: { couriersTotalBalanse: 0, couriersTotalBalance: 0, items: [] },
+  };
+  const total = balance.currentSituation;
   const isNegative = total < 0;
 
   const tabs = [
@@ -176,7 +197,7 @@ const FinancialBalance = () => {
       label: t("cashbox"),
       subLabel: t("financialBalanceCashAvailable"),
       subType: "neutral",
-      amount: data.main.balance,
+      amount: balance.main.balance,
       icon: <Briefcase size={18} />,
       colorClass: "purple",
     },
@@ -184,7 +205,7 @@ const FinancialBalance = () => {
       label: t("financialBalanceMarkets"),
       subLabel: t("financialBalanceMarketsDebt"),
       subType: "negative",
-      amount: data.markets.marketsTotalBalans,
+      amount: balance.markets.marketsTotalBalans,
       icon: <Store size={18} />,
       colorClass: "red",
     },
@@ -192,7 +213,7 @@ const FinancialBalance = () => {
       label: t("financialBalanceCouriers"),
       subLabel: t("financialBalanceCouriersMoney"),
       subType: "positive",
-      amount: data.couriers.couriersTotalBalanse,
+      amount: balance.couriers.couriersTotalBalanse,
       icon: <Truck size={18} />,
       colorClass: "green",
     },
@@ -300,7 +321,7 @@ const FinancialBalance = () => {
       </div>
 
       <div className="shrink-0 px-4 pb-3">
-        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-purple-200/80 bg-purple-50/80 p-2 shadow-sm dark:border-purple-400/25 dark:bg-[#201a33] sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] p-2 shadow-sm dark:border-white/10 dark:bg-white/5 sm:grid-cols-3">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
 
@@ -310,8 +331,8 @@ const FinancialBalance = () => {
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
-                  ? "border-purple-500 bg-gradient-to-r from-purple-600 to-violet-500 text-white shadow-lg shadow-purple-500/25 dark:border-purple-300 dark:from-purple-500 dark:to-violet-500 dark:text-white"
-                  : "border-purple-200 bg-white text-purple-700 shadow-sm hover:border-purple-400 hover:bg-purple-100 hover:text-purple-900 dark:border-purple-400/25 dark:bg-[#2f2946] dark:text-purple-100 dark:hover:border-purple-300/70 dark:hover:bg-[#3b3158] dark:hover:text-white"
+                  ? "border-main bg-main text-white shadow-lg shadow-main/25"
+                  : "border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] text-[color:var(--color-maindark)] shadow-sm hover:border-main/50 hover:bg-main/10 hover:text-main dark:border-white/10 dark:bg-white/5 dark:text-primary dark:hover:bg-white/10 dark:hover:text-white"
                   }`}
               >
                 {tab.icon}
@@ -325,16 +346,16 @@ const FinancialBalance = () => {
       <div className="px-4 pb-4">
         {activeTab === "overview" ? (
           <div className="flex flex-col gap-3">
-            <Statistics data={data} />
+            <Statistics data={balance} />
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
               <SettlementListCard
                 title={t("financialBalanceMarkets")}
                 description={t("financialBalanceMarketsSettlement")}
-                count={data.markets.items.length}
+                count={balance.markets.items.length}
                 icon={<Store size={18} />}
                 iconClassName="bg-purple-600/20 text-purple-500 dark:text-purple-300"
-                total={data.markets.marketsTotalBalans}
-                rows={data.markets.items}
+                total={balance.markets.marketsTotalBalans}
+                rows={balance.markets.items}
                 amountClassName="text-red-500 dark:text-red-400"
                 emptyText={t("financialBalanceListEmpty")}
                 countSuffix={t("financialBalanceCountSuffix")}
@@ -344,11 +365,11 @@ const FinancialBalance = () => {
               <SettlementListCard
                 title={t("financialBalanceCouriers")}
                 description={t("financialBalanceCouriersSettlement")}
-                count={data.couriers.items.length}
+                count={balance.couriers.items.length}
                 icon={<Truck size={18} />}
                 iconClassName="bg-blue-600/20 text-blue-600 dark:text-blue-300"
-                total={data.couriers.couriersTotalBalanse}
-                rows={data.couriers.items}
+                total={balance.couriers.couriersTotalBalanse}
+                rows={balance.couriers.items}
                 amountClassName="text-emerald-600 dark:text-emerald-400"
                 emptyText={t("financialBalanceListEmpty")}
                 countSuffix={t("financialBalanceCountSuffix")}
