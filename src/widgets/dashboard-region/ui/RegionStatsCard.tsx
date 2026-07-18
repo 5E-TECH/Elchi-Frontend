@@ -76,7 +76,7 @@ const MetricCard = ({
   }[tone];
 
   return (
-    <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-[#2A263D]">
+    <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
       <div className="flex items-center gap-3">
         <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${toneClass}`}>
           {icon}
@@ -226,7 +226,7 @@ const RegionStatsCard = memo(({
               ) : null}
             </div>
 
-            <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-[#2A263D]">
+            <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="text-sm font-extrabold text-main dark:text-primary">
                   {regionT("map.districtsTitle", { count: districts.length })}

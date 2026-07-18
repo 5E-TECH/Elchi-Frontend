@@ -101,10 +101,10 @@ const ScannerCameraModal = ({
               />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="relative h-[58%] w-[68%] max-w-[440px] rounded-[34px] border border-white/10 bg-white/[0.04] shadow-[0_0_0_9999px_rgba(7,10,24,0.34)]">
-                  <div className="absolute left-0 top-0 h-14 w-14 rounded-tl-[30px] border-l-4 border-t-4 border-[#7c8cff]" />
-                  <div className="absolute right-0 top-0 h-14 w-14 rounded-tr-[30px] border-r-4 border-t-4 border-[#7c8cff]" />
-                  <div className="absolute bottom-0 left-0 h-14 w-14 rounded-bl-[30px] border-b-4 border-l-4 border-[#7c8cff]" />
-                  <div className="absolute bottom-0 right-0 h-14 w-14 rounded-br-[30px] border-b-4 border-r-4 border-[#7c8cff]" />
+                  <div className="absolute left-0 top-0 h-14 w-14 rounded-tl-[30px] border-l-4 border-t-4 border-main" />
+                  <div className="absolute right-0 top-0 h-14 w-14 rounded-tr-[30px] border-r-4 border-t-4 border-main" />
+                  <div className="absolute bottom-0 left-0 h-14 w-14 rounded-bl-[30px] border-b-4 border-l-4 border-main" />
+                  <div className="absolute bottom-0 right-0 h-14 w-14 rounded-br-[30px] border-b-4 border-r-4 border-main" />
                   <div
                     className="absolute left-[8%] right-[8%] h-[2px] -translate-y-1/2 bg-[linear-gradient(90deg,transparent,rgba(124,140,255,0.98),transparent)] shadow-[0_0_24px_rgba(124,140,255,0.78)]"
                     style={{ animation: "scanner-scan-line-y 2.2s ease-in-out infinite alternate" }}

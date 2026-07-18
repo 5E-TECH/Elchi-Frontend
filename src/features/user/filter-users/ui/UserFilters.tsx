@@ -111,7 +111,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
     };
 
     return (
-        <section className="relative mb-6 overflow-visible rounded-[28px] border border-white/70 bg-white/95 p-4 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-[#342f4b] dark:shadow-black/10">
+        <section className="relative mb-6 overflow-visible rounded-[28px] border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:shadow-black/10">
 
             <div className="relative flex flex-col gap-4">
                 {isMobile && (
@@ -119,7 +119,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                         <button
                             type="button"
                             onClick={() => setIsMobilePanelOpen((prev) => !prev)}
-                            className="flex w-full items-center justify-between rounded-2xl border border-white/70 bg-white/90 px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-main/40 dark:border-white/10 dark:bg-primarydark/60"
+                            className="flex w-full items-center justify-between rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-main/40 dark:border-white/10 dark:bg-white/5"
                         >
                             <div className="flex items-center gap-2.5">
                                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-main/10 text-main dark:bg-white/10 dark:text-white">
@@ -146,7 +146,7 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
                             className={`grid transition-all duration-300 ease-out ${isMobilePanelOpen ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
                         >
                             <div className="overflow-hidden">
-                                <div className="rounded-2xl border border-white/70 bg-white/95 p-3 shadow-sm dark:border-white/10 dark:bg-primarydark/60">
+                                <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
                                     <div className="flex flex-col gap-3">
                                         <FilterSearch
                                             value={String(search.userSearch ?? "")}

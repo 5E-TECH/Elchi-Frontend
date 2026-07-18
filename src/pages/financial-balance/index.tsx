@@ -79,8 +79,8 @@ const SettlementListCard = ({
   totalLabel,
   currencyLabel,
 }: SettlementListCardProps) => (
-  <div className="overflow-hidden rounded-2xl border border-glass-border bg-primary dark:bg-maindark">
-    <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-[#36324A]">
+  <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
+    <div className="flex items-center justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-5 py-4 dark:border-white/10">
       <div className="flex min-w-0 items-center gap-3">
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconClassName}`}>
           {icon}
@@ -100,9 +100,9 @@ const SettlementListCard = ({
         rows.map((row, index) => (
           <div
             key={`${row.id}-${index}`}
-            className="flex items-center gap-3 border-b border-gray-100 px-5 py-3 last:border-b-0 dark:border-[#2A273B]"
+            className="flex items-center gap-3 border-b border-[color:var(--color-border-soft)] px-5 py-3 last:border-b-0 dark:border-white/8"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200/70 text-sm font-bold text-slate-600 dark:bg-[#1d3340] dark:text-slate-300">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-main-soft)] text-sm font-bold text-main dark:bg-white/8 dark:text-primary">
               {index + 1}
             </span>
             <div className="min-w-0 flex-1">
@@ -126,7 +126,7 @@ const SettlementListCard = ({
       )}
     </div>
 
-    <div className="flex items-center justify-between gap-4 border-t border-gray-200 bg-slate-50 px-5 py-4 dark:border-[#36324A] dark:bg-[#202437]">
+    <div className="flex items-center justify-between gap-4 border-t border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] px-5 py-4 dark:border-white/10 dark:bg-white/5">
       <p className="text-base font-bold text-maindark dark:text-white">{totalLabel}</p>
       <p className={`text-right text-base font-black tabular-nums sm:text-lg ${amountClassName}`}>
         {formatFinancialAmount(total, "comma")} {currencyLabel}
@@ -278,7 +278,7 @@ const FinancialBalance = () => {
           return (
             <div
               key={card.label}
-              className="rounded-2xl border border-gray-200 bg-white/60 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-main/40 dark:border-glass-border dark:bg-transparent dark:hover:border-[#4A476A]"
+              className="rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-main/40 dark:border-white/10 dark:bg-white/5 dark:hover:border-main/50"
             >
               <div className="mb-2.5 flex items-center gap-3">
                 <div

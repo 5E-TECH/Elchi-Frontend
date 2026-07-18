@@ -328,7 +328,7 @@ const ScanDetailPage = () => {
         <div className="space-y-4">
           <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 p-4 shadow-sm sm:rounded-[30px] sm:p-6 dark:bg-white/[0.04]">
             <div className="flex items-center gap-2 text-maindark dark:text-white">
-              <Sparkles size={16} className="text-[#a5b4fc]" />
+              <Sparkles size={16} className="text-main dark:text-primary" />
               <p className="m-0 text-sm font-bold uppercase tracking-[0.22em] text-[color:var(--color-text-muted)] dark:text-white/55">
                 {t("scannerResultLabel")}
               </p>

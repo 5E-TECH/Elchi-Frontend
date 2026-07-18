@@ -103,7 +103,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
             })}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 border-t border-gray-200 pt-3 dark:border-[#2E2B3E]">
+          <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
             {chartData.map((item) => (
               <div key={item.name} className="flex items-center gap-1.5">
                 <span
