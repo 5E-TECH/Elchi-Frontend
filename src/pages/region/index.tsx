@@ -71,10 +71,9 @@ const RegionPage = () => {
 
   const isSuperadmin = role === "superadmin";
   const isAdmin = role === "admin";
-  const isLogist = role === "operator";
   const isManager = role === "manager";
   const isCourier = role === "courier";
-  const canViewStats = isAdmin || isSuperadmin || isLogist;
+  const canViewStats = isAdmin || isSuperadmin;
   const canViewScopedStats = isManager || isCourier;
   const canUseDateFilter = canViewStats || canViewScopedStats;
 
