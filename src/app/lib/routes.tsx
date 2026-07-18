@@ -129,7 +129,7 @@ const hasSelfCashboxAccess = (state: RootState) => {
 
 const canViewBranchDashboard = (state: RootState) => {
   const role = state.role.role;
-  return role === "manager" || role === "operator";
+  return role === "manager";
 };
 
 const canViewDispatch = (state: RootState) => {
@@ -144,7 +144,7 @@ const canViewDispatch = (state: RootState) => {
     return Boolean(branchType && branchType !== "HQ");
   }
 
-  return role === "operator" || role === "branch";
+  return false;
 };
 
 const canViewBatches = (state: RootState) => {
@@ -154,7 +154,7 @@ const canViewBatches = (state: RootState) => {
     return Boolean(branchType && MANAGER_BATCH_BRANCH_TYPES.has(branchType));
   }
 
-  return role === "operator" || role === "admin" || role === "superadmin";
+  return role === "admin" || role === "superadmin";
 };
 
 const canViewReturns = (state: RootState) => {
@@ -164,7 +164,7 @@ const canViewReturns = (state: RootState) => {
     return Boolean(branchType && MANAGER_BATCH_BRANCH_TYPES.has(branchType));
   }
 
-  return role === "operator" || role === "admin" || role === "superadmin";
+  return role === "admin" || role === "superadmin";
 };
 
 const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
@@ -228,7 +228,7 @@ const canViewCourierBulk = (state: RootState) => state.role.role === "courier";
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
 
-  if (role === "manager" || role === "operator") {
+  if (role === "manager") {
     return <Navigate replace to="/branch-dashboard" />;
   }
 

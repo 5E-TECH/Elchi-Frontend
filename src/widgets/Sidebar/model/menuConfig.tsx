@@ -22,7 +22,7 @@ import {
 import type { User } from "../../../entities/user/model/types";
 
 export type UserRole = "admin" | "superadmin" | "market" | "courier" | "registrator";
-export type BranchDashboardRole = "manager" | "operator";
+export type BranchDashboardRole = "manager";
 export type SidebarUserRole = UserRole | BranchDashboardRole;
 
 export interface NavItem {
@@ -111,20 +111,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   ],
   manager: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
-    { to: "/dispatch", icon: Truck, label: "dispatch" },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-    { to: "/batches", icon: PackageCheck, label: "batches" },
-    { to: "/returns", icon: RotateCcw, label: "returns" },
     { to: "/regions", icon: MapPinned, label: "regions" },
-  ],
-  operator: [
-    { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
-    { to: "/dispatch", icon: Truck, label: "dispatch" },
-    { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/mails", icon: MailOpen, label: "mails" },
-    { to: "/batches", icon: PackageCheck, label: "batches" },
-    { to: "/returns", icon: RotateCcw, label: "returns" },
   ],
 };
 
@@ -163,7 +151,6 @@ const MANAGER_HYBRID_CONFIG: NavItem[] = [
 const MANAGER_HQ_CONFIG: NavItem[] = [
   { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
   { to: "/orders", icon: ShoppingBag, label: "orders" },
-  { to: "/new-orders", icon: Calendar1, label: "newOrders" },
   { to: "/mails", icon: MailOpen, label: "mails" },
   { to: "/payments", icon: CreditCard, label: "payments" },
   { to: "/regions", icon: MapPinned, label: "regions" },
