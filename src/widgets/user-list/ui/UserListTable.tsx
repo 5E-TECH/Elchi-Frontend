@@ -328,7 +328,7 @@ export const UserListTable = memo(({
     // Loading state
     if (isLoading) {
         return (
-            <div className="overflow-hidden rounded-[24px] border border-white/70 bg-white/95 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-[#342f4b]">
+            <div className="overflow-hidden rounded-[24px] border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center space-y-3">
                         <span className="relative flex h-12 w-12 mx-auto">
@@ -347,7 +347,7 @@ export const UserListTable = memo(({
     // Error state
     if (isError) {
         return (
-            <div className="overflow-hidden rounded-[24px] border border-red-200/70 bg-white/95 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-red-400/20 dark:bg-[#342f4b]">
+            <div className="overflow-hidden rounded-[24px] border border-red-200/70 bg-[color:var(--color-card-surface-strong)] shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-red-400/20 dark:bg-[color:var(--color-surface-elevated-dark)]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -368,7 +368,7 @@ export const UserListTable = memo(({
     // Empty state
     if (users.length === 0) {
         return (
-            <div className="overflow-hidden rounded-[24px] border border-white/70 bg-white/95 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-[#342f4b]">
+            <div className="overflow-hidden rounded-[24px] border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -386,7 +386,7 @@ export const UserListTable = memo(({
 
     return (
         <>
-            <div className="overflow-hidden rounded-[24px] border border-white/70 bg-white/95 shadow-[0_16px_42px_rgba(15,23,42,0.07)] dark:border-white/10 dark:bg-[#342f4b]">
+            <div className="overflow-hidden rounded-[24px] border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
                 <Table
                     data={users}
                     columns={columns}
@@ -398,7 +398,7 @@ export const UserListTable = memo(({
 
                 {/* Pagination */}
                 <div
-                    className="flex flex-col gap-3 border-t border-slate-200/70 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-[#302b46]"
+                    className="flex flex-col gap-3 border-t border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-white/5"
                 >
                     <span className="text-center text-sm font-semibold text-slate-600 dark:text-white/65 sm:text-left">
                         {pagination ? (

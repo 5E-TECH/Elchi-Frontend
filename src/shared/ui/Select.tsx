@@ -56,10 +56,10 @@ const Select = memo(
         };
 
         const inputClasses = `
-      w-full bg-slate-50 dark:bg-[#1a1f3a] border 
+      w-full bg-[color:var(--color-card-surface-strong)] dark:bg-[color:var(--color-primarydark)] border 
       ${error
                 ? "border-red-400 dark:border-red-500 focus:ring-red-400/20"
-                : "border-slate-200 dark:border-[#4c5798]/20 focus:border-main dark:focus:border-main focus:ring-main/10"
+                : "border-[color:var(--color-border-soft)] dark:border-white/10 focus:border-main dark:focus:border-main focus:ring-main/10"
             } 
       rounded-xl ${Icon ? "pl-10" : "px-4"} pr-10 py-3 
       text-slate-800 dark:text-white text-sm font-medium
@@ -109,7 +109,7 @@ const Select = memo(
                                 key={opt.value}
                                 value={opt.value}
                                 disabled={opt.disabled}
-                                className="dark:bg-[#1a1f3a] text-slate-800 dark:text-white"
+                                className="bg-[color:var(--color-card-surface-strong)] text-slate-800 dark:bg-[color:var(--color-primarydark)] dark:text-white"
                             >
                                 {opt.label}
                             </option>

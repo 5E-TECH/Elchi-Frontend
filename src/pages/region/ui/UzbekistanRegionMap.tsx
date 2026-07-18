@@ -623,7 +623,7 @@ const UzbekistanRegionMap = ({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700/50 dark:bg-[#2A263D]">
+        <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
               <Package className="h-5 w-5 text-blue-600" />
@@ -636,7 +636,7 @@ const UzbekistanRegionMap = ({
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700/50 dark:bg-[#2A263D]">
+        <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
               <TrendingUp className="h-5 w-5 text-emerald-600" />
@@ -649,7 +649,7 @@ const UzbekistanRegionMap = ({
             </div>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700/50 dark:bg-[#2A263D]">
+        <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10">
               <MapPin className="h-5 w-5 text-indigo-600" />
@@ -663,7 +663,7 @@ const UzbekistanRegionMap = ({
           </div>
         </div>
         {showFinancialMetrics ? (
-          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700/50 dark:bg-[#2A263D]">
+          <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
                 <Package className="h-5 w-5 text-purple-600" />
@@ -679,7 +679,7 @@ const UzbekistanRegionMap = ({
         ) : null}
       </div>
 
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm dark:bg-[#2A263D]">
+      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
         <HighchartsReact
           highcharts={Highcharts}
           constructorType="mapChart"

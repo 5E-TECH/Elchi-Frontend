@@ -66,7 +66,7 @@ export const UserStats = memo(({
                 return (
                     <div
                         key={index}
-                        className="group relative cursor-default overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.07)] transition-transform duration-200 sm:rounded-[24px] sm:p-5 sm:shadow-[0_18px_55px_rgba(15,23,42,0.07)] sm:hover:-translate-y-1 dark:border-white/10 dark:bg-[#342f4b] dark:shadow-black/10"
+                        className="group relative cursor-default overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-3 shadow-[0_10px_26px_var(--color-card-shadow)] transition-transform duration-200 sm:rounded-[24px] sm:p-5 sm:shadow-[0_18px_55px_var(--color-card-shadow)] sm:hover:-translate-y-1 dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:shadow-black/10"
                         style={{
                             boxShadow: `0 4px 24px ${stat.colorFrom}18, 0 1px 4px rgba(0,0,0,0.06)`,
                         }}
@@ -121,7 +121,7 @@ export const UserStats = memo(({
                     type="button"
                     onClick={onAdd}
                     aria-label={t("addUser")}
-                    className="group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/95 p-3 shadow-[0_10px_26px_rgba(15,23,42,0.07)] transition-shadow duration-200 hover:border-main/40 hover:shadow-[0_14px_32px_rgba(87,106,219,0.2)] dark:border-white/10 dark:bg-[#342f4b] sm:hidden"
+                    className="group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-3 shadow-[0_10px_26px_var(--color-card-shadow)] transition-shadow duration-200 hover:border-main/40 hover:shadow-[0_14px_32px_color-mix(in_srgb,var(--color-main)_22%,transparent)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] sm:hidden"
                 >
                     <span className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-main/10 transition-opacity group-hover:opacity-80" />
                     <span className="relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/60 bg-main text-white shadow-md shadow-main/30">

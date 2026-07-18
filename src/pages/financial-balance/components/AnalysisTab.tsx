@@ -414,7 +414,7 @@ const AnalysisTab = () => {
               key={key}
               type="button"
               onClick={() => setPeriod(key as "today" | "week" | "month" | "year")}
-              className="h-10 rounded-xl border border-purple-200 bg-white px-4 text-sm font-semibold text-purple-700 shadow-sm transition hover:border-main hover:bg-main/10 hover:text-main dark:border-purple-400/25 dark:bg-[#2f2946] dark:text-purple-100 dark:hover:border-main dark:hover:bg-main/20 dark:hover:text-white"
+              className="h-10 rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] px-4 text-sm font-semibold text-[color:var(--color-maindark)] shadow-sm transition hover:border-main hover:bg-main/10 hover:text-main dark:border-white/10 dark:bg-white/5 dark:text-primary dark:hover:bg-white/10 dark:hover:text-white"
             >
               {label}
             </button>

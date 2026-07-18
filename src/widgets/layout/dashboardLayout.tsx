@@ -24,7 +24,7 @@ const DashboardLayout = () => {
 
         {/* Content */}
         <main
-          className={`el-surface-page mx-2 mb-0 flex-1 rounded-[1rem] bg-[var(--color-page-surface)] p-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] custom-scrollbar dark:bg-[#2b2741] sm:mx-4 sm:rounded-[1.35rem] sm:p-4 sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:ml-0 md:mr-3 md:mb-0 md:border-l-0 md:shadow-none md:p-5 md:pb-5 xl:p-6 xl:pb-6 ${
+          className={`el-surface-page mx-2 mb-0 flex-1 rounded-[1rem] bg-[color:var(--color-page-surface)] p-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] custom-scrollbar dark:bg-[color:var(--color-surface-elevated-dark)] sm:mx-4 sm:rounded-[1.35rem] sm:p-4 sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:ml-0 md:mr-3 md:mb-0 md:border-l-0 md:shadow-none md:p-5 md:pb-5 xl:p-6 xl:pb-6 ${
             isBranchDashboard ? "overflow-y-auto xl:overflow-hidden" : "overflow-y-auto"
           }`}
         >

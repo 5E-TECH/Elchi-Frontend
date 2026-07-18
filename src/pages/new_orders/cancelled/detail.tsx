@@ -566,7 +566,7 @@ const CancelledMarketDetail = () => {
   return (
     <div className="space-y-5 pb-28 md:pb-6">
       {!isMarketRole && authorizationToken ? (
-        <div className="fixed right-4 top-24 z-50 rounded-2xl border border-emerald-300/25 bg-[#172b3a]/95 px-4 py-3 text-emerald-100 shadow-2xl shadow-emerald-500/20 backdrop-blur-xl dark:bg-[#172b3a]/95 sm:right-8">
+        <div className="fixed right-4 top-24 z-50 rounded-2xl border border-emerald-500/25 bg-[color:var(--color-card-surface-strong)] px-4 py-3 text-emerald-700 shadow-2xl shadow-emerald-500/20 backdrop-blur-xl dark:border-emerald-300/25 dark:bg-[color:var(--color-surface-elevated-dark)] dark:text-emerald-100 sm:right-8">
           <div className="flex items-center gap-3">
             <span className="relative flex h-3 w-3 shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
