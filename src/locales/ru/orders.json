@@ -49,6 +49,7 @@
   "statusPaid": "Оплачен",
   "statusPartlyPaid": "Частично оплачен",
   "statusCancelled": "Отменен",
+  "statusCancelledSent": "Отменен — отправлен",
   "statusClosed": "Закрыт",
   "filterMarket": "Маркет",
   "filterCourier": "Курьер",

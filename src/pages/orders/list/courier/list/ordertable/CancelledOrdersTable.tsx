@@ -6,6 +6,42 @@ import { Calendar, MapPin, Phone, Store, User } from "lucide-react";
 import type { Order } from "./pendingOrderTable";
 import OrderStatusBadge from "../../../OrderStatusBadge";
 
+const normalizeOrderStatus = (value: unknown) =>
+  String(value ?? "").trim().toLowerCase().replaceAll("_", " ").replace("canceled", "cancelled");
+
+const getTransportStatus = (order: Order) => {
+  const record = order as Order & {
+    transport_status?: unknown;
+    transportStatus?: unknown;
+  };
+  return normalizeOrderStatus(record.transport_status ?? record.transportStatus);
+};
+
+const getHolderType = (order: Order) => {
+  const record = order as Order & {
+    holder_type?: unknown;
+    holderType?: unknown;
+  };
+  return String(record.holder_type ?? record.holderType ?? "").trim().toUpperCase();
+};
+
+const getParentOrderId = (order: Order) => {
+  const record = order as Order & {
+    parent_order_id?: unknown;
+    parentOrderId?: unknown;
+  };
+  return String(record.parent_order_id ?? record.parentOrderId ?? "").trim();
+};
+
+const isVisibleCancelledOrder = (order: Order) =>
+  normalizeOrderStatus(order.status) === "cancelled" &&
+  getTransportStatus(order) !== "cancelled (sent)" &&
+  !["BRANCH", "HQ"].includes(getHolderType(order)) &&
+  !getParentOrderId(order);
+
+const isSelectableCancelledOrder = (order: Order) =>
+  isVisibleCancelledOrder(order);
+
 type Props = {
   orders: Order[];
   loading?: boolean;
@@ -26,8 +62,10 @@ const CancelledOrdersTable = ({
   const { t, i18n } = useTranslation("orders");
   const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const formatMoney = (value: number) => `${value.toLocaleString(locale)} ${t("currency")}`;
-  const allChecked = orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
-  const someChecked = orders.some((o) => selectedIds.has(o.id));
+  const visibleOrders = orders.filter(isVisibleCancelledOrder);
+  const selectableOrders = visibleOrders.filter(isSelectableCancelledOrder);
+  const allChecked = selectableOrders.length > 0 && selectableOrders.every((o) => selectedIds.has(o.id));
+  const someChecked = selectableOrders.some((o) => selectedIds.has(o.id));
   const formatDate = (value: string) =>
     new Date(value).toLocaleString(locale, {
       day: "2-digit",
@@ -41,11 +79,12 @@ const CancelledOrdersTable = ({
     <input
       type="checkbox"
       checked={allChecked}
+      disabled={!selectableOrders.length}
       ref={(el) => {
         if (el) el.indeterminate = someChecked && !allChecked;
       }}
       onChange={(e) => onSelectAll(e.target.checked)}
-      className="h-4 w-4 cursor-pointer accent-red-500"
+      className="h-4 w-4 cursor-pointer accent-red-500 disabled:cursor-not-allowed disabled:opacity-40"
     />
   );
 
@@ -56,18 +95,24 @@ const CancelledOrdersTable = ({
         label: t("selectLabel"),
         renderHeader: () => renderSelectAllCheckbox(),
         width: "40px",
-        render: (_, row) => (
-          <input
-            type="checkbox"
-            checked={selectedIds.has(row.id)}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => {
-              e.stopPropagation();
-              onSelectChange(row.id, e.target.checked);
-            }}
-            className="w-4 h-4 accent-red-500 cursor-pointer"
-          />
-        ),
+        render: (_, row) => {
+          const selectable = isSelectableCancelledOrder(row);
+
+          return (
+            <input
+              type="checkbox"
+              checked={selectable && selectedIds.has(row.id)}
+              disabled={!selectable}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                e.stopPropagation();
+                if (!selectable) return;
+                onSelectChange(row.id, e.target.checked);
+              }}
+              className="w-4 h-4 accent-red-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            />
+          );
+        },
       },
       {
         key: "id",
@@ -115,7 +160,11 @@ const CancelledOrdersTable = ({
       {
         key: "status",
         label: t("orderStatus"),
-        render: () => <OrderStatusBadge status="cancelled" />,
+        render: (_, row) => (
+          <OrderStatusBadge
+            status={row.status === "cancelled (sent)" ? "cancelled (sent)" : "cancelled"}
+          />
+        ),
       },
       {
         key: "total_price",
@@ -166,7 +215,7 @@ const CancelledOrdersTable = ({
       </div>
 
       <Table
-        data={orders}
+        data={visibleOrders}
         columns={columns}
         keyExtractor={(row) => row.id}
         loading={loading}
@@ -175,7 +224,7 @@ const CancelledOrdersTable = ({
         mobileRowRender={(row) => (
           <div
             className={`rounded-xl border p-3 ${
-              selectedIds.has(row.id)
+              isSelectableCancelledOrder(row) && selectedIds.has(row.id)
                 ? "border-emerald-400/60 bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.35)]"
                 : "border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/4"
             }`}
@@ -184,13 +233,15 @@ const CancelledOrdersTable = ({
               <div className="flex min-w-0 items-start gap-2">
                 <input
                   type="checkbox"
-                  checked={selectedIds.has(row.id)}
+                  checked={isSelectableCancelledOrder(row) && selectedIds.has(row.id)}
+                  disabled={!isSelectableCancelledOrder(row)}
                   onClick={(e) => e.stopPropagation()}
                   onChange={(e) => {
                     e.stopPropagation();
+                    if (!isSelectableCancelledOrder(row)) return;
                     onSelectChange(row.id, e.target.checked);
                   }}
-                  className="mt-0.5 h-4 w-4 cursor-pointer accent-red-500"
+                  className="mt-0.5 h-4 w-4 cursor-pointer accent-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                 />
                 <div className="min-w-0">
                   <p className="m-0 truncate text-sm font-bold text-slate-900 dark:text-white">{row.customer?.name ?? "—"}</p>
@@ -200,7 +251,9 @@ const CancelledOrdersTable = ({
                   </p>
                 </div>
               </div>
-              <OrderStatusBadge status="cancelled" />
+              <OrderStatusBadge
+                status={row.status === "cancelled (sent)" ? "cancelled (sent)" : "cancelled"}
+              />
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-1.5">

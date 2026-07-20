@@ -49,6 +49,7 @@
   "statusPaid": "Paid",
   "statusPartlyPaid": "Partially paid",
   "statusCancelled": "Cancelled",
+  "statusCancelledSent": "Cancelled — sent",
   "statusClosed": "Closed",
   "filterMarket": "Market",
   "filterCourier": "Courier",

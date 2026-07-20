@@ -49,6 +49,7 @@
   "statusPaid": "To'langan",
   "statusPartlyPaid": "Qisman to'landi",
   "statusCancelled": "Bekor qilingan",
+  "statusCancelledSent": "Bekor qilingan — jo'natilgan",
   "statusClosed": "Yopildi",
   "filterMarket": "Market",
   "filterCourier": "Kuryer",
