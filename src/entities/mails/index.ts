@@ -441,10 +441,7 @@ export const useMails = () => {
   const useGetRefusedMails = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused", role, branchId],
-      queryFn: () =>
-        isManagerRole
-          ? getManagerScopedPosts("canceled")
-          : api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
       enabled: options?.enabled ?? true,
     });
 

@@ -4,6 +4,7 @@ import { Table } from "../../../../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../../../../shared/components/Table/Table.types";
 import { Calendar, MapPin, Phone, RotateCcw, Store, User } from "lucide-react";
 import type { Order } from "./pendingOrderTable";
+import type { OrderStatus } from "../../../../../../entities/order/types/order";
 import OrderStatusBadge from "../../../OrderStatusBadge";
 
 // Sotish + Bekor tugmalari ko'rsatiladigan statuslar
@@ -128,7 +129,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
       {
         key: "status",
         label: t("orderStatus"),
-        render: (val) => <OrderStatusBadge status={(val === "cancelled (sent)" ? "cancelled" : val) as "created" | "new" | "received" | "on the road" | "waiting" | "sold" | "cancelled" | "paid" | "partly_paid" | "closed"} />,
+        render: (val) => <OrderStatusBadge status={val} />,
       },
       {
         key: "total_price",
@@ -187,7 +188,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
               </p>
             </div>
             <OrderStatusBadge
-              status={(row.status === "cancelled (sent)" ? "cancelled" : row.status) as "created" | "new" | "received" | "on the road" | "waiting" | "sold" | "cancelled" | "paid" | "partly_paid" | "closed"}
+              status={row.status as OrderStatus}
             />
           </div>
 

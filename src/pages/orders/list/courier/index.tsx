@@ -29,11 +29,25 @@ const toText = (value: unknown) => {
 
 const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
 
+const normalizeOrderStatus = (value: unknown) =>
+  normalizeMatchText(value).replaceAll("_", " ").replace("canceled", "cancelled");
+
 const unwrapScannedOrder = (payload: unknown) => {
   const source = asRecord(payload);
   const data = asRecord(source.data ?? source);
   const nestedData = asRecord(data.data ?? data);
-  return asRecord(nestedData.order ?? data.order ?? nestedData);
+  const resource = asRecord(nestedData.resource ?? data.resource);
+  const payloadData = asRecord(nestedData.payload ?? data.payload);
+
+  return asRecord(
+    nestedData.order ??
+      data.order ??
+      resource.order ??
+      payloadData.order ??
+      resource ??
+      payloadData ??
+      nestedData,
+  );
 };
 
 const addOrderIdentifiers = (target: Set<string>, value: unknown) => {
@@ -103,7 +117,23 @@ const getComparableOrderInfo = (value: unknown) => {
 
   return {
     customerId: normalizeMatchText(order.customer_id ?? order.customerId ?? customer.id),
-    phone: normalizeMatchText(customer.phone_number ?? customer.phone ?? order.phone_number ?? order.phone),
+    name: normalizeMatchText(
+      customer.name ??
+        customer.full_name ??
+        customer.fullName ??
+        order.customer_name ??
+        order.customerName ??
+        order.name,
+    ),
+    phone: normalizeMatchText(
+      customer.phone_number ??
+        customer.phoneNumber ??
+        customer.phone ??
+        order.customer_phone ??
+        order.customerPhone ??
+        order.phone_number ??
+        order.phone,
+    ),
     marketId: normalizeMatchText(order.market_id ?? order.marketId ?? market.id),
     marketName: normalizeMatchText(market.name),
     districtId: normalizeMatchText(order.district_id ?? order.districtId ?? district.id),
@@ -114,8 +144,14 @@ const getComparableOrderInfo = (value: unknown) => {
 const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
   const a = getComparableOrderInfo(left);
   const b = getComparableOrderInfo(right);
-  const sameCustomer = Boolean(a.customerId && a.customerId === b.customerId) || Boolean(a.phone && a.phone === b.phone);
-  const sameMarket = Boolean(a.marketId && a.marketId === b.marketId) || Boolean(a.marketName && a.marketName === b.marketName);
+  const sameCustomer =
+    Boolean(a.customerId && a.customerId === b.customerId) ||
+    Boolean(a.phone && a.phone === b.phone) ||
+    Boolean(a.name && a.name === b.name);
+  const sameMarket =
+    !a.marketId && !a.marketName
+      ? true
+      : Boolean(a.marketId && a.marketId === b.marketId) || Boolean(a.marketName && a.marketName === b.marketName);
   const sameDistrict =
     !a.districtId && !a.districtName && !b.districtId && !b.districtName
       ? true
@@ -133,7 +169,77 @@ const TAB_STATUS_MAP: Record<string, string | undefined> = {
 
 const STATUS_TAB_MAP: Record<string, string> = {
   waiting: "pending",
+  pending: "pending",
+  canceled: "cancelled",
   cancelled: "cancelled",
+};
+
+const isSelectableCancelledOrder = (order: Order) =>
+  normalizeOrderStatus(order.status) === "cancelled" &&
+  isUnsentCancelledOrder(order);
+
+const isUnsentCancelledOrder = (order: Order) => {
+  const record = asRecord(order);
+  const transportStatus = normalizeOrderStatus(record.transport_status ?? record.transportStatus);
+  const holderType = toText(record.holder_type ?? record.holderType).toUpperCase();
+  const parentOrderId = toText(record.parent_order_id ?? record.parentOrderId);
+  if (holderType === "BRANCH" || holderType === "HQ") return false;
+  return (
+    normalizeOrderStatus(order.status) === "cancelled" &&
+    transportStatus !== "cancelled (sent)" &&
+    !parentOrderId
+  );
+};
+
+const getHiddenSentCancelledOrderIds = () => {
+  try {
+    const storedValue = window.sessionStorage.getItem("courier_sent_cancelled_order_ids");
+    const parsedValue = storedValue ? JSON.parse(storedValue) : [];
+    return new Set(Array.isArray(parsedValue) ? parsedValue.map(String) : []);
+  } catch {
+    return new Set<string>();
+  }
+};
+
+const saveHiddenSentCancelledOrderIds = (ids: Set<string>) => {
+  try {
+    window.sessionStorage.setItem("courier_sent_cancelled_order_ids", JSON.stringify([...ids]));
+  } catch {
+    // Ignore storage errors; the in-memory state still keeps the current view correct.
+  }
+};
+
+const extractOrderRows = (value: unknown): Order[] => {
+  const root = asRecord(value);
+  const data = asRecord(root.data);
+  const nestedData = asRecord(data.data);
+  const candidates = [
+    root.data,
+    root.orders,
+    root.items,
+    root.results,
+    root.rows,
+    data.data,
+    data.orders,
+    data.items,
+    data.results,
+    data.rows,
+    nestedData.data,
+    nestedData.orders,
+    nestedData.items,
+    nestedData.results,
+    nestedData.rows,
+  ];
+
+  const rows = candidates.find(Array.isArray);
+  return Array.isArray(rows) ? rows as Order[] : [];
+};
+
+const normalizeCourierStatusParam = (value: unknown) => {
+  const normalizedStatus = normalizeOrderStatus(value);
+  if (!normalizedStatus) return undefined;
+  const mappedTab = STATUS_TAB_MAP[normalizedStatus];
+  return mappedTab ? TAB_STATUS_MAP[mappedTab] : normalizedStatus;
 };
 
 const CourierOrders = () => {
@@ -142,7 +248,7 @@ const CourierOrders = () => {
   const navigate = useNavigate();
   const { getParam, setParam, removeParam } = useQueryParams();
 
-  const initialStatus = getParam("status");
+  const initialStatus = normalizeOrderStatus(getParam("status"));
   const initialTab = initialStatus
     ? (STATUS_TAB_MAP[initialStatus] ?? "pending")
     : "pending";
@@ -152,6 +258,8 @@ const CourierOrders = () => {
   const [cancelOrder, setCancelOrder] = useState<Order | null>(null);
   const [rollbackOrder, setRollbackOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [hiddenSentCancelledOrderIds, setHiddenSentCancelledOrderIds] =
+    useState<Set<string>>(getHiddenSentCancelledOrderIds);
   const scanLookupTokensRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -175,7 +283,7 @@ const CourierOrders = () => {
     SendToPost,
   } = useOrders();
 
-  const statusParam = getParam("status") ?? undefined;
+  const statusParam = normalizeCourierStatusParam(getParam("status"));
   const params = statusParam ? { status: statusParam } : undefined;
 
   const { data, isLoading } = useGetOrderCourier(params);
@@ -186,13 +294,26 @@ const CourierOrders = () => {
   const { mutate: cancelMutate, isPending: isCancelling } = CancelOrder;
   const { mutate: sendToPostMutate, isPending: isSendingToPost } = SendToPost;
 
-  const orders: Order[] = Array.isArray(data?.data?.data)
-    ? data.data.data
-    : Array.isArray(data?.data)
-      ? data.data
-      : [];
+  const rawOrders = extractOrderRows(data);
+  const orders = activeTab === "cancelled"
+    ? rawOrders.filter((order) => isUnsentCancelledOrder(order) && !hiddenSentCancelledOrderIds.has(order.id))
+    : rawOrders;
+  const selectedSendableCount = orders.filter(
+    (order) => selectedIds.has(order.id) && isSelectableCancelledOrder(order),
+  ).length;
 
   const selectScannedOrder = useCallback((order: Order) => {
+    if (activeTab === "cancelled" && !isSelectableCancelledOrder(order)) {
+      notificationApi.warning({
+        message: t("scanNotFoundTitle"),
+        description: t("scanNotFoundDescription"),
+        placement: "topRight",
+        duration: 2.5,
+      });
+      void playScanFeedback("missing");
+      return;
+    }
+
     if (selectedIds.has(order.id)) {
       notificationApi.warning({
         message: t("scanAlreadySelectedTitle"),
@@ -218,9 +339,9 @@ const CourierOrders = () => {
       }),
       placement: "topRight",
       duration: 2,
-    });
-    void playScanFeedback("success");
-  }, [notificationApi, selectedIds, t]);
+      });
+      void playScanFeedback("success");
+  }, [activeTab, notificationApi, selectedIds, t]);
 
   const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
     const tokenKey = rawValue.trim().toLowerCase();
@@ -320,6 +441,9 @@ const CourierOrders = () => {
   };
 
   const handleSelectChange = (id: string, checked: boolean) => {
+    const order = orders.find((item) => item.id === id);
+    if (checked && order && !isSelectableCancelledOrder(order)) return;
+
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (checked) {
@@ -332,13 +456,29 @@ const CourierOrders = () => {
   };
 
   const handleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? new Set(orders.map((o) => o.id)) : new Set());
+    setSelectedIds(
+      checked
+        ? new Set(orders.filter(isSelectableCancelledOrder).map((o) => o.id))
+        : new Set(),
+    );
   };
 
   const handleSendToPost = () => {
-    if (selectedIds.size === 0) return;
-    sendToPostMutate(Array.from(selectedIds), {
-      onSuccess: () => setSelectedIds(new Set()),
+    const sendableIds = orders
+      .filter((order) => selectedIds.has(order.id) && isSelectableCancelledOrder(order))
+      .map((order) => order.id);
+
+    if (sendableIds.length === 0) return;
+    sendToPostMutate(sendableIds, {
+      onSuccess: () => {
+        setHiddenSentCancelledOrderIds((prev) => {
+          const next = new Set(prev);
+          sendableIds.forEach((id) => next.add(id));
+          saveHiddenSentCancelledOrderIds(next);
+          return next;
+        });
+        setSelectedIds(new Set());
+      },
     });
   };
 
@@ -401,7 +541,7 @@ const CourierOrders = () => {
       </div>
 
       {/* Floating button */}
-      {activeTab === "cancelled" && selectedIds.size > 0 && (
+      {activeTab === "cancelled" && selectedSendableCount > 0 && (
         <div className="fixed bottom-22 left-3 right-3 z-50 sm:bottom-6 sm:left-auto sm:right-6">
           <button
             onClick={handleSendToPost}
@@ -413,7 +553,7 @@ const CourierOrders = () => {
             ) : (
               <Send size={16} />
             )}
-            {t("sendSelectedToPost", { count: selectedIds.size })}
+            {t("sendSelectedToPost", { count: selectedSendableCount })}
           </button>
         </div>
       )}
