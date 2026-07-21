@@ -216,7 +216,7 @@ export const initAuth = async () => {
         return;
       }
 
-      const accessToken = tokenStorage.getAccessToken();
+      let accessToken = tokenStorage.getAccessToken();
 
       if (!accessToken) {
         resetClientAuthState();
@@ -225,7 +225,24 @@ export const initAuth = async () => {
 
       store.dispatch(setAppInitializing(true));
 
-      await fetchMyProfile(accessToken);
+      const { accessTokenExpiresAt } = tokenStorage.getSessionMetadata();
+      if (accessTokenExpiresAt && Date.now() >= accessTokenExpiresAt) {
+        accessToken = await refreshAccessToken();
+      }
+
+      try {
+        await fetchMyProfile(accessToken);
+      } catch (error) {
+        // Profile bootstrap uses the interceptor-free auth client. If an older
+        // session has no expiry metadata, recover once from a server-side 401
+        // instead of discarding a still-valid refresh cookie.
+        if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+          throw error;
+        }
+
+        accessToken = await refreshAccessToken();
+        await fetchMyProfile(accessToken);
+      }
     } catch {
       resetClientAuthState();
     } finally {

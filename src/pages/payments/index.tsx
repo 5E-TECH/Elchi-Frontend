@@ -10,8 +10,6 @@ import {
   Landmark,
   Truck,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownLeft,
   User,
 } from "lucide-react";
 import HeaderName from "../../shared/components/headerName";
@@ -28,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { usePagination } from "../../shared/lib/usePagination";
 import PageContainer from "../../shared/ui/PageContainer";
 import type { RootState } from "../../app/config/store";
+import PaymentSummaryCards from "./components/PaymentSummaryCards";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const DEFAULT_PAYMENTS_LIMIT = 10;
@@ -62,6 +61,17 @@ type PaymentCourierOption = {
   phone_number: string;
   role: "courier";
   region: string;
+  cashbox?: unknown;
+  amount: number;
+};
+
+type PaymentReceiveOption = {
+  id: string;
+  name: string;
+  phone_number: string;
+  role: "courier" | "branch";
+  region: string;
+  branch_name?: string;
   cashbox?: unknown;
   amount: number;
 };
@@ -490,50 +500,16 @@ const Payments = () => {
         .filter((courier: PaymentCourierOption) => courier.id),
     [couriersData, t],
   );
-  const receiveOptions = isManagerRole ? couriersList : branchManagersList;
+  const receiveOptions: PaymentReceiveOption[] = isManagerRole ? couriersList : branchManagersList;
   const isReceiveLoading = isManagerRole ? couriersLoading : managersLoading;
   const receiveDescription = isManagerRole
     ? t("selectCourierDescription")
     : t("selectBranchManagerDescription");
   const receiveIcon = isManagerRole ? <Truck size={20} /> : <Landmark size={20} />;
-  const receiveSearchKeys = isManagerRole ? ["name", "region"] : ["name", "region", "branch_name"];
+  const receiveSearchKeys: (keyof PaymentReceiveOption)[] = isManagerRole
+    ? ["name", "region"]
+    : ["name", "region", "branch_name"];
 
-  // ── Stat cardlar (API qiymatlari bilan) ───────────────────────────────────
-  const CARDS = [
-    {
-      label: t("toBeGiven"),
-      amount: marketCashboxTotal,
-      icon: isManagerRole ? <Landmark size={20} /> : <Store size={20} />,
-      action: <ArrowUpRight size={16} />,
-      bg: "bg-maindark",
-      iconBg: "bg-main/20",
-      badge: null,
-      path: null,
-      showPopup: "given" as const,
-    },
-    {
-      label: t("amountInCashbox"),
-      amount: mainCashboxTotal,
-      icon: <Landmark size={20} />,
-      action: <TrendingUp size={16} />,
-      bg: "bg-gradient-to-br from-main to-main/80 shadow-main/30",
-      iconBg: "bg-white/20",
-      badge: t("mainCashboxBadge"),
-      path: "main-cashbox",
-      showPopup: null as null,
-    },
-    {
-      label: t("toBeReceived"),
-      amount: courierCashboxTotal,
-      icon: <Truck size={20} />,
-      action: <ArrowDownLeft size={16} />,
-      bg: "bg-maindark",
-      iconBg: "bg-main/20",
-      badge: null,
-      path: null,
-      showPopup: "received" as const,
-    },
-  ] as const;
   const staticFilterOptions: Record<
     "operation_type" | "source_type",
     { value: string; label: string }[]
@@ -671,58 +647,14 @@ const Payments = () => {
       </div>
 
       {/* Stats */}
-      <div className="flex flex-col items-stretch gap-3 sm:gap-4 lg:flex-row">
-        {CARDS.map(
-          ({
-            label,
-            amount,
-            icon,
-            action,
-            bg,
-            iconBg,
-            badge,
-            path,
-            showPopup,
-          }) => (
-            <div
-              key={label}
-              onClick={() => handleCardClick(path, showPopup)}
-              className={`relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-glass-border p-4 shadow-lg transition-transform duration-300 hover:scale-[1.02] sm:p-5 lg:p-4 xl:p-6 ${bg} ${path || showPopup ? "cursor-pointer" : ""}`}
-            >
-              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white opacity-[0.06]" />
-              <div className="mb-4 flex items-start justify-between sm:mb-5">
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl text-white sm:h-11 sm:w-11 ${iconBg}`}
-                >
-                  {icon}
-                </div>
-                <div className="flex min-w-0 items-center gap-1.5 xl:gap-2">
-                  {badge && (
-                    <div className="flex min-w-0 items-center gap-1 rounded-lg border border-glass-border bg-glass px-2 py-1 xl:gap-1.5 xl:px-2.5">
-                      <TrendingUp size={11} className="hidden shrink-0 text-white/80 xl:block" />
-                      <span className="whitespace-nowrap text-[10px] font-semibold text-white xl:text-xs">
-                        {badge}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70 sm:h-8 sm:w-8">
-                    {action}
-                  </div>
-                </div>
-              </div>
-              <p className="mb-2 text-sm font-medium text-white/60">{label}</p>
-              {cashboxLoading ? (
-                <div className="h-9 w-32 rounded-lg bg-white/10 animate-pulse" />
-              ) : (
-                <p className="text-2xl font-extrabold text-white sm:text-3xl">
-                  {fmt(amount)}
-                </p>
-              )}
-              <p className="text-xs text-white/40 mt-1.5">{t("currency")}</p>
-            </div>
-          ),
-        )}
-      </div>
+      <PaymentSummaryCards
+        isManagerRole={isManagerRole}
+        marketTotal={marketCashboxTotal}
+        mainTotal={mainCashboxTotal}
+        courierTotal={courierCashboxTotal}
+        loading={cashboxLoading}
+        onCardClick={handleCardClick}
+      />
 
       {/* Filters */}
       <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border p-5 shadow-sm">
@@ -823,7 +755,7 @@ const Payments = () => {
       />
 
       {/* To be received popup */}
-      <PopupSelect<any>
+      <PopupSelect<PaymentReceiveOption>
         isOpen={isReceivedPopupOpen}
         onClose={() => setIsReceivedPopupOpen(false)}
         data={receiveOptions}
