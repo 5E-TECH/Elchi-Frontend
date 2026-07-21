@@ -3,7 +3,7 @@ import type { TableProps, ColumnConfig, SortConfig } from './Table.types';
 import EmptyState from '../../ui/EmptyState';
 import TableSkeleton from '../../ui/TableSkeleton';
 
-export const Table = memo(<T extends Record<string, any>>({
+export const Table = memo(<T extends object>({
   data,
   columns,
   keyExtractor = (_, index) => index,

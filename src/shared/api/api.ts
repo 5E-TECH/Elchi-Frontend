@@ -8,7 +8,7 @@ export const api = axios.create({
   paramsSerializer: {
     // `status=paid&status=sold` ko'rinishidagi query string saqlanadi.
     indexes: null,
-  } as any,
+  },
 });
 
 setupAuthInterceptors(api);

@@ -31,32 +31,11 @@ export const userSlice = createSlice({
       state.user = action.payload.user ?? state.user;
       state.isAuthenticated = true;
       state.error = null;
-
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("accessToken", action.payload.accessToken);
-        window.localStorage.removeItem("accessToken");
-
-        if (action.payload.user?.role) {
-          window.sessionStorage.setItem("role", action.payload.user.role);
-          window.localStorage.removeItem("role");
-        }
-      }
     },
     setAccessToken: (state, action: PayloadAction<string | null>) => {
       state.accessToken = action.payload;
       state.isAuthenticated = Boolean(action.payload);
 
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      if (action.payload) {
-        window.sessionStorage.setItem("accessToken", action.payload);
-        window.localStorage.removeItem("accessToken");
-      } else {
-        window.sessionStorage.removeItem("accessToken");
-        window.localStorage.removeItem("accessToken");
-      }
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -79,12 +58,6 @@ export const userSlice = createSlice({
       state.loading = false;
       state.error = null;
 
-      if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem("accessToken");
-        window.sessionStorage.removeItem("role");
-        window.localStorage.removeItem("accessToken");
-        window.localStorage.removeItem("role");
-      }
     },
   },
 });

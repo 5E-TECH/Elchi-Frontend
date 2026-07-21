@@ -15,8 +15,9 @@ const ProtectedRoute = ({
   redirectTo = "/403",
 }: ProtectedRouteProps) => {
   const navigate = useNavigate();
-  const state = useSelector((rootState: RootState) => rootState);
-  const isAllowed = canActivate(state);
+  // Subscribe to the derived permission only. Selecting the entire store made
+  // every protected route re-render for unrelated search/pagination changes.
+  const isAllowed = useSelector((state: RootState) => canActivate(state));
 
   useEffect(() => {
     if (!isAllowed) {
