@@ -12,6 +12,8 @@ import AllOrdersTable from "./list/ordertable/AllOrdersTable";
 import CancelledOrdersTable from "./list/ordertable/CancelledOrdersTable";
 import { useOrders } from "../../../../entities/orders";
 import { useQueryParams } from "../../../../shared/lib/useQueryParams";
+import { usePagination } from "../../../../shared/lib/usePagination";
+import Pagination from "../../../../shared/components/pagination";
 import type { Order } from "./list/ordertable/pendingOrderTable";
 import { useOrderQrScanner } from "../../../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../../../scan/lib/scanResource";
@@ -28,6 +30,49 @@ const toText = (value: unknown) => {
 };
 
 const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
+
+const formatOrderAmount = (value: unknown) => {
+  const amount = Number(value ?? 0);
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  return new Intl.NumberFormat("uz-UZ").format(amount) + " so'm";
+};
+
+const getOrderPersonName = (order: unknown) => {
+  const record = asRecord(order);
+  const customer = asRecord(record.customer);
+  return toText(
+    customer.name ??
+      customer.full_name ??
+      customer.fullName ??
+      record.customer_name ??
+      record.customerName ??
+      record.name,
+  );
+};
+
+const getOrderPhone = (order: unknown) => {
+  const record = asRecord(order);
+  const customer = asRecord(record.customer);
+  return toText(
+    customer.phone_number ??
+      customer.phoneNumber ??
+      customer.phone ??
+      record.customer_phone ??
+      record.customerPhone ??
+      record.phone_number ??
+      record.phone,
+  );
+};
+
+const getRollbackOrderSummary = (order: unknown) => {
+  const record = asRecord(order);
+  const name = getOrderPersonName(order) || (record.id ? `Buyurtma #${record.id}` : "Buyurtma");
+  const details = [getOrderPhone(order), formatOrderAmount(record.total_price)]
+    .filter(Boolean)
+    .join(" • ");
+
+  return { name, details };
+};
 
 const normalizeOrderStatus = (value: unknown) =>
   normalizeMatchText(value).replaceAll("_", " ").replace("canceled", "cancelled");
@@ -235,6 +280,18 @@ const extractOrderRows = (value: unknown): Order[] => {
   return Array.isArray(rows) ? rows as Order[] : [];
 };
 
+const getPaginationContainer = (value: unknown) => {
+  const root = asRecord(value);
+  const data = asRecord(root.data);
+  const nestedData = asRecord(data.data);
+  return nestedData.data || nestedData.total ? nestedData : data.data || data.total ? data : root;
+};
+
+const toPositiveNumber = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+};
+
 const normalizeCourierStatusParam = (value: unknown) => {
   const normalizedStatus = normalizeOrderStatus(value);
   if (!normalizedStatus) return undefined;
@@ -261,6 +318,10 @@ const CourierOrders = () => {
   const [hiddenSentCancelledOrderIds, setHiddenSentCancelledOrderIds] =
     useState<Set<string>>(getHiddenSentCancelledOrderIds);
   const scanLookupTokensRef = useRef<Set<string>>(new Set());
+  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
+    key: "orders",
+    defaultLimit: 10,
+  });
 
   useEffect(() => {
     if (!getParam("status")) setParam("status", "waiting");
@@ -269,6 +330,7 @@ const CourierOrders = () => {
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     setSelectedIds(new Set());
+    resetPagination(limit);
     const status = TAB_STATUS_MAP[tabId];
     if (status) setParam("status", status);
     else removeParam("status");
@@ -284,20 +346,29 @@ const CourierOrders = () => {
   } = useOrders();
 
   const statusParam = normalizeCourierStatusParam(getParam("status"));
-  const params = statusParam ? { status: statusParam } : undefined;
+  const params = {
+    ...(statusParam ? { status: statusParam } : {}),
+    page,
+    limit,
+  };
 
   const { data, isLoading } = useGetOrderCourier(params);
 
   const { mutate: sellMutate, isPending: isSelling } = SellOrder;
   const { mutate: partlySellMutate, isPending: isPartlySelling } = PartlySellOrder;
   const { mutate: rollbackMutate, isPending: isRollbacking } = RollbackOrder;
+  const rollbackSummary = getRollbackOrderSummary(rollbackOrder);
   const { mutate: cancelMutate, isPending: isCancelling } = CancelOrder;
   const { mutate: sendToPostMutate, isPending: isSendingToPost } = SendToPost;
 
   const rawOrders = extractOrderRows(data);
+  const paginationContainer = getPaginationContainer(data);
   const orders = activeTab === "cancelled"
     ? rawOrders.filter((order) => isUnsentCancelledOrder(order) && !hiddenSentCancelledOrderIds.has(order.id))
     : rawOrders;
+  const totalItems = toPositiveNumber(paginationContainer.total) ?? orders.length;
+  const currentPage = toPositiveNumber(paginationContainer.page) ?? page;
+  const itemsPerPage = toPositiveNumber(paginationContainer.limit) ?? limit;
   const selectedSendableCount = orders.filter(
     (order) => selectedIds.has(order.id) && isSelectableCancelledOrder(order),
   ).length;
@@ -538,6 +609,19 @@ const CourierOrders = () => {
             </>
           )}
         </div>
+
+        {!isLoading && (
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-primarydark/60 sm:px-5">
+            <Pagination
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setPage}
+              onItemsPerPageChange={setLimit}
+              className="pt-0"
+            />
+          </div>
+        )}
       </div>
 
       {/* Floating button */}
@@ -584,12 +668,17 @@ const CourierOrders = () => {
         onConfirm={handleRollbackConfirm}
         title={t("rollbackOrder")}
         message={
-          <>
-            <span className="font-medium text-gray-700 dark:text-gray-200">
-              #{rollbackOrder?.id}
-            </span>{" "}
-            {t("rollbackConfirmMessage", { id: rollbackOrder?.id })}
-          </>
+          <div className="space-y-2 text-center">
+            <div className="text-base font-semibold text-gray-800 dark:text-white">
+              {rollbackSummary.name}
+            </div>
+            {rollbackSummary.details && (
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-300">
+                {rollbackSummary.details}
+              </div>
+            )}
+            <div>{t("rollbackConfirmMessage", { id: rollbackOrder?.id })}</div>
+          </div>
         }
         confirmLabel={t("rollbackConfirmLabel")}
         cancelLabel={t("cancelOrderAction")}

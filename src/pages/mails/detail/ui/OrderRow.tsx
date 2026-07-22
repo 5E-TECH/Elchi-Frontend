@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
+import Checkbox from "./Checkbox";
 import { formatDate, formatPrice, getStatusLabel, getStatusStyle } from "../lib/helpers";
 import { HISTORY_TABLE_COLS, TABLE_COLS } from "./OrdersTable";
 import type { PrintMode } from "../lib/printMode";
@@ -222,6 +223,9 @@ const OrderRow = memo(({
       {/* XL table layout */}
       <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 px-3 xl:px-4 py-3.5`}>
         <div className="flex items-center gap-2 min-w-0">
+          {!readOnly ? (
+            <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
+          ) : null}
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 shrink-0">
             <User size={13} className="text-slate-500 dark:text-white/70" />
           </div>
@@ -325,6 +329,11 @@ const OrderRow = memo(({
         <div className="lg:hidden">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
+              {!readOnly ? (
+                <div className="pt-0.5">
+                  <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
+                </div>
+              ) : null}
               <div className="min-w-0">
                 <p className="m-0 truncate text-sm font-bold text-slate-900 dark:text-white">
                   {customerName}
@@ -383,7 +392,7 @@ const OrderRow = memo(({
                   className="flex items-center gap-1.5"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  {onPrint ? (
+          {onPrint ? (
                     <PrintModeSelect
                       variant="icon"
                       count={1}
@@ -414,7 +423,13 @@ const OrderRow = memo(({
 
         <div className="hidden lg:block">
           <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-start gap-3">
+              {!readOnly ? (
+                <div className="pt-0.5">
+                  <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
+                </div>
+              ) : null}
+              <div className="min-w-0">
               <p className="m-0 truncate text-base font-bold text-slate-900 dark:text-white">
                 {customerName}
               </p>
@@ -422,6 +437,7 @@ const OrderRow = memo(({
                 <Phone size={13} className="shrink-0" />
                 <span className="truncate">{customerPhone}</span>
               </p>
+              </div>
             </div>
 
             <div className="flex shrink-0 items-start gap-3">
@@ -471,7 +487,7 @@ const OrderRow = memo(({
               className="mt-2 flex items-center justify-end gap-1.5"
               onClick={(event) => event.stopPropagation()}
             >
-              {onPrint ? (
+          {onPrint ? (
                 <PrintModeSelect
                   variant="icon"
                   count={1}
