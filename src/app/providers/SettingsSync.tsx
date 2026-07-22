@@ -1,14 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
-import { useSettings } from "../../entities/settings";
+import { useDispatch, useSelector } from "react-redux";
+import { mergeSettings, useSettings } from "../../entities/settings";
 import { useTheme } from "./theme/ThemeContext";
 import { changeAppLanguage, normalizeLanguage } from "../../i18n";
 import { setSidebar } from "../../widgets/Sidebar/model/sidebarSlice";
+import type { RootState } from "../config/store";
 import {
-  readStoredLanguage,
-  readStoredSidebar,
-  readStoredTheme,
   writeStoredScannerErrorSound,
   writeStoredScannerSuccessSound,
 } from "../../shared/lib/preferencesStorage";
@@ -20,31 +18,24 @@ import {
  */
 const SettingsSync = () => {
   const { data } = useSettings();
+  const profileSettings = useSelector((state: RootState) => state.user.user?.settings);
+  const effectiveSettings = data ?? (profileSettings !== undefined ? mergeSettings(profileSettings) : undefined);
   const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
   const dispatch = useDispatch();
-  const appliedRef = useRef(false);
-
   useEffect(() => {
-    if (!data) return;
-    // Faqat birinchi yuklashda jonli manbalarni serverdagi qiymatga moslaymiz
-    if (appliedRef.current) return;
-    appliedRef.current = true;
-
-    if (!readStoredTheme() && data.appearance.theme !== theme) {
-      setTheme(data.appearance.theme);
+    if (!effectiveSettings) return;
+    if (effectiveSettings.appearance.theme !== theme) {
+      setTheme(effectiveSettings.appearance.theme);
     }
     const currentLang = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language);
-    if (!readStoredLanguage() && data.appearance.language !== currentLang) {
-      void changeAppLanguage(data.appearance.language);
+    if (effectiveSettings.appearance.language !== currentLang) {
+      void changeAppLanguage(effectiveSettings.appearance.language);
     }
-    if (readStoredSidebar() === null) {
-      dispatch(setSidebar(data.interface.sidebarOpen));
-    }
-    writeStoredScannerSuccessSound(data.scanner.sounds.success);
-    writeStoredScannerErrorSound(data.scanner.sounds.error);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+    dispatch(setSidebar(effectiveSettings.interface.sidebarOpen));
+    writeStoredScannerSuccessSound(effectiveSettings.scanner.sounds.success);
+    writeStoredScannerErrorSound(effectiveSettings.scanner.sounds.error);
+  }, [effectiveSettings, dispatch, i18n.language, i18n.resolvedLanguage, setTheme, theme]);
 
   return null;
 };

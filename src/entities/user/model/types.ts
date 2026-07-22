@@ -10,6 +10,7 @@ export interface User {
     updatedAt: string;
     add_order?: boolean;
     cancelled_handover_qr_required?: boolean;
+    settings?: Record<string, unknown> | null;
 }
 
 export interface UserState {

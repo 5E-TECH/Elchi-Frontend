@@ -86,3 +86,15 @@ export const readStoredScannerErrorSound = (): StoredScannerSound | null =>
 export const writeStoredScannerErrorSound = (sound: StoredScannerSound) => {
   write(PREFERENCE_STORAGE_KEYS.scannerErrorSound, sound);
 };
+
+export const clearStoredUiPreferences = () => {
+  if (typeof window === "undefined") return;
+
+  try {
+    Object.values(PREFERENCE_STORAGE_KEYS).forEach((key) => {
+      window.localStorage.removeItem(key);
+    });
+  } catch {
+    // UI preferences must not break logout when storage is unavailable.
+  }
+};

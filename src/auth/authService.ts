@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from "../shared/api";
 import { loginSuccess, logout as logoutAction, setAppInitializing, setProfile, setError } from "../entities/user/model/slice";
 import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
+import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
 
 type LoginCredentials = {
   phone_number: string;
@@ -102,6 +103,7 @@ const resetClientAuthState = () => {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem("name");
     window.localStorage.removeItem("region");
+    clearStoredUiPreferences();
   }
 };
 
