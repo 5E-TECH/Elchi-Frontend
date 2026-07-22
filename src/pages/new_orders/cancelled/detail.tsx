@@ -30,7 +30,6 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import type { RootState } from "../../../app/config/store";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { OrderCard, type ApiOrder } from "../components/OrderCard";
-import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 
 const formatMoney = (value: number, currencyLabel: string) =>
   `${value.toLocaleString("uz-UZ")} ${currencyLabel}`;
@@ -216,7 +215,6 @@ const CancelledMarketDetail = () => {
   const { api: notificationApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
-  const branchType = getUserBranchType(user);
   const { marketId = "" } = useParams();
   const {
     useCancelledOrdersByMarket,
@@ -272,7 +270,8 @@ const CancelledMarketDetail = () => {
   const canManualSelectDamagedQr =
     role === "superadmin" ||
     role === "admin" ||
-    (role === "registrator" && branchType === "HQ");
+    role === "manager" ||
+    role === "registrator";
   const manualReasonOptions = useMemo(
     () => [
       t("cancelledManualReasonTorn"),
@@ -479,6 +478,31 @@ const CancelledMarketDetail = () => {
     setManualConfirmOrder(order);
     setManualReason(manualReasonOptions[0] ?? "");
   }, [canManualSelectDamagedQr, manualReasonOptions, selectedIds]);
+
+  const toggleManualOrderSelection = useCallback((order: OrderListItem) => {
+    if (!canManualSelectDamagedQr) return;
+
+    if (!selectedIds.has(order.id)) {
+      openManualSelectModal(order);
+      return;
+    }
+
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      next.delete(order.id);
+      return next;
+    });
+    setManualSelectedIds((previous) => {
+      const next = new Set(previous);
+      next.delete(order.id);
+      return next;
+    });
+    setManualOverrideReasons((previous) => {
+      const { [order.id]: _removed, ...rest } = previous;
+      void _removed;
+      return rest;
+    });
+  }, [canManualSelectDamagedQr, openManualSelectModal, selectedIds]);
 
   const closeManualSelectModal = useCallback(() => {
     setManualConfirmOrder(null);
@@ -755,9 +779,9 @@ const CancelledMarketDetail = () => {
                   key={order.id}
                   order={toOrderCardData(order)}
                   isSelected={selectedIds.has(order.id)}
-                  onToggle={() => undefined}
+                  onToggle={() => toggleManualOrderSelection(order)}
                   showCheckbox={!isMarketRole}
-                  checkboxDisabled
+                  checkboxDisabled={!canManualSelectDamagedQr}
                   manualSelectLabel={t("cancelledManualSelect")}
                   onManualSelect={
                     canManualSelectDamagedQr && !manualSelectedIds.has(order.id)

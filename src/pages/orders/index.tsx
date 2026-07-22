@@ -55,6 +55,49 @@ const toText = (value: unknown) => {
 
 const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
 
+const formatOrderAmount = (value: unknown) => {
+  const amount = Number(value ?? 0);
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  return new Intl.NumberFormat("uz-UZ").format(amount) + " so'm";
+};
+
+const getOrderPersonName = (order: unknown) => {
+  const record = asRecord(order);
+  const customer = asRecord(record.customer);
+  return toText(
+    customer.name ??
+      customer.full_name ??
+      customer.fullName ??
+      record.customer_name ??
+      record.customerName ??
+      record.name,
+  );
+};
+
+const getOrderPhone = (order: unknown) => {
+  const record = asRecord(order);
+  const customer = asRecord(record.customer);
+  return toText(
+    customer.phone_number ??
+      customer.phoneNumber ??
+      customer.phone ??
+      record.customer_phone ??
+      record.customerPhone ??
+      record.phone_number ??
+      record.phone,
+  );
+};
+
+const getRollbackOrderSummary = (order: unknown) => {
+  const record = asRecord(order);
+  const name = getOrderPersonName(order) || (record.id ? `Buyurtma #${record.id}` : "Buyurtma");
+  const details = [getOrderPhone(order), formatOrderAmount(record.total_price)]
+    .filter(Boolean)
+    .join(" • ");
+
+  return { name, details };
+};
+
 const unwrapScannedOrder = (payload: unknown) => {
   const source = asRecord(payload);
   const data = asRecord(source.data ?? source);
@@ -281,6 +324,7 @@ const Orders = () => {
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
   const [rollbackOrder, setRollbackOrder] = useState<OrderListItem | null>(null);
   const [selectedCancelledIds, setSelectedCancelledIds] = useState<Set<string>>(new Set());
+  const rollbackSummary = useMemo(() => getRollbackOrderSummary(rollbackOrder), [rollbackOrder]);
 
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
@@ -985,12 +1029,17 @@ const Orders = () => {
         onConfirm={handleRollbackOrder}
         title={t("rollbackOrder")}
         message={
-          <>
-            <span className="font-semibold text-[var(--color-maindark)] dark:text-white">
-              #{rollbackOrder?.id}
-            </span>{" "}
-            {t("rollbackConfirmMessage", { id: rollbackOrder?.id })}
-          </>
+          <div className="space-y-2 text-center">
+            <div className="text-base font-semibold text-[var(--color-maindark)] dark:text-white">
+              {rollbackSummary.name}
+            </div>
+            {rollbackSummary.details && (
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-300">
+                {rollbackSummary.details}
+              </div>
+            )}
+            <div>{t("rollbackConfirmMessage", { id: rollbackOrder?.id })}</div>
+          </div>
         }
         confirmLabel={t("rollbackConfirmLabel")}
         cancelLabel={t("cancel", { ns: "common" })}

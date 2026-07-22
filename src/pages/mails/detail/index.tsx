@@ -206,7 +206,7 @@ const REFUSED_MAIL_ORDER_STATUSES = new Set(["cancelled", "cancelled (sent)", "c
 
 // ─── Xatolik holati ───────────────────────────────────────────────────────────
 const ErrorState = memo(() => {
-  const { t } = useTranslation("mails");
+  const { t } = useTranslation(["mails", "newOrders"]);
 
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -228,7 +228,7 @@ ErrorState.displayName = "ErrorState";
 
 // ─── Asosiy Page ──────────────────────────────────────────────────────────────
 const MailDetailPage = () => {
-  const { t } = useTranslation("mails");
+  const { t } = useTranslation(["mails", "newOrders", "orders"]);
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -317,10 +317,14 @@ const MailDetailPage = () => {
   }, []);
 
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
-  const isEffectiveRefusedDetail = isRefusedDetail;
-  const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
   const regularOrdersFromPost = regularResponse?.data?.allOrdersByPostId ?? [];
   const refusedOrdersFromPost = refusedResponse?.data ?? [];
+  const isRegularRefusedDetail =
+    !isOldDetail &&
+    regularOrdersFromPost.length > 0 &&
+    regularOrdersFromPost.every((order) => REFUSED_MAIL_ORDER_STATUSES.has(order.status));
+  const isEffectiveRefusedDetail = isRefusedDetail || isRegularRefusedDetail;
+  const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
   const fallbackRegionId = toText(navState?.fallbackRegionId);
   const fallbackRegionName = toText(navState?.fallbackRegionName);
   const shouldLoadRegionFallback =
@@ -392,18 +396,20 @@ const MailDetailPage = () => {
       return mapBatchOrdersToPostOrders(transferBatchResponse);
     }
 
-    return isEffectiveRefusedDetail
-      ? refusedOrdersFromPost.length > 0
+    if (isRefusedDetail) {
+      return refusedOrdersFromPost.length > 0
         ? refusedOrdersFromPost
-        : refusedRegionFallbackOrders
-      : regularOrdersFromPost.length > 0
-        ? regularOrdersFromPost
-        : regionFallbackOrders;
+        : refusedRegionFallbackOrders;
+    }
+
+    return regularOrdersFromPost.length > 0
+      ? regularOrdersFromPost
+      : regionFallbackOrders;
   }, [
     isAllBatchesDetail,
     isBranchTransferRole,
     transferBatchResponse,
-    isEffectiveRefusedDetail,
+    isRefusedDetail,
     refusedOrdersFromPost,
     refusedRegionFallbackOrders,
     regularOrdersFromPost,
@@ -463,6 +469,12 @@ const MailDetailPage = () => {
   // ─── Checkbox state ────────────────────────────────────────────────────────
   const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, clearSelection } =
     useMailDetailState(orders);
+  const hasRefusedOrders = orders.some((order) => REFUSED_MAIL_ORDER_STATUSES.has(order.status));
+  const canManualSelectRefusedOrder =
+    !isOldDetail &&
+    !isReadOnlyRefusedCourier &&
+    canReceiveRefusedPost &&
+    (isEffectiveRefusedDetail || hasRefusedOrders);
 
   // ─── Modal state (faqat courier bo'lmaganlar uchun) ────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -507,6 +519,14 @@ const MailDetailPage = () => {
     () => orders[0]?.region_id ?? orders[0]?.district?.region_id ?? "",
     [orders],
   );
+
+  const handleManualToggleOne = useCallback((id: string) => {
+    toggleOne(id);
+  }, [toggleOne]);
+
+  const handleManualToggleAll = useCallback(() => {
+    toggleAll();
+  }, [toggleAll]);
 
   const selectScannedOrder = useCallback((order: PostOrder) => {
     if (selectedIds.has(order.id)) {
@@ -846,7 +866,7 @@ const MailDetailPage = () => {
         showSelectionCard={!isOldDetail}
       />
 
-      {role === "manager" && isEffectiveRefusedDetail && !isOldDetail ? (
+      {canManualSelectRefusedOrder ? (
         <div className="flex items-center gap-3 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-main dark:text-white">
           <ScanLine size={20} className="shrink-0" />
           <p className="m-0 text-sm font-semibold">{t("refusedScanHint")}</p>
@@ -859,8 +879,8 @@ const MailDetailPage = () => {
         selectedIds={selectedIds}
         allSelected={allSelected}
         someSelected={someSelected}
-        onToggleAll={toggleAll}
-        onToggleOne={toggleOne}
+        onToggleAll={handleManualToggleAll}
+        onToggleOne={handleManualToggleOne}
         onPrintOne={handlePrintOne}
         onDeleteOne={handleDeleteOne}
         canDelete={isSuperAdmin && !isEffectiveRefusedDetail && !isOldDetail}
@@ -900,6 +920,7 @@ const MailDetailPage = () => {
           onSuccess={handleSendSuccess}
         />
       )}
+
       <PopupConfirm
         isOpen={isDeleteConfirmOpen}
         onClose={() => {
