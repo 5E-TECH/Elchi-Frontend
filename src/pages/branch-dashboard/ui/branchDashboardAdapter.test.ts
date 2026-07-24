@@ -109,4 +109,47 @@ describe("branch dashboard adapter", () => {
       returned: 2,
     });
   });
+  it("treats zero filtered order summary as authoritative over branch cards", () => {
+    const result = adaptBranchDashboard(
+      {
+        role: "manager",
+        today_orders_count: 0,
+        week_orders_count: 0,
+        active_batches_count: 0,
+        couriers_count: 1,
+        cards: {
+          orders: {
+            total: 0,
+            new: 0,
+            on_the_road: 0,
+            delivered: 0,
+            returned: 1,
+          },
+          markets: [],
+          packages: null,
+          couriers: null,
+        },
+      },
+      "manager",
+      {
+        acceptedCount: 0,
+        total: 0,
+        totalOrders: 0,
+        ordersCount: 0,
+        soldAndPaid: 0,
+        cancelled: 0,
+        profit: 0,
+        totalRevenue: 0,
+      },
+      true,
+    );
+
+    expect(result.orderSummary).toMatchObject({
+      total: 0,
+      onTheRoad: 0,
+      delivered: 0,
+      returned: 0,
+    });
+  });
+
 });

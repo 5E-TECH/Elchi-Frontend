@@ -97,16 +97,17 @@ export const adaptBranchDashboard = (
 ): BranchDashboardSnapshot => {
   const role = payload?.role?.toUpperCase?.() || fallbackRole.toUpperCase();
   const fallback = createEmptyBranchDashboard(role);
-  const acceptedCount = toNumber(orders?.acceptedCount);
+  const hasOrdersSummary = Boolean(orders);
+  const acceptedCount = toNumber(
+    orders?.total ?? orders?.totalOrders ?? orders?.ordersCount ?? orders?.acceptedCount,
+  );
   const soldAndPaid = toNumber(orders?.soldAndPaid);
   const cancelled = toNumber(orders?.cancelled);
   const inProgress = Math.max(0, acceptedCount - soldAndPaid - cancelled);
-  const totalOrders =
-    acceptedCount > 0 ? acceptedCount : soldAndPaid + cancelled + inProgress;
-  const hasOrderSummary = totalOrders > 0;
+  const totalOrders = acceptedCount;
 
   const mergeOrderSummary = (snapshot: BranchDashboardSnapshot): BranchDashboardSnapshot => {
-    if (!hasOrderSummary) return snapshot;
+    if (!hasOrdersSummary) return snapshot;
 
     const backendOrderTotal =
       snapshot.orderSummary.total +
