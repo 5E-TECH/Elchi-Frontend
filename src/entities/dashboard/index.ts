@@ -17,6 +17,9 @@ export interface RevenueParams extends AnalyticsDateParams {
 
 export interface DashboardOrdersSummary {
   acceptedCount: number;
+  total?: number;
+  totalOrders?: number;
+  ordersCount?: number;
   cancelled: number;
   soldAndPaid: number;
   inProgress?: number;

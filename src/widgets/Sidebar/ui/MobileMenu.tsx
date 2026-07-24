@@ -1,10 +1,8 @@
 import { memo } from "react";
-import { X, LogOut, Bell, User, ScanQrCode, Settings } from "lucide-react";
+import { X, LogOut, Bell, ScanQrCode, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "../../../shared/lib/useLogout";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../../app/config/store";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { Controller, useForm } from "react-hook-form";
@@ -24,7 +22,6 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const { t } = useTranslation(["sidebar"]);
     const { logout } = useLogout();
     const { theme } = useTheme();
-    const roleState = useSelector((state: RootState) => state.role);
     const { control, handleSubmit } = useForm<MobileMenuSearchValues>({
         defaultValues: { search: "" },
     });
@@ -145,25 +142,8 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                     </button>
                 </div>
 
-                {/* Footer Section - Profile & Logout */}
-                <div className="space-y-4 border-t border-black/10 bg-black/5 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 dark:border-white/5 dark:bg-white/[0.02]">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            onClose();
-                            navigate("/profile");
-                        }}
-                        className="flex w-full items-center gap-3 rounded-2xl border border-black/10 bg-black/5 p-4 transition-all hover:bg-black/8 dark:border-white/5 dark:bg-white/5 dark:hover:bg-white/8"
-                    >
-                        <div className="w-12 h-12 rounded-2xl bg-main flex items-center justify-center shadow-lg shadow-main/20">
-                            <User size={24} className="text-white" />
-                        </div>
-                        <div className="flex-1 text-left">
-                            <p className="text-sm font-black uppercase tracking-tight text-maindark dark:text-white">{roleState.name || "Admin User"}</p>
-                            <p className="mt-1 text-[10px] font-bold uppercase leading-none tracking-widest text-maindark/45 dark:text-white/40">{roleState.role || "Super Admin"}</p>
-                        </div>
-                    </button>
-
+                {/* Footer Section - Logout */}
+                <div className="border-t border-black/10 bg-black/5 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 dark:border-white/5 dark:bg-white/[0.02]">
                     <button
                         onClick={logout}
                         className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest text-xs hover:bg-red-600 active:scale-95 transition-all duration-300 shadow-lg shadow-red-500/20"

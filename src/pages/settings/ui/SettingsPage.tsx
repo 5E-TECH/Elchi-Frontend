@@ -6,7 +6,6 @@ import {
   Palette,
   LayoutDashboard,
   PanelLeft,
-  User as UserIcon,
   Sun,
   Moon,
   Check,
@@ -37,18 +36,14 @@ import {
   writeStoredScannerErrorSound,
   writeStoredScannerSuccessSound,
 } from "../../../shared/lib/preferencesStorage";
-import { useUser } from "../../../entities/user/api/userApi";
-import { unwrapUserResponse } from "../../../entities/user/lib/normalizeUser";
-import { UserDetailWidget } from "../../../widgets/user-detail/ui/UserDetailWidget";
 import { TYPO, TEXT, toneSoftBg } from "../../../shared/config/designSystem";
 
-type TabId = "appearance" | "dashboard" | "interface" | "profile";
+type TabId = "appearance" | "dashboard" | "interface";
 
 const TABS: { id: TabId; icon: ReactNode }[] = [
   { id: "appearance", icon: <Palette size={18} /> },
   { id: "dashboard", icon: <LayoutDashboard size={18} /> },
   { id: "interface", icon: <PanelLeft size={18} /> },
-  { id: "profile", icon: <UserIcon size={18} /> },
 ];
 
 const LANGUAGES: { key: Language; label: string; native: string }[] = [
@@ -502,22 +497,11 @@ const SettingsPage = () => {
             </div>
           )}
 
-          {activeTab === "profile" && <ProfileTab />}
         </div>
       </div>
     </PageContainer>
   );
 };
 
-// ─── Profil tabi ───────────────────────────────────────────────────────────────
-const ProfileTab = memo(() => {
-  const { useGetMyProfile } = useUser();
-  const { data, isLoading, isError, error } = useGetMyProfile();
-  const user = unwrapUserResponse(data);
-  return (
-    <UserDetailWidget user={user} isLoading={isLoading} isError={isError} error={error} isOwnProfile />
-  );
-});
-ProfileTab.displayName = "ProfileTab";
 
 export default memo(SettingsPage);
