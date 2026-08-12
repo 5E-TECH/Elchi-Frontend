@@ -9,7 +9,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Check, ChevronDown, type LucideIcon } from "lucide-react";
-import { setFilterValue } from "../../features/Select/model/FilterSlice";
+import { setFilterValue } from "../model/filterSlice";
 import { useQueryParams } from "../lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
 

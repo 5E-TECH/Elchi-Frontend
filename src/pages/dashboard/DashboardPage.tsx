@@ -13,7 +13,7 @@ import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import type { RootState } from "../../app/config/store";
-import { removeFilterValue, setMultipleFilters } from "../../features/Select/model/FilterSlice";
+import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 

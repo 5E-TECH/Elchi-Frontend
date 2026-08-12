@@ -8,7 +8,7 @@ import { I18nextProvider } from "react-i18next";
 import type { RootState } from "../app/config/store";
 import sidebar from "../widgets/Sidebar/model/sidebarSlice";
 import user from "../entities/user/model/slice";
-import filter from "../features/Select/model/FilterSlice";
+import filter from "../shared/model/filterSlice";
 import search from "../features/search/model/searchSlice";
 import role from "../features/auth/model/loginSlice";
 import pagination from "../shared/model/paginationSlice";

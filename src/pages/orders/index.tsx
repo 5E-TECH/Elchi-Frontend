@@ -29,7 +29,7 @@ import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
 import PopupConfirm from "../../shared/components/popupConfirm";
 import OrderTabs from "./list/courier/list/tabs";
-import { setFilterValue } from "../../features/Select/model/FilterSlice";
+import { setFilterValue } from "../../shared/model/filterSlice";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
