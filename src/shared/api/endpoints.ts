@@ -250,6 +250,13 @@ export const API_ENDPOINTS = {
     HEALTH: "notifications/health",
     SEND: "notifications/send", // POST send to telegram group(s)
     CONNECT_BY_TOKEN: "notifications/connect-by-token", // POST connect group by token
+    // In-app inbox (current user, per-recipient rows) ──────────────────────
+    INBOX: "notifications/inbox", // GET my inbox (is_read/type/category/priority/page/limit)
+    INBOX_UNREAD_COUNT: "notifications/inbox/unread-count", // GET my unread count
+    INBOX_READ_ALL: "notifications/inbox/read-all", // PATCH mark all read
+    INBOX_BY_ID: (id: string | number) => `notifications/inbox/${id}`, // GET / DELETE one
+    INBOX_READ: (id: string | number) => `notifications/inbox/${id}/read`, // PATCH read/unread
+    DISPATCH: "notifications/dispatch", // POST manual dispatch (admin/testing)
   },
 
   // ── Branches (admin full; manager/branch scoped) — guide §8 ──────────────
@@ -315,5 +322,14 @@ export const API_ENDPOINTS = {
   // ── Webhooks (public — provider inbound, no JWT) ─────────────────────────
   WEBHOOKS: {
     BY_SLUG: (slug: string | number) => `webhooks/${slug}`, // POST
+  },
+
+  // ── Activity logs / audit trail (admin) — merged across services ─────────
+  ACTIVITY_LOGS: {
+    BASE: "activity-logs", // GET audit feed (filters: service/entity/action/user/date/search)
+    ACTIONS: "activity-logs/actions", // GET known action verbs (filter dropdown)
+    ENTITY: (entityType: string, entityId: string | number) =>
+      `activity-logs/entity/${entityType}/${entityId}`, // GET full history of one entity
+    USER: (userId: string | number) => `activity-logs/user/${userId}`, // GET everything a user did
   },
 } as const;
