@@ -1,7 +1,7 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
-import { Calendar, HeadphonesIcon, MapPin, Settings } from "lucide-react";
+import { Calendar, HeadphonesIcon, Loader2, MapPin, Settings } from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,16 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import PageContainer from "../../shared/ui/PageContainer";
-import UzbekistanRegionMap from "./ui/UzbekistanRegionMap";
+
+// Highcharts + the Uzbekistan topology JSON are heavy; load them only when the
+// map actually renders (keeps the region route chunk small and the page fast).
+const UzbekistanRegionMap = lazy(() => import("./ui/UzbekistanRegionMap"));
+
+const MapFallback = () => (
+  <div className="flex h-[400px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)]">
+    <Loader2 className="h-7 w-7 animate-spin" style={{ color: "var(--color-main)" }} />
+  </div>
+);
 
 const { RangePicker } = DatePicker;
 
@@ -436,25 +445,27 @@ const RegionPage = () => {
             <h3 className="text-2xl font-bold text-main dark:text-primary">{userRegionName || "—"}</h3>
           </div>
         ) : (
-          <UzbekistanRegionMap
-            regions={regions.map((region) => ({
-              id: region.id,
-              name: region.name,
-              stats: {
-                districtCount: region.districtCount,
-                activeCouriers: region.activeCouriers,
-                orderCount: region.ordersCount,
-                deliveredOrders: region.deliveredOrders,
-                cancelledOrders: region.cancelledOrders,
-                pendingOrders: region.pendingOrders,
-                totalRevenue: region.totalRevenue,
-                successRate: region.successRate,
-              },
-            }))}
-            summary={summary}
-            startDate={detailDateParams.startDate}
-            endDate={detailDateParams.endDate}
-          />
+          <Suspense fallback={<MapFallback />}>
+            <UzbekistanRegionMap
+              regions={regions.map((region) => ({
+                id: region.id,
+                name: region.name,
+                stats: {
+                  districtCount: region.districtCount,
+                  activeCouriers: region.activeCouriers,
+                  orderCount: region.ordersCount,
+                  deliveredOrders: region.deliveredOrders,
+                  cancelledOrders: region.cancelledOrders,
+                  pendingOrders: region.pendingOrders,
+                  totalRevenue: region.totalRevenue,
+                  successRate: region.successRate,
+                },
+              }))}
+              summary={summary}
+              startDate={detailDateParams.startDate}
+              endDate={detailDateParams.endDate}
+            />
+          </Suspense>
         )}
 
         {isLoading ? (

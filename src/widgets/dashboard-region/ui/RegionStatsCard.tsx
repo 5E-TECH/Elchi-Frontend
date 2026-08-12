@@ -1,8 +1,18 @@
-import { memo, useMemo } from "react";
+import { lazy, memo, Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Map as MapIcon, Loader2 } from "lucide-react";
-import UzbekistanRegionMap from "../../../pages/region/ui/UzbekistanRegionMap";
 import { useRegionStats, toRegionMapItems } from "../../../entities/region";
+
+// Defer Highcharts + the topology JSON until the map is actually rendered.
+const UzbekistanRegionMap = lazy(
+  () => import("../../../pages/region/ui/UzbekistanRegionMap"),
+);
+
+const MapLoadingBox = () => (
+  <div className="flex h-[400px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)]">
+    <Loader2 className="h-7 w-7 animate-spin" style={{ color: "var(--color-main)" }} />
+  </div>
+);
 import { TYPO, TEXT } from "../../../shared/config/designSystem";
 import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import { getTodayRange } from "../../../shared/lib/dateRange";
@@ -51,16 +61,16 @@ const RegionStatsCard = memo(({ startDate, endDate }: RegionStatsCardProps) => {
           onRetry={() => void refetch()}
         />
       ) : isLoading ? (
-        <div className="flex h-[400px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)]">
-          <Loader2 className="h-7 w-7 animate-spin" style={{ color: "var(--color-main)" }} />
-        </div>
+        <MapLoadingBox />
       ) : (
-        <UzbekistanRegionMap
-          regions={toRegionMapItems(regions)}
-          summary={summary}
-          startDate={params.startDate}
-          endDate={params.endDate}
-        />
+        <Suspense fallback={<MapLoadingBox />}>
+          <UzbekistanRegionMap
+            regions={toRegionMapItems(regions)}
+            summary={summary}
+            startDate={params.startDate}
+            endDate={params.endDate}
+          />
+        </Suspense>
       )}
     </section>
   );
