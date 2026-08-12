@@ -14,6 +14,7 @@ import {
   Bell,
   Building2,
   Truck,
+  ScrollText,
   type LucideIcon,
   //   LucideIcon,
 } from "lucide-react";
@@ -49,6 +50,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/regions", icon: MapPinned, label: "regions" },
     { to: "/notifications", icon: Bell, label: "notifications" },
     { to: "/branches", icon: Building2, label: "branches" },
+    { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
     { to: "/logs", icon: FileText, label: "logs" },
   ],
   admin: [
@@ -63,6 +65,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
     { to: "/regions", icon: MapPinned, label: "regions" },
+    { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
   ],
   market: [
     { to: "/", icon: House, label: "dashboard", end: true },

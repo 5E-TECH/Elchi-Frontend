@@ -20,6 +20,7 @@ const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
 const BranchOpsPage = lazy(() => import("../../pages/branch-ops"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
 const SystemOpsPage = lazy(() => import("../../pages/system-ops"));
+const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
 
 // ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
@@ -321,6 +322,14 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewOps}>
                   <SystemOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "activity-logs",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <ActivityLogsPage />
                 </ProtectedRoute>
               ),
             },
