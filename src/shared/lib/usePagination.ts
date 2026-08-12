@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { PaginationScope } from "../../features/pagination/model/paginationSlice";
+import type { PaginationScope } from "../model/paginationSlice";
 
 interface UsePaginationOptions {
   key: PaginationScope;

@@ -9,7 +9,7 @@ import userReducer from "../../entities/user/model/slice";
 import filterslice from "../../features/Select/model/FilterSlice";
 import searchSlice from "../../features/search/model/searchSlice";
 import roleReducer from "../../features/auth/model/loginSlice";
-import paginationReducer from "../../features/pagination/model/paginationSlice";
+import paginationReducer from "../../shared/model/paginationSlice";
 import { writeStoredSidebar } from "../../shared/lib/preferencesStorage";
 
 const sidebarStorageListener = createListenerMiddleware();
