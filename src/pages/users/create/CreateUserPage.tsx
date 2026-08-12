@@ -11,7 +11,19 @@ const CreateUserPage = memo(() => {
 
     return (
         <div className="rounded-2xl">
-            <div className="cursor-pointer px-3 py-3 sm:px-4 sm:py-4 md:px-5" onClick={() => navigate(-1)}>
+            <div
+                role="button"
+                tabIndex={0}
+                aria-label={t("back", { defaultValue: "Orqaga" })}
+                className="cursor-pointer rounded-2xl px-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-main sm:px-4 sm:py-4 md:px-5"
+                onClick={() => navigate(-1)}
+                onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(-1);
+                    }
+                }}
+            >
                 <HeaderName
                     name={t("createNewUser")}
                     icon={<ArrowLeft />}

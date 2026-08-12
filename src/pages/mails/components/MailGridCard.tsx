@@ -52,8 +52,13 @@ const MailGridCard = ({
       role="button"
       tabIndex={0}
       onClick={onOpen}
-      onKeyDown={(event) => event.key === "Enter" && onOpen()}
-      className={`group relative min-h-[172px] cursor-pointer overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl ${variantClassName[variant]}`}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+      className={`group relative min-h-[172px] cursor-pointer overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${variantClassName[variant]}`}
     >
       <div className="mail-card-shimmer" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.14)_0%,transparent_48%,rgba(255,255,255,0.06)_100%)]" />

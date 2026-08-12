@@ -80,6 +80,7 @@ const UpdatePopup = ({
                       imageProps.previewUrl
                         ?? (typeof imageProps.value === "string" ? imageProps.value : undefined)
                     }
+                    alt=""
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
