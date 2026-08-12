@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { Paperclip, X, Loader2, FileCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useMiscCoverage } from "../../entities/coverage/miscCoverage";
+import { useMiscCoverage } from "../../../entities/coverage/miscCoverage";
 
 /**
  * Proof-file attach control for courier sell/cancel. Markets can require expense

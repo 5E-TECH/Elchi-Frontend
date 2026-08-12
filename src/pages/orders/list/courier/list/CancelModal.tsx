@@ -3,7 +3,7 @@ import { X, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Order } from "./ordertable/pendingOrderTable";
 import Popup from "../../../../../shared/ui/Popup";
-import ProofUpload from "../../../../../shared/ui/ProofUpload";
+import { ProofUpload } from "../../../../../features/proof-upload";
 
 type Props = {
   order: Order | null;

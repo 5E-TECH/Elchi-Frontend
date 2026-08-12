@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../../shared/ui/Popup";
-import ProofUpload from "../../../../../shared/ui/ProofUpload";
+import { ProofUpload } from "../../../../../features/proof-upload";
 
 type OrderItem = {
   id: string;
