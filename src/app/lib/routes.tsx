@@ -1,5 +1,5 @@
 import { lazy, memo } from "react";
-import { Navigate, useParams, useRoutes } from "react-router-dom";
+import { Navigate, Outlet, useParams, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
@@ -145,6 +145,24 @@ const canViewReturns = (state: RootState) => {
 // 403s their write endpoints, but these dev forms must not be reachable by URL
 // for non-admins. Admin/superadmin only. (Audit I17.)
 const canViewOps = (state: RootState) => {
+  const role = state.role.role;
+  return role === "admin" || role === "superadmin";
+};
+
+// User management — admin/superadmin, plus REGIONAL/HYBRID managers (matches the
+// sidebar's "users" visibility). Backend RBAC still enforces on every call.
+const canManageUsers = (state: RootState) => {
+  const role = state.role.role;
+  if (role === "admin" || role === "superadmin") return true;
+  if (role === "manager") {
+    const branchType = getUserBranchType(state.user.user);
+    return branchType === "REGIONAL" || branchType === "HYBRID";
+  }
+  return false;
+};
+
+// Company-wide financial balance — admin/superadmin only (sidebar "balance").
+const canViewBalance = (state: RootState) => {
   const role = state.role.role;
   return role === "admin" || role === "superadmin";
 };
@@ -335,6 +353,11 @@ const AppRouter = () => {
             },
             {
               path: "all-users",
+              element: (
+                <ProtectedRoute canActivate={canManageUsers}>
+                  <Outlet />
+                </ProtectedRoute>
+              ),
               children: [
                 { index: true, element: <UserListPage /> },
                 { path: "create-user", element: <CreateUserPage /> },
@@ -457,7 +480,11 @@ const AppRouter = () => {
             },
             {
               path: "financial-balance",
-              element: <FinancialBalance />,
+              element: (
+                <ProtectedRoute canActivate={canViewBalance}>
+                  <FinancialBalance />
+                </ProtectedRoute>
+              ),
             },
             {
               path: "regions",
