@@ -1,0 +1,37 @@
+{
+  "tabs": {
+    "all": "All",
+    "unread": "Unread"
+  },
+  "markAllRead": "Mark all as read",
+  "markAllReadSuccess": "All notifications marked as read",
+  "markAllReadError": "Failed to mark notifications",
+  "markRead": "Mark as read",
+  "markUnread": "Mark as unread",
+  "actionError": "Failed to perform the action",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "deleteConfirm": "Delete this notification?",
+  "deleteSuccess": "Notification deleted",
+  "deleteError": "Failed to delete notification",
+  "empty": "No notifications",
+  "emptyHint": "New notifications will appear here",
+  "emptyUnread": "No unread notifications",
+  "emptyUnreadHint": "You're all caught up",
+  "loadError": "Failed to load notifications",
+  "category": {
+    "order": "Order",
+    "finance": "Finance",
+    "branch": "Branch",
+    "logistics": "Logistics",
+    "account": "Account",
+    "system": "System",
+    "marketing": "Marketing"
+  },
+  "priority": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "critical": "Critical"
+  }
+}
