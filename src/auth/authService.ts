@@ -1,6 +1,6 @@
 import axios from "axios";
 import store from "../app/config/store";
-import { setId, setName, setRegion, setRole, removeRole } from "../features/auth/model/loginSlice";
+import { setId, setName, setRegion, setRole, removeRole } from "../shared/model/roleSlice";
 import { BASE_URL } from "../shared/const";
 import { API_ENDPOINTS } from "../shared/api";
 import { loginSuccess, logout as logoutAction, setAppInitializing, setProfile, setError } from "../entities/user/model/slice";

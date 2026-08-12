@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
-import store from "../../../app/config/store";
+import { useDispatch, useStore } from "react-redux";
+import type { RootState } from "../../../app/config/store";
 import { setProfile } from "../model/slice";
-import { setName, setRole } from "../../../features/auth/model/loginSlice";
+import { setName, setRole } from "../../../shared/model/roleSlice";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
@@ -52,6 +53,8 @@ export interface IUserFilter {
 
 export const useUser = () => {
   const client = useQueryClient();
+  const dispatch = useDispatch();
+  const reduxStore = useStore<RootState>();
 
   const getUser = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
@@ -148,7 +151,7 @@ export const useUser = () => {
     onSuccess: (response, variables) => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
 
-      const currentProfile = store.getState().user.user;
+      const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile || currentProfile.id !== variables.id) {
         return;
       }
@@ -162,9 +165,9 @@ export const useUser = () => {
           role: currentProfile.role,
         } as any);
 
-      store.dispatch(setProfile(updatedProfile as any));
-      store.dispatch(setName(updatedProfile.name));
-      store.dispatch(setRole(updatedProfile.role));
+      dispatch(setProfile(updatedProfile as any));
+      dispatch(setName(updatedProfile.name));
+      dispatch(setRole(updatedProfile.role));
     },
   });
 
@@ -175,7 +178,7 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: [user, "profile"] });
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
 
-      const currentProfile = store.getState().user.user;
+      const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile) {
         return;
       }
@@ -189,9 +192,9 @@ export const useUser = () => {
           role: currentProfile.role,
         } as any);
 
-      store.dispatch(setProfile(updatedProfile as any));
-      store.dispatch(setName(updatedProfile.name));
-      store.dispatch(setRole(updatedProfile.role));
+      dispatch(setProfile(updatedProfile as any));
+      dispatch(setName(updatedProfile.name));
+      dispatch(setRole(updatedProfile.role));
     },
   });
 
