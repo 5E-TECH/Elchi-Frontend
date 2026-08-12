@@ -3,6 +3,8 @@
   "pageDescription": "Manage cashboxes and payments",
   "toBeGiven": "To be given",
   "amountInCashbox": "Amount in cashbox",
+  "settlementStatus": "Settlement status",
+  "counterparty": "Counterparty",
   "toBeReceived": "To be received",
   "filters": "Filters",
   "clearFilters": "Clear filters",
