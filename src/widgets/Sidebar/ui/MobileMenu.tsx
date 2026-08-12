@@ -37,8 +37,10 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     return (
         <div className="fixed inset-0 z-60 overflow-hidden lg:hidden">
             {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-md animate-loader-in"
+            <button
+                type="button"
+                aria-label="Close menu"
+                className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-md animate-loader-in"
                 onClick={onClose}
             />
 
