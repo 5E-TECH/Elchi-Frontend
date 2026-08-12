@@ -7,6 +7,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import { GlobalSearchInput, useDebounce } from "../../../features/search";
 import { useOrders } from "../../../entities/orders";
 import { OrderCard, Checkbox, fmt } from "./OrderCard";
+import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -133,8 +134,7 @@ const NewOrderDetail = () => {
         },
         onError: (err: unknown) => {
           void playScanFeedback("error");
-          const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
-          const msg = apiErr?.response?.data?.message ?? apiErr?.message ?? t("receiveError");
+          const msg = getApiErrorMessage(err, t("receiveError"));
           notifApi.error({
             message: t("receiveError"),
             description: msg,
