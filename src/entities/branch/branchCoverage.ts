@@ -34,13 +34,13 @@ export const useBranchCoverage = () => {
 
   // POST branches/:id/return-batches
   const returnBatches = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.post(API_ENDPOINTS.BRANCHES.RETURN_BATCHES(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["branch-cov"] }),
   });
 
   // GET branches/new-orders
-  const getNewOrders = (params?: any) =>
+  const getNewOrders = (params?: unknown) =>
     useQuery({
       queryKey: ["branch-cov", "new-orders", params],
       queryFn: () =>
@@ -49,13 +49,13 @@ export const useBranchCoverage = () => {
 
   // POST branches/posts/:postId/dispatch
   const postDispatch = useMutation({
-    mutationFn: ({ postId, data }: { postId: string; data: any }) =>
+    mutationFn: ({ postId, data }: { postId: string; data: unknown }) =>
       api.post(API_ENDPOINTS.BRANCHES.POST_DISPATCH(postId), data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["branch-cov"] }),
   });
 
   // GET branches/tree
-  const getTree = (params?: any) =>
+  const getTree = (params?: unknown) =>
     useQuery({
       queryKey: ["branch-cov", "tree", params],
       queryFn: () =>
@@ -64,7 +64,7 @@ export const useBranchCoverage = () => {
 
   // POST transfer-batches/:id/cancel
   const cancelBatch = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.post(API_ENDPOINTS.BATCHES.CANCEL(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["branch-cov"] }),
   });

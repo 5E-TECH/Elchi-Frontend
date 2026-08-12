@@ -7,14 +7,14 @@ export const useMiscCoverage = () => {
 
   // ── ANALYTICS ──────────────────────────────────────────────────────────────
 
-  const getAnalyticsKpi = (params?: any) =>
+  const getAnalyticsKpi = (params?: unknown) =>
     useQuery({
       queryKey: ["misc-cov", "analytics-kpi", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ANALYTICS.KPI, { params }).then((res) => res.data),
     });
 
-  const getAnalyticsReportCouriers = (params?: any) =>
+  const getAnalyticsReportCouriers = (params?: unknown) =>
     useQuery({
       queryKey: ["misc-cov", "analytics-report-couriers", params],
       queryFn: () =>
@@ -22,7 +22,7 @@ export const useMiscCoverage = () => {
           .then((res) => res.data),
     });
 
-  const getAnalyticsReportFinance = (params?: any) =>
+  const getAnalyticsReportFinance = (params?: unknown) =>
     useQuery({
       queryKey: ["misc-cov", "analytics-report-finance", params],
       queryFn: () =>
@@ -30,7 +30,7 @@ export const useMiscCoverage = () => {
           .then((res) => res.data),
     });
 
-  const getAnalyticsReportOrders = (params?: any) =>
+  const getAnalyticsReportOrders = (params?: unknown) =>
     useQuery({
       queryKey: ["misc-cov", "analytics-report-orders", params],
       queryFn: () =>
@@ -41,16 +41,16 @@ export const useMiscCoverage = () => {
   // ── AUTH ───────────────────────────────────────────────────────────────────
 
   const login = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.AUTH.LOGIN, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.AUTH.LOGIN, data),
   });
 
   const logout = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.AUTH.LOGOUT, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.AUTH.LOGOUT, data),
     onSuccess: () => client.clear(),
   });
 
   const refresh = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.AUTH.REFRESH, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.AUTH.REFRESH, data),
   });
 
   const getAuthValidate = (enabled: boolean = true) =>
@@ -63,7 +63,7 @@ export const useMiscCoverage = () => {
 
   // ── EXPORT (binary xlsx — returned as any) ─────────────────────────────────
 
-  const getExportCashboxHistoryXlsx = (params?: any) =>
+  const getExportCashboxHistoryXlsx = (params?: unknown) =>
     useQuery<any>({
       queryKey: ["misc-cov", "export-cashbox-history-xlsx", params],
       queryFn: () =>
@@ -71,7 +71,7 @@ export const useMiscCoverage = () => {
           .then((res) => res.data),
     });
 
-  const getExportOrdersXlsx = (params?: any) =>
+  const getExportOrdersXlsx = (params?: unknown) =>
     useQuery<any>({
       queryKey: ["misc-cov", "export-orders-xlsx", params],
       queryFn: () =>
@@ -79,7 +79,7 @@ export const useMiscCoverage = () => {
           .then((res) => res.data),
     });
 
-  const getExportShiftsXlsx = (params?: any) =>
+  const getExportShiftsXlsx = (params?: unknown) =>
     useQuery<any>({
       queryKey: ["misc-cov", "export-shifts-xlsx", params],
       queryFn: () =>
@@ -103,15 +103,15 @@ export const useMiscCoverage = () => {
   });
 
   const generatePdf = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.FILES.PDF, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.FILES.PDF, data),
   });
 
   const generateQr = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.FILES.QR, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.FILES.QR, data),
   });
 
   const uploadFile = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.FILES.UPLOAD, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.FILES.UPLOAD, data),
   });
 
   // ── HEALTH ─────────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ export const useMiscCoverage = () => {
   // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
 
   const connectNotificationByToken = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.NOTIFICATIONS.CONNECT_BY_TOKEN, data),
   });
 
@@ -145,18 +145,18 @@ export const useMiscCoverage = () => {
     });
 
   const sendNotification = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.NOTIFICATIONS.SEND, data),
   });
 
   // ── PRINTER ────────────────────────────────────────────────────────────────
 
   const printReceipt = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.PRINTER.RECEIPT, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.PRINTER.RECEIPT, data),
   });
 
   const printThermalPdf = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.PRINTER.THERMAL_PDF, data),
   });
 
@@ -170,7 +170,7 @@ export const useMiscCoverage = () => {
     });
 
   const updateMyProduct = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.PRODUCTS.UPDATE_MY(id), data),
   });
 

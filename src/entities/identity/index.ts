@@ -6,7 +6,7 @@ export const useIdentityCoverage = () => {
   const client = useQueryClient();
 
   // ── GET · ADMINS.BASE ──────────────────────────────────────────────────────
-  const getAdmins = (params?: any) =>
+  const getAdmins = (params?: unknown) =>
     useQuery({
       queryKey: ["identity-cov", "admins", params],
       queryFn: () =>
@@ -14,7 +14,7 @@ export const useIdentityCoverage = () => {
     });
 
   // ── GET · MANAGERS.BASE ───────────────────────────────────────────────────
-  const getManagers = (params?: any) =>
+  const getManagers = (params?: unknown) =>
     useQuery({
       queryKey: ["identity-cov", "managers", params],
       queryFn: () =>
@@ -22,7 +22,7 @@ export const useIdentityCoverage = () => {
     });
 
   // ── GET · REGISTRATORS.BASE ───────────────────────────────────────────────
-  const getRegistrators = (params?: any) =>
+  const getRegistrators = (params?: unknown) =>
     useQuery({
       queryKey: ["identity-cov", "registrators", params],
       queryFn: () =>
@@ -40,7 +40,7 @@ export const useIdentityCoverage = () => {
 
   // ── PATCH · MARKETS.ADD_ORDER ─────────────────────────────────────────────
   const addOrderToMarket = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.MARKETS.ADD_ORDER(id), data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ["identity-cov", "markets"] });
@@ -49,7 +49,7 @@ export const useIdentityCoverage = () => {
 
   // ── PATCH · MARKETS.EXPENSE_PROOF ────────────────────────────────────────
   const updateMarketExpenseProof = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.MARKETS.EXPENSE_PROOF(id), data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ["identity-cov", "markets"] });

@@ -56,15 +56,15 @@ export const useUser = () => {
   const getUser = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
       queryKey: [user, params],
-      queryFn: () => api.get(API_ENDPOINTS.USERS.BASE, { params }).then((res: any) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.USERS.BASE, { params }).then((res) => res.data),
       enabled,
-      placeholderData: (prev: any) => prev,
+      placeholderData: (prev: unknown) => prev,
     });
 
   const getCouriers = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
       queryKey: ["couriers", params],
-      queryFn: () => api.get(API_ENDPOINTS.COURIERS.BASE, { params }).then((res: any) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.COURIERS.BASE, { params }).then((res) => res.data),
       enabled,
     });
 
@@ -114,7 +114,7 @@ export const useUser = () => {
   const getRegions = (enabled: boolean = true) =>
     useQuery({
       queryKey: ["regions"],
-      queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res: any) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => res.data),
       staleTime: 5 * 60 * 1000,
       enabled,
     });
@@ -123,7 +123,7 @@ export const useUser = () => {
     useQuery({
       queryKey: [user, "detail", id, params],
       queryFn: () =>
-        api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res: any) => res.data),
+        api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res) => res.data),
       enabled: !!id,
     });
 
@@ -131,20 +131,20 @@ export const useUser = () => {
     useQuery({
       queryKey: [user, "profile"],
       queryFn: () =>
-        api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res: any) => res.data),
+        api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res) => res.data),
       staleTime: 60 * 1000,
     });
 
   const updateUserStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
-      api.patch(API_ENDPOINTS.USERS.STATUS(id), { status }).then((res: any) => res.data),
+      api.patch(API_ENDPOINTS.USERS.STATUS(id), { status }).then((res) => res.data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
   const updateUser = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
-      api.patch(API_ENDPOINTS.USERS.BY_ID(id), data).then((res: any) => res.data),
+      api.patch(API_ENDPOINTS.USERS.BY_ID(id), data).then((res) => res.data),
     onSuccess: (response, variables) => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
 
@@ -170,7 +170,7 @@ export const useUser = () => {
 
   const updateMyProfile = useMutation({
     mutationFn: (data: UpdateUserRequest) =>
-      api.patch(API_ENDPOINTS.AUTH.MY_PROFILE, data).then((res: any) => res.data),
+      api.patch(API_ENDPOINTS.AUTH.MY_PROFILE, data).then((res) => res.data),
     onSuccess: (response, variables) => {
       client.invalidateQueries({ queryKey: [user, "profile"] });
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
@@ -199,7 +199,7 @@ export const useUser = () => {
     mutationFn: ({ id, add_order }: { id: string; add_order: boolean }) =>
       api
         .patch(API_ENDPOINTS.MARKETS.ADD_ORDER(id), { add_order })
-        .then((res: any) => res.data),
+        .then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
@@ -208,7 +208,7 @@ export const useUser = () => {
 
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
-      api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
+      api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res) => res.data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });

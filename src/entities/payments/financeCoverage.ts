@@ -8,12 +8,12 @@ export const useFinanceCoverage = () => {
   // ── Cashbox ──────────────────────────────────────────────────────────────
 
   const createCashbox = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.CASHBOX_BASE, data).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getCashboxAllInfo = (enabled: boolean = true, params?: any) =>
+  const getCashboxAllInfo = (enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "cashbox-all-info", params],
       queryFn: () =>
@@ -23,12 +23,12 @@ export const useFinanceCoverage = () => {
     });
 
   const updateCashboxBalance = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.patch(API_ENDPOINTS.FINANCE.CASHBOX_BALANCE, data).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getManagerPayableToHq = (enabled: boolean = true, params?: any) =>
+  const getManagerPayableToHq = (enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "manager-payable-to-hq", params],
       queryFn: () =>
@@ -37,7 +37,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getManagerSettlement = (enabled: boolean = true, params?: any) =>
+  const getManagerSettlement = (enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "manager-settlement", params],
       queryFn: () =>
@@ -46,7 +46,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getCashboxUserMain = (id: string, enabled: boolean = true, params?: any) =>
+  const getCashboxUserMain = (id: string, enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "cashbox-user-main", id, params],
       queryFn: () =>
@@ -55,7 +55,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getCashboxByUser = (id: string, enabled: boolean = true, params?: any) =>
+  const getCashboxByUser = (id: string, enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "cashbox-by-user", id, params],
       queryFn: () =>
@@ -67,13 +67,13 @@ export const useFinanceCoverage = () => {
   // ── Financial balance ledger ──────────────────────────────────────────────
 
   const createFinancialBalanceEntry = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.FINANCIAL_BALANCE_ENTRIES, data)
         .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getFinancialBalanceHistory = (enabled: boolean = true, params?: any) =>
+  const getFinancialBalanceHistory = (enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "financial-balance-history", params],
       queryFn: () =>
@@ -95,7 +95,7 @@ export const useFinanceCoverage = () => {
   // ── Operator payments / balance / earnings / payouts ─────────────────────
 
   const createOperatorPayment = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENTS, data)
         .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
@@ -110,7 +110,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getOperatorEarnings = (operatorId: string, enabled: boolean = true, params?: any) =>
+  const getOperatorEarnings = (operatorId: string, enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "operator-earnings", operatorId, params],
       queryFn: () =>
@@ -119,7 +119,7 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  const getOperatorPayouts = (operatorId: string, enabled: boolean = true, params?: any) =>
+  const getOperatorPayouts = (operatorId: string, enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "operator-payouts", operatorId, params],
       queryFn: () =>
@@ -131,18 +131,18 @@ export const useFinanceCoverage = () => {
   // ── Salary ────────────────────────────────────────────────────────────────
 
   const createSalary = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.SALARY, data).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
   const updateSalary = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.patch(API_ENDPOINTS.FINANCE.SALARY, data).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
 
-  const getSalaryByUser = (userId: string, enabled: boolean = true, params?: any) =>
+  const getSalaryByUser = (userId: string, enabled: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: ["finance-cov", "salary-by-user", userId, params],
       queryFn: () =>

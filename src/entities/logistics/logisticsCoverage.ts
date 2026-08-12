@@ -9,7 +9,7 @@ export const useLogisticsCoverage = () => {
 
   // ── DISTRICTS ──────────────────────────────────────────────────────────────
 
-  const getDistricts = (params?: any) =>
+  const getDistricts = (params?: unknown) =>
     useQuery({
       queryKey: [logiCov, "districts", params],
       queryFn: () =>
@@ -17,7 +17,7 @@ export const useLogisticsCoverage = () => {
     });
 
   const createDistrict = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.DISTRICTS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.DISTRICTS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
   });
 
@@ -36,18 +36,18 @@ export const useLogisticsCoverage = () => {
   });
 
   const updateDistrictName = useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: any }) =>
+    mutationFn: ({ id, data }: { id: string | number; data: unknown }) =>
       api.patch(API_ENDPOINTS.DISTRICTS.UPDATE_NAME(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
   });
 
   const applyDistrictSatoMatch = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.DISTRICTS.SATO_MATCH_APPLY, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
   });
 
-  const getDistrictSatoMatchPreview = (params?: any) =>
+  const getDistrictSatoMatchPreview = (params?: unknown) =>
     useQuery({
       queryKey: [logiCov, "districts", "sato-match-preview", params],
       queryFn: () =>
@@ -56,7 +56,7 @@ export const useLogisticsCoverage = () => {
     });
 
   const updateDistrictSato = useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: any }) =>
+    mutationFn: ({ id, data }: { id: string | number; data: unknown }) =>
       api.patch(API_ENDPOINTS.DISTRICTS.SATO_UPDATE(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "districts"] }),
   });
@@ -72,7 +72,7 @@ export const useLogisticsCoverage = () => {
 
   // ── POSTS ──────────────────────────────────────────────────────────────────
 
-  const getPosts = (params?: any) =>
+  const getPosts = (params?: unknown) =>
     useQuery({
       queryKey: [logiCov, "posts", params],
       queryFn: () =>
@@ -110,7 +110,7 @@ export const useLogisticsCoverage = () => {
       api.post(API_ENDPOINTS.POSTS.COURIERS_BY_POST(id), data),
   });
 
-  const getCourierOldPosts = (params?: any) =>
+  const getCourierOldPosts = (params?: unknown) =>
     useQuery({
       queryKey: [logiCov, "posts", "courier-old", params],
       queryFn: () =>
@@ -118,7 +118,7 @@ export const useLogisticsCoverage = () => {
     });
 
   const reassignPost = useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: any }) =>
+    mutationFn: ({ id, data }: { id: string | number; data: unknown }) =>
       api.patch(API_ENDPOINTS.POSTS.REASSIGN(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
@@ -136,12 +136,12 @@ export const useLogisticsCoverage = () => {
   });
 
   const approveReturnRequest = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_APPROVE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
 
-  const getReturnRequestsList = (params?: any) =>
+  const getReturnRequestsList = (params?: unknown) =>
     useQuery({
       queryKey: [logiCov, "posts", "return-requests", params],
       queryFn: () =>
@@ -150,7 +150,7 @@ export const useLogisticsCoverage = () => {
     });
 
   const rejectReturnRequest = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_REJECT, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
@@ -166,12 +166,12 @@ export const useLogisticsCoverage = () => {
   // ── REGIONS ────────────────────────────────────────────────────────────────
 
   const createRegion = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.REGIONS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.REGIONS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "regions"] }),
   });
 
   const updateRegion = useMutation({
-    mutationFn: ({ regionId, data }: { regionId: string | number; data: any }) =>
+    mutationFn: ({ regionId, data }: { regionId: string | number; data: unknown }) =>
       api.patch(API_ENDPOINTS.REGIONS.BY_ID(regionId), data),
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "regions"] }),
   });

@@ -9,7 +9,7 @@ export const useInvestors = () => {
 
   // ==================== INVESTORS ====================
 
-  const getInvestors = (params?: any) =>
+  const getInvestors = (params?: unknown) =>
     useQuery({
       queryKey: [investors, "list", params],
       queryFn: () =>
@@ -17,7 +17,7 @@ export const useInvestors = () => {
     });
 
   const createInvestor = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.INVESTORS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.INVESTORS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
@@ -30,7 +30,7 @@ export const useInvestors = () => {
     });
 
   const updateInvestor = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.INVESTORS.BY_ID(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
@@ -40,7 +40,7 @@ export const useInvestors = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
-  const getInvestorInvestments = (investorId: string, params?: any, enabled: boolean = true) =>
+  const getInvestorInvestments = (investorId: string, params?: unknown, enabled: boolean = true) =>
     useQuery({
       queryKey: [investors, investorId, "investments", params],
       queryFn: () =>
@@ -49,7 +49,7 @@ export const useInvestors = () => {
       enabled: enabled && !!investorId,
     });
 
-  const getInvestorProfits = (investorId: string, params?: any, enabled: boolean = true) =>
+  const getInvestorProfits = (investorId: string, params?: unknown, enabled: boolean = true) =>
     useQuery({
       queryKey: [investors, investorId, "profits", params],
       queryFn: () =>
@@ -60,7 +60,7 @@ export const useInvestors = () => {
 
   // ==================== INVESTMENTS ====================
 
-  const getInvestments = (params?: any) =>
+  const getInvestments = (params?: unknown) =>
     useQuery({
       queryKey: [investors, "investments", "list", params],
       queryFn: () =>
@@ -68,7 +68,7 @@ export const useInvestors = () => {
     });
 
   const createInvestment = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.INVESTMENTS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.INVESTMENTS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
@@ -81,7 +81,7 @@ export const useInvestors = () => {
     });
 
   const updateInvestment = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.INVESTMENTS.BY_ID(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
@@ -93,7 +93,7 @@ export const useInvestors = () => {
 
   // ==================== PROFITS ====================
 
-  const getProfits = (params?: any) =>
+  const getProfits = (params?: unknown) =>
     useQuery({
       queryKey: [investors, "profits", "list", params],
       queryFn: () =>
@@ -101,12 +101,12 @@ export const useInvestors = () => {
     });
 
   const createProfit = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.PROFITS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.PROFITS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
   const calculateProfits = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.PROFITS.CALCULATE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.PROFITS.CALCULATE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 

@@ -24,7 +24,7 @@ export const useIntegrationsCoverage = () => {
 
   // ── POST · INTEGRATIONS.REMITTANCES ────────────────────────────────────────
   const createRemittance = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.post(API_ENDPOINTS.INTEGRATIONS.REMITTANCES(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["integ-cov"] }),
   });
@@ -85,13 +85,13 @@ export const useIntegrationsCoverage = () => {
 
   // ── POST · INTEGRATIONS.SEARCH_BY_QR ───────────────────────────────────────
   const searchByQr = useMutation({
-    mutationFn: ({ slug, data }: { slug: string; data: any }) =>
+    mutationFn: ({ slug, data }: { slug: string; data: unknown }) =>
       api.post(API_ENDPOINTS.INTEGRATIONS.SEARCH_BY_QR(slug), data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["integ-cov"] }),
   });
 
   // ── GET · INTEGRATIONS.RECEIVABLES ─────────────────────────────────────────
-  const getReceivables = (params?: any) =>
+  const getReceivables = (params?: unknown) =>
     useQuery({
       queryKey: ["integ-cov", "receivables", params],
       queryFn: () =>
@@ -110,7 +110,7 @@ export const useIntegrationsCoverage = () => {
     });
 
   // ── GET · INTEGRATIONS.SYNC_HISTORY ────────────────────────────────────────
-  const getSyncHistory = (params?: any) =>
+  const getSyncHistory = (params?: unknown) =>
     useQuery({
       queryKey: ["integ-cov", "sync-history", params],
       queryFn: () =>

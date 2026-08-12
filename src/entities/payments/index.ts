@@ -111,24 +111,24 @@ export const useCashBox = () => {
   };
 
   const createPaymentCourier = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_COURIER, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_COURIER, data),
     onSuccess: refreshCashboxQueries,
   });
 
   const createPaymentBranchToMain = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN, data),
     onSuccess: refreshCashboxQueries,
   });
 
   const createPaymentMarket = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_MARKET, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_MARKET, data),
     onSuccess: refreshCashboxQueries,
   });
 
   const getCashBoxById = (
     id: string | undefined,
     bool: boolean = true,
-    params?: any,
+    params?: unknown,
   ) =>
     useQuery({
       queryKey: [cashbox, "by-user", id, params],
@@ -146,14 +146,14 @@ export const useCashBox = () => {
       enabled: bool,
     });
 
-  const getCashboxMyCashbox = (params?: any) =>
+  const getCashboxMyCashbox = (params?: unknown) =>
     useQuery({
       queryKey: [cashbox, "my-cashbox", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.MY_CASHBOX, { params }).then((res) => res.data),
     });
 
-  const getCashBoxInfo = (bool: boolean = true, params?: any) =>
+  const getCashBoxInfo = (bool: boolean = true, params?: unknown) =>
     useQuery({
       queryKey: [cashbox, "all-info", params],
       queryFn: () =>
@@ -163,7 +163,7 @@ export const useCashBox = () => {
       enabled: bool,
     });
 
-  const getCashBoxMain = (params?: any) =>
+  const getCashBoxMain = (params?: unknown) =>
     useQuery({
       queryKey: [cashbox, "main", params],
       queryFn: () =>
@@ -171,20 +171,20 @@ export const useCashBox = () => {
     });
 
   const cashboxSpand = useMutation({
-    mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
+    mutationFn: ({ data }: { data: unknown }) => api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [cashbox] });
     },
   });
 
   const cashboxFill = useMutation({
-    mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
+    mutationFn: ({ data }: { data: unknown }) => api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ["cashbox"] });
     },
   });
 
-  const getFinanceHistory = (params?: any) =>
+  const getFinanceHistory = (params?: unknown) =>
     useQuery({
       queryKey: [cashbox, "finance-history", params],
       queryFn: () =>

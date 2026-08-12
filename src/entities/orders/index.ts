@@ -53,7 +53,7 @@ export const useOrders = () => {
     },
   });
 
-  const getTodayOrders = (params?: any, enabled: boolean = true) =>
+  const getTodayOrders = (params?: unknown, enabled: boolean = true) =>
     useQuery({
       queryKey: [orders, params],
       queryFn: () =>
@@ -63,7 +63,7 @@ export const useOrders = () => {
 
   const getTodayOrdersByMarket = (
     marketId: string | number,
-    params?: any,
+    params?: unknown,
     enabled: boolean = true,
   ) =>
     useQuery({
