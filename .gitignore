@@ -17,10 +17,11 @@ coverage
 test-results
 playwright-report
 
-# Editor directories and files
+# Editor / tooling local config
 .vscode/*
 !.vscode/extensions.json
 .idea
+.claude/
 .DS_Store
 *.suo
 *.ntvs*
