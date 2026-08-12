@@ -10,11 +10,11 @@ import {
 } from "react";
 import { Search, X, type LucideIcon } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { setSearchValue } from "../../../shared/model/searchSlice";
-import { useQueryParams } from "../../../shared/lib/useQueryParams";
-import { useDebounce } from "../../../shared/lib/useDebounce";
-import { extractScannerToken } from "../../../shared/lib/scanToken";
-import type { RootState } from "../../../app/config/store";
+import { setSearchValue } from "../model/searchSlice";
+import { useQueryParams } from "../lib/useQueryParams";
+import { useDebounce } from "../lib/useDebounce";
+import { extractScannerToken } from "../lib/scanToken";
+import type { RootState } from "../../app/config/store";
 
 type NativeInputProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,

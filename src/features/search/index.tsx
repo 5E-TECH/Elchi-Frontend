@@ -1,5 +1,5 @@
 // Search feature exports
-export { GlobalSearchInput } from './ui/GlobalSearchInput';
+export { GlobalSearchInput } from '../../shared/ui/GlobalSearchInput';
 export {
     setSearchValue,
     setMultipleSearchValues,
