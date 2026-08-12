@@ -23,7 +23,9 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Global ErrorBoundary xatoligi:", error, errorInfo);
+    if (import.meta.env.DEV) {
+      console.error("Global ErrorBoundary xatoligi:", error, errorInfo);
+    }
 
     try {
       saveRuntimeError({

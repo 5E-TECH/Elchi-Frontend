@@ -237,12 +237,6 @@ export const UserListTable = memo(({
         );
     }, [handleStatusToggle, loadingIds, t]);
 
-    // console.log('=== BACKEND DATA ===');
-    // console.log('Full Response:', data);
-    // console.log('Users:', data?.data?.items);
-    // console.log('Meta:', data?.data?.meta);
-    // console.log('===================');
-
     const columns = useMemo<ColumnConfig<User>[]>(() => [
         {
             key: 'name',

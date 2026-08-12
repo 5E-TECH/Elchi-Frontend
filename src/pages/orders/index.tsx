@@ -613,8 +613,7 @@ const Orders = () => {
         },
       });
       message.success(t("exportSuccess", { count: exportedOrders.length }));
-    } catch (error) {
-      console.error("Orders export failed:", error);
+    } catch {
       message.error(t("exportError"));
     } finally {
       setIsExporting(false);

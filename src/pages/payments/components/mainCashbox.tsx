@@ -589,9 +589,8 @@ const MainCashbox = () => {
         searchKeys={["name"]}
         labelKey="name"
         secondaryLabelKey="role"
-        onSelect={(emp) => {
+        onSelect={() => {
           setIsSalaryPopupOpen(false);
-          console.log("Salary employee:", emp);
         }}
         placeholder={t("searchPlaceholder")}
         selectLabel={t("selectLabel")}
