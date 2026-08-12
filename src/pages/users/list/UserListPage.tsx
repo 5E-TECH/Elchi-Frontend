@@ -11,7 +11,7 @@ import { useUser, type IUserFilter } from "../../../entities/user/api/userApi";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
 import { setMultipleFilters } from "../../../shared/model/filterSlice";
-import { setMultipleSearchValues } from "../../../features/search/model/searchSlice";
+import { setMultipleSearchValues } from "../../../shared/model/searchSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 
 const UserListPage = memo(() => {

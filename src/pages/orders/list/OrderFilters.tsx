@@ -23,7 +23,7 @@ import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
 import FilterMultiSelect from "../../../shared/ui/FilterMultiSelect";
 import FilterClearButton from "../../../shared/ui/FilterClearButton";
-import { clearAllSearch, setSearchValue } from "../../../features/search/model/searchSlice";
+import { clearAllSearch, setSearchValue } from "../../../shared/model/searchSlice";
 import type { RootState } from "../../../app/config/store";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 

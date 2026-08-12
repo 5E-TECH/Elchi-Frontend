@@ -7,7 +7,7 @@ import sidebarSlice, {
 } from "../../widgets/Sidebar/model/sidebarSlice";
 import userReducer from "../../entities/user/model/slice";
 import filterslice from "../../shared/model/filterSlice";
-import searchSlice from "../../features/search/model/searchSlice";
+import searchSlice from "../../shared/model/searchSlice";
 import roleReducer from "../../features/auth/model/loginSlice";
 import paginationReducer from "../../shared/model/paginationSlice";
 import { writeStoredSidebar } from "../../shared/lib/preferencesStorage";

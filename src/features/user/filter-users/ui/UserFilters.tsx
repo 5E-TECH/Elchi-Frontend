@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ChevronDown, Filter, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import FilterSelect from '../../../../shared/ui/FilterSelect';
 import { resetFilters } from '../../../../shared/model/filterSlice';
-import { clearAllSearch, setSearchValue } from '../../../search/model/searchSlice';
+import { clearAllSearch, setSearchValue } from '../../../../shared/model/searchSlice';
 import { useQueryParams } from '../../../../shared/lib/useQueryParams';
 import { useTranslation } from 'react-i18next';
 import FilterClearButton from '../../../../shared/ui/FilterClearButton';

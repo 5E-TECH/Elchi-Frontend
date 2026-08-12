@@ -10,7 +10,7 @@ import {
 } from "react";
 import { Search, X, type LucideIcon } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { setSearchValue } from "../model/searchSlice";
+import { setSearchValue } from "../../../shared/model/searchSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import { useDebounce } from "../../../shared/lib/useDebounce";
 import { extractScannerToken } from "../../../shared/lib/scanToken";

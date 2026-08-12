@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { clearAllSearch } from "../../features/search/model/searchSlice";
+import { clearAllSearch } from "../model/searchSlice";
 import { resetFilters } from "../model/filterSlice";
 
 /**

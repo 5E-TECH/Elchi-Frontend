@@ -6,8 +6,8 @@ export {
     removeSearchValue,
     clearAllSearch,
     syncFromUrlParams
-} from './model/searchSlice';
-export { default as searchReducer } from './model/searchSlice';
+} from '../../shared/model/searchSlice';
+export { default as searchReducer } from '../../shared/model/searchSlice';
 
 // Re-export useDebounce for convenience
 export { useDebounce } from '../../shared/lib/useDebounce';
