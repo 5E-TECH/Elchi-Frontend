@@ -63,7 +63,8 @@
   },
   "delete": {
     "confirm": "Delete this branch?",
-    "success": "Branch deleted"
+    "success": "Branch deleted",
+    "error": "Failed to delete branch"
   },
   "fields": {
     "name": "Branch name",
