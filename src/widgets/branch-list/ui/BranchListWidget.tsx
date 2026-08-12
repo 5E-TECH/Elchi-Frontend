@@ -7,6 +7,7 @@ import { useBranches, type Branch, type BranchParams } from "../../../entities/b
 import Pagination from "../../../shared/components/pagination";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterSelect from "../../../shared/ui/FilterSelect";
+import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import BranchCards from "./BranchCards";
 import BranchTable from "./BranchTable";
 import BranchTree from "./BranchTree";
@@ -38,7 +39,7 @@ const BranchListWidget = ({
     () => (viewMode === "tree" ? { ...params, page: 1, limit: 100 } : params),
     [params, viewMode],
   );
-  const { data, isLoading } = useBranches(queryParams);
+  const { data, isLoading, isError, refetch } = useBranches(queryParams);
   const currentPage = data?.page ?? params.page ?? 1;
   const currentLimit = data?.limit ?? params.limit ?? TABLE_PAGE_SIZE;
   const totalItems = data?.total ?? 0;
@@ -117,17 +118,23 @@ const BranchListWidget = ({
       </div>
 
       <div className="p-4 sm:p-5">
-        <Spin spinning={isLoading}>
-          {viewMode === "table" ? (
-            <BranchTable data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-          ) : viewMode === "card" ? (
-            <BranchCards data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-          ) : (
-            <BranchTree data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-          )}
-        </Spin>
+        {isError ? (
+          <QueryErrorState onRetry={() => refetch()} />
+        ) : (
+          <>
+            <Spin spinning={isLoading}>
+              {viewMode === "table" ? (
+                <BranchTable data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
+              ) : viewMode === "card" ? (
+                <BranchCards data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
+              ) : (
+                <BranchTree data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
+              )}
+            </Spin>
 
-        {viewMode === "card" && data && !data.data.length ? <Empty description={t("list.notFound")} /> : null}
+            {viewMode === "card" && data && !data.data.length ? <Empty description={t("list.notFound")} /> : null}
+          </>
+        )}
       </div>
 
       {viewMode !== "tree" ? (
