@@ -90,18 +90,54 @@ export interface TopCourier {
   success_rate: number;
 }
 
+/**
+ * Per-courier stats row as the superadmin/admin dashboard returns them under
+ * `couriers` (order.analytics.courier_stats): a nested `courier` object plus
+ * camelCase totals — a DIFFERENT shape from the flat TopCourier leaderboard row.
+ */
+export interface CourierStatRow {
+  courier?: { id?: string | number; name?: string | null } | null;
+  courier_id?: string | number;
+  courier_name?: string | null;
+  totalOrders?: number;
+  soldOrders?: number;
+  total_orders?: number;
+  successful_orders?: number;
+  successRate?: number;
+  success_rate?: number;
+}
+
 export interface DashboardResponse {
   statusCode: number;
   message: string;
   data: {
     orders: DashboardOrdersSummary;
     markets?: unknown[];
-    couriers?: unknown[];
+    couriers?: CourierStatRow[];
     topMarkets?: TopMarket[];
     topCouriers?: TopCourier[];
+    topBranches?: TopMarket[];
     branchDashboard?: BranchDashboardPayload | null;
   };
 }
+
+/**
+ * The superadmin/admin dashboard branch returns `couriers` (full per-courier
+ * stats) but no `topCouriers` leaderboard, so the "Top Couriers" panel rendered
+ * permanently empty. Derive the leaderboard rows from the courier stats
+ * (already sorted by success rate on the backend), tolerating both the nested
+ * `courier` shape and a flat one.
+ */
+export const deriveTopCouriers = (
+  rows: CourierStatRow[] | undefined | null,
+): TopCourier[] =>
+  (rows ?? []).map((row) => ({
+    courier_id: String(row.courier?.id ?? row.courier_id ?? ""),
+    courier_name: row.courier?.name ?? row.courier_name ?? null,
+    total_orders: Number(row.totalOrders ?? row.total_orders ?? 0),
+    successful_orders: Number(row.soldOrders ?? row.successful_orders ?? 0),
+    success_rate: Number(row.successRate ?? row.success_rate ?? 0),
+  }));
 
 export interface RevenuePoint {
   period: string;

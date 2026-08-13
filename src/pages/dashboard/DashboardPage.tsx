@@ -6,7 +6,7 @@ import DashboardStatistics from "../../widgets/dashboard-statistics/ui/Dashboard
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
 import RegionStatsCard from "../../widgets/dashboard-region/ui/RegionStatsCard";
-import { useDashboard } from "../../entities/dashboard";
+import { useDashboard, deriveTopCouriers } from "../../entities/dashboard";
 import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
@@ -81,7 +81,15 @@ const DashboardPage = () => {
   const orders = data?.data?.orders;
   const kpi = kpiData?.data;
   const topMarkets = data?.data?.topMarkets ?? [];
-  const topCouriers = data?.data?.topCouriers ?? [];
+  // The superadmin/admin dashboard returns `couriers` (per-courier stats) but no
+  // `topCouriers`, which left the "Top Couriers" panel permanently empty. Fall
+  // back to deriving the leaderboard from the courier stats we do receive.
+  const topCouriers = useMemo(() => {
+    const provided = data?.data?.topCouriers ?? [];
+    return provided.length > 0
+      ? provided
+      : deriveTopCouriers(data?.data?.couriers);
+  }, [data]);
 
   const clearRange = useCallback(() => {
     setFromDate("");

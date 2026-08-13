@@ -1,10 +1,35 @@
 import { describe, expect, it } from "vitest";
 import {
   cleanAnalyticsParams,
+  deriveTopCouriers,
   normalizeDashboardResponse,
   normalizeKpiResponse,
   normalizeRevenueResponse,
 } from "./index";
+
+describe("deriveTopCouriers", () => {
+  it("maps admin `couriers` stat rows (nested courier + camelCase) to leaderboard rows", () => {
+    const rows = deriveTopCouriers([
+      { courier: { id: 3, name: "Ali" }, totalOrders: 40, soldOrders: 36, successRate: 90 },
+      { courier: { id: 7, name: null }, totalOrders: 10, soldOrders: 4, successRate: 40 },
+    ]);
+    expect(rows).toEqual([
+      { courier_id: "3", courier_name: "Ali", total_orders: 40, successful_orders: 36, success_rate: 90 },
+      { courier_id: "7", courier_name: null, total_orders: 10, successful_orders: 4, success_rate: 40 },
+    ]);
+  });
+
+  it("tolerates a flat shape and empty/undefined input", () => {
+    expect(deriveTopCouriers(undefined)).toEqual([]);
+    expect(
+      deriveTopCouriers([
+        { courier_id: "9", courier_name: "Vali", total_orders: 5, successful_orders: 5, success_rate: 100 },
+      ]),
+    ).toEqual([
+      { courier_id: "9", courier_name: "Vali", total_orders: 5, successful_orders: 5, success_rate: 100 },
+    ]);
+  });
+});
 
 describe("dashboard response normalization", () => {
   it("does not send empty date filters to analytics endpoints", () => {
