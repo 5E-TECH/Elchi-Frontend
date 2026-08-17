@@ -99,6 +99,9 @@ const RegionDistrictsPage = lazy(() => import("../../pages/region/pages/district
 const RegionSatoManagementPage = lazy(() => import("../../pages/region/pages/sato-management"));
 const RegionLogistAssignmentPage = lazy(() => import("../../pages/region/pages/logist-assignment"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
+const NotificationInboxPage = lazy(
+  () => import("../../pages/notifications/ui/NotificationInboxPage"),
+);
 const BranchesPage = lazy(() => import("../../pages/branches"));
 const BranchDetailPage = lazy(() => import("../../pages/branches/ui/BranchDetailPage"));
 const LogsPage = lazy(() => import("../../pages/logs/index"));
@@ -788,6 +791,12 @@ const AppRouter = () => {
             {
               path: "notification",
               element: <Navigate replace to="/notifications" />,
+            },
+            {
+              // Per-user notification inbox (header bell target). Available to
+              // every authenticated user — the dashboard layout already gates auth.
+              path: "inbox",
+              element: <NotificationInboxPage />,
             },
             {
               path: "branches",

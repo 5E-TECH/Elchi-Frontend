@@ -33,5 +33,7 @@
     "normal": "Oddiy",
     "high": "Yuqori",
     "critical": "Muhim"
-  }
+  },
+  "inboxTitle": "Bildirishnomalar",
+  "inboxDescription": "Sizga kelgan bildirishnomalar"
 }

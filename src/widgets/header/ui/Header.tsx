@@ -379,7 +379,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
           <button
             type="button"
-            onClick={() => navigate("/notifications")}
+            onClick={() => navigate("/inbox")}
             className="relative hidden rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 lg:inline-flex dark:text-primary"
             aria-label={unreadCount > 0 ? `${t("notifications")} (${unreadCount})` : t("notifications")}
           >

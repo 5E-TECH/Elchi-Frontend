@@ -33,5 +33,7 @@
     "normal": "Normal",
     "high": "High",
     "critical": "Critical"
-  }
+  },
+  "inboxTitle": "Notifications",
+  "inboxDescription": "Notifications you have received"
 }
