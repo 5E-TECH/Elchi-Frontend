@@ -105,6 +105,23 @@ export interface TopBranch {
   success_rate: number;
 }
 
+/**
+ * Per-courier stats row from the superadmin/admin dashboard `couriers` payload.
+ * The backend mixes a nested `courier` shape with flat snake_case fields, so
+ * every field is optional and `deriveTopCouriers` tolerates both.
+ */
+export interface CourierStatRow {
+  courier?: { id?: string | number | null; name?: string | null } | null;
+  courier_id?: string | number | null;
+  courier_name?: string | null;
+  totalOrders?: number | null;
+  total_orders?: number | null;
+  soldOrders?: number | null;
+  successful_orders?: number | null;
+  successRate?: number | null;
+  success_rate?: number | null;
+}
+
 export interface DashboardResponse {
   statusCode: number;
   message: string;

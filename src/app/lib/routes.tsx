@@ -1,5 +1,5 @@
 import { lazy, memo, type ReactNode } from "react";
-import { Navigate, useParams, useRoutes } from "react-router-dom";
+import { Navigate, Outlet, useParams, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
@@ -186,12 +186,6 @@ const canManageUsers = (state: RootState) => {
     return branchType === "REGIONAL" || branchType === "HYBRID";
   }
   return false;
-};
-
-// Company-wide financial balance — admin/superadmin only (sidebar "balance").
-const canViewBalance = (state: RootState) => {
-  const role = state.role.role;
-  return role === "admin" || role === "superadmin";
 };
 
 const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
@@ -454,6 +448,14 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
                   <SystemOpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "activity-logs",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <ActivityLogsPage />
                 </ProtectedRoute>
               ),
             },

@@ -264,7 +264,9 @@ const RegionStatsCard = memo(({
           onRetry={() => void refetch()}
         />
       ) : isLoading ? (
-        <MapLoadingBox />
+        <div className="flex h-[400px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)]">
+          <Loader2 className="h-7 w-7 animate-spin" style={{ color: "var(--color-main)" }} />
+        </div>
       ) : (
         <UzbekistanRegionMap
           regions={toRegionMapItems(regions)}

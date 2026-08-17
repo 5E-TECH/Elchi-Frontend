@@ -17,7 +17,7 @@ import { useMarkets } from "../../../entities/markets";
 import { useBranches } from "../../../entities/branch";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import type { DeliveryType, OrderStatus } from "../../../entities/order/types/order";
-import { resetFilters, setFilterValue } from "../../../features/Select/model/FilterSlice";
+import { resetFilters, setFilterValue } from "../../../shared/model/filterSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";

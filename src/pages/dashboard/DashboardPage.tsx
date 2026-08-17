@@ -6,7 +6,7 @@ import DashboardStatistics from "../../widgets/dashboard-statistics/ui/Dashboard
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
 import RegionStatsCard from "../../widgets/dashboard-region/ui/RegionStatsCard";
-import { useDashboard, deriveTopCouriers } from "../../entities/dashboard";
+import { useDashboard } from "../../entities/dashboard";
 import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";

@@ -7,7 +7,6 @@ import { useBranches, type Branch, type BranchParams } from "../../../entities/b
 import Pagination from "../../../shared/components/pagination";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterSelect from "../../../shared/ui/FilterSelect";
-import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import BranchCards from "./BranchCards";
 import BranchTable from "./BranchTable";
 import BranchTree from "./BranchTree";
@@ -39,7 +38,7 @@ const BranchListWidget = ({
     () => (viewMode === "tree" ? { ...params, page: 1, limit: 100 } : params),
     [params, viewMode],
   );
-  const { data, isLoading, isError, refetch } = useBranches(queryParams);
+  const { data, isLoading } = useBranches(queryParams);
   const currentPage = data?.page ?? params.page ?? 1;
   const currentLimit = data?.limit ?? params.limit ?? TABLE_PAGE_SIZE;
   const totalItems = data?.total ?? 0;
@@ -128,9 +127,7 @@ const BranchListWidget = ({
           )}
         </Spin>
 
-            {viewMode === "card" && data && !data.data.length ? <Empty description={t("list.notFound")} /> : null}
-          </>
-        )}
+        {viewMode === "card" && data && !data.data.length ? <Empty description={t("list.notFound")} /> : null}
       </div>
 
       {viewMode !== "tree" ? (

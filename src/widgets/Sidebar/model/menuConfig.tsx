@@ -12,6 +12,7 @@ import {
   CreditCard,
   Scale,
   FileText,
+  ScrollText,
   Bell,
   Building2,
   Truck,

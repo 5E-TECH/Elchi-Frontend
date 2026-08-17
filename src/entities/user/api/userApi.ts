@@ -217,7 +217,7 @@ export const useUser = () => {
       queryKey: [user, params],
       queryFn: () => fetchUserList(params),
       enabled,
-      placeholderData: (prev: unknown) => prev,
+      placeholderData: (prev) => prev,
     });
 
   const useGetCouriers = (params?: IUserFilter, enabled: boolean = true) =>
@@ -410,7 +410,7 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
       client.invalidateQueries({ queryKey: ["orders", "markets", "cancelled"], refetchType: "active" });
 
-      const currentProfile = store.getState().user.user;
+      const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile || currentProfile.id !== variables.id) {
         return;
       }
@@ -425,7 +425,7 @@ export const useUser = () => {
         cancelled_handover_qr_required: variables.cancelled_handover_qr_required,
       };
 
-      store.dispatch(setProfile(updatedProfile as any));
+      dispatch(setProfile(updatedProfile as any));
     },
   });
 

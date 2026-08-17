@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import reducer, {
   loginSuccess,
   setAccessToken,
@@ -13,15 +13,10 @@ import type { User } from "./types";
 const base = () => reducer(undefined, { type: "@@INIT" });
 const makeUser = (role: string, id = "1"): User => ({ id, role }) as unknown as User;
 
+// The slice is a pure reducer: token persistence lives in `tokenStorage`
+// (sessionStorage), so these assertions cover state transitions only.
 describe("userSlice reducer", () => {
-  beforeEach(() => {
-    window.localStorage.clear();
-  });
-  afterEach(() => {
-    window.localStorage.clear();
-  });
-
-  it("loginSuccess authenticates and persists token + role", () => {
+  it("loginSuccess authenticates and stores the token + user in state", () => {
     const user = makeUser("admin");
     const state = reducer(base(), loginSuccess({ accessToken: "tok", user }));
 
@@ -29,25 +24,30 @@ describe("userSlice reducer", () => {
     expect(state.isAuthenticated).toBe(true);
     expect(state.user).toEqual(user);
     expect(state.error).toBeNull();
-    expect(window.localStorage.getItem("accessToken")).toBe("tok");
-    expect(window.localStorage.getItem("role")).toBe("admin");
+    expect(state.loading).toBe(false);
   });
 
-  it("setAccessToken(token) authenticates and persists the token", () => {
+  it("loginSuccess keeps the existing user when none is provided", () => {
+    const seeded = reducer(base(), setProfile(makeUser("manager", "9")));
+    const state = reducer(seeded, loginSuccess({ accessToken: "tok" }));
+
+    expect(state.accessToken).toBe("tok");
+    expect(state.user).toEqual(makeUser("manager", "9"));
+  });
+
+  it("setAccessToken(token) authenticates", () => {
     const state = reducer(base(), setAccessToken("abc"));
 
     expect(state.accessToken).toBe("abc");
     expect(state.isAuthenticated).toBe(true);
-    expect(window.localStorage.getItem("accessToken")).toBe("abc");
   });
 
-  it("setAccessToken(null) de-authenticates and clears storage", () => {
-    window.localStorage.setItem("accessToken", "old");
-    const state = reducer(base(), setAccessToken(null));
+  it("setAccessToken(null) de-authenticates", () => {
+    const authed = reducer(base(), setAccessToken("old"));
+    const state = reducer(authed, setAccessToken(null));
 
     expect(state.accessToken).toBeNull();
     expect(state.isAuthenticated).toBe(false);
-    expect(window.localStorage.getItem("accessToken")).toBeNull();
   });
 
   it("setProfile stores the user and marks authenticated", () => {
@@ -71,7 +71,7 @@ describe("userSlice reducer", () => {
     expect(reducer(base(), setAppInitializing(false)).isAppInitializing).toBe(false);
   });
 
-  it("logout resets auth state and clears persisted token + role", () => {
+  it("logout resets auth state", () => {
     const authed = reducer(
       base(),
       loginSuccess({ accessToken: "tok", user: makeUser("admin") }),
@@ -81,7 +81,6 @@ describe("userSlice reducer", () => {
     expect(state.user).toBeNull();
     expect(state.accessToken).toBeNull();
     expect(state.isAuthenticated).toBe(false);
-    expect(window.localStorage.getItem("accessToken")).toBeNull();
-    expect(window.localStorage.getItem("role")).toBeNull();
+    expect(state.error).toBeNull();
   });
 });
