@@ -218,7 +218,9 @@ const ReturnsPage = () => {
         label: t("columns.ordersCount"),
         sortable: true,
         render: (value) => (
-          <span className="font-semibold text-maindark dark:text-white">{Number(value)} ta</span>
+          <span className="font-semibold text-maindark dark:text-white">
+            {t("orderCountValue", { count: Number(value) })}
+          </span>
         ),
       },
       {
@@ -323,7 +325,7 @@ const ReturnsPage = () => {
           <EmptyState
             icon="↩"
             title={t("empty")}
-            description="Hozircha qaytarilgan orderlar topilmadi."
+            description={t("emptyDescription")}
             className="border-0 bg-transparent shadow-none"
           />
         )}

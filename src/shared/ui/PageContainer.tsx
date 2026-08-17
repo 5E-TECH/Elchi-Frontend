@@ -6,7 +6,7 @@ type PageContainerProps = {
 };
 
 const PageContainer = ({ children, className = "" }: PageContainerProps) => (
-  <div className={`min-h-full ${className}`.trim()}>{children}</div>
+  <div className={`min-h-full min-w-0 overflow-x-clip ${className}`.trim()}>{children}</div>
 );
 
 export default memo(PageContainer);

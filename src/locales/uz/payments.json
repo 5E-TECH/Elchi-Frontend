@@ -11,6 +11,7 @@
   "selectPlaceholder": "Tanlang",
   "selectMarketDescription": "Marketni tanlang",
   "selectCourierDescription": "Kuryerni tanlang",
+  "selectBranchManagerDescription": "Branch managerni tanlang",
   "selectEmployee": "Xodimni tanlang",
   "forSalaryPayment": "Maosh to'lash uchun",
   "selectCourier": "Kuryer tanlang",
@@ -67,11 +68,11 @@
   "user": "Foydalanuvchi",
   "phoneNumber": "Telefon raqami",
   "type": "Turi",
-  "order": "Order",
-  "district": "District",
+  "order": "Buyurtma",
+  "district": "Tuman",
   "totalPrice": "Jami summa",
   "toBePaid": "To'lanishi kerak",
-  "paid": "Paid",
+  "paid": "To'langan",
   "address": "Manzil",
   "qty": "Qty",
   "detailLoading": "Detail yuklanmoqda",
@@ -114,6 +115,8 @@
   "spendFromCashbox": "Kassadan xarajat",
   "paymentCourier": "Kuryer to'lovi",
   "paymentMarket": "Market to'lovi",
+  "courierToBranchTransfer": "Kuryerdan filialga o'tkazma",
+  "hqToMarketTransfer": "HQdan marketga o'tkazma",
   "operationType": "Operatsiya turi",
   "sourceType": "Manba turi",
   "cashboxType": "Kassa turi",
@@ -134,6 +137,18 @@
   "financialBalanceDistribution": "Taqsimot",
   "financialBalanceTotal": "Umumiy balans",
   "financialBalanceTotalFormula": "Kassa + Kuryerlar + Marketlar",
+  "financialBalanceMarketsSettlement": "Marketlar bilan hisob-kitob",
+  "financialBalanceCouriersSettlement": "Kuryerlar bilan hisob-kitob",
+  "financialBalanceListEmpty": "Ma'lumot topilmadi",
+  "financialBalanceCountSuffix": "ta",
+  "financialBalancePositiveImpact": "Musbat ta'sir (+)",
+  "financialBalanceNegativeImpact": "Manfiy ta'sir (-)",
+  "financialBalanceNetChange": "Sof o'zgarish",
+  "financialBalanceTransactionsCount": "{{count}} ta tranzaksiya",
+  "financialBalancePositiveSources": "Musbatga tortuvchi manbalar",
+  "financialBalanceNegativeSources": "Manfiyga tortuvchi manbalar",
+  "financialBalanceTopTransactions": "Eng katta ta'sir ko'rsatgan tranzaksiyalar",
+  "financialBalanceTotalTransactions": "{{count}} ta jami",
   "financialBalanceComingSoon": "Bu bo'lim uchun UI keyingi bosqichda qo'shiladi.",
   "financialBalanceDate": "Sana",
   "financialBalanceSource": "Manba",
@@ -145,6 +160,7 @@
   "financialBalanceComment": "Izoh",
   "financialBalanceHistoryEmpty": "Tarix ma'lumotlari topilmadi",
   "financialBalanceSourceProfit": "Pochta foydasi",
+  "financialBalanceSourceExtraCost": "Qo'shimcha xarajat",
   "financialBalanceSourceManualIncome": "Qo'lda kirim",
   "financialBalanceSourceManualExpense": "Qo'lda chiqim",
   "financialBalanceSourceSalary": "Maosh",
@@ -171,7 +187,7 @@
   "balanceVisible": "Balans ko'rinadi",
   "balanceHidden": "Balans yashirilgan",
   "cashboxUser": "Kassa foydalanuvchisi",
-  "transactionStatus": "Status",
+  "transactionStatus": "Holat",
   "delivery": "Yetkazish",
   "orderProducts": "Mahsulotlar",
   "financeHistory": "Moliyaviy tarix",
@@ -189,9 +205,20 @@
   ,"receiveAction": "Qabul qilish"
   ,"userFallback": "Foydalanuvchi"
   ,"receiveFromCourier": "Kuryerdan qabul qilish"
+  ,"receiveFromBranchManager": "Branch managerdan qabul qilish"
   ,"payToMarket": "Marketga to'lov"
   ,"paySalary": "Maosh to'lash"
+  ,"monthlySalary": "Oylik maosh"
+  ,"salaryUnpaidBalance": "To'lanmagan qoldiq"
+  ,"salaryPaidTotal": "Jami to'langan: {{amount}} so'm"
+  ,"salaryHistoryEmpty": "Maosh to'lovlari hali yo'q"
+  ,"salaryPaymentSuccess": "Maosh muvaffaqiyatli to'landi"
+  ,"salaryPaymentError": "Maosh to'lovida xatolik yuz berdi"
+  ,"mainCard": "Asosiy karta"
+  ,"selectCard": "Kartani tanlang"
+  ,"cardRequired": "Kartani tanlang"
   ,"courierShort": "Kuryer"
+  ,"branchManagerShort": "Branch manager"
   ,"marketShort": "Market"
   ,"expenseShort": "Chiqim"
   ,"incomeShort": "Kirim"
@@ -215,5 +242,27 @@
   ,"branchToMainPaymentError": "Asosiy filialga to'lov o'tkazishda xatolik yuz berdi"
   ,"branchToMainSource": "Filialdan HQga o'tkazma"
   ,"mainBranchFallback": "Asosiy filial"
+  ,"unknown": "Noma'lum"
+  ,"cardHolder": "Karta egasi"
+  ,"transferSourceRequired": "O'tkazma manbasini tanlang"
+  ,"transferCourierLabel": "Kuryer kassasi"
+  ,"transferCourierPlaceholder": "Kuryerni tanlang"
+  ,"transferMarketLabel": "Market kassasi"
+  ,"transferMarketPlaceholder": "Marketni tanlang"
+  ,"customerRole": "Mijoz"
+  ,"adminRole": "Admin"
+  ,"superAdminRole": "Super Admin"
+  ,"clickPayment": "Click"
+  ,"paymePayment": "Payme"
+  ,"statusSold": "Sotilgan"
+  ,"statusCancelled": "Bekor qilingan"
+  ,"statusPaid": "To'langan"
+  ,"statusPartlyPaid": "Qisman to'langan"
+  ,"statusNew": "Yangi"
+  ,"statusReceived": "Qabul qilingan"
+  ,"deliveryAddress": "Manzilga"
+  ,"deliveryCenter": "Markazga"
+  ,"region": "Hudud"
+  ,"no": "No"
   ,"currencyAmountSuffix": "so'm"
 }

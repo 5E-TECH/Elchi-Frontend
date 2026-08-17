@@ -1,7 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html lang="uz">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- ═══════════════════ Viewport & Basic ═══════════════════ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+
+    <!-- ═══════════════════ Primary SEO ═══════════════════ -->
+    <title>Elchi Pochta — Logistika va Kuryer Xizmati</title>
+    <meta
+      name="description"
+      content="Elchi Pochta — O'zbekiston bo'ylab tezkor va ishonchli kuryer va logistika xizmati. Buyurtmalarni kuzatish, pochta jo'natish, va yetkazib berish tizimi."
+    />
+    <meta
+      name="keywords"
+      content="elchi pochta, kuryer xizmati, logistika, jo'natma, yetkazib berish, o'zbekiston, buyurtma kuzatish"
+    />
+    <meta name="author" content="Elchi Pochta" />
+    <link rel="canonical" href="https://elchi.uz/" />
+
+    <!-- ═══════════════════ Open Graph (Facebook, Telegram) ═══════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://elchi.uz/" />
+    <meta property="og:site_name" content="Elchi Pochta" />
+    <meta property="og:title" content="Elchi Pochta — Logistika va Kuryer Xizmati" />
+    <meta
+      property="og:description"
+      content="O'zbekiston bo'ylab tezkor va ishonchli kuryer va logistika xizmati. Buyurtmalarni kuzatish, pochta jo'natish, va yetkazib berish tizimi."
+    />
+    <meta property="og:image" content="https://elchi.uz/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:locale" content="uz_UZ" />
+
+    <!-- ═══════════════════ Twitter Card ═══════════════════ -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Elchi Pochta — Logistika va Kuryer Xizmati" />
+    <meta
+      name="twitter:description"
+      content="O'zbekiston bo'ylab tezkor va ishonchli kuryer va logistika xizmati."
+    />
+    <meta name="twitter:image" content="https://elchi.uz/icon-512.png" />
+
+    <!-- ═══════════════════ Icons & PWA ═══════════════════ -->
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -10,8 +53,33 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Elchi" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Elchi Pochta</title>
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Elchi Pochta" />
+    <meta name="msapplication-TileColor" content="#202954" />
+    <meta name="msapplication-TileImage" content="/icon-192.png" />
+
+    <!-- ═══════════════════ Structured Data (JSON-LD) ═══════════════════ -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Elchi Pochta",
+        "url": "https://elchi.uz",
+        "logo": "https://elchi.uz/icon-512.png",
+        "description": "O'zbekiston bo'ylab tezkor va ishonchli kuryer va logistika xizmati",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "UZ"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer service"
+        },
+        "sameAs": []
+      }
+    </script>
+
+    <!-- ═══════════════════ Theme Init (FOUC prevention) ═══════════════════ -->
     <script>
       (() => {
         let savedTheme;

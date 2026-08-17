@@ -26,7 +26,28 @@
     "orders": "Orderlar",
     "piece": "ta",
     "amount": "Summa",
-    "direction": "Yo'nalish"
+    "direction": "Yo'nalish",
+    "region": "Viloyat",
+    "route": "Yo'nalish",
+    "created": "Yaratilgan"
+  },
+  "detail": {
+    "title": "Paket {{id}}",
+    "notFound": "Paket topilmadi",
+    "branch": "Filial",
+    "destination": "Qayerga",
+    "orderCount": "{{count}} ta",
+    "insideOrders": "Ichidagi orderlar",
+    "history": "Tarix",
+    "historyEmpty": "Tarix hozircha mavjud emas",
+    "qrCode": "QR kod"
+  },
+  "print": {
+    "branch": "FILIAL:",
+    "region": "VILOYAT:",
+    "orders": "ORDER:",
+    "total": "JAMI:",
+    "date": "SANA:"
   },
   "loadError": "Paketlar ro'yxatini yuklab bo'lmadi",
   "emptyTitle": "Paketlar yo'q",

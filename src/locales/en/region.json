@@ -1,6 +1,8 @@
 {
   "title": "Regions",
   "subtitle": "Order statistics by region",
+  "scopedTitle": "{{region}} — district statistics",
+  "scopedSubtitle": "Select a district to view detailed statistics",
   "assignedRegion": "Your assigned region",
   "unknown": "Unknown",
   "unknownDistrict": "Unknown district",
@@ -45,6 +47,9 @@
     "detailedStatistics": "Detailed statistics",
     "clickForDetails": "Click to view details",
     "loadingError": "Could not load region details",
+    "scopedCourierSubtitle": "Only district statistics assigned to you",
+    "scopedManagerSubtitle": "District statistics for this branch",
+    "regionNotFound": "Region was not found for this user",
     "mainCourier": "Regional main courier",
     "mainCouriers": "Regional main couriers ({{count}})",
     "couriersNotFound": "Courier information not found",

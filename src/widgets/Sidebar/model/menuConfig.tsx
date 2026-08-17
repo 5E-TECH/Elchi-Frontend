@@ -4,6 +4,7 @@ import {
   MailOpen,
   Apple,
   UserRound,
+  UsersRound,
   MapPinned,
   Calendar1,
   PackageCheck,
@@ -14,14 +15,14 @@ import {
   Bell,
   Building2,
   Truck,
-  ScrollText,
+  Zap,
   type LucideIcon,
   //   LucideIcon,
 } from "lucide-react";
 import type { User } from "../../../entities/user/model/types";
 
 export type UserRole = "admin" | "superadmin" | "market" | "courier" | "registrator";
-export type BranchDashboardRole = "manager" | "operator";
+export type BranchDashboardRole = "manager";
 export type SidebarUserRole = UserRole | BranchDashboardRole;
 
 export interface NavItem {
@@ -32,6 +33,25 @@ export interface NavItem {
 }
 
 export type BranchType = "HQ" | "PICKUP" | "REGIONAL" | "HYBRID";
+
+export const normalizeSidebarRole = (
+  role: unknown,
+  user?: User | null,
+): SidebarUserRole | null => {
+  const rawRole =
+    typeof role === "string" && role.trim()
+      ? role
+      : typeof user?.role === "string"
+        ? user.role
+        : "";
+  const normalized = rawRole.trim().toLowerCase();
+
+  if (normalized in SIDEBAR_CONFIG) {
+    return normalized as SidebarUserRole;
+  }
+
+  return null;
+};
 
 /**
  * Barcha roller uchun static navigation configuration
@@ -73,6 +93,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
+    { to: "/market-operators", icon: UsersRound, label: "operators" },
   ],
   registrator: [
     { to: "/", icon: House, label: "dashboard", end: true },
@@ -85,24 +106,15 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/courier-bulk", icon: Zap, label: "quickAction" },
     { to: "/mails", icon: MailOpen, label: "mails" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
+    { to: "/regions", icon: MapPinned, label: "regions" },
   ],
   manager: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
-    { to: "/dispatch", icon: Truck, label: "dispatch" },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-    { to: "/batches", icon: PackageCheck, label: "batches" },
-    { to: "/returns", icon: RotateCcw, label: "returns" },
-  ],
-  operator: [
-    { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
-    { to: "/dispatch", icon: Truck, label: "dispatch" },
-    { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/mails", icon: MailOpen, label: "mails" },
-    { to: "/batches", icon: PackageCheck, label: "batches" },
-    { to: "/returns", icon: RotateCcw, label: "returns" },
+    { to: "/regions", icon: MapPinned, label: "regions" },
   ],
 };
 
@@ -113,6 +125,7 @@ const MANAGER_REGIONAL_CONFIG: NavItem[] = [
   { to: "/mails", icon: MailOpen, label: "mails" },
   { to: "/all-users", icon: UserRound, label: "users" },
   { to: "/payments", icon: CreditCard, label: "payments" },
+  { to: "/regions", icon: MapPinned, label: "regions" },
 ];
 
 const MANAGER_PICKUP_CONFIG: NavItem[] = [
@@ -121,6 +134,7 @@ const MANAGER_PICKUP_CONFIG: NavItem[] = [
   { to: "/new-orders", icon: Calendar1, label: "newOrders" },
   { to: "/batches", icon: PackageCheck, label: "batches" },
   { to: "/returns", icon: RotateCcw, label: "returns" },
+  { to: "/regions", icon: MapPinned, label: "regions" },
 ];
 
 const MANAGER_HYBRID_CONFIG: NavItem[] = [
@@ -133,6 +147,15 @@ const MANAGER_HYBRID_CONFIG: NavItem[] = [
   { to: "/returns", icon: RotateCcw, label: "returns" },
   { to: "/all-users", icon: UserRound, label: "users" },
   { to: "/payments", icon: CreditCard, label: "payments" },
+  { to: "/regions", icon: MapPinned, label: "regions" },
+];
+
+const MANAGER_HQ_CONFIG: NavItem[] = [
+  { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
+  { to: "/orders", icon: ShoppingBag, label: "orders" },
+  { to: "/mails", icon: MailOpen, label: "mails" },
+  { to: "/payments", icon: CreditCard, label: "payments" },
+  { to: "/regions", icon: MapPinned, label: "regions" },
 ];
 
 const toBranchType = (value: unknown): BranchType | null => {
@@ -172,22 +195,33 @@ export const getUserBranchType = (user: User | null | undefined): BranchType | n
 };
 
 export const getSidebarConfigForUser = (
-  role: SidebarUserRole,
+  role: SidebarUserRole | string | null | undefined,
   user?: User | null,
 ): NavItem[] => {
+  const normalizedRole = normalizeSidebarRole(role, user);
+  if (!normalizedRole) return [];
+
   const branchType = getUserBranchType(user);
 
-  if (role === "manager" && branchType === "REGIONAL") {
+  if (normalizedRole === "manager" && branchType === "REGIONAL") {
     return MANAGER_REGIONAL_CONFIG;
   }
 
-  if (role === "manager" && branchType === "PICKUP") {
+  if (normalizedRole === "manager" && branchType === "PICKUP") {
     return MANAGER_PICKUP_CONFIG;
   }
 
-  if (role === "manager" && branchType === "HYBRID") {
+  if (normalizedRole === "manager" && branchType === "HYBRID") {
     return MANAGER_HYBRID_CONFIG;
   }
 
-  return SIDEBAR_CONFIG[role] ?? SIDEBAR_CONFIG.admin;
+  if (normalizedRole === "manager" && branchType === "HQ") {
+    return MANAGER_HQ_CONFIG;
+  }
+
+  if (normalizedRole === "registrator" && branchType === "HQ") {
+    return SIDEBAR_CONFIG.registrator.filter((item) => item.to !== "/dispatch");
+  }
+
+  return SIDEBAR_CONFIG[normalizedRole];
 };

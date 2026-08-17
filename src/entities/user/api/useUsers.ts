@@ -13,6 +13,30 @@ type UseUsersParams = {
   enabled?: boolean;
 };
 
+type BackendIdentityUser = Partial<IdentityUser> & {
+  id?: string | number;
+  _id?: string | number;
+  name?: string;
+  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  phone_number?: string;
+};
+
+const normalizeUser = (value: BackendIdentityUser): IdentityUser => {
+  const username = value.username ?? value.phone_number ?? value.phone ?? "";
+  const composedName = [value.first_name, value.last_name].filter(Boolean).join(" ");
+
+  return {
+    ...value,
+    id: String(value.id ?? value._id ?? ""),
+    fullName: value.fullName || value.full_name || value.name || composedName || username,
+    username,
+    phone: value.phone ?? value.phone_number,
+  };
+};
+
 const normalizeUsers = (value: unknown): IdentityUser[] => {
   const response = value as Record<string, unknown>;
   const responseData = response.data as unknown;
@@ -21,12 +45,17 @@ const normalizeUsers = (value: unknown): IdentityUser[] => {
       ? (responseData as Record<string, unknown>)
       : null;
 
-  if (Array.isArray(value)) return value as IdentityUser[];
-  if (Array.isArray(responseData)) return responseData as IdentityUser[];
-  if (Array.isArray(response.items)) return response.items as IdentityUser[];
-  if (Array.isArray(responseDataRecord?.items)) return responseDataRecord.items as IdentityUser[];
+  const users = Array.isArray(value)
+    ? value
+    : Array.isArray(responseData)
+      ? responseData
+      : Array.isArray(response.items)
+        ? response.items
+        : Array.isArray(responseDataRecord?.items)
+          ? responseDataRecord.items
+          : [];
 
-  return [];
+  return (users as BackendIdentityUser[]).map(normalizeUser);
 };
 
 const dedupeUsers = (users: IdentityUser[]) => {

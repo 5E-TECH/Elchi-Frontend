@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { getSidebarConfigForUser, type SidebarUserRole } from "../model/menuConfig";
+import { getSidebarConfigForUser, normalizeSidebarRole } from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -23,7 +23,7 @@ const Sidebar = () => {
   // ─── User role'ni Redux dan oling ────────────────────────────────────────
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
-  const userRole = (role as SidebarUserRole) || "admin";
+  const userRole = normalizeSidebarRole(role, user);
 
   // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
   // navItems va links alohida memoized — role/user o'zgarmasa qayta hisoblanmaydi
@@ -42,13 +42,14 @@ const Sidebar = () => {
   const currentLogoText = isDarkMode ? LogoTextdark : LogoText;
   const currentLogoIcon = isDarkMode ? LogoIcondark : LogoIcon;
 
+
   return (
     <aside
       className={`sticky left-0 top-0 z-50 hidden h-screen flex-col bg-sidebar text-maindark transition-all duration-300 ease-in-out lg:flex dark:bg-maindark dark:text-primary ${!isOpen ? "w-20" : "w-72"
         }`}
     >
       {/* Header with Logo */}
-      <div className="flex h-22 items-center justify-start overflow-hidden bg-sidebar pl-4 dark:bg-maindark">
+      <div className="flex h-18 shrink-0 items-center justify-start overflow-hidden bg-sidebar pl-4 dark:bg-maindark">
         <div
           className={`transition-all duration-300 flex items-center justify-start ${!isOpen ? "w-full px-2" : "w-full px-4"
             }`}
@@ -63,7 +64,7 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1.5 overflow-y-auto bg-sidebar px-3 py-4 custom-scrollbar dark:bg-maindark">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto bg-sidebar px-3 py-3 custom-scrollbar dark:bg-maindark">
         {links.map((link) => (
           <SidebarLink
             key={link.to}
@@ -76,14 +77,12 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Footer with Toggle Button */}
-      <div
-        className={`p-3 flex bg-primary/5 dark:bg-maindark/50 ${!isOpen ? "flex-col space-y-3 items-center" : "items-center justify-between"
-          }`}
-      >
+      {/* Footer — Toggle */}
+      <div className="shrink-0 border-t border-black/5 bg-primary/5 p-3 dark:border-white/5 dark:bg-maindark/50">
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className="flex items-center justify-center rounded-lg p-2 transition-all duration-300 text-maindark dark:text-primary hover:bg-main/10"
+          aria-label={isOpen ? t("collapse") : t("expand")}
+          className={`flex shrink-0 items-center justify-center rounded-lg p-2 text-maindark transition-all duration-300 hover:bg-main/10 dark:text-primary ${isOpen ? "w-full" : "mx-auto"}`}
         >
           {isOpen ? (
             <>

@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AreaChart,
@@ -16,7 +16,7 @@ import {
 import {
   Wallet,
   Store,
-  Bike,
+  Building2,
   Scale,
   BarChart2,
 } from "lucide-react";
@@ -202,16 +202,22 @@ export interface FinancialAnalysisProps {
   startDate?: string;
   endDate?: string;
   analyticsScope?: string;
+  isAllTime?: boolean;
 }
 
 const FinancialAnalysis = memo(({
   startDate,
   endDate,
   analyticsScope,
+  isAllTime = false,
 }: FinancialAnalysisProps) => {
   const { t } = useTranslation("dashboard");
   const { getRevenue } = useDashboard();
   const [period, setPeriod] = useState<RevenuePeriod>("daily");
+
+  useEffect(() => {
+    if (isAllTime) setPeriod("yearly");
+  }, [isAllTime]);
 
   const revenueParams = useMemo(() => {
     const params: RevenueParams = { period };
@@ -254,7 +260,9 @@ const FinancialAnalysis = memo(({
   const hasFinance = Boolean(finance);
   const mainBalance = Number(finance?.main?.balance ?? 0);
   const marketsBalance = Number(finance?.markets?.marketsTotalBalans ?? 0);
-  const couriersBalance = Number(finance?.couriers?.couriersTotalBalanse ?? 0);
+  const branchesBalance = Number(
+    finance?.branches?.branchReceivable ?? finance?.couriers?.couriersTotalBalanse ?? 0,
+  );
   const currentSituation = Number(finance?.currentSituation ?? 0);
 
   const balanceRows: Array<{
@@ -265,7 +273,7 @@ const FinancialAnalysis = memo(({
   }> = [
     { title: t("balance.main"), value: mainBalance, icon: <Wallet size={16} />, tone: "brand" },
     { title: t("balance.markets"), value: marketsBalance, icon: <Store size={16} />, tone: "info" },
-    { title: t("balance.couriers"), value: couriersBalance, icon: <Bike size={16} />, tone: "warning" },
+    { title: t("balance.branches"), value: branchesBalance, icon: <Building2 size={16} />, tone: "warning" },
     {
       title: t("balance.current"),
       value: currentSituation,
@@ -303,7 +311,7 @@ const FinancialAnalysis = memo(({
         </div>
 
         <div className="el-segmented">
-          {PERIODS.map((p) => (
+          {PERIODS.filter((p) => !isAllTime || p === "monthly" || p === "yearly").map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}

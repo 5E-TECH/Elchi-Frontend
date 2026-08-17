@@ -1,195 +1,44 @@
-import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
-import { DatePicker } from "antd";
+import { memo, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { Calendar, HeadphonesIcon, Loader2, MapPin, Settings } from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../app/config/store";
+import {
+  mergeRegionDistrictStats,
+  useRegionDetailStats,
+  useRegionDistrictCatalog,
+  useRegionStats,
+} from "../../entities/region";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { parseISODate, toISODate } from "../../shared/lib/dateRange";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
+import DateRangePicker from "../../shared/ui/DateRangePicker";
 import PageContainer from "../../shared/ui/PageContainer";
-
-// Highcharts + the Uzbekistan topology JSON are heavy; load them only when the
-// map actually renders (keeps the region route chunk small and the page fast).
-const UzbekistanRegionMap = lazy(() => import("./ui/UzbekistanRegionMap"));
-
-const MapFallback = () => (
-  <div className="flex h-[400px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)]">
-    <Loader2 className="h-7 w-7 animate-spin" style={{ color: "var(--color-main)" }} />
-  </div>
-);
-
-const { RangePicker } = DatePicker;
-
-type RegionItem = {
-  id: string;
-  name: string;
-  districtCount: number;
-  activeCouriers: number;
-  ordersCount: number;
-  deliveredOrders: number;
-  cancelledOrders: number;
-  pendingOrders: number;
-  totalRevenue: number;
-  successRate: number;
-};
-
-type RegionSummary = {
-  totalOrders: number;
-  totalDelivered: number;
-  totalCancelled: number;
-  totalRevenue: number;
-};
+import ScopedRegionStatistics from "./ui/ScopedRegionStatistics";
+import UzbekistanRegionMap from "./ui/UzbekistanRegionMap";
+import {
+  findOrderRegionScope,
+  resolveRegionScope,
+} from "./model/regionScope";
 
 type DateRangeType = "today" | "week" | "month" | "all" | "custom";
 
-const toNumber = (value: unknown, fallback = 0) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 
-const normalizeRegionItem = (raw: unknown): RegionItem | null => {
-  const item = raw as {
-    id?: string | number;
-    regionId?: string | number;
-    region_id?: string | number;
-    name?: string;
-    regionName?: string;
-    region_name?: string;
-    districtCount?: number | string;
-    district_count?: number | string;
-    districts_count?: number | string;
-    districtsCount?: number | string;
-    activeCouriers?: number | string;
-    active_couriers?: number | string;
-    ordersCount?: number | string;
-    orders_count?: number | string;
-    orderCount?: number | string;
-    order_count?: number | string;
-    totalOrders?: number | string;
-    total_orders?: number | string;
-    totalOrderCount?: number | string;
-    total_order_count?: number | string;
-    allOrders?: number | string;
-    all_orders?: number | string;
-    deliveredOrders?: number | string;
-    delivered_orders?: number | string;
-    cancelledOrders?: number | string;
-    cancelled_orders?: number | string;
-    pendingOrders?: number | string;
-    pending_orders?: number | string;
-    totalRevenue?: number | string;
-    total_revenue?: number | string;
-    revenue?: number | string;
-    successRate?: number | string;
-    success_rate?: number | string;
-  };
+const getNestedRecord = (source: Record<string, unknown>, key: string) => asRecord(source[key]);
 
-  const id = item?.id ?? item?.regionId ?? item?.region_id;
-  const name = item?.name ?? item?.regionName ?? item?.region_name;
-  if (!id || !name) return null;
+const getProfileBranchId = (profile: unknown): string => {
+  const user = asRecord(profile);
+  const branch = getNestedRecord(user, "branch");
+  const nestedBranch = getNestedRecord(branch, "branch");
+  const id = user.branch_id ?? branch.id ?? nestedBranch.id;
 
-  return {
-    id: String(id),
-    name,
-    districtCount: toNumber(
-      item.districtCount ?? item.district_count ?? item.districtsCount ?? item.districts_count,
-      0,
-    ),
-    activeCouriers: toNumber(item.activeCouriers ?? item.active_couriers, 0),
-    ordersCount: toNumber(
-      item.ordersCount ??
-        item.orders_count ??
-        item.orderCount ??
-        item.order_count ??
-        item.totalOrders ??
-        item.total_orders ??
-        item.totalOrderCount ??
-        item.total_order_count ??
-        item.allOrders ??
-        item.all_orders,
-      0,
-    ),
-    deliveredOrders: toNumber(item.deliveredOrders ?? item.delivered_orders, 0),
-    cancelledOrders: toNumber(item.cancelledOrders ?? item.cancelled_orders, 0),
-    pendingOrders: toNumber(item.pendingOrders ?? item.pending_orders, 0),
-    totalRevenue: toNumber(item.totalRevenue ?? item.total_revenue ?? item.revenue, 0),
-    successRate: toNumber(item.successRate ?? item.success_rate, 0),
-  };
-};
-
-const unwrapRegions = (payload: unknown): RegionItem[] => {
-  const data = payload as {
-    data?:
-      | unknown[]
-      | {
-          data?: unknown[];
-          items?: unknown[];
-          regions?: unknown[];
-        };
-    items?: unknown[];
-    regions?: unknown[];
-  };
-  const arrayCandidate = Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data?.items)
-      ? data.items
-      : Array.isArray(data?.regions)
-        ? data.regions
-        : Array.isArray((data?.data as { regions?: unknown[] })?.regions)
-          ? (data.data as { regions: unknown[] }).regions
-      : Array.isArray((data?.data as { items?: unknown[] })?.items)
-        ? (data.data as { items: unknown[] }).items
-        : Array.isArray((data?.data as { data?: unknown[] })?.data)
-          ? (data.data as { data: unknown[] }).data
-          : [];
-
-  return arrayCandidate
-    .map(normalizeRegionItem)
-    .filter((region): region is RegionItem => Boolean(region));
-};
-
-const normalizeSummary = (payload: unknown): RegionSummary => {
-  const data = payload as {
-    summary?: unknown;
-    data?: { summary?: unknown };
-  };
-
-  const summary = (data?.summary ?? data?.data?.summary ?? {}) as {
-    totalOrders?: number | string;
-    total_orders?: number | string;
-    ordersCount?: number | string;
-    orders_count?: number | string;
-    totalDelivered?: number | string;
-    total_delivered?: number | string;
-    deliveredOrders?: number | string;
-    delivered_orders?: number | string;
-    totalCancelled?: number | string;
-    total_cancelled?: number | string;
-    cancelledOrders?: number | string;
-    cancelled_orders?: number | string;
-    totalRevenue?: number | string;
-    total_revenue?: number | string;
-    revenue?: number | string;
-  };
-
-  return {
-    totalOrders: toNumber(
-      summary.totalOrders ?? summary.total_orders ?? summary.ordersCount ?? summary.orders_count,
-      0,
-    ),
-    totalDelivered: toNumber(
-      summary.totalDelivered ?? summary.total_delivered ?? summary.deliveredOrders ?? summary.delivered_orders,
-      0,
-    ),
-    totalCancelled: toNumber(
-      summary.totalCancelled ?? summary.total_cancelled ?? summary.cancelledOrders ?? summary.cancelled_orders,
-      0,
-    ),
-    totalRevenue: toNumber(summary.totalRevenue ?? summary.total_revenue ?? summary.revenue, 0),
-  };
+  return id == null ? "" : String(id);
 };
 
 const RegionPage = () => {
@@ -198,11 +47,9 @@ const RegionPage = () => {
   const { pathname } = useLocation();
   const { getParam, setMultipleParams, removeParam } = useQueryParams();
   const role = useSelector((state: RootState) => state.role.role);
+  const profile = useSelector((state: RootState) => state.user.user);
   const userRegionName = useSelector((state: RootState) => state.role.region);
 
-  const [regions, setRegions] = useState<RegionItem[]>([]);
-  const [summary, setSummary] = useState<RegionSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [customRange, setCustomRange] = useState<{ start: string; end: string } | null>(() => {
     const start = getParam("startDate");
     const end = getParam("endDate");
@@ -224,56 +71,16 @@ const RegionPage = () => {
 
   const isSuperadmin = role === "superadmin";
   const isAdmin = role === "admin";
-  const isLogist = role === "operator";
+  const isManager = role === "manager";
   const isCourier = role === "courier";
-  const canViewStats = isAdmin || isSuperadmin || isLogist;
+  const canViewStats = isAdmin || isSuperadmin;
+  const canViewScopedStats = isManager || isCourier;
+  const canUseDateFilter = canViewStats || canViewScopedStats;
 
   const isChildRoute =
     pathname.includes("/regions/districts") ||
     pathname.includes("/regions/sato-management") ||
     pathname.includes("/regions/logist-assignment");
-
-  useEffect(() => {
-    let active = true;
-
-    const fetchRegions = async () => {
-      setIsLoading(true);
-      try {
-        const params: Record<string, string> = {};
-        const now = dayjs();
-
-        if (dateRange === "today") {
-          params.startDate = now.startOf("day").format("YYYY-MM-DD");
-          params.endDate = now.endOf("day").format("YYYY-MM-DD");
-        } else if (dateRange === "week") {
-          params.startDate = now.startOf("week").format("YYYY-MM-DD");
-          params.endDate = now.endOf("week").format("YYYY-MM-DD");
-        } else if (dateRange === "month") {
-          params.startDate = now.startOf("month").format("YYYY-MM-DD");
-          params.endDate = now.endOf("month").format("YYYY-MM-DD");
-        } else if (dateRange === "custom" && customRange) {
-          params.startDate = customRange.start;
-          params.endDate = customRange.end;
-        }
-
-        const response = await api.get(API_ENDPOINTS.REGIONS.STATS_ALL, { params });
-        if (!active) return;
-        setRegions(unwrapRegions(response.data));
-        setSummary(normalizeSummary(response.data));
-      } catch {
-        if (!active) return;
-        setRegions([]);
-        setSummary(null);
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    };
-
-    void fetchRegions();
-    return () => {
-      active = false;
-    };
-  }, [dateRange, customRange]);
 
   const detailDateParams = useMemo<{ startDate?: string; endDate?: string }>(() => {
     const now = dayjs();
@@ -309,6 +116,119 @@ const RegionPage = () => {
     return {};
   }, [dateRange, customRange]);
 
+  const regionStatsQuery = useRegionStats(
+    detailDateParams,
+    canViewStats || canViewScopedStats,
+  );
+  const regions = regionStatsQuery.data?.regions ?? [];
+  const summary = regionStatsQuery.data?.summary ?? null;
+  const endpointScopedDetail = regionStatsQuery.data?.scopedDetail ?? null;
+  const profileRegionScope = resolveRegionScope(profile);
+  const courierRegionQuery = useQuery({
+    queryKey: ["courier-region-scope", profile?.id],
+    queryFn: async () => {
+      const response = await api.get(API_ENDPOINTS.ORDERS.BASE, {
+        params: { page: 1, limit: 10 },
+      });
+      return findOrderRegionScope(response.data);
+    },
+    enabled:
+      isCourier &&
+      Boolean(profile?.id) &&
+      !profileRegionScope.id &&
+      !profileRegionScope.name,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const effectiveRegionScope =
+    profileRegionScope.id || profileRegionScope.name
+      ? profileRegionScope
+      : courierRegionQuery.data ?? profileRegionScope;
+  const profileRegionId = effectiveRegionScope.id;
+  const scopedRegion = useMemo(() => {
+    if (profileRegionId) {
+      return regions.find((region) => region.id === profileRegionId) ?? null;
+    }
+
+    const normalizedProfileRegionName = (
+      effectiveRegionScope.name ||
+      String(userRegionName ?? "")
+    ).trim().toLowerCase();
+    if (normalizedProfileRegionName) {
+      const matchedRegion = regions.find(
+        (region) => region.name.trim().toLowerCase() === normalizedProfileRegionName,
+      );
+      if (matchedRegion) return matchedRegion;
+    }
+
+    return regions.length === 1 ? regions[0] : null;
+  }, [effectiveRegionScope.name, profileRegionId, regions, userRegionName]);
+  const scopedRegionId =
+    profileRegionId ||
+    scopedRegion?.id ||
+    endpointScopedDetail?.id ||
+    "";
+  const scopedBranchId = getProfileBranchId(profile);
+  const scopedStatsParams = useMemo(
+    () => ({
+      ...detailDateParams,
+      ...(isCourier && profile?.id ? { courier_id: String(profile.id) } : {}),
+      ...(isManager && scopedBranchId ? { branch_id: scopedBranchId } : {}),
+    }),
+    [detailDateParams, isCourier, isManager, profile?.id, scopedBranchId],
+  );
+  const scopedStatsQuery = useRegionDetailStats(
+    scopedRegionId,
+    scopedStatsParams,
+    canViewScopedStats && !isCourier && Boolean(scopedRegionId),
+  );
+  const districtCatalogQuery = useRegionDistrictCatalog(
+    scopedRegionId,
+    canViewScopedStats && Boolean(scopedRegionId),
+  );
+  const scopedStats = useMemo(
+    () => {
+      const courierFallback = isCourier && scopedRegion
+        ? {
+            id: scopedRegion.id,
+            name: scopedRegion.name,
+            summary: {
+              totalOrders: scopedRegion.ordersCount,
+              totalDelivered: scopedRegion.deliveredOrders,
+              totalCancelled: scopedRegion.cancelledOrders,
+              totalRevenue: scopedRegion.totalRevenue,
+              pendingOrders: scopedRegion.pendingOrders,
+              activeCouriers: scopedRegion.activeCouriers,
+              successRate: scopedRegion.successRate,
+            },
+            districts: [],
+          }
+        : null;
+
+      return mergeRegionDistrictStats(
+        scopedStatsQuery.data ?? endpointScopedDetail ?? courierFallback,
+        districtCatalogQuery.data ?? [],
+        {
+          id: scopedRegionId,
+          name:
+            scopedRegion?.name ||
+            effectiveRegionScope.name ||
+            String(userRegionName ?? ""),
+        },
+      );
+    },
+    [
+      districtCatalogQuery.data,
+      effectiveRegionScope.name,
+      endpointScopedDetail,
+      isCourier,
+      scopedRegion,
+      scopedRegionId,
+      scopedStatsQuery.data,
+      userRegionName,
+    ],
+  );
+
   useEffect(() => {
     if (dateRange === "custom" && customRange?.start && customRange?.end) {
       setMultipleParams({
@@ -328,7 +248,7 @@ const RegionPage = () => {
     return <Outlet />;
   }
 
-  if (!canViewStats && !isCourier) {
+  if (!canViewStats && !canViewScopedStats) {
     return <Navigate to="/403" replace />;
   }
 
@@ -341,15 +261,19 @@ const RegionPage = () => {
                 <span className="w-10 h-10 rounded-xl bg-main flex items-center justify-center shadow-lg">
                   <MapPin className="w-5 h-5 text-primary" />
                 </span>
-                {t("title")}
+                {canViewScopedStats && (scopedStats?.name || scopedRegion?.name || userRegionName)
+                  ? t("scopedTitle", {
+                      region: scopedStats?.name || scopedRegion?.name || userRegionName,
+                    })
+                  : t("title")}
               </h1>
               <p className="text-sm text-main/65 dark:text-primary/65 mt-1">
-                {t("subtitle")}
+                {canViewScopedStats ? t("scopedSubtitle") : t("subtitle")}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {canViewStats && (
+              {canUseDateFilter && (
                 <div className="flex items-center gap-1 rounded-xl border border-primarydark/20 bg-primary p-1 shadow-sm dark:border-white/10 dark:bg-primarydark/55">
                   <Calendar className="ml-2 h-4 w-4 text-main/55 dark:text-primary/70" />
                   {[
@@ -375,18 +299,21 @@ const RegionPage = () => {
                     </button>
                   ))}
                   <div className="mx-1 h-6 w-px bg-primarydark/30 dark:bg-white/15" />
-                  <RangePicker
+                  <DateRangePicker
                     value={
                       dateRange === "custom" && customRange
-                        ? [dayjs(customRange.start), dayjs(customRange.end)]
-                        : null
+                        ? {
+                            startDate: parseISODate(customRange.start),
+                            endDate: parseISODate(customRange.end),
+                          }
+                        : { startDate: null, endDate: null }
                     }
-                    onChange={(dates) => {
-                      if (dates?.[0] && dates?.[1]) {
+                    onChange={({ startDate, endDate }) => {
+                      if (startDate && endDate) {
                         setDateRange("custom");
                         setCustomRange({
-                          start: dates[0].format("YYYY-MM-DD"),
-                          end: dates[1].format("YYYY-MM-DD"),
+                          start: toISODate(startDate),
+                          end: toISODate(endDate),
                         });
                         return;
                       }
@@ -394,9 +321,12 @@ const RegionPage = () => {
                       setCustomRange(null);
                       setDateRange("all");
                     }}
-                    className="region-range-picker border-0! bg-transparent! shadow-none!"
-                    classNames={{ popup: { root: "region-range-picker-popup" } }}
-                    style={{ width: 220 }}
+                    className="w-[220px]"
+                    size="sm"
+                    placeholder={t("common:dateRangePlaceholder", {
+                      from: t("common:startDate"),
+                      to: t("common:endDate"),
+                    })}
                   />
                 </div>
               )}
@@ -439,11 +369,26 @@ const RegionPage = () => {
           </div>
         </div>
 
-        {isCourier ? (
-          <div className="rounded-2xl border border-primarydark/20 bg-primary p-5 dark:border-white/10 dark:bg-primarydark/45">
-            <p className="text-sm text-main/70 dark:text-primary/70 mb-2">{t("assignedRegion")}</p>
-            <h3 className="text-2xl font-bold text-main dark:text-primary">{userRegionName || "—"}</h3>
-          </div>
+        {canViewScopedStats ? (
+          regionStatsQuery.isLoading ||
+          courierRegionQuery.isLoading ||
+          (scopedRegionId && districtCatalogQuery.isLoading) ||
+          (!isCourier && scopedRegionId && scopedStatsQuery.isLoading) ? (
+            <div className="rounded-2xl border border-primarydark/20 bg-primary p-8 text-center text-sm text-main/60 dark:border-white/10 dark:bg-primarydark/45 dark:text-primary/60">
+              {t("common:loading")}
+            </div>
+          ) : regionStatsQuery.isError ||
+            (scopedStatsQuery.isError && districtCatalogQuery.isError) ? (
+            <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-700 dark:text-rose-100">
+              {t("map.loadingError")}
+            </div>
+          ) : !scopedRegionId && !endpointScopedDetail ? (
+            <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-700 dark:text-rose-100">
+              {t("map.regionNotFound")}
+            </div>
+          ) : scopedStats ? (
+            <ScopedRegionStatistics data={scopedStats} />
+          ) : null
         ) : (
           <Suspense fallback={<MapFallback />}>
             <UzbekistanRegionMap
@@ -468,7 +413,7 @@ const RegionPage = () => {
           </Suspense>
         )}
 
-        {isLoading ? (
+        {regionStatsQuery.isLoading && !canViewScopedStats ? (
           <div className="mt-4 text-sm text-main/60 dark:text-primary/60">{t("common:loading")}</div>
         ) : null}
     </PageContainer>

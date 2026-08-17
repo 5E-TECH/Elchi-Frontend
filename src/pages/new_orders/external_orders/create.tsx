@@ -86,8 +86,8 @@ const ExternalIntegrationCreatePage = () => {
   const { api: notificationApi } = useAppNotification();
   const [platform, setPlatform] = useState("custom");
   const [showPassword, setShowPassword] = useState(false);
-  const { getMarkets } = useMarkets();
-  const marketsQuery = getMarkets({ status: "active", limit: 100 }, true);
+  const { useGetMarkets } = useMarkets();
+  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, true);
   const createIntegration = useCreateIntegration();
 
   const {

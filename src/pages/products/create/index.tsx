@@ -10,8 +10,8 @@ import {
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useNavigate, useParams } from "react-router-dom";
-import { Box, Image, X, Trash2, Edit, MoveLeft } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Box, Image, X, Trash2, Edit } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Button from "../../../shared/components/button";
@@ -24,11 +24,20 @@ import i18n from "../../../i18n";
 import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
+import BackButton from "../../../shared/ui/BackButton";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 
 interface ExistingProduct {
   id: number;
   name: string;
-  image: string;
+  image?: string | null;
+  image_url?: string | null;
+  imageUrl?: string | null;
+  photo?: string | null;
+  photo_url?: string | null;
+  file?: string | null;
+  url?: string | null;
 }
 
 interface CreateProductFormValues {
@@ -43,21 +52,38 @@ const createProductSchema: yup.ObjectSchema<CreateProductFormValues> = yup.objec
 
 // ─── Cell Components ────────────────────────────────────────────────────────────
 
-const ProductNameCell = memo(({ item }: { item: ExistingProduct }) => (
-  <div className="flex items-center gap-2">
-    {item.image ? (
-      <img
-        src={item.image}
-        alt={item.name}
-        className="w-8 h-8 rounded object-cover"
-        loading="lazy"
-      />
-    ) : (
-      <Box className="w-8 h-8 text-gray-400" />
-    )}
-    <span>{item.name}</span>
-  </div>
-));
+const getProductImageUrl = (product: ExistingProduct): string | undefined =>
+  resolveAssetUrl(
+    product.image_url
+      ?? product.imageUrl
+      ?? product.image
+      ?? product.photo_url
+      ?? product.photo
+      ?? product.file
+      ?? product.url,
+  );
+
+const ProductNameCell = memo(({ item }: { item: ExistingProduct }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+  const imageUrl = getProductImageUrl(item);
+
+  return (
+    <div className="flex items-center gap-2">
+      {imageUrl && !hasImageError ? (
+        <img
+          src={imageUrl}
+          alt={item.name}
+          className="w-8 h-8 rounded-lg object-cover border border-white/10 bg-main/10"
+          loading="lazy"
+          onError={() => setHasImageError(true)}
+        />
+      ) : (
+        <Box className="w-8 h-8 text-gray-400" />
+      )}
+      <span>{item.name}</span>
+    </div>
+  );
+});
 ProductNameCell.displayName = "ProductNameCell";
 
 
@@ -71,20 +97,28 @@ const CreateProductPage = () => {
   const isMarketRole = roleState.role === "market";
   const [preview, setPreview] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ExistingProduct | null>(null);
+  const [editTarget, setEditTarget] = useState<ExistingProduct | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevPreviewRef = useRef<string | null>(null);
 
-  const { createProduct, getByMarketId, getMyProducts, deleteProduct } = useProducts();
+  const {
+    createProduct,
+    updateProduct,
+    updateMyProduct,
+    useGetByMarketId,
+    useGetMyProducts,
+    deleteProduct,
+  } = useProducts();
   const { id } = useParams<{ id: string }>();
   const marketIdFromState = roleState.id ?? profile?.id;
   const effectiveMarketId = id ?? marketIdFromState ?? "";
 
-  const { data: marketD } = getByMarketId(
+  const { data: marketD } = useGetByMarketId(
     effectiveMarketId || undefined,
     !isMarketRole && Boolean(effectiveMarketId),
   );
-  const { data: myProductsData } = getMyProducts(isMarketRole);
+  const { data: myProductsData } = useGetMyProducts(isMarketRole);
 
   const marketData = useMemo<ExistingProduct[]>(() => {
     if (isMarketRole) {
@@ -94,7 +128,7 @@ const CreateProductPage = () => {
 
     const source = marketD?.data ?? [];
     return Array.isArray(source) ? source : [];
-  }, [isMarketRole, marketD?.data, myProductsData?.data, myProductsData?.data?.items]);
+  }, [isMarketRole, marketD?.data, myProductsData?.data]);
 
   const marketName: string | null = useMemo(() => {
     if (isMarketRole) {
@@ -105,9 +139,8 @@ const CreateProductPage = () => {
     return marketD.data[0]?.market?.name ?? null;
   }, [isMarketRole, marketD?.data, profile?.name, roleState.name]);
 
-  const navigate = useNavigate();
-  const { getMarketById } = useMarkets();
-  const { data: selectedMarketData, isLoading: isMarketStatusLoading } = getMarketById(
+  const { useGetMarketById } = useMarkets();
+  const { data: selectedMarketData, isLoading: isMarketStatusLoading } = useGetMarketById(
     Number(effectiveMarketId),
     !isMarketRole && Boolean(effectiveMarketId),
   );
@@ -129,12 +162,13 @@ const CreateProductPage = () => {
     resolver: yupResolver(createProductSchema) as Resolver<CreateProductFormValues>,
   });
 
-  const isPending = createProduct.isPending;
+  const isPending =
+    createProduct.isPending || updateProduct.isPending || updateMyProduct.isPending;
 
   useEffect(() => {
     const prev = prevPreviewRef.current;
     return () => {
-      if (prev) URL.revokeObjectURL(prev);
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
     };
   }, [preview]);
 
@@ -159,9 +193,15 @@ const CreateProductPage = () => {
     setDeleteTarget(null);
   }, []);
 
-  const handleEdit = useCallback((_id: number) => {
-    // TODO: implement edit
-  }, []);
+  const handleEdit = useCallback((product: ExistingProduct) => {
+    setEditTarget(product);
+    reset({ name: product.name, image: null });
+    setPreview((current) => {
+      if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+      return product.image || null;
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [reset]);
 
   // ─── Table Columns ─────────────────────────────────────────────────────
 
@@ -189,7 +229,7 @@ const CreateProductPage = () => {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => handleEdit(item.id)}
+              onClick={() => handleEdit(item)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors"
               aria-label={t("editProductAria")}
             >
@@ -215,12 +255,13 @@ const CreateProductPage = () => {
   // ─── Form Handlers ─────────────────────────────────────────────────────
 
   const resetForm = useCallback(() => {
+    setEditTarget(null);
     reset({
       name: "",
       image: null,
     });
     setPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
       return null;
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -231,7 +272,7 @@ const CreateProductPage = () => {
       if (!file) return;
 
       setPreview((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
         return URL.createObjectURL(file);
       });
       setValue("image", file, { shouldValidate: true });
@@ -241,7 +282,7 @@ const CreateProductPage = () => {
 
   const handleRemoveImage = useCallback(() => {
     setPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
       return null;
     });
     setValue("image", null, { shouldValidate: true });
@@ -262,18 +303,49 @@ const CreateProductPage = () => {
 
       const formData = new FormData();
       formData.append("name", values.name.trim());
-      if (effectiveMarketId) {
+      if (!editTarget && !isMarketRole && effectiveMarketId) {
         formData.append("market_id", effectiveMarketId);
       }
       if (values.image) formData.append("image", values.image);
 
-      await createProduct.mutateAsync(formData, {
-        onSuccess: () => {
-          resetForm();
-        },
-      });
+      try {
+        if (editTarget) {
+          const mutation = isMarketRole ? updateMyProduct : updateProduct;
+          await mutation.mutateAsync({ id: editTarget.id, data: formData });
+          notificationApi.success({
+            message: t("updateSuccess"),
+            placement: "topRight",
+          });
+        } else {
+          await createProduct.mutateAsync(formData);
+          notificationApi.success({
+            message: t("createSuccess"),
+            placement: "topRight",
+          });
+        }
+        resetForm();
+      } catch (error) {
+        notificationApi.error({
+          message: t(editTarget ? "updateError" : "createError"),
+          description: getBackendErrorMessage(error),
+          placement: "topRight",
+        });
+      }
     },
-    [createProduct, effectiveMarketId, isInactiveMarket, isMarketStatusLoading, isPending, notificationApi, resetForm, t],
+    [
+      createProduct,
+      editTarget,
+      effectiveMarketId,
+      isInactiveMarket,
+      isMarketRole,
+      isMarketStatusLoading,
+      isPending,
+      notificationApi,
+      resetForm,
+      t,
+      updateMyProduct,
+      updateProduct,
+    ],
   );
 
   return (
@@ -285,17 +357,19 @@ const CreateProductPage = () => {
       >
         {/* Header with gradient bar */}
         <div
-          onClick={() => navigate(-1)}
-          className="cursor-pointer px-6 py-4 flex items-center gap-3"
+          className="px-6 py-4 flex items-center gap-3"
           style={{
             background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)',
           }}
         >
-          <div className="p-2 rounded-lg bg-white/10">
-            <MoveLeft size={20} className="text-white" />
-          </div>
+          <BackButton
+            className="h-10 min-w-10 shrink-0 rounded-xl border-white/20 bg-white/10 px-2 text-white hover:border-white/35 hover:bg-white/15 hover:text-white dark:bg-white/10 dark:text-white"
+            label=""
+          />
           <div>
-            <h2 className="text-lg font-bold text-white m-0">{t("createTitle")}</h2>
+            <h2 className="text-lg font-bold text-white m-0">
+              {t(editTarget ? "edit" : "createTitle")}
+            </h2>
             <p className="text-white/60 text-sm m-0">
               {marketName ?? t("createSubtitleFallback")}
             </p>
@@ -384,7 +458,7 @@ const CreateProductPage = () => {
         {/* Footer buttons */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-maindark">
           <Button
-            label={t("clear")}
+            label={t(editTarget ? "cancel" : "clear")}
             type="button"
             className="border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
             icon={<X size={18} />}

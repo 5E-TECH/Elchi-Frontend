@@ -9,6 +9,8 @@ import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
+import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
+import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import {
@@ -40,6 +42,8 @@ const MarketDashboardPage = () => {
   );
 
   const hasDateFilter = Boolean(fromDate && toDate);
+  const allTimeRange = getAllTimeRange();
+  const isAllTime = fromDate === allTimeRange.from && toDate === allTimeRange.to;
 
   // ─── Scope: re-render minimizatsiya uchun ─────────────────────────────────────
   const analyticsScope = useMemo(
@@ -48,10 +52,11 @@ const MarketDashboardPage = () => {
   );
 
   const analyticsParams = useMemo(
-    () => ({
-      start_day: hasDateFilter ? fromDate : "",
-      end_day: hasDateFilter ? toDate : "",
-    }),
+    () =>
+      ({
+        start_day: hasDateFilter ? fromDate : "",
+        end_day: hasDateFilter ? toDate : "",
+      }),
     [fromDate, hasDateFilter, toDate],
   );
 
@@ -72,8 +77,9 @@ const MarketDashboardPage = () => {
   const sold = orders?.soldAndPaid ?? 0;
   const cancelled = orders?.cancelled ?? 0;
   const profit = orders?.profit ?? 0;
+  const topMarkets = data?.data?.topMarkets ?? [];
 
-  const inProgress = Math.max(0, accepted - sold - cancelled);
+  const inProgress = orders?.inProgress ?? Math.max(0, accepted - sold - cancelled);
   const successRate = ratio(sold, accepted);
 
   // ─── Market add_order ruxsati ─────────────────────────────────────────────────
@@ -108,8 +114,8 @@ const MarketDashboardPage = () => {
       {/* Sahifa sarlavhasi */}
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <HeaderName
-          name={hasDateFilter ? t("page_title_filtered") : t("market.page_title")}
-          description={hasDateFilter ? t("page_subtitle_filtered") : t("market.page_subtitle")}
+          name={isAllTime ? t("page_title_all") : hasDateFilter ? t("page_title_filtered") : t("market.page_title")}
+          description={isAllTime ? t("page_subtitle_all") : hasDateFilter ? t("page_subtitle_filtered") : t("market.page_subtitle")}
           icon={<LayoutDashboard />}
         />
 
@@ -119,10 +125,13 @@ const MarketDashboardPage = () => {
             toDate={toDate}
             onChange={applyRange}
             onClear={clearRange}
+            includeAll
             labels={{
               today: t("quickRanges.today"),
               week: t("quickRanges.week"),
               month: t("quickRanges.month"),
+              year: t("quickRanges.year"),
+              all: t("quickRanges.all"),
             }}
             placeholder={`${t("datePicker.from")} → ${t("datePicker.to")}`}
             className="lg:items-end"
@@ -168,6 +177,12 @@ const MarketDashboardPage = () => {
             loading={isDataLoading}
             t={t}
           />
+        </div>
+      )}
+
+      {!dashboardError && !isDataLoading && (
+        <div className="mb-5">
+          <TopPerformers markets={topMarkets} />
         </div>
       )}
 

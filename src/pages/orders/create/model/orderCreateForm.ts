@@ -96,9 +96,9 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
         total_price: yup
           .string()
           .required(i18n.t("orders:validationTotalPriceRequired"))
-          .test("positive-price", i18n.t("orders:validationTotalPrice"), (value) => {
-            const amount = Number((value ?? "").replace(/\D/g, ""));
-            return amount > 0;
+          .test("price-entered", i18n.t("orders:validationTotalPriceRequired"), (value) => {
+            const amount = (value ?? "").replace(/\D/g, "");
+            return amount.length > 0;
           }),
         where_deliver: yup
           .mixed<DeliveryType>()
@@ -108,6 +108,19 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
         comment: yup.string().optional(),
       }),
     })
+    .test(
+      "address-required-for-home-delivery",
+      i18n.t("orders:validationAddressRequired"),
+      function validateAddressForHomeDelivery(value) {
+        if (value?.details?.where_deliver !== "address") return true;
+        if (value.customer?.address?.trim()) return true;
+
+        return this.createError({
+          path: "customer.address",
+          message: i18n.t("orders:validationAddressRequired"),
+        });
+      },
+    )
     .required();
 
 export const orderCreateSchema = createOrderSchema();

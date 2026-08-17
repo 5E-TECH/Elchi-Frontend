@@ -7,6 +7,8 @@ const dashboard = "dashboard";
 export interface AnalyticsDateParams {
   start_day?: string;
   end_day?: string;
+  branch_id?: string;
+  all?: boolean;
 }
 
 export interface RevenueParams extends AnalyticsDateParams {
@@ -15,9 +17,14 @@ export interface RevenueParams extends AnalyticsDateParams {
 
 export interface DashboardOrdersSummary {
   acceptedCount: number;
+  total?: number;
+  totalOrders?: number;
+  ordersCount?: number;
   cancelled: number;
   soldAndPaid: number;
+  inProgress?: number;
   profit: number;
+  totalRevenue: number;
   from?: number;
   to?: number;
 }
@@ -90,21 +97,12 @@ export interface TopCourier {
   success_rate: number;
 }
 
-/**
- * Per-courier stats row as the superadmin/admin dashboard returns them under
- * `couriers` (order.analytics.courier_stats): a nested `courier` object plus
- * camelCase totals — a DIFFERENT shape from the flat TopCourier leaderboard row.
- */
-export interface CourierStatRow {
-  courier?: { id?: string | number; name?: string | null } | null;
-  courier_id?: string | number;
-  courier_name?: string | null;
-  totalOrders?: number;
-  soldOrders?: number;
-  total_orders?: number;
-  successful_orders?: number;
-  successRate?: number;
-  success_rate?: number;
+export interface TopBranch {
+  branch_id: string;
+  branch_name: string | null;
+  total_orders: number;
+  successful_orders: number;
+  success_rate: number;
 }
 
 export interface DashboardResponse {
@@ -116,7 +114,7 @@ export interface DashboardResponse {
     couriers?: CourierStatRow[];
     topMarkets?: TopMarket[];
     topCouriers?: TopCourier[];
-    topBranches?: TopMarket[];
+    topBranches?: TopBranch[];
     branchDashboard?: BranchDashboardPayload | null;
   };
 }
@@ -162,6 +160,9 @@ export interface RevenueResponse {
       markets?: {
         marketsTotalBalans?: number;
       };
+      branches?: {
+        branchReceivable?: number;
+      };
       couriers?: {
         couriersTotalBalanse?: number;
       };
@@ -189,6 +190,12 @@ const toNumber = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const toOptionalNumber = (value: unknown): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 const toOptionalBoolean = (value: unknown): boolean | undefined => {
   if (value === undefined || value === null) return undefined;
   if (typeof value === "string") {
@@ -211,6 +218,32 @@ type UnknownRecord = Record<string, unknown>;
 
 const asRecord = (value: unknown): UnknownRecord =>
   value && typeof value === "object" ? (value as UnknownRecord) : {};
+
+const firstDefined = (...values: unknown[]): unknown =>
+  values.find((value) => value !== undefined && value !== null);
+
+const getDashboardOrdersRecord = (data: UnknownRecord): UnknownRecord => {
+  const directOrders = asRecord(data.orders);
+  if (Object.keys(directOrders).length) return directOrders;
+
+  const summary = asRecord(data.summary);
+  const summaryOrders = asRecord(summary.orders);
+  if (Object.keys(summaryOrders).length) return summaryOrders;
+  if (Object.keys(summary).length) return summary;
+
+  const myStat = asRecord(data.myStat ?? data.my_stat);
+  if (Object.keys(myStat).length) return myStat;
+
+  const orderSummary = asRecord(data.orderSummary ?? data.order_summary);
+  if (Object.keys(orderSummary).length) return orderSummary;
+
+  const marketDashboard = asRecord(data.marketDashboard ?? data.market_dashboard);
+  const marketOrders = asRecord(marketDashboard.orders);
+  if (Object.keys(marketOrders).length) return marketOrders;
+  if (Object.keys(marketDashboard).length) return marketDashboard;
+
+  return data;
+};
 
 const normalizePerformerMetrics = (value: unknown) => {
   const item = asRecord(value);
@@ -243,6 +276,21 @@ const normalizeTopCourier = (value: unknown): TopCourier => {
     ),
     courier_name: String(
       metrics.item.courier_name ?? metrics.item.courierName ?? metrics.item.name ?? "",
+    ) || null,
+    total_orders: metrics.total_orders,
+    successful_orders: metrics.successful_orders,
+    success_rate: metrics.success_rate,
+  };
+};
+
+const normalizeTopBranch = (value: unknown): TopBranch => {
+  const metrics = normalizePerformerMetrics(value);
+  return {
+    branch_id: String(
+      metrics.item.branch_id ?? metrics.item.branchId ?? metrics.item.id ?? "",
+    ),
+    branch_name: String(
+      metrics.item.branch_name ?? metrics.item.branchName ?? metrics.item.name ?? "",
     ) || null,
     total_orders: metrics.total_orders,
     successful_orders: metrics.successful_orders,
@@ -323,9 +371,10 @@ const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null
 export const normalizeDashboardResponse = (payload: unknown): DashboardResponse => {
   const response = asRecord(payload);
   const data = asRecord(response.data);
-  const orders = asRecord(data.orders);
+  const orders = getDashboardOrdersRecord(data);
   const topMarkets = data.topMarkets ?? data.top_markets;
   const topCouriers = data.topCouriers ?? data.top_couriers;
+  const topBranches = data.topBranches ?? data.top_branches;
   const branchDashboard = data.branchDashboard ?? data.branch_dashboard;
 
   return {
@@ -334,10 +383,81 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
     data: {
       ...data,
       orders: {
-        acceptedCount: toNumber(orders.acceptedCount ?? orders.accepted_count),
-        cancelled: toNumber(orders.cancelled ?? orders.cancelledCount ?? orders.cancelled_count),
-        soldAndPaid: toNumber(orders.soldAndPaid ?? orders.sold_and_paid),
-        profit: toNumber(orders.profit),
+        acceptedCount: toNumber(
+          firstDefined(
+            orders.acceptedCount,
+            orders.accepted_count,
+            orders.accepted,
+            orders.totalAccepted,
+            orders.total_accepted,
+            orders.acceptedOrders,
+            orders.accepted_orders,
+            orders.totalOrders,
+            orders.total_orders,
+          ),
+        ),
+        cancelled: toNumber(
+          firstDefined(
+            orders.cancelled,
+            orders.cancelledCount,
+            orders.cancelled_count,
+            orders.canceled,
+            orders.canceledCount,
+            orders.canceled_count,
+            orders.cancelledOrders,
+            orders.cancelled_orders,
+            orders.canceledOrders,
+            orders.canceled_orders,
+          ),
+        ),
+        soldAndPaid: toNumber(
+          firstDefined(
+            orders.soldAndPaid,
+            orders.sold_and_paid,
+            orders.soldAndPaidCount,
+            orders.sold_and_paid_count,
+            orders.soldOrders,
+            orders.sold_orders,
+            orders.sold,
+            orders.soldCount,
+            orders.sold_count,
+            orders.paid,
+            orders.paidCount,
+            orders.paid_count,
+            orders.successfulOrders,
+            orders.successful_orders,
+          ),
+        ),
+        inProgress: toOptionalNumber(
+          firstDefined(
+            orders.inProgress,
+            orders.in_progress,
+            orders.onTheRoad,
+            orders.on_the_road,
+            orders.activeOrders,
+            orders.active_orders,
+          ),
+        ),
+        profit: toNumber(
+          firstDefined(
+            orders.profit,
+            orders.marketProfit,
+            orders.market_profit,
+            orders.netProfit,
+            orders.net_profit,
+            orders.profitSum,
+            orders.profit_sum,
+          ),
+        ),
+        totalRevenue: toNumber(
+          firstDefined(
+            orders.totalRevenue,
+            orders.total_revenue,
+            orders.revenue,
+            orders.totalAmount,
+            orders.total_amount,
+          ),
+        ),
         from: orders.from === undefined ? undefined : toNumber(orders.from),
         to: orders.to === undefined ? undefined : toNumber(orders.to),
       },
@@ -346,6 +466,9 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
         : [],
       topCouriers: Array.isArray(topCouriers)
         ? topCouriers.map(normalizeTopCourier)
+        : [],
+      topBranches: Array.isArray(topBranches)
+        ? topBranches.map(normalizeTopBranch)
         : [],
       branchDashboard: normalizeBranchDashboard(branchDashboard),
     },
@@ -380,6 +503,7 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
   const finance = asRecord(data.finance);
   const main = asRecord(finance.main);
   const markets = asRecord(finance.markets);
+  const branches = asRecord(finance.branches);
   const couriers = asRecord(finance.couriers);
 
   return {
@@ -403,6 +527,14 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
                   markets.marketsTotalBalance ??
                   markets.markets_total_balans ??
                   markets.markets_total_balance,
+              ),
+            },
+            branches: {
+              branchReceivable: toNumber(
+                branches.branchReceivable ??
+                  branches.branchReceivableBalance ??
+                  branches.branch_receivable ??
+                  branches.branch_receivable_balance,
               ),
             },
             couriers: {

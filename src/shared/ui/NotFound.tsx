@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Compass, House, SearchX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ErrorActions from "./error-page/ErrorActions";
@@ -7,36 +8,36 @@ import ErrorInfoCard from "./error-page/ErrorInfoCard";
 import ErrorPageLayout from "./error-page/ErrorPageLayout";
 
 const NotFoundPage = () => {
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
 
   return (
     <ErrorPageLayout>
-      <ErrorCode leftDigit="4" rightDigit="4" subtitle="ROUTE LOST IN SPACE" />
+      <ErrorCode leftDigit="4" rightDigit="4" subtitle={t("notFoundCodeSubtitle")} />
 
       <div className="mt-10 text-center">
         <h1 className="text-4xl font-black text-primary sm:text-5xl">
-          Bu sahifa topilmadi
+          {t("notFoundTitle")}
         </h1>
         <p className="error-page-muted mx-auto mt-5 max-w-3xl text-sm leading-7 sm:text-base">
-          Siz kirmoqchi bo'lgan manzil mavjud emas, o'chirilgan yoki noto'g'ri
-          yozilgan bo'lishi mumkin.
+          {t("notFoundDescription")}
         </p>
       </div>
 
       <div className="mt-10 grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
-        <ErrorInfoCard icon={<Compass size={22} />} label="HOLAT" value="URL topilmadi" />
-        <ErrorInfoCard icon={<SearchX size={22} />} label="KOD" value="404 Not Found" />
-        <ErrorInfoCard icon={<House size={22} />} label="TAVSIYA" value="Dashboardga qayting" />
+        <ErrorInfoCard icon={<Compass size={22} />} label={t("state")} value={t("urlNotFound")} />
+        <ErrorInfoCard icon={<SearchX size={22} />} label={t("code")} value={t("notFoundCode")} />
+        <ErrorInfoCard icon={<House size={22} />} label={t("recommendation")} value={t("returnToDashboard")} />
       </div>
 
       <ErrorActions
         primary={{
-          label: "Asosiy sahifaga qaytish",
+          label: t("returnToHome"),
           icon: <House size={17} />,
           onClick: () => navigate("/"),
         }}
         secondary={{
-          label: "Oldingi sahifaga qaytish",
+          label: t("returnToPrevious"),
           icon: <ArrowLeft size={17} />,
           onClick: () => navigate(-1),
         }}

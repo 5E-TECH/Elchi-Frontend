@@ -37,9 +37,9 @@ const payoutColumns = [
 
 const FinanceOperatorsPage = () => {
   const {
-    getOperatorBalance,
-    getOperatorEarnings,
-    getOperatorPayouts,
+    useGetOperatorBalance,
+    useGetOperatorEarnings,
+    useGetOperatorPayouts,
     createOperatorPayment,
   } = useFinanceCoverage();
 
@@ -49,14 +49,14 @@ const FinanceOperatorsPage = () => {
   const [payoutComment, setPayoutComment] = useState("");
 
   const enabled = !!operatorId;
-  const balanceQuery = getOperatorBalance(operatorId, enabled);
-  const earningsQuery = getOperatorEarnings(operatorId, enabled);
-  const payoutsQuery = getOperatorPayouts(operatorId, enabled);
+  const balanceQuery = useGetOperatorBalance(operatorId, enabled);
+  const earningsQuery = useGetOperatorEarnings(operatorId, enabled);
+  const payoutsQuery = useGetOperatorPayouts(operatorId, enabled);
 
   const balance = (balanceQuery.data as OperatorBalance | undefined) ?? {};
 
   return (
-    <div style={{ padding: 16, maxWidth: 920, margin: "0 auto" }}>
+    <div className="mx-auto w-full max-w-[920px] px-4 pt-4 pb-28 md:pb-4">
       <Title level={3}>
         <Wallet size={20} style={{ verticalAlign: -3, marginRight: 8 }} />
         Operator hisob-kitobi
@@ -83,13 +83,13 @@ const FinanceOperatorsPage = () => {
       {enabled ? (
         <Space direction="vertical" size="large" style={{ display: "flex", marginTop: 16 }}>
           <Row gutter={16}>
-            <Col span={8}>
+            <Col xs={24} md={8}>
               <Card><Statistic title="Ishlab topgan" value={fmt(balance.earned)} suffix="so'm" loading={balanceQuery.isLoading} /></Card>
             </Col>
-            <Col span={8}>
+            <Col xs={24} md={8}>
               <Card><Statistic title="To'langan" value={fmt(balance.paid)} suffix="so'm" loading={balanceQuery.isLoading} /></Card>
             </Col>
-            <Col span={8}>
+            <Col xs={24} md={8}>
               <Card><Statistic title="Qoldiq" value={fmt(balance.balance)} suffix="so'm" loading={balanceQuery.isLoading} /></Card>
             </Col>
           </Row>
@@ -121,11 +121,11 @@ const FinanceOperatorsPage = () => {
           </Card>
 
           <Card title={<><Banknote size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Daromadlar</>}>
-            <Table size="small" rowKey={(_, i) => String(i)} pagination={false} loading={earningsQuery.isLoading} columns={earningColumns} dataSource={asRows(earningsQuery.data)} />
+            <Table size="small" rowKey={(_, i) => String(i)} pagination={false} loading={earningsQuery.isLoading} columns={earningColumns} dataSource={asRows(earningsQuery.data)} scroll={{ x: "max-content" }} />
           </Card>
 
           <Card title="To'lovlar tarixi">
-            <Table size="small" rowKey={(_, i) => String(i)} pagination={false} loading={payoutsQuery.isLoading} columns={payoutColumns} dataSource={asRows(payoutsQuery.data)} />
+            <Table size="small" rowKey={(_, i) => String(i)} pagination={false} loading={payoutsQuery.isLoading} columns={payoutColumns} dataSource={asRows(payoutsQuery.data)} scroll={{ x: "max-content" }} />
           </Card>
         </Space>
       ) : null}

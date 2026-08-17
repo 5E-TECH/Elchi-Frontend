@@ -1,6 +1,7 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const UZ_MONTHS = [
     "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
@@ -34,10 +35,10 @@ const buildCalendarDays = (year: number, month: number): (number | null)[] => {
     return cells;
 };
 
-const formatDisplay = (str: string): string => {
+const formatDisplay = (str: string, months: string[]): string => {
     const date = parseDate(str);
     if (!date) return "";
-    return `${date.getDate()} ${UZ_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+    return `${date.getDate()} ${months[date.getMonth()] ?? UZ_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 };
 
 interface CustomDatePickerProps {
@@ -55,7 +56,7 @@ interface CustomDatePickerProps {
 const CustomDatePicker = memo(({
     value,
     onChange,
-    placeholder = "Sanani tanlang",
+    placeholder,
     minDate,
     maxDate,
     className = "",
@@ -63,6 +64,22 @@ const CustomDatePicker = memo(({
     variant = "default",
     placement = "auto",
 }: CustomDatePickerProps) => {
+    const { t } = useTranslation("common");
+    const months = useMemo(
+        () => {
+            const value = t("datePicker.months", { returnObjects: true });
+            return Array.isArray(value) ? value.map(String) : UZ_MONTHS;
+        },
+        [t],
+    );
+    const weekDaysShort = useMemo(
+        () => {
+            const value = t("datePicker.weekDaysShort", { returnObjects: true });
+            return Array.isArray(value) ? value.map(String) : UZ_DAYS_SHORT;
+        },
+        [t],
+    );
+    const resolvedPlaceholder = placeholder ?? t("selectDateRange");
 
     const today = new Date();
     const selectedDate = parseDate(value);
@@ -266,7 +283,7 @@ const CustomDatePicker = memo(({
                     className={iconClassName}
                 />
                 <span className={`flex-1 text-left truncate ${valueClassName}`}>
-                    {value ? formatDisplay(value) : placeholder}
+                    {value ? formatDisplay(value, months) : resolvedPlaceholder}
                 </span>
 
                 {value && (
@@ -275,7 +292,7 @@ const CustomDatePicker = memo(({
                         tabIndex={0}
                         onClick={handleClear}
                         onKeyDown={handleClearKeyDown}
-                        aria-label="Sanani tozalash"
+                        aria-label={t("datePicker.clearAriaLabel")}
                         className={clearClassName}
                     >
                         <X size={12} />
@@ -312,7 +329,7 @@ const CustomDatePicker = memo(({
                         </button>
 
                         <span className="text-sm font-bold text-maindark dark:text-primary">
-                            {UZ_MONTHS[viewMonth]} {viewYear}
+                            {months[viewMonth] ?? UZ_MONTHS[viewMonth]} {viewYear}
                         </span>
 
                         <button
@@ -330,7 +347,7 @@ const CustomDatePicker = memo(({
                     </div>
 
                     <div className="grid grid-cols-7 px-3 pt-3 pb-1">
-                        {UZ_DAYS_SHORT.map((d) => (
+                        {weekDaysShort.map((d) => (
                             <div
                                 key={d}
                                 className="text-center text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wider py-1"

@@ -6,7 +6,6 @@ import {
   Menu,
   Search,
   Settings,
-  User,
   X,
 } from "lucide-react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -25,6 +24,7 @@ import { useUnreadCount } from "../../../entities/notification-inbox";
 import Popup from "../../../shared/ui/Popup";
 import HeaderSearchPopup from "./HeaderSearchPopup";
 import ScannerActionButton from "../../../shared/components/ScannerActionButton";
+import { getRoleAvatarConfig } from "../model/roleAvatar";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -84,6 +84,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     roleState.name ||
     t("profile");
   const profileRole = tUsers(getUserRoleLabelKey(profileRecord?.role || roleState.role));
+  const roleAvatar = getRoleAvatarConfig(profileRecord?.role || roleState.role);
+  const RoleAvatarIcon = roleAvatar.icon;
   const canOpenBatchesShortcut = roleState.role === "manager";
 
   useEffect(() => {
@@ -223,7 +225,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-17.5 items-center justify-between gap-2 bg-sidebar px-3 py-3 transition-colors duration-300 md:h-auto md:px-4 md:py-4 lg:px-6 dark:bg-maindark">
+    <header className="sticky top-0 z-30 flex min-h-[4.25rem] items-center justify-between gap-2 bg-sidebar px-3 py-2 transition-colors duration-300 sm:min-h-[4.5rem] md:h-auto md:px-4 md:py-3 lg:px-6 dark:bg-maindark">
       {/* Mobile Search Overlay */}
       {isSearchOpen && (
         <div className="absolute inset-0 z-50 bg-sidebar px-4 flex items-center animate-fade-in dark:bg-maindark lg:hidden">
@@ -282,7 +284,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <img
           src={theme === "dark" ? LogoTextdark : LogoText}
           alt="Logo"
-          className="h-28 w-auto object-contain"
+          className="h-12 w-auto max-w-[42vw] object-contain sm:h-14"
           onDoubleClick={() => setIsSearchOpen(true)}
         />
       </div>
@@ -348,7 +350,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
           aria-label={t("openSearch")}
         >
           <Search className="w-5.5 h-5.5" />
@@ -358,7 +360,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         <button
           type="button"
           onClick={onMenuClick}
-          className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
           aria-label={t("openMenu")}
         >
           <Menu className="w-7 h-7" />
@@ -393,7 +395,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             type="button"
             onClick={logout}
             className="p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 group"
-            title="Chiqish"
+            title={t("logout")}
             aria-label={t("logout")}
           >
             <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -415,9 +417,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                   navigate("profile");
                 }
               }}
-              className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-main flex items-center justify-center shadow-md shadow-main/20"
+              className={`flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-transform hover:scale-105 lg:h-10 lg:w-10 ${roleAvatar.className}`}
             >
-              <User className="w-4 h-4 text-primary lg:w-5 lg:h-5" />
+              <RoleAvatarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
             </div>
           </div>
         </div>

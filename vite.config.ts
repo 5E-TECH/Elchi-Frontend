@@ -2,9 +2,26 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
+const usePolling = process.env.VITE_USE_POLLING !== "false";
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    watch: {
+      ignored: [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/.git/**",
+        "**/.vite/**",
+        "**/coverage/**",
+        "**/playwright-report/**",
+        "**/test-results/**",
+      ],
+      usePolling,
+      interval: 500,
+    },
+  },
   build: {
     outDir: "dist",
     rollupOptions: {
@@ -34,7 +51,11 @@ export default defineConfig({
             return "vendor-react";
           }
 
-          if (id.includes("antd") || id.includes("@ant-design")) {
+          if (
+            id.includes("antd") ||
+            id.includes("@ant-design") ||
+            id.includes("@rc-component/qrcode")
+          ) {
             return "vendor-antd";
           }
 
@@ -48,6 +69,19 @@ export default defineConfig({
 
           if (id.includes("html2canvas")) {
             return "vendor-html2canvas";
+          }
+
+          // ─── Qo'shimcha chunk ajratmalar ────────────────────────────────
+          if (id.includes("lucide-react")) {
+            return "vendor-icons";
+          }
+
+          if (id.includes("i18next") || id.includes("react-i18next")) {
+            return "vendor-i18n";
+          }
+
+          if (id.includes("qrcode") || id.includes("jsqr")) {
+            return "vendor-qrcode";
           }
         },
       },

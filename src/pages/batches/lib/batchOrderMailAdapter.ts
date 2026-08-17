@@ -1,5 +1,6 @@
 import type { BatchDetail } from "../../../entities/batch";
 import type { PostOrder } from "../../../entities/mails";
+import i18n from "../../../i18n";
 
 const normalizeOrderStatus = (status: string): PostOrder["status"] => {
   const normalized = status.toLowerCase();
@@ -17,7 +18,7 @@ const normalizeOrderStatus = (status: string): PostOrder["status"] => {
 export const mapBatchOrdersToPostOrders = (batch?: BatchDetail | null): PostOrder[] => {
   const createdAt = batch?.created_at ?? new Date().toISOString();
   const branchId = batch?.to_branch?.id ?? "batch-region";
-  const branchName = batch?.to_branch?.name ?? "Filial";
+  const branchName = batch?.to_branch?.name ?? i18n.t("batches:detail.branch");
 
   return (batch?.orders ?? []).map((order) => ({
     id: order.id,

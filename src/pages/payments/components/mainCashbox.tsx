@@ -8,6 +8,7 @@ import {
   Banknote,
   ArrowLeftRight,
   Truck,
+  Landmark,
   Store,
   Minus,
   Plus,
@@ -17,11 +18,13 @@ import {
   TrendingDown,
 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
+import BackButton from "../../../shared/ui/BackButton";
 import DateRangePicker from "../../../shared/ui/DateRangePicker";
 import PopupSelect from "../../../shared/components/popupSelect";
 import CashboxFormPopup from "./CashboxFormPopup";
 import CloseShiftPopup from "./CloseShiftPopup";
 import CashboxSummaryCard from "./CashboxSummaryCard";
+import SalaryPaymentPopup, { type SalaryCardSource } from "./SalaryPaymentPopup";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useMarkets } from "../../../entities/markets";
 import { useCashBox } from "../../../entities/payments";
@@ -31,15 +34,34 @@ import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) =>
   n.toLocaleString("uz-UZ", { maximumFractionDigits: 0 });
+const FULL_LIST_LIMIT = 10000;
 
 const toNumber = (v: unknown, fallback = 0): number => {
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : fallback;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const toDataItems = (value: unknown): unknown[] => {
+  if (Array.isArray(value)) return value;
+
+  const record = asRecord(value);
+  if (Array.isArray(record.items)) return record.items;
+  if (Array.isArray(record.data)) return record.data;
+
+  const data = asRecord(record.data);
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.data)) return data.data;
+
+  return [];
 };
 
 const toIsoDate = (date: Date) => {
@@ -53,6 +75,15 @@ const parseIsoDate = (value: string) => {
   if (!year || !month || !day) return null;
   return new Date(year, month - 1, day);
 };
+
+const getPersonName = (item: Record<string, unknown>, fallback: string) =>
+  String(
+    item.name ??
+      item.full_name ??
+      item.fullName ??
+      [item.first_name, item.last_name].filter(Boolean).join(" ") ??
+      fallback,
+  ).trim() || fallback;
 
 const buildRangeStart = (type: "today" | "week" | "month") => {
   const today = new Date();
@@ -85,7 +116,7 @@ const summarizeHistory = (items: PaymentRow[] = []) =>
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ActionLabel =
-  | "receiveFromCourier"
+  | "receiveFromBranchManager"
   | "payToMarket"
   | "spendFromCashbox"
   | "fillCashbox"
@@ -99,9 +130,9 @@ const ACTIONS: {
   bg: string;
 }[] = [
   {
-    icon: <Truck size={20} />,
-    label: "receiveFromCourier",
-    shortLabelKey: "courierShort",
+    icon: <Landmark size={20} />,
+    label: "receiveFromBranchManager",
+    shortLabelKey: "branchManagerShort",
     color: "text-emerald-400",
     bg: "bg-emerald-500/15 hover:bg-emerald-500/25",
   },
@@ -149,7 +180,8 @@ const MainCashbox = () => {
   const { t } = useTranslation("payments");
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [isSalaryPopupOpen, setIsSalaryPopupOpen] = useState(false);
-  const [isCourierPopupOpen, setIsCourierPopupOpen] = useState(false);
+  const [selectedSalaryEmployee, setSelectedSalaryEmployee] = useState<any>(null);
+  const [isBranchManagerPopupOpen, setIsBranchManagerPopupOpen] = useState(false);
   const [isMarketPopupOpen, setIsMarketPopupOpen] = useState(false);
   const [isSpendPopupOpen, setIsSpendPopupOpen] = useState(false);
   const [isRefillPopupOpen, setIsRefillPopupOpen] = useState(false);
@@ -159,30 +191,36 @@ const MainCashbox = () => {
   const navigate = useNavigate();
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
+  const isManagerRole = String(role).toLowerCase() === "manager";
   const branchType = getUserBranchType(user);
+  const { apiRequest } = useAppNotification();
 
-  const { getUser, getCouriers } = useUser();
-  const { getMarkets } = useMarkets();
+  const { useGetUser, useGetManagers, useGetCouriers } = useUser();
+  const { useGetMarkets } = useMarkets();
   const {
     cashboxSpand,
     cashboxFill,
     closeShift,
-    getCashBoxInfo,
-    getFinanceHistory,
-    getCashBoxMain,
+    useGetCashBoxInfo,
+    useGetFinanceHistory,
+    useGetCashBoxMain,
   } = useCashBox();
 
   // ── Data fetching ──────────────────────────────────────────────────────────
-  const { data: usersData, isLoading: usersLoading } = getUser(
-    { limit: 100 },
+  const { data: usersData, isLoading: usersLoading } = useGetUser(
+    { limit: FULL_LIST_LIMIT },
     isSalaryPopupOpen,
   );
-  const { data: couriersData, isLoading: couriersLoading } = getCouriers(
-    { status: "active", limit: 0 },
-    isCourierPopupOpen,
+  const { data: managersData, isLoading: managersLoading } = useGetManagers(
+    { status: "active", limit: FULL_LIST_LIMIT },
+    isBranchManagerPopupOpen && !isManagerRole,
   );
-  const { data: marketsData, isLoading: marketsLoading } = getMarkets(
-    { status: "active", limit: 0 },
+  const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
+    { status: "active", limit: FULL_LIST_LIMIT },
+    isBranchManagerPopupOpen && isManagerRole,
+  );
+  const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
+    { status: "active", limit: FULL_LIST_LIMIT },
     isMarketPopupOpen,
   );
   const mainCashboxParams = useMemo(
@@ -192,12 +230,12 @@ const MainCashbox = () => {
     [draftHistoryFrom, draftHistoryTo],
   );
 
-  const { data: cashboxInfoRes, isLoading: cashboxInfoLoading } = getCashBoxInfo();
-  const { data: mainCashboxRes, isLoading: mainCashboxLoading } = getCashBoxMain(mainCashboxParams);
+  const { data: cashboxInfoRes, isLoading: cashboxInfoLoading } = useGetCashBoxInfo();
+  const { data: mainCashboxRes, isLoading: mainCashboxLoading } = useGetCashBoxMain(mainCashboxParams);
   const historyParams = useMemo(
     () => ({
       page: 1,
-      limit: 0,
+      limit: FULL_LIST_LIMIT,
       ...(draftHistoryFrom && draftHistoryTo && { fromDate: draftHistoryFrom, toDate: draftHistoryTo }),
     }),
     [draftHistoryFrom, draftHistoryTo],
@@ -206,7 +244,7 @@ const MainCashbox = () => {
     data: historyRes,
     isLoading: historyLoading,
     isFetching: historyFetching,
-  } = getFinanceHistory(historyParams);
+  } = useGetFinanceHistory(historyParams);
 
   const employees = useMemo(
     () =>
@@ -216,38 +254,122 @@ const MainCashbox = () => {
       }),
     [usersData?.data?.items],
   );
+  const branchManagers = useMemo(
+    () =>
+      toDataItems(managersData).map((manager) => {
+        const item = asRecord(manager);
+        const branch = asRecord(item.branch);
+        const nestedBranch = asRecord(branch.branch);
+        const resolvedBranch = Object.keys(nestedBranch).length ? nestedBranch : branch;
+        const region = asRecord(resolvedBranch.region ?? branch.region ?? item.region);
+        const cashbox = asRecord(
+          resolvedBranch.cashbox ??
+            branch.cashbox ??
+            item.cashbox ??
+            item.cashBox ??
+            item.cash_box ??
+            item.kassa,
+        );
+        const branchId = String(
+          item.branch_id ??
+            item.branchId ??
+            resolvedBranch.id ??
+            branch.id ??
+            "",
+        );
+
+        return {
+          ...item,
+          id: branchId,
+          manager_id: String(item.id ?? ""),
+          name: getPersonName(item, t("userFallback")),
+          region: String(region.name ?? t("unknown")),
+          branch_name: String(resolvedBranch.name ?? ""),
+          amount: toNumber(
+            item.berilishi_kerak ??
+              item.payable_to_hq ??
+              item.payableToHq ??
+              cashbox.berilishi_kerak ??
+              cashbox.payable_to_hq ??
+              cashbox.payableToHq ??
+              item.olinishi_kerak ??
+              cashbox.olinishi_kerak ??
+              cashbox.balance ??
+              item.amount,
+          ),
+        };
+      }).filter((manager) => manager.id),
+    [managersData, t],
+  );
   const couriers = useMemo(
     () =>
-      (couriersData?.data?.items ?? []).map((courier: any) => ({
-        ...courier,
-        region: courier.region?.name || "Noma'lum",
-        amount: toNumber(
-          courier.olinishi_kerak ??
-            courier.cashbox?.olinishi_kerak ??
-            courier.cashbox?.balance ??
-            courier.amount,
-        ),
-      })).filter((courier: any) => courier.amount !== 0),
-    [couriersData?.data?.items],
+      toDataItems(couriersData).map((courier) => {
+        const item = asRecord(courier);
+        const region = asRecord(item.region);
+        const cashbox = asRecord(item.cashbox ?? item.cashBox ?? item.cash_box ?? item.kassa);
+
+        return {
+          ...item,
+          id: String(item.id ?? ""),
+          name: getPersonName(item, t("userFallback")),
+          region: String(region.name ?? t("unknown")),
+          role: "courier",
+          amount: toNumber(
+            item.olinishi_kerak ??
+              item.to_be_received ??
+              item.toBeReceived ??
+              item.receivable ??
+              item.courier_receivable ??
+              cashbox.olinishi_kerak ??
+              cashbox.to_be_received ??
+              cashbox.toBeReceived ??
+              cashbox.receivable ??
+              cashbox.courier_receivable ??
+              cashbox.balance ??
+              item.amount,
+          ),
+        };
+      }).filter((courier) => courier.id),
+    [couriersData, t],
   );
+  const receiveOptions = isManagerRole ? couriers : branchManagers;
+  const isReceiveLoading = isManagerRole ? couriersLoading : managersLoading;
+  const receiveDescription = isManagerRole
+    ? t("selectCourierDescription")
+    : t("selectBranchManagerDescription");
+  const receiveIcon = isManagerRole ? <Truck size={20} /> : <Landmark size={20} />;
+  const receiveSearchKeys = isManagerRole ? ["name", "region"] : ["name", "region", "branch_name"];
   const markets = useMemo(
     () =>
-      (marketsData?.data?.items ?? []).map((market: any) => ({
-        ...market,
-        amount: toNumber(
-          market.berilishi_kerak ??
-            market.cashbox?.berilishi_kerak ??
-            market.cashbox?.balance ??
-            market.amount,
-        ),
-      })).filter((market: any) => market.amount !== 0),
-    [marketsData?.data?.items],
+      toDataItems(marketsData).map((market) => {
+        const item = asRecord(market);
+        const cashbox = asRecord(item.cashbox);
+
+        return {
+          ...item,
+          id: String(item.id ?? ""),
+          name: String(item.name ?? ""),
+          amount: toNumber(
+            item.berilishi_kerak ??
+              cashbox.berilishi_kerak ??
+              cashbox.balance ??
+              item.amount,
+          ),
+        };
+      }).filter((market) => market.id),
+    [marketsData],
   );
 
   // ── Cashbox balances ───────────────────────────────────────────────────────
   const cashboxInfoData = cashboxInfoRes?.data ?? {};
-  const mainCashboxData = mainCashboxRes?.data ?? {};
-  const mainCashbox = mainCashboxData?.cashbox ?? {};
+  const mainCashboxData = useMemo(
+    () => mainCashboxRes?.data ?? {},
+    [mainCashboxRes?.data],
+  );
+  const mainCashbox = useMemo(
+    () => mainCashboxData?.cashbox ?? {},
+    [mainCashboxData],
+  );
   const totalBalance = toNumber(
     (mainCashbox as any)?.balance ??
       (mainCashboxData as any)?.balance ??
@@ -266,7 +388,39 @@ const MainCashbox = () => {
       (mainCashboxData as any)?.balanceCard ??
       (mainCashboxData as any)?.transfer,
   );
+  const salaryCardSources = useMemo<SalaryCardSource[]>(() => {
+    const adminRoles = new Set(["admin", "superadmin", "manager", "registrator"]);
+    const selectedEmployeeId = String(selectedSalaryEmployee?.id ?? "");
+    const sourceMap = new Map<string, SalaryCardSource>();
 
+    sourceMap.set("main", {
+      id: "main",
+      name: t("mainCard"),
+      balance: transferBalance,
+    });
+
+    (usersData?.data?.items ?? []).forEach((source: any) => {
+      const item = asRecord(source);
+      const id = String(item.id ?? "");
+      const role = String(item.role ?? "").toLowerCase();
+      if (!id || id === selectedEmployeeId || !adminRoles.has(role)) return;
+
+      const cashbox = asRecord(item.cashbox ?? item.cashBox ?? item.cash_box ?? item.kassa);
+      sourceMap.set(id, {
+        id,
+        name: getPersonName(item, t("userFallback")),
+        balance: toNumber(
+          cashbox.balance_card ??
+            item.balance_card ??
+            cashbox.balance ??
+            item.balance ??
+            item.amount,
+        ),
+      });
+    });
+
+    return Array.from(sourceMap.values());
+  }, [selectedSalaryEmployee?.id, t, transferBalance, usersData?.data?.items]);
   // ── History ────────────────────────────────────────────────────────────────
   const historyRows: PaymentRow[] = useMemo(
     () => ((historyRes?.data?.items ?? []) as PaymentRow[]),
@@ -306,7 +460,7 @@ const MainCashbox = () => {
   const handleActionClick = useCallback((label: ActionLabel) => {
     const map: Record<ActionLabel, () => void> = {
       paySalary: () => setIsSalaryPopupOpen(true),
-      receiveFromCourier: () => setIsCourierPopupOpen(true),
+      receiveFromBranchManager: () => setIsBranchManagerPopupOpen(true),
       payToMarket: () => setIsMarketPopupOpen(true),
       spendFromCashbox: () => setIsSpendPopupOpen(true),
       fillCashbox: () => setIsRefillPopupOpen(true),
@@ -324,12 +478,14 @@ const MainCashbox = () => {
     return ACTIONS.filter((action) => action.label !== "payToMarket");
   }, [role, branchType]);
 
-  const handleCourierSelect = useCallback(
-    (courier: any) => {
-      setIsCourierPopupOpen(false);
-      navigate(`/payments/cash-detail/${courier.id}`, { state: { type: "courier", entity: courier } });
+  const handleBranchManagerSelect = useCallback(
+    (item: any) => {
+      setIsBranchManagerPopupOpen(false);
+      navigate(`/payments/cash-detail/${item.id}`, {
+        state: { type: isManagerRole ? "courier" : "branch", entity: item },
+      });
     },
-    [navigate],
+    [isManagerRole, navigate],
   );
 
   const handleMarketSelect = useCallback(
@@ -348,6 +504,24 @@ const MainCashbox = () => {
       cardBalance: transferBalance,
       fromDate: draftHistoryFrom || undefined,
       toDate: draftHistoryTo || undefined,
+      labels: {
+        defaultReportTitle: t("report"),
+        mainCashbox: t("mainCashbox"),
+        income: t("income"),
+        expense: t("expense"),
+        expenseSection: t("expenseSection"),
+        balance: t("balance"),
+        cash: t("cash"),
+        card: t("card"),
+        total: t("total"),
+        no: t("no"),
+        fromWhere: t("fromWhere"),
+        toWhere: t("toWhere"),
+        other: t("other"),
+        comment: t("comment"),
+        summaryIncome: t("summaryIncome"),
+        summaryExpense: t("summaryExpense"),
+      },
     });
   }, [
     historyRows,
@@ -356,19 +530,62 @@ const MainCashbox = () => {
     transferBalance,
     draftHistoryFrom,
     draftHistoryTo,
+    t,
   ]);
+
+  const handleSpend = useCallback(
+    async ({ amount, type, comment }: { amount: number; type?: string; comment: string }) => {
+      const result = await apiRequest({
+        request: () => cashboxSpand.mutateAsync({ data: { amount, type, comment } }),
+        successMessage: t("spendSuccess"),
+        errorMessage: t("spendError"),
+      });
+      if (result) setIsSpendPopupOpen(false);
+    },
+    [apiRequest, cashboxSpand, t],
+  );
+
+  const handleRefill = useCallback(
+    async ({ amount, type, comment }: { amount: number; type?: string; comment: string }) => {
+      const result = await apiRequest({
+        request: () => cashboxFill.mutateAsync({ data: { amount, type, comment } }),
+        successMessage: t("fillSuccess"),
+        errorMessage: t("fillError"),
+      });
+      if (result) setIsRefillPopupOpen(false);
+    },
+    [apiRequest, cashboxFill, t],
+  );
+
+  const handleCloseShift = useCallback(
+    async (comment: string) => {
+      const result = await apiRequest({
+        request: () => closeShift.mutateAsync(comment || undefined),
+        successMessage: t("closeShiftSuccess"),
+        errorMessage: t("closeShiftError"),
+      });
+      if (!result) return;
+
+      setIsCloseShiftPopupOpen(false);
+      handleExportExcel();
+    },
+    [apiRequest, closeShift, handleExportExcel, t],
+  );
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="p-5 bg-sidebar dark:bg-maindark min-h-full flex flex-col gap-5 rounded-2xl">
       {/* ── Header ── */}
       <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border px-4 shadow-sm">
-        <HeaderName
-          name={t("mainCashboxTitle")}
-          description={t("mainCashboxDescription")}
-          icon={<Wallet />}
-          onIconClick={() => navigate(-1)}
-        />
+        <div className="flex items-center gap-3 py-2">
+          <BackButton className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
+          <HeaderName
+            name={t("mainCashboxTitle")}
+            description={t("mainCashboxDescription")}
+            icon={<Wallet />}
+            onIconClick={() => navigate(-1)}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -404,7 +621,7 @@ const MainCashbox = () => {
                     <Skeleton className="h-4 w-20" />
                   ) : (
                     <p className="text-sm font-bold text-white">
-                      {balanceVisible ? `${fmt(amount)} UZS` : "••••••"}
+                      {balanceVisible ? `${fmt(amount)} ${t("currency")}` : "••••••"}
                     </p>
                   )}
                 </div>
@@ -417,20 +634,25 @@ const MainCashbox = () => {
             <p className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-3">
               {t("quickActions")}
             </p>
-            <div className="grid grid-cols-5 gap-1.5">
-              {visibleActions.map(({ icon, label, shortLabelKey, color, bg }) => (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5 xl:gap-1.5">
+              {visibleActions.map(({ icon, label, shortLabelKey, color, bg }) => {
+                const isReceiveAction = label === "receiveFromBranchManager";
+                const actionIcon = isReceiveAction && isManagerRole ? <Truck size={20} /> : icon;
+                const actionShortLabelKey = isReceiveAction && isManagerRole ? "courierShort" : shortLabelKey;
+
+                return (
                 <button
                   key={label}
                   onClick={() => handleActionClick(label)}
                   title={t(label)}
                   className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl ${bg} ${color} transition-all duration-150 active:scale-95`}
                 >
-                  <span className="text-current">{icon}</span>
+                  <span className="text-current">{actionIcon}</span>
                   <span className="text-[10px] font-semibold text-center leading-tight text-gray-600 dark:text-white/60">
-                    {t(shortLabelKey)}
+                    {t(actionShortLabelKey)}
                   </span>
                 </button>
-              ))}
+              )})}
             </div>
           </div>
 
@@ -468,7 +690,7 @@ const MainCashbox = () => {
                   +{fmt(filteredIncome)}
                 </p>
                 <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(filteredExpense)} UZS
+                  -{fmt(filteredExpense)} {t("currency")}
                 </p>
               </div>
             </div>
@@ -483,7 +705,7 @@ const MainCashbox = () => {
                   +{fmt(weeklyStats.income)}
                 </p>
                 <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(weeklyStats.expense)} UZS
+                  -{fmt(weeklyStats.expense)} {t("currency")}
                 </p>
               </div>
             </div>
@@ -498,7 +720,7 @@ const MainCashbox = () => {
                   +{fmt(monthlyStats.income)}
                 </p>
                 <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(monthlyStats.expense)} UZS
+                  -{fmt(monthlyStats.expense)} {t("currency")}
                 </p>
               </div>
             </div>
@@ -589,9 +811,11 @@ const MainCashbox = () => {
         searchKeys={["name"]}
         labelKey="name"
         secondaryLabelKey="role"
-        onSelect={() => {
+        onSelect={(employee: any) => {
+          setSelectedSalaryEmployee(employee);
           setIsSalaryPopupOpen(false);
         }}
+        immediateSelection
         placeholder={t("searchPlaceholder")}
         selectLabel={t("selectLabel")}
         cancelLabel={t("cancelShort")}
@@ -618,17 +842,24 @@ const MainCashbox = () => {
         )}
       />
 
-      {/* Receive from courier */}
+      <SalaryPaymentPopup
+        employee={selectedSalaryEmployee}
+        isOpen={Boolean(selectedSalaryEmployee)}
+        onClose={() => setSelectedSalaryEmployee(null)}
+        cardSources={salaryCardSources}
+      />
+
+      {/* Receive from branch manager/courier */}
       <PopupSelect
-        isOpen={isCourierPopupOpen}
-        onClose={() => setIsCourierPopupOpen(false)}
-        data={couriersLoading ? [] : couriers}
+        isOpen={isBranchManagerPopupOpen}
+        onClose={() => setIsBranchManagerPopupOpen(false)}
+        data={isReceiveLoading ? [] : receiveOptions}
         title={t("toBeReceived")}
-        description={couriersLoading ? t("loadingLabel") : t("selectCourierDescription")}
-        icon={<Truck size={20} />}
+        description={isReceiveLoading ? t("loadingLabel") : receiveDescription}
+        icon={receiveIcon}
         keyExtractor={(c: any) => c.id}
-        searchKeys={["name", "region"]}
-        onSelect={handleCourierSelect}
+        searchKeys={receiveSearchKeys}
+        onSelect={handleBranchManagerSelect}
         placeholder={t("searchPlaceholder")}
         selectLabel={t("selectLabel")}
         cancelLabel={t("cancelShort")}
@@ -640,10 +871,17 @@ const MainCashbox = () => {
                   isSelected ? "bg-white/20" : "bg-orange-500/10"
                 }`}
               >
-                <Truck
-                  size={16}
-                  className={isSelected ? "text-white" : "text-orange-400"}
-                />
+                {isManagerRole ? (
+                  <Truck
+                    size={16}
+                    className={isSelected ? "text-white" : "text-orange-400"}
+                  />
+                ) : (
+                  <Landmark
+                    size={16}
+                    className={isSelected ? "text-white" : "text-orange-400"}
+                  />
+                )}
               </div>
               <div>
                 <p
@@ -658,7 +896,7 @@ const MainCashbox = () => {
                     isSelected ? "text-white/70" : "text-gray-500 dark:text-white/75"
                   }`}
                 >
-                  {c.region}
+                  {c.branch_name || c.region}
                 </p>
               </div>
             </div>
@@ -672,7 +910,7 @@ const MainCashbox = () => {
               }`}
             >
               {c.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(c.amount))} UZS
+              {fmt(Math.abs(c.amount))} {t("currency")}
             </span>
           </div>
         )}
@@ -719,7 +957,7 @@ const MainCashbox = () => {
               }`}
             >
               {m.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(m.amount))} UZS
+              {fmt(Math.abs(m.amount))} {t("currency")}
             </span>
           </div>
         )}
@@ -739,17 +977,12 @@ const MainCashbox = () => {
         typePlaceholder={t("paymentTypePlaceholder")}
         sourceTypes={[
           { id: "cash", name: t("cash") },
-          { id: "click", name: "Click" },
+          { id: "click", name: t("clickPayment") },
         ]}
         requireType
         requireComment
         isLoading={cashboxSpand.isPending}
-        onSubmit={({ amount, type, comment }) => {
-          cashboxSpand.mutate(
-            { data: { amount, type, comment } },
-            { onSuccess: () => setIsSpendPopupOpen(false) },
-          );
-        }}
+        onSubmit={handleSpend}
       />
 
       {/* Refill cashbox */}
@@ -766,31 +999,19 @@ const MainCashbox = () => {
         typePlaceholder={t("paymentTypePlaceholder")}
         sourceTypes={[
           { id: "cash", name: t("cash") },
-          { id: "click", name: "Click" },
+          { id: "click", name: t("clickPayment") },
         ]}
         requireType
         requireComment
         isLoading={cashboxFill.isPending}
-        onSubmit={({ amount, type, comment }) => {
-          cashboxFill.mutate(
-            { data: { amount, type, comment } },
-            { onSuccess: () => setIsRefillPopupOpen(false) },
-          );
-        }}
+        onSubmit={handleRefill}
       />
 
       <CloseShiftPopup
         isOpen={isCloseShiftPopupOpen}
         onClose={() => setIsCloseShiftPopupOpen(false)}
         isLoading={closeShift.isPending}
-        onConfirm={(comment) => {
-          closeShift.mutate(comment || undefined, {
-            onSuccess: () => {
-              setIsCloseShiftPopupOpen(false);
-              handleExportExcel();
-            },
-          });
-        }}
+        onConfirm={handleCloseShift}
       />
     </div>
   );

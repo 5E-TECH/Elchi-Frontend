@@ -9,6 +9,7 @@ import { UpdateUserModal } from '../../../features/user/update-user/ui/UpdateUse
 import { useTranslation } from 'react-i18next';
 import { useUser } from '../../../entities/user/api/userApi';
 import { useAppNotification } from '../../../app/providers/notification/NotificationProvider';
+import type { ExpenseProofCondition } from '../../../entities/user/types/user';
 
 interface UserDetailWidgetProps {
   user?: User;
@@ -40,7 +41,11 @@ export const UserDetailWidget = memo(({
 }: UserDetailWidgetProps) => {
   const { t } = useTranslation("users");
   const [showEdit, setShowEdit] = useState(false);
-  const { updateMarketAddOrder } = useUser();
+  const {
+    updateMarketAddOrder,
+    updateMarketExpenseProof,
+    updateMarketCancelledHandoverQr,
+  } = useUser();
   const { apiRequest } = useAppNotification();
   const isMarket = user?.role === "market" || user?.role === "marketing";
 
@@ -113,6 +118,47 @@ export const UserDetailWidget = memo(({
     });
   };
 
+  const handleToggleMarketProof = async (condition: ExpenseProofCondition) => {
+    if (!user || !isMarket) return;
+
+    const currentConditions = Array.isArray(user.expense_proof_conditions)
+      ? user.expense_proof_conditions
+      : [];
+    const nextConditions = currentConditions.includes(condition)
+      ? currentConditions.filter((item) => item !== condition)
+      : [...currentConditions, condition];
+
+    await apiRequest({
+      request: () =>
+        updateMarketExpenseProof.mutateAsync({
+          id: user.id,
+          expense_proof_conditions: nextConditions,
+        }),
+      successMessage: nextConditions.includes(condition)
+        ? t("marketProofEnabled", { defaultValue: "Market uchun rasm/video isbot yoqildi" })
+        : t("marketProofDisabled", { defaultValue: "Market uchun rasm/video isbot o'chirildi" }),
+      errorMessage: t("editUserError"),
+    });
+  };
+
+  const handleToggleMarketCancelledHandoverQr = async () => {
+    if (!user || !isMarket) return;
+
+    const nextValue = user.cancelled_handover_qr_required === false;
+
+    await apiRequest({
+      request: () =>
+        updateMarketCancelledHandoverQr.mutateAsync({
+          id: user.id,
+          cancelled_handover_qr_required: nextValue,
+        }),
+      successMessage: nextValue
+        ? t("cancelledHandoverQrEnabled", { defaultValue: "Bekor qilingan orderlarni topshirishda market QR talabi yoqildi" })
+        : t("cancelledHandoverQrDisabled", { defaultValue: "Bekor qilingan orderlarni topshirishda market QR talabi o'chirildi" }),
+      errorMessage: t("editUserError"),
+    });
+  };
+
   return (
     <>
       <div className="flex flex-col items-start gap-4 lg:flex-row lg:gap-5">
@@ -127,6 +173,10 @@ export const UserDetailWidget = memo(({
             user={user}
             onToggleMarketAddOrder={isMarket ? handleToggleMarketAddOrder : undefined}
             isMarketAddOrderPending={updateMarketAddOrder.isPending}
+            onToggleMarketProof={isMarket ? handleToggleMarketProof : undefined}
+            isMarketProofPending={updateMarketExpenseProof.isPending}
+            onToggleMarketCancelledHandoverQr={isMarket ? handleToggleMarketCancelledHandoverQr : undefined}
+            isMarketCancelledHandoverQrPending={updateMarketCancelledHandoverQr.isPending}
             headerAction={
               <button
                 type="button"

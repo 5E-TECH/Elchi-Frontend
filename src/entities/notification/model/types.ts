@@ -1,8 +1,9 @@
 export interface Notification {
   id: string;
-  user: { id: string; fullName: string; username: string };
-  chat_id: string;
-  status: "active" | "inactive";
+  market_id: string;
+  market_name: string;
+  group_id: string;
+  group_type: "cancel" | "create";
   created_at: string;
 }
 

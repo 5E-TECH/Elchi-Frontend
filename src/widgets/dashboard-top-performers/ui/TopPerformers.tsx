@@ -1,7 +1,7 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Store, Bike, Trophy, Inbox } from "lucide-react";
-import type { TopMarket, TopCourier } from "../../../entities/dashboard";
+import { Store, Building2, Trophy, Inbox } from "lucide-react";
+import type { TopMarket, TopBranch } from "../../../entities/dashboard";
 import {
   toneAccent,
   toneSoftBg,
@@ -12,8 +12,8 @@ import {
 } from "../../../shared/config/designSystem";
 
 /**
- * TopPerformers — eng yaxshi marketlar va kuryerlar reytingi (leaderboard).
- * Ma'lumot `analytics/dashboard` javobida tayyor keladi (topMarkets/topCouriers),
+ * TopPerformers — eng yaxshi marketlar va filiallar reytingi (leaderboard).
+ * Ma'lumot `analytics/dashboard` javobida tayyor keladi (topMarkets/topBranches),
  * oxirgi 30 kun, kamida 30 buyurtmali, sotuv (success rate) bo'yicha saralangan.
  */
 
@@ -26,6 +26,14 @@ interface LeaderboardRow {
 }
 
 const RANK_COLORS = ["#f59e0b", "#94a3b8", "#b45309"]; // oltin / kumush / bronza
+const MAX_ROWS = 5;
+
+const toFiniteNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const clampPercent = (value: number): number => Math.min(100, Math.max(0, value));
 
 interface LeaderboardProps {
   title: string;
@@ -35,14 +43,15 @@ interface LeaderboardProps {
   emptyText: string;
   rateLabel: string;
   ordersLabel: string;
+  compact?: boolean;
 }
 
 const Leaderboard = memo(
-  ({ title, icon, accentTone, rows, emptyText, rateLabel, ordersLabel }: LeaderboardProps) => {
+  ({ title, icon, accentTone, rows, emptyText, rateLabel, ordersLabel, compact = false }: LeaderboardProps) => {
     const accent = toneAccent(accentTone);
     return (
-      <div className="el-card flex h-full min-h-[300px] flex-col rounded-2xl p-5">
-        <div className="mb-4 flex items-center gap-2">
+      <div className={`el-card flex h-full flex-col rounded-2xl p-5 ${compact ? "min-h-[170px]" : "min-h-[300px]"}`}>
+        <div className={`${compact ? "mb-3" : "mb-4"} flex items-center gap-2`}>
           <span
             className="flex h-8 w-8 items-center justify-center rounded-xl"
             style={{ background: toneSoftBg(accentTone, 16), color: accent }}
@@ -53,7 +62,7 @@ const Leaderboard = memo(
         </div>
 
         {rows.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
+          <div className={`flex flex-1 flex-col items-center justify-center gap-2 text-center ${compact ? "py-4" : "py-8"}`}>
             <Inbox size={28} style={{ color: TEXT.soft, opacity: 0.5 }} />
             <p className="text-[12px] font-medium" style={{ color: TEXT.soft }}>
               {emptyText}
@@ -63,6 +72,7 @@ const Leaderboard = memo(
           <ul className="flex flex-1 flex-col gap-2.5">
             {rows.map((row, i) => {
               const medal = RANK_COLORS[i];
+              const progress = clampPercent(row.rate);
               return (
                 <li key={row.id} className="flex items-center gap-3">
                   {/* Reyting raqami */}
@@ -93,7 +103,7 @@ const Leaderboard = memo(
                     >
                       <div
                         className="h-full rounded-full"
-                        style={{ width: `${Math.min(100, row.rate)}%`, background: accent }}
+                        style={{ width: `${progress}%`, background: accent }}
                       />
                     </div>
                     <p className="mt-1 text-[10px] font-medium" style={{ color: TEXT.soft }}>
@@ -113,49 +123,70 @@ const Leaderboard = memo(
 Leaderboard.displayName = "Leaderboard";
 
 export interface TopPerformersProps {
-  markets: TopMarket[];
-  couriers: TopCourier[];
+  markets?: TopMarket[];
+  branches?: TopBranch[];
+  compact?: boolean;
 }
 
-const TopPerformers = memo(({ markets, couriers }: TopPerformersProps) => {
+const TopPerformers = memo(({ markets, branches, compact = false }: TopPerformersProps) => {
   const { t } = useTranslation("dashboard");
 
-  const marketRows: LeaderboardRow[] = (markets ?? []).slice(0, 5).map((m, i) => ({
-    id: String(m.market_id ?? i),
-    name: m.market_name ?? "—",
-    rate: Number(m.success_rate ?? 0),
-    total: Number(m.total_orders ?? 0),
-    successful: Number(m.successful_orders ?? 0),
-  }));
+  const marketRows: LeaderboardRow[] = useMemo(
+    () =>
+      (markets ?? []).slice(0, MAX_ROWS).map((m, i) => ({
+        id: `market-${m.market_id || "unknown"}-${i}`,
+        name: m.market_name || "—",
+        rate: clampPercent(toFiniteNumber(m.success_rate)),
+        total: toFiniteNumber(m.total_orders),
+        successful: toFiniteNumber(m.successful_orders),
+      })),
+    [markets],
+  );
 
-  const courierRows: LeaderboardRow[] = (couriers ?? []).slice(0, 5).map((c, i) => ({
-    id: String(c.courier_id ?? i),
-    name: c.courier_name ?? "—",
-    rate: Number(c.success_rate ?? 0),
-    total: Number(c.total_orders ?? 0),
-    successful: Number(c.successful_orders ?? 0),
-  }));
+  const branchRows: LeaderboardRow[] = useMemo(
+    () =>
+      (branches ?? []).slice(0, MAX_ROWS).map((branch, i) => ({
+        id: `branch-${branch.branch_id || "unknown"}-${i}`,
+        name: branch.branch_name || "—",
+        rate: clampPercent(toFiniteNumber(branch.success_rate)),
+        total: toFiniteNumber(branch.total_orders),
+        successful: toFiniteNumber(branch.successful_orders),
+      })),
+    [branches],
+  );
+
+  const showMarkets = markets !== undefined;
+  const showBranches = branches !== undefined;
+  const sectionCount = Number(showMarkets) + Number(showBranches);
+
+  if (sectionCount === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <Leaderboard
-        title={t("top.markets_title")}
-        icon={<Store size={16} />}
-        accentTone="info"
-        rows={marketRows}
-        emptyText={t("top.empty")}
-        rateLabel={t("cards.success_rate")}
-        ordersLabel={t("unit.orders")}
-      />
-      <Leaderboard
-        title={t("top.couriers_title")}
-        icon={<Bike size={16} />}
-        accentTone="warning"
-        rows={courierRows}
-        emptyText={t("top.empty")}
-        rateLabel={t("cards.success_rate")}
-        ordersLabel={t("unit.orders")}
-      />
+    <div className={`grid grid-cols-1 gap-4 ${sectionCount > 1 ? "md:grid-cols-2" : ""}`}>
+      {showMarkets ? (
+        <Leaderboard
+          title={t("top.markets_title")}
+          icon={<Store size={16} />}
+          accentTone="info"
+          rows={marketRows}
+          emptyText={t("top.empty")}
+          rateLabel={t("cards.success_rate")}
+          ordersLabel={t("unit.orders")}
+          compact={compact}
+        />
+      ) : null}
+      {showBranches ? (
+        <Leaderboard
+          title={t("top.branches_title")}
+          icon={<Building2 size={16} />}
+          accentTone="warning"
+          rows={branchRows}
+          emptyText={t("top.empty")}
+          rateLabel={t("cards.success_rate")}
+          ordersLabel={t("unit.orders")}
+          compact={compact}
+        />
+      ) : null}
     </div>
   );
 });

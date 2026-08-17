@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
+type QueryParams = Record<string, unknown>;
+
 export const useBranchCoverage = () => {
   const client = useQueryClient();
 
   // GET branches/:id/analytics/markets
-  const getAnalyticsMarkets = (id: string, enabled: boolean = true) =>
+  const useGetAnalyticsMarkets = (id: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["branch-cov", "analytics-markets", id],
       queryFn: () =>
@@ -15,7 +17,7 @@ export const useBranchCoverage = () => {
     });
 
   // GET branches/:branchId/config/:key
-  const getSettingById = (branchId: string, key: string, enabled: boolean = true) =>
+  const useGetSettingById = (branchId: string, key: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["branch-cov", "setting-by-id", branchId, key],
       queryFn: () =>
@@ -24,7 +26,7 @@ export const useBranchCoverage = () => {
     });
 
   // GET branches/:id/descendants
-  const getDescendants = (id: string, enabled: boolean = true) =>
+  const useGetDescendants = (id: string, enabled: boolean = true) =>
     useQuery({
       queryKey: ["branch-cov", "descendants", id],
       queryFn: () =>
@@ -40,7 +42,7 @@ export const useBranchCoverage = () => {
   });
 
   // GET branches/new-orders
-  const getNewOrders = (params?: unknown) =>
+  const useGetNewOrders = (params?: QueryParams) =>
     useQuery({
       queryKey: ["branch-cov", "new-orders", params],
       queryFn: () =>
@@ -55,7 +57,7 @@ export const useBranchCoverage = () => {
   });
 
   // GET branches/tree
-  const getTree = (params?: unknown) =>
+  const useGetTree = (params?: QueryParams) =>
     useQuery({
       queryKey: ["branch-cov", "tree", params],
       queryFn: () =>
@@ -70,13 +72,13 @@ export const useBranchCoverage = () => {
   });
 
   return {
-    getAnalyticsMarkets,
-    getSettingById,
-    getDescendants,
+    useGetAnalyticsMarkets,
+    useGetSettingById,
+    useGetDescendants,
     returnBatches,
-    getNewOrders,
+    useGetNewOrders,
     postDispatch,
-    getTree,
+    useGetTree,
     cancelBatch,
   };
 };

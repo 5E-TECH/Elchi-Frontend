@@ -52,7 +52,7 @@ const TableHeader = memo(() => {
     const { t } = useTranslation(["orders", "common"]);
 
     return (
-        <div className={`hidden 2xl:grid ${TABLE_COLS} items-center gap-2 px-3 2xl:px-4 py-2`}>
+        <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 px-3 xl:px-4 py-2`}>
             <div className="text-[12px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">{t("orders:customerName")}</div>
             <div className="text-[12px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">{t("common:phone")}</div>
             <div className="text-[12px] pl-8 text-black dark:text-white font-semibold uppercase tracking-wider">{t("common:district")}</div>
@@ -71,7 +71,7 @@ const HistoryTableHeader = memo(() => {
     const { t } = useTranslation(["orders", "common"]);
 
     return (
-        <div className={`hidden 2xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-1`}>
+        <div className={`hidden xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-1`}>
             <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("orders:customer")}</div>
             <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("common:phone")}</div>
             <div className="text-[11px] text-slate-500 dark:text-white/70 font-semibold uppercase tracking-wider">{t("common:address")}</div>
@@ -126,8 +126,8 @@ const OrdersTable = memo(({
             )}
 
             {isHistory ? (
-                <div className="flex flex-col gap-1.5 2xl:overflow-x-auto">
-                    <div className="flex flex-col gap-1.5 2xl:min-w-[1240px]">
+                <div className="flex flex-col gap-1.5 xl:overflow-x-auto">
+                    <div className="flex flex-col gap-1.5 xl:min-w-[1240px]">
                         <HistoryTableHeader />
                         {orders.map((order) => (
                             <OrderRow
@@ -145,8 +145,8 @@ const OrdersTable = memo(({
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-col gap-1.5 2xl:overflow-x-auto">
-                    <div className="flex flex-col gap-1.5 2xl:min-w-[1020px]">
+                <div className="flex flex-col gap-1.5 xl:overflow-x-auto">
+                    <div className="flex flex-col gap-1.5 xl:min-w-[1020px]">
                         <TableHeader />
                         {orders.map((order) => (
                             <OrderRow

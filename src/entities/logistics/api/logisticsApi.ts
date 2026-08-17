@@ -6,14 +6,14 @@ export const REGION_KEY = "regions";
 export const DISTRICT_KEY = "districts";
 
 export const useLogistics = () => {
-    const getRegions = () =>
+    const useGetRegions = () =>
         useQuery({
             queryKey: [REGION_KEY],
             queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => res.data),
             staleTime: 5 * 60 * 1000,
         });
 
-    const getDistricts = (regionId?: string) =>
+    const useGetDistricts = (regionId?: string) =>
         useQuery({
             queryKey: [DISTRICT_KEY, regionId],
             queryFn: () =>
@@ -29,5 +29,5 @@ export const useLogistics = () => {
             enabled: !!regionId,
         });
 
-    return { getRegions, getDistricts };
+    return { useGetRegions, useGetDistricts };
 };

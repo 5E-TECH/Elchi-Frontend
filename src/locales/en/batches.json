@@ -26,7 +26,28 @@
     "orders": "Orders",
     "piece": "pcs",
     "amount": "Amount",
-    "direction": "Direction"
+    "direction": "Direction",
+    "region": "Region",
+    "route": "Route",
+    "created": "Created"
+  },
+  "detail": {
+    "title": "Batch {{id}}",
+    "notFound": "Batch not found",
+    "branch": "Branch",
+    "destination": "Destination",
+    "orderCount": "{{count}} pcs",
+    "insideOrders": "Orders inside",
+    "history": "History",
+    "historyEmpty": "No history yet",
+    "qrCode": "QR code"
+  },
+  "print": {
+    "branch": "BRANCH:",
+    "region": "REGION:",
+    "orders": "ORDERS:",
+    "total": "TOTAL:",
+    "date": "DATE:"
   },
   "loadError": "Could not load batches",
   "emptyTitle": "No batches",

@@ -54,15 +54,15 @@ export const toneSoftBg = (tone: Tone, percent = 14): string =>
 // Bir xil sarlavha/qiymat/yorliq o'lchamlari butun ilova bo'ylab.
 export const TYPO = {
   /** Sahifa sarlavhasi */
-  pageTitle: "text-[20px] font-bold tracking-tight",
+  pageTitle: "text-[18px] font-bold tracking-tight sm:text-[20px]",
   /** Bo'lim sarlavhasi (widget title) */
   sectionTitle: "text-[15px] font-semibold tracking-[-0.1px]",
   /** Karta sarlavhasi */
   cardTitle: "text-[13px] font-semibold leading-tight",
   /** Katta raqamli ko'rsatkich (KPI value) */
-  metricValue: "text-[28px] font-bold leading-none tracking-tight",
+  metricValue: "text-[23px] font-bold leading-none tracking-tight sm:text-[28px]",
   /** O'rta raqamli ko'rsatkich (kichikroq karta) */
-  metricValueSm: "text-[22px] font-bold leading-none tracking-tight",
+  metricValueSm: "text-[20px] font-bold leading-none tracking-tight sm:text-[22px]",
   /** Yorliq / izoh matni */
   label: "text-[12px] font-semibold",
   /** Yumshoq yordamchi matn */
@@ -85,7 +85,7 @@ export const GAP = {
 } as const;
 
 export const CARD_MIN_H = {
-  metric: "min-h-[132px]",
+  metric: "min-h-[118px] sm:min-h-[132px]",
   finance: "min-h-[160px]",
 } as const;
 

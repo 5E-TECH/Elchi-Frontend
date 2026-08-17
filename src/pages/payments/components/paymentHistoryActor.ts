@@ -10,6 +10,11 @@ const getActorName = (actor?: PaymentRow["created_by_user"]) => {
   );
 };
 
+const isMeaningfulName = (value: string) => {
+  const normalized = value.trim();
+  return Boolean(normalized) && normalized !== "-" && normalized !== "—" && !/^\d+$/.test(normalized);
+};
+
 export const resolvePaymentActorName = (row: PaymentRow) => {
   const actorName = [
     row.created_by_user,
@@ -24,5 +29,5 @@ export const resolvePaymentActorName = (row: PaymentRow) => {
   if (actorName) return actorName;
 
   const createdBy = String(row.created_by ?? "").trim();
-  return createdBy && !/^\d+$/.test(createdBy) ? createdBy : "-";
+  return isMeaningfulName(createdBy) ? createdBy : "-";
 };

@@ -43,6 +43,9 @@ export interface OrderListItem {
     operator: string | null;
     comment: string | null;
     post_id: string | null;
+    qr_code_token?: string | null;
+    sell_requires_media?: boolean;
+    cancel_requires_media?: boolean;
     createdAt: string;
     updatedAt: string;
     deleted: boolean;
@@ -53,6 +56,11 @@ export interface OrderListItem {
         quantity: number;
         createdAt: string;
         updatedAt: string;
+        product?: {
+            id: string;
+            name: string;
+            image_url?: string | null;
+        };
     }[];
     customer?: {
         id: string;
@@ -64,6 +72,8 @@ export interface OrderListItem {
         id: string;
         name: string;
         phone_number?: string;
+        expense_proof_conditions?: string[] | null;
+        cancelled_handover_qr_required?: boolean | null;
     };
     branch?: {
         id: string;
@@ -93,9 +103,12 @@ export interface OrderListParams {
     region_id?: string;
     district_id?: string;
     courier_id?: string;
+    courier_ids?: string[];
+    where_deliver?: DeliveryType | "";
     search?: string;
     start_day?: string;
     end_day?: string;
+    fetch_all?: boolean | string;
 }
 
 export interface ExternalOrderItem {
@@ -172,4 +185,6 @@ export interface CreateOrderRequest {
     paid_amount?: number;
     post_id?: string;
     qr_code_token?: string;
+    sell_requires_media?: boolean;
+    cancel_requires_media?: boolean;
 }

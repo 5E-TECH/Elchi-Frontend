@@ -30,14 +30,15 @@ export const useOrders = () => {
         },
     });
 
-    const getOrders = (params?: OrderListParams) =>
+    const useGetOrders = (params?: OrderListParams, enabled = true) =>
         useQuery<OrderListResponse>({
             queryKey: [ORDER_KEY, params],
             queryFn: () => api.get(API_ENDPOINTS.ORDERS.BASE, { params }).then((res) => res.data),
+            enabled,
             placeholderData: (prev) => prev,
         });
 
-    const getExternalOrders = (params?: ExternalOrdersParams) =>
+    const useGetExternalOrders = (params?: ExternalOrdersParams) =>
         useQuery<ExternalOrdersResponse>({
             queryKey: [ORDER_KEY, "external", params],
             queryFn: () =>
@@ -52,5 +53,5 @@ export const useOrders = () => {
             client.invalidateQueries({ queryKey: [ORDER_KEY], refetchType: "active" }),
     });
 
-    return { createOrder, getOrders, getExternalOrders, assignCourier };
+    return { createOrder, useGetOrders, useGetExternalOrders, assignCourier };
 };

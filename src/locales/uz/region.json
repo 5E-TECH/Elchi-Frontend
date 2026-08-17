@@ -1,6 +1,8 @@
 {
   "title": "Hududlar",
   "subtitle": "Hududlar kesimida buyurtmalar statistikasi",
+  "scopedTitle": "{{region}} — tumanlar statistikasi",
+  "scopedSubtitle": "Tuman ustiga bosib batafsil ma'lumotni ko'ring",
   "assignedRegion": "Siz biriktirilgan hudud",
   "unknown": "Noma'lum",
   "unknownDistrict": "Noma'lum tuman",
@@ -45,6 +47,9 @@
     "detailedStatistics": "Batafsil statistika",
     "clickForDetails": "Batafsil ko'rish uchun bosing",
     "loadingError": "Viloyat ma'lumotini yuklab bo'lmadi",
+    "scopedCourierSubtitle": "Faqat o'zingizga tegishli tuman statistikasi",
+    "scopedManagerSubtitle": "Branchga tegishli tuman statistikasi",
+    "regionNotFound": "Bu foydalanuvchi uchun viloyat topilmadi",
     "mainCourier": "Viloyat asosiy kuryeri",
     "mainCouriers": "Viloyat asosiy kuryeri ({{count}})",
     "couriersNotFound": "Kuryerlar ma'lumoti topilmadi",

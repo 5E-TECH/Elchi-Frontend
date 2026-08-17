@@ -10,7 +10,7 @@ import { useOrders } from "../../entities/order/api/orderApi";
 import { useOrders as useOrderActions } from "../../entities/orders";
 import { useMarkets } from "../../entities/markets";
 import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
-import OrderFilters, { ORDER_FILTER_KEYS } from "./list/OrderFilters";
+import OrderFilters, { ORDER_FILTER_KEYS, ORDER_STATUS_URL_KEY } from "./list/OrderFilters";
 import OrdersTable from "./list/OrdersTable";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
@@ -29,15 +29,187 @@ import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
 import PopupConfirm from "../../shared/components/popupConfirm";
 import OrderTabs from "./list/courier/list/tabs";
-import { setFilterValue } from "../../shared/model/filterSlice";
+import { setFilterValue } from "../../features/Select/model/FilterSlice";
+import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
+import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResource";
+import { playScanFeedback } from "../scan/lib/scanShared";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
+const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
+const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
+const ORDER_CREATE_ROLES = new Set(["admin", "superadmin", "market", "registrator"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
 const TABLE_ROLLBACK_STATUSES = new Set<OrderStatus>(["sold", "cancelled"]);
 const isUnsentCancelledOrder = (order: OrderListItem) => order.status === "cancelled";
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? value as Record<string, unknown> : {};
+
+const toText = (value: unknown) => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number") return String(value);
+  return "";
+};
+
+const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
+
+const formatOrderAmount = (value: unknown) => {
+  const amount = Number(value ?? 0);
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  return new Intl.NumberFormat("uz-UZ").format(amount) + " so'm";
+};
+
+const getOrderPersonName = (order: unknown) => {
+  const record = asRecord(order);
+  const customer = asRecord(record.customer);
+  return toText(
+    customer.name ??
+      customer.full_name ??
+      customer.fullName ??
+      record.customer_name ??
+      record.customerName ??
+      record.name,
+  );
+};
+
+const getOrderPhone = (order: unknown) => {
+  const record = asRecord(order);
+  const customer = asRecord(record.customer);
+  return toText(
+    customer.phone_number ??
+      customer.phoneNumber ??
+      customer.phone ??
+      record.customer_phone ??
+      record.customerPhone ??
+      record.phone_number ??
+      record.phone,
+  );
+};
+
+const getRollbackOrderSummary = (order: unknown) => {
+  const record = asRecord(order);
+  const name = getOrderPersonName(order) || (record.id ? `Buyurtma #${record.id}` : "Buyurtma");
+  const details = [getOrderPhone(order), formatOrderAmount(record.total_price)]
+    .filter(Boolean)
+    .join(" • ");
+
+  return { name, details };
+};
+
+const unwrapScannedOrder = (payload: unknown) => {
+  const source = asRecord(payload);
+  const data = asRecord(source.data ?? source);
+  const nestedData = asRecord(data.data ?? data);
+  return asRecord(nestedData.order ?? data.order ?? nestedData);
+};
+
+const addOrderIdentifiers = (target: Set<string>, value: unknown) => {
+  const record = asRecord(value);
+  [
+    "id",
+    "qr_code_token",
+    "qrCodeToken",
+    "token",
+    "order_token",
+    "orderToken",
+    "parent_order_id",
+    "parentOrderId",
+    "original_order_id",
+    "originalOrderId",
+    "source_order_id",
+    "sourceOrderId",
+    "split_from_order_id",
+    "splitFromOrderId",
+    "cancelled_from_order_id",
+    "cancelledFromOrderId",
+    "partly_sold_order_id",
+    "partlySoldOrderId",
+    "root_order_id",
+    "rootOrderId",
+    "base_order_id",
+    "baseOrderId",
+  ].forEach((key) => {
+    const text = normalizeMatchText(record[key]);
+    if (text) target.add(text);
+  });
+
+  [
+    "order",
+    "parent_order",
+    "parentOrder",
+    "original_order",
+    "originalOrder",
+    "source_order",
+    "sourceOrder",
+    "split_from_order",
+    "splitFromOrder",
+    "cancelled_from_order",
+    "cancelledFromOrder",
+  ].forEach((key) => {
+    const nested = asRecord(record[key]);
+    ["id", "qr_code_token", "qrCodeToken", "token"].forEach((nestedKey) => {
+      const text = normalizeMatchText(nested[nestedKey]);
+      if (text) target.add(text);
+    });
+  });
+};
+
+const getOrderIdentifiers = (value: unknown) => {
+  const identifiers = new Set<string>();
+  addOrderIdentifiers(identifiers, value);
+  return identifiers;
+};
+
+const getComparableOrderInfo = (value: unknown) => {
+  const order = asRecord(value);
+  const customer = asRecord(order.customer);
+  const market = asRecord(order.market);
+  const district = asRecord(order.district);
+
+  return {
+    customerId: normalizeMatchText(order.customer_id ?? order.customerId ?? customer.id),
+    name: normalizeMatchText(
+      customer.name ??
+        customer.full_name ??
+        customer.fullName ??
+        order.customer_name ??
+        order.customerName ??
+        order.name,
+    ),
+    phone: normalizeMatchText(
+      customer.phone_number ??
+        customer.phoneNumber ??
+        customer.phone ??
+        order.customer_phone ??
+        order.customerPhone ??
+        order.phone_number ??
+        order.phone,
+    ),
+    marketId: normalizeMatchText(order.market_id ?? order.marketId ?? market.id),
+    marketName: normalizeMatchText(market.name),
+    districtId: normalizeMatchText(order.district_id ?? order.districtId ?? district.id),
+    districtName: normalizeMatchText(district.name),
+  };
+};
+
+const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
+  const a = getComparableOrderInfo(left);
+  const b = getComparableOrderInfo(right);
+  const sameCustomer =
+    Boolean(a.customerId && a.customerId === b.customerId) ||
+    Boolean(a.phone && a.phone === b.phone) ||
+    Boolean(a.name && a.name === b.name);
+  const sameMarket = Boolean(a.marketId && a.marketId === b.marketId) || Boolean(a.marketName && a.marketName === b.marketName);
+  const sameDistrict =
+    !a.districtId && !a.districtName && !b.districtId && !b.districtName
+      ? true
+      : Boolean(a.districtId && a.districtId === b.districtId) ||
+        Boolean(a.districtName && a.districtName === b.districtName);
+
+  return sameCustomer && sameMarket && sameDistrict;
+};
 const isOrderStatus = (value: string): value is OrderStatus =>
   [
     "created",
@@ -142,9 +314,9 @@ const Orders = () => {
   const { t } = useTranslation("orders");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { getOrders } = useOrders();
+  const { useGetOrders } = useOrders();
   const { SellOrder, PartlySellOrder, CancelOrder, RollbackOrder, SendToPost } = useOrderActions();
-  const { getMarkets } = useMarkets();
+  const { useGetMarkets } = useMarkets();
   const { getAllParams, setMultipleParams } = useQueryParams();
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -152,11 +324,15 @@ const Orders = () => {
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
   const [rollbackOrder, setRollbackOrder] = useState<OrderListItem | null>(null);
   const [selectedCancelledIds, setSelectedCancelledIds] = useState<Set<string>>(new Set());
+  const rollbackSummary = useMemo(() => getRollbackOrderSummary(rollbackOrder), [rollbackOrder]);
 
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const branchType = getUserBranchType(currentUser);
-  const canCreateOrder = !(role === "manager" && branchType === "REGIONAL");
+  const canCreateOrder =
+    role === "manager"
+      ? Boolean(branchType && MANAGER_ORDER_CREATE_BRANCH_TYPES.has(branchType))
+      : Boolean(role && ORDER_CREATE_ROLES.has(role));
   const canUseManagerTableActions =
     role === "manager" && Boolean(branchType && MANAGER_TABLE_ACTION_BRANCH_TYPES.has(branchType));
   const canUseManagerTabs =
@@ -177,11 +353,21 @@ const Orders = () => {
   const urlRegionId = urlParams[ORDER_FILTER_KEYS.regionId] ?? "";
   const urlDistrictId = urlParams[ORDER_FILTER_KEYS.districtId] ?? "";
   const urlCourierId = urlParams[ORDER_FILTER_KEYS.courierId] ?? "";
-  const urlStatusRaw = urlParams[ORDER_FILTER_KEYS.status] ?? "";
+  const urlStatusRaw = urlParams[ORDER_STATUS_URL_KEY] ?? urlParams[LEGACY_ORDER_STATUS_URL_KEY] ?? "";
+  const urlDeliveryType = urlParams[ORDER_FILTER_KEYS.deliveryType] ?? "";
   const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams.orderDateFrom ?? "";
   const urlDateTo = urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams.orderDateTo ?? "";
   const urlSearch = urlParams[ORDER_FILTER_KEYS.search] ?? "";
   const activeManagerTab = getManagerOrdersTab(parseStatusFilterValue(urlStatusRaw));
+
+  useEffect(() => {
+    if (!urlParams[ORDER_STATUS_URL_KEY] && urlParams[LEGACY_ORDER_STATUS_URL_KEY]) {
+      setMultipleParams({
+        [ORDER_STATUS_URL_KEY]: urlParams[LEGACY_ORDER_STATUS_URL_KEY],
+        [LEGACY_ORDER_STATUS_URL_KEY]: "",
+      });
+    }
+  }, [setMultipleParams, urlParams]);
 
   const handleManagerTabChange = useCallback(
     (tabId: string) => {
@@ -191,12 +377,13 @@ const Orders = () => {
         value: tabId === "pending" ? ["waiting"] : tabId === "cancelled" ? ["cancelled"] : [],
       }));
       setMultipleParams({
-        [ORDER_FILTER_KEYS.status]:
+        [ORDER_STATUS_URL_KEY]:
           tabId === "pending"
             ? "waiting"
             : tabId === "cancelled"
               ? "cancelled,cancelled (sent)"
               : "",
+        [LEGACY_ORDER_STATUS_URL_KEY]: "",
         page: "1",
       });
     },
@@ -242,6 +429,10 @@ const Orders = () => {
       params.status = status;
     }
 
+    if (urlDeliveryType === "center" || urlDeliveryType === "address") {
+      params.where_deliver = urlDeliveryType;
+    }
+
     // Sana oralig'i
     const dateFrom = urlDateFrom;
     if (dateFrom) params.start_day = String(dateFrom);
@@ -265,6 +456,7 @@ const Orders = () => {
     urlBranchId,
     urlCourierId,
     urlStatusRaw,
+    urlDeliveryType,
     urlDateFrom,
     urlDateTo,
     urlSearch,
@@ -282,6 +474,7 @@ const Orders = () => {
         districtId: role === "manager" ? urlDistrictId : "",
         courierId: role !== "market" ? urlCourierId : "",
         status: Array.isArray(status) ? status.join(",") : status,
+        deliveryType: urlDeliveryType,
         dateFrom: urlDateFrom,
         dateTo: urlDateTo,
         search: urlSearch,
@@ -296,6 +489,7 @@ const Orders = () => {
       urlBranchId,
       urlCourierId,
       urlStatusRaw,
+      urlDeliveryType,
       urlDateFrom,
       urlDateTo,
       urlSearch,
@@ -317,8 +511,8 @@ const Orders = () => {
     resetPagination(LIMIT);
   }, [filtersKey, resetPagination]);
 
-  const { data, isLoading } = getOrders(apiParams);
-  const { data: marketsResponse, isLoading: isMarketsLoading } = getMarkets(
+  const { data, isLoading } = useGetOrders(apiParams);
+  const { data: marketsResponse, isLoading: isMarketsLoading } = useGetMarkets(
     { status: "active", limit: 100 },
     showMarketSelect,
   );
@@ -369,14 +563,6 @@ const Orders = () => {
     });
   }, [canSendCancelledToHq, items]);
 
-  if (role === "courier") {
-    return (
-      <div>
-        <CourierOrders />
-      </div>
-    );
-  }
-
   const handleOpenNewOrder = () => {
     if (!canCreateOrder) return;
 
@@ -414,6 +600,24 @@ const Orders = () => {
         }
       >;
     };
+    const orderFlags = selectedActionOrder as OrderListItem & Record<string, unknown>;
+    const proofConditions = Array.isArray(selectedActionOrder.market?.expense_proof_conditions)
+      ? selectedActionOrder.market.expense_proof_conditions
+      : [];
+    const sellRequiresMedia = Boolean(
+      orderFlags.sell_requires_media ??
+      orderFlags.sellRequiresMedia ??
+      orderFlags.require_sell_proof ??
+      orderFlags.sell_proof_required ??
+      proofConditions.includes("sell_any"),
+    );
+    const cancelRequiresMedia = Boolean(
+      orderFlags.cancel_requires_media ??
+      orderFlags.cancelRequiresMedia ??
+      orderFlags.require_cancel_proof ??
+      orderFlags.cancel_proof_required ??
+      proofConditions.includes("cancel_any"),
+    );
 
     return {
       id: selectedActionOrder.id,
@@ -422,13 +626,18 @@ const Orders = () => {
       total_price: selectedActionOrder.total_price,
       where_deliver: selectedActionOrder.where_deliver,
       product_quantity: selectedActionOrder.product_quantity,
-      market: { name: selectedActionOrder.market?.name ?? "—" },
+      market: {
+        name: selectedActionOrder.market?.name ?? "—",
+        expense_proof_conditions: selectedActionOrder.market?.expense_proof_conditions ?? null,
+      },
       customer: {
         name: selectedActionOrder.customer?.name ?? "—",
         phone_number: selectedActionOrder.customer?.phone_number ?? "",
       },
       district: { name: selectedActionOrder.district?.name ?? "—" },
       region: { name: selectedActionOrder.district?.region?.name ?? "—" },
+      sell_requires_media: sellRequiresMedia,
+      cancel_requires_media: cancelRequiresMedia,
       items: (orderWithProducts.items ?? []).map((item) => {
         const orderItem = item as OrderListItem["items"][number] & {
           product?: { id?: string; name?: string; image_url?: string | null } | null;
@@ -449,10 +658,7 @@ const Orders = () => {
   }, [selectedActionOrder]);
 
   const handleSellOrder = useCallback(
-    (
-      orderId: string,
-      payload: { comment: string; extraCost: number; proofFileKeys?: string[] },
-    ) => {
+    (orderId: string, payload: { comment: string; extraCost: number; proof?: File }) => {
       SellOrder.mutate(
         { orderId, data: payload },
         { onSuccess: () => setSellOrder(null) },
@@ -469,7 +675,7 @@ const Orders = () => {
         totalPrice: number;
         extraCost: number;
         comment: string;
-        proofFileKeys?: string[];
+        proof?: File;
       },
     ) => {
       PartlySellOrder.mutate(
@@ -483,12 +689,7 @@ const Orders = () => {
   const handleCancelOrder = useCallback(
     (
       orderId: string,
-      payload: {
-        comment: string;
-        extraCost: number;
-        paidAmount: number;
-        proofFileKeys?: string[];
-      },
+      payload: { comment: string; extraCost: number; paidAmount: number; proof?: File },
     ) => {
       CancelOrder.mutate(
         { orderId, data: payload },
@@ -514,6 +715,68 @@ const Orders = () => {
       return next;
     });
   }, []);
+
+  const selectScannedCancelledOrder = useCallback((order: OrderListItem) => {
+    if (!isUnsentCancelledOrder(order)) {
+      message.warning(t("scanNotFoundDescription"));
+      void playScanFeedback("missing");
+      return;
+    }
+
+    if (selectedCancelledIds.has(order.id)) {
+      message.warning(t("scanAlreadySelectedDescription", {
+        name: order.customer?.name ?? `#${order.id}`,
+      }));
+      void playScanFeedback("duplicate");
+      return;
+    }
+
+    setSelectedCancelledIds((previous) => {
+      const next = new Set(previous);
+      next.add(order.id);
+      return next;
+    });
+    message.success(t("scanSelectedDescription", {
+      name: order.customer?.name ?? `#${order.id}`,
+    }));
+    void playScanFeedback("success");
+  }, [selectedCancelledIds, t]);
+
+  const handleMissingScannedCancelledOrder = useCallback(async (rawValue: string) => {
+    try {
+      const detail = await fetchScanDetail(rawValue);
+      const scannedOrder = detail.type === "order" ? unwrapScannedOrder(detail.data) : {};
+      const scannedIdentifiers = getOrderIdentifiers(scannedOrder);
+      const matchedByIdentifier = items.find((order) => {
+        const orderIdentifiers = getOrderIdentifiers(order);
+        return [...scannedIdentifiers].some((identifier) => orderIdentifiers.has(identifier));
+      });
+      const comparableMatches = matchedByIdentifier
+        ? []
+        : items.filter((order) => isUnsentCancelledOrder(order) && isSameCustomerMarketOrder(scannedOrder, order));
+      const matchedOrder = matchedByIdentifier ?? (comparableMatches.length === 1 ? comparableMatches[0] : undefined);
+
+      if (matchedOrder) {
+        selectScannedCancelledOrder(matchedOrder);
+        return;
+      }
+
+      message.error(t("scanNotFoundDescription"));
+      void playScanFeedback("missing");
+    } catch (error) {
+      message.error(getBackendErrorMessage(error) ?? t("scanNotFoundDescription"));
+      void playScanFeedback("error");
+    }
+  }, [items, selectScannedCancelledOrder, t]);
+
+  useOrderQrScanner({
+    orders: items,
+    enabled: canSendCancelledToHq && !isLoading,
+    onMatch: selectScannedCancelledOrder,
+    onMissing: (rawValue) => {
+      void handleMissingScannedCancelledOrder(rawValue);
+    },
+  });
 
   const handleSelectAllCancelled = useCallback((checked: boolean) => {
     setSelectedCancelledIds(
@@ -620,6 +883,14 @@ const Orders = () => {
     }
   };
 
+  if (role === "courier") {
+    return (
+      <div>
+        <CourierOrders />
+      </div>
+    );
+  }
+
   return (
     <PageContainer className="flex flex-col gap-4 sm:gap-5">
 
@@ -656,6 +927,12 @@ const Orders = () => {
 
         {/* Divider */}
         <div className="border-t border-gray-100 dark:border-primarydark/60" />
+
+        {canSendCancelledToHq ? (
+          <div className="rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-sm font-semibold text-maindark dark:border-white/10 dark:bg-white/6 dark:text-white">
+            {t("scanSelectHint")}
+          </div>
+        ) : null}
 
         {/* Table */}
         <OrdersTable
@@ -751,12 +1028,17 @@ const Orders = () => {
         onConfirm={handleRollbackOrder}
         title={t("rollbackOrder")}
         message={
-          <>
-            <span className="font-semibold text-[var(--color-maindark)] dark:text-white">
-              #{rollbackOrder?.id}
-            </span>{" "}
-            {t("rollbackConfirmMessage", { id: rollbackOrder?.id })}
-          </>
+          <div className="space-y-2 text-center">
+            <div className="text-base font-semibold text-[var(--color-maindark)] dark:text-white">
+              {rollbackSummary.name}
+            </div>
+            {rollbackSummary.details && (
+              <div className="text-sm font-medium text-gray-500 dark:text-gray-300">
+                {rollbackSummary.details}
+              </div>
+            )}
+            <div>{t("rollbackConfirmMessage", { id: rollbackOrder?.id })}</div>
+          </div>
         }
         confirmLabel={t("rollbackConfirmLabel")}
         cancelLabel={t("cancel", { ns: "common" })}

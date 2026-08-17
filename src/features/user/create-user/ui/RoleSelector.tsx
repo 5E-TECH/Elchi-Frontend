@@ -67,7 +67,7 @@ export const RoleSelector = memo(({ selectedRole, onSelect, allowedRoles }: Role
                             relative w-full text-left p-4 rounded-xl transition-all duration-300 border group overflow-hidden
                             ${isSelected
                                 ? 'border-transparent shadow-lg transform scale-[1.02]'
-                                : 'bg-slate-50 dark:bg-[#1a1f3a] border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10'
+                                : 'border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] hover:border-main/40 hover:bg-main/5 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10'
                             }
                         `}
                     >

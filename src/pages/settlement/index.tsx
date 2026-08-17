@@ -71,6 +71,7 @@ const AllocationResult = ({ result }: { result?: SettlementResult }) => {
           pagination={false}
           columns={settledOrderColumns}
           dataSource={rows}
+          scroll={{ x: "max-content" }}
         />
       ) : null}
     </div>
@@ -82,7 +83,7 @@ const SettlementPage = () => {
     settlementCourierToBranch,
     settlementBranchToHq,
     settlementHqToMarket,
-    getSettlementState,
+    useGetSettlementState,
   } = useOrdersCoverage();
 
   // ── Leg 1: courier → branch ────────────────────────────────────────────────
@@ -101,10 +102,10 @@ const SettlementPage = () => {
   // ── Per-order settlement state lookup ────────────────────────────────────────
   const [lookupId, setLookupId] = useState("");
   const [activeLookupId, setActiveLookupId] = useState("");
-  const settlementState = getSettlementState(activeLookupId, !!activeLookupId);
+  const settlementState = useGetSettlementState(activeLookupId, !!activeLookupId);
 
   return (
-    <div style={{ padding: 16, maxWidth: 920, margin: "0 auto" }}>
+    <div className="mx-auto w-full max-w-[920px] px-4 pt-4 pb-28 md:pb-4">
       <Title level={3}>
         <ArrowRightLeft size={20} style={{ verticalAlign: -3, marginRight: 8 }} />
         Hisob-kitob (COD settlement)
@@ -194,7 +195,7 @@ const SettlementPage = () => {
           {settlementState.isLoading ? (
             <Text type="secondary">Yuklanmoqda…</Text>
           ) : settlementState.data ? (
-            <pre style={{ marginTop: 12, background: "#f6f8fa", padding: 12, borderRadius: 6 }}>
+            <pre style={{ marginTop: 12, background: "#f6f8fa", padding: 12, borderRadius: 6, maxWidth: "100%", overflowX: "auto" }}>
               {JSON.stringify(settlementState.data, null, 2)}
             </pre>
           ) : activeLookupId ? (

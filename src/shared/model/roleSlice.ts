@@ -7,36 +7,38 @@ interface IState {
   name: string | null
 }
 
-const getStoredAuthField = (key: "region" | "name") => {
+const getStoredAuthField = (key: "region" | "name" | "role") => {
   if (typeof window === "undefined") {
     return null;
   }
 
   try {
-    return window.localStorage.getItem(key) || null;
+    return window.sessionStorage.getItem(key) || null;
   } catch {
     return null;
   }
 };
 
-const setStoredAuthField = (key: "region" | "name", value: string) => {
+const setStoredAuthField = (key: "region" | "name" | "role", value: string) => {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
-    window.localStorage.setItem(key, value);
+    window.sessionStorage.setItem(key, value);
+    window.localStorage.removeItem(key);
   } catch {
     // Ignore storage failures and keep auth state usable.
   }
 };
 
-const removeStoredAuthField = (key: "region" | "name") => {
+const removeStoredAuthField = (key: "region" | "name" | "role") => {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
+    window.sessionStorage.removeItem(key);
     window.localStorage.removeItem(key);
   } catch {
     // Ignore storage failures and keep auth state usable.
@@ -45,7 +47,7 @@ const removeStoredAuthField = (key: "region" | "name") => {
 
 const initialState: IState = {
   id: null,
-  role: null,
+  role: getStoredAuthField("role"),
   region: getStoredAuthField("region"),
   name: getStoredAuthField("name")
 };
@@ -55,7 +57,9 @@ export const roleSlice = createSlice({
   initialState,
   reducers: {
     setRole: (state, action: PayloadAction<string>) => {
-      state.role = action.payload;
+      const role = action.payload.trim().toLowerCase();
+      state.role = role;
+      setStoredAuthField("role", role);
     },
     setName: (state, action: PayloadAction<string>) => {
       state.name = action.payload;
@@ -72,6 +76,7 @@ export const roleSlice = createSlice({
       state.name = null;
       removeStoredAuthField("region");
       removeStoredAuthField("name");
+      removeStoredAuthField("role");
     },
     setId: (state, action: PayloadAction<string>) => {
       state.id = action.payload;

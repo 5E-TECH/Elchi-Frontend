@@ -6,22 +6,23 @@ import { Globe, FileText, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { GlobalSearchInput, useDebounce } from "../../../features/search";
 import { useOrders } from "../../../entities/orders";
-import { OrderCard, Checkbox, fmt } from "./OrderCard";
-import { getApiErrorMessage } from "../../../shared/lib/apiError";
+import { OrderCard, Checkbox } from "./OrderCard";
 import type { ApiOrder } from "./OrderCard";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
+  normalizeScannerCandidates,
   playMissingOrderFeedback,
   playScanFeedback,
 } from "../../scan/lib/scanShared";
 import BackButton from "../../../shared/ui/BackButton";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
-  const { t } = useTranslation("newOrders");
+  const { t, i18n } = useTranslation(["newOrders", "orders"]);
   const navigate = useNavigate();
   const { marketId } = useParams();
   const roleState = useSelector((state: RootState) => state.role);
@@ -40,9 +41,10 @@ const NewOrderDetail = () => {
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
+  const receivedScanKeysRef = useRef<Set<string>>(new Set());
   const selectedOrdersKeyRef = useRef("");
 
-  const { getTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } = useOrders();
+  const { useGetTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } = useOrders();
   const receiveMutation = shouldUseBranchTransferReceive
     ? createTransferBatch
     : createReceiveOrder;
@@ -62,7 +64,7 @@ const NewOrderDetail = () => {
   }, [searchQuery, applyDebounce]);
 
   const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
-  const { data: res, isLoading, refetch } = getTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
+  const { data: res, isLoading, refetch } = useGetTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
   const rawOrders = useMemo<ApiOrder[]>(() => res?.data ?? res ?? [], [res]);
   const orders = useMemo(
     () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
@@ -91,18 +93,55 @@ const NewOrderDetail = () => {
     setSelectedIds(new Set(orders.map((order) => order.id)));
   }, [isMarketRole, orders, ordersKey]);
 
-  const handleMissingScannedOrder = useCallback(() => {
+  const rememberReceivedScan = useCallback((order: ApiOrder, rawValue?: string) => {
+    const keys = receivedScanKeysRef.current;
+    keys.add(String(order.id).toLowerCase());
+
+    const token = order.qr_code_token?.trim();
+    if (token) keys.add(token.toLowerCase());
+
+    if (rawValue) {
+      normalizeScannerCandidates(rawValue, window.location.origin).forEach((candidate) => {
+        keys.add(candidate);
+      });
+    }
+  }, []);
+
+  const showAlreadyReceivedFeedback = useCallback((orderId?: string | number) => {
+    void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+    notifApi.warning({
+      message: t("common:scannerFeedbackDuplicate"),
+      description: orderId ? `#${orderId}` : t("newOrderAlreadyReceivedDescription"),
+      placement: "topRight",
+      duration: 2,
+    });
+  }, [notifApi, t]);
+
+  const handleMissingScannedOrder = useCallback((rawValue: string) => {
+    const isAlreadyReceived = normalizeScannerCandidates(rawValue, window.location.origin)
+      .some((candidate) => receivedScanKeysRef.current.has(candidate));
+
+    if (isAlreadyReceived) {
+      showAlreadyReceivedFeedback();
+      return;
+    }
+
     playMissingOrderFeedback();
     notifApi.warning({
-      message: "QR topilmadi",
-      description: "Bu QR kod ushbu ro'yxatdagi orderlarga mos kelmadi.",
+      message: t("newOrderScanMissing"),
       placement: "topRight",
       duration: 3,
     });
-  }, [notifApi]);
+  }, [notifApi, showAlreadyReceivedFeedback, t]);
 
-  const receiveScannedOrder = useCallback((order: ApiOrder) => {
+  const receiveScannedOrder = useCallback((order: ApiOrder, rawValue: string) => {
     const orderId = order.id;
+    if (receivedOrderIds.has(orderId)) {
+      rememberReceivedScan(order, rawValue);
+      showAlreadyReceivedFeedback(orderId);
+      return;
+    }
+
     if (pendingScanOrderIdsRef.current.has(orderId)) {
       return;
     }
@@ -112,7 +151,8 @@ const NewOrderDetail = () => {
       { orderIds: [orderId] },
       {
         onSuccess: () => {
-          void playScanFeedback("success");
+          rememberReceivedScan(order, rawValue);
+          void playScanFeedback("success", t("newOrderReceiveSuccess"));
           setReceivedOrderIds((prev) => {
             const next = new Set(prev);
             next.add(orderId);
@@ -126,15 +166,32 @@ const NewOrderDetail = () => {
           });
           void refetch();
           notifApi.success({
-            message: "Order qabul qilindi",
-            description: `#${orderId} mailga o'tkazildi.`,
+            message: t("newOrderReceiveSuccess"),
+            description: t("newOrderReceiveDescription"),
             placement: "topRight",
             duration: 2,
           });
         },
         onError: (err: unknown) => {
+          const msg = getBackendErrorMessage(err) ?? t("receiveError");
+          const lowerMsg = msg.toLowerCase();
+          const isAlreadyReceived =
+            lowerMsg.includes("already") ||
+            lowerMsg.includes("allaqachon") ||
+            lowerMsg.includes("qabul qilingan");
+
+          if (isAlreadyReceived) {
+            rememberReceivedScan(order, rawValue);
+            setReceivedOrderIds((prev) => {
+              const next = new Set(prev);
+              next.add(orderId);
+              return next;
+            });
+            showAlreadyReceivedFeedback(orderId);
+            return;
+          }
+
           void playScanFeedback("error");
-          const msg = getApiErrorMessage(err, t("receiveError"));
           notifApi.error({
             message: t("receiveError"),
             description: msg,
@@ -147,10 +204,11 @@ const NewOrderDetail = () => {
         },
       },
     );
-  }, [receiveMutation, notifApi, refetch, t]);
+  }, [receiveMutation, notifApi, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t]);
 
   useOrderQrScanner({
-    orders,
+    orders: rawOrders,
+    enabled: rawOrders.length > 0,
     onMatch: receiveScannedOrder,
     onMissing: handleMissingScannedOrder,
   });
@@ -178,6 +236,8 @@ const NewOrderDetail = () => {
 
   const allSelected = selectedIds.size === orders.length && orders.length > 0;
   const totalSum = orders.reduce((s, o) => s + o.total_price, 0);
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+  const formattedTotalSum = `${totalSum.toLocaleString(locale)} ${t("currency", { ns: "orders" })}`;
 
 
   const handleAccepted = useCallback(() => {
@@ -202,8 +262,7 @@ const NewOrderDetail = () => {
       },
       onError: (err: unknown) => {
         setIsReceiveConfirmOpen(false);
-        const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
-        const msg = apiErr?.response?.data?.message ?? apiErr?.message ?? t("receiveError");
+        const msg = getBackendErrorMessage(err) ?? t("receiveError");
         notifApi.error({ message: t("receiveError"), description: msg, placement: "topRight", duration: 5 });
       },
     });
@@ -231,7 +290,7 @@ const NewOrderDetail = () => {
       } catch {
         notifApi.error({
           message: t("print"),
-          description: "PDF yaratishda xatolik yuz berdi.",
+          description: t("printError"),
           placement: "topRight",
           duration: 5,
         });
@@ -246,7 +305,7 @@ const NewOrderDetail = () => {
     } catch {
       notifApi.error({
         message: t("print"),
-        description: "PDF yaratishda xatolik yuz berdi.",
+        description: t("printError"),
         placement: "topRight",
         duration: 5,
       });
@@ -289,7 +348,7 @@ const NewOrderDetail = () => {
                     {t("ordersHeader")}
                   </h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-maindark/65 dark:text-primary/70 sm:text-sm">
-                    {t("totalCount", { count: orders.length })} • {fmt(totalSum)} so'm
+                    {t("totalCount", { count: orders.length })} • {formattedTotalSum}
                   </p>
                 </div>
               </div>

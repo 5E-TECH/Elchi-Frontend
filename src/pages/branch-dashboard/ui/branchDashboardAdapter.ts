@@ -1,4 +1,5 @@
 import type {
+  DashboardOrdersSummary,
   BranchDashboardMarketCard,
   BranchDashboardPayload,
 } from "../../../entities/dashboard";
@@ -91,17 +92,53 @@ export const createEmptyBranchDashboard = (role: string): BranchDashboardSnapsho
 export const adaptBranchDashboard = (
   payload?: BranchDashboardPayload | null,
   fallbackRole = "OPERATOR",
+  orders?: DashboardOrdersSummary,
+  preferOrderSummary = false,
 ): BranchDashboardSnapshot => {
   const role = payload?.role?.toUpperCase?.() || fallbackRole.toUpperCase();
   const fallback = createEmptyBranchDashboard(role);
+  const hasOrdersSummary = Boolean(orders);
+  const acceptedCount = toNumber(
+    orders?.total ?? orders?.totalOrders ?? orders?.ordersCount ?? orders?.acceptedCount,
+  );
+  const soldAndPaid = toNumber(orders?.soldAndPaid);
+  const cancelled = toNumber(orders?.cancelled);
+  const inProgress = Math.max(0, acceptedCount - soldAndPaid - cancelled);
+  const totalOrders = acceptedCount;
+
+  const mergeOrderSummary = (snapshot: BranchDashboardSnapshot): BranchDashboardSnapshot => {
+    if (!hasOrdersSummary) return snapshot;
+
+    const backendOrderTotal =
+      snapshot.orderSummary.total +
+      snapshot.orderSummary.new +
+      snapshot.orderSummary.onTheRoad +
+      snapshot.orderSummary.delivered +
+      snapshot.orderSummary.returned;
+
+    if (backendOrderTotal > 0 && !preferOrderSummary) return snapshot;
+
+    return {
+      ...snapshot,
+      orderSummary: {
+        total: totalOrders,
+        new: 0,
+        onTheRoad: inProgress,
+        delivered: soldAndPaid,
+        returned: cancelled,
+      },
+      todayOrdersCount: totalOrders,
+      weekOrdersCount: totalOrders,
+    };
+  };
 
   if (!payload) {
-    return fallback;
+    return mergeOrderSummary(fallback);
   }
 
   const cards = payload.cards;
 
-  return {
+  return mergeOrderSummary({
     orderSummary: {
       total: toNumber(cards?.orders?.total),
       new: toNumber(cards?.orders?.new),
@@ -133,5 +170,5 @@ export const adaptBranchDashboard = (
     activeBatchesCount: toNumber(payload.active_batches_count),
     couriersCount: toNumber(payload.couriers_count),
     role,
-  };
+  });
 };

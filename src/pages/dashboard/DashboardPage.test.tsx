@@ -16,8 +16,11 @@ vi.mock("../../entities/dashboard", async (importOriginal) => ({
 }));
 
 vi.mock("../../widgets/dashboard-statistics/ui/DashboardStatistics", () => ({
-  default: (props: Record<string, number>) => (
-    <div data-testid="dashboard-statistics">
+  default: (props: Record<string, number | boolean>) => (
+    <div
+      data-testid="dashboard-statistics"
+      data-financial={String(props.showFinancialMetrics)}
+    >
       {props.accepted}-{props.sold}-{props.cancelled}-{props.profit}-
       {props.avgOrderValue}-{props.avgFulfillmentHours}
     </div>
@@ -68,6 +71,24 @@ const adminState = {
   role: { id: "admin-1", role: "admin", region: null, name: "Admin" },
 } as never;
 
+const registratorState = {
+  role: {
+    id: "registrator-1",
+    role: "registrator",
+    region: null,
+    name: "Registrator",
+  },
+} as never;
+
+const courierState = {
+  role: {
+    id: "courier-1",
+    role: "courier",
+    region: null,
+    name: "Courier",
+  },
+} as never;
+
 describe("DashboardPage", () => {
   beforeEach(() => {
     getDashboardMock.mockReturnValue({
@@ -78,6 +99,7 @@ describe("DashboardPage", () => {
             soldAndPaid: 5,
             cancelled: 2,
             profit: 480000,
+            totalRevenue: 960000,
           },
         },
       },
@@ -114,6 +136,22 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("button", { name: "Bugun" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bu hafta" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bu oy" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Barchasi" })).toBeInTheDocument();
+  });
+
+  it("loads all-time totals when All is selected", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    await user.click(screen.getByRole("button", { name: "Barchasi" }));
+
+    expect(screen.getByText("Umumiy statistika")).toBeInTheDocument();
+    expect(getDashboardMock).toHaveBeenLastCalledWith(
+      { all: true },
+      true,
+      "admin:unknown",
+    );
+    expect(screen.getByTestId("top-performers")).toBeInTheDocument();
   });
 
   it("passes dashboard metrics into child widgets", () => {
@@ -123,6 +161,43 @@ describe("DashboardPage", () => {
       "12-5-2-480000-96000-24",
     );
     expect(screen.getByTestId("financial-analysis")).toHaveTextContent('"startDate"');
+  });
+
+  it("hides financial dashboard metrics from registrators", () => {
+    renderWithProviders(<DashboardPage />, { preloadedState: registratorState });
+
+    expect(screen.getByTestId("dashboard-statistics")).toHaveAttribute(
+      "data-financial",
+      "false",
+    );
+    expect(getKpiMock).toHaveBeenCalledWith(
+      { start_day: "", end_day: "" },
+      false,
+      "registrator:unknown",
+    );
+    expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
+  });
+
+  it("shows only courier-relevant dashboard widgets for couriers", () => {
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+
+    expect(screen.getByTestId("dashboard-statistics")).toHaveAttribute(
+      "data-financial",
+      "false",
+    );
+    expect(getDashboardMock).toHaveBeenCalledWith(
+      { start_day: "", end_day: "" },
+      true,
+      "courier:unknown",
+    );
+    expect(getKpiMock).toHaveBeenCalledWith(
+      { start_day: "", end_day: "" },
+      false,
+      "courier:unknown",
+    );
+    expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
   });
 
   it("switches to filtered title when dates are selected", async () => {

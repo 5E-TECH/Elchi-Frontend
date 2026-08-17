@@ -10,8 +10,8 @@ import BackButton from '../../../shared/ui/BackButton';
 
 const ProfilePage = () => {
   const { t } = useTranslation("users");
-  const { getMyProfile } = useUser();
-  const { data, isLoading, isError, error } = getMyProfile();
+  const { useGetMyProfile } = useUser();
+  const { data, isLoading, isError, error } = useGetMyProfile();
   const user = unwrapUserResponse(data);
 
   return (

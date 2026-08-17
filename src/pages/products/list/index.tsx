@@ -9,7 +9,6 @@ import {
   Package,
   Pencil,
   Plus,
-  ScanLine,
   SquarePen,
   Store,
   Trash2,
@@ -126,6 +125,29 @@ const getProductPayload = (response: unknown): Product | null => {
   return null;
 };
 
+const ProductImageThumb = memo(({ src, name }: { src?: string; name: string }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+
+  if (!src || hasImageError) {
+    return (
+      <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
+        <Package size={14} className="text-main" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      className="w-8 h-8 rounded-lg object-cover shrink-0 border border-white/10 bg-main/10"
+      loading="lazy"
+      onError={() => setHasImageError(true)}
+    />
+  );
+});
+ProductImageThumb.displayName = "ProductImageThumb";
+
 const getValueAtPath = (source: unknown, path: string[]): unknown => {
   let current: unknown = source;
 
@@ -228,8 +250,8 @@ const ProductTable = () => {
 
   // ─── Data Fetching ──────────────────────────────────────────────────────
 
-  const { getMarkets } = useMarkets();
-  const { data } = getMarkets(
+  const { useGetMarkets } = useMarkets();
+  const { data } = useGetMarkets(
     { status: "active", limit: 100 },
     isRoleResolved && !isMarketRole,
   );
@@ -288,17 +310,17 @@ const ProductTable = () => {
     return params;
   }, [filterValue, isMarketRole, limit, page, searchValue]);
 
-  const { getProducts, getMyProducts, getProductById, deleteProduct, updateProduct } = useProducts();
-  const { data: productsData, isLoading: isProductsLoading } = getProducts(
+  const { useGetProducts, useGetMyProducts, useGetProductById, deleteProduct, updateProduct } = useProducts();
+  const { data: productsData, isLoading: isProductsLoading } = useGetProducts(
     apiParams,
     isRoleResolved && !isMarketRole,
   );
-  const { data: myProductsData, isLoading: isMyProductsLoading } = getMyProducts(
+  const { data: myProductsData, isLoading: isMyProductsLoading } = useGetMyProducts(
     isRoleResolved && isMarketRole,
   );
   const products = isMarketRole ? myProductsData : productsData;
   const isLoading = isMarketRole ? isMyProductsLoading : isProductsLoading;
-  const { data: editProductResponse } = getProductById(editTarget?.id, Boolean(editTarget));
+  const { data: editProductResponse } = useGetProductById(editTarget?.id, Boolean(editTarget));
   const editProductDetail = useMemo(
     () => getProductPayload(editProductResponse),
     [editProductResponse],
@@ -461,11 +483,9 @@ const ProductTable = () => {
         label: t("name"),
         width: "35%",
         sortable: true,
-        render: (v: string) => (
+        render: (v: string, row: Product) => (
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
-              <Package size={14} className="text-main" />
-            </div>
+            <ProductImageThumb src={getProductImageUrl(row)} name={v} />
             <span className="font-semibold text-gray-900 dark:text-white">{v}</span>
           </div>
         ),
@@ -535,7 +555,10 @@ const ProductTable = () => {
         <HeaderName
           name={t("title")}
           description={t("pageDescription")}
-          icon={<ScanLine />}
+          icon={<Package />}
+          iconClassName="h-12 w-12 rounded-[18px] [&_svg]:!h-[22px] [&_svg]:!w-[22px]"
+          titleClassName="text-[22px]"
+          descriptionClassName="text-[13.5px]"
         />
         <Button
           label={t("create")}
@@ -544,8 +567,8 @@ const ProductTable = () => {
             if (isMarketRole) {
               if (!marketUserId) {
                 notificationApi.warning({
-                  message: "Market aniqlanmadi",
-                  description: "Sahifani qayta yuklab ko'ring yoki profil qayta yuklanishini kuting.",
+                  message: t("marketNotResolved"),
+                  description: t("marketNotResolvedDescription"),
                   placement: "topRight",
                 });
                 return;

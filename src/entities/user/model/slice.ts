@@ -3,7 +3,7 @@ import type { UserState, User } from "./types";
 
 const initialAccessToken =
   typeof window !== "undefined"
-    ? window.localStorage.getItem("accessToken")
+    ? window.sessionStorage.getItem("accessToken")
     : null;
 
 const startsOnLoginPage =
@@ -31,28 +31,11 @@ export const userSlice = createSlice({
       state.user = action.payload.user ?? state.user;
       state.isAuthenticated = true;
       state.error = null;
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("accessToken", action.payload.accessToken);
-
-        if (action.payload.user?.role) {
-          window.localStorage.setItem("role", action.payload.user.role);
-        }
-      }
     },
     setAccessToken: (state, action: PayloadAction<string | null>) => {
       state.accessToken = action.payload;
       state.isAuthenticated = Boolean(action.payload);
 
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      if (action.payload) {
-        window.localStorage.setItem("accessToken", action.payload);
-      } else {
-        window.localStorage.removeItem("accessToken");
-      }
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -75,10 +58,6 @@ export const userSlice = createSlice({
       state.loading = false;
       state.error = null;
 
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem("accessToken");
-        window.localStorage.removeItem("role");
-      }
     },
   },
 });

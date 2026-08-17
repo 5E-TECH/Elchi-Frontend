@@ -5,12 +5,12 @@ import { useIdentityCoverage } from "../../entities/identity";
 const { Title, Text } = Typography;
 
 const IdentityOpsPage = () => {
-  const { getAdmins, getManagers, getRegistrators, addOrderToMarket } =
+  const { useGetAdmins, useGetManagers, useGetRegistrators, addOrderToMarket } =
     useIdentityCoverage();
 
-  const admins = getAdmins();
-  const managers = getManagers();
-  const registrators = getRegistrators();
+  const admins = useGetAdmins();
+  const managers = useGetManagers();
+  const registrators = useGetRegistrators();
 
   const [marketId, setMarketId] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -33,7 +33,7 @@ const IdentityOpsPage = () => {
   ];
 
   return (
-    <div style={{ padding: 16, maxWidth: 920, margin: "0 auto" }}>
+    <div className="mx-auto w-full max-w-[920px] px-4 pt-4 pb-28 md:pb-4">
       <Title level={3}>Xodimlar — ro'yxatlar</Title>
       <Text type="secondary">
         Adminlar, menejerlar va registratorlar ro'yxatini ko'rish va market
@@ -49,6 +49,7 @@ const IdentityOpsPage = () => {
           loading={admins.isLoading}
           dataSource={(admins.data as unknown[]) ?? []}
           columns={userColumns}
+          scroll={{ x: "max-content" }}
         />
 
         <Table
@@ -59,6 +60,7 @@ const IdentityOpsPage = () => {
           loading={managers.isLoading}
           dataSource={(managers.data as unknown[]) ?? []}
           columns={userColumns}
+          scroll={{ x: "max-content" }}
         />
 
         <Table
@@ -69,6 +71,7 @@ const IdentityOpsPage = () => {
           loading={registrators.isLoading}
           dataSource={(registrators.data as unknown[]) ?? []}
           columns={userColumns}
+          scroll={{ x: "max-content" }}
         />
 
         <Space direction="vertical" style={{ display: "flex" }}>

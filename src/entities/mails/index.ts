@@ -3,6 +3,7 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
+import { getCurrentBranchId } from "../../shared/lib/currentBranch";
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 const MAILS_KEY = "mails";
@@ -39,6 +40,11 @@ export interface OrderItem {
   quantity: number;
   createdAt: string;
   updatedAt: string;
+  product?: {
+    id: string;
+    name: string;
+    image_url?: string | null;
+  };
 }
 
 export interface Market {
@@ -82,6 +88,8 @@ export interface Customer {
 export type OrderStatus =
   | "new"
   | "received"
+  | "waiting"
+  | "on the road"
   | "delivered"
   | "cancelled"
   | "cancelled (sent)";
@@ -161,7 +169,14 @@ export interface PaginatedPostsResponse {
 interface GetOldMailsParams {
   page?: number;
   limit?: number;
+  region_id?: string;
+  courier_id?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
 }
+
+type ManagerPostStatus = "new" | "sent" | "received" | "canceled" | "canceled_received";
 
 export const BRANCH_TRANSFER_BATCH_STATUS = {
   PENDING: "PENDING",
@@ -176,6 +191,9 @@ export type BranchTransferBatchStatus =
 // ─── Mail list item (post/new, post/old, post/rejected) ───────────────────────
 export interface MailItem {
   id: string;
+  request_id?: string;
+  order_id?: string;
+  post_id?: string;
   createdAt: string;
   updatedAt: string;
   courier_id: string;
@@ -184,6 +202,22 @@ export interface MailItem {
   qr_code_token: string;
   region_id: string;
   region: Region;
+  courier?: {
+    id?: string;
+    name?: string;
+    phone_number?: string;
+  } | null;
+  customer?: {
+    id?: string;
+    name?: string;
+    phone_number?: string;
+    extra_number?: string | null;
+  } | null;
+  district?: {
+    id?: string;
+    name?: string;
+  } | null;
+  action?: string;
   status: string;
 }
 
@@ -256,6 +290,10 @@ const mapTransferBatchToMailItem = (batch: any): MailItem => {
 const mapReturnRequestToMailItem = (request: any): MailItem => {
   const post = request?.post ?? request?.mail ?? request?.batch ?? request;
   const region = post?.region ?? request?.region;
+  const district = request?.district ?? request?.order?.district ?? request?.customer?.district ?? post?.district;
+  const courier = request?.courier ?? post?.courier ?? request?.user ?? request?.courier_user;
+  const order = request?.order ?? request;
+  const customer = order?.customer ?? request?.customer;
   const orders = post?.orders ?? request?.orders ?? post?.allOrdersByPostId ?? request?.allOrdersByPostId;
   const orderCount =
     request?.order_quantity ??
@@ -269,6 +307,11 @@ const mapReturnRequestToMailItem = (request: any): MailItem => {
     request?.post_total_price ??
     request?.total_price ??
     request?.totalPrice ??
+    request?.amount ??
+    order?.total_price ??
+    order?.totalPrice ??
+    order?.to_be_paid ??
+    order?.price ??
     post?.post_total_price ??
     post?.total_price ??
     post?.totalPrice;
@@ -276,18 +319,37 @@ const mapReturnRequestToMailItem = (request: any): MailItem => {
 
   return {
     id: toText(post?.id ?? request?.post_id ?? request?.postId ?? request?.id ?? request?._id),
+    request_id: toText(request?.id ?? request?._id),
+    order_id: toText(request?.order_id ?? request?.orderId ?? order?.id),
+    post_id: toText(post?.id ?? request?.post_id ?? request?.postId),
     createdAt: toText(post?.createdAt ?? post?.created_at ?? request?.createdAt ?? request?.created_at, new Date().toISOString()),
     updatedAt: toText(post?.updatedAt ?? post?.updated_at ?? request?.updatedAt ?? request?.updated_at, new Date().toISOString()),
-    courier_id: toText(post?.courier_id ?? request?.courier_id),
+    courier_id: toText(post?.courier_id ?? request?.courier_id ?? courier?.id),
     post_total_price: toNumber(totalPrice),
     order_quantity: toNumber(orderCount),
     qr_code_token: toText(post?.qr_code_token ?? post?.qrCodeToken ?? request?.qr_code_token ?? request?.qrCodeToken),
     region_id: regionId,
     region: {
       id: regionId,
-      name: toText(region?.name ?? region?.title, "Qaytarish"),
+      name: toText(region?.name ?? region?.title),
       sato_code: toText(region?.sato_code),
     },
+    courier: courier ? {
+      id: toText(courier?.id),
+      name: toText(courier?.name ?? courier?.full_name ?? courier?.username),
+      phone_number: toText(courier?.phone_number ?? courier?.phone),
+    } : null,
+    customer: customer ? {
+      id: toText(customer?.id),
+      name: toText(customer?.name ?? customer?.full_name ?? customer?.username),
+      phone_number: toText(customer?.phone_number ?? customer?.phone),
+      extra_number: customer?.extra_number ?? null,
+    } : null,
+    district: district ? {
+      id: toText(district?.id),
+      name: toText(district?.name ?? district?.title),
+    } : null,
+    action: toText(request?.action ?? request?.return_action ?? request?.destination, "center"),
     status: toText(request?.status ?? post?.status, "return"),
   };
 };
@@ -319,12 +381,13 @@ const toPaginatedMailResponse = (
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 export const useMails = () => {
+  const queryClient = useQueryClient();
   const role = useSelector((state: RootState) => state.role.role);
-  const branchId = useSelector((state: RootState) => state.user.user?.branch_id);
+  const branchId = useSelector(getCurrentBranchId);
   const isManagerRole = role === "manager";
 
   const getManagerScopedPosts = (
-    status?: "new" | "sent" | "received" | "canceled" | "canceled_received",
+    status?: ManagerPostStatus,
     params?: GetOldMailsParams,
   ) =>
     api
@@ -333,11 +396,16 @@ export const useMails = () => {
           page: params?.page ?? 1,
           limit: params?.limit ?? 8,
           ...(status ? { status } : {}),
+          ...(branchId ? { branch_id: branchId } : {}),
+          ...(params?.region_id ? { region_id: params.region_id } : {}),
+          ...(params?.courier_id ? { courier_id: params.courier_id } : {}),
+          ...(params?.startDate ? { startDate: params.startDate } : {}),
+          ...(params?.endDate ? { endDate: params.endDate } : {}),
         },
       })
       .then((res) => res.data);
 
-  const getNewMails = (options?: { enabled?: boolean }) =>
+  const useGetNewMails = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "new", role, branchId],
       queryFn: () =>
@@ -347,38 +415,37 @@ export const useMails = () => {
       enabled: options?.enabled ?? true,
     });
 
-  const getNewMailsCourier = (options?: { enabled?: boolean }) =>
+  const useGetNewMailsCourier = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "new"],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.ON_THE_ROAD).then((res) => res.data),
       enabled: options?.enabled ?? true,
     });
 
-  const getTodayMailsCourier = (id: string) =>
+  const useGetTodayMailsCourier = (id: string) =>
     useQuery({
       queryKey: [MAILS_KEY, "new", id],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(id)).then((res) => res.data),
       enabled: !!id,
+      retry: false,
     });
 
-  const getRefusedMailsCourierByPostId = (id: string) =>
+  const useGetRefusedMailsCourierByPostId = (id: string) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-detail", id],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED_ORDERS_BY_POST_ID(id)).then((res) => res.data),
       enabled: !!id,
+      retry: false,
     });
 
-  const getRefusedMails = (options?: { enabled?: boolean }) =>
+  const useGetRefusedMails = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused", role, branchId],
-      queryFn: () =>
-        isManagerRole
-          ? getManagerScopedPosts("canceled")
-          : api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED).then((res) => res.data),
       enabled: options?.enabled ?? true,
     });
 
-  const getReturnMails = (params?: GetOldMailsParams) =>
+  const useGetReturnMails = (params?: GetOldMailsParams) =>
     useQuery<PaginatedPostsResponse>({
       queryKey: [MAILS_KEY, "return", role, branchId, params?.page ?? 1, params?.limit ?? 8],
       queryFn: () =>
@@ -392,14 +459,32 @@ export const useMails = () => {
           .then((res) => toPaginatedMailResponse(res.data, mapReturnRequestToMailItem)),
     });
 
-  const getRefusedMailsCourier = (options?: { enabled?: boolean }) =>
+  const approveReturnRequests = useMutation({
+    mutationFn: (data: any) =>
+      api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_APPROVE, data).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+    },
+  });
+
+  const rejectReturnRequests = useMutation({
+    mutationFn: (data: any) =>
+      api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_REJECT, data).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+    },
+  });
+
+  const useGetRefusedMailsCourier = (options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [MAILS_KEY, "refused-courier"],
       queryFn: () => api.get(API_ENDPOINTS.POSTS.COURIER_REJECTED).then((res) => res.data),
       enabled: options?.enabled ?? true,
     });
 
-  const getOldMails = (
+  const useGetOldMails = (
     isCourier = false,
     params?: GetOldMailsParams,
     options?: { enabled?: boolean },
@@ -411,17 +496,24 @@ export const useMails = () => {
         role,
         branchId,
         isCourier ? "courier" : "default",
-        params?.page ?? 1,
-        params?.limit ?? 8,
+        params,
       ],
       queryFn: () =>
         isManagerRole
-          ? getManagerScopedPosts("received", params)
+          ? getManagerScopedPosts(
+              params?.status as ManagerPostStatus | undefined,
+              params,
+            )
           : api
             .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
               params: {
                 page: params?.page ?? 1,
                 limit: params?.limit ?? 8,
+                ...(params?.region_id ? { region_id: params.region_id } : {}),
+                ...(params?.courier_id ? { courier_id: params.courier_id } : {}),
+                ...(params?.status ? { status: params.status } : {}),
+                ...(params?.startDate ? { startDate: params.startDate } : {}),
+                ...(params?.endDate ? { endDate: params.endDate } : {}),
               },
             })
             .then((res) => res.data),
@@ -429,14 +521,16 @@ export const useMails = () => {
     });
 
   return {
-    getNewMails,
-    getRefusedMails,
-    getReturnMails,
-    getOldMails,
-    getNewMailsCourier,
-    getTodayMailsCourier,
-    getRefusedMailsCourier,
-    getRefusedMailsCourierByPostId
+    useGetNewMails,
+    useGetRefusedMails,
+    useGetReturnMails,
+    approveReturnRequests,
+    rejectReturnRequests,
+    useGetOldMails,
+    useGetNewMailsCourier,
+    useGetTodayMailsCourier,
+    useGetRefusedMailsCourier,
+    useGetRefusedMailsCourierByPostId
   };
 };
 
@@ -445,6 +539,7 @@ export const useMailDetail = (postId: string) =>
     queryKey: [MAILS_KEY, "detail", postId],
     queryFn: () => api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(postId)).then((res) => res.data),
     enabled: !!postId,
+    retry: false,
   });
 
 export const useRefusedMailDetail = (postId: string) =>
@@ -452,6 +547,7 @@ export const useRefusedMailDetail = (postId: string) =>
     queryKey: [MAILS_KEY, "refused-detail", postId],
     queryFn: () => api.get(API_ENDPOINTS.POSTS.REJECTED_ORDERS_BY_POST_ID(postId)).then((res) => res.data),
     enabled: !!postId,
+    retry: false,
   });
 
 // ─── Courier Types ────────────────────────────────────────────────────────────
@@ -597,6 +693,12 @@ export const useReceiveCanceledPost = () => {
       });
       queryClient.invalidateQueries({
         queryKey: [MAILS_KEY, "refused-courier"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["orders"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["orders", "markets", "cancelled"],
       });
     },
   });

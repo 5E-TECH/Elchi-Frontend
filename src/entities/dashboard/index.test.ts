@@ -75,6 +75,102 @@ describe("dashboard response normalization", () => {
     });
   });
 
+  it("normalizes market dashboard summary aliases", () => {
+    const result = normalizeDashboardResponse({
+      statusCode: 200,
+      data: {
+        summary: {
+          accepted: "18",
+          sold: "11",
+          cancelledCount: "3",
+          market_profit: "250000",
+          revenue: "790000",
+        },
+      },
+    });
+
+    expect(result.data.orders).toMatchObject({
+      acceptedCount: 18,
+      soldAndPaid: 11,
+      cancelled: 3,
+      profit: 250000,
+      totalRevenue: 790000,
+    });
+  });
+
+  it("normalizes nested market dashboard order totals", () => {
+    const result = normalizeDashboardResponse({
+      data: {
+        market_dashboard: {
+          orders: {
+            total_orders: "9",
+            successful_orders: "4",
+            cancelled_orders: "2",
+            netProfit: "135000",
+          },
+        },
+      },
+    });
+
+    expect(result.data.orders).toMatchObject({
+      acceptedCount: 9,
+      soldAndPaid: 4,
+      cancelled: 2,
+      profit: 135000,
+    });
+  });
+
+  it("normalizes market dashboard myStat payload", () => {
+    const result = normalizeDashboardResponse({
+      statusCode: 200,
+      message: "Dashboard infos",
+      data: {
+        myStat: {
+          totalOrders: 38,
+          soldOrders: 7,
+          canceledOrders: 0,
+          inProgress: 12,
+          profit: 19060000,
+          successRate: 18.42,
+        },
+      },
+    });
+
+    expect(result.data.orders).toMatchObject({
+      acceptedCount: 38,
+      soldAndPaid: 7,
+      cancelled: 0,
+      inProgress: 12,
+      profit: 19060000,
+    });
+  });
+
+  it("normalizes top branches payload", () => {
+    const result = normalizeDashboardResponse({
+      statusCode: 200,
+      message: "Dashboard infos",
+      data: {
+        topBranches: [
+          {
+            branch_id: "9",
+            branch_name: "Qashqadaryo",
+            total_orders: "42",
+            successful_orders: "31",
+            success_rate: "73.81",
+          },
+        ],
+      },
+    });
+
+    expect(result.data.topBranches?.[0]).toMatchObject({
+      branch_id: "9",
+      branch_name: "Qashqadaryo",
+      total_orders: 42,
+      successful_orders: 31,
+      success_rate: 73.81,
+    });
+  });
+
   it("normalizes KPI fields", () => {
     const result = normalizeKpiResponse({
       data: {

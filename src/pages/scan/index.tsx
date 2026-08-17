@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
-  ArrowLeft,
   Camera,
   CheckCircle2,
   Flashlight,
@@ -25,6 +24,7 @@ import {
   fetchScanDetail,
   getScanDetailQueryKey,
 } from "./lib/scanResource";
+import BackButton from "../../shared/ui/BackButton";
 
 const ScanPage = () => {
   const { t } = useTranslation("common");
@@ -129,19 +129,12 @@ const ScanPage = () => {
   const shownError = error || cameraError;
 
   return (
-    <div className="relative overflow-hidden rounded-[32px] border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-sidebar)_86%,var(--color-main)_14%)_100%)] shadow-sm dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
+    <div className="relative overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-sidebar)_86%,var(--color-main)_14%)_100%)] shadow-sm sm:rounded-[32px] dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--color-main)_16%,transparent),transparent_34%),radial-gradient(circle_at_bottom_left,color-mix(in_srgb,var(--color-main)_10%,transparent),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--color-main)_20%,transparent),transparent_34%),radial-gradient(circle_at_bottom_left,color-mix(in_srgb,var(--color-success)_10%,transparent),transparent_28%)]" />
 
-      <div className="relative flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4 md:px-7">
+      <div className="relative flex items-center justify-between gap-3 border-b border-[color:var(--color-border-soft)] px-3 py-3 sm:px-5 sm:py-4 md:px-7">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-white text-[color:var(--color-text-muted)] transition hover:border-main/30 hover:bg-main/5 hover:text-main dark:bg-maindark dark:text-white/80 dark:hover:bg-white/12 dark:hover:text-white"
-            aria-label={t("back")}
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <BackButton to="/" className="bg-white dark:bg-maindark" label="" />
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-main/10 text-main ring-1 ring-main/10 dark:bg-white/10 dark:text-white dark:ring-white/10">
             <QrCode size={20} />
           </div>
@@ -167,8 +160,8 @@ const ScanPage = () => {
         ) : null}
       </div>
 
-      <div className="relative grid gap-6 px-5 py-5 md:grid-cols-[1.12fr_0.88fr] md:px-7 md:py-7">
-        <div className="relative overflow-hidden rounded-[30px] border border-[color:var(--color-border-soft)] bg-maindark shadow-sm">
+      <div className="relative grid gap-4 px-3 py-3 sm:px-5 sm:py-5 md:grid-cols-[1.12fr_0.88fr] md:gap-6 md:px-7 md:py-7">
+        <div className="relative overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-maindark shadow-sm sm:rounded-[30px]">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-main)_10%,transparent),rgba(15,23,42,0.22))]" />
 
           <div className="relative aspect-[4/5] w-full md:aspect-[16/10]">
@@ -181,11 +174,11 @@ const ScanPage = () => {
             />
 
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-[58%] w-[68%] max-w-[340px] rounded-[34px] border border-white/10 bg-white/[0.04] shadow-[0_0_0_9999px_rgba(7,10,24,0.34)]">
-                <div className="absolute left-0 top-0 h-12 w-12 rounded-tl-[30px] border-l-4 border-t-4 border-[#7c8cff]" />
-                <div className="absolute right-0 top-0 h-12 w-12 rounded-tr-[30px] border-r-4 border-t-4 border-[#7c8cff]" />
-                <div className="absolute bottom-0 left-0 h-12 w-12 rounded-bl-[30px] border-b-4 border-l-4 border-[#7c8cff]" />
-                <div className="absolute bottom-0 right-0 h-12 w-12 rounded-br-[30px] border-b-4 border-r-4 border-[#7c8cff]" />
+              <div className="relative h-[58%] w-[72%] max-w-[340px] rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_0_0_9999px_rgba(7,10,24,0.34)] sm:w-[68%] sm:rounded-[34px]">
+                <div className="absolute left-0 top-0 h-12 w-12 rounded-tl-[30px] border-l-4 border-t-4 border-main" />
+                <div className="absolute right-0 top-0 h-12 w-12 rounded-tr-[30px] border-r-4 border-t-4 border-main" />
+                <div className="absolute bottom-0 left-0 h-12 w-12 rounded-bl-[30px] border-b-4 border-l-4 border-main" />
+                <div className="absolute bottom-0 right-0 h-12 w-12 rounded-br-[30px] border-b-4 border-r-4 border-main" />
                 <div
                   className="absolute left-[8%] right-[8%] h-[2px] -translate-y-1/2 bg-[linear-gradient(90deg,transparent,rgba(124,140,255,0.98),transparent)] shadow-[0_0_24px_rgba(124,140,255,0.78)]"
                   style={{ animation: "scanner-scan-line-y 2.2s ease-in-out infinite alternate" }}
@@ -225,7 +218,7 @@ const ScanPage = () => {
         <div className="flex flex-col gap-4">
           <div className="rounded-[28px] border border-[color:var(--color-border-soft)] bg-white/80 p-5 shadow-sm dark:bg-white/[0.04]">
             <div className="flex items-center gap-2 text-maindark dark:text-white">
-              <Sparkles size={16} className="text-main dark:text-[#a5b4fc]" />
+              <Sparkles size={16} className="text-main dark:text-primary" />
               <p className="m-0 text-sm font-bold uppercase tracking-[0.22em] text-[color:var(--color-text-muted)] dark:text-white/55">
                 {t("scannerGuideTitle")}
               </p>

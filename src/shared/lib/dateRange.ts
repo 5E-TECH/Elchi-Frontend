@@ -1,4 +1,4 @@
-export type DateRangePreset = "today" | "week" | "month";
+export type DateRangePreset = "today" | "week" | "month" | "year" | "all";
 
 export interface ISODateRange {
   from: string;
@@ -49,13 +49,37 @@ export const getThisMonthRange = (): ISODateRange => {
   return { from: toISODate(from), to: toISODate(now) };
 };
 
+export const getThisYearRange = (): ISODateRange => {
+  const now = new Date();
+  return getYearRange(now.getFullYear());
+};
+
+export const getYearRange = (year: number): ISODateRange => {
+  const from = new Date(year, 0, 1);
+  const to = new Date(year, 11, 31);
+
+  return { from: toISODate(from), to: toISODate(to) };
+};
+
+export const getAllTimeRange = (): ISODateRange => ({
+  from: "1970-01-01",
+  to: toISODate(new Date()),
+});
+
 export const getPresetDateRange = (preset: DateRangePreset): ISODateRange => {
+  if (preset === "all") {
+    return getAllTimeRange();
+  }
   if (preset === "week") {
     return getThisWeekRange();
   }
 
   if (preset === "month") {
     return getThisMonthRange();
+  }
+
+  if (preset === "year") {
+    return getThisYearRange();
   }
 
   return getTodayRange();

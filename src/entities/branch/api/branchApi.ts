@@ -23,14 +23,68 @@ const normalizeBranchType = (value: unknown): BranchType | undefined => {
   return undefined;
 };
 
+const hasManagerInCollection = (value: unknown) =>
+  Array.isArray(value) &&
+  value.some((entry) => {
+    const item = entry as Record<string, any>;
+    const user = (item.user ?? item.user_data ?? item.employee ?? item) as Record<string, any>;
+    return String(item.role ?? item.position ?? user.role ?? "").toLowerCase() === "manager";
+  });
+
+const getManagerFromBranch = (item: Record<string, any>) => {
+  const manager = item.manager ?? item.branch_manager ?? item.responsible_manager ?? null;
+  if (!manager || typeof manager !== "object") return null;
+
+  const record = manager as Record<string, any>;
+  const id = record.id ?? record.user_id;
+  if (!id) return null;
+
+  return {
+    id: String(id),
+    name: record.name ?? record.full_name ?? record.fullName,
+    fullName: record.fullName ?? record.full_name ?? record.name,
+  };
+};
+
+const getManagerIdFromBranch = (item: Record<string, any>, manager: { id: string } | null) => {
+  const id =
+    item.manager_id ??
+    item.managerId ??
+    item.branch_manager_id ??
+    item.branchManagerId ??
+    item.responsible_manager_id ??
+    manager?.id;
+
+  return id ? String(id) : "";
+};
+
+const hasBranchManager = (
+  item: Record<string, any>,
+  manager: { id: string } | null,
+  managerId: string,
+) => {
+  if (typeof item.has_manager === "boolean") return item.has_manager;
+  if (typeof item.hasManager === "boolean") return item.hasManager;
+  if (typeof item.manager_exists === "boolean") return item.manager_exists;
+  if (typeof item.has_branch_manager === "boolean") return item.has_branch_manager;
+  if (manager || managerId) return true;
+
+  return hasManagerInCollection(item.employees) || hasManagerInCollection(item.users);
+};
+
 const normalizeBranch = (value: unknown): Branch => {
   const item = value as Branch & Record<string, any>;
   const parent = item.parent ?? item.parent_branch ?? null;
   const type = item.type ?? item.branch_type;
+  const manager = getManagerFromBranch(item);
+  const managerId = getManagerIdFromBranch(item, manager);
 
   return {
     id: String(item.id),
     name: item.name ?? i18n.t("branches:fallback.unknownBranch"),
+    manager_id: managerId,
+    manager,
+    has_manager: hasBranchManager(item, manager, managerId),
     parent_id: item.parent_id ? String(item.parent_id) : parent?.id ? String(parent.id) : "",
     parent: parent
       ? {
@@ -183,6 +237,33 @@ const normalizeBranchList = (value: unknown, params?: BranchParams): PaginatedRe
 export const getBranches = async (params: BranchParams): Promise<PaginatedResponse<Branch>> => {
   const response = await api.get(API_ENDPOINTS.BRANCHES.BASE, { params });
   return normalizeBranchList(response.data, params);
+};
+
+const extractManagerBranchId = (value: unknown): string => {
+  const item = value as Record<string, any>;
+  const branch = item.branch ?? item.branch_data ?? item.assigned_branch ?? item.manager_branch;
+  const branchId =
+    item.branch_id ??
+    item.branchId ??
+    item.branch?.id ??
+    item.branch_data?.id ??
+    item.assigned_branch?.id ??
+    item.manager_branch?.id ??
+    (branch && typeof branch === "object" ? (branch as Record<string, any>).id : undefined);
+
+  return branchId ? String(branchId) : "";
+};
+
+export const getActiveManagerBranchIds = async (): Promise<Set<string>> => {
+  const response = await api.get(API_ENDPOINTS.MANAGERS.BASE, {
+    params: { status: "active", page: 1, limit: 1000 },
+  });
+
+  return new Set(
+    extractArray<Record<string, any>>(response.data)
+      .map(extractManagerBranchId)
+      .filter(Boolean),
+  );
 };
 
 export const getBranchById = async (id: string): Promise<Branch> => {

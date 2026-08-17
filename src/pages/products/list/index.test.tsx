@@ -97,7 +97,7 @@ vi.mock("../../../shared/components/popupUpdate", () => ({
 
 vi.mock("../../../entities/product", () => ({
   useProducts: () => ({
-    getProducts: () => ({
+    useGetProducts: () => ({
       data: {
         data: [{ id: 1, name: "Olma", market: { id: 1, name: "Fresh" } }],
         total: 1,
@@ -105,12 +105,12 @@ vi.mock("../../../entities/product", () => ({
       isLoading: false,
       isFetching: false,
     }),
-    getMyProducts: () => ({
+    useGetMyProducts: () => ({
       data: { data: [] },
       isLoading: false,
       isFetching: false,
     }),
-    getProductById: () => ({
+    useGetProductById: () => ({
       data: {
         data: { id: 1, name: "Olma", image_url: "/uploads/olma.png", market: { id: 1, name: "Fresh" } },
       },
@@ -124,7 +124,7 @@ vi.mock("../../../entities/product", () => ({
 
 vi.mock("../../../entities/markets", () => ({
   useMarkets: () => ({
-    getMarkets: () => ({
+    useGetMarkets: () => ({
       data: {
         data: {
           items: [{ id: 1, name: "Fresh", phone_number: "+998901234567" }],

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { PostOrder, OrderStatus } from "../../../../entities/mails";
 import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
+import Checkbox from "./Checkbox";
 import { formatDate, formatPrice, getStatusLabel, getStatusStyle } from "../lib/helpers";
 import { HISTORY_TABLE_COLS, TABLE_COLS } from "./OrdersTable";
 import type { PrintMode } from "../lib/printMode";
@@ -42,10 +43,45 @@ const OrderRow = memo(({
   readOnly = false,
 }: OrderRowProps) => {
   const { t } = useTranslation(["mails", "orders", "common"]);
-  const customerName = order.customer?.name ?? t("mails:customerNumber", { id: order.customer_id });
-  const customerPhone = order.customer?.phone_number ?? t("mails:phoneUnavailable");
-  const districtName = order.district?.name ?? t("mails:districtNumber", { id: order.district_id });
-  const marketName = order.market?.name ?? t("mails:marketNumber", { id: order.market_id });
+  const orderRecord = order as unknown as Record<string, unknown>;
+  const customerRecord =
+    order.customer && typeof order.customer === "object"
+      ? (order.customer as unknown as Record<string, unknown>)
+      : {};
+  const getText = (...values: unknown[]) => {
+    for (const value of values) {
+      if (typeof value === "string" && value.trim()) return value.trim();
+      if (typeof value === "number") return String(value);
+    }
+
+    return "";
+  };
+  const customerName =
+    getText(
+      customerRecord.name,
+      customerRecord.full_name,
+      customerRecord.fullName,
+      orderRecord.customer_name,
+      orderRecord.customerName,
+      orderRecord.client_name,
+      orderRecord.clientName,
+      orderRecord.receiver_name,
+      orderRecord.receiverName,
+      orderRecord.name,
+    ) || "—";
+  const customerPhone =
+    getText(
+      customerRecord.phone_number,
+      customerRecord.phoneNumber,
+      customerRecord.phone,
+      orderRecord.customer_phone,
+      orderRecord.customerPhone,
+      orderRecord.phone_number,
+      orderRecord.phoneNumber,
+      orderRecord.phone,
+    ) || t("mails:phoneUnavailable");
+  const districtName = order.district?.name ?? "—";
+  const marketName = order.market?.name ?? "—";
   const isAddressDelivery = order.where_deliver === "address";
   const locationLabel = order.address?.trim() || districtName;
   const isHistory = variant === "history";
@@ -67,7 +103,7 @@ const OrderRow = memo(({
   if (isHistory) {
     return (
       <div className="rounded-[22px] border border-slate-200/70 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:border-white/8 dark:bg-white/[0.03]">
-        <div className={`hidden 2xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-4`}>
+        <div className={`hidden xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-4`}>
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 shrink-0">
               <User size={14} className="text-slate-500 dark:text-white/70" />
@@ -116,7 +152,7 @@ const OrderRow = memo(({
           </div>
         </div>
 
-        <div className="2xl:hidden px-4 py-4">
+        <div className="xl:hidden px-4 py-4">
           <div className="flex items-start gap-3">
             <div className="flex items-center justify-center h-9 w-9 shrink-0 rounded-full border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
               <User size={15} className="text-slate-500 dark:text-white/70" />
@@ -167,6 +203,7 @@ const OrderRow = memo(({
               </span>
             )}
           </div>
+
         </div>
       </div>
     );
@@ -184,8 +221,11 @@ const OrderRow = memo(({
       }}
     >
       {/* XL table layout */}
-      <div className={`hidden 2xl:grid ${TABLE_COLS} items-center gap-2 px-3 2xl:px-4 py-3.5`}>
+      <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 px-3 xl:px-4 py-3.5`}>
         <div className="flex items-center gap-2 min-w-0">
+          {!readOnly ? (
+            <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
+          ) : null}
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 shrink-0">
             <User size={13} className="text-slate-500 dark:text-white/70" />
           </div>
@@ -285,10 +325,15 @@ const OrderRow = memo(({
       </div>
 
       {/* Compact layout (no horizontal scroll) */}
-      <div className="2xl:hidden px-3 py-2.5">
+      <div className="xl:hidden px-3 py-2.5">
         <div className="lg:hidden">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
+              {!readOnly ? (
+                <div className="pt-0.5">
+                  <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
+                </div>
+              ) : null}
               <div className="min-w-0">
                 <p className="m-0 truncate text-sm font-bold text-slate-900 dark:text-white">
                   {customerName}
@@ -347,7 +392,7 @@ const OrderRow = memo(({
                   className="flex items-center gap-1.5"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  {onPrint ? (
+          {onPrint ? (
                     <PrintModeSelect
                       variant="icon"
                       count={1}
@@ -378,7 +423,13 @@ const OrderRow = memo(({
 
         <div className="hidden lg:block">
           <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-start gap-3">
+              {!readOnly ? (
+                <div className="pt-0.5">
+                  <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
+                </div>
+              ) : null}
+              <div className="min-w-0">
               <p className="m-0 truncate text-base font-bold text-slate-900 dark:text-white">
                 {customerName}
               </p>
@@ -386,6 +437,7 @@ const OrderRow = memo(({
                 <Phone size={13} className="shrink-0" />
                 <span className="truncate">{customerPhone}</span>
               </p>
+              </div>
             </div>
 
             <div className="flex shrink-0 items-start gap-3">
@@ -435,7 +487,7 @@ const OrderRow = memo(({
               className="mt-2 flex items-center justify-end gap-1.5"
               onClick={(event) => event.stopPropagation()}
             >
-              {onPrint ? (
+          {onPrint ? (
                 <PrintModeSelect
                   variant="icon"
                   count={1}
@@ -461,6 +513,7 @@ const OrderRow = memo(({
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

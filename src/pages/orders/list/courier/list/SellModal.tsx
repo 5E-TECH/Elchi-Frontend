@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from "react";
 import {
   X, MapPin, Phone, User, Info, Plus, Minus,
-  MessageSquare, CheckCircle,
+  MessageSquare, CheckCircle, Camera,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../../shared/ui/Popup";
@@ -20,17 +20,19 @@ type Order = {
   total_price: number;
   where_deliver: string;
   product_quantity: number;
-  market: { name: string };
+  market: { name: string; expense_proof_conditions?: string[] | null };
   customer: { name: string; phone_number: string };
   district: { name: string };
   region: { name: string };
   items: OrderItem[];
+  sell_requires_media?: boolean;
+  cancel_requires_media?: boolean;
 };
 
 type SellPayload = {
   comment: string;
   extraCost: number;
-  proofFileKeys?: string[];
+  proof?: File;
 };
 
 type PartlySellPayload = {
@@ -38,7 +40,7 @@ type PartlySellPayload = {
   totalPrice: number;
   extraCost: number;
   comment: string;
-  proofFileKeys?: string[];
+  proof?: File;
 };
 
 type SellModalProps = {
@@ -50,13 +52,15 @@ type SellModalProps = {
   isLoading?: boolean;
 };
 
-const formatAmountInput = (value: string) => {
+const formatAmountInput = (value: string, locale: string) => {
   if (!value) return "";
 
-  return Number(value).toLocaleString("uz-UZ");
+  return Number(value).toLocaleString(locale);
 };
 
 const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
+const MAX_PROOF_SIZE_MB = 10;
+const MAX_PROOF_SIZE_BYTES = MAX_PROOF_SIZE_MB * 1024 * 1024;
 
 const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: SellModalProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
@@ -66,7 +70,8 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
   const [totalPrice, setTotalPrice] = useState("");
   const [extraCost, setExtraCost] = useState("");
   const [note, setNote] = useState("");
-  const [proofKeys, setProofKeys] = useState<string[]>([]);
+  const [proof, setProof] = useState<File | null>(null);
+  const [proofError, setProofError] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -76,10 +81,24 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
     setTotalPrice("");
     setExtraCost("");
     setNote("");
-    setProofKeys([]);
+    setProof(null);
+    setProofError("");
   }, [open, order?.id]);
 
   if (!open || !order) return null;
+
+  const orderFlags = order as Order & Record<string, unknown>;
+  const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
+    ? order.market.expense_proof_conditions
+    : [];
+  const sellRequiresMedia = Boolean(
+    orderFlags.sell_requires_media ??
+    orderFlags.sellRequiresMedia ??
+    orderFlags.require_sell_proof ??
+    orderFlags.sell_proof_required ??
+    proofConditions.includes("sell_any"),
+  );
+  const isProofMissing = sellRequiresMedia && !proof;
 
   const getItemQty = (item: OrderItem) =>
     itemQuantities[item.id] ?? item.quantity;
@@ -110,6 +129,10 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
 
   const handleSubmit = () => {
     if (!order) return;
+    if (sellRequiresMedia && !proof) {
+      setProofError(t("mediaProofRequired"));
+      return;
+    }
 
     if (isPartial) {
       if (getSelectedItemsCount() < 1) {
@@ -125,16 +148,30 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
         totalPrice: Number(totalPrice) || 0,
         extraCost: Number(extraCost) || 0,
         comment: note,
-        proofFileKeys: proofKeys.length ? proofKeys : undefined,
+        ...(proof ? { proof } : {}),
       });
     } else {
       // POST /orders/sell/{id}
       onSell(order.id, {
         comment: note,
         extraCost: Number(extraCost) || 0,
-        proofFileKeys: proofKeys.length ? proofKeys : undefined,
+        ...(proof ? { proof } : {}),
       });
     }
+  };
+
+  const handleProofChange = (file?: File) => {
+    setProofError("");
+    if (!file) {
+      setProof(null);
+      return;
+    }
+    if (file.size > MAX_PROOF_SIZE_BYTES) {
+      setProof(null);
+      setProofError(t("mediaProofTooLarge", { size: MAX_PROOF_SIZE_MB }));
+      return;
+    }
+    setProof(file);
   };
 
   return (
@@ -273,7 +310,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={formatAmountInput(totalPrice)}
+                  value={formatAmountInput(totalPrice, locale)}
                   onChange={(e) =>
                     setTotalPrice(sanitizeAmountInput(e.target.value))
                   }
@@ -295,7 +332,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
               <input
                 type="text"
                 inputMode="numeric"
-                value={formatAmountInput(extraCost)}
+                value={formatAmountInput(extraCost, locale)}
                 onChange={(e) =>
                   setExtraCost(sanitizeAmountInput(e.target.value))
                 }
@@ -322,19 +359,49 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
             />
           </div>
 
-          {/* Proof files (image/video) — required by some markets for sell. */}
-          <ProofUpload value={proofKeys} onChange={setProofKeys} />
+          <div>
+            <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+              <Camera size={12} className="text-emerald-500" />
+              {t("mediaProof")}
+              {sellRequiresMedia ? <span className="text-red-400">*</span> : null}
+            </p>
+            {sellRequiresMedia ? (
+              <p className="mb-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+                {t("sellMediaProofRequiredNotice")}
+              </p>
+            ) : null}
+            <label className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-3 py-4 text-center transition-colors ${
+              proofError
+                ? "border-error/50 bg-error/10"
+                : "border-gray-200 bg-white/70 hover:border-emerald-400 dark:border-white/10 dark:bg-primarydark/35"
+            }`}>
+              <input
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={(event) => handleProofChange(event.target.files?.[0])}
+              />
+              <Camera size={20} className="text-emerald-500" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-100">
+                {proof ? proof.name : t("mediaProofUpload")}
+              </span>
+              <span className="text-xs text-gray-400">
+                {t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}
+              </span>
+            </label>
+            {proofError ? <p className="mt-1 text-xs font-semibold text-error">{proofError}</p> : null}
+          </div>
         </div>
 
         {/* Footer */}
         <div className="shrink-0 border-t border-gray-200 bg-primary px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-4 dark:border-white/10 dark:bg-maindark sm:pb-5">
           <button
             onClick={handleSubmit}
-            disabled={isLoading}
+            disabled={isLoading || isProofMissing}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-500 hover:to-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <CheckCircle size={18} />
-            {isLoading ? t("loading", { ns: "common" }) : t("sell")}
+            {isLoading ? t("loading", { ns: "common" }) : isProofMissing ? t("sellMediaProofRequiredNotice") : t("sell")}
           </button>
         </div>
       </div>

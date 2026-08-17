@@ -11,6 +11,7 @@
   "selectPlaceholder": "Select",
   "selectMarketDescription": "Select a market",
   "selectCourierDescription": "Select a courier",
+  "selectBranchManagerDescription": "Select a branch manager",
   "selectEmployee": "Select employee",
   "forSalaryPayment": "For salary payment",
   "selectCourier": "Select courier",
@@ -114,6 +115,8 @@
   "spendFromCashbox": "Spend from cashbox",
   "paymentCourier": "Courier payment",
   "paymentMarket": "Market payment",
+  "courierToBranchTransfer": "Courier to branch transfer",
+  "hqToMarketTransfer": "HQ to market transfer",
   "operationType": "Operation type",
   "sourceType": "Source type",
   "cashboxType": "Cashbox type",
@@ -134,6 +137,18 @@
   "financialBalanceDistribution": "Distribution",
   "financialBalanceTotal": "Total balance",
   "financialBalanceTotalFormula": "Cashbox + Couriers + Markets",
+  "financialBalanceMarketsSettlement": "Settlements with markets",
+  "financialBalanceCouriersSettlement": "Settlements with couriers",
+  "financialBalanceListEmpty": "No data found",
+  "financialBalanceCountSuffix": "items",
+  "financialBalancePositiveImpact": "Positive impact (+)",
+  "financialBalanceNegativeImpact": "Negative impact (-)",
+  "financialBalanceNetChange": "Net change",
+  "financialBalanceTransactionsCount": "{{count}} transactions",
+  "financialBalancePositiveSources": "Positive source drivers",
+  "financialBalanceNegativeSources": "Negative source drivers",
+  "financialBalanceTopTransactions": "Transactions with the biggest impact",
+  "financialBalanceTotalTransactions": "{{count}} total",
   "financialBalanceComingSoon": "UI for this section will be added in the next stage.",
   "financialBalanceDate": "Date",
   "financialBalanceSource": "Source",
@@ -145,6 +160,7 @@
   "financialBalanceComment": "Comment",
   "financialBalanceHistoryEmpty": "No history data found",
   "financialBalanceSourceProfit": "Post profit",
+  "financialBalanceSourceExtraCost": "Extra cost",
   "financialBalanceSourceManualIncome": "Manual income",
   "financialBalanceSourceManualExpense": "Manual expense",
   "financialBalanceSourceSalary": "Salary",
@@ -189,9 +205,20 @@
   ,"receiveAction": "Receive"
   ,"userFallback": "User"
   ,"receiveFromCourier": "Receive from courier"
+  ,"receiveFromBranchManager": "Receive from branch manager"
   ,"payToMarket": "Pay to market"
   ,"paySalary": "Pay salary"
+  ,"monthlySalary": "Monthly salary"
+  ,"salaryUnpaidBalance": "Outstanding balance"
+  ,"salaryPaidTotal": "Total paid: {{amount}} UZS"
+  ,"salaryHistoryEmpty": "No salary payments yet"
+  ,"salaryPaymentSuccess": "Salary paid successfully"
+  ,"salaryPaymentError": "Could not pay salary"
+  ,"mainCard": "Main card"
+  ,"selectCard": "Select a card"
+  ,"cardRequired": "Please select a card"
   ,"courierShort": "Courier"
+  ,"branchManagerShort": "Branch manager"
   ,"marketShort": "Market"
   ,"expenseShort": "Expense"
   ,"incomeShort": "Income"
@@ -215,5 +242,27 @@
   ,"branchToMainPaymentError": "Failed to transfer payment to HQ"
   ,"branchToMainSource": "Branch to HQ transfer"
   ,"mainBranchFallback": "HQ branch"
+  ,"unknown": "Unknown"
+  ,"cardHolder": "Card holder"
+  ,"transferSourceRequired": "Select a transfer source"
+  ,"transferCourierLabel": "Courier cashbox"
+  ,"transferCourierPlaceholder": "Select a courier"
+  ,"transferMarketLabel": "Market cashbox"
+  ,"transferMarketPlaceholder": "Select a market"
+  ,"customerRole": "Customer"
+  ,"adminRole": "Admin"
+  ,"superAdminRole": "Super Admin"
+  ,"clickPayment": "Click"
+  ,"paymePayment": "Payme"
+  ,"statusSold": "Sold"
+  ,"statusCancelled": "Cancelled"
+  ,"statusPaid": "Paid"
+  ,"statusPartlyPaid": "Partly paid"
+  ,"statusNew": "New"
+  ,"statusReceived": "Received"
+  ,"deliveryAddress": "To address"
+  ,"deliveryCenter": "To center"
+  ,"region": "Region"
+  ,"no": "No"
   ,"currencyAmountSuffix": "so'm"
 }

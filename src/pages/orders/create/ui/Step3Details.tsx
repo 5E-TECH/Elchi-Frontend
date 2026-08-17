@@ -28,8 +28,8 @@ const Step3Details = () => {
 
   const market = useWatch({ control, name: "market" });
   const details = useWatch({ control, name: "details" });
-  const { getByMarketId } = useProducts();
-  const { data: productsData, isLoading } = getByMarketId(market ? String(market.id) : "");
+  const { useGetByMarketId } = useProducts();
+  const { data: productsData, isLoading } = useGetByMarketId(market ? String(market.id) : "");
 
   const toArray = (value: unknown): any[] => {
     if (Array.isArray(value)) return value;

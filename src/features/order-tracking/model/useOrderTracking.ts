@@ -14,6 +14,7 @@ type UseOrderTrackingResult = {
 };
 
 const DEFAULT_LIMIT = 20;
+const HIDDEN_TRACKING_ACTIONS = new Set(["custody_change", "custody_changed"]);
 
 const sortEvents = (items: TrackingEvent[]) =>
   [...items].sort((left, right) => {
@@ -37,6 +38,76 @@ const normalizeEvent = (event: TrackingEvent): TrackingEvent => {
   };
 };
 
+const normalizeAction = (value?: string | null) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+
+const shouldShowEvent = (event: TrackingEvent) =>
+  !HIDDEN_TRACKING_ACTIONS.has(normalizeAction(event.action));
+
+const getSystemStatusActorInferenceMode = (event: TrackingEvent) => {
+  const oldStatus = normalizeAction(event.old_value?.status ?? event.from_status);
+  const newStatus = normalizeAction(event.new_value?.status ?? event.to_status);
+  const transition = `${oldStatus}->${newStatus}`;
+
+  if (transition === "new->received") return "nearby";
+  if (transition === "on_the_road->waiting") return "next";
+
+  return null;
+};
+
+const isSystemActor = (event: TrackingEvent) => {
+  const actorName = normalizeAction(event.actor?.name ?? event.actor?.username);
+  const actorRole = normalizeAction(event.actor?.role);
+  const changedByRole = normalizeAction(event.changed_by_role);
+
+  return actorName === "system" || actorRole === "system" || changedByRole === "system";
+};
+
+const isHumanActor = (event: TrackingEvent) => {
+  const actorName = normalizeAction(event.actor?.name ?? event.actor?.username ?? event.user_name);
+  const actorRole = normalizeAction(event.actor?.role ?? event.changed_by_role);
+
+  return Boolean(actorName && actorName !== "system" && actorRole && actorRole !== "system");
+};
+
+const withInferredActor = (event: TrackingEvent, source: TrackingEvent): TrackingEvent => ({
+  ...event,
+  changed_by: source.changed_by,
+  changed_by_role: source.actor?.role ?? source.changed_by_role,
+  actor: source.actor ?? event.actor,
+  user_name: source.user_name,
+});
+
+const inferSystemStatusActors = (items: TrackingEvent[]) => {
+  const chronologicalEvents = [...items].sort(
+    (left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
+  );
+
+  return chronologicalEvents.map((event, index) => {
+    const inferenceMode = getSystemStatusActorInferenceMode(event);
+
+    if (!inferenceMode || !isSystemActor(event)) {
+      return event;
+    }
+
+    const nextHumanEvent = chronologicalEvents.slice(index + 1).find(isHumanActor);
+    const previousHumanEvent = chronologicalEvents
+      .slice(0, index)
+      .reverse()
+      .find(isHumanActor);
+
+    if (nextHumanEvent || inferenceMode === "next") {
+      return nextHumanEvent ? withInferredActor(event, nextHumanEvent) : event;
+    }
+
+    return previousHumanEvent ? withInferredActor(event, previousHumanEvent) : event;
+  });
+};
+
 const getPayloadMeta = (payload: ActivityLogResponse | TrackingEvent[]) => {
   if (Array.isArray(payload)) {
     return {
@@ -53,7 +124,7 @@ const getPayloadMeta = (payload: ActivityLogResponse | TrackingEvent[]) => {
   };
 };
 
-export const useOrderTracking = (orderId: string | number): UseOrderTrackingResult => {
+export const useOrderTracking = (orderId: string | number, enabled = true): UseOrderTrackingResult => {
   const [events, setEvents] = useState<TrackingEvent[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -66,6 +137,11 @@ export const useOrderTracking = (orderId: string | number): UseOrderTrackingResu
     async (nextPage: number, replace: boolean) => {
       const currentRequestId = ++requestIdRef.current;
 
+      if (!enabled) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setIsError(false);
       setErrorMessage("");
@@ -77,7 +153,7 @@ export const useOrderTracking = (orderId: string | number): UseOrderTrackingResu
         });
         const payload = response.data;
         const { items, total, limit } = getPayloadMeta(payload);
-        const incomingEvents = items.map(normalizeEvent);
+        const incomingEvents = items.map(normalizeEvent).filter(shouldShowEvent);
 
         if (requestIdRef.current !== currentRequestId) {
           return;
@@ -90,7 +166,7 @@ export const useOrderTracking = (orderId: string | number): UseOrderTrackingResu
               collection.findIndex((item) => item.id === event.id) === index,
           );
 
-          return sortEvents(uniqueEvents);
+          return sortEvents(inferSystemStatusActors(uniqueEvents));
         });
 
         setPage(nextPage);
@@ -119,15 +195,23 @@ export const useOrderTracking = (orderId: string | number): UseOrderTrackingResu
         }
       }
     },
-    [orderId],
+    [enabled, orderId],
   );
 
   useEffect(() => {
     setEvents([]);
     setPage(1);
     setHasMore(false);
+
+    if (!enabled) {
+      setIsLoading(false);
+      setIsError(false);
+      setErrorMessage("");
+      return;
+    }
+
     void fetchPage(1, true);
-  }, [fetchPage, orderId]);
+  }, [enabled, fetchPage, orderId]);
 
   const loadMore = useCallback(() => {
     if (isLoading || !hasMore) {

@@ -4,6 +4,7 @@ import { Table } from "../../../../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../../../../shared/components/Table/Table.types";
 import { Calendar, MapPin, Phone, RotateCcw, Store, User } from "lucide-react";
 import type { Order } from "./pendingOrderTable";
+import type { OrderStatus } from "../../../../../../entities/order/types/order";
 import OrderStatusBadge from "../../../OrderStatusBadge";
 
 // Sotish + Bekor tugmalari ko'rsatiladigan statuslar
@@ -59,15 +60,18 @@ const renderHarakat = (
 type Props = {
   orders: Order[];
   loading?: boolean;
+  onRowClick?: (order: Order) => void;
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
   onRestore?: (order: Order) => void;
 };
 
-const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Props) => {
-  const { t } = useTranslation("orders");
+const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRestore }: Props) => {
+  const { t, i18n } = useTranslation("orders");
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+  const formatMoney = (value: number) => `${value.toLocaleString(locale)} ${t("currency")}`;
   const formatDate = (value: string) =>
-    new Date(value).toLocaleString("uz-UZ", {
+    new Date(value).toLocaleString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -125,7 +129,7 @@ const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Pro
       {
         key: "status",
         label: t("orderStatus"),
-        render: (val) => <OrderStatusBadge status={(val === "cancelled (sent)" ? "cancelled" : val) as "created" | "new" | "received" | "on the road" | "waiting" | "sold" | "cancelled" | "paid" | "partly_paid" | "closed"} />,
+        render: (val) => <OrderStatusBadge status={val} />,
       },
       {
         key: "total_price",
@@ -133,7 +137,7 @@ const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Pro
         sortable: true,
         render: (val) => (
           <span className="font-bold text-sm">
-            {Number(val).toLocaleString("uz-UZ")}
+            {formatMoney(Number(val))}
           </span>
         ),
       },
@@ -152,13 +156,7 @@ const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Pro
         sortable: true,
         render: (val) => (
           <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-            {new Date(val as string).toLocaleString("uz-UZ", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatDate(val as string)}
           </span>
         ),
       },
@@ -168,7 +166,7 @@ const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Pro
         render: (_, row) => renderHarakat(row, onDeliver, onCancel, onRestore, t),
       },
     ],
-    [onDeliver, onCancel, onRestore, t]
+    [formatDate, formatMoney, onDeliver, onCancel, onRestore, t]
   );
 
   return (
@@ -178,6 +176,7 @@ const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Pro
       keyExtractor={(row) => row.id}
       loading={loading}
       emptyMessage={t("orderEmpty")}
+      onRowClick={onRowClick}
       mobileRowRender={(row) => (
         <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/4">
           <div className="flex items-start justify-between gap-3">
@@ -189,7 +188,7 @@ const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Pro
               </p>
             </div>
             <OrderStatusBadge
-              status={(row.status === "cancelled (sent)" ? "cancelled" : row.status) as "created" | "new" | "received" | "on the road" | "waiting" | "sold" | "cancelled" | "paid" | "partly_paid" | "closed"}
+              status={row.status as OrderStatus}
             />
           </div>
 
@@ -209,7 +208,7 @@ const AllOrdersTable = ({ orders, loading, onDeliver, onCancel, onRestore }: Pro
 
           <div className="mt-2 flex items-center justify-between gap-2">
             <span className="text-base font-bold text-slate-900 dark:text-white">
-              {Number(row.total_price).toLocaleString("uz-UZ")}
+              {formatMoney(Number(row.total_price))}
             </span>
             <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-white/65">
               <Calendar size={11} className="shrink-0" />

@@ -7,9 +7,13 @@ export const shift = "shift";
 export const financeHistory = "finance-history";
 
 export interface FinanceHistoryActor {
-  id: string;
+  id: string | number;
   name?: string | null;
+  full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   phone_number?: string | null;
+  phone?: string | null;
   role?: string | null;
   status?: string | null;
 }
@@ -21,6 +25,7 @@ export interface FinanceHistoryCashbox {
   balance_card?: number;
   cashbox_type: string;
   user_id?: string | null;
+  user?: FinanceHistoryActor | null;
 }
 
 export interface FinanceHistoryOrderProduct {
@@ -88,7 +93,9 @@ export interface FinanceHistoryDetail {
   order?: FinanceHistoryOrder | null;
   user?: FinanceHistoryActor | null;
   source_user?: FinanceHistoryActor | null;
+  sourceUser?: FinanceHistoryActor | null;
   created_by_user?: FinanceHistoryActor | null;
+  createdByUser?: FinanceHistoryActor | null;
 }
 
 export interface FinanceHistoryDetailResponse {
@@ -96,6 +103,17 @@ export interface FinanceHistoryDetailResponse {
   message: string;
   data: FinanceHistoryDetail;
 }
+
+const normalizeFinanceHistoryParams = (params?: any) => {
+  if (!params) return params;
+
+  const { fromDate, toDate, ...rest } = params;
+  return {
+    ...rest,
+    ...(fromDate && { from_date: fromDate }),
+    ...(toDate && { to_date: toDate }),
+  };
+};
 
 export const useCashBox = () => {
   const client = useQueryClient();
@@ -106,7 +124,13 @@ export const useCashBox = () => {
       client.invalidateQueries({ queryKey: ["finance-cov"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["couriers"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["courier-cashbox-balances"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["branches"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["branch-dashboard"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["revenue"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: ["kpi"], refetchType: "active" }),
+      client.invalidateQueries({ queryKey: [financeHistory], refetchType: "active" }),
     ]);
   };
 
@@ -125,7 +149,7 @@ export const useCashBox = () => {
     onSuccess: refreshCashboxQueries,
   });
 
-  const getCashBoxById = (
+  const useGetCashBoxById = (
     id: string | undefined,
     bool: boolean = true,
     params?: unknown,
@@ -136,24 +160,24 @@ export const useCashBox = () => {
         api
           .get(API_ENDPOINTS.FINANCE.CASHBOX_BY_USER(id as string), { params })
           .then((res) => res.data),
-      enabled: bool,
+      enabled: bool && Boolean(id),
     });
 
-  const getCashBoxHistoryById = (id: string | null, bool: boolean = true) =>
+  const useGetCashBoxHistoryById = (id: string | null, bool: boolean = true) =>
     useQuery({
       queryKey: [cashbox, "history-by-id", id],
       queryFn: () => api.get(API_ENDPOINTS.CASHBOX_HISTORY.BY_ID(id as string)).then((res) => res.data),
-      enabled: bool,
+      enabled: bool && Boolean(id),
     });
 
-  const getCashboxMyCashbox = (params?: unknown) =>
+  const useGetCashboxMyCashbox = (params?: any) =>
     useQuery({
       queryKey: [cashbox, "my-cashbox", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.MY_CASHBOX, { params }).then((res) => res.data),
     });
 
-  const getCashBoxInfo = (bool: boolean = true, params?: unknown) =>
+  const useGetCashBoxInfo = (bool: boolean = true, params?: any) =>
     useQuery({
       queryKey: [cashbox, "all-info", params],
       queryFn: () =>
@@ -163,7 +187,7 @@ export const useCashBox = () => {
       enabled: bool,
     });
 
-  const getCashBoxMain = (params?: unknown) =>
+  const useGetCashBoxMain = (params?: any) =>
     useQuery({
       queryKey: [cashbox, "main", params],
       queryFn: () =>
@@ -171,27 +195,27 @@ export const useCashBox = () => {
     });
 
   const cashboxSpand = useMutation({
-    mutationFn: ({ data }: { data: unknown }) => api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [cashbox] });
-    },
+    mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
+    onSuccess: refreshCashboxQueries,
   });
 
   const cashboxFill = useMutation({
-    mutationFn: ({ data }: { data: unknown }) => api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: ["cashbox"] });
-    },
+    mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
+    onSuccess: refreshCashboxQueries,
   });
 
-  const getFinanceHistory = (params?: unknown) =>
-    useQuery({
-      queryKey: [cashbox, "finance-history", params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.FINANCE.HISTORY, { params }).then((res) => res.data),
-    });
+  const useGetFinanceHistory = (params?: any, enabled: boolean = true) => {
+    const normalizedParams = normalizeFinanceHistoryParams(params);
 
-  const getFinanceHistoryById = (id: string | null, enabled: boolean = true) =>
+    return useQuery({
+      queryKey: [cashbox, "finance-history", normalizedParams],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.FINANCE.HISTORY, { params: normalizedParams }).then((res) => res.data),
+      enabled,
+    });
+  };
+
+  const useGetFinanceHistoryById = (id: string | null, enabled: boolean = true) =>
     useQuery<FinanceHistoryDetailResponse>({
       queryKey: [financeHistory, id],
       queryFn: () =>
@@ -203,7 +227,7 @@ export const useCashBox = () => {
 
   // ==================== SHIFT (SMENA) HOOKS ====================
 
-  const getCurrentShift = () =>
+  const useGetCurrentShift = () =>
     useQuery({
       queryKey: [shift, "current"],
       queryFn: () => api.get(API_ENDPOINTS.CASHBOX.SHIFT_CURRENT).then((res) => res.data),
@@ -221,41 +245,41 @@ export const useCashBox = () => {
       api.post(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, { comment }),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [shift] });
-      client.invalidateQueries({ queryKey: [cashbox] });
+      refreshCashboxQueries();
     },
   });
 
-  const getShiftHistory = (params?: { page?: number; limit?: number }) =>
+  const useGetShiftHistory = (params?: { page?: number; limit?: number }) =>
     useQuery({
       queryKey: [shift, "history", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.SHIFT_HISTORY, { params }).then((res) => res.data),
     });
 
-  const getFinancialBalance = () =>
+  const useGetFinancialBalance = () =>
     useQuery({
       queryKey: [cashbox, "financial-balance"],
       queryFn: () => api.get(API_ENDPOINTS.FINANCE.CASHBOX_FINANCIAL_BALANCE).then((res) => res.data),
     });
 
   return {
-    getCashBoxById,
-    getCashBoxInfo,
-    getCashboxMyCashbox,
-    getCashBoxHistoryById,
-    getCashBoxMain,
+    useGetCashBoxById,
+    useGetCashBoxInfo,
+    useGetCashboxMyCashbox,
+    useGetCashBoxHistoryById,
+    useGetCashBoxMain,
     createPaymentCourier,
     createPaymentBranchToMain,
     createPaymentMarket,
     cashboxSpand,
     cashboxFill,
-    getFinanceHistory,
-    getFinanceHistoryById,
+    useGetFinanceHistory,
+    useGetFinanceHistoryById,
     // Shift hooks
-    getCurrentShift,
+    useGetCurrentShift,
     openShift,
     closeShift,
-    getShiftHistory,
-    getFinancialBalance,
+    useGetShiftHistory,
+    useGetFinancialBalance,
   };
 };

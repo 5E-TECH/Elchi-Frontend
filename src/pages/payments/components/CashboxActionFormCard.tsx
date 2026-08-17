@@ -6,15 +6,16 @@ import type {
   UseFormHandleSubmit,
   UseFormRegister,
 } from "react-hook-form";
-import { CreditCard, Landmark, PackageCheck, Send } from "lucide-react";
-import Select from "../../../shared/ui/Select";
+import { ArrowLeftRight, Banknote, CreditCard, Landmark, PackageCheck, Send, Store } from "lucide-react";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import { formatAmountInput } from "./lib/amountInput";
+import { useTranslation } from "react-i18next";
 
 export interface CashboxActionFormValues {
   amount: string;
   paymentType: string;
   marketId: string;
+  transferSourceId: string;
   comment: string;
 }
 
@@ -34,6 +35,11 @@ interface CashboxActionFormCardProps {
   marketPlaceholder?: string;
   marketOptions?: { value: string; label: string }[];
   marketLoading?: boolean;
+  showTransferSourceSelect?: boolean;
+  transferSourceLabel?: string;
+  transferSourcePlaceholder?: string;
+  transferSourceOptions?: { value: string; label: string }[];
+  transferSourceLoading?: boolean;
   submitLoading?: boolean;
   submitDisabled?: boolean;
   paymentTypeOptions: { value: string; label: string }[];
@@ -49,6 +55,17 @@ const sectionClassName =
 
 const fieldClassName =
   "w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] px-4 py-3 text-sm font-semibold text-maindark outline-none transition-all placeholder:text-[color:var(--color-text-muted)] focus:border-main focus:ring-2 focus:ring-main/15 dark:border-white/10 dark:bg-white/[0.055] dark:text-primary dark:placeholder:text-white/35 dark:focus:border-main dark:focus:ring-main/20";
+
+const paymentTypeIconMap = {
+  cash: Banknote,
+  card: CreditCard,
+  click: CreditCard,
+  transfer: ArrowLeftRight,
+  click_to_market: Store,
+} as const;
+
+const getPaymentTypeIcon = (value: string) =>
+  paymentTypeIconMap[value as keyof typeof paymentTypeIconMap] ?? CreditCard;
 
 const CashboxActionFormCard = ({
   type,
@@ -66,6 +83,11 @@ const CashboxActionFormCard = ({
   marketPlaceholder = "",
   marketOptions = [],
   marketLoading = false,
+  showTransferSourceSelect = false,
+  transferSourceLabel = "",
+  transferSourcePlaceholder = "",
+  transferSourceOptions = [],
+  transferSourceLoading = false,
   submitLoading = false,
   submitDisabled = false,
   paymentTypeOptions,
@@ -75,6 +97,7 @@ const CashboxActionFormCard = ({
   handleSubmit,
   onSubmit,
 }: CashboxActionFormCardProps) => {
+  const { t } = useTranslation("payments");
   const headerIcon =
     type === "market" ? (
       <CreditCard size={17} />
@@ -121,7 +144,7 @@ const CashboxActionFormCard = ({
               )}
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[color:var(--color-text-muted)] dark:text-white/45">
-              UZS
+              {t("currency")}
             </span>
           </div>
           {errors.amount && (
@@ -130,18 +153,60 @@ const CashboxActionFormCard = ({
         </div>
 
         <div>
+          <p className="mb-2 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-table-label)] dark:text-[color:var(--color-table-label-dark)]">
+            {paymentTypeLabel} <span className="text-rose-400">*</span>
+          </p>
           <Controller
             control={control}
             name="paymentType"
             render={({ field }) => (
-              <FilterSelect
-                label={paymentTypeLabel}
-                name={field.name}
-                value={field.value}
-                onChange={field.onChange}
-                options={paymentTypeOptions}
-                placeholder={paymentTypePlaceholder}
-              />
+              <div
+                className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+                role="radiogroup"
+                aria-label={`${paymentTypeLabel}: ${paymentTypePlaceholder}`}
+              >
+                {paymentTypeOptions.map((option) => {
+                  const Icon = getPaymentTypeIcon(option.value);
+                  const isSelected = field.value === option.value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() => field.onChange(option.value)}
+                      className={`group flex min-h-14 items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-main/25 ${
+                        isSelected
+                          ? "border-main bg-main text-white shadow-lg shadow-main/20"
+                          : "border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] text-maindark hover:border-main/50 hover:bg-main/8 dark:border-white/10 dark:bg-white/[0.055] dark:text-primary dark:hover:bg-white/10"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                          isSelected
+                            ? "bg-white/18 text-white"
+                            : "bg-main/10 text-main dark:bg-white/8 dark:text-primary"
+                        }`}
+                      >
+                        <Icon size={18} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-extrabold">
+                          {option.label}
+                        </span>
+                      </span>
+                      <span
+                        className={`h-3 w-3 shrink-0 rounded-full border transition-all ${
+                          isSelected
+                            ? "border-white bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.22)]"
+                            : "border-main/40 group-hover:border-main dark:border-white/25"
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
             )}
           />
           {errors.paymentType && (
@@ -157,20 +222,45 @@ const CashboxActionFormCard = ({
               control={control}
               name="marketId"
               render={({ field }) => (
-                <Select
+                <FilterSelect
                   label={marketLabel}
                   name={field.name}
                   value={field.value}
                   onChange={field.onChange}
                   options={marketOptions}
                   placeholder={marketPlaceholder}
-                  required
                   loading={marketLoading}
-                  error={errors.marketId?.message}
-                  className="border-(--color-border-soft)! !bg-[color:var(--color-card-surface-strong)] !py-3 !text-sm !font-semibold dark:!border-white/10 dark:!bg-white/[0.055] dark:!text-primary"
+                  size="sm"
                 />
               )}
             />
+            {errors.marketId?.message && (
+              <p className="mt-1 text-xs text-error">{errors.marketId.message}</p>
+            )}
+          </div>
+        )}
+
+        {showTransferSourceSelect && (
+          <div>
+            <Controller
+              control={control}
+              name="transferSourceId"
+              render={({ field }) => (
+                <FilterSelect
+                  label={transferSourceLabel}
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={transferSourceOptions}
+                  placeholder={transferSourcePlaceholder}
+                  loading={transferSourceLoading}
+                  size="sm"
+                />
+              )}
+            />
+            {errors.transferSourceId?.message && (
+              <p className="mt-1 text-xs text-error">{errors.transferSourceId.message}</p>
+            )}
           </div>
         )}
 
@@ -193,7 +283,7 @@ const CashboxActionFormCard = ({
           className={`flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r text-sm font-extrabold text-white shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${actionGradient}`}
         >
           <Send size={16} />
-          {submitLoading ? "Yuklanmoqda..." : submitLabel}
+          {submitLoading ? t("loadingLabel") : submitLabel}
         </button>
       </div>
     </div>

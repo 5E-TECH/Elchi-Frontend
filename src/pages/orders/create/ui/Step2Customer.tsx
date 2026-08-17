@@ -61,9 +61,9 @@ const Step2Customer = () => {
 
   const regionId = useWatch({ control, name: "customer.region_id" });
 
-  const { getRegions, getDistricts } = useLogistics();
-  const { data: regions, isLoading: regLoading } = getRegions();
-  const { data: districts, isLoading: distLoading } = getDistricts(regionId);
+  const { useGetRegions, useGetDistricts } = useLogistics();
+  const { data: regions, isLoading: regLoading } = useGetRegions();
+  const { data: districts, isLoading: distLoading } = useGetDistricts(regionId);
 
   useEffect(() => {
     setValue("customer.district_id", "");

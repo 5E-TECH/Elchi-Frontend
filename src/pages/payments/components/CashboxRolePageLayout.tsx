@@ -7,6 +7,7 @@ import CashboxSummaryCard from "./CashboxSummaryCard";
 import type { PaymentRow } from "./patmentHistoryTable";
 import PageContainer from "../../../shared/ui/PageContainer";
 import BackButton from "../../../shared/ui/BackButton";
+import { useTranslation } from "react-i18next";
 
 interface CashboxRolePageLayoutProps {
   entityName: string;
@@ -70,6 +71,8 @@ const CashboxRolePageLayout = ({
   actionForm,
   summaryDetails,
 }: CashboxRolePageLayoutProps) => {
+  const { t } = useTranslation("payments");
+
   return (
     <PageContainer className="flex min-w-0 flex-col gap-3 overflow-x-hidden">
       <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(19rem,0.42fr)_minmax(0,0.58fr)]">
@@ -139,7 +142,7 @@ const CashboxRolePageLayout = ({
                     {incomeLabel}
                   </p>
                   <p className="text-lg font-black text-emerald-500">
-                    +{fmt(incomeAmount)} UZS
+                    +{fmt(incomeAmount)} {t("currency")}
                   </p>
                 </div>
               </div>
@@ -155,7 +158,7 @@ const CashboxRolePageLayout = ({
                     {expenseLabel}
                   </p>
                   <p className="text-lg font-black text-rose-400">
-                    -{fmt(expenseAmount)} UZS
+                    -{fmt(expenseAmount)} {t("currency")}
                   </p>
                 </div>
               </div>

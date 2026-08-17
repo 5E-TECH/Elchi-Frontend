@@ -1,14 +1,28 @@
 import { memo } from "react";
-import { Phone, MapPin, SquarePen, Trash2, Package, CheckSquare, Square } from "lucide-react";
+import { Phone, MapPin, SquarePen, Trash2, Package, CheckSquare, Square, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
-export const Checkbox = memo(({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
-    <button type="button" onClick={(e) => { e.stopPropagation(); onChange(); }} className="focus:outline-none">
+export const Checkbox = memo(({ checked, onChange, disabled = false }: { checked: boolean; onChange: () => void; disabled?: boolean }) => (
+    <button
+        type="button"
+        onClick={(e) => {
+            e.stopPropagation();
+            if (!disabled) onChange();
+        }}
+        aria-pressed={checked}
+        disabled={disabled}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition-all focus:outline-none focus:ring-2 focus:ring-main/35 ${
+            disabled
+                ? "cursor-not-allowed opacity-45"
+                : "hover:border-main/40 hover:bg-main/10"
+        }`}
+    >
         {checked
-            ? <div className="bg-main rounded-md p-0.5 shadow-sm shadow-main/40"><CheckSquare size={18} className="text-white" /></div>
-            : <Square size={22} className="text-gray-300 dark:text-gray-600 hover:text-main transition-colors" />}
+            ? <div className="rounded-lg bg-main p-0.5 shadow-sm shadow-main/40"><CheckSquare size={18} className="text-white" /></div>
+            : <Square size={20} className="text-gray-300 transition-colors dark:text-white/35" />}
     </button>
 ));
 
@@ -35,6 +49,8 @@ const statusConfig: Record<string, { labelKey: string; cls: string; dot: string 
     new: { labelKey: "statusNew", cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
     processing: { labelKey: "statusProcessing", cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
     completed: { labelKey: "statusCompleted", cls: "bg-blue-500/10 text-blue-600 dark:text-blue-400", dot: "bg-blue-500" },
+    cancelled: { labelKey: "statusCancelled", cls: "bg-red-500/10 text-red-600 dark:text-red-400", dot: "bg-red-500" },
+    "cancelled (sent)": { labelKey: "statusCancelled", cls: "bg-red-500/10 text-red-600 dark:text-red-400", dot: "bg-red-500" },
 };
 
 const deliverLabel: Record<string, string> = { center: "deliverCenter", home: "deliverHome", address: "deliverAddress" };
@@ -52,38 +68,52 @@ const StatusBadge = memo(({ status }: { status: string }) => {
 });
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
-export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, showCheckbox = true }: {
+export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, showCheckbox = true, showOrderId = true, checkboxDisabled = false, manualSelectLabel, onManualSelect }: {
     order: ApiOrder; isSelected: boolean;
-    onToggle?: () => void; onEdit: (id: string) => void; onDelete: (id: string) => void;
+    onToggle?: () => void; onEdit?: (id: string) => void; onDelete?: (id: string) => void;
     showCheckbox?: boolean;
+    showOrderId?: boolean;
+    checkboxDisabled?: boolean;
+    manualSelectLabel?: string;
+    onManualSelect?: () => void;
 }) => {
-    const { t } = useTranslation("newOrders");
+    const { t, i18n } = useTranslation(["newOrders", "orders"]);
+    const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+    const currencyLabel = t("currency", { ns: "orders" });
     const location = order.customer?.district?.name
         ? `${order.customer?.region?.name ?? ""} • ${order.customer.district.name}`
         : order.address ?? "—";
 
-    const date = new Date(order.createdAt).toLocaleString("uz-UZ", {
+    const date = new Date(order.createdAt).toLocaleString(locale, {
         day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
     });
+    const formatMoney = (value: number) => value.toLocaleString(locale);
 
     return (
         <div
-            onClick={showCheckbox && onToggle ? onToggle : undefined}
-            className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${showCheckbox ? "cursor-pointer" : "cursor-default"} ${isSelected
-                ? "border-emerald-500 shadow-xl shadow-emerald-500/25 bg-white dark:bg-maindark"
-                : "border-gray-100 dark:border-white/5 bg-white dark:bg-maindark hover:border-main/20 hover:shadow-md shadow-sm"}`}>
+            onClick={showCheckbox && onToggle && !checkboxDisabled ? onToggle : undefined}
+            className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${
+                showCheckbox && onToggle && !checkboxDisabled ? "cursor-pointer" : "cursor-default"
+            } ${isSelected
+                ? "border-emerald-500 bg-emerald-50/65 shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400/70 dark:bg-emerald-500/8"
+                : "border-gray-100 bg-white shadow-sm hover:border-main/25 hover:shadow-md dark:border-white/5 dark:bg-maindark"}`}>
 
-            {isSelected && <div className="absolute inset-0 bg-linear-to-br from-emerald-500/8 via-emerald-500/4 to-transparent pointer-events-none" />}
+            {isSelected && <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-emerald-500/12 via-emerald-500/5 to-transparent" />}
             <div className={`h-0.5 w-full transition-all ${isSelected ? "bg-linear-to-r from-emerald-500 to-emerald-300/40" : "bg-transparent"}`} />
+            {isSelected && <div className="absolute bottom-0 left-0 top-0 w-1 bg-emerald-500" />}
 
             <div className="relative flex flex-col gap-3 p-3 sm:flex-row sm:gap-4 sm:p-5">
                 {/* Chap: checkbox + ID */}
                 <div className="flex min-w-fit items-center gap-2 sm:flex-col sm:items-center sm:pt-0.5">
                     {showCheckbox && onToggle && (
-                        <Checkbox checked={isSelected} onChange={onToggle} />
+                        <Checkbox checked={isSelected} onChange={onToggle} disabled={checkboxDisabled} />
                     )}
-                    <div className="hidden w-px flex-1 bg-gray-100 dark:bg-white/5 sm:block" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-300 dark:text-gray-700 sm:[writing-mode:vertical-lr] sm:rotate-180">#{order.id}</span>
+                    {showOrderId ? (
+                        <>
+                            <div className="hidden w-px flex-1 bg-gray-100 dark:bg-white/5 sm:block" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-300 dark:text-gray-700 sm:[writing-mode:vertical-lr] sm:rotate-180">#{order.id}</span>
+                        </>
+                    ) : null}
                 </div>
 
                 {/* O'rta: info */}
@@ -134,22 +164,43 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
                 <div className="flex w-full shrink-0 items-center justify-between gap-3 border-t border-gray-100 pt-3 dark:border-white/6 sm:w-auto sm:flex-col sm:items-end sm:justify-between sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                     <div className="text-left sm:text-right">
                         <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1">{t("total")}</p>
-                        <p className="text-lg font-black text-gray-900 dark:text-white tabular-nums leading-tight">{fmt(order.total_price)}</p>
-                        <p className="text-[10px] text-main font-bold">UZS</p>
+                        <p className="text-lg font-black text-gray-900 dark:text-white tabular-nums leading-tight">{formatMoney(order.total_price)}</p>
+                        <p className="text-[10px] text-main font-bold">{currencyLabel}</p>
                         {order.paid_amount > 0 && (
-                            <p className="text-[10px] text-emerald-500 font-semibold mt-1">✓ {fmt(order.paid_amount)} {t("paid").toLowerCase()}</p>
+                            <p className="text-[10px] text-emerald-500 font-semibold mt-1">
+                                ✓ {formatMoney(order.paid_amount)} {currencyLabel} {t("paid").toLowerCase()}
+                            </p>
                         )}
                     </div>
-                    <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-white/5">
-                        <button onClick={(e) => { e.stopPropagation(); onEdit(order.id); }}
-                            className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-main transition-all active:scale-90">
-                            <SquarePen size={16} />
+                    {(onEdit || onDelete) && (
+                        <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-white/5">
+                            {onEdit && (
+                                <button onClick={(e) => { e.stopPropagation(); onEdit(order.id); }}
+                                    className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-main transition-all active:scale-90">
+                                    <SquarePen size={16} />
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button onClick={(e) => { e.stopPropagation(); onDelete(order.id); }}
+                                    className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-500 transition-all active:scale-90">
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
+                        </div>
+                    )}
+                    {onManualSelect && !isSelected ? (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onManualSelect();
+                            }}
+                            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-amber-300/35 bg-amber-500/10 px-3 text-xs font-black text-amber-700 transition hover:border-amber-400/60 hover:bg-amber-500/15 dark:text-amber-200"
+                        >
+                            <AlertTriangle size={14} />
+                            {manualSelectLabel}
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(order.id); }}
-                            className="p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-500 transition-all active:scale-90">
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
+                    ) : null}
                 </div>
             </div>
         </div>

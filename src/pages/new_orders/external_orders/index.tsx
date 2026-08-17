@@ -141,8 +141,8 @@ const ExternalOrdersPage = () => {
   const [viewMode, setViewMode] = useState<IntegrationViewMode>(() => getStorageViewMode());
   const page = Math.max(1, Number(searchParams.get("page") || 1));
   const limit = Math.max(1, Number(searchParams.get("limit") || DEFAULT_LIMIT));
-  const { getMarkets } = useMarkets();
-  const marketsQuery = getMarkets({ status: "active", limit: 100 }, true);
+  const { useGetMarkets } = useMarkets();
+  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, true);
 
   const params = useMemo<IntegrationParams>(() => {
     const nextParams: IntegrationParams = { page, limit };

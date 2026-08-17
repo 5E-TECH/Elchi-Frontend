@@ -11,9 +11,9 @@ const columns = [
 ];
 
 const InvestorsOpsPage = () => {
-  const { getInvestors, createInvestor } = useInvestors();
+  const { useGetInvestors, createInvestor } = useInvestors();
 
-  const investorsQuery = getInvestors();
+  const investorsQuery = useGetInvestors();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -23,7 +23,7 @@ const InvestorsOpsPage = () => {
   };
 
   return (
-    <div style={{ padding: 16, maxWidth: 860, margin: "0 auto" }}>
+    <div className="mx-auto w-full max-w-[860px] px-4 pt-4 pb-28 md:pb-4">
       <Title level={3}>Investorlar</Title>
       <Text type="secondary">
         Barcha investorlar ro'yxati va yangi investor qo'shish.
@@ -37,6 +37,7 @@ const InvestorsOpsPage = () => {
         dataSource={(investorsQuery.data as any[]) ?? []}
         loading={investorsQuery.isLoading}
         pagination={false}
+        scroll={{ x: "max-content" }}
       />
 
       <Space direction="vertical" style={{ display: "flex", marginTop: 20 }}>

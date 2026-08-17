@@ -1,0 +1,13 @@
+# Elchi Pochta — robots.txt
+# https://elchi.uz
+
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /403
+Disallow: /404
+Disallow: /500
+Disallow: /runtime-error
+
+# Sitemap
+Sitemap: https://elchi.uz/sitemap.xml

@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from "../shared/api";
 import { loginSuccess, logout as logoutAction, setAppInitializing, setProfile, setError } from "../entities/user/model/slice";
 import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
+import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
 
 type LoginCredentials = {
   phone_number: string;
@@ -14,10 +15,22 @@ type LoginCredentials = {
 
 type LoginResponse = {
   accessToken: string;
+  accessTokenExpiresAt?: number | null;
+  refreshTokenExpiresAt?: number | null;
+  refreshTokenWarnAt?: number | null;
+  access_token_expires_at?: number | null;
+  refresh_token_expires_at?: number | null;
+  refresh_token_warn_at?: number | null;
 };
 
 type RefreshResponse = {
   accessToken: string;
+  accessTokenExpiresAt?: number | null;
+  refreshTokenExpiresAt?: number | null;
+  refreshTokenWarnAt?: number | null;
+  access_token_expires_at?: number | null;
+  refresh_token_expires_at?: number | null;
+  refresh_token_warn_at?: number | null;
 };
 
 type AuthenticatedUser = User & {
@@ -70,6 +83,7 @@ const shouldSkipRefreshAfterLogout = () => {
 };
 
 const syncUserContext = (user: AuthenticatedUser) => {
+  tokenStorage.setAuthIdentity({ id: user.id, role: user.role });
   store.dispatch(setProfile(user));
   store.dispatch(setRole(user.role));
   store.dispatch(setId(user.id));
@@ -89,7 +103,16 @@ const resetClientAuthState = () => {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem("name");
     window.localStorage.removeItem("region");
+    clearStoredUiPreferences();
   }
+};
+
+const persistSessionMetadata = (response: LoginResponse | RefreshResponse) => {
+  tokenStorage.setSessionMetadata({
+    accessTokenExpiresAt: response.accessTokenExpiresAt ?? response.access_token_expires_at ?? null,
+    refreshTokenExpiresAt: response.refreshTokenExpiresAt ?? response.refresh_token_expires_at ?? null,
+    refreshTokenWarnAt: response.refreshTokenWarnAt ?? response.refresh_token_warn_at ?? null,
+  });
 };
 
 export const fetchMyProfile = async (accessToken?: string) => {
@@ -123,7 +146,12 @@ export const refreshAccessToken = async () => {
     throw new Error("Refresh response does not include accessToken");
   }
 
+  if (!tokenStorage.tokenMatchesCurrentSession(nextAccessToken)) {
+    throw new Error("Refreshed token belongs to another browser tab session");
+  }
+
   tokenStorage.setAccessToken(nextAccessToken);
+  persistSessionMetadata(response.data);
   store.dispatch(loginSuccess({ accessToken: nextAccessToken }));
 
   return nextAccessToken;
@@ -139,6 +167,7 @@ export const login = async (credentials: LoginCredentials) => {
     }
 
     tokenStorage.setAccessToken(accessToken);
+    persistSessionMetadata(response.data);
     store.dispatch(loginSuccess({ accessToken }));
 
     const user = await fetchMyProfile(accessToken);
@@ -192,18 +221,30 @@ export const initAuth = async () => {
       let accessToken = tokenStorage.getAccessToken();
 
       if (!accessToken) {
-        if (typeof window !== "undefined" && window.location.pathname === "/login") {
-          resetClientAuthState();
-          return;
-        }
-
-        store.dispatch(setAppInitializing(true));
-        accessToken = await refreshAccessToken();
-      } else {
-        store.dispatch(setAppInitializing(true));
+        resetClientAuthState();
+        return;
       }
 
-      await fetchMyProfile(accessToken);
+      store.dispatch(setAppInitializing(true));
+
+      const { accessTokenExpiresAt } = tokenStorage.getSessionMetadata();
+      if (accessTokenExpiresAt && Date.now() >= accessTokenExpiresAt) {
+        accessToken = await refreshAccessToken();
+      }
+
+      try {
+        await fetchMyProfile(accessToken);
+      } catch (error) {
+        // Profile bootstrap uses the interceptor-free auth client. If an older
+        // session has no expiry metadata, recover once from a server-side 401
+        // instead of discarding a still-valid refresh cookie.
+        if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+          throw error;
+        }
+
+        accessToken = await refreshAccessToken();
+        await fetchMyProfile(accessToken);
+      }
     } catch {
       resetClientAuthState();
     } finally {

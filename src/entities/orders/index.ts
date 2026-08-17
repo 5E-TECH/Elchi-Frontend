@@ -17,6 +17,38 @@ export type UpdateNewOrderPayload = Partial<{
 export const useOrders = () => {
   const client = useQueryClient();
 
+  const uploadProofFile = async (proof: File) => {
+    const formData = new FormData();
+    formData.append("file", proof);
+    formData.append("folder", "proof");
+
+    const response = await api.post(API_ENDPOINTS.FILES.UPLOAD, formData);
+    const key =
+      response.data?.data?.key ??
+      response.data?.key;
+
+    if (!key) {
+      throw new Error("Proof file upload did not return a key");
+    }
+
+    return String(key);
+  };
+
+  const toOrderActionBody = async (data: Record<string, unknown>) => {
+    if (!(data.proof instanceof File)) return data;
+
+    const { proof, proofFileKeys, ...rest } = data;
+    const uploadedKey = await uploadProofFile(proof);
+    const existingKeys = Array.isArray(proofFileKeys)
+      ? proofFileKeys.map(String).filter(Boolean)
+      : [];
+
+    return {
+      ...rest,
+      proofFileKeys: Array.from(new Set([...existingKeys, uploadedKey])),
+    };
+  };
+
   // A sell/cancel/rollback/partly-sell moves COD cash across cashboxes, so the
   // finance/cashbox caches (separate key space, 30s staleTime) must be refreshed
   // too — otherwise balances shown right after the action are stale. (Audit P1-3.)
@@ -53,7 +85,7 @@ export const useOrders = () => {
     },
   });
 
-  const getTodayOrders = (params?: unknown, enabled: boolean = true) =>
+  const useGetTodayOrders = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [orders, params],
       queryFn: () =>
@@ -61,7 +93,7 @@ export const useOrders = () => {
       enabled,
     });
 
-  const getTodayOrdersByMarket = (
+  const useGetTodayOrdersByMarket = (
     marketId: string | number,
     params?: unknown,
     enabled: boolean = true,
@@ -72,21 +104,36 @@ export const useOrders = () => {
         api
           .get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId), { params })
           .then((res) => res.data),
-      enabled,
+      enabled: enabled && Boolean(marketId),
     });
 
-  const getOrderById = (orderId: string, enabled: boolean = true) =>
+  const useGetOrderById = (orderId: string, enabled: boolean = true) =>
     useQuery({
       queryKey: [orders, orderId],
       queryFn: () => api.get(API_ENDPOINTS.ORDERS.BY_ID(orderId)).then((res) => res.data),
-      enabled,
+      enabled: enabled && Boolean(orderId),
     });
 
-  const getOrderCourier = (params?: { status?: string; page?: number; limit?: number }) =>
+  const useGetOrderCourier = (params?: { status?: string; page?: number; limit?: number }) =>
     useQuery({
       queryKey: [orders, "courier", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ORDERS.COURIER_ORDERS, { params }).then((res) => res.data),
+    });
+
+  const useCancelledMarkets = (params?: { search?: string }) =>
+    useQuery({
+      queryKey: [orders, "markets", "cancelled", params],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params }).then((res) => res.data),
+    });
+
+  const useCancelledOrdersByMarket = (marketId: string | number) =>
+    useQuery({
+      queryKey: [orders, "markets", marketId, "cancelled"],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId)).then((res) => res.data),
+      enabled: Boolean(marketId),
     });
 
   const updateNewOrder = useMutation({
@@ -104,8 +151,11 @@ export const useOrders = () => {
       data,
     }: {
       orderId: string;
-      data: { comment: string; extraCost: number };
-    }) => api.post(API_ENDPOINTS.ORDERS.SELL(orderId), data).then((res) => res.data),
+      data: { comment: string; extraCost: number; proof?: File };
+    }) =>
+      toOrderActionBody(data).then((body) =>
+        api.post(API_ENDPOINTS.ORDERS.SELL(orderId), body).then((res) => res.data),
+      ),
     onSuccess: invalidateMoney,
   });
 
@@ -120,9 +170,12 @@ export const useOrders = () => {
         totalPrice: number;
         extraCost: number;
         comment: string;
+        proof?: File;
       };
     }) =>
-      api.post(API_ENDPOINTS.ORDERS.PARTLY_SELL(orderId), data).then((res) => res.data),
+      toOrderActionBody(data).then((body) =>
+        api.post(API_ENDPOINTS.ORDERS.PARTLY_SELL(orderId), body).then((res) => res.data),
+      ),
     onSuccess: invalidateMoney,
   });
 
@@ -140,14 +193,53 @@ export const useOrders = () => {
     },
   });
 
+  const handoverCancelledOrders = useMutation({
+    mutationFn: ({
+      marketId,
+      orderIds,
+      authorizationToken,
+      manualOverrides,
+    }: {
+      marketId: string | number;
+      orderIds: string[];
+      authorizationToken?: string;
+      manualOverrides?: Array<{ order_id: string; reason: string }>;
+    }) =>
+      api
+        .post(API_ENDPOINTS.ORDERS.MARKET_CANCELLED_HANDOVER(marketId), {
+          order_ids: orderIds,
+          ...(authorizationToken ? { authorization_token: authorizationToken } : {}),
+          ...(manualOverrides?.length ? { manual_overrides: manualOverrides } : {}),
+        })
+        .then((res) => res.data),
+    onSuccess: (_data, variables) => {
+      client.invalidateQueries({ queryKey: [orders] });
+      client.invalidateQueries({ queryKey: [orders, "markets", "cancelled"] });
+      client.invalidateQueries({ queryKey: [orders, "markets", variables.marketId, "cancelled"] });
+    },
+  });
+
+  const generateCancelledMarketQr = useMutation({
+    mutationFn: (marketId: string | number) =>
+      api.post(API_ENDPOINTS.ORDERS.MARKET_CANCELLED_QR(marketId)).then((res) => res.data),
+  });
+
+  const scanMarketCancelledQr = useMutation({
+    mutationFn: (qrToken: string) =>
+      api.post(API_ENDPOINTS.SCAN.MARKET_CANCELLED, { qr_token: qrToken }).then((res) => res.data),
+  });
+
   const CancelOrder = useMutation({
     mutationFn: ({
       orderId,
       data,
     }: {
       orderId: string;
-      data: { comment: string; extraCost: number; paidAmount: number };
-    }) => api.post(API_ENDPOINTS.ORDERS.CANCEL(orderId), data).then((res) => res.data),
+      data: { comment: string; extraCost: number; paidAmount: number; proof?: File };
+    }) =>
+      toOrderActionBody(data).then((body) =>
+        api.post(API_ENDPOINTS.ORDERS.CANCEL(orderId), body).then((res) => res.data),
+      ),
     onSuccess: invalidateMoney,
   });
 
@@ -163,11 +255,16 @@ export const useOrders = () => {
   return {
     createReceiveOrder,
     createTransferBatch,
-    getTodayOrders,
-    getTodayOrdersByMarket,
-    getOrderById,
-    getOrderCourier,
+    useGetTodayOrders,
+    useGetTodayOrdersByMarket,
+    useGetOrderById,
+    useGetOrderCourier,
+    useCancelledMarkets,
+    useCancelledOrdersByMarket,
     SendToPost,
+    generateCancelledMarketQr,
+    scanMarketCancelledQr,
+    handoverCancelledOrders,
     RollbackOrder,
     updateNewOrder,
     deleteOrder,

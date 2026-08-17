@@ -7,8 +7,8 @@ const getNewMailsCourierMock = vi.fn();
 
 vi.mock("../../../entities/mails", () => ({
   useMails: () => ({
-    getNewMails: getNewMailsMock,
-    getNewMailsCourier: getNewMailsCourierMock,
+    useGetNewMails: getNewMailsMock,
+    useGetNewMailsCourier: getNewMailsCourierMock,
   }),
 }));
 

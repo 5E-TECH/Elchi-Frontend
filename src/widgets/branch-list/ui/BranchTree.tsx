@@ -102,7 +102,10 @@ const BranchTreeNodeCard = ({
     : "border-border-soft bg-surface-elevated hover:border-main/60 dark:border-white/10 dark:bg-surface-elevated-dark";
 
   return (
-    <div className={`relative mx-auto flex min-h-[136px] w-full max-w-[15.5rem] flex-col rounded-2xl border p-3.5 text-left shadow-[0_12px_26px_rgba(39,44,82,0.10)] transition-colors dark:shadow-[0_14px_28px_rgba(8,10,28,0.20)] ${cardClass}`}>
+    <div
+      data-branch-tree-card={node.id}
+      className={`relative mx-auto flex min-h-[136px] w-full min-w-0 max-w-[15.5rem] flex-col rounded-2xl border p-3 text-left shadow-[0_12px_26px_rgba(39,44,82,0.10)] transition-colors dark:shadow-[0_14px_28px_rgba(8,10,28,0.20)] sm:p-3.5 ${cardClass}`}
+    >
       {node.type !== "HQ" ? (
         <span className="pointer-events-none absolute -left-4 top-7 hidden h-8 w-8 rotate-[-28deg] items-center justify-center rounded-full border border-teal-400/25 bg-teal-400/10 text-teal-600 dark:text-teal-100 md:flex">
           <Leaf size={15} />
@@ -135,7 +138,7 @@ const BranchTreeNodeCard = ({
             {node.type === "HQ" ? <Building2 size={18} /> : <GitBranch size={18} />}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:flex-nowrap sm:gap-2">
               <h3 className="truncate text-[0.98rem] font-extrabold text-maindark dark:text-white">{node.name}</h3>
               <BranchStatusBadge status={node.status} />
             </div>
@@ -170,7 +173,7 @@ const BranchTreeNodeCard = ({
             event.stopPropagation();
             onToggleChildren();
           }}
-          className={`mt-3 flex w-full items-center justify-between rounded-xl border px-3 py-2 text-xs font-extrabold transition-all ${
+          className={`mt-3 flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-xs font-extrabold transition-all sm:px-3 ${
             isExpanded
               ? "border-teal-400/45 bg-teal-400/12 text-teal-700 shadow-[0_8px_20px_rgba(20,184,166,0.14)] dark:text-teal-100"
               : "border-main/45 bg-main/15 text-main shadow-[0_8px_22px_rgba(109,72,217,0.16)] hover:border-main hover:bg-main/20 dark:text-white"
@@ -178,8 +181,8 @@ const BranchTreeNodeCard = ({
           aria-label={isExpanded ? t("tree.collapse") : t("tree.expand")}
           title={isExpanded ? t("tree.collapse") : t("tree.expand")}
         >
-          <span className="truncate">{t("tree.childCount", { count: node.children.length })}</span>
-          <span className="ml-2 inline-flex items-center gap-1">
+          <span className="min-w-0 truncate">{t("tree.childCount", { count: node.children.length })}</span>
+          <span className="inline-flex shrink-0 items-center gap-1">
             {isExpanded ? t("tree.hideChildren") : t("tree.showChildren")}
             <ChevronRight
               size={15}
@@ -296,9 +299,10 @@ const BranchTreeItem = ({
               </div>
             ) : null}
             <div
+              data-testid={isRootChildrenPanel ? "branch-tree-root-grid" : undefined}
               className={
                 isRootChildrenPanel
-                  ? "relative grid w-full grid-cols-5 items-start justify-items-center gap-5 px-2 pt-1"
+                  ? "relative grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,15.5rem),1fr))] items-start justify-items-center gap-x-5 gap-y-8 px-1 pt-1 sm:px-2"
                   : "relative flex w-full flex-col items-center gap-8"
               }
             >
@@ -310,7 +314,7 @@ const BranchTreeItem = ({
                   key={child.id}
                   className={
                     isRootChildrenPanel
-                      ? "relative flex w-full max-w-[15.5rem] justify-center pt-6"
+                      ? "relative flex w-full min-w-0 max-w-[15.5rem] justify-center pt-6"
                       : "relative flex w-full justify-center pt-6"
                   }
                 >
@@ -362,10 +366,10 @@ const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border-soft bg-primary px-4 py-6 shadow-sm dark:bg-primarydark sm:px-5 sm:py-8">
+    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-border-soft bg-primary px-2.5 py-5 shadow-sm dark:bg-primarydark sm:px-5 sm:py-8">
       <div className="pointer-events-none absolute inset-x-8 top-8 h-px bg-gradient-to-r from-transparent via-main/20 to-transparent dark:via-teal-100/18" />
       <div className="relative z-10 flex w-full justify-center">
-        <ul className="flex w-full flex-col items-center gap-10 px-2 sm:px-4">
+        <ul className="flex min-w-0 w-full flex-col items-center gap-8 px-0 sm:gap-10 sm:px-2 lg:px-4">
           {roots.map((node) => (
             <BranchTreeItem
               key={node.id}

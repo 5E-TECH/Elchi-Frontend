@@ -1,11 +1,20 @@
 import type { BatchDirection, BatchStatus } from "../../../entities/batch";
+import i18n from "../../../i18n";
 
-export const formatBatchMoney = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
+const resolveLocale = () => {
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  if (language?.startsWith("ru")) return "ru-RU";
+  if (language?.startsWith("en")) return "en-US";
+  return "uz-UZ";
+};
+
+export const formatBatchMoney = (value: number) =>
+  `${value.toLocaleString(resolveLocale())} ${i18n.t("orders:currency")}`;
 
 export const formatBatchCompactMoney = (value: number) => {
   if (Math.abs(value) >= 1_000_000) {
     const amount = value / 1_000_000;
-    return `${amount.toLocaleString("uz-UZ", { maximumFractionDigits: 1 })}M so'm`;
+    return `${amount.toLocaleString(resolveLocale(), { maximumFractionDigits: 1 })}M ${i18n.t("orders:currency")}`;
   }
 
   return formatBatchMoney(value);
@@ -17,7 +26,7 @@ export const formatBatchDisplayId = (value: string | number) => {
 };
 
 export const formatBatchDateTime = (value: string) =>
-  new Intl.DateTimeFormat("uz-UZ", {
+  new Intl.DateTimeFormat(resolveLocale(), {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -25,22 +34,22 @@ export const formatBatchDateTime = (value: string) =>
   }).format(new Date(value));
 
 export const formatBatchPrintDate = (value: string) =>
-  new Intl.DateTimeFormat("uz-UZ", {
+  new Intl.DateTimeFormat(resolveLocale(), {
     day: "2-digit",
     month: "short",
     year: "numeric",
   }).format(new Date(value));
 
 export const batchStatusLabel: Record<BatchStatus, string> = {
-  new: "Yangi",
-  on_the_way: "Yo'lda",
-  received: "Qabul qilindi",
-  cancelled: "Bekor qilindi",
+  get new() { return i18n.t("batches:status.new"); },
+  get on_the_way() { return i18n.t("batches:status.onTheWay"); },
+  get received() { return i18n.t("batches:status.received"); },
+  get cancelled() { return i18n.t("batches:status.cancelled"); },
 };
 
 export const batchDirectionLabel: Record<BatchDirection, string> = {
-  forward: "Oldinga",
-  return: "Qaytarish",
+  get forward() { return i18n.t("batches:direction.forward"); },
+  get return() { return i18n.t("batches:direction.return"); },
 };
 
 export const batchStatusClass: Record<BatchStatus, string> = {
@@ -51,15 +60,15 @@ export const batchStatusClass: Record<BatchStatus, string> = {
 };
 
 export const batchStatusOptions = [
-  { value: "new", label: batchStatusLabel.new },
-  { value: "on_the_way", label: batchStatusLabel.on_the_way },
-  { value: "received", label: batchStatusLabel.received },
-  { value: "cancelled", label: batchStatusLabel.cancelled },
+  { value: "new", get label() { return batchStatusLabel.new; } },
+  { value: "on_the_way", get label() { return batchStatusLabel.on_the_way; } },
+  { value: "received", get label() { return batchStatusLabel.received; } },
+  { value: "cancelled", get label() { return batchStatusLabel.cancelled; } },
 ] as const;
 
 export const batchDirectionOptions = [
-  { value: "forward", label: batchDirectionLabel.forward },
-  { value: "return", label: batchDirectionLabel.return },
+  { value: "forward", get label() { return batchDirectionLabel.forward; } },
+  { value: "return", get label() { return batchDirectionLabel.return; } },
 ] as const;
 
 export const getBatchQrUrl = (token: string) => {

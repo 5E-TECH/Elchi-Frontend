@@ -1,12 +1,19 @@
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../shared/components/headerName";
-import { Scale, Briefcase, Store, Truck, History, ChartColumn } from "lucide-react";
+import { Scale, Briefcase, Store, Truck, History, ChartColumn, MapPin } from "lucide-react";
 import Statistics from "./components/Statistics";
 import HistoryTab from "./components/HistoryTab";
+import AnalysisTab from "./components/AnalysisTab";
 import { useCashBox } from "../../entities/payments";
 import PageContainer from "../../shared/ui/PageContainer";
-import { formatFinancialAmount, normalizeFinancialBalance } from "./lib/financialBalance";
+import QueryErrorState from "../../shared/ui/QueryErrorState";
+import EmptyState from "../../shared/ui/EmptyState";
+import {
+  formatFinancialAmount,
+  normalizeFinancialBalance,
+  type FinancialBalanceParty,
+} from "./lib/financialBalance";
 
 interface BalanceCard {
   label: string;
@@ -43,16 +50,128 @@ const subLabelColor = {
   positive: "text-emerald-600 dark:text-emerald-400",
 };
 
+interface SettlementListCardProps {
+  title: string;
+  description: string;
+  count: number;
+  icon: React.ReactNode;
+  iconClassName: string;
+  total: number;
+  rows: FinancialBalanceParty[];
+  amountClassName: string;
+  emptyText: string;
+  countSuffix: string;
+  totalLabel: string;
+  currencyLabel: string;
+}
+
+const SettlementListCard = ({
+  title,
+  description,
+  count,
+  icon,
+  iconClassName,
+  total,
+  rows,
+  amountClassName,
+  emptyText,
+  countSuffix,
+  totalLabel,
+  currencyLabel,
+}: SettlementListCardProps) => (
+  <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
+    <div className="flex items-center justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-5 py-4 dark:border-white/10">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconClassName}`}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-base font-bold text-maindark dark:text-white">{title}</p>
+          <p className="truncate text-xs text-maindark/50 dark:text-slate-400">{description}</p>
+        </div>
+      </div>
+      <p className="shrink-0 text-sm font-semibold text-maindark/45 dark:text-slate-500">
+        {count} {countSuffix}
+      </p>
+    </div>
+
+    <div className="max-h-72 overflow-y-auto">
+      {rows.length ? (
+        rows.map((row, index) => (
+          <div
+            key={`${row.id}-${index}`}
+            className="flex items-center gap-3 border-b border-[color:var(--color-border-soft)] px-5 py-3 last:border-b-0 dark:border-white/8"
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-main-soft)] text-sm font-bold text-main dark:bg-white/8 dark:text-primary">
+              {index + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-maindark dark:text-white">{row.name}</p>
+              {row.location ? (
+                <p className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-maindark/45 dark:text-slate-400">
+                  <MapPin size={12} className="shrink-0" />
+                  <span className="truncate">{row.location}</span>
+                </p>
+              ) : null}
+            </div>
+            <p className={`shrink-0 text-right text-sm font-black tabular-nums ${amountClassName}`}>
+              {formatFinancialAmount(row.balance, "comma")}
+            </p>
+          </div>
+        ))
+      ) : (
+        <div className="px-5 py-10 text-center text-sm text-maindark/50 dark:text-slate-400">
+          {emptyText}
+        </div>
+      )}
+    </div>
+
+    <div className="flex items-center justify-between gap-4 border-t border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] px-5 py-4 dark:border-white/10 dark:bg-white/5">
+      <p className="text-base font-bold text-maindark dark:text-white">{totalLabel}</p>
+      <p className={`text-right text-base font-black tabular-nums sm:text-lg ${amountClassName}`}>
+        {formatFinancialAmount(total, "comma")} {currencyLabel}
+      </p>
+    </div>
+  </div>
+);
+
 
 const FinancialBalance = () => {
   const { t } = useTranslation("payments");
-  const { getFinancialBalance } = useCashBox();
-  const { data: response, isLoading } = getFinancialBalance();
+  const { useGetFinancialBalance } = useCashBox();
+  const { data: response, isLoading, isError, refetch } = useGetFinancialBalance();
   const data = normalizeFinancialBalance(response);
   const currencyLabel = t("currency");
   const [activeTab, setActiveTab] = useState<"overview" | "history" | "analysis">("overview");
 
-  const total = data.currentSituation;
+  if (isError) {
+    return (
+      <PageContainer>
+        <QueryErrorState onRetry={() => void refetch()} />
+      </PageContainer>
+    );
+  }
+
+  if (!isLoading && !data) {
+    return (
+      <PageContainer>
+        <EmptyState
+          icon={<Scale size={28} />}
+          title={t("financialBalanceCurrentSituation")}
+          description={t("empty", { ns: "common" })}
+        />
+      </PageContainer>
+    );
+  }
+
+  const balance = data ?? {
+    currentSituation: 0,
+    difference: 0,
+    main: { balance: 0 },
+    markets: { marketsTotalBalans: 0, marketsTotalBalance: 0, items: [] },
+    couriers: { couriersTotalBalanse: 0, couriersTotalBalance: 0, items: [] },
+  };
+  const total = balance.currentSituation;
   const isNegative = total < 0;
 
   const tabs = [
@@ -78,7 +197,7 @@ const FinancialBalance = () => {
       label: t("cashbox"),
       subLabel: t("financialBalanceCashAvailable"),
       subType: "neutral",
-      amount: data.main.balance,
+      amount: balance.main.balance,
       icon: <Briefcase size={18} />,
       colorClass: "purple",
     },
@@ -86,7 +205,7 @@ const FinancialBalance = () => {
       label: t("financialBalanceMarkets"),
       subLabel: t("financialBalanceMarketsDebt"),
       subType: "negative",
-      amount: data.markets.marketsTotalBalans,
+      amount: balance.markets.marketsTotalBalans,
       icon: <Store size={18} />,
       colorClass: "red",
     },
@@ -94,7 +213,7 @@ const FinancialBalance = () => {
       label: t("financialBalanceCouriers"),
       subLabel: t("financialBalanceCouriersMoney"),
       subType: "positive",
-      amount: data.couriers.couriersTotalBalanse,
+      amount: balance.couriers.couriersTotalBalanse,
       icon: <Truck size={18} />,
       colorClass: "green",
     },
@@ -159,7 +278,7 @@ const FinancialBalance = () => {
           return (
             <div
               key={card.label}
-              className="rounded-2xl border border-gray-200 bg-white/60 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-main/40 dark:border-glass-border dark:bg-transparent dark:hover:border-[#4A476A]"
+              className="rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-main/40 dark:border-white/10 dark:bg-white/5 dark:hover:border-main/50"
             >
               <div className="mb-2.5 flex items-center gap-3">
                 <div
@@ -202,7 +321,7 @@ const FinancialBalance = () => {
       </div>
 
       <div className="shrink-0 px-4 pb-3">
-        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[var(--color-border-soft)] bg-primary p-2 dark:border-primarydark/60 dark:bg-maindark sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] p-2 shadow-sm dark:border-white/10 dark:bg-white/5 sm:grid-cols-3">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
 
@@ -211,9 +330,9 @@ const FinancialBalance = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
-                  ? "bg-[var(--color-main-soft)] text-[var(--color-main)] dark:bg-primarydark/70 dark:text-primary"
-                  : "text-[var(--color-text-muted)] dark:text-[var(--color-text-muted-dark)] hover:bg-[var(--color-table-row-alt)] dark:hover:bg-primarydark/70 hover:text-[var(--color-maindark)] dark:hover:text-[var(--color-primary)]"
+                className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
+                  ? "border-main bg-main text-white shadow-lg shadow-main/25"
+                  : "border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] text-[color:var(--color-maindark)] shadow-sm hover:border-main/50 hover:bg-main/10 hover:text-main dark:border-white/10 dark:bg-white/5 dark:text-primary dark:hover:bg-white/10 dark:hover:text-white"
                   }`}
               >
                 {tab.icon}
@@ -225,17 +344,44 @@ const FinancialBalance = () => {
       </div>
 
       <div className="px-4 pb-4">
-        {activeTab === "overview" ? <Statistics data={data} /> : activeTab === "history" ? (
+        {activeTab === "overview" ? (
+          <div className="flex flex-col gap-3">
+            <Statistics data={balance} />
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <SettlementListCard
+                title={t("financialBalanceMarkets")}
+                description={t("financialBalanceMarketsSettlement")}
+                count={balance.markets.items.length}
+                icon={<Store size={18} />}
+                iconClassName="bg-purple-600/20 text-purple-500 dark:text-purple-300"
+                total={balance.markets.marketsTotalBalans}
+                rows={balance.markets.items}
+                amountClassName="text-red-500 dark:text-red-400"
+                emptyText={t("financialBalanceListEmpty")}
+                countSuffix={t("financialBalanceCountSuffix")}
+                totalLabel={t("total")}
+                currencyLabel={currencyLabel}
+              />
+              <SettlementListCard
+                title={t("financialBalanceCouriers")}
+                description={t("financialBalanceCouriersSettlement")}
+                count={balance.couriers.items.length}
+                icon={<Truck size={18} />}
+                iconClassName="bg-blue-600/20 text-blue-600 dark:text-blue-300"
+                total={balance.couriers.couriersTotalBalanse}
+                rows={balance.couriers.items}
+                amountClassName="text-emerald-600 dark:text-emerald-400"
+                emptyText={t("financialBalanceListEmpty")}
+                countSuffix={t("financialBalanceCountSuffix")}
+                totalLabel={t("total")}
+                currencyLabel={currencyLabel}
+              />
+            </div>
+          </div>
+        ) : activeTab === "history" ? (
           <HistoryTab />
         ) : (
-          <div className="rounded-2xl border border-gray-200 dark:border-glass-border bg-white dark:bg-maindark px-6 py-10 text-center">
-            <p className="text-base font-semibold text-maindark dark:text-white/85">
-              {t("financialBalanceAnalysis")}
-            </p>
-            <p className="mt-2 text-sm text-maindark/50 dark:text-slate-400">
-              {t("financialBalanceComingSoon")}
-            </p>
-          </div>
+          <AnalysisTab />
         )}
       </div>
       </div>

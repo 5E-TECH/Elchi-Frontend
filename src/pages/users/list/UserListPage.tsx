@@ -25,7 +25,7 @@ const UserListPage = memo(() => {
 
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "users",
-    defaultLimit: 10,
+    defaultLimit: 100,
   });
   const previousFiltersKeyRef = useRef("");
   const isUrlHydratedRef = useRef(false);
@@ -128,8 +128,8 @@ const UserListPage = memo(() => {
     [roleFromUrl, statusFromUrl, searchFromUrl],
   );
 
-  const { getUser } = useUser();
-  const { data, isLoading, isError, error } = getUser(apiParams);
+  const { useGetUser } = useUser();
+  const { data, isLoading, isError, error } = useGetUser(apiParams);
   const meta = data?.data?.meta;
 
   useEffect(() => {

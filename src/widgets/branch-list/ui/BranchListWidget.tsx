@@ -117,20 +117,16 @@ const BranchListWidget = ({
         </div>
       </div>
 
-      <div className="p-4 sm:p-5">
-        {isError ? (
-          <QueryErrorState onRetry={() => refetch()} />
-        ) : (
-          <>
-            <Spin spinning={isLoading}>
-              {viewMode === "table" ? (
-                <BranchTable data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-              ) : viewMode === "card" ? (
-                <BranchCards data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-              ) : (
-                <BranchTree data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-              )}
-            </Spin>
+      <div className="min-w-0 p-2.5 sm:p-5">
+        <Spin spinning={isLoading}>
+          {viewMode === "table" ? (
+            <BranchTable data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
+          ) : viewMode === "card" ? (
+            <BranchCards data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
+          ) : (
+            <BranchTree data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
+          )}
+        </Spin>
 
             {viewMode === "card" && data && !data.data.length ? <Empty description={t("list.notFound")} /> : null}
           </>

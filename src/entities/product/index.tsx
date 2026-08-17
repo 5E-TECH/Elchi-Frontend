@@ -4,6 +4,8 @@ import { API_ENDPOINTS } from "../../shared/api";
 
 export const products = "products";
 
+type ProductQueryParams = Record<string, unknown>;
+
 export const useProducts = () => {
   const client = useQueryClient();
 
@@ -15,15 +17,15 @@ export const useProducts = () => {
     },
   });
 
-  const getProducts = (params?: any, enabled: boolean = true) =>
+  const useGetProducts = (params?: ProductQueryParams, enabled: boolean = true) =>
     useQuery({
       queryKey: [products, params],
       queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.BASE, { params }).then((res) => res.data),
       enabled,
-      placeholderData: (prev: any) => prev,
+      placeholderData: (previousData) => previousData,
     });
 
-  const getProductById = (id: number | undefined, enabled: boolean = true) =>
+  const useGetProductById = (id: number | undefined, enabled: boolean = true) =>
     useQuery({
       queryKey: [products, "detail", id],
       queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.BY_ID(id as number)).then((res) => res.data),
@@ -39,8 +41,17 @@ export const useProducts = () => {
     },
   });
 
+  const updateMyProduct = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: FormData }) =>
+      api.patch(API_ENDPOINTS.PRODUCTS.UPDATE_MY(id), data),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [products] });
+      client.invalidateQueries({ queryKey: ["market"] });
+    },
+  });
+
   // Inside useProducts.ts
-  const getByMarketId = (id: string | undefined, enabled?: boolean) => {
+  const useGetByMarketId = (id: string | undefined, enabled?: boolean) => {
     return useQuery({
       queryKey: ["market", id],
       queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.BY_MARKET_ID(id as string)).then((res) => res.data), // or however you fetch
@@ -48,7 +59,7 @@ export const useProducts = () => {
     });
   };
 
-  const getMyProducts = (enabled: boolean = true) =>
+  const useGetMyProducts = (enabled: boolean = true) =>
     useQuery({
       queryKey: [products, "my-products"],
       queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.MY_PRODUCTS).then((res) => res.data),
@@ -64,11 +75,12 @@ export const useProducts = () => {
 
   return {
     createProduct,
-    getProducts,
-    getProductById,
+    useGetProducts,
+    useGetProductById,
     updateProduct,
+    updateMyProduct,
     deleteProduct,
-    getByMarketId,
-    getMyProducts,
+    useGetByMarketId,
+    useGetMyProducts,
   };
 };

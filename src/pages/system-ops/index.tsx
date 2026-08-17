@@ -11,19 +11,19 @@ const { Title, Text } = Typography;
  */
 
 const SystemOpsPage = () => {
-  const { getAnalyticsKpi, getHealthLiveness, getScanByToken } = useMiscCoverage();
+  const { useGetAnalyticsKpi, useGetHealthLiveness, useGetScanByToken } = useMiscCoverage();
 
   // ── Scan lookup ───────────────────────────────────────────────────────────
   const [scanInput, setScanInput] = useState("");
   const [activeToken, setActiveToken] = useState("");
 
   // All three queries unconditional at top level
-  const kpiQuery = getAnalyticsKpi();
-  const healthQuery = getHealthLiveness();
-  const scanQuery = getScanByToken(activeToken, !!activeToken);
+  const kpiQuery = useGetAnalyticsKpi();
+  const healthQuery = useGetHealthLiveness();
+  const scanQuery = useGetScanByToken(activeToken, !!activeToken);
 
   return (
-    <div style={{ padding: 16, maxWidth: 860, margin: "0 auto" }}>
+    <div className="mx-auto w-full max-w-[860px] px-4 pt-4 pb-28 md:pb-4">
       <Title level={3}>Tizim — analitika va xizmatlar</Title>
       <Text type="secondary">
         Tizim holati, analitika ko'rsatkichlari va QR-token tekshirish oynasi.
@@ -35,7 +35,7 @@ const SystemOpsPage = () => {
           {kpiQuery.isLoading ? (
             <Text type="secondary">Yuklanmoqda…</Text>
           ) : kpiQuery.data !== undefined ? (
-            <pre style={{ background: "#f6f8fa", padding: 12, borderRadius: 6, margin: 0 }}>
+            <pre style={{ background: "#f6f8fa", padding: 12, borderRadius: 6, margin: 0, maxWidth: "100%", overflowX: "auto" }}>
               {JSON.stringify(kpiQuery.data, null, 2)}
             </pre>
           ) : (
@@ -72,7 +72,7 @@ const SystemOpsPage = () => {
               Yuklanmoqda…
             </Text>
           ) : scanQuery.data !== undefined ? (
-            <pre style={{ marginTop: 12, background: "#f6f8fa", padding: 12, borderRadius: 6 }}>
+            <pre style={{ marginTop: 12, background: "#f6f8fa", padding: 12, borderRadius: 6, maxWidth: "100%", overflowX: "auto" }}>
               {JSON.stringify(scanQuery.data, null, 2)}
             </pre>
           ) : null}

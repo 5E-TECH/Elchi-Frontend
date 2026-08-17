@@ -11,6 +11,7 @@
   "selectPlaceholder": "Выберите",
   "selectMarketDescription": "Выберите маркет",
   "selectCourierDescription": "Выберите курьера",
+  "selectBranchManagerDescription": "Выберите менеджера филиала",
   "selectEmployee": "Выберите сотрудника",
   "forSalaryPayment": "Для выплаты зарплаты",
   "selectCourier": "Выберите курьера",
@@ -114,6 +115,8 @@
   "spendFromCashbox": "Расход из кассы",
   "paymentCourier": "Оплата курьеру",
   "paymentMarket": "Оплата маркету",
+  "courierToBranchTransfer": "Перевод от курьера в филиал",
+  "hqToMarketTransfer": "Перевод из HQ в маркет",
   "operationType": "Тип операции",
   "sourceType": "Тип источника",
   "cashboxType": "Тип кассы",
@@ -134,6 +137,18 @@
   "financialBalanceDistribution": "Распределение",
   "financialBalanceTotal": "Общий баланс",
   "financialBalanceTotalFormula": "Касса + Курьеры + Маркеты",
+  "financialBalanceMarketsSettlement": "Расчеты с маркетами",
+  "financialBalanceCouriersSettlement": "Расчеты с курьерами",
+  "financialBalanceListEmpty": "Данные не найдены",
+  "financialBalanceCountSuffix": "шт.",
+  "financialBalancePositiveImpact": "Положительное влияние (+)",
+  "financialBalanceNegativeImpact": "Отрицательное влияние (-)",
+  "financialBalanceNetChange": "Чистое изменение",
+  "financialBalanceTransactionsCount": "{{count}} транзакций",
+  "financialBalancePositiveSources": "Источники роста",
+  "financialBalanceNegativeSources": "Источники снижения",
+  "financialBalanceTopTransactions": "Транзакции с наибольшим влиянием",
+  "financialBalanceTotalTransactions": "Всего {{count}}",
   "financialBalanceComingSoon": "Интерфейс для этого раздела будет добавлен на следующем этапе.",
   "financialBalanceDate": "Дата",
   "financialBalanceSource": "Источник",
@@ -145,6 +160,7 @@
   "financialBalanceComment": "Комментарий",
   "financialBalanceHistoryEmpty": "История не найдена",
   "financialBalanceSourceProfit": "Доход почты",
+  "financialBalanceSourceExtraCost": "Дополнительный расход",
   "financialBalanceSourceManualIncome": "Ручное поступление",
   "financialBalanceSourceManualExpense": "Ручной расход",
   "financialBalanceSourceSalary": "Зарплата",
@@ -189,9 +205,20 @@
   ,"receiveAction": "Принять"
   ,"userFallback": "Пользователь"
   ,"receiveFromCourier": "Принять от курьера"
+  ,"receiveFromBranchManager": "Принять от менеджера филиала"
   ,"payToMarket": "Оплатить маркету"
   ,"paySalary": "Выплатить зарплату"
+  ,"monthlySalary": "Ежемесячная зарплата"
+  ,"salaryUnpaidBalance": "Невыплаченный остаток"
+  ,"salaryPaidTotal": "Всего выплачено: {{amount}} сум"
+  ,"salaryHistoryEmpty": "Выплат зарплаты пока нет"
+  ,"salaryPaymentSuccess": "Зарплата успешно выплачена"
+  ,"salaryPaymentError": "Не удалось выплатить зарплату"
+  ,"mainCard": "Основная карта"
+  ,"selectCard": "Выберите карту"
+  ,"cardRequired": "Выберите карту"
   ,"courierShort": "Курьер"
+  ,"branchManagerShort": "Менеджер филиала"
   ,"marketShort": "Маркет"
   ,"expenseShort": "Расход"
   ,"incomeShort": "Доход"
@@ -215,5 +242,27 @@
   ,"branchToMainPaymentError": "Ошибка при переводе платежа в HQ"
   ,"branchToMainSource": "Перевод из филиала в HQ"
   ,"mainBranchFallback": "Главный филиал"
+  ,"unknown": "Неизвестно"
+  ,"cardHolder": "Владелец карты"
+  ,"transferSourceRequired": "Выберите источник перевода"
+  ,"transferCourierLabel": "Касса курьера"
+  ,"transferCourierPlaceholder": "Выберите курьера"
+  ,"transferMarketLabel": "Касса маркета"
+  ,"transferMarketPlaceholder": "Выберите маркет"
+  ,"customerRole": "Клиент"
+  ,"adminRole": "Админ"
+  ,"superAdminRole": "Супер админ"
+  ,"clickPayment": "Click"
+  ,"paymePayment": "Payme"
+  ,"statusSold": "Продано"
+  ,"statusCancelled": "Отменено"
+  ,"statusPaid": "Оплачено"
+  ,"statusPartlyPaid": "Частично оплачено"
+  ,"statusNew": "Новый"
+  ,"statusReceived": "Принято"
+  ,"deliveryAddress": "По адресу"
+  ,"deliveryCenter": "В центр"
+  ,"region": "Регион"
+  ,"no": "№"
   ,"currencyAmountSuffix": "сум"
 }

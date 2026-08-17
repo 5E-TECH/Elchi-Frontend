@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { House, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "./EmptyState";
@@ -14,6 +15,7 @@ interface ErrorBoundaryPageProps {
 }
 
 const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
   const runtimeError = useMemo(() => error ?? getRuntimeError(), [error]);
   const recoveryPath = getRuntimeErrorRecoveryPath(runtimeError);
@@ -33,8 +35,8 @@ const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
       <div className="w-full max-w-3xl">
         <EmptyState
           icon="😵"
-          title="Ups, nimadir noto'g'ri bo'ldi"
-          description={errorMessage ? <>Texnik ma'lumot: <span className="font-mono">{errorMessage}</span></> : "Ilovada kutilmagan xato yuz berdi."}
+          title={t("runtimeErrorTitle")}
+          description={errorMessage ? <>{t("technicalInfo")}: <span className="font-mono">{errorMessage}</span></> : t("runtimeErrorDescription")}
           className="border-white/10 bg-primary/95 py-14 dark:bg-maindark"
           action={(
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -47,7 +49,7 @@ const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition hover:bg-main/90"
               >
                 <RefreshCw size={16} />
-                Qayta yuklash
+                {t("reload")}
               </button>
               <button
                 type="button"
@@ -58,7 +60,7 @@ const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-5 py-3 text-sm font-bold text-maindark transition hover:border-main/50 hover:text-main dark:border-white/10 dark:bg-white/5 dark:text-white"
               >
                 <House size={16} />
-                Bosh sahifa
+                {t("homePage")}
               </button>
             </div>
           )}
@@ -67,7 +69,7 @@ const ErrorBoundaryPage = ({ error }: ErrorBoundaryPageProps) => {
         {errorMessage && (
         <details className="mt-5 w-full rounded-3xl border border-[color:var(--color-border-soft)] bg-primary p-5 text-left shadow-sm dark:border-white/10 dark:bg-maindark">
           <summary className="cursor-pointer text-sm font-semibold text-primary">
-            Xato tafsilotlari
+            {t("errorDetails")}
           </summary>
           <div className="mt-4 rounded-2xl border border-[color:var(--color-glass-border)] bg-[color:var(--color-glass)] p-4">
             <p className="font-mono text-xs leading-6 text-primary">

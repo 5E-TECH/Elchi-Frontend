@@ -5,7 +5,6 @@ import {
   BadgeCheck,
   Calendar,
   CreditCard,
-  ExternalLink,
   Loader2,
   MapPin,
   MessageSquare,
@@ -38,70 +37,90 @@ const formatDate = (dateStr?: string) => {
   }
 };
 
-const getPaymentMethodLabel = (value?: string | null) => {
+const getPaymentMethodLabel = (value: string | null | undefined, t: (key: string) => string) => {
   const normalized = value?.toLowerCase();
-  if (normalized === "cash") return "Naqd";
-  if (normalized === "click") return "Click";
-  if (normalized === "payme") return "Payme";
-  if (normalized === "transfer") return "O'tkazma";
-  if (normalized === "click_to_market") return "Do'konga o'tkazma";
-  if (normalized === "card") return "Karta";
+  if (normalized === "cash") return t("cash");
+  if (normalized === "click") return t("clickPayment");
+  if (normalized === "payme") return t("paymePayment");
+  if (normalized === "transfer") return t("transferOption");
+  if (normalized === "click_to_market") return t("toMarketTransferOption");
+  if (normalized === "card") return t("card");
   return value || "—";
 };
 
-const getRoleLabel = (value?: string | null) => {
-  if (value === "market") return "Market";
-  if (value === "courier") return "Courier";
-  if (value === "customer") return "Customer";
-  if (value === "admin") return "Admin";
-  if (value === "superadmin") return "Super Admin";
-  return value || "User";
+const getRoleLabel = (value: string | null | undefined, t: (key: string) => string) => {
+  const normalized = value?.toLowerCase();
+  if (normalized === "market" || normalized === "markets" || normalized === "for_market") return t("marketShort");
+  if (normalized === "courier" || normalized === "couriers" || normalized === "for_courier") return t("courierShort");
+  if (normalized === "branch" || normalized === "branches" || normalized === "for_branch") return t("branchMainCashboxLabel");
+  if (normalized === "main" || normalized === "hq") return t("mainCashbox");
+  if (normalized === "customer") return t("customerRole");
+  if (normalized === "admin") return t("adminRole");
+  if (normalized === "superadmin") return t("superAdminRole");
+  return value || t("user");
 };
 
-const getStatusLabel = (value?: string | null) => {
+const getStatusLabel = (value: string | null | undefined, t: (key: string) => string) => {
   if (!value) return "—";
-  if (value === "sold") return "To'langan";
-  if (value === "cancelled") return "Bekor qilingan";
-  if (value === "paid") return "To'langan";
-  if (value === "partly_paid") return "Qisman to'langan";
-  if (value === "new") return "Yangi";
-  if (value === "received") return "Qabul qilingan";
+  if (value === "sold") return t("statusSold");
+  if (value === "cancelled") return t("statusCancelled");
+  if (value === "paid") return t("statusPaid");
+  if (value === "partly_paid") return t("statusPartlyPaid");
+  if (value === "new") return t("statusNew");
+  if (value === "received") return t("statusReceived");
   return value;
 };
 
-const getDeliveryLabel = (value?: string | null) => {
-  if (value === "address") return "Manzilga";
-  if (value === "center") return "Markazga";
-  return value || "—";
+const getActorName = (actor?: Partial<FinanceHistoryActor> | null) => {
+  const name =
+    actor?.name?.trim() ||
+    actor?.full_name?.trim() ||
+    [actor?.first_name, actor?.last_name].filter(Boolean).join(" ").trim();
+
+  return name || (actor?.id ? `#${actor.id}` : "—");
 };
 
-const getActorName = (actor?: FinanceHistoryActor | null) =>
-  actor?.name?.trim() || actor?.id || "—";
+const resolvePrimaryActor = (
+  detail?: FinanceHistoryDetail | null,
+  row?: PaymentRow | null,
+) => {
+  const actors = [
+    detail?.source_user,
+    detail?.sourceUser,
+    row?.source_user,
+    row?.sourceUser,
+    detail?.created_by_user,
+    detail?.createdByUser,
+    row?.created_by_user,
+    row?.createdByUser,
+    detail?.cashbox?.user,
+    detail?.user,
+    row?.user,
+    detail?.order?.market,
+  ];
 
-const resolvePrimaryActor = (detail?: FinanceHistoryDetail | null) => {
-  if (!detail) return null;
-
-  return (
-    detail.source_user ||
-    detail.created_by_user ||
-    detail.user ||
-    detail.order?.market ||
-    null
-  );
+  return actors.find(Boolean) ?? null;
 };
 
 const resolveDirectionValue = (
   detail: FinanceHistoryDetail | null | undefined,
-  actor: FinanceHistoryActor | null,
+  row: PaymentRow | null | undefined,
+  actor: Partial<FinanceHistoryActor> | null,
 ) => {
-  if (actor?.name) return actor.name;
-  if (detail?.source_id) return detail.source_id;
+  const actorName = getActorName(actor);
+  if (actorName !== "—") return actorName;
+  if (detail?.source_user_id) return `#${detail.source_user_id}`;
+  if (row?.source_id) return `#${row.source_id}`;
+  if (detail?.source_id) return `#${detail.source_id}`;
   if (detail?.cashbox?.id) return `#${detail.cashbox.id}`;
   return "—";
 };
 
-const getActorPhone = (actor?: FinanceHistoryActor | null) =>
-  actor?.phone_number?.trim() || "—";
+const getActorPhone = (actor?: Partial<FinanceHistoryActor> | null) =>
+  actor?.phone_number?.trim() || actor?.phone?.trim() || "—";
+
+const getHistoryCashboxId = (item?: Partial<FinanceHistoryDetail | PaymentRow> | null) =>
+  item?.cashbox_id != null ? String(item.cashbox_id) : item?.cashbox?.id != null ? String(item.cashbox.id) : "";
 
 const getDirectionCardClasses = (isIncome: boolean) =>
   isIncome
@@ -184,23 +203,47 @@ interface Props {
 
 const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   const { t } = useTranslation("payments");
-  const { getFinanceHistoryById } = useCashBox();
+  const { useGetFinanceHistoryById } = useCashBox();
   const rowId = row?.id ?? null;
-  const { data, isLoading, isError } = getFinanceHistoryById(rowId, !!rowId);
+  const { data, isLoading, isError } = useGetFinanceHistoryById(rowId, !!rowId);
 
-  const detail = data?.data;
-  const display = detail ?? row;
+  const fetchedDetail = data?.data;
+  const rowCashboxId = getHistoryCashboxId(row);
+  const detailCashboxId = getHistoryCashboxId(fetchedDetail);
+  const isMismatchedDetail = Boolean(rowCashboxId && detailCashboxId && rowCashboxId !== detailCashboxId);
+  const detail = isMismatchedDetail ? null : fetchedDetail;
+  const display = detail
+    ? {
+        ...detail,
+        operation_type: row?.operation_type ?? detail.operation_type,
+        amount: row?.amount ?? detail.amount,
+        balance_after: row?.balance_after ?? detail.balance_after,
+        source_type: row?.source_type ?? detail.source_type,
+        payment_method: row?.payment_method ?? detail.payment_method,
+        payment_date: row?.payment_date ?? detail.payment_date,
+        comment: row?.comment ?? detail.comment,
+      }
+    : row;
   const isIncome = display?.operation_type === "income";
-  const actor = useMemo(() => resolvePrimaryActor(detail), [detail]);
+  const actor = useMemo(() => resolvePrimaryActor(detail, row), [detail, row]);
   const actorName = getActorName(actor);
   const actorPhone = getActorPhone(actor);
-  const hasComment = Boolean(detail?.comment);
+  const hasComment = Boolean(display?.comment);
   const actorRole = getRoleLabel(
-    actor?.role ?? detail?.order?.market?.role ?? detail?.cashbox?.cashbox_type,
+    actor?.role ?? detail?.order?.market?.role ?? detail?.cashbox?.cashbox_type ?? row?.cashbox_type,
+    t,
   );
-  const directionLabel = isIncome ? "Qayerdan" : "Qayerga";
-  const directionValue = resolveDirectionValue(detail, actor);
-  const directionRoleLabel = getRoleLabel(detail?.source_user?.role ?? detail?.cashbox?.cashbox_type);
+  const directionLabel = isIncome ? t("fromWhere") : t("toWhere");
+  const directionValue = resolveDirectionValue(detail, row, actor);
+  const directionRoleLabel = getRoleLabel(
+    detail?.source_user?.role ??
+      detail?.sourceUser?.role ??
+      row?.source_user?.role ??
+      row?.sourceUser?.role ??
+      detail?.cashbox?.cashbox_type ??
+      row?.cashbox_type,
+    t,
+  );
   const order = detail?.order;
   const locationLabel = [
     order?.district?.name ?? order?.customer?.district?.name ?? "",
@@ -208,6 +251,19 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
   ]
     .filter(Boolean)
     .join(", ");
+  const orderTitle =
+    order?.market?.name ||
+    order?.items?.[0]?.product?.name ||
+    order?.customer?.name ||
+    (order?.id ? `#${order.id}` : "—");
+  const orderPhone =
+    order?.customer?.phone_number ||
+    order?.customer?.phone ||
+    order?.customer?.extra_number ||
+    "—";
+  const orderTotal = Number(order?.total_price ?? 0);
+  const orderToBePaid = Number(order?.to_be_paid ?? 0);
+  const orderPaid = Number(order?.paid_amount ?? 0);
 
   if (!row) return null;
 
@@ -242,11 +298,11 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
               </div>
               <div>
                 <p className="text-[16px] font-bold capitalize text-primary">
-                  {isIncome ? "kirim" : "chiqim"}
+                  {isIncome ? t("income") : t("expense")}
                 </p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-primary/80">
                   <Receipt size={12} />
-                  To'lov tarixi
+                  {t("paymentHistory")}
                 </p>
               </div>
             </div>
@@ -264,21 +320,21 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
 
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[11px] text-primary/75">Miqdor</p>
+              <p className="text-[11px] text-primary/75">{t("amount")}</p>
               <p className="mt-1 text-[30px] leading-none font-extrabold text-primary">
                 {isIncome ? "+" : "-"}
                 {fmt(display?.amount ?? 0)}
                 <span className="ml-1.5 text-[14px] font-medium uppercase text-primary/85">
-                  UZS
+                  {t("currency")}
                 </span>
               </p>
             </div>
 
             {display?.balance_after !== undefined && (
               <div className="text-right">
-                <p className="text-[10px] text-primary/70">Amaldan keyingi balans</p>
+                <p className="text-[10px] text-primary/70">{t("balanceAfterTransaction")}</p>
                 <p className="mt-1 text-[13px] font-bold text-primary">
-                  {fmt(display.balance_after)} UZS
+                  {fmt(display.balance_after)} {t("currency")}
                 </p>
               </div>
             )}
@@ -288,15 +344,15 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
         <div className="min-h-0 space-y-3 overflow-y-auto bg-primary p-3 sm:p-4 dark:bg-maindark">
           {isLoading && (
             <PopupState
-              title="Detail yuklanmoqda"
-              description="Backenddan payment history detail olinmoqda."
+              title={t("detailLoading")}
+              description={t("detailLoadingDescription")}
             />
           )}
 
           {!isLoading && isError && (
             <PopupState
-              title="Detail yuklanmadi"
-              description="`finance/history/:id` detailini olishda xatolik bo‘ldi."
+              title={t("detailError")}
+              description={t("detailErrorDescription")}
               isError
             />
           )}
@@ -311,10 +367,10 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                     </div>
                     <div className="min-w-0">
                       <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-warning-end)] dark:text-[var(--color-warning-text)]">
-                        Izoh
+                        {t("comment")}
                       </p>
                       <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-maindark)] dark:text-primary">
-                        {detail?.comment}
+                        {display?.comment}
                       </p>
                     </div>
                   </div>
@@ -344,32 +400,32 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
                 {actorPhone !== "—" && (
                   <InfoCard
                     icon={<Phone size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                    label="Telefon raqami"
+                    label={t("phoneNumber")}
                     value={actorPhone}
                     accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                   />
                 )}
                 <InfoCard
                   icon={<CreditCard size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                  label="Manba turi"
-                  value={getPaymentSourceTypeLabel(detail?.source_type, t)}
+                  label={t("sourceType")}
+                  value={getPaymentSourceTypeLabel(display?.source_type, t)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
                   icon={<Wallet size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                  label="To'lov turi"
-                  value={getPaymentMethodLabel(detail?.payment_method)}
+                  label={t("paymentType")}
+                  value={getPaymentMethodLabel(display?.payment_method, t)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
                   icon={<Calendar size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                  label="To'lov kuni"
-                  value={formatDate(detail?.payment_date ?? detail?.createdAt)}
+                  label={t("paymentDate")}
+                  value={formatDate(display?.payment_date ?? display?.createdAt)}
                   accentClassName="bg-[color:color-mix(in_srgb,var(--color-maindark)_8%,var(--color-primary))] dark:bg-white/10"
                 />
                 <InfoCard
                   icon={<User size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
-                  label="Foydalanuvchi"
+                  label={t("user")}
                   value={
                     <div className="flex flex-col gap-1">
                       <span>{actorName || detail?.created_by || "—"}</span>
@@ -383,121 +439,73 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose }: Props) => {
               </div>
 
               {order && (
-                <div className="overflow-hidden rounded-2xl border border-[color:color-mix(in_srgb,var(--color-success)_28%,transparent)] bg-[color:color-mix(in_srgb,var(--color-success)_9%,var(--color-primary))] dark:border-white/10 dark:bg-primarydark/55">
-                  <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-4 py-3 dark:border-white/10">
+                <>
+                  <div className="rounded-2xl border border-success/35 bg-linear-to-br from-success/14 to-success/7 p-4 dark:border-success/35 dark:from-success/20 dark:to-success/10">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-2xl"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, var(--color-success) 0%, color-mix(in srgb, var(--color-success) 62%, var(--color-maindark)) 100%)",
-                        }}
-                      >
-                        <ShoppingCart size={17} className="text-primary" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-success to-info text-primary shadow-sm">
+                        <ShoppingCart size={17} />
                       </div>
-                      <div>
-                        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[var(--color-success)] dark:text-white/85">
-                          Buyurtma
+                      <div className="min-w-0 flex-1">
+                        <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-success dark:text-primary/85">
+                          {t("order")}
                         </p>
-                        <p className="text-[15px] font-bold text-[var(--color-maindark)] dark:text-white">#{order.id}</p>
+                        <p className="truncate text-sm font-bold text-[var(--color-maindark)] dark:text-primary">
+                          {orderTitle}
+                        </p>
+                        {order.id && (
+                          <p className="mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-primary/65">
+                            #{String(order.id).slice(0, 8)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3 px-4 py-3 text-[14px]">
-                    {hasComment && (
-                      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-sidebar/70 p-3 dark:border-white/10 dark:bg-maindark/40">
-                        <div className="mb-2 flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <MessageSquare size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Izoh</span>
-                        </div>
-                        <p className="whitespace-pre-line text-[var(--color-maindark)] dark:text-white">
-                          {detail?.comment}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-[1fr_auto] gap-y-2.5">
-                      <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                        <MapPin size={12} className="text-[var(--color-main)] dark:text-white" />
-                        <span>Hudud</span>
-                      </div>
-                      <span className="text-right font-medium text-[var(--color-maindark)] dark:text-white">
-                        {locationLabel || "—"}
-                      </span>
-
-                      <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                        <Phone size={12} className="text-[var(--color-main)] dark:text-white" />
-                        <span>Telefon nomer</span>
-                      </div>
-                      <span className="text-right font-medium text-[var(--color-maindark)] dark:text-white">
-                        {order.customer?.phone_number || "—"}
-                      </span>
-                    </div>
-
-                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <Wallet size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Umumiy narx</span>
-                        </div>
-                        <span className="font-bold text-[var(--color-main)] dark:text-white">
-                          {fmt(order.total_price ?? order.to_be_paid ?? 0)} UZS
+                  <div className="grid grid-cols-2 gap-3">
+                    <InfoCard
+                      icon={<MapPin size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("district")}
+                      value={locationLabel || "—"}
+                    />
+                    <InfoCard
+                      icon={<Phone size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("phoneNumber")}
+                      value={orderPhone}
+                    />
+                    <InfoCard
+                      icon={<Wallet size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("totalPrice")}
+                      value={`${fmt(orderTotal || orderToBePaid)} ${t("currency")}`}
+                    />
+                    <InfoCard
+                      icon={<Receipt size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("toBePaid")}
+                      value={`${fmt(orderToBePaid)} ${t("currency")}`}
+                    />
+                    <InfoCard
+                      icon={<CreditCard size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("paid")}
+                      value={`${fmt(orderPaid)} ${t("currency")}`}
+                    />
+                    <InfoCard
+                      icon={<BadgeCheck size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                      label={t("transactionStatus")}
+                      value={
+                        <span className="inline-flex w-fit rounded-md border border-success/20 bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success dark:text-white">
+                          {getStatusLabel(order.status, t)}
                         </span>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <BadgeCheck size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Holat</span>
-                        </div>
-                        <span
-                          className="rounded-full border px-2 py-0.5 text-[10px] font-bold dark:border-white/10 dark:text-white"
-                          style={{
-                            color:
-                              order.status === "sold" || order.status === "paid"
-                                ? "var(--color-success)"
-                                : "var(--color-error)",
-                            background:
-                              order.status === "sold" || order.status === "paid"
-                                ? "color-mix(in srgb, var(--color-success) 15%, var(--color-primary))"
-                                : "color-mix(in srgb, var(--color-error) 15%, var(--color-primary))",
-                            borderColor:
-                              order.status === "sold" || order.status === "paid"
-                                ? "color-mix(in srgb, var(--color-success) 26%, transparent)"
-                                : "color-mix(in srgb, var(--color-error) 26%, transparent)",
-                          }}
-                        >
-                          {getStatusLabel(order.status)}
-                        </span>
-                      </div>
-                    </div>
-
+                      }
+                    />
                     {order.address && (
-                      <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
-                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <MapPin size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Manzil</span>
-                        </div>
-                        <p className="mt-1 leading-5 text-[var(--color-maindark)] dark:text-white">{order.address}</p>
-                      </div>
+                      <InfoCard
+                        icon={<MapPin size={12} className="text-[color:var(--color-text-muted)] dark:text-white/80" />}
+                        label={t("address")}
+                        value={order.address}
+                        fullWidth
+                      />
                     )}
-
-                    <div className="border-t border-[color:var(--color-border-soft)] pt-3 dark:border-white/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/75">
-                          <ExternalLink size={12} className="text-[var(--color-main)] dark:text-white" />
-                          <span>Yetkazish</span>
-                        </div>
-                        <span className="font-medium text-[var(--color-maindark)] dark:text-white">
-                          {getDeliveryLabel(order.where_deliver)}
-                        </span>
-                      </div>
-                    </div>
                   </div>
-                </div>
+                </>
               )}
             </>
           )}

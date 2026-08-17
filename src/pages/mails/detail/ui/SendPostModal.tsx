@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { X, Send, User, Phone, CheckCircle2, Loader2 } from "lucide-react";
+import { X, Send, User, Phone, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../shared/ui/Popup";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
@@ -32,10 +32,12 @@ const BranchCard = memo(
     branch,
     selected,
     onSelect,
+    missingManagerLabel,
   }: {
     branch: Branch;
     selected: boolean;
     onSelect: (id: string) => void;
+    missingManagerLabel: string;
   }) => (
     <button
       type="button"
@@ -68,6 +70,12 @@ const BranchCard = memo(
             {branch.phone_number || "—"}
           </span>
         </div>
+        {!branch.has_manager && (
+          <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-300">
+            <AlertTriangle size={12} className="shrink-0" />
+            <span className="truncate">{missingManagerLabel}</span>
+          </div>
+        )}
       </div>
 
       {selected && <CheckCircle2 size={20} className="text-main shrink-0" />}
@@ -80,7 +88,7 @@ BranchCard.displayName = "BranchCard";
 const SendPostModal = memo(
   ({ isOpen, onClose, postId, branches, selectedIds, onSuccess }: SendPostModalProps) => {
     const { t } = useTranslation("mails");
-    const { apiRequest } = useAppNotification();
+    const { apiRequest, api: notifApi } = useAppNotification();
 
     const {
       control,
@@ -114,6 +122,15 @@ const SendPostModal = memo(
       if (!branchId || dispatchPostToBranch.isPending) return;
 
       const branch = branches.find((item) => item.id === branchId);
+      if (!branch?.has_manager) {
+        notifApi.error({
+          message: t("branchManagerRequiredTitle"),
+          description: t("branchManagerRequiredDescription"),
+          placement: "topRight",
+          duration: 5,
+        });
+        return;
+      }
 
       apiRequest({
         request: () =>
@@ -177,6 +194,7 @@ const SendPostModal = memo(
                       key={branch.id}
                       branch={branch}
                       selected={selectedBranchId === branch.id}
+                      missingManagerLabel={t("branchManagerMissing")}
                       onSelect={(id) =>
                         setValue("branchId", id, {
                           shouldDirty: true,

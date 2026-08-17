@@ -5,6 +5,9 @@ export interface ColumnConfig<T> {
   width?: string;
   sortable?: boolean;
   sortValue?: (row: T) => string | number | null | undefined;
+  // Column arrays combine different field types; the row remains strongly
+  // typed while custom renderers intentionally receive the selected value.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render?: (value: any, row: T, index: number) => React.ReactNode;
   renderHeader?: (label: React.ReactNode) => React.ReactNode;
   className?: string;

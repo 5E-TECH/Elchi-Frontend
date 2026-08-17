@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from "react";
+import { memo, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { ChevronRight, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -15,6 +15,11 @@ type MailGridCardProps = {
   variant?: MailGridCardVariant;
   subtitle?: ReactNode;
   footer?: ReactNode;
+  actionLabel?: ReactNode;
+  actionIcon?: ReactNode;
+  actionLoading?: boolean;
+  onAction?: () => void;
+  statusBadgeClassName?: string;
 };
 
 export const MAIL_CARD_GRID_CLASS = "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
@@ -28,7 +33,7 @@ const variantClassName: Record<MailGridCardVariant, string> = {
   refused:
     "border-rose-300/22 bg-[linear-gradient(135deg,#ef4444_0%,#b91c1c_100%)] shadow-[0_16px_34px_rgba(239,68,68,0.22)]",
   old:
-    "border-slate-300/18 bg-[linear-gradient(180deg,rgba(111,126,156,0.95)_0%,rgba(78,92,118,0.98)_100%)] shadow-[0_16px_34px_rgba(66,77,103,0.20)]",
+    "border-slate-300/14 bg-[linear-gradient(180deg,rgba(67,78,101,0.98)_0%,rgba(47,56,76,0.99)_100%)] shadow-[0_16px_34px_rgba(20,25,38,0.28)]",
   batch:
     "border-cyan-300/25 bg-[linear-gradient(135deg,rgba(18,124,154,0.96)_0%,rgba(68,62,148,0.98)_55%,rgba(35,42,86,0.98)_100%)] shadow-[0_16px_34px_rgba(18,124,154,0.22)]",
 };
@@ -44,21 +49,32 @@ const MailGridCard = ({
   variant = "today",
   subtitle,
   footer,
+  actionLabel,
+  actionIcon,
+  actionLoading = false,
+  onAction,
+  statusBadgeClassName = "border-white/25 bg-white/18 text-white",
 }: MailGridCardProps) => {
   const { t } = useTranslation("mails");
+  const handleAction = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onAction?.();
+  };
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    onOpen();
+  };
 
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen();
-        }
-      }}
-      className={`group relative min-h-[172px] cursor-pointer overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${variantClassName[variant]}`}
+      onKeyDown={handleCardKeyDown}
+      className={`group relative min-h-[172px] cursor-pointer overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl ${variantClassName[variant]}`}
     >
       <div className="mail-card-shimmer" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.14)_0%,transparent_48%,rgba(255,255,255,0.06)_100%)]" />
@@ -70,7 +86,7 @@ const MailGridCard = ({
           </div>
 
           <div className="flex min-w-0 items-center gap-2">
-            <span className="inline-flex max-w-[128px] items-center gap-1 rounded-lg border border-white/25 bg-white/18 px-2.5 py-1 text-[11px] font-bold leading-none text-white backdrop-blur-sm">
+            <span className={`inline-flex max-w-[128px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold leading-none backdrop-blur-sm ${statusBadgeClassName}`}>
               {statusIcon}
               <span className="truncate">{statusLabel}</span>
             </span>
@@ -94,7 +110,7 @@ const MailGridCard = ({
               {t("ordersLabel")}:
             </span>
             <span className="text-sm font-black text-white">
-              {orders} <span className="font-semibold text-white/75">ta</span>
+              {orders} <span className="font-semibold text-white/75">{t("piece")}</span>
             </span>
           </div>
           <div className="flex items-center justify-between gap-4">
@@ -103,7 +119,22 @@ const MailGridCard = ({
           </div>
         </div>
 
-        {footer ? <div className="mt-auto truncate text-xs font-medium text-white/62">{footer}</div> : null}
+        {footer || onAction ? (
+          <div className="mt-auto space-y-3">
+            {footer ? <div className="truncate text-xs font-medium text-white/62">{footer}</div> : null}
+            {onAction ? (
+              <button
+                type="button"
+                onClick={handleAction}
+                disabled={actionLoading}
+                className="flex min-h-9 w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/14 px-3 text-sm font-bold text-white transition hover:bg-white/22 disabled:cursor-not-allowed disabled:opacity-65"
+              >
+                {actionIcon}
+                <span className="truncate">{actionLoading ? t("checking") : actionLabel}</span>
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

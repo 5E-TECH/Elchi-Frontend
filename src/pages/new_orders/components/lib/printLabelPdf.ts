@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import type { ApiOrder } from "../OrderCard";
 import pdfLogoUrl from "../../../../shared/assets/pdflogo.svg";
 import pdfLogoFallbackUrl from "../../../../shared/assets/logoo.png";
+import i18n from "../../../../i18n";
 
 type LabelOrder = ApiOrder & {
   market?: {
@@ -37,11 +38,11 @@ const BOTTOM_Y = M + TOP_SECTION_H;
 const BOTTOM_SECTION_H = FULL_H - TOP_SECTION_H;
 
 const zoneARows = [
-  { label: "F.I.O:", key: "fullName" as const, h: 16 },
-  { label: "Telefon:", key: "phone" as const, h: 26 },
-  { label: "Manzil:", key: "address" as const, h: 26 },
-  { label: "Jami:", key: "total" as const, h: 15 },
-  { label: "Jo'natuvchi:", key: "sender" as const, h: 13 },
+  { labelKey: "labelFullName", key: "fullName" as const, h: 16 },
+  { labelKey: "labelPhone", key: "phone" as const, h: 26 },
+  { labelKey: "labelAddress", key: "address" as const, h: 26 },
+  { labelKey: "labelTotal", key: "total" as const, h: 15 },
+  { labelKey: "labelSender", key: "sender" as const, h: 13 },
 ];
 
 const BOTTOM_ROW_H = BOTTOM_SECTION_H / 4;
@@ -51,11 +52,13 @@ const IZOH_H = BOTTOM_ROW_H;
 const LOGIST_H = BOTTOM_ROW_H;
 
 const zoneBRows = [
-  { label: "Mahsulot:", key: "product" as const, h: MAHSULOT_H },
-  { label: "Mo'ljal:", key: "landmark" as const, h: MOLJAL_H },
-  { label: "Izoh:", key: "comment" as const, h: IZOH_H },
-  { label: "Logist:", key: "logist" as const, h: LOGIST_H },
+  { labelKey: "labelProduct", key: "product" as const, h: MAHSULOT_H },
+  { labelKey: "labelLandmark", key: "landmark" as const, h: MOLJAL_H },
+  { labelKey: "labelComment", key: "comment" as const, h: IZOH_H },
+  { labelKey: "labelLogist", key: "logist" as const, h: LOGIST_H },
 ];
+
+const tLabel = (key: string) => i18n.t(`newOrders:${key}`);
 
 const safe = (value?: string | null, fallback = "-") =>
   typeof value === "string" && value.trim() ? value.trim() : fallback;
@@ -116,12 +119,12 @@ const getLandmark = (order: LabelOrder) => {
 const getProducts = (order: LabelOrder) =>
   order.items.length
     ? order.items
-      .map((item) => `${safe(item.product?.name, "Mahsulot")} x${item.quantity}`)
+      .map((item) => `${safe(item.product?.name, tLabel("productFallback"))} x${item.quantity}`)
       .join(", ")
     : "-";
 
 const getDeliveryLabel = (order: LabelOrder) =>
-  order.where_deliver === "center" ? "MARKAZGA" : "UYGA";
+  order.where_deliver === "center" ? tLabel("deliveryCenterUpper") : tLabel("deliveryHomeUpper");
 
 const getSender = (order: LabelOrder) => {
   const marketName = safe(order.market?.name, "");
@@ -279,7 +282,7 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
     fullName: safe(order.customer?.name),
     phone: formatPhoneNumber(order.customer?.phone_number),
     address: getAddress(order),
-    total: `${formatMoney(order.total_price)} so'm`,
+    total: `${formatMoney(order.total_price)} ${i18n.t("orders:currency")}`,
     sender: getSender(order),
   };
 
@@ -305,7 +308,7 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
 
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(labelFontSize);
-    drawCellText(pdf, row.label, labelX, currentY, labelW, rowHeight, labelFontSize, {
+    drawCellText(pdf, tLabel(row.labelKey), labelX, currentY, labelW, rowHeight, labelFontSize, {
       bold: true,
       maxLines: 1,
       valign: "top",
@@ -388,7 +391,7 @@ const drawBottomSection = (pdf: jsPDF, order: LabelOrder) => {
       pdf.line(M, rowBottom, M + FULL_W, rowBottom);
     }
 
-    drawCellText(pdf, row.label, M + PAD, currentY, LABEL_COL - PAD * 2, row.h, 6.8, {
+    drawCellText(pdf, tLabel(row.labelKey), M + PAD, currentY, LABEL_COL - PAD * 2, row.h, 6.8, {
       bold: true,
       maxLines: 1,
       valign: "top",
@@ -481,7 +484,7 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
       const fullName = escapeHtml(safe(order.customer?.name));
       const phone = escapeHtml(formatPhoneNumber(order.customer?.phone_number));
       const address = escapeHtml(getAddress(order));
-      const total = escapeHtml(`${formatMoney(order.total_price)} so'm | ${getDeliveryLabel(order)}`);
+      const total = escapeHtml(`${formatMoney(order.total_price)} ${i18n.t("orders:currency")} | ${getDeliveryLabel(order)}`);
       const sender = escapeHtml(getSender(order));
       const product = escapeHtml(getProducts(order));
       const landmark = escapeHtml(getLandmark(order));
@@ -508,20 +511,20 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
 
             <div class="right">
               <table class="top-table">
-                <tr><td class="k">F.I.O:</td><td class="v">${fullName}</td></tr>
-                <tr><td class="k">Telefon:</td><td class="v">${phone}</td></tr>
-                <tr><td class="k">Manzil:</td><td class="v">${address}</td></tr>
-                <tr><td class="k">Jami:</td><td class="v">${total}</td></tr>
-                <tr><td class="k">Jo'natuvchi:</td><td class="v">${sender}</td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelFullName"))}</td><td class="v">${fullName}</td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelPhone"))}</td><td class="v">${phone}</td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelAddress"))}</td><td class="v">${address}</td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelTotal"))}</td><td class="v">${total}</td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelSender"))}</td><td class="v">${sender}</td></tr>
               </table>
             </div>
           </div>
 
           <table class="bottom-table">
-            <tr><td class="k">Mahsulot:</td><td class="v">${product}</td></tr>
-            <tr><td class="k">Mo'ljal:</td><td class="v">${landmark}</td></tr>
-            <tr><td class="k">Izoh:</td><td class="v">${comment}</td></tr>
-            <tr><td class="k">Logist:</td><td class="v">${logist}</td></tr>
+            <tr><td class="k">${escapeHtml(tLabel("labelProduct"))}</td><td class="v">${product}</td></tr>
+            <tr><td class="k">${escapeHtml(tLabel("labelLandmark"))}</td><td class="v">${landmark}</td></tr>
+            <tr><td class="k">${escapeHtml(tLabel("labelComment"))}</td><td class="v">${comment}</td></tr>
+            <tr><td class="k">${escapeHtml(tLabel("labelLogist"))}</td><td class="v">${logist}</td></tr>
           </table>
         </section>
       `;
@@ -661,7 +664,7 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
       </style>
     </head>
     <body>
-      <button id="printBtn" type="button">Print</button>
+      <button id="printBtn" type="button">${escapeHtml(tLabel("printButton"))}</button>
       ${sheets}
       <script>
         const triggerPrint = () => {

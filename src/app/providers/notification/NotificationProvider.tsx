@@ -2,6 +2,8 @@ import { Button } from 'antd';
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { notification } from 'antd';
 import type { NotificationInstance } from 'antd/es/notification/interface';
+import { useTranslation } from 'react-i18next';
+import { getBackendErrorMessage } from '../../../shared/lib/backendError';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +35,7 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const [api, contextHolder] = notification.useNotification();
+    const { t } = useTranslation('common');
     const lastNetworkToastAtRef = useRef(0);
 
     useEffect(() => {
@@ -44,13 +47,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
             lastNetworkToastAtRef.current = now;
             api.error({
-                message: "Tarmoq xatosi",
-                description: "Internet aloqangizni tekshiring",
+                message: t('networkError'),
+                description: t('networkCheckConnection'),
                 placement: "bottomRight",
                 duration: 8,
                 btn: (
                     <Button size="small" danger onClick={() => window.location.reload()}>
-                        Qayta urinib ko'rish
+                        {t('retry')}
                     </Button>
                 ),
             });
@@ -58,7 +61,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
         window.addEventListener("elchi:network-error", handleNetworkError);
         return () => window.removeEventListener("elchi:network-error", handleNetworkError);
-    }, [api]);
+    }, [api, t]);
 
     /**
      * Universal API request wrapper.
@@ -66,7 +69,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
      */
     const apiRequest = async <T = unknown>({
         request,
-        successMessage = "Muvaffaqiyatli bajarildi",
+        successMessage = t('operationCompleted'),
         errorMessage,
         onSuccess,
         onError,
@@ -75,7 +78,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             const data = await request();
 
             api.success({
-                message: "Muvaffaqiyatli",
+                message: t('success'),
                 description: successMessage,
                 placement: 'topRight',
                 duration: 4,
@@ -87,11 +90,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             const backendMessage = getBackendErrorMessage(error);
 
             api.error({
-                message: "Xatolik",
+                message: t('error'),
                 description:
                     backendMessage ??
                     errorMessage ??
-                    "Serverda xatolik yuz berdi",
+                    t('serverRequestError'),
                 placement: 'topRight',
                 duration: 5,
             });
@@ -122,69 +125,3 @@ export const useAppNotification = (): NotificationContextValue => {
     }
     return context;
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Axios yoki fetch xatoligidan backend xabarini oladi.
- * Fallback: standart xabar.
- */
-function getBackendErrorMessage(error: unknown): string | undefined {
-    if (typeof error !== 'object' || error === null) {
-        return undefined;
-    }
-
-    const axiosError = error as {
-        response?: {
-            data?: {
-                message?: string | string[];
-                error?: string | string[];
-                detail?: string;
-                errors?: Record<string, string | string[]>;
-            };
-        };
-        message?: string;
-    };
-
-    const responseData = axiosError.response?.data;
-
-    const normalizedMessage =
-        normalizeErrorMessage(responseData?.message) ??
-        normalizeErrorMessage(responseData?.error) ??
-        normalizeErrorMessage(responseData?.detail) ??
-        normalizeErrorRecord(responseData?.errors) ??
-        normalizeErrorMessage(axiosError.message);
-
-    return normalizedMessage;
-}
-
-function normalizeErrorMessage(value: unknown): string | undefined {
-    if (typeof value === 'string') {
-        const message = value.trim();
-        return message || undefined;
-    }
-
-    if (Array.isArray(value)) {
-        const message = value
-            .map((item) => (typeof item === 'string' ? item.trim() : ''))
-            .filter(Boolean)
-            .join(', ');
-
-        return message || undefined;
-    }
-
-    return undefined;
-}
-
-function normalizeErrorRecord(
-    value: Record<string, string | string[]> | undefined,
-): string | undefined {
-    if (!value) return undefined;
-
-    const message = Object.values(value)
-        .map((entry) => normalizeErrorMessage(entry))
-        .filter(Boolean)
-        .join(', ');
-
-    return message || undefined;
-}

@@ -17,21 +17,25 @@ type OrderItem = { id: string; quantity: number; product: { name: string; image_
 export type Order = {
   id: string; created_at: string; status: string; total_price: number;
   where_deliver: string; product_quantity: number;
-  market: { name: string }; customer: { name: string; phone_number: string };
+  market: { name: string; expense_proof_conditions?: string[] | null }; customer: { name: string; phone_number: string };
   district: { name: string }; region: { name: string }; items: OrderItem[];
+  sell_requires_media?: boolean; cancel_requires_media?: boolean;
 };
 
 type Props = {
   orders: Order[];
   loading?: boolean;
+  onRowClick?: (order: Order) => void;
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
 };
 
-const PendingOrdersTable = ({ orders, loading, onDeliver, onCancel }: Props) => {
-  const { t } = useTranslation("orders");
+const PendingOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel }: Props) => {
+  const { t, i18n } = useTranslation("orders");
+  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+  const formatMoney = (value: number) => `${value.toLocaleString(locale)} ${t("currency")}`;
   const formatDate = (value: string) =>
-    new Date(value).toLocaleString("uz-UZ", {
+    new Date(value).toLocaleString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -75,7 +79,7 @@ const PendingOrdersTable = ({ orders, loading, onDeliver, onCancel }: Props) => 
     },
     {
       key: "total_price", label: t("price"), sortable: true,
-      render: (val) => <span className="font-bold text-sm">{Number(val).toLocaleString("uz-UZ")}</span>,
+      render: (val) => <span className="font-bold text-sm">{formatMoney(Number(val))}</span>,
     },
     {
       key: "where_deliver", label: t("deliveryWhere"),
@@ -85,7 +89,7 @@ const PendingOrdersTable = ({ orders, loading, onDeliver, onCancel }: Props) => 
       key: "created_at", label: t("date"), sortable: true,
       render: (val) => (
         <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-          {new Date(val as string).toLocaleString("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+          {formatDate(val as string)}
         </span>
       ),
     },
@@ -104,7 +108,7 @@ const PendingOrdersTable = ({ orders, loading, onDeliver, onCancel }: Props) => 
         </div>
       ),
     },
-  ], [onDeliver, onCancel, t]);
+  ], [formatDate, formatMoney, onDeliver, onCancel, t]);
 
   return (
     <Table
@@ -113,6 +117,7 @@ const PendingOrdersTable = ({ orders, loading, onDeliver, onCancel }: Props) => 
       keyExtractor={(row) => row.id}
       loading={loading}
       emptyMessage={t("orderEmpty")}
+      onRowClick={onRowClick}
       mobileRowRender={(row) => (
         <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/4">
           <div className="flex items-start justify-between gap-3">
@@ -144,7 +149,7 @@ const PendingOrdersTable = ({ orders, loading, onDeliver, onCancel }: Props) => 
 
           <div className="mt-2 flex items-center justify-between gap-2">
             <span className="text-base font-bold text-slate-900 dark:text-white">
-              {Number(row.total_price).toLocaleString("uz-UZ")}
+              {formatMoney(Number(row.total_price))}
             </span>
             <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-white/65">
               <Calendar size={11} className="shrink-0" />

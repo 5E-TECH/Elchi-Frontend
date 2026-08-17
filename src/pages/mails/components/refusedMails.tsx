@@ -33,11 +33,11 @@ interface MailItem {
   courier?: Courier | null;
 }
 
-const formatPrice = (price: number): string =>
-  price.toLocaleString("uz-UZ") + " so'm";
+const formatPrice = (price: number, currencyLabel: string): string =>
+  `${price.toLocaleString("uz-UZ")} ${currencyLabel}`;
 
 // ─── Karta ────────────────────────────────────────────────────────────────────
-const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
+const RefusedMailCard = memo(({ item, currencyLabel }: { item: MailItem; currencyLabel: string }) => {
   const { t } = useTranslation("mails");
   const navigate = useNavigate();
   const { role } = useSelector((state: RootState) => state.role);
@@ -45,7 +45,15 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
   const regionName = item.region?.name ?? t("regionFallback", { id: item.region_id });
   const courierName = item.courier?.name;
   const openDetail = () =>
-    navigate(`/mails/${item.id}`, { state: { fromTab: "refused", type: "refused" } });
+    navigate(`/mails/${item.id}`, {
+      state: {
+        fromTab: "refused",
+        type: "refused",
+        fallbackRegionId: item.region?.id ?? item.region_id,
+        fallbackRegionName: regionName,
+        expectedOrderCount: item.order_quantity,
+      },
+    });
   const title = isCourierLike
     ? new Date(item.createdAt).toLocaleString("uz-UZ", {
         year: "numeric",
@@ -69,7 +77,7 @@ const RefusedMailCard = memo(({ item }: { item: MailItem }) => {
       statusIcon={<AlertTriangle size={11} />}
       leadingIcon={<MapPin size={20} />}
       orders={item.order_quantity}
-      amount={formatPrice(item.post_total_price)}
+      amount={formatPrice(item.post_total_price, currencyLabel)}
       onOpen={openDetail}
       variant="refused"
     />
@@ -88,13 +96,14 @@ RefusedMailCardSkeleton.displayName = "RefusedMailCardSkeleton";
 // ─── Asosiy komponent ─────────────────────────────────────────────────────────
 const RefusedMails = () => {
   const { t } = useTranslation("mails");
+  const currencyLabel = t("currencyLabel");
   const { role } = useSelector((state: RootState) => state.role);
   const isCourierLike = role === "courier";
 
-  const { getRefusedMails, getRefusedMailsCourier } = useMails();
+  const { useGetRefusedMails, useGetRefusedMailsCourier } = useMails();
 
-  const courierQuery = getRefusedMailsCourier({ enabled: isCourierLike });
-  const defaultQuery = getRefusedMails({ enabled: !isCourierLike });
+  const courierQuery = useGetRefusedMailsCourier({ enabled: isCourierLike });
+  const defaultQuery = useGetRefusedMails({ enabled: !isCourierLike });
   const response = isCourierLike ? courierQuery.data : defaultQuery.data;
   const isLoading = isCourierLike ? courierQuery.isLoading : defaultQuery.isLoading;
   const isError = isCourierLike ? courierQuery.isError : defaultQuery.isError;
@@ -148,7 +157,7 @@ const RefusedMails = () => {
       <MailSummaryStats
         totalRegions={stats.totalRegions}
         totalOrders={stats.totalOrders}
-        totalPrice={formatPrice(stats.totalPrice)}
+        totalPrice={formatPrice(stats.totalPrice, currencyLabel)}
         isCourier={isCourierLike}
         accent="error"
       />
@@ -156,7 +165,7 @@ const RefusedMails = () => {
       {/* Grid */}
       <div className={MAIL_CARD_GRID_CLASS}>
         {mails.map((mail) => (
-          <RefusedMailCard key={mail.id} item={mail} />
+          <RefusedMailCard key={mail.id} item={mail} currencyLabel={currencyLabel} />
         ))}
       </div>
     </div>

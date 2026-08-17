@@ -11,6 +11,7 @@ import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
+import { getAllTimeRange } from "../../shared/lib/dateRange";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import type { RootState } from "../../app/config/store";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
@@ -25,12 +26,16 @@ const DashboardPage = () => {
   const user = useSelector((state: RootState) => state.user.user);
   const role = useSelector((state: RootState) => state.role.role);
   const analyticsScope = `${role || "unknown"}:${user?.id || "unknown"}`;
+  const normalizedRole = String(role || "").toLowerCase();
   // KPI and revenue analytics are backend-restricted to SUPERADMIN/ADMIN.
   // Firing them for other roles returns 403 and breaks the shared dashboard
   // landing page on every login — gate them client-side too. (Audit P1-2.)
-  const isAnalyticsAdmin = ["superadmin", "admin"].includes(
-    String(role || "").toLowerCase(),
-  );
+  const isAnalyticsAdmin = ["superadmin", "admin"].includes(normalizedRole);
+  const isRegistrator = normalizedRole === "registrator";
+  const isCourier = normalizedRole === "courier";
+  const canShowFinancialMetrics = !isRegistrator && !isCourier;
+  const canShowTopPerformers = !isCourier;
+  const canShowRegionStats = !isCourier;
   const [fromDate, setFromDate] = useState(
     typeof storedFromDate === "string" ? storedFromDate : "",
   );
@@ -41,6 +46,8 @@ const DashboardPage = () => {
   const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
 
   const hasDateFilter = Boolean(fromDate && toDate);
+  const allTimeRange = getAllTimeRange();
+  const isAllTime = fromDate === allTimeRange.from && toDate === allTimeRange.to;
 
   const applyRange = useCallback(
     (range: { from: string; to: string }) => {
@@ -58,11 +65,14 @@ const DashboardPage = () => {
 
   const { getDashboard, getKpi } = useDashboard();
   const analyticsParams = useMemo(
-    () => ({
-      start_day: hasDateFilter ? fromDate : "",
-      end_day: hasDateFilter ? toDate : "",
-    }),
-    [fromDate, hasDateFilter, toDate],
+    () =>
+      isAllTime
+        ? { all: true }
+        : {
+            start_day: hasDateFilter ? fromDate : "",
+            end_day: hasDateFilter ? toDate : "",
+          },
+    [fromDate, hasDateFilter, isAllTime, toDate],
   );
   const needsDashboard = widgets.stats || widgets.topPerformers;
   const {
@@ -76,20 +86,16 @@ const DashboardPage = () => {
     isLoading: kpiLoading,
     isError: kpiError,
     refetch: refetchKpi,
-  } = getKpi(analyticsParams, widgets.stats && isAnalyticsAdmin, analyticsScope);
+  } = getKpi(
+    analyticsParams,
+    widgets.stats && isAnalyticsAdmin && !isAllTime,
+    analyticsScope,
+  );
 
   const orders = data?.data?.orders;
   const kpi = kpiData?.data;
   const topMarkets = data?.data?.topMarkets ?? [];
-  // The superadmin/admin dashboard returns `couriers` (per-courier stats) but no
-  // `topCouriers`, which left the "Top Couriers" panel permanently empty. Fall
-  // back to deriving the leaderboard from the courier stats we do receive.
-  const topCouriers = useMemo(() => {
-    const provided = data?.data?.topCouriers ?? [];
-    return provided.length > 0
-      ? provided
-      : deriveTopCouriers(data?.data?.couriers);
-  }, [data]);
+  const topBranches = data?.data?.topBranches ?? [];
 
   const clearRange = useCallback(() => {
     setFromDate("");
@@ -103,8 +109,8 @@ const DashboardPage = () => {
       {/* Page header */}
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <HeaderName
-          name={hasDateFilter ? t("page_title_filtered") : t("page_title_today")}
-          description={hasDateFilter ? t("page_subtitle_filtered") : t("page_subtitle_today")}
+          name={isAllTime ? t("page_title_all") : hasDateFilter ? t("page_title_filtered") : t("page_title_today")}
+          description={isAllTime ? t("page_subtitle_all") : hasDateFilter ? t("page_subtitle_filtered") : t("page_subtitle_today")}
           icon={<LayoutDashboard />}
         />
         <div className="flex w-full flex-col gap-2 lg:w-auto lg:items-end">
@@ -113,10 +119,13 @@ const DashboardPage = () => {
             toDate={toDate}
             onChange={applyRange}
             onClear={clearRange}
+            includeAll
             labels={{
               today: t("quickRanges.today"),
               week: t("quickRanges.week"),
               month: t("quickRanges.month"),
+              year: t("quickRanges.year"),
+              all: t("quickRanges.all"),
             }}
             placeholder={`${t("datePicker.from")} → ${t("datePicker.to")}`}
             className="lg:items-end"
@@ -127,26 +136,32 @@ const DashboardPage = () => {
       </div>
 
       {/* Stat cards */}
-      {widgets.stats && (dashboardError || kpiError) && (
+      {widgets.stats && (dashboardError || (!isAllTime && kpiError)) && (
         <div className="mb-5">
           <QueryErrorState
             description={t("load_error")}
-            onRetry={() => void Promise.all([refetchDashboard(), refetchKpi()])}
+            onRetry={() =>
+              void (isAllTime
+                ? refetchDashboard()
+                : Promise.all([refetchDashboard(), refetchKpi()]))
+            }
           />
         </div>
       )}
 
-      {widgets.stats && !dashboardError && !kpiError && (
+      {widgets.stats && !dashboardError && (isAllTime || !kpiError) && (
         <div className="mb-5">
           <DashboardStatistics
             accepted={orders?.acceptedCount ?? 0}
             sold={orders?.soldAndPaid ?? 0}
             cancelled={orders?.cancelled ?? 0}
             profit={orders?.profit ?? 0}
+            totalRevenue={orders?.totalRevenue ?? 0}
             avgOrderValue={kpi?.averageOrderValue ?? 0}
             avgFulfillmentHours={kpi?.averageFulfillmentHours ?? 0}
             onTimeRate={kpi?.onTimeRate ?? 0}
-            loading={isLoading || kpiLoading}
+            showFinancialMetrics={canShowFinancialMetrics}
+            loading={isLoading || (!isAllTime && kpiLoading)}
           />
         </div>
       )}
@@ -161,28 +176,30 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {widgets.topPerformers && !dashboardError && (
+      {widgets.topPerformers && canShowTopPerformers && !dashboardError && (
         <div className="mb-5">
-          <TopPerformers markets={topMarkets} couriers={topCouriers} />
+          <TopPerformers markets={topMarkets} branches={topBranches} />
         </div>
       )}
 
       {/* Financial analysis — revenue endpoint is SUPERADMIN/ADMIN-only. */}
-      {widgets.financial && isAnalyticsAdmin && (
+      {widgets.financial && isAnalyticsAdmin && !isAllTime && (
         <div className="mb-5">
           <FinancialAnalysis
             startDate={hasDateFilter ? fromDate : ""}
             endDate={hasDateFilter ? toDate : ""}
             analyticsScope={analyticsScope}
+            isAllTime={isAllTime}
           />
         </div>
       )}
 
       {/* Hududlar bo'yicha xarita */}
-      {widgets.region && (
+      {widgets.region && canShowRegionStats && (
         <RegionStatsCard
           startDate={hasDateFilter ? fromDate : ""}
           endDate={hasDateFilter ? toDate : ""}
+          showFinancialMetrics={canShowFinancialMetrics}
         />
       )}
     </PageContainer>
