@@ -223,7 +223,14 @@ const canViewRegionStats = (state: RootState) => {
 
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
 const canViewMarketOperators = (state: RootState) => state.role.role === "market";
-const canViewCourierBulk = (state: RootState) => state.role.role === "courier";
+const canViewCourierBulk = (state: RootState) => {
+  if (state.role.role === "courier") return true;
+
+  if (state.role.role !== "manager") return false;
+
+  const branchType = getUserBranchType(state.user.user);
+  return branchType === "REGIONAL" || branchType === "HYBRID";
+};
 
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);

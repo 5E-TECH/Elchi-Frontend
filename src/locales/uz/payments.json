@@ -57,6 +57,8 @@
   "financeHistoryNotFound": "Finance tarixi topilmadi",
   "historyLower": "history",
   "paymentHistory": "To'lov tarixi",
+  "allHistory": "Barcha tarix",
+  "paymentTransfers": "Oldi-berdi",
   "lastOperations": "So'nggi operatsiyalar",
   "todayTransactions": "Bugungi tranzaksiyalar",
   "todayOperations": "Bugungi operatsiyalar",

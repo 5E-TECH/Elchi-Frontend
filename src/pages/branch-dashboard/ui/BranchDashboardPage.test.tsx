@@ -40,11 +40,11 @@ describe("BranchDashboardPage", () => {
             couriers_count: 4,
             cards: {
               orders: {
-                total: 0,
+                total: 7,
                 new: 0,
-                on_the_road: 0,
-                delivered: 0,
-                returned: 0,
+                on_the_road: 3,
+                delivered: 3,
+                returned: 1,
               },
               markets: [],
               packages: {

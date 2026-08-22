@@ -148,7 +148,9 @@
     "showChildren": "Ko'rsatish",
     "hideChildren": "Yopish",
     "previousPage": "Oldingi filiallar",
-    "nextPage": "Keyingi filiallar"
+    "nextPage": "Keyingi filiallar",
+    "regionGroup": "Viloyat",
+    "districtGroup": "Shahar/Tuman"
   },
   "validation": {
     "minName": "Kamida 2 ta belgi",

@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { ArrowDownRight, ArrowUpRight, CalendarClock } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarClock, ListFilter, Repeat2 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import DateRangePicker from "../../../shared/ui/DateRangePicker";
 import PaymentHistoryList from "./PaymentHistoryList";
@@ -36,6 +36,10 @@ interface CashboxRolePageLayoutProps {
   todayOperationsLabel: string;
   actionForm?: ReactNode;
   summaryDetails?: ReactNode;
+  historyTab?: "all" | "payments";
+  onHistoryTabChange?: (tab: "all" | "payments") => void;
+  allHistoryLabel?: string;
+  paymentsHistoryLabel?: string;
 }
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
@@ -70,8 +74,24 @@ const CashboxRolePageLayout = ({
   todayOperationsLabel,
   actionForm,
   summaryDetails,
+  historyTab = "all",
+  onHistoryTabChange,
+  allHistoryLabel,
+  paymentsHistoryLabel,
 }: CashboxRolePageLayoutProps) => {
   const { t } = useTranslation("payments");
+  const tabs = [
+    {
+      key: "all" as const,
+      label: allHistoryLabel ?? t("allHistory"),
+      icon: <ListFilter size={15} />,
+    },
+    {
+      key: "payments" as const,
+      label: paymentsHistoryLabel ?? t("paymentTransfers"),
+      icon: <Repeat2 size={15} />,
+    },
+  ];
 
   return (
     <PageContainer className="flex min-w-0 flex-col gap-3 overflow-x-hidden">
@@ -107,27 +127,51 @@ const CashboxRolePageLayout = ({
         <div className="flex min-h-0 min-w-0 flex-col gap-3 xl:pt-1">
           <div className={sectionClassName}>
             <div className={sectionHeaderClassName}>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20">
-                  <CalendarClock size={18} />
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-main text-primary shadow-lg shadow-main/20">
+                    <CalendarClock size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      {todayTransactionsLabel}
+                    </p>
+                    <p className="text-[11px] text-gray-400 dark:text-white/40">
+                      {todayOperationsLabel}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    {todayTransactionsLabel}
-                  </p>
-                  <p className="text-[11px] text-gray-400 dark:text-white/40">
-                    {todayOperationsLabel}
-                  </p>
-                </div>
+
+                <DateRangePicker
+                  value={dateRangeValue}
+                  onChange={onDateRangeChange}
+                  placeholder={dateRangePlaceholder}
+                  className="w-full lg:max-w-[360px]"
+                />
               </div>
             </div>
             <div className="p-3 sm:p-4">
-              <DateRangePicker
-                value={dateRangeValue}
-                onChange={onDateRangeChange}
-                placeholder={dateRangePlaceholder}
-                className="w-full md:max-w-[360px]"
-              />
+              <div className="flex flex-wrap gap-2">
+                {tabs.map((tab) => {
+                  const active = historyTab === tab.key;
+
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => onHistoryTabChange?.(tab.key)}
+                      className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-all ${
+                        active
+                          ? "border-main bg-main text-primary shadow-lg shadow-main/20"
+                          : "border-[color:var(--color-border-soft)] bg-white/5 text-gray-500 hover:text-gray-900 dark:text-white/55 dark:hover:text-white"
+                      }`}
+                    >
+                      {tab.icon}
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

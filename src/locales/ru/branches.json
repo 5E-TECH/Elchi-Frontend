@@ -148,7 +148,9 @@
     "showChildren": "Показать",
     "hideChildren": "Скрыть",
     "previousPage": "Предыдущие филиалы",
-    "nextPage": "Следующие филиалы"
+    "nextPage": "Следующие филиалы",
+    "regionGroup": "Область",
+    "districtGroup": "Город/район"
   },
   "validation": {
     "minName": "Минимум 2 символа",

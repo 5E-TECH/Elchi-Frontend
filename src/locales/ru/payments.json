@@ -57,6 +57,8 @@
   "financeHistoryNotFound": "Финансовая история не найдена",
   "historyLower": "история",
   "paymentHistory": "История платежей",
+  "allHistory": "Вся история",
+  "paymentTransfers": "Расчеты",
   "lastOperations": "Последние операции",
   "todayTransactions": "Сегодняшние транзакции",
   "todayOperations": "Операции за сегодня",
