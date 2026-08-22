@@ -57,6 +57,8 @@
   "financeHistoryNotFound": "Finance history not found",
   "historyLower": "history",
   "paymentHistory": "Payment history",
+  "allHistory": "All history",
+  "paymentTransfers": "Transfers",
   "lastOperations": "Recent operations",
   "todayTransactions": "Today's transactions",
   "todayOperations": "Today's operations",

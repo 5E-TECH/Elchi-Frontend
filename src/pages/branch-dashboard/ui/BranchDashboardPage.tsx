@@ -17,7 +17,10 @@ import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import TopPerformers from "../../../widgets/dashboard-top-performers/ui/TopPerformers";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import { getTodayRange } from "../../../shared/lib/dateRange";
-import { removeFilterValue, setMultipleFilters } from "../../../features/Select/model/FilterSlice";
+import {
+  removeFilterValue,
+  setMultipleFilters,
+} from "../../../features/Select/model/FilterSlice";
 import type { RootState } from "../../../app/config/store";
 
 const statCardClassName =
@@ -29,14 +32,22 @@ const BranchDashboardPage = () => {
   const userRole = useSelector((state: RootState) => state.role.role);
   const userId = useSelector((state: RootState) => state.user.user?.id);
   const branchId = useSelector(getCurrentBranchId);
-  const storedFromDate = useSelector((state: RootState) => state.filter.dashboardFromDate);
-  const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
+  const storedFromDate = useSelector(
+    (state: RootState) => state.filter.dashboardFromDate,
+  );
+  const storedToDate = useSelector(
+    (state: RootState) => state.filter.dashboardToDate,
+  );
   const defaultDateRange = useMemo(() => getTodayRange(), []);
   const [fromDate, setFromDate] = useState(
-    typeof storedFromDate === "string" && storedFromDate ? storedFromDate : defaultDateRange.from,
+    typeof storedFromDate === "string" && storedFromDate
+      ? storedFromDate
+      : defaultDateRange.from,
   );
   const [toDate, setToDate] = useState(
-    typeof storedToDate === "string" && storedToDate ? storedToDate : defaultDateRange.to,
+    typeof storedToDate === "string" && storedToDate
+      ? storedToDate
+      : defaultDateRange.to,
   );
   const hasDateFilter = Boolean(fromDate && toDate);
   const analyticsScope = `${userRole || "unknown"}:${userId || "unknown"}`;
@@ -54,16 +65,15 @@ const BranchDashboardPage = () => {
     true,
     analyticsScope,
   );
-  const hasBranchScope = Boolean(branchId);
   const branchDashboard = useMemo(
     () =>
       adaptBranchDashboard(
         data?.data?.branchDashboard,
         userRole || "OPERATOR",
-        data?.data?.orders,
-        hasBranchScope || hasDateFilter,
+        data?.data?.branchDashboard ? undefined : data?.data?.orders,
+        false,
       ),
-    [data?.data?.branchDashboard, data?.data?.orders, hasBranchScope, hasDateFilter, userRole],
+    [data?.data?.branchDashboard, data?.data?.orders, userRole],
   );
   const displayDashboard = branchDashboard;
 

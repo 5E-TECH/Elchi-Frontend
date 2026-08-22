@@ -8,6 +8,7 @@ interface FilterDateRangeProps {
     dateTo: string;
     onChangeDateFrom: (value: string) => void;
     onChangeDateTo: (value: string) => void;
+    onChangeRange?: (dateFrom: string, dateTo: string) => void;
     className?: string;
     fromClassName?: string;
     toClassName?: string;
@@ -21,6 +22,7 @@ const FilterDateRange = memo(({
     dateTo,
     onChangeDateFrom,
     onChangeDateTo,
+    onChangeRange,
     className = "",
     size = "md",
     placeholder,
@@ -34,8 +36,16 @@ const FilterDateRange = memo(({
                 endDate: parseISODate(dateTo),
             }}
             onChange={({ startDate, endDate }) => {
-                onChangeDateFrom(startDate ? toISODate(startDate) : "");
-                onChangeDateTo(endDate ? toISODate(endDate) : "");
+                const nextDateFrom = startDate ? toISODate(startDate) : "";
+                const nextDateTo = endDate ? toISODate(endDate) : "";
+
+                if (onChangeRange) {
+                    onChangeRange(nextDateFrom, nextDateTo);
+                    return;
+                }
+
+                onChangeDateFrom(nextDateFrom);
+                onChangeDateTo(nextDateTo);
             }}
             className={className}
             size={size}

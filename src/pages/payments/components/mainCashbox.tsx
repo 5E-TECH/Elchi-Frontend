@@ -292,9 +292,6 @@ const MainCashbox = () => {
               cashbox.berilishi_kerak ??
               cashbox.payable_to_hq ??
               cashbox.payableToHq ??
-              item.olinishi_kerak ??
-              cashbox.olinishi_kerak ??
-              cashbox.balance ??
               item.amount,
           ),
         };
