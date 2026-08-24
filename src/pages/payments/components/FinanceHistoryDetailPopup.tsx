@@ -85,14 +85,14 @@ const resolvePrimaryActor = (
   row?: PaymentRow | null,
 ) => {
   const actors = [
-    detail?.source_user,
-    detail?.sourceUser,
-    row?.source_user,
-    row?.sourceUser,
     detail?.created_by_user,
     detail?.createdByUser,
     row?.created_by_user,
     row?.createdByUser,
+    detail?.source_user,
+    detail?.sourceUser,
+    row?.source_user,
+    row?.sourceUser,
     detail?.cashbox?.user,
     detail?.user,
     row?.user,
