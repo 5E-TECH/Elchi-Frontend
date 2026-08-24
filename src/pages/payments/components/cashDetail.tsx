@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { ArrowDownLeft, ArrowUpRight, Landmark, Loader2, Store, Truck, WalletCards } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Download, Landmark, Loader2, Store, Truck, WalletCards } from "lucide-react";
 import type { PaymentRow } from "./patmentHistoryTable";
 import { useCashBox } from "../../../entities/payments";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
@@ -19,6 +19,8 @@ import CashboxActionFormCard, {
 } from "./CashboxActionFormCard";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { RootState } from "../../../app/config/store";
+import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -108,14 +110,14 @@ const getArrayFromResponse = (value: unknown): Record<string, unknown>[] => {
   const data = record.data as Record<string, unknown> | Record<string, unknown>[] | undefined;
 
   if (Array.isArray(record.items)) return record.items as Record<string, unknown>[];
-  if (Array.isArray(record.history)) return record.history as Record<string, unknown>[];
   if (Array.isArray(record.cashboxHistory)) return record.cashboxHistory as Record<string, unknown>[];
+  if (Array.isArray(record.history)) return record.history as Record<string, unknown>[];
   if (Array.isArray(data)) return data;
 
   if (data && typeof data === "object") {
     if (Array.isArray(data.items)) return data.items as Record<string, unknown>[];
-    if (Array.isArray(data.history)) return data.history as Record<string, unknown>[];
     if (Array.isArray(data.cashboxHistory)) return data.cashboxHistory as Record<string, unknown>[];
+    if (Array.isArray(data.history)) return data.history as Record<string, unknown>[];
   }
 
   return [];
@@ -308,6 +310,7 @@ const CashDetail = () => {
   const [historyTab, setHistoryTab] = useState<"all" | "payments">("all");
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [balanceOverride, setBalanceOverride] = useState<number | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const currentRole = useSelector((store: RootState) => store.role.role);
   const isCurrentManagerRole = String(currentRole).toLowerCase() === "manager";
 
@@ -651,14 +654,9 @@ const CashDetail = () => {
         toActor(item["source_user"]) ??
         toActor(item["sourceUser"]);
       const rowUser = toActor(item["user"]);
-      const actorName =
-        getActorDisplayName(createdByUser) ||
-        getActorDisplayName(sourceUser) ||
-        getActorDisplayName(rowUser);
+      const actorName = getActorDisplayName(createdByUser);
       const createdByName =
         actorName ||
-        toMeaningfulString(item["created_by"]) ||
-        toMeaningfulString(item["createdBy"]) ||
         toMeaningfulString(item["created_user_name"]) ||
         toMeaningfulString(item["createdUserName"]) ||
         toMeaningfulString(item["creator_name"]) ||
@@ -669,7 +667,8 @@ const CashDetail = () => {
         toMeaningfulString(item["createdByName"]) ||
         toMeaningfulString(item["created_by_full_name"]) ||
         toMeaningfulString(item["createdByFullName"]) ||
-        entityName;
+        toOptionalString(item["created_by"]) ||
+        toOptionalString(item["createdBy"]);
       const operationType =
         typeof item["operation_type"] === "string"
           ? item["operation_type"]
@@ -729,6 +728,40 @@ const CashDetail = () => {
       }, 0),
     [historyRows],
   );
+
+  const handleExportExcel = async () => {
+    const cashboxId = toOptionalString(cashbox?.id);
+    if (!cashboxId || isExporting) return;
+
+    setIsExporting(true);
+    try {
+      const response = await api.get(API_ENDPOINTS.EXPORT.CASHBOX_HISTORY_XLSX, {
+        params: {
+          cashbox_id: cashboxId,
+          ...(selectedDateFrom && { from_date: selectedDateFrom }),
+          ...(selectedDateTo && { to_date: selectedDateTo }),
+          ...(historyTab === "payments" && { sourceTypes: PAYMENT_HISTORY_SOURCE_TYPES }),
+        },
+        responseType: "blob",
+      });
+      const blob = response.data instanceof Blob
+        ? response.data
+        : new Blob([response.data], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `cashbox-history-${entityName || cashboxId}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
 
   const onSubmit = async (values: CashboxActionFormValues) => {
     const amount = parseAmountInput(values.amount);
@@ -836,6 +869,17 @@ const CashDetail = () => {
       onHistoryTabChange={setHistoryTab}
       allHistoryLabel={t("allHistory")}
       paymentsHistoryLabel={t("paymentTransfers")}
+      historyAction={
+        <button
+          type="button"
+          onClick={handleExportExcel}
+          disabled={isExporting || !cashbox?.id}
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-500 px-4 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+          Excel
+        </button>
+      }
       summaryDetails={
         hasSettlementDetails ? (
           <div className="overflow-hidden rounded-[1.5rem] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark">
