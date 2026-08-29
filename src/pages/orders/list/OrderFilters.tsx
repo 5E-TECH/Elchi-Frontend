@@ -82,9 +82,6 @@ const parseStatusValues = (value: unknown): OrderStatus[] => {
 const isDeliveryType = (value: string): value is DeliveryType =>
     value === "center" || value === "address";
 
-const getStringFilterValue = (value: unknown, fallback = "") =>
-    typeof value === "string" ? value : fallback;
-
 // ── Komponent ─────────────────────────────────────────────────────────────
 const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const { t } = useTranslation(["orders", "common"]);
@@ -92,12 +89,10 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const { setParam, removeParam, getParam, setMultipleParams } = useQueryParams();
     const role = useSelector((state: RootState) => state.role.role);
     const currentUser = useSelector((state: RootState) => state.user.user as Record<string, unknown> | null);
-    const filters = useSelector((state: RootState) => state.filter);
-    const searchFilters = useSelector((state: RootState) => state.search);
     const isMarketRole = role === "market";
     const isManagerRole = role === "manager";
-    const shouldShowBranchFilter = !isMarketRole && !isManagerRole;
     const canUseBranchFilter = role === "admin" || role === "superadmin";
+    const shouldShowBranchFilter = canUseBranchFilter;
     const canLoadRoleDependentOptions = role !== null && !isMarketRole;
     const selectGridClassName = "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3";
     const [isMobile, setIsMobile] = useState(
@@ -119,18 +114,21 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
     const urlDateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? getParam("orderDateTo") ?? "";
     const urlSearch = getParam(ORDER_FILTER_KEYS.search) ?? "";
 
-    const marketId = getStringFilterValue(filters[ORDER_FILTER_KEYS.marketId], urlMarketId);
-    const branchId = getStringFilterValue(filters[ORDER_FILTER_KEYS.branchId], urlBranchId);
-    const regionId = getStringFilterValue(filters[ORDER_FILTER_KEYS.regionId], urlRegionId);
-    const districtId = getStringFilterValue(filters[ORDER_FILTER_KEYS.districtId], urlDistrictId);
-    const courierId = getStringFilterValue(filters[ORDER_FILTER_KEYS.courierId], urlCourierId);
-    const deliveryType = getStringFilterValue(filters[ORDER_FILTER_KEYS.deliveryType], urlDeliveryType);
-    const dateFrom = getStringFilterValue(filters[ORDER_FILTER_KEYS.dateFrom], urlDateFrom);
-    const dateTo = getStringFilterValue(filters[ORDER_FILTER_KEYS.dateTo], urlDateTo);
-    const search = getStringFilterValue(searchFilters[ORDER_FILTER_KEYS.search], urlSearch);
+    // Buyurtmalar so'rovi URL parametrlaridan quriladi, shuning uchun URL bu
+    // sahifadagi filterlar uchun yagona ishonchli manba bo'lishi kerak. Redux
+    // qiymatlari browser back/forward'da eskirib qolishi mumkin.
+    const marketId = urlMarketId;
+    const branchId = urlBranchId;
+    const regionId = urlRegionId;
+    const districtId = urlDistrictId;
+    const courierId = urlCourierId;
+    const deliveryType = urlDeliveryType;
+    const dateFrom = urlDateFrom;
+    const dateTo = urlDateTo;
+    const search = urlSearch;
     const statusValues = useMemo(
-        () => parseStatusValues(filters[ORDER_FILTER_KEYS.status] ?? urlStatus),
-        [filters, urlStatus],
+        () => parseStatusValues(urlStatus),
+        [urlStatus],
     );
 
     const hasFilter = !!(
@@ -343,13 +341,12 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
         );
         dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: normalizedValue }));
 
-        if (normalizedValue.length > 0) {
-            setParam(ORDER_STATUS_URL_KEY, normalizedValue.join(","));
-            removeParam(LEGACY_ORDER_STATUS_URL_KEY);
-        } else {
-            removeParam(ORDER_STATUS_URL_KEY);
-            removeParam(LEGACY_ORDER_STATUS_URL_KEY);
-        }
+        // Ikkita ketma-ket URL update bir render ichida bir-birini bekor qilishi
+        // mumkin. Status va eski status kalitini atomar yangilaymiz.
+        setMultipleParams({
+            [ORDER_STATUS_URL_KEY]: normalizedValue.join(","),
+            [LEGACY_ORDER_STATUS_URL_KEY]: "",
+        });
 
         if (isMobile) {
             setIsMobilePanelOpen(false);
@@ -363,6 +360,21 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
             setParam(ORDER_FILTER_KEYS.search, value);
         } else {
             removeParam(ORDER_FILTER_KEYS.search);
+        }
+    };
+
+    const updateDateRange = (nextDateFrom: string, nextDateTo: string) => {
+        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.dateFrom, value: nextDateFrom }));
+        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.dateTo, value: nextDateTo }));
+        setMultipleParams({
+            [ORDER_FILTER_KEYS.dateFrom]: nextDateFrom,
+            [ORDER_FILTER_KEYS.dateTo]: nextDateTo,
+            orderDateFrom: "",
+            orderDateTo: "",
+        });
+
+        if (isMobile) {
+            setIsMobilePanelOpen(false);
         }
     };
 
@@ -441,6 +453,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         <FilterDateRange
                                             dateFrom={dateFrom}
                                             dateTo={dateTo}
+                                            onChangeRange={updateDateRange}
                                             onChangeDateFrom={(v) =>
                                                 update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, v)
                                             }
@@ -697,6 +710,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 <FilterDateRange
                     dateFrom={dateFrom}
                     dateTo={dateTo}
+                    onChangeRange={updateDateRange}
                     onChangeDateFrom={(v) =>
                         update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, v)
                     }

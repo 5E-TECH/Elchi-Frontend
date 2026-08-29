@@ -149,7 +149,9 @@
     "showChildren": "Show",
     "hideChildren": "Hide",
     "previousPage": "Previous branches",
-    "nextPage": "Next branches"
+    "nextPage": "Next branches",
+    "regionGroup": "Region",
+    "districtGroup": "City/District"
   },
   "validation": {
     "minName": "At least 2 characters",

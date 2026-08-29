@@ -9,6 +9,8 @@ import { DeleteBranchButton } from "../../../features/branch-delete";
 
 type BranchTreeNode = Branch & {
   children: BranchTreeNode[];
+  isVirtualGroup?: boolean;
+  groupType?: "region" | "district";
 };
 
 interface BranchTreeProps {
@@ -24,7 +26,99 @@ const typeToneMap: Record<string, string> = {
   DISTRICT: "border-emerald-400/38 bg-emerald-400/12 text-emerald-700 dark:text-emerald-100",
 };
 
-const ROOT_CHILDREN_PAGE_SIZE = 5;
+const ROOT_CHILDREN_PAGE_SIZE = 1000;
+
+const getAreaId = (branch: Branch, key: "region" | "district") => {
+  const area = branch[key];
+  const id = area?.id ? String(area.id) : "";
+  const name = area?.name?.trim() || "—";
+
+  return id || name;
+};
+
+const getAreaName = (branch: Branch, key: "region" | "district") =>
+  branch[key]?.name?.trim() || "—";
+
+const createVirtualGroupNode = ({
+  id,
+  name,
+  level,
+  parentId,
+  groupType,
+}: {
+  id: string;
+  name: string;
+  level: number;
+  parentId?: string;
+  groupType: "region" | "district";
+}): BranchTreeNode => ({
+  id,
+  name,
+  parent_id: parentId,
+  type: groupType === "region" ? "REGIONAL" : "PICKUP",
+  level,
+  code: groupType === "region" ? "Viloyat" : "Shahar/Tuman",
+  region: { id, name },
+  district: { id, name },
+  address: name,
+  status: "active",
+  employees_count: 0,
+  created_at: "",
+  children: [],
+  isVirtualGroup: true,
+  groupType,
+});
+
+const groupRootBranchesByArea = (root: BranchTreeNode) => {
+  const directChildren = root.children;
+  const regionGroups = new Map<string, BranchTreeNode>();
+  const ungrouped: BranchTreeNode[] = [];
+
+  directChildren.forEach((branch) => {
+    const regionKey = getAreaId(branch, "region");
+    if (!regionKey || regionKey === "—") {
+      ungrouped.push(branch);
+      return;
+    }
+
+    let regionGroup = regionGroups.get(regionKey);
+    if (!regionGroup) {
+      regionGroup = createVirtualGroupNode({
+        id: `region-${regionKey}`,
+        name: getAreaName(branch, "region"),
+        level: (root.level ?? 0) + 1,
+        parentId: root.id,
+        groupType: "region",
+      });
+      regionGroups.set(regionKey, regionGroup);
+    }
+
+    const districtKey = getAreaId(branch, "district");
+    const shouldNestDistrict = districtKey && districtKey !== "—" && districtKey !== regionKey;
+
+    if (!shouldNestDistrict) {
+      regionGroup.children.push(branch);
+      return;
+    }
+
+    const districtId = `${regionGroup.id}-district-${districtKey}`;
+    let districtGroup = regionGroup.children.find((child) => child.id === districtId);
+    if (!districtGroup) {
+      districtGroup = createVirtualGroupNode({
+        id: districtId,
+        name: getAreaName(branch, "district"),
+        level: (root.level ?? 0) + 2,
+        parentId: regionGroup.id,
+        groupType: "district",
+      });
+      regionGroup.children.push(districtGroup);
+    }
+
+    districtGroup.children.push(branch);
+  });
+
+  root.children = [...Array.from(regionGroups.values()), ...ungrouped];
+};
 
 const buildBranchTree = (branches: Branch[]) => {
   const nodeMap = new Map<string, BranchTreeNode>();
@@ -67,9 +161,11 @@ const buildBranchTree = (branches: Branch[]) => {
   if (!hqRoot) return roots;
 
   const looseRoots = roots.filter((node) => node.id !== hqRoot.id);
-  if (!looseRoots.length) return roots;
+  if (looseRoots.length) {
+    hqRoot.children.push(...looseRoots);
+  }
 
-  hqRoot.children.push(...looseRoots);
+  groupRootBranchesByArea(hqRoot);
   sortNodes(hqRoot.children);
 
   return [hqRoot];
@@ -89,7 +185,11 @@ const BranchTreeNodeCard = ({
   const { t } = useTranslation("branches");
   const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
-  const typeLabel = node.type ? t(`branchTypes.${node.type}`) : t("branchTypes.unknown");
+  const typeLabel = node.isVirtualGroup
+    ? node.groupType === "region"
+      ? t("tree.regionGroup")
+      : t("tree.districtGroup")
+    : node.type ? t(`branchTypes.${node.type}`) : t("branchTypes.unknown");
   const level = node.level ?? 0;
   const regionName = node.region?.name ?? "—";
   const districtName = node.district?.name ?? "—";
@@ -99,7 +199,9 @@ const BranchTreeNodeCard = ({
     "border-border-soft bg-main-soft text-text-muted dark:text-white/80";
   const cardClass = node.type === "HQ"
     ? "border-amber-300/45 bg-surface-elevated ring-4 ring-amber-300/10 hover:border-amber-300/70 dark:bg-surface-elevated-dark"
-    : "border-border-soft bg-surface-elevated hover:border-main/60 dark:border-white/10 dark:bg-surface-elevated-dark";
+    : node.isVirtualGroup
+      ? "border-teal-300/40 bg-teal-300/10 ring-2 ring-teal-300/10 hover:border-teal-300/65 dark:border-teal-200/18 dark:bg-teal-200/8"
+      : "border-border-soft bg-surface-elevated hover:border-main/60 dark:border-white/10 dark:bg-surface-elevated-dark";
 
   return (
     <div
@@ -130,12 +232,15 @@ const BranchTreeNodeCard = ({
       ) : null}
       <button
         type="button"
-        onClick={() => navigate(`/branches/${node.id}`)}
+        onClick={() => {
+          if (!node.isVirtualGroup) navigate(`/branches/${node.id}`);
+          else onToggleChildren?.();
+        }}
         className="flex min-h-0 flex-1 flex-col text-left"
       >
         <div className="flex items-start gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main/15 text-main dark:text-white">
-            {node.type === "HQ" ? <Building2 size={18} /> : <GitBranch size={18} />}
+{node.type === "HQ" || node.isVirtualGroup ? <Building2 size={18} /> : <GitBranch size={18} />}
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:flex-nowrap sm:gap-2">
@@ -193,28 +298,105 @@ const BranchTreeNodeCard = ({
       ) : null}
 
       <div className="mt-3 flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
-        <Button
-          size="small"
-          icon={<ArrowRight size={15} />}
-          className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-border-soft !bg-main-soft !p-0 !text-maindark hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
-          onClick={() => navigate(`/branches/${node.id}`)}
-          aria-label={tCommon("open")}
-          title={tCommon("open")}
-        />
-        <Button
-          size="small"
-          icon={<EditOutlined />}
-          className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-border-soft !bg-main-soft !p-0 !text-maindark hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
-          onClick={() => onEdit(node)}
-          aria-label={t("actions.edit")}
-          title={t("actions.edit")}
-        />
-        <DeleteBranchButton id={node.id} className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-rose-300/60 !bg-rose-50 !p-0 !text-rose-600 hover:!border-rose-400/70 hover:!bg-rose-100 dark:!border-rose-500/30 dark:!bg-rose-500/12 dark:!text-rose-300 dark:hover:!border-rose-400/60 dark:hover:!bg-rose-500/18" />
+        {!node.isVirtualGroup ? (
+          <>
+            <Button
+              size="small"
+              icon={<ArrowRight size={15} />}
+              className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-border-soft !bg-main-soft !p-0 !text-maindark hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
+              onClick={() => navigate(`/branches/${node.id}`)}
+              aria-label={tCommon("open")}
+              title={tCommon("open")}
+            />
+            <Button
+              size="small"
+              icon={<EditOutlined />}
+              className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-border-soft !bg-main-soft !p-0 !text-maindark hover:!border-main hover:!text-main dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
+              onClick={() => onEdit(node)}
+              aria-label={t("actions.edit")}
+              title={t("actions.edit")}
+            />
+            <DeleteBranchButton id={node.id} className="!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-rose-300/60 !bg-rose-50 !p-0 !text-rose-600 hover:!border-rose-400/70 hover:!bg-rose-100 dark:!border-rose-500/30 dark:!bg-rose-500/12 dark:!text-rose-300 dark:hover:!border-rose-400/60 dark:hover:!bg-rose-500/18" />
+          </>
+        ) : null}
       </div>
     </div>
   );
 };
 
+const BranchAreaGroupButton = ({
+  node,
+  expandedIds,
+  onToggle,
+}: {
+  node: BranchTreeNode;
+  expandedIds: Set<string>;
+  onToggle: (id: string) => void;
+}) => {
+  const { t } = useTranslation("branches");
+  const isExpanded = expandedIds.has(node.id);
+  const childCount = node.children.length;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(node.id)}
+      className={`flex min-h-[4.25rem] w-full min-w-0 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
+        isExpanded
+          ? "border-teal-300/55 bg-teal-300/14 text-teal-800 shadow-[0_10px_22px_rgba(20,184,166,0.12)] dark:text-teal-100"
+          : "border-border-soft bg-main-soft/80 text-maindark hover:border-main/55 hover:bg-main/12 dark:border-white/10 dark:bg-white/7 dark:text-white"
+      }`}
+      aria-expanded={isExpanded}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-main/15 text-main dark:text-white">
+          <Building2 size={18} />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-extrabold">{node.name}</span>
+          <span className="mt-1 block truncate text-xs font-semibold text-text-muted dark:text-white/55">
+            {node.groupType === "region" ? t("tree.regionGroup") : t("tree.districtGroup")} · {t("tree.childCount", { count: childCount })}
+          </span>
+        </span>
+      </span>
+      <ChevronRight size={18} className={`shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+    </button>
+  );
+};
+
+const BranchAreaGroupPanel = ({
+  node,
+  onEdit,
+  expandedIds,
+  onToggle,
+  depth,
+}: {
+  node: BranchTreeNode;
+  onEdit: (branch: Branch) => void;
+  expandedIds: Set<string>;
+  onToggle: (id: string) => void;
+  depth: number;
+}) => {
+  if (!expandedIds.has(node.id)) return null;
+
+  return (
+    <div className="mt-5 w-full rounded-2xl border border-border-soft bg-surface-elevated/65 p-4 dark:border-white/10 dark:bg-white/5">
+      <div className="flex w-full flex-wrap items-start justify-center gap-5">
+        {node.children.map((child) => (
+          <div key={child.id} className="w-[15.5rem] min-w-0 shrink-0">
+            <BranchTreeItem
+              node={child}
+              onEdit={onEdit}
+              expandedIds={expandedIds}
+              onToggle={onToggle}
+              depth={depth + 1}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 const BranchTreeItem = ({
   node,
   onEdit,
@@ -246,8 +428,10 @@ const BranchTreeItem = ({
       )
     : node.children;
 
+  const widthClass = isRoot ? "w-full" : depth <= 2 ? "w-full" : "w-[15.5rem] shrink-0";
+
   return (
-    <li className={`relative flex flex-col items-center ${isRoot ? "w-full" : depth === 1 ? "w-[15.5rem] shrink-0" : "w-full"}`}>
+    <li className={`relative flex flex-col items-center ${widthClass}`}>
       <div
         className={
           isRoot
@@ -302,32 +486,61 @@ const BranchTreeItem = ({
               data-testid={isRootChildrenPanel ? "branch-tree-root-grid" : undefined}
               className={
                 isRootChildrenPanel
-                  ? "relative grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,15.5rem),1fr))] items-start justify-items-center gap-x-5 gap-y-8 px-1 pt-1 sm:px-2"
+                  ? "relative grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-start gap-3 px-1 pt-1 sm:px-2"
                   : "relative flex w-full flex-col items-center gap-8"
               }
             >
               {node.children.length > 1 && isRootChildrenPanel ? (
                 <span className="absolute left-6 right-6 top-0 h-[5px] rounded-full bg-gradient-to-r from-transparent via-teal-300/45 to-transparent shadow-[0_0_16px_rgba(45,212,191,0.18)]" />
               ) : null}
-              {visibleChildren.map((child) => (
-                <div
-                  key={child.id}
-                  className={
-                    isRootChildrenPanel
-                      ? "relative flex w-full min-w-0 max-w-[15.5rem] justify-center pt-6"
-                      : "relative flex w-full justify-center pt-6"
-                  }
-                >
-                  <span className="absolute left-1/2 top-[-1px] h-6 w-[6px] -translate-x-1/2 rounded-full bg-teal-300/44" />
-                  <BranchTreeItem
-                    node={child}
-                    onEdit={onEdit}
-                    expandedIds={expandedIds}
-                    onToggle={onToggle}
-                    depth={depth + 1}
-                  />
+              {visibleChildren.map((child) => {
+                if (isRootChildrenPanel && child.isVirtualGroup) {
+                  return (
+                    <BranchAreaGroupButton
+                      key={child.id}
+                      node={child}
+                      expandedIds={expandedIds}
+                      onToggle={onToggle}
+                    />
+                  );
+                }
+
+                return (
+                  <div
+                    key={child.id}
+                    className={
+                      isRootChildrenPanel
+                        ? "relative flex w-full min-w-0 justify-center pt-6"
+                        : "relative flex w-full justify-center pt-6"
+                    }
+                  >
+                    <span className="absolute left-1/2 top-[-1px] h-6 w-[6px] -translate-x-1/2 rounded-full bg-teal-300/44" />
+                    <BranchTreeItem
+                      node={child}
+                      onEdit={onEdit}
+                      expandedIds={expandedIds}
+                      onToggle={onToggle}
+                      depth={depth + 1}
+                    />
+                  </div>
+                );
+              })}
+              {isRootChildrenPanel ? (
+                <div className="col-span-full w-full">
+                  {visibleChildren
+                    .filter((child) => child.isVirtualGroup)
+                    .map((child) => (
+                      <BranchAreaGroupPanel
+                        key={`${child.id}-panel`}
+                        node={child}
+                        onEdit={onEdit}
+                        expandedIds={expandedIds}
+                        onToggle={onToggle}
+                        depth={depth + 1}
+                      />
+                    ))}
                 </div>
-              ))}
+              ) : null}
             </div>
           </div>
         </div>
@@ -339,21 +552,28 @@ const BranchTreeItem = ({
 const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
   const { t } = useTranslation("branches");
   const roots = useMemo(() => buildBranchTree(data), [data]);
-  const defaultExpandedIds = useMemo(() => new Set(roots.map((node) => node.id)), [roots]);
-  const [expandedIds, setExpandedIds] = useState<Set<string> | null>(null);
-  const visibleExpandedIds = expandedIds ?? defaultExpandedIds;
+  const primaryRoot = roots[0];
+  const rootGroupIds = useMemo(
+    () => new Set((primaryRoot?.children ?? []).filter((child) => child.isVirtualGroup).map((child) => child.id)),
+    [primaryRoot],
+  );
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   if (loading) {
     return <Spin />;
   }
 
-  if (!roots.length) {
+  if (!primaryRoot) {
     return <Empty description={t("list.notFound")} />;
   }
 
   const toggleNode = (id: string) => {
     setExpandedIds((current) => {
-      const next = new Set(current ?? defaultExpandedIds);
+      if (rootGroupIds.has(id)) {
+        return current.has(id) ? new Set() : new Set([id]);
+      }
+
+      const next = new Set(current);
 
       if (next.has(id)) {
         next.delete(id);
@@ -366,22 +586,67 @@ const BranchTree = ({ data, loading, onEdit }: BranchTreeProps) => {
   };
 
   return (
-    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-border-soft bg-primary px-2.5 py-5 shadow-sm dark:bg-primarydark sm:px-5 sm:py-8">
+    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-border-soft bg-primary px-3 py-5 shadow-sm dark:bg-primarydark sm:px-5 sm:py-6">
       <div className="pointer-events-none absolute inset-x-8 top-8 h-px bg-gradient-to-r from-transparent via-main/20 to-transparent dark:via-teal-100/18" />
-      <div className="relative z-10 flex w-full justify-center">
-        <ul className="flex min-w-0 w-full flex-col items-center gap-8 px-0 sm:gap-10 sm:px-2 lg:px-4">
-          {roots.map((node) => (
-            <BranchTreeItem
-              key={node.id}
-              node={node}
-              onEdit={onEdit}
-              expandedIds={visibleExpandedIds}
-              onToggle={toggleNode}
-              isRoot
-            />
-          ))}
-        </ul>
+
+      <div className="relative z-10 flex justify-center">
+        <BranchTreeNodeCard
+          node={primaryRoot}
+          onEdit={onEdit}
+          isExpanded={false}
+        />
       </div>
+
+      {primaryRoot.children.length ? (
+        <div className="relative z-10 mt-7">
+          <span className="mx-auto mb-4 block h-8 w-[7px] rounded-full bg-gradient-to-b from-teal-200/80 via-teal-400/55 to-main/40 shadow-[0_0_16px_rgba(45,212,191,0.26)]" />
+
+          <div className="rounded-2xl border border-border-soft bg-surface-elevated/70 p-4 dark:border-white/10 dark:bg-white/5">
+            <div
+              data-testid="branch-tree-root-grid"
+              className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-start gap-3"
+            >
+              {primaryRoot.children.map((child) => {
+                if (child.isVirtualGroup) {
+                  return (
+                    <BranchAreaGroupButton
+                      key={child.id}
+                      node={child}
+                      expandedIds={expandedIds}
+                      onToggle={toggleNode}
+                    />
+                  );
+                }
+
+                return (
+                  <div key={child.id} className="flex min-w-0 justify-center">
+                    <BranchTreeItem
+                      node={child}
+                      onEdit={onEdit}
+                      expandedIds={expandedIds}
+                      onToggle={toggleNode}
+                      depth={1}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {primaryRoot.children.map((child) =>
+              child.isVirtualGroup ? (
+                <BranchAreaGroupPanel
+                  key={`${child.id}-panel`}
+                  node={child}
+                  onEdit={onEdit}
+                  expandedIds={expandedIds}
+                  onToggle={toggleNode}
+                  depth={1}
+                />
+              ) : null,
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

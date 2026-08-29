@@ -41,22 +41,6 @@ const getActorName = (actor: unknown) => {
   ).trim();
 };
 
-const asRecord = (value: unknown): Record<string, unknown> =>
-  value && typeof value === "object" ? value as Record<string, unknown> : {};
-
-const getHistoryItems = (payload: unknown): Record<string, unknown>[] => {
-  const record = asRecord(payload);
-  const data = asRecord(record.data);
-
-  if (Array.isArray(payload)) return payload as Record<string, unknown>[];
-  if (Array.isArray(data.items)) return data.items as Record<string, unknown>[];
-  if (Array.isArray(data.data)) return data.data as Record<string, unknown>[];
-  if (Array.isArray(data.history)) return data.history as Record<string, unknown>[];
-  if (Array.isArray(record.items)) return record.items as Record<string, unknown>[];
-  if (Array.isArray(record.history)) return record.history as Record<string, unknown>[];
-  return [];
-};
-
 const getHistoryDate = (item: Record<string, unknown>) =>
   String(item["payment_date"] ?? item["createdAt"] ?? item["created_at"] ?? "");
 
@@ -65,6 +49,9 @@ const toOptionalString = (value: unknown): string | undefined => {
   const text = String(value);
   return text ? text : undefined;
 };
+
+const PAYMENT_HISTORY_SOURCE_TYPES =
+  "courier_payment,market_payment,branch_to_main";
 
 const getCounterpartyLabel = (
   role: "market" | "manager" | "courier",
@@ -86,19 +73,20 @@ const getCounterpartyLabel = (
 const MyCashboxPage = () => {
   const { t } = useTranslation("payments");
   const role = useSelector((state: RootState) => state.role.role);
-  const currentUserId = useSelector((state: RootState) => state.user.user?.id);
-  const { useGetCashboxMyCashbox, useGetFinanceHistory } = useCashBox();
+  const { useGetCashboxMyCashbox } = useCashBox();
 
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
+  const [historyTab, setHistoryTab] = useState<"all" | "payments">("all");
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   const params = useMemo(
     () => ({
       ...(selectedDateFrom && { fromDate: toRangeBoundary(selectedDateFrom, "start") }),
       ...(selectedDateTo && { toDate: toRangeBoundary(selectedDateTo, "end") }),
+      ...(historyTab === "payments" && { sourceTypes: PAYMENT_HISTORY_SOURCE_TYPES }),
     }),
-    [selectedDateFrom, selectedDateTo],
+    [historyTab, selectedDateFrom, selectedDateTo],
   );
 
   const { data: cashboxResponse, isLoading } = useGetCashboxMyCashbox(params);
@@ -123,29 +111,11 @@ const MyCashboxPage = () => {
         ? t("branchMainCashboxLabel")
         : t("courierCashboxLabel");
   const totalBalance = toNumber(cashbox?.balance);
-  const marketExtraCostParams = useMemo(
-    () => ({
-      page: 1,
-      limit: 100,
-      source_type: "extra_cost",
-      ...(currentUserId ? { user_id: currentUserId, cashbox_type: "markets" } : {}),
-      ...(selectedDateFrom && { fromDate: toRangeBoundary(selectedDateFrom, "start") }),
-      ...(selectedDateTo && { toDate: toRangeBoundary(selectedDateTo, "end") }),
-    }),
-    [currentUserId, selectedDateFrom, selectedDateTo],
-  );
-  const marketExtraCostHistoryQuery = useGetFinanceHistory(
-    marketExtraCostParams,
-    currentRole === "market",
-  );
-
   const historyRows = useMemo<PaymentRow[]>(() => {
     const cashboxRows = Array.isArray(detailData?.cashboxHistory)
       ? detailData.cashboxHistory
       : [];
-    const extraCostRows =
-      currentRole === "market" ? getHistoryItems(marketExtraCostHistoryQuery.data) : [];
-    const rows = [...cashboxRows, ...extraCostRows].sort((left, right) => {
+    const rows = [...cashboxRows].sort((left, right) => {
       const leftDate = Date.parse(getHistoryDate(left));
       const rightDate = Date.parse(getHistoryDate(right));
 
@@ -204,7 +174,6 @@ const MyCashboxPage = () => {
     detailData,
     entityName,
     expectedCashboxType,
-    marketExtraCostHistoryQuery.data,
   ]);
 
   const incomeAmount = historyRows.reduce(
@@ -257,6 +226,10 @@ const MyCashboxPage = () => {
       expenseLabel={t("expense")}
       todayTransactionsLabel={t("todayTransactions")}
       todayOperationsLabel={t("todayOperations")}
+      historyTab={historyTab}
+      onHistoryTabChange={setHistoryTab}
+      allHistoryLabel={t("allHistory")}
+      paymentsHistoryLabel={t("paymentTransfers")}
     />
   );
 };

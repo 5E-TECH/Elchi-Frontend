@@ -16,18 +16,14 @@ const isMeaningfulName = (value: string) => {
 };
 
 export const resolvePaymentActorName = (row: PaymentRow) => {
-  const actorName = [
-    row.created_by_user,
-    row.createdByUser,
-    row.user,
-    row.source_user,
-    row.sourceUser,
-  ]
+  const createdActorName = [row.created_by_user, row.createdByUser]
     .map(getActorName)
     .find(Boolean);
 
-  if (actorName) return actorName;
+  if (createdActorName) return createdActorName;
 
   const createdBy = String(row.created_by ?? "").trim();
-  return isMeaningfulName(createdBy) ? createdBy : "-";
+  if (isMeaningfulName(createdBy)) return createdBy;
+
+  return "-";
 };
