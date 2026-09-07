@@ -1,0 +1,31 @@
+{
+  "title": "Faoliyat jurnali",
+  "description": "Barcha xizmatlar bo'yicha audit izlari (kim, nima, qachon)",
+  "columns": {
+    "time": "Vaqt",
+    "actor": "Kim",
+    "action": "Amal",
+    "entity": "Obyekt",
+    "service": "Xizmat"
+  },
+  "filters": {
+    "search": "Qidirish...",
+    "service": "Xizmat",
+    "action": "Amal",
+    "entityType": "Obyekt turi (masalan Order)",
+    "userId": "Foydalanuvchi ID",
+    "from": "Boshlanish",
+    "to": "Tugash",
+    "clear": "Filtrlarni tozalash"
+  },
+  "detail": {
+    "field": "Maydon",
+    "before": "Oldin",
+    "after": "Keyin",
+    "noChanges": "Maydon o'zgarishlari qayd etilmagan",
+    "metadata": "Qo'shimcha ma'lumot",
+    "traceId": "Trace ID"
+  },
+  "empty": "Yozuvlar topilmadi",
+  "loadError": "Faoliyat jurnalini yuklashda xatolik yuz berdi"
+}

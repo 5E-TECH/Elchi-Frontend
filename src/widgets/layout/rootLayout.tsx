@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import Header from "../header";
 import Footer from "../footer";
 import { Outlet } from "react-router-dom";
-import { resetFilters } from "../../features/Select/model/FilterSlice";
+import { resetFilters } from "../../shared/model/filterSlice";
 
 const MainLayout = () => {
   const location = useLocation();

@@ -1,0 +1,39 @@
+{
+  "tabs": {
+    "all": "Barchasi",
+    "unread": "O'qilmagan"
+  },
+  "markAllRead": "Barchasini o'qilgan deb belgilash",
+  "markAllReadSuccess": "Barcha bildirishnomalar o'qilgan deb belgilandi",
+  "markAllReadError": "Bildirishnomalarni belgilashda xatolik yuz berdi",
+  "markRead": "O'qilgan deb belgilash",
+  "markUnread": "O'qilmagan deb belgilash",
+  "actionError": "Amalni bajarishda xatolik yuz berdi",
+  "delete": "O'chirish",
+  "cancel": "Bekor qilish",
+  "deleteConfirm": "Bildirishnomani o'chirmoqchimisiz?",
+  "deleteSuccess": "Bildirishnoma o'chirildi",
+  "deleteError": "Bildirishnomani o'chirishda xatolik yuz berdi",
+  "empty": "Bildirishnomalar yo'q",
+  "emptyHint": "Yangi bildirishnomalar shu yerda ko'rinadi",
+  "emptyUnread": "O'qilmagan bildirishnomalar yo'q",
+  "emptyUnreadHint": "Barcha bildirishnomalar o'qilgan",
+  "loadError": "Bildirishnomalarni yuklashda xatolik yuz berdi",
+  "category": {
+    "order": "Buyurtma",
+    "finance": "Moliya",
+    "branch": "Filial",
+    "logistics": "Logistika",
+    "account": "Hisob",
+    "system": "Tizim",
+    "marketing": "Marketing"
+  },
+  "priority": {
+    "low": "Past",
+    "normal": "Oddiy",
+    "high": "Yuqori",
+    "critical": "Muhim"
+  },
+  "inboxTitle": "Bildirishnomalar",
+  "inboxDescription": "Sizga kelgan bildirishnomalar"
+}

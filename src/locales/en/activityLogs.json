@@ -1,0 +1,31 @@
+{
+  "title": "Activity log",
+  "description": "Audit trail across all services (who, what, when)",
+  "columns": {
+    "time": "Time",
+    "actor": "Actor",
+    "action": "Action",
+    "entity": "Entity",
+    "service": "Service"
+  },
+  "filters": {
+    "search": "Search...",
+    "service": "Service",
+    "action": "Action",
+    "entityType": "Entity type (e.g. Order)",
+    "userId": "User ID",
+    "from": "From",
+    "to": "To",
+    "clear": "Clear filters"
+  },
+  "detail": {
+    "field": "Field",
+    "before": "Before",
+    "after": "After",
+    "noChanges": "No field changes recorded",
+    "metadata": "Metadata",
+    "traceId": "Trace ID"
+  },
+  "empty": "No records found",
+  "loadError": "Failed to load the activity log"
+}

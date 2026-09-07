@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useBranchesWithSentBatches } from "../../../entities/branch";
 import { useNavigate } from "react-router-dom";
+import QueryErrorState from "../../../shared/ui/QueryErrorState";
 
 interface BranchBatchRow {
   branch_id: string;
@@ -103,7 +104,7 @@ const BranchBatchesPage = () => {
     applyDebounce(searchQuery);
   }, [searchQuery, applyDebounce]);
 
-  const { data: response, isLoading } = useBranchesWithSentBatches({
+  const { data: response, isLoading, isError, refetch } = useBranchesWithSentBatches({
     side: "source",
     direction: "FORWARD",
   });
@@ -185,22 +186,26 @@ const BranchBatchesPage = () => {
         />
       </div>
 
-      <Table<BranchBatchRow>
-        data={rows}
-        loading={isLoading}
-        columns={columns.map((column) => {
-          if (column.key === "name") return { ...column, label: t("branchName") };
-          if (column.key === "phone_number") return { ...column, label: t("phone") };
-          if (column.key === "batches_count") return { ...column, label: t("batches") };
-          if (column.key === "total_price_sum") return { ...column, label: t("totalAmount") };
-          return column;
-        })}
-        keyExtractor={(item) => item.branch_id}
-        hoverable
-        mobileRowRender={renderMobileCard}
-        onRowClick={(row) => navigate(`/new-orders/branches/${row.branch_id}`)}
-        emptyMessage={t("noBranchBatchesToday")}
-      />
+      {isError ? (
+        <QueryErrorState onRetry={() => refetch()} />
+      ) : (
+        <Table<BranchBatchRow>
+          data={rows}
+          loading={isLoading}
+          columns={columns.map((column) => {
+            if (column.key === "name") return { ...column, label: t("branchName") };
+            if (column.key === "phone_number") return { ...column, label: t("phone") };
+            if (column.key === "batches_count") return { ...column, label: t("batches") };
+            if (column.key === "total_price_sum") return { ...column, label: t("totalAmount") };
+            return column;
+          })}
+          keyExtractor={(item) => item.branch_id}
+          hoverable
+          mobileRowRender={renderMobileCard}
+          onRowClick={(row) => navigate(`/new-orders/branches/${row.branch_id}`)}
+          emptyMessage={t("noBranchBatchesToday")}
+        />
+      )}
     </div>
   );
 };

@@ -5,7 +5,7 @@ import { Check, X } from 'lucide-react';
 import Button from './button';
 import Popup from '../ui/Popup';
 import { Controller, useForm } from "react-hook-form";
-import { GlobalSearchInput } from "../../features/search";
+import { GlobalSearchInput } from "../ui/GlobalSearchInput";
 
 interface PopupSelectProps<T> {
   isOpen: boolean;

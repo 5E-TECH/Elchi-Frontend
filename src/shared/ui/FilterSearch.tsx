@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import { useDebounce } from "../lib/useDebounce";
-import { GlobalSearchInput } from "../../features/search";
+import { GlobalSearchInput } from "./GlobalSearchInput";
 
 interface FilterSearchProps {
     value: string;

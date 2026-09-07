@@ -20,6 +20,7 @@ import { GlobalSearchInput } from "../../../features/search";
 import { useGlobalSearch } from "../../../features/search/api/useGlobalSearch";
 import type { RootState } from "../../../app/config/store";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import { useUnreadCount } from "../../../entities/notification-inbox";
 import Popup from "../../../shared/ui/Popup";
 import HeaderSearchPopup from "./HeaderSearchPopup";
 import ScannerActionButton from "../../../shared/components/ScannerActionButton";
@@ -40,6 +41,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const { t: tUsers } = useTranslation("users");
   const profile = useSelector((state: RootState) => state.user.user);
   const roleState = useSelector((state: RootState) => state.role);
+  const { data: unreadCount = 0 } = useUnreadCount(Boolean(roleState.role));
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
@@ -377,11 +379,16 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
           <button
             type="button"
+            onClick={() => navigate("/inbox")}
             className="relative hidden rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 lg:inline-flex dark:text-primary"
-            aria-label={t("notifications")}
+            aria-label={unreadCount > 0 ? `${t("notifications")} (${unreadCount})` : t("notifications")}
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-[var(--color-card-surface-strong)] bg-red-500 md:h-2.5 md:w-2.5"></span>
+            {unreadCount > 0 ? (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-[var(--color-card-surface-strong)] bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            ) : null}
           </button>
 
           <button

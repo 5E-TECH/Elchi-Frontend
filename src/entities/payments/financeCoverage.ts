@@ -8,7 +8,7 @@ export const useFinanceCoverage = () => {
   // ── Cashbox ──────────────────────────────────────────────────────────────
 
   const createCashbox = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.CASHBOX_BASE, data).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
@@ -23,7 +23,7 @@ export const useFinanceCoverage = () => {
     });
 
   const updateCashboxBalance = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.patch(API_ENDPOINTS.FINANCE.CASHBOX_BALANCE, data).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });
@@ -67,7 +67,7 @@ export const useFinanceCoverage = () => {
   // ── Financial balance ledger ──────────────────────────────────────────────
 
   const createFinancialBalanceEntry = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.FINANCIAL_BALANCE_ENTRIES, data)
         .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
@@ -113,7 +113,7 @@ export const useFinanceCoverage = () => {
   // ── Operator payments / balance / earnings / payouts ─────────────────────
 
   const createOperatorPayment = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENTS, data)
         .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
@@ -149,7 +149,7 @@ export const useFinanceCoverage = () => {
   // ── Salary ────────────────────────────────────────────────────────────────
 
   const createSalary = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.post(API_ENDPOINTS.FINANCE.SALARY, data).then((res) => res.data),
     onSuccess: () =>
       Promise.all([
@@ -159,7 +159,7 @@ export const useFinanceCoverage = () => {
   });
 
   const updateSalary = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: unknown) =>
       api.patch(API_ENDPOINTS.FINANCE.SALARY, data).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });

@@ -14,9 +14,11 @@ const Popup: FC<Props> = ({ children, onClose, isShow = false }) => {
 
   return createPortal(
     <>
-      <div
+      <button
+        type="button"
+        aria-label="Close"
         onClick={onClose}
-        className="fixed inset-0 z-[9998] h-screen w-full bg-black/65 backdrop-blur-md"
+        className="fixed inset-0 z-[9998] h-screen w-full cursor-default bg-black/65 backdrop-blur-md"
       />
 
       <div className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2">

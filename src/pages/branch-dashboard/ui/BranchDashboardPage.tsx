@@ -17,10 +17,7 @@ import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import TopPerformers from "../../../widgets/dashboard-top-performers/ui/TopPerformers";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import { getTodayRange } from "../../../shared/lib/dateRange";
-import {
-  removeFilterValue,
-  setMultipleFilters,
-} from "../../../features/Select/model/FilterSlice";
+import { removeFilterValue, setMultipleFilters } from "../../../shared/model/filterSlice";
 import type { RootState } from "../../../app/config/store";
 
 const statCardClassName =

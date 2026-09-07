@@ -17,7 +17,7 @@ export const useInvestors = () => {
     });
 
   const createInvestor = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.INVESTORS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.INVESTORS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
@@ -30,7 +30,7 @@ export const useInvestors = () => {
     });
 
   const updateInvestor = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.INVESTORS.BY_ID(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
@@ -68,7 +68,7 @@ export const useInvestors = () => {
     });
 
   const createInvestment = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.INVESTMENTS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.INVESTMENTS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
@@ -81,7 +81,7 @@ export const useInvestors = () => {
     });
 
   const updateInvestment = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.INVESTMENTS.BY_ID(id), data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
@@ -101,12 +101,12 @@ export const useInvestors = () => {
     });
 
   const createProfit = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.PROFITS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.PROFITS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 
   const calculateProfits = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.PROFITS.CALCULATE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.PROFITS.CALCULATE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [investors] }),
   });
 

@@ -135,24 +135,24 @@ export const useCashBox = () => {
   };
 
   const createPaymentCourier = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_COURIER, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_COURIER, data),
     onSuccess: refreshCashboxQueries,
   });
 
   const createPaymentBranchToMain = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN, data),
     onSuccess: refreshCashboxQueries,
   });
 
   const createPaymentMarket = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_MARKET, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_MARKET, data),
     onSuccess: refreshCashboxQueries,
   });
 
   const useGetCashBoxById = (
     id: string | undefined,
     bool: boolean = true,
-    params?: any,
+    params?: unknown,
   ) =>
     useQuery({
       queryKey: [cashbox, "by-user", id, params],

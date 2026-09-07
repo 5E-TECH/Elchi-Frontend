@@ -1,5 +1,5 @@
 import { lazy, memo, type ReactNode } from "react";
-import { Navigate, useParams, useRoutes } from "react-router-dom";
+import { Navigate, Outlet, useParams, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
@@ -26,6 +26,7 @@ const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
 const BranchOpsPage = lazy(() => import("../../pages/branch-ops"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
 const SystemOpsPage = lazy(() => import("../../pages/system-ops"));
+const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
 
 // ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
@@ -98,6 +99,9 @@ const RegionDistrictsPage = lazy(() => import("../../pages/region/pages/district
 const RegionSatoManagementPage = lazy(() => import("../../pages/region/pages/sato-management"));
 const RegionLogistAssignmentPage = lazy(() => import("../../pages/region/pages/logist-assignment"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
+const NotificationInboxPage = lazy(
+  () => import("../../pages/notifications/ui/NotificationInboxPage"),
+);
 const BranchesPage = lazy(() => import("../../pages/branches"));
 const BranchDetailPage = lazy(() => import("../../pages/branches/ui/BranchDetailPage"));
 const LogsPage = lazy(() => import("../../pages/logs/index"));
@@ -165,6 +169,26 @@ const canViewReturns = (state: RootState) => {
   }
 
   return role === "admin" || role === "superadmin";
+};
+
+// Internal ops/maintenance screens (settlement, *-ops). Backend RBAC already
+// 403s their write endpoints, but these dev forms must not be reachable by URL
+// for non-admins. Admin/superadmin only. (Audit I17.)
+const canViewOps = (state: RootState) => {
+  const role = state.role.role;
+  return role === "admin" || role === "superadmin";
+};
+
+// User management — admin/superadmin, plus REGIONAL/HYBRID managers (matches the
+// sidebar's "users" visibility). Backend RBAC still enforces on every call.
+const canManageUsers = (state: RootState) => {
+  const role = state.role.role;
+  if (role === "admin" || role === "superadmin") return true;
+  if (role === "manager") {
+    const branchType = getUserBranchType(state.user.user);
+    return branchType === "REGIONAL" || branchType === "HYBRID";
+  }
+  return false;
 };
 
 const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
@@ -438,7 +462,20 @@ const AppRouter = () => {
               ),
             },
             {
+              path: "activity-logs",
+              element: (
+                <ProtectedRoute canActivate={canViewOps}>
+                  <ActivityLogsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
               path: "all-users",
+              element: (
+                <ProtectedRoute canActivate={canManageUsers}>
+                  <Outlet />
+                </ProtectedRoute>
+              ),
               children: [
                 {
                   index: true,
@@ -761,6 +798,12 @@ const AppRouter = () => {
             {
               path: "notification",
               element: <Navigate replace to="/notifications" />,
+            },
+            {
+              // Per-user notification inbox (header bell target). Available to
+              // every authenticated user — the dashboard layout already gates auth.
+              path: "inbox",
+              element: <NotificationInboxPage />,
             },
             {
               path: "branches",

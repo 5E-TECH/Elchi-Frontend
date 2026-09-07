@@ -12,6 +12,7 @@ import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { formatDate } from "../../../shared/lib/formatDate";
 import Pagination from "../../../shared/components/pagination";
+import QueryErrorState from "../../../shared/ui/QueryErrorState";
 
 interface NotificationTableProps {
   onEdit: (record: Notification) => void;
@@ -23,7 +24,7 @@ const NotificationTable = ({ onEdit }: NotificationTableProps) => {
     page: 1,
     limit: 10,
   });
-  const { data, isLoading } = useNotifications(params);
+  const { data, isLoading, isError, refetch } = useNotifications(params);
   const currentPage = data?.page ?? params.page ?? 1;
   const currentLimit = data?.limit ?? params.limit ?? 10;
   const totalItems = data?.total ?? 0;
@@ -83,40 +84,46 @@ const NotificationTable = ({ onEdit }: NotificationTableProps) => {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-sm dark:border-primarydark/60 dark:bg-maindark">
-      <Table
-        keyExtractor={(item) => item.id}
-        columns={columns}
-        data={data?.data ?? []}
-        loading={isLoading}
-        emptyMessage={t("notificationsNotFound")}
-      />
+      {isError ? (
+        <QueryErrorState onRetry={() => refetch()} className="m-4" />
+      ) : (
+        <>
+          <Table
+            keyExtractor={(item) => item.id}
+            columns={columns}
+            data={data?.data ?? []}
+            loading={isLoading}
+            emptyMessage={t("notificationsNotFound")}
+          />
 
-      <div
-        className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-primarydark/60"
-        style={{
-          background: "linear-gradient(90deg, var(--color-main) 0%, var(--color-primarydark) 100%)",
-        }}
-      >
-        <span className="text-sm text-white">
-          {totalItems
-            ? t("paginationSummary", {
-                from: (currentPage - 1) * currentLimit + 1,
-                to: Math.min(currentPage * currentLimit, totalItems),
-                total: totalItems,
-              })
-            : t("notificationsEmptyCount")}
-        </span>
+          <div
+            className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-primarydark/60"
+            style={{
+              background: "linear-gradient(90deg, var(--color-main) 0%, var(--color-primarydark) 100%)",
+            }}
+          >
+            <span className="text-sm text-white">
+              {totalItems
+                ? t("paginationSummary", {
+                    from: (currentPage - 1) * currentLimit + 1,
+                    to: Math.min(currentPage * currentLimit, totalItems),
+                    total: totalItems,
+                  })
+                : t("notificationsEmptyCount")}
+            </span>
 
-        <Pagination
-          totalItems={totalItems}
-          itemsPerPage={currentLimit}
-          currentPage={currentPage}
-          onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}
-          onItemsPerPageChange={(limit) => setParams((prev) => ({ ...prev, page: 1, limit }))}
-          className="w-full pt-0 sm:w-auto"
-          summary={null}
-        />
-      </div>
+            <Pagination
+              totalItems={totalItems}
+              itemsPerPage={currentLimit}
+              currentPage={currentPage}
+              onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}
+              onItemsPerPageChange={(limit) => setParams((prev) => ({ ...prev, page: 1, limit }))}
+              className="w-full pt-0 sm:w-auto"
+              summary={null}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };
