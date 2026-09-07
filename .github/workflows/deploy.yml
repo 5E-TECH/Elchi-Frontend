@@ -1,0 +1,63 @@
+# CRM frontendni Cloudflare Workers'ga avtomatik chiqarish.
+#
+# Shu paytgacha deploy faqat qo'lda qilingan: kimdir o'z noutbukidan
+# `npm run deploy` yozardi. Oxirgi marta 24-avgustda qilingan — ya'ni
+# `main`ga qo'shilgan kod ikki hafta productionga chiqmay turgan.
+#
+# Endi: `main`ga push -> sifat darvozasi -> deploy. PR'da faqat tekshiruv.
+#
+# Kerakli GitHub Secrets (Settings -> Secrets and variables -> Actions):
+#   CLOUDFLARE_API_TOKEN   — "Edit Cloudflare Workers" shablonidagi token
+#   CLOUDFLARE_ACCOUNT_ID  — akkaunt id (`npx wrangler whoami` ko'rsatadi)
+#
+# Build uchun qo'shimcha sir kerak emas: `.env.production` repoda turadi va
+# ichida faqat ochiq qiymatlar bor (VITE_* baribir bundle'ga tushadi).
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Bir branchda ikkita deploy bir vaqtda ketmasin. main'da `cancel-in-progress`
+# o'chirilgan — productionga chiqish yarim yo'lda uzilib qolmasligi kerak.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      # Sifat darvozasi — yiqilsa deploy umuman boshlanmaydi.
+      - run: npm run lint
+      - run: npm test
+
+      # `npm run build` = `tsc -b && vite build`, ya'ni tip tekshiruvi shu yerda.
+      - run: npm run build
+
+      # Wrangler package.json dagi versiyadan olinadi (npm ci o'rnatgan), ya'ni
+      # versiya bitta joyda turadi va workflow repodan uzilib qolmaydi.
+      # Konfiguratsiya `wrangler.jsonc` dan o'qiladi: Worker nomi elchi-frontend,
+      # `dist` esa static asset sifatida yuklanadi.
+      - name: Deploy (production)
+        if: github.ref == 'refs/heads/main'
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
