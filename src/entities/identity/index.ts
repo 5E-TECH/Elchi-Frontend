@@ -40,7 +40,7 @@ export const useIdentityCoverage = () => {
 
   // ── PATCH · MARKETS.ADD_ORDER ─────────────────────────────────────────────
   const addOrderToMarket = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.MARKETS.ADD_ORDER(id), data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ["identity-cov", "markets"] });
@@ -49,7 +49,7 @@ export const useIdentityCoverage = () => {
 
   // ── PATCH · MARKETS.EXPENSE_PROOF ────────────────────────────────────────
   const updateMarketExpenseProof = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
       api.patch(API_ENDPOINTS.MARKETS.EXPENSE_PROOF(id), data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ["identity-cov", "markets"] });

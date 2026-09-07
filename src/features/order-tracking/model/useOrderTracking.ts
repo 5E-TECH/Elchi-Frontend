@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AxiosError } from "axios";
 import { orderActivityLogApi } from "../../../entities/order";
+import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import type { ActivityLogResponse, TrackingEvent } from "../../../entities/order";
 
 type UseOrderTrackingResult = {
@@ -23,10 +24,8 @@ const sortEvents = (items: TrackingEvent[]) =>
     return rightTime - leftTime;
   });
 
-const getErrorMessage = (error: unknown) => {
-  const axiosError = error as AxiosError<{ message?: string; error?: string }>;
-  return axiosError.response?.data?.message ?? axiosError.response?.data?.error ?? axiosError.message ?? "";
-};
+const getErrorMessage = (error: unknown) =>
+  getApiErrorMessage(error, (error as AxiosError)?.message ?? "");
 
 const normalizeEvent = (event: TrackingEvent): TrackingEvent => {
   const oldStatus = event.old_value?.status ?? event.from_status ?? undefined;

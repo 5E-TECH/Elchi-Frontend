@@ -12,10 +12,16 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Test artifacts
+coverage
+test-results
+playwright-report
+
+# Editor / tooling local config
 .vscode/*
 !.vscode/extensions.json
 .idea
+.claude/
 .DS_Store
 *.suo
 *.ntvs*
@@ -25,7 +31,9 @@ dist-ssr
 
 
 .env
-.env.production
+# .env.production is intentionally committed: it holds only the PUBLIC production
+# API URL (all VITE_* vars are baked into the client bundle — never a secret).
+# Machine-specific overrides belong in *.local files, which are ignored above.
 
 # wrangler files
 .wrangler

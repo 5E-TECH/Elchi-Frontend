@@ -1,73 +1,59 @@
-# React + TypeScript + Vite
+# Elchi Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Admin & logistics web client for the Elchi delivery platform.
+React 19 + TypeScript + Vite, organized with **Feature-Sliced Design**
+(`app → pages → widgets → features → entities → shared`).
 
-Currently, two official plugins are available:
+**Stack:** React 19 · Vite · Redux Toolkit (client state) · TanStack React Query
+(server state) · Ant Design v6 · react-hook-form + yup · react-i18next (uz/ru/en)
+· react-router-dom v7.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Backend: NestJS microservices (see `../Elchi-Backend`). The API contract lives in
+`../Elchi-Backend/docs/frontend/openapi.json`; run `npm run audit:frontend` there
+to check endpoint coverage. An audit of this codebase is in
+[`docs/FRONTEND_AUDIT.md`](docs/FRONTEND_AUDIT.md).
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev        # start Vite dev server
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Script | What it does |
+|---|---|
+| `npm run dev` | Vite dev server |
+| `npm run build` | Type-check (`tsc -b`) + `vite build --mode production` |
+| `npm run preview` | Build then serve via `wrangler dev` |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest unit tests |
+| `npm run test:e2e` | Playwright E2E |
+| `npm run deploy` | Build + `wrangler deploy` (see below) |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Environment
+
+All `VITE_*` variables are embedded into the client bundle and are therefore
+**public — never put secrets in them.**
+
+| File | Purpose | Tracked? |
+|---|---|---|
+| `.env.production` | Production API URL (`VITE_BASE_URL`) used by `npm run build` | ✅ committed (public URL only) |
+| `.env` | Local dev override (e.g. an internal API IP) | ❌ git-ignored |
+| `.env.development` | Shared dev defaults | ✅ committed |
+| `.env.example` | Template | ✅ committed |
+
+`src/shared/const/index.ts` also falls back to the production API when the built
+URL is missing or would be blocked as mixed content.
+
+## Deployment
+
+**Primary target: Cloudflare Workers** (`npm run deploy`, config in
+`wrangler.jsonc`). `not_found_handling: single-page-application` makes deep links
+work with react-router.
+
+`netlify.toml` and `vercel.json` are **SPA-rewrite fallbacks** kept only so the
+app still routes correctly if it is also built on Netlify or Vercel. They are not
+the primary pipeline — the `deploy` script targets Cloudflare. Remove them if
+those platforms are not used.

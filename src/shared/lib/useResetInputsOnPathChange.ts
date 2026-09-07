@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { clearAllSearch } from "../../features/search/model/searchSlice";
-import { resetFilters } from "../../features/Select/model/FilterSlice";
+import { clearAllSearch } from "../model/searchSlice";
+import { resetFilters } from "../model/filterSlice";
 
 /**
  * Pathname o'zgarganda global input/filter state ni tozalaydi.

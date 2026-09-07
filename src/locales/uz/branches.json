@@ -63,7 +63,8 @@
   },
   "delete": {
     "confirm": "Filialni o'chirmoqchimisiz?",
-    "success": "Filial o'chirildi"
+    "success": "Filial o'chirildi",
+    "error": "Filialni o'chirishda xatolik yuz berdi"
   },
   "fields": {
     "name": "Filial nomi",

@@ -12,7 +12,7 @@ import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
-import { removeFilterValue, setMultipleFilters } from "../../features/Select/model/FilterSlice";
+import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import {
   formatCompactMoney,
   formatNumber,

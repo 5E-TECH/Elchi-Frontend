@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
-import store from "../../../app/config/store";
+import { useDispatch, useStore } from "react-redux";
+import type { RootState } from "../../../app/config/store";
 import { setProfile } from "../model/slice";
-import { setName, setRole } from "../../../features/auth/model/loginSlice";
+import { setName, setRole } from "../../../shared/model/roleSlice";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
@@ -208,19 +209,21 @@ const fetchUserList = async (params?: IUserFilter) => {
 
 export const useUser = () => {
   const client = useQueryClient();
+  const dispatch = useDispatch();
+  const reduxStore = useStore<RootState>();
 
   const useGetUser = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
       queryKey: [user, params],
       queryFn: () => fetchUserList(params),
       enabled,
-      placeholderData: (prev: any) => prev,
+      placeholderData: (prev) => prev,
     });
 
   const useGetCouriers = (params?: IUserFilter, enabled: boolean = true) =>
     useQuery({
       queryKey: ["couriers", params],
-      queryFn: () => api.get(API_ENDPOINTS.COURIERS.BASE, { params }).then((res: any) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.COURIERS.BASE, { params }).then((res) => res.data),
       enabled,
     });
 
@@ -278,7 +281,7 @@ export const useUser = () => {
   const useGetRegions = (enabled: boolean = true) =>
     useQuery({
       queryKey: ["regions"],
-      queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res: any) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => res.data),
       staleTime: 5 * 60 * 1000,
       enabled,
     });
@@ -287,7 +290,7 @@ export const useUser = () => {
     useQuery({
       queryKey: [user, "detail", id, params],
       queryFn: () =>
-        api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res: any) => res.data),
+        api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res) => res.data),
       enabled: !!id,
     });
 
@@ -295,24 +298,24 @@ export const useUser = () => {
     useQuery({
       queryKey: [user, "profile"],
       queryFn: () =>
-        api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res: any) => res.data),
+        api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res) => res.data),
       staleTime: 60 * 1000,
     });
 
   const updateUserStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
-      api.patch(API_ENDPOINTS.USERS.STATUS(id), { status }).then((res: any) => res.data),
+      api.patch(API_ENDPOINTS.USERS.STATUS(id), { status }).then((res) => res.data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });
 
   const updateUser = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
-      api.patch(API_ENDPOINTS.USERS.BY_ID(id), data).then((res: any) => res.data),
+      api.patch(API_ENDPOINTS.USERS.BY_ID(id), data).then((res) => res.data),
     onSuccess: (response, variables) => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
 
-      const currentProfile = store.getState().user.user;
+      const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile || currentProfile.id !== variables.id) {
         return;
       }
@@ -326,20 +329,20 @@ export const useUser = () => {
           role: currentProfile.role,
         } as any);
 
-      store.dispatch(setProfile(updatedProfile as any));
-      store.dispatch(setName(updatedProfile.name));
-      store.dispatch(setRole(updatedProfile.role));
+      dispatch(setProfile(updatedProfile as any));
+      dispatch(setName(updatedProfile.name));
+      dispatch(setRole(updatedProfile.role));
     },
   });
 
   const updateMyProfile = useMutation({
     mutationFn: (data: UpdateUserRequest) =>
-      api.patch(API_ENDPOINTS.AUTH.MY_PROFILE, data).then((res: any) => res.data),
+      api.patch(API_ENDPOINTS.AUTH.MY_PROFILE, data).then((res) => res.data),
     onSuccess: (response, variables) => {
       client.invalidateQueries({ queryKey: [user, "profile"] });
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
 
-      const currentProfile = store.getState().user.user;
+      const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile) {
         return;
       }
@@ -353,9 +356,9 @@ export const useUser = () => {
           role: currentProfile.role,
         } as any);
 
-      store.dispatch(setProfile(updatedProfile as any));
-      store.dispatch(setName(updatedProfile.name));
-      store.dispatch(setRole(updatedProfile.role));
+      dispatch(setProfile(updatedProfile as any));
+      dispatch(setName(updatedProfile.name));
+      dispatch(setRole(updatedProfile.role));
     },
   });
 
@@ -363,7 +366,7 @@ export const useUser = () => {
     mutationFn: ({ id, add_order }: { id: string; add_order: boolean }) =>
       api
         .patch(API_ENDPOINTS.MARKETS.ADD_ORDER(id), { add_order })
-        .then((res: any) => res.data),
+        .then((res) => res.data),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [user], refetchType: "active" });
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
@@ -407,7 +410,7 @@ export const useUser = () => {
       client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
       client.invalidateQueries({ queryKey: ["orders", "markets", "cancelled"], refetchType: "active" });
 
-      const currentProfile = store.getState().user.user;
+      const currentProfile = reduxStore.getState().user.user;
       if (!currentProfile || currentProfile.id !== variables.id) {
         return;
       }
@@ -422,13 +425,13 @@ export const useUser = () => {
         cancelled_handover_qr_required: variables.cancelled_handover_qr_required,
       };
 
-      store.dispatch(setProfile(updatedProfile as any));
+      dispatch(setProfile(updatedProfile as any));
     },
   });
 
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
-      api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res: any) => res.data),
+      api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res) => res.data),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
   });

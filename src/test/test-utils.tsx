@@ -8,10 +8,10 @@ import { I18nextProvider } from "react-i18next";
 import type { RootState } from "../app/config/store";
 import sidebar from "../widgets/Sidebar/model/sidebarSlice";
 import user from "../entities/user/model/slice";
-import filter from "../features/Select/model/FilterSlice";
-import search from "../features/search/model/searchSlice";
-import role from "../features/auth/model/loginSlice";
-import pagination from "../features/pagination/model/paginationSlice";
+import filter from "../shared/model/filterSlice";
+import search from "../shared/model/searchSlice";
+import role from "../shared/model/roleSlice";
+import pagination from "../shared/model/paginationSlice";
 import i18n from "../i18n";
 import { NotificationProvider } from "../app/providers/notification/NotificationProvider";
 

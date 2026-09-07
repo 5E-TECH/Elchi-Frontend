@@ -29,7 +29,7 @@ import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
 import PopupConfirm from "../../shared/components/popupConfirm";
 import OrderTabs from "./list/courier/list/tabs";
-import { setFilterValue } from "../../features/Select/model/FilterSlice";
+import { setFilterValue } from "../../shared/model/filterSlice";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../scan/lib/scanShared";
@@ -876,8 +876,7 @@ const Orders = () => {
         },
       });
       message.success(t("exportSuccess", { count: exportedOrders.length }));
-    } catch (error) {
-      console.error("Orders export failed:", error);
+    } catch {
       message.error(t("exportError"));
     } finally {
       setIsExporting(false);

@@ -18,8 +18,12 @@ const DeleteBranchButton = ({ id, className }: { id: string; className?: string 
       confirmTitle={t("delete.confirm")}
       popupTheme="branch"
       onConfirm={async () => {
-        await deleteBranch.mutateAsync(id);
-        message.success(t("delete.success"));
+        try {
+          await deleteBranch.mutateAsync(id);
+          message.success(t("delete.success"));
+        } catch {
+          message.error(t("delete.error"));
+        }
       }}
       loading={deleteBranch.isPending}
     />

@@ -17,13 +17,13 @@ import { useMarkets } from "../../../entities/markets";
 import { useBranches } from "../../../entities/branch";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import type { DeliveryType, OrderStatus } from "../../../entities/order/types/order";
-import { resetFilters, setFilterValue } from "../../../features/Select/model/FilterSlice";
+import { resetFilters, setFilterValue } from "../../../shared/model/filterSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterDateRange from "../../../shared/ui/FilterDateRange";
 import FilterMultiSelect from "../../../shared/ui/FilterMultiSelect";
 import FilterClearButton from "../../../shared/ui/FilterClearButton";
-import { clearAllSearch, setSearchValue } from "../../../features/search/model/searchSlice";
+import { clearAllSearch, setSearchValue } from "../../../shared/model/searchSlice";
 import type { RootState } from "../../../app/config/store";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 

@@ -7,7 +7,8 @@ import { renderWithProviders } from "../../test/test-utils";
 const getDashboardMock = vi.fn();
 const getKpiMock = vi.fn();
 
-vi.mock("../../entities/dashboard", () => ({
+vi.mock("../../entities/dashboard", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/dashboard")>()),
   useDashboard: () => ({
     getDashboard: getDashboardMock,
     getKpi: getKpiMock,

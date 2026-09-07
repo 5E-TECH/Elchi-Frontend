@@ -95,7 +95,7 @@ export const useOrders = () => {
 
   const useGetTodayOrdersByMarket = (
     marketId: string | number,
-    params?: any,
+    params?: unknown,
     enabled: boolean = true,
   ) =>
     useQuery({

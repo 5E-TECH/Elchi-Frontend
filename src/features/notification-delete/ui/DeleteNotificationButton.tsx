@@ -13,8 +13,12 @@ const DeleteNotificationButton = ({ id }: { id: string }) => {
       icon={<DeleteOutlined />}
       confirmTitle="Haqiqatan ham o'chirmoqchimisiz?"
       onConfirm={async () => {
-        await deleteNotification.mutateAsync(id);
-        message.success("Bildirishnoma o'chirildi");
+        try {
+          await deleteNotification.mutateAsync(id);
+          message.success("Bildirishnoma o'chirildi");
+        } catch {
+          message.error("Bildirishnomani o'chirishda xatolik yuz berdi");
+        }
       }}
       loading={deleteNotification.isPending}
     >

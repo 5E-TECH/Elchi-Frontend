@@ -8,7 +8,7 @@ export const useMarkets = () => {
   const client = useQueryClient();
 
   const createMarket = useMutation({
-    mutationFn: (data: any) => api.post(API_ENDPOINTS.MARKETS.BASE, data),
+    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.MARKETS.BASE, data),
     onSuccess: () => client.invalidateQueries({ queryKey: [markets] }),
   });
 
