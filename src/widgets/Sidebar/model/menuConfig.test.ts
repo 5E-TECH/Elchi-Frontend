@@ -23,11 +23,28 @@ describe("sidebar menu config", () => {
       "/regions",
     ]);
 
+    // /courier-bulk faqat REGIONAL va HYBRID menejerlarga ochiq —
+    // routes.tsx dagi canViewCourierBulk guardi bilan bir xil chegara.
     expect(getSidebarConfigForUser("manager", userWithBranchType("REGIONAL")).map((item) => item.to)).toEqual([
       "/branch-dashboard",
       "/dispatch",
       "/orders",
+      "/courier-bulk",
       "/mails",
+      "/all-users",
+      "/payments",
+      "/regions",
+    ]);
+
+    expect(getSidebarConfigForUser("manager", userWithBranchType("HYBRID")).map((item) => item.to)).toEqual([
+      "/branch-dashboard",
+      "/dispatch",
+      "/orders",
+      "/courier-bulk",
+      "/new-orders",
+      "/mails",
+      "/batches",
+      "/returns",
       "/all-users",
       "/payments",
       "/regions",
