@@ -49,11 +49,23 @@ URL is missing or would be blocked as mixed content.
 
 ## Deployment
 
-**Primary target: Cloudflare Workers** (`npm run deploy`, config in
-`wrangler.jsonc`). `not_found_handling: single-page-application` makes deep links
-work with react-router.
+**Automatic.** Every push to `main` runs `.github/workflows/deploy.yml`: lint →
+tests → build → `wrangler deploy`. A pull request runs the same checks but stops
+before deploying. Until this workflow was added (Sep 2026) every release was a
+manual `npm run deploy` from someone's laptop, so `main` regularly sat weeks
+ahead of production.
 
-`netlify.toml` and `vercel.json` are **SPA-rewrite fallbacks** kept only so the
-app still routes correctly if it is also built on Netlify or Vercel. They are not
-the primary pipeline — the `deploy` script targets Cloudflare. Remove them if
-those platforms are not used.
+Two repository secrets drive it — `CLOUDFLARE_API_TOKEN` (Cloudflare → My
+Profile → API Tokens → **Edit Cloudflare Workers** template) and
+`CLOUDFLARE_ACCOUNT_ID` (`npx wrangler whoami`). The build itself needs no
+secrets: `.env.production` is committed and holds only public `VITE_*` values.
+
+**Target: Cloudflare Workers**, Worker name `elchi-frontend`, config in
+`wrangler.jsonc`. `not_found_handling: single-page-application` makes deep links
+work with react-router. `npm run deploy` still works for a manual release.
+
+This project is **not** on Cloudflare Pages, Netlify or Vercel. A stale
+`wrangler.toml` (Pages, project `elchi-pochta`), `netlify.toml` and `vercel.json`
+used to sit alongside the real config and were removed — wrangler prefers
+`wrangler.jsonc`, so the extra files only misled readers about where the site
+actually runs.

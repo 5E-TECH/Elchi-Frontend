@@ -8,11 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint . --quiet",
     "lint:report": "eslint .",
-    "preview": "npm run build && wrangler pages dev dist",
+    "preview": "npm run build && wrangler dev",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "deploy": "npm run build && wrangler pages deploy dist"
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@highcharts/map-collection": "^2.3.2",
