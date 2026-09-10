@@ -27,7 +27,22 @@ import {
 } from "../../entities/incoming-orders";
 import { useOrders } from "../../entities/orders";
 
-/** Bu ekranga kimlar kira oladi — backend guardi bilan bir xil. */
+/**
+ * Bu ekranga kimlar kira oladi — backend guardi bilan BIR XIL bo'lishi shart.
+ *
+ * ⚠️ `manager` ATAYLAB yo'q. Marshrut guardi (`canReceiveExternalOrders`)
+ * HQ menejerini o'tkazadi, lekin backendda
+ * `POST /orders/receive` hamon `@Roles(SUPERADMIN, ADMIN, REGISTRATOR)` —
+ * ya'ni menejer ro'yxatni ko'rib, "Qabul qilish" tugmasida 403 olardi.
+ *
+ * Ishlamaydigan tugmani ko'rsatgandan ko'ra ekranni ochmagan ma'qul. Backendga
+ * `MANAGER` qo'shilgandan keyin bu ro'yxatga ham qo'shiladi.
+ *
+ * DIQQAT: o'sha endpointda filial chegarasi YO'Q (`receiveNewOrders` faqat
+ * order_id oladi), shuning uchun `MANAGER` qo'shilsa BARCHA menejerlar
+ * (HQ dan tashqari ham) istalgan buyurtmani qabul qila oladi. Buni HQ bilan
+ * cheklash alohida qaror talab qiladi.
+ */
 const ALLOWED_ROLES = new Set(["superadmin", "admin", "registrator"]);
 
 const formatMoney = (value: unknown) =>

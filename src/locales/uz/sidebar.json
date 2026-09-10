@@ -26,5 +26,7 @@
   "darkMode": "Tungi rejim",
   "lightMode": "Kunduzgi rejim",
   "profile": "Profil",
-  "search": "Qidiruv..."
+  "search": "Qidiruv...",
+  "branchTypeMissing": "Filial turi aniqlanmadi",
+  "branchTypeMissingHint": "Shu sababli menyuning bir qismi ko'rinmayapti. Administratorga murojaat qiling — foydalanuvchingizga filial biriktirilishi kerak."
 }

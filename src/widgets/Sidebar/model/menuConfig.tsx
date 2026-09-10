@@ -115,6 +115,13 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/cash-box", icon: CreditCard, label: "payments" },
     { to: "/regions", icon: MapPinned, label: "regions" },
   ],
+  /**
+   * ⚠️ Menejer menyusi ASLIDA bu yerdan olinmaydi — u `MANAGER_MENU_ORDER` dan
+   * qobiliyatlar bo'yicha hosil qilinadi (`buildManagerConfig`). Bu yozuv
+   * faqat `Record<SidebarUserRole, NavItem[]>` turini qanoatlantirish uchun va
+   * filial turi aniqlanmagandagi bazaviy ro'yxatga TENG bo'lishi shart —
+   * tenglik testda qulflangan.
+   */
   manager: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
@@ -122,47 +129,103 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   ],
 };
 
-const MANAGER_REGIONAL_CONFIG: NavItem[] = [
-  { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
-  { to: "/dispatch", icon: Truck, label: "dispatch" },
-  { to: "/orders", icon: ShoppingBag, label: "orders" },
-  { to: "/courier-bulk", icon: Zap, label: "quickAction" },
-  { to: "/mails", icon: MailOpen, label: "mails" },
-  { to: "/all-users", icon: UserRound, label: "users" },
-  { to: "/payments", icon: CreditCard, label: "payments" },
-  { to: "/regions", icon: MapPinned, label: "regions" },
+/**
+ * ═══════════════ MENEJER QOBILIYATLARI ═══════════════
+ *
+ * Avval menejer uchun TO'RTTA qo'lda yozilgan menyu ro'yxati bor edi
+ * (REGIONAL / PICKUP / HYBRID / HQ). Ikki muammosi bor edi:
+ *
+ *   1. HYBRID aynan REGIONAL ∪ PICKUP ga teng edi — ya'ni uchinchi ro'yxat
+ *      ortiqcha nusxa. REGIONAL ga band qo'shilsa, HYBRID ga ham qo'lda
+ *      qo'shish kerak edi; unutilsa ikkisi jimgina ajralib ketardi.
+ *   2. Ro'yxat KIRISH HUQUQINI ham belgilaydi (`routes.tsx` guardlari),
+ *      shuning uchun ro'yxatdagi tasodifiy farq = ruxsat xatosi.
+ *
+ * Endi manba bitta: filial turi → QOBILIYATLAR to'plami. Menyu ham, guard ham
+ * shundan hosil bo'ladi. HYBRID alohida ro'yxat emas — u shunchaki ikkala
+ * qobiliyatga ega.
+ */
+export type ManagerCapability =
+  /** Jo'natish yo'nalishi: kuryerga berish, tezkor amal. */
+  | 'dispatch'
+  /** Qabul yo'nalishi: buyurtma qabuli, paketlar, qaytarishlar. */
+  | 'intake'
+  /** Pochta ro'yxati. */
+  | 'mails'
+  /** Kassa. */
+  | 'finance'
+  /** Filial xodimlari. */
+  | 'staff';
+
+export const MANAGER_CAPABILITIES: Record<BranchType, ManagerCapability[]> = {
+  REGIONAL: ['dispatch', 'mails', 'finance', 'staff'],
+  PICKUP: ['intake'],
+  // HYBRID = REGIONAL ∪ PICKUP — qo'lda emas, hisoblab chiqariladi.
+  HYBRID: ['dispatch', 'intake', 'mails', 'finance', 'staff'],
+  /**
+   * HQ markaziy filial: pochta va kassa avvaldan bor edi; `intake` 2026-09-10
+   * da QO'SHILDI — hamkordan (BeePost) kelgan posilkalarni aynan HQ qabul
+   * qiladi, shuning uchun HQ menejeri qabul ekranini ko'rishi kerak.
+   */
+  HQ: ['intake', 'mails', 'finance'],
+};
+
+/**
+ * Menyu bandlarining KANONIK tartibi.
+ *
+ * Tartib ataylab bitta joyda: har bir filial turi shu ro'yxatdan o'ziga
+ * tegishlisini FILTRLAB oladi. Shu sababli ikki filial turi orasida tartib
+ * hech qachon farq qilmaydi.
+ *
+ * `null` qobiliyat = bazaviy band, hamma menejerda bor.
+ */
+const MANAGER_MENU_ORDER: { item: NavItem; capability: ManagerCapability | null }[] = [
+  { item: { to: "/branch-dashboard", icon: House, label: "dashboard", end: true }, capability: null },
+  { item: { to: "/dispatch", icon: Truck, label: "dispatch" }, capability: 'dispatch' },
+  { item: { to: "/orders", icon: ShoppingBag, label: "orders" }, capability: null },
+  { item: { to: "/courier-bulk", icon: Zap, label: "quickAction" }, capability: 'dispatch' },
+  { item: { to: "/new-orders", icon: Calendar1, label: "newOrders" }, capability: 'intake' },
+  { item: { to: "/mails", icon: MailOpen, label: "mails" }, capability: 'mails' },
+  { item: { to: "/batches", icon: PackageCheck, label: "batches" }, capability: 'intake' },
+  { item: { to: "/returns", icon: RotateCcw, label: "returns" }, capability: 'intake' },
+  { item: { to: "/all-users", icon: UserRound, label: "users" }, capability: 'staff' },
+  { item: { to: "/payments", icon: CreditCard, label: "payments" }, capability: 'finance' },
+  { item: { to: "/regions", icon: MapPinned, label: "regions" }, capability: null },
 ];
 
-const MANAGER_PICKUP_CONFIG: NavItem[] = [
-  { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
-  { to: "/orders", icon: ShoppingBag, label: "orders" },
-  { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-  { to: "/batches", icon: PackageCheck, label: "batches" },
-  { to: "/returns", icon: RotateCcw, label: "returns" },
-  { to: "/regions", icon: MapPinned, label: "regions" },
-];
+/**
+ * Menejerning qobiliyatlari.
+ *
+ * ⚠️ Filial turi ANIQLANMASA bo'sh to'plam qaytadi — ya'ni menejer faqat
+ * bazaviy bandlarni ko'radi. Bu ATAYLAB: noma'lum filialga kengroq huquq
+ * berishdan ko'ra torroq berish xavfsiz. Foydalanuvchi sababni bilishi uchun
+ * sidebar ogohlantirish ko'rsatadi (`hasUnknownBranchType`).
+ */
+export const getManagerCapabilities = (
+  user?: User | null,
+): ManagerCapability[] => {
+  const branchType = getUserBranchType(user);
+  return branchType ? MANAGER_CAPABILITIES[branchType] : [];
+};
 
-const MANAGER_HYBRID_CONFIG: NavItem[] = [
-  { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
-  { to: "/dispatch", icon: Truck, label: "dispatch" },
-  { to: "/orders", icon: ShoppingBag, label: "orders" },
-  { to: "/courier-bulk", icon: Zap, label: "quickAction" },
-  { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-  { to: "/mails", icon: MailOpen, label: "mails" },
-  { to: "/batches", icon: PackageCheck, label: "batches" },
-  { to: "/returns", icon: RotateCcw, label: "returns" },
-  { to: "/all-users", icon: UserRound, label: "users" },
-  { to: "/payments", icon: CreditCard, label: "payments" },
-  { to: "/regions", icon: MapPinned, label: "regions" },
-];
+export const managerHasCapability = (
+  user: User | null | undefined,
+  capability: ManagerCapability,
+): boolean => getManagerCapabilities(user).includes(capability);
 
-const MANAGER_HQ_CONFIG: NavItem[] = [
-  { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
-  { to: "/orders", icon: ShoppingBag, label: "orders" },
-  { to: "/mails", icon: MailOpen, label: "mails" },
-  { to: "/payments", icon: CreditCard, label: "payments" },
-  { to: "/regions", icon: MapPinned, label: "regions" },
-];
+/** Menejer roli, lekin filial turi aniqlanmagan — menyu qisqarib qoladi. */
+export const hasUnknownBranchType = (
+  role: SidebarUserRole | string | null | undefined,
+  user?: User | null,
+): boolean =>
+  normalizeSidebarRole(role, user) === "manager" && getUserBranchType(user) === null;
+
+const buildManagerConfig = (user?: User | null): NavItem[] => {
+  const capabilities = getManagerCapabilities(user);
+  return MANAGER_MENU_ORDER.filter(
+    ({ capability }) => capability === null || capabilities.includes(capability),
+  ).map(({ item }) => item);
+};
 
 const toBranchType = (value: unknown): BranchType | null => {
   if (typeof value !== "string") return null;
@@ -209,20 +272,8 @@ export const getSidebarConfigForUser = (
 
   const branchType = getUserBranchType(user);
 
-  if (normalizedRole === "manager" && branchType === "REGIONAL") {
-    return MANAGER_REGIONAL_CONFIG;
-  }
-
-  if (normalizedRole === "manager" && branchType === "PICKUP") {
-    return MANAGER_PICKUP_CONFIG;
-  }
-
-  if (normalizedRole === "manager" && branchType === "HYBRID") {
-    return MANAGER_HYBRID_CONFIG;
-  }
-
-  if (normalizedRole === "manager" && branchType === "HQ") {
-    return MANAGER_HQ_CONFIG;
+  if (normalizedRole === "manager") {
+    return buildManagerConfig(user);
   }
 
   if (normalizedRole === "registrator" && branchType === "HQ") {

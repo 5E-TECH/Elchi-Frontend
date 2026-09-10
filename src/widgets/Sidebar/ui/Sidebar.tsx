@@ -2,10 +2,14 @@ import { memo, useMemo } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { getSidebarConfigForUser, normalizeSidebarRole } from "../model/menuConfig";
+import {
+  getSidebarConfigForUser,
+  hasUnknownBranchType,
+  normalizeSidebarRole,
+} from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoIcon from "../../../shared/assets/logo qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
@@ -38,6 +42,15 @@ const Sidebar = () => {
     [navItems, t],
   );
 
+  /**
+   * Menejerning filial turi aniqlanmagan.
+   *
+   * Bunday holatda menyu bazaviy uch bandga tushadi va u bilan birga pochta,
+   * kassa, xodimlar sahifalari yopiladi. Avval bu JIMGINA sodir bo'lardi —
+   * foydalanuvchi "bandlar yo'qoldi" deb o'ylardi. Endi sabab ochiq aytiladi.
+   */
+  const branchTypeMissing = hasUnknownBranchType(userRole, user);
+
   // ─── Logo rasmlarini tanlash ──────────────────────────────────────────────
   const currentLogoText = isDarkMode ? LogoTextdark : LogoText;
   const currentLogoIcon = isDarkMode ? LogoIcondark : LogoIcon;
@@ -65,6 +78,19 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto bg-sidebar px-3 py-3 custom-scrollbar dark:bg-maindark">
+        {branchTypeMissing && (
+          <div
+            className="mb-2 flex items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-500/12 px-3 py-2.5 text-amber-700 dark:text-amber-200"
+            title={t("branchTypeMissingHint")}
+          >
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            {isOpen && (
+              <span className="text-xs font-semibold leading-snug">
+                {t("branchTypeMissing")}
+              </span>
+            )}
+          </div>
+        )}
         {links.map((link) => (
           <SidebarLink
             key={link.to}
