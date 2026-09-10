@@ -53,6 +53,22 @@ export const fetchScanDetail = async (token: string): Promise<ScanDetailResponse
   return { type: resourceType, data: response };
 };
 
+/**
+ * P1b — kuryer skan qilgan buyurtmani O'ZIGA oladi.
+ *
+ * Backend (`POST /orders/scan-assign`) bir amalda ikkisini bajaradi:
+ *   1. buyurtma kuryer filialiga jo'natilgan paketda bo'lsa — FILIAL QABULI;
+ *   2. keyin buyurtmani kuryerga biriktirish.
+ * Ya'ni bitta skan, lekin mas'uliyat zanjirida ikki bo'g'in (HQ → filial →
+ * kuryer) — shu bois posilka yo'qolsa kim yo'qotganini aniqlash mumkin.
+ *
+ * Faqat COURIER roli chaqira oladi (gateway guardi).
+ */
+export const scanAssignOrder = async (qrToken: string) =>
+  api
+    .post(API_ENDPOINTS.ORDERS.SCAN_ASSIGN, { qr_token: qrToken })
+    .then((res) => res.data);
+
 export const receiveScannedPackage = async (packageIdOrToken: string) =>
   api
     .patch(API_ENDPOINTS.BATCHES.RECEIVE(encodeURIComponent(packageIdOrToken)))

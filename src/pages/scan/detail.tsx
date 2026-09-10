@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Building2,
@@ -15,8 +15,9 @@ import {
   Truck,
   UserRound,
 } from "lucide-react";
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   extractScannerToken,
@@ -24,12 +25,15 @@ import {
 } from "./lib/scanShared";
 import {
   fetchScanDetail,
+  getBackendErrorMessage,
   getScanDetailQueryKey,
   getScanResourceType,
+  scanAssignOrder,
 } from "./lib/scanResource";
 import ScanPackageDetail from "./ui/ScanPackageDetail";
 import ScanPostDetail from "./ui/ScanPostDetail";
 import BackButton from "../../shared/ui/BackButton";
+import type { RootState } from "../../app/config/store";
 
 type ScanOrderView = {
   id: string;
@@ -149,6 +153,40 @@ const ScanDetailPage = () => {
     queryFn: () => fetchScanDetail(normalizedToken),
     enabled: Boolean(normalizedToken),
   });
+
+  // P1b — "O'zimga olish". Faqat KURYER uchun: backend guardi ham
+  // `@Roles(COURIER)`, shu bois boshqa rolga tugma ko'rsatish chalg'ituvchi
+  // bo'lardi (bosgan zahoti 403 olardi).
+  const role = useSelector((state: RootState) => state.role.role);
+  const isCourier = role === "courier";
+  const [assignMessage, setAssignMessage] = useState<
+    { tone: "success" | "error"; text: string } | null
+  >(null);
+
+  const assignMutation = useMutation({
+    mutationFn: () => scanAssignOrder(normalizedToken),
+    onSuccess: () => {
+      void playScanFeedback("success");
+      setAssignMessage({ tone: "success", text: t("scannerOrderAssignSuccess") });
+      // Kuryer ketma-ket bir necha buyurtma skan qiladi — skanerga qaytaramiz.
+      window.setTimeout(() => navigate("/scan"), 1500);
+    },
+    onError: (error) => {
+      void playScanFeedback("error");
+      // Backend xabari ATAYLAB ko'rsatiladi: u aniq sababni aytadi
+      // ("paket hali jo'natilmagan", "boshqa filial orderi", "allaqachon
+      // boshqa kuryerga biriktirilgan"). Umumiy xabar bilan almashtirish
+      // kuryerni ko'r qoldirardi.
+      setAssignMessage({
+        tone: "error",
+        text: getBackendErrorMessage(error) ?? t("scannerOrderAssignError"),
+      });
+    },
+  });
+
+  useEffect(() => {
+    setAssignMessage(null);
+  }, [normalizedToken]);
 
   useEffect(() => {
     if (isError) {
@@ -362,6 +400,52 @@ const ScanDetailPage = () => {
               </p>
             </div>
           ))}
+
+          {isCourier ? (
+            <div className="space-y-3">
+              {assignMessage ? (
+                <div
+                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                    assignMessage.tone === "success"
+                      ? "border-emerald-400/30 bg-emerald-500/12 text-emerald-700 dark:text-emerald-200"
+                      : "border-red-400/30 bg-red-500/12 text-red-700 dark:text-red-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    {assignMessage.tone === "success" ? (
+                      <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
+                    ) : (
+                      <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+                    )}
+                    <span className="[overflow-wrap:anywhere]">
+                      {assignMessage.text}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => assignMutation.mutate()}
+                disabled={
+                  assignMutation.isPending || assignMessage?.tone === "success"
+                }
+                className="flex w-full items-center justify-center gap-3 rounded-[28px] bg-emerald-600 px-6 py-5 text-base font-extrabold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {assignMutation.isPending ? (
+                  <>
+                    <ScanLine size={18} className="animate-pulse" />
+                    {t("scannerOrderAssigning")}
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={18} />
+                    {t("scannerOrderAssign")}
+                  </>
+                )}
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
