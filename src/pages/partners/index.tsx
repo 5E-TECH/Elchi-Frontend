@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Copy,
   KeyRound,
+  Pencil,
   Loader2,
   Plug,
   Plus,
@@ -59,7 +60,7 @@ const PartnersPage = () => {
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
   const partnersQuery = usePartners();
-  const { createPartner, rotateKey, setActive, retryWebhook } =
+  const { createPartner, updatePartner, rotateKey, setActive, retryWebhook } =
     usePartnerActions();
 
   const [message, setMessage] = useState<Message | null>(null);
@@ -70,6 +71,19 @@ const PartnersPage = () => {
     webhook_secret: "",
     ip_allowlist: "",
   });
+  /**
+   * Tahrirlanayotgan hamkor.
+   *
+   * Sekret maydoni ATAYLAB bo'sh keladi: mavjud qiymat bizga qaytarilmaydi
+   * (faqat shifrlangan holda saqlanadi). Bo'sh qoldirilsa tegilmaydi.
+   */
+  const [editing, setEditing] = useState<Partner | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    webhook_url: "",
+    webhook_secret: "",
+  });
+
   /** Bir martalik kalit — modal yopilgach BUTUNLAY yo'qoladi. */
   const [revealedKey, setRevealedKey] = useState<{
     name: string;
@@ -128,6 +142,48 @@ const PartnersPage = () => {
       setMessage({ tone: "success", text: t("partnerCreated") });
     } catch (error) {
       fail(error, t("partnerCreateFailed"));
+    }
+  };
+
+  const openEdit = (partner: Partner) => {
+    setEditing(partner);
+    setEditForm({
+      name: partner.name ?? "",
+      webhook_url: partner.webhook_url ?? "",
+      webhook_secret: "",
+    });
+  };
+
+  const handleEdit = async () => {
+    if (!editing) return;
+    /**
+     * FAQAT O'ZGARGAN maydonlar yuboriladi. Aks holda tegilmagan maydon ham
+     * jo'natilib, backendning "berilmasa tegilmaydi" qoidasi ma'nosini
+     * yo'qotardi — masalan sekret bo'sh yuborilib, ishlab turgan imzo
+     * o'chib ketardi.
+     */
+    const dto: Record<string, string> = {};
+    if (editForm.name.trim() !== (editing.name ?? "")) {
+      dto.name = editForm.name.trim();
+    }
+    if (editForm.webhook_url.trim() !== (editing.webhook_url ?? "")) {
+      dto.webhook_url = editForm.webhook_url.trim();
+    }
+    if (editForm.webhook_secret.trim()) {
+      dto.webhook_secret = editForm.webhook_secret.trim();
+    }
+
+    if (!Object.keys(dto).length) {
+      setEditing(null);
+      return;
+    }
+
+    try {
+      await updatePartner.mutateAsync({ id: String(editing.id), dto });
+      setMessage({ tone: "success", text: t("partnerUpdated") });
+      setEditing(null);
+    } catch (error) {
+      fail(error, t("partnerUpdateFailed"));
     }
   };
 
@@ -317,6 +373,15 @@ const PartnersPage = () => {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(partner)}
+                    title={t("partnerEdit")}
+                    className="flex h-9 items-center gap-1.5 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark transition hover:bg-main/5 dark:text-white"
+                  >
+                    <Pencil size={14} />
+                    {t("partnerEdit")}
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleRotate(partner)}
@@ -549,6 +614,100 @@ const PartnersPage = () => {
                 className="flex h-11 items-center gap-2 rounded-2xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
               >
                 {createPartner.isPending && (
+                  <Loader2 size={16} className="animate-spin" />
+                )}
+                {t("save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ Tahrirlash modali ═══════ */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-[24px] bg-primary p-5 shadow-2xl dark:bg-primarydark">
+            <div className="flex items-center justify-between">
+              <h3 className="m-0 text-base font-extrabold text-maindark dark:text-white">
+                {editing.name} — {t("partnerEdit")}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="text-[color:var(--color-text-muted)]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                  {t("partnerName")}
+                </span>
+                <input
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                  {t("partnerWebhookUrl")}
+                </span>
+                <input
+                  value={editForm.webhook_url}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, webhook_url: e.target.value }))
+                  }
+                  placeholder="https://..."
+                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                />
+                <span className="text-[11px] text-[color:var(--color-text-muted)]">
+                  {t("partnerWebhookUrlHint")}
+                </span>
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                  {t("partnerWebhookSecret")}
+                </span>
+                <input
+                  type="password"
+                  value={editForm.webhook_secret}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      webhook_secret: e.target.value,
+                    }))
+                  }
+                  autoComplete="new-password"
+                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                />
+                <span className="text-[11px] text-[color:var(--color-text-muted)]">
+                  {t("partnerSecretHint")}
+                </span>
+              </label>
+            </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="h-11 rounded-2xl border border-[color:var(--color-border-soft)] px-4 text-sm font-bold text-maindark dark:text-white"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={handleEdit}
+                disabled={updatePartner.isPending}
+                className="flex h-11 items-center gap-2 rounded-2xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
+              >
+                {updatePartner.isPending && (
                   <Loader2 size={16} className="animate-spin" />
                 )}
                 {t("save")}

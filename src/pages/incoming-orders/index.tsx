@@ -1,8 +1,10 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   AlertTriangle,
+  ArrowLeft,
   CheckCircle2,
   Circle,
   Inbox,
@@ -55,6 +57,7 @@ type Message = { tone: "success" | "error" | "warn"; text: string };
  */
 const IncomingOrdersPage = () => {
   const { t } = useTranslation("common");
+  const navigate = useNavigate();
   const role = useSelector((state: RootState) => state.role.role);
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
@@ -168,6 +171,14 @@ const IncomingOrdersPage = () => {
       <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[28px] sm:p-6 dark:bg-primarydark">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/new-orders/integrations")}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 dark:text-white"
+              title={t("integrationsTitle")}
+            >
+              <ArrowLeft size={18} />
+            </button>
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-main/10 text-main dark:text-primary">
               <Inbox size={22} />
             </div>

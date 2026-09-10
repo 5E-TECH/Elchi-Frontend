@@ -355,11 +355,6 @@ const AppRouter = () => {
           children: [
             { index: true, element: <DashboardEntry /> },
             {
-              // Hamkordan (BeePost) kelgan buyurtmalarni skanerlab qabul qilish.
-              path: "incoming-orders",
-              element: <IncomingOrdersPage />,
-            },
-            {
               // Partner API hamkorlari + chiquvchi webhook outbox monitori.
               path: "partners",
               element: <PartnersPage />,
@@ -583,6 +578,17 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
                       <NewOrdersExternalList />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  // Hamkordan (BeePost) kelgan posilkalarni skanerlab qabul
+                  // qilish. Integratsiyalar ostida — u alohida bo'lim emas,
+                  // aynan tashqi ulanishlar bilan bir ish oqimining davomi.
+                  path: "integrations/incoming",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <IncomingOrdersPage />
                     </ProtectedRoute>
                   ),
                 },

@@ -46,6 +46,18 @@ export interface PartnerWebhookRow {
   payload: Record<string, unknown>;
 }
 
+/**
+ * Tahrirlash. Maydon semantikasi backend bilan BIR XIL:
+ *   • berilmasa   — tegilmaydi;
+ *   • bo'sh satr  — tozalanadi.
+ */
+export interface UpdatePartnerDto {
+  name?: string;
+  webhook_url?: string;
+  webhook_secret?: string;
+  ip_allowlist?: string[];
+}
+
 export interface CreatePartnerDto {
   name: string;
   webhook_url?: string;
@@ -130,6 +142,14 @@ export const usePartnerActions = () => {
     onSuccess: invalidate,
   });
 
+  const updatePartner = useMutation({
+    mutationFn: (params: { id: string; dto: UpdatePartnerDto }) =>
+      api
+        .patch(API_ENDPOINTS.PARTNERS.BY_ID(params.id), params.dto)
+        .then((res) => res.data),
+    onSuccess: invalidate,
+  });
+
   const rotateKey = useMutation({
     mutationFn: (id: string) =>
       api
@@ -159,5 +179,5 @@ export const usePartnerActions = () => {
     onSuccess: invalidate,
   });
 
-  return { createPartner, rotateKey, setActive, retryWebhook };
+  return { createPartner, updatePartner, rotateKey, setActive, retryWebhook };
 };
