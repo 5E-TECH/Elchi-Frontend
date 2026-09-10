@@ -335,6 +335,7 @@ export const API_ENDPOINTS = {
   // ── Partners (admin) — Partner API hamkorlarini boshqarish ───────────────
   PARTNERS: {
     BASE: "admin/partners", // GET ro'yxat / POST yaratish (kalit BIR MARTA)
+    BY_ID: (id: string | number) => `admin/partners/${id}`, // PATCH sozlamalar
     ROTATE_KEY: (id: string | number) => `admin/partners/${id}/rotate-key`, // POST
     STATUS: (id: string | number) => `admin/partners/${id}/status`, // POST faol/o'chiq
     // ⚠️ `:id` marshrutlaridan OLDIN e'lon qilingan — aks holda "webhooks"

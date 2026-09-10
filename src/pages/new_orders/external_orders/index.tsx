@@ -6,6 +6,7 @@ import {
   Clock3,
   Eye,
   EyeOff,
+  Inbox,
   KeyRound,
   LayoutGrid,
   Link2,
@@ -460,6 +461,19 @@ const ExternalOrdersPage = () => {
                 <LayoutGrid size={16} />
               </button>
             </div>
+            {/*
+              Kiruvchi posilkalarni skanerlab qabul qilish. Alohida bo'lim
+              EMAS: hamkor ulanishi shu yerda sozlanadi, uning posilkasi ham
+              shu yerdan qabul qilinadi — bitta ish oqimi.
+            */}
+            <button
+              type="button"
+              onClick={() => navigate("/new-orders/integrations/incoming")}
+              className="inline-flex h-10 items-center gap-2 rounded-2xl border border-glass-border bg-sidebar/50 px-4 text-sm font-bold text-maindark/80 transition-all hover:border-main/30 hover:text-main dark:bg-maindark/40 dark:text-primary/80"
+            >
+              <Inbox size={16} />
+              {t("incomingTitle", { ns: "common" })}
+            </button>
             <button
               type="button"
               onClick={() => navigate("/new-orders/integrations/create")}
