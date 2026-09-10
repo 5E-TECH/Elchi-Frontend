@@ -332,6 +332,18 @@ export const API_ENDPOINTS = {
     BY_SLUG: (slug: string | number) => `webhooks/${slug}`, // POST
   },
 
+  // ── Partners (admin) — Partner API hamkorlarini boshqarish ───────────────
+  PARTNERS: {
+    BASE: "admin/partners", // GET ro'yxat / POST yaratish (kalit BIR MARTA)
+    ROTATE_KEY: (id: string | number) => `admin/partners/${id}/rotate-key`, // POST
+    STATUS: (id: string | number) => `admin/partners/${id}/status`, // POST faol/o'chiq
+    // ⚠️ `:id` marshrutlaridan OLDIN e'lon qilingan — aks holda "webhooks"
+    // hamkor id'si deb o'qilardi.
+    WEBHOOKS: "admin/partners/webhooks", // GET outbox jurnali
+    WEBHOOK_RETRY: (id: string | number) =>
+      `admin/partners/webhooks/${id}/retry`, // POST qayta navbatga
+  },
+
   // ── Activity logs / audit trail (admin) — merged across services ─────────
   ACTIVITY_LOGS: {
     BASE: "activity-logs", // GET audit feed (filters: service/entity/action/user/date/search)

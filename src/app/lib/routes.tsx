@@ -90,6 +90,10 @@ const MyCashboxPage = lazy(
   () => import("../../pages/payments/components/MyCashboxPage"),
 );
 const ScanPage = lazy(() => import("../../pages/scan"));
+const IncomingOrdersPage = lazy(
+  () => import("../../pages/incoming-orders"),
+);
+const PartnersPage = lazy(() => import("../../pages/partners"));
 const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
@@ -350,6 +354,16 @@ const AppRouter = () => {
           element: <DashboardLayout />,
           children: [
             { index: true, element: <DashboardEntry /> },
+            {
+              // Hamkordan (BeePost) kelgan buyurtmalarni skanerlab qabul qilish.
+              path: "incoming-orders",
+              element: <IncomingOrdersPage />,
+            },
+            {
+              // Partner API hamkorlari + chiquvchi webhook outbox monitori.
+              path: "partners",
+              element: <PartnersPage />,
+            },
             {
               path: "branch-dashboard",
               element: (
