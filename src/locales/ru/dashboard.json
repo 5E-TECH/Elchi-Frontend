@@ -149,6 +149,17 @@
     "page_subtitle": "Заказы и показатели за сегодня",
     "add_order": "Добавить заказ",
     "view_orders": "Просмотр заказов",
-    "quick_actions": "Быстрые действия"
+    "quick_actions": "Быстрые действия",
+    "extra_cost_approvals": "Подтверждения доп. расходов",
+    "extra_cost_approvals_count": "Ожидает: {{count}}",
+    "extra_cost_sell": "Доп. расход при продаже",
+    "extra_cost_partly_sell": "Доп. расход при частичной продаже",
+    "extra_cost_cancel": "Доп. расход при отмене",
+    "extra_cost_requester": "Запросил",
+    "extra_cost_proofs": "Доказательства",
+    "extra_cost_approve": "Подтвердить",
+    "extra_cost_reject": "Отклонить",
+    "extra_cost_approving": "Подтверждение",
+    "extra_cost_rejecting": "Отклонение"
   }
 }

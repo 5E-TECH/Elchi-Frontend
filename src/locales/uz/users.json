@@ -170,5 +170,11 @@
   "deleteErrorDescription": "Foydalanuvchini o'chirishda xatolik yuz berdi",
   "filterPanelTitle": "Foydalanuvchilar",
   "filterPanelDescription": "Foydalanuvchilarni saralash",
-  "activeFiltersCount": "{{count}} ta faol filter"
+  "activeFiltersCount": "{{count}} ta faol filter",
+  "extraCostPermission": "Qo'shimcha harajat",
+  "extraCostPermissionEnabled": "Qo'shimcha harajat ruxsati yoqildi",
+  "extraCostPermissionDisabled": "Qo'shimcha harajat ruxsati o'chirildi",
+  "sellExtraCostProofRequired": "Sotishda qo'shimcha harajat isboti",
+  "cancelExtraCostProofRequired": "Bekor qilishda qo'shimcha harajat isboti",
+  "permissions": "Ruxsatlar"
 }

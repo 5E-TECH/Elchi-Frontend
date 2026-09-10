@@ -4,6 +4,27 @@ import { API_ENDPOINTS } from "../../shared/api";
 
 const orders = "orders";
 
+export type ExtraCostApproval = {
+  id: string;
+  order_id: string;
+  market_id: string;
+  requested_by_user_id: string;
+  requested_by_role?: string | null;
+  requester_branch_id?: string | null;
+  action: "sell" | "cancel" | "partly_sell";
+  amount: number;
+  proof_file_keys?: string[];
+  status: "pending" | "approved" | "rejected";
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ExtraCostApprovalsResponse = {
+  data?: ExtraCostApproval[];
+  statusCode?: number;
+  message?: string;
+};
+
 export type UpdateNewOrderPayload = Partial<{
   region_id: string;
   district_id: string;
@@ -23,9 +44,7 @@ export const useOrders = () => {
     formData.append("folder", "proof");
 
     const response = await api.post(API_ENDPOINTS.FILES.UPLOAD, formData);
-    const key =
-      response.data?.data?.key ??
-      response.data?.key;
+    const key = response.data?.data?.key ?? response.data?.key;
 
     if (!key) {
       throw new Error("Proof file upload did not return a key");
@@ -59,6 +78,36 @@ export const useOrders = () => {
     client.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
+  const useExtraCostApprovals = (
+    status: "pending" | "approved" | "rejected" = "pending",
+    enabled = true,
+  ) =>
+    useQuery<ExtraCostApprovalsResponse>({
+      queryKey: [orders, "extra-cost-approvals", status],
+      queryFn: () =>
+        api
+          .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status } })
+          .then((res) => res.data),
+      enabled,
+      refetchInterval: status === "pending" ? 30000 : false,
+    });
+
+  const approveExtraCostApproval = useMutation({
+    mutationFn: ({ id, comment }: { id: string; comment?: string }) =>
+      api
+        .post(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVAL_APPROVE(id), { comment })
+        .then((res) => res.data),
+    onSuccess: invalidateMoney,
+  });
+
+  const rejectExtraCostApproval = useMutation({
+    mutationFn: ({ id, comment }: { id: string; comment?: string }) =>
+      api
+        .post(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVAL_REJECT(id), { comment })
+        .then((res) => res.data),
+    onSuccess: invalidateMoney,
+  });
+
   const createReceiveOrder = useMutation({
     mutationFn: (data: { orderIds?: string[]; order_ids?: string[] }) => {
       const normalizedOrderIds = Array.isArray(data?.order_ids)
@@ -88,8 +137,7 @@ export const useOrders = () => {
   const useGetTodayOrders = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [orders, params],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params }).then((res) => res.data),
+      queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params }).then((res) => res.data),
       enabled,
     });
 
@@ -101,9 +149,7 @@ export const useOrders = () => {
     useQuery({
       queryKey: [orders, marketId, params],
       queryFn: () =>
-        api
-          .get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId), { params })
-          .then((res) => res.data),
+        api.get(API_ENDPOINTS.ORDERS.MARKET_NEW(marketId), { params }).then((res) => res.data),
       enabled: enabled && Boolean(marketId),
     });
 
@@ -270,6 +316,9 @@ export const useOrders = () => {
     deleteOrder,
     SellOrder,
     PartlySellOrder,
-    CancelOrder
+    CancelOrder,
+    useExtraCostApprovals,
+    approveExtraCostApproval,
+    rejectExtraCostApproval,
   };
 };

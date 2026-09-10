@@ -82,13 +82,18 @@ export const API_ENDPOINTS = {
     MARKETS_CANCELLED: "orders/markets/cancelled", // GET markets with cancelled orders
     MARKET_CANCELLED: (marketId: string | number) => `orders/markets/${marketId}/cancelled`,
     MARKET_CANCELLED_QR: (marketId: string | number) => `orders/markets/${marketId}/cancelled/qr`,
-    MARKET_CANCELLED_HANDOVER: (marketId: string | number) => `orders/markets/${marketId}/cancelled/handover`,
+    MARKET_CANCELLED_HANDOVER: (marketId: string | number) =>
+      `orders/markets/${marketId}/cancelled/handover`,
     BY_MARKET: (marketId: string | number) => `orders/market/${marketId}`, // GET orders by market id
     COURIER_ORDERS: "orders/courier/orders",
     SELL: (id: string | number) => `orders/sell/${id}`, // POST courier sell (proof per §5)
     PARTLY_SELL: (id: string | number) => `orders/partly-sell/${id}`, // POST
     ROLLBACK: (id: string | number) => `orders/rollback/${id}`, // POST
     CANCEL: (id: string | number) => `orders/cancel/${id}`, // POST courier cancel (proof per §5)
+    EXTRA_COST_APPROVALS: "orders/extra-cost-approvals", // GET pending market approvals
+    EXTRA_COST_APPROVAL_APPROVE: (id: string | number) =>
+      `orders/extra-cost-approvals/${id}/approve`,
+    EXTRA_COST_APPROVAL_REJECT: (id: string | number) => `orders/extra-cost-approvals/${id}/reject`,
     COULD_NOT_DELIVER: (id: string | number) => `orders/${id}/could-not-deliver`, // POST courier
     INITIATE_RETURN: (id: string | number) => `orders/${id}/initiate-return`, // POST HQ
     MARK_RETURNED_TO_MARKET: (id: string | number) => `orders/${id}/mark-returned-to-market`, // POST branch
@@ -340,8 +345,7 @@ export const API_ENDPOINTS = {
     // ⚠️ `:id` marshrutlaridan OLDIN e'lon qilingan — aks holda "webhooks"
     // hamkor id'si deb o'qilardi.
     WEBHOOKS: "admin/partners/webhooks", // GET outbox jurnali
-    WEBHOOK_RETRY: (id: string | number) =>
-      `admin/partners/webhooks/${id}/retry`, // POST qayta navbatga
+    WEBHOOK_RETRY: (id: string | number) => `admin/partners/webhooks/${id}/retry`, // POST qayta navbatga
   },
 
   // ── Activity logs / audit trail (admin) — merged across services ─────────

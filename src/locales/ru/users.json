@@ -170,5 +170,11 @@
   "deleteErrorDescription": "Произошла ошибка при удалении пользователя",
   "filterPanelTitle": "Пользователи",
   "filterPanelDescription": "Сортировка пользователей",
-  "activeFiltersCount": "Активных фильтров: {{count}}"
+  "activeFiltersCount": "Активных фильтров: {{count}}",
+  "extraCostPermission": "Доп. расход",
+  "extraCostPermissionEnabled": "Разрешение на доп. расход включено",
+  "extraCostPermissionDisabled": "Разрешение на доп. расход выключено",
+  "sellExtraCostProofRequired": "Доказательство доп. расхода при продаже",
+  "cancelExtraCostProofRequired": "Доказательство доп. расхода при отмене",
+  "permissions": "Разрешения"
 }

@@ -170,5 +170,11 @@
   "deleteErrorDescription": "An error occurred while deleting the user",
   "filterPanelTitle": "Users",
   "filterPanelDescription": "Sort users",
-  "activeFiltersCount": "{{count}} active filters"
+  "activeFiltersCount": "{{count}} active filters",
+  "extraCostPermission": "Extra cost",
+  "extraCostPermissionEnabled": "Extra cost permission enabled",
+  "extraCostPermissionDisabled": "Extra cost permission disabled",
+  "sellExtraCostProofRequired": "Sale extra cost proof",
+  "cancelExtraCostProofRequired": "Cancel extra cost proof",
+  "permissions": "Permissions"
 }
