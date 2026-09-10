@@ -30,20 +30,21 @@ import { useOrders } from "../../entities/orders";
 /**
  * Bu ekranga kimlar kira oladi — backend guardi bilan BIR XIL bo'lishi shart.
  *
- * ⚠️ `manager` ATAYLAB yo'q. Marshrut guardi (`canReceiveExternalOrders`)
- * HQ menejerini o'tkazadi, lekin backendda
- * `POST /orders/receive` hamon `@Roles(SUPERADMIN, ADMIN, REGISTRATOR)` —
- * ya'ni menejer ro'yxatni ko'rib, "Qabul qilish" tugmasida 403 olardi.
+ * `manager` 2026-09-10 da qo'shildi: hamkordan (BeePost) kelgan posilkalar HQ
+ * da qabul qilinadi va buni HQ menejeri bajaradi.
  *
- * Ishlamaydigan tugmani ko'rsatgandan ko'ra ekranni ochmagan ma'qul. Backendga
- * `MANAGER` qo'shilgandan keyin bu ro'yxatga ham qo'shiladi.
- *
- * DIQQAT: o'sha endpointda filial chegarasi YO'Q (`receiveNewOrders` faqat
- * order_id oladi), shuning uchun `MANAGER` qo'shilsa BARCHA menejerlar
- * (HQ dan tashqari ham) istalgan buyurtmani qabul qila oladi. Buni HQ bilan
- * cheklash alohida qaror talab qiladi.
+ * ⚠️ ROL O'ZI YETARLI EMAS. Backend menejer va registratorni O'Z FILIALI bilan
+ * cheklaydi (`resolveReceiveBranchScope`): begona filial buyurtmasi bo'lsa
+ * butun so'rov rad etiladi, filiali yo'q xodim esa hech nima qabul qila
+ * olmaydi. Bu yerdagi ro'yxat faqat ekranni ko'rsatadi — haqiqiy chegara
+ * serverda.
  */
-const ALLOWED_ROLES = new Set(["superadmin", "admin", "registrator"]);
+const ALLOWED_ROLES = new Set([
+  "superadmin",
+  "admin",
+  "registrator",
+  "manager",
+]);
 
 const formatMoney = (value: unknown) =>
   typeof value === "number" ? `${value.toLocaleString("uz-UZ")} so'm` : "—";
