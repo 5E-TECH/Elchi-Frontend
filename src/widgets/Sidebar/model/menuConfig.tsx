@@ -1,6 +1,8 @@
 import {
   House,
   Plug,
+  Landmark,
+  Wrench,
   ShoppingBag,
   MailOpen,
   Apple,
@@ -73,8 +75,11 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/notifications", icon: Bell, label: "notifications" },
     { to: "/branches", icon: Building2, label: "branches" },
     { to: "/partners", icon: Plug, label: "partners" },
+    // Ikkalasi ham avval menyuda YO'Q edi — faqat URL orqali ochilardi (B2).
+    { to: "/settlement", icon: Landmark, label: "settlement" },
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
     { to: "/logs", icon: FileText, label: "logs" },
+    { to: "/ops", icon: Wrench, label: "ops" },
   ],
   admin: [
     { to: "/", icon: House, label: "dashboard", end: true },
@@ -321,8 +326,10 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/market-operators": 'directory',
   // Integratsiyalar (B3 da kengayadi)
   "/partners": 'integrations',
+  "/settlement": 'finance',
   // Tizim
   "/notifications": 'system',
+  "/ops": 'system',
   "/activity-logs": 'system',
   "/logs": 'system',
 };

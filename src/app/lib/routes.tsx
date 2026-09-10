@@ -40,6 +40,7 @@ const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
 const BranchOpsPage = lazy(() => import("../../pages/branch-ops"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
 const SystemOpsPage = lazy(() => import("../../pages/system-ops"));
+const OpsPage = lazy(() => import("../../pages/ops"));
 const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
 
 // ✅ Login page:
@@ -340,6 +341,19 @@ const AppRouter = () => {
             },
             { path: "profile", element: <Profile /> },
             { path: "settings", element: <SettingsPage /> },
+            {
+              /**
+               * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda.
+               * Eski to'g'ridan-to'g'ri marshrutlar SAQLANADI (havolalar
+               * buzilmasin), bu esa menyudan ochiladigan kirish nuqtasi.
+               */
+              path: "ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <OpsPage />
+                </ProtectedRoute>
+              ),
+            },
             {
               path: "settlement",
               element: (
