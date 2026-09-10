@@ -3,11 +3,25 @@ import { Navigate, Outlet, useParams, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
+import {
+  canViewOrders,
+  canViewMails,
+  canViewUsers,
+  canViewFinancialBalance,
+  canViewNotifications,
+  canViewBranches,
+  canViewLogs,
+  canViewDispatchPage,
+  canViewCourierBulkPage,
+  canViewBatchesPage,
+  canViewReturnsPage,
+  canCreateOrders,
+  canReceiveExternalOrders,
+  canViewPaymentsPage,
+} from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import {
-  getSidebarConfigForUser,
   getUserBranchType,
-  type SidebarUserRole,
 } from "../../widgets/Sidebar/model/menuConfig";
 
 // ✅ Auth component (Protected route):
@@ -26,6 +40,7 @@ const LogisticsOpsPage = lazy(() => import("../../pages/logistics-ops"));
 const BranchOpsPage = lazy(() => import("../../pages/branch-ops"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
 const SystemOpsPage = lazy(() => import("../../pages/system-ops"));
+const OpsPage = lazy(() => import("../../pages/ops"));
 const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
 
 // ✅ Login page:
@@ -114,66 +129,34 @@ const NotFound = lazy(() => import("../../shared/ui/NotFound"));
 const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
 const ErrorBoundaryPage = lazy(() => import("../../shared/ui/ErrorBoundaryPage"));
 
-const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
-const MANAGER_DISPATCH_BRANCH_TYPES = new Set(["REGIONAL", "HYBRID"]);
-const MANAGER_BATCH_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
-
-const isPaymentsManager = (state: RootState) => {
-  const role = state.role.role;
-  if (role === "admin" || role === "superadmin") return true;
-
-  if (role === "manager") {
-    const branchType = getUserBranchType(state.user.user);
-    return branchType === "REGIONAL" || branchType === "HYBRID";
-  }
-
-  return false;
-};
+/**
+ * Marshrut guardlari.
+ *
+ * ⚠️ Ular endi SIDEBAR'dan hosil bo'lmaydi. Avvalgi `canViewSidebarPath` naqshi
+ * menyuni ruxsat manbaiga aylantirgan edi — bandni ko'chirish yoki guruhlash
+ * sahifani jimgina yopib qo'yardi. Aniq shartlar `app/lib/access.ts` da.
+ */
+const isPaymentsManager = canViewPaymentsPage;
 
 const hasSelfCashboxAccess = (state: RootState) => {
   const role = state.role.role;
   return role === "courier" || role === "market" || role === "manager";
 };
 
-const canViewBranchDashboard = (state: RootState) => {
-  const role = state.role.role;
-  return role === "manager";
-};
+const canViewBranchDashboard = (state: RootState) =>
+  state.role.role === "manager";
 
 const canViewDispatch = (state: RootState) => {
-  const role = state.role.role;
-  if (role === "manager") {
-    const branchType = getUserBranchType(state.user.user);
-    return Boolean(branchType && MANAGER_DISPATCH_BRANCH_TYPES.has(branchType));
-  }
-
-  if (role === "registrator") {
+  if (state.role.role === "registrator") {
+    // Registrator uchun qoida boshqacha: HQ dan tashqari har qanday filial.
     const branchType = getUserBranchType(state.user.user);
     return Boolean(branchType && branchType !== "HQ");
   }
-
-  return false;
+  return canViewDispatchPage(state);
 };
 
-const canViewBatches = (state: RootState) => {
-  const role = state.role.role;
-  if (role === "manager") {
-    const branchType = getUserBranchType(state.user.user);
-    return Boolean(branchType && MANAGER_BATCH_BRANCH_TYPES.has(branchType));
-  }
-
-  return role === "admin" || role === "superadmin";
-};
-
-const canViewReturns = (state: RootState) => {
-  const role = state.role.role;
-  if (role === "manager") {
-    const branchType = getUserBranchType(state.user.user);
-    return Boolean(branchType && MANAGER_BATCH_BRANCH_TYPES.has(branchType));
-  }
-
-  return role === "admin" || role === "superadmin";
-};
+const canViewBatches = canViewBatchesPage;
+const canViewReturns = canViewReturnsPage;
 
 // Internal ops/maintenance screens (settlement, *-ops). Backend RBAC already
 // 403s their write endpoints, but these dev forms must not be reachable by URL
@@ -183,34 +166,9 @@ const canViewOps = (state: RootState) => {
   return role === "admin" || role === "superadmin";
 };
 
-// User management — admin/superadmin, plus REGIONAL/HYBRID managers (matches the
-// sidebar's "users" visibility). Backend RBAC still enforces on every call.
-const canManageUsers = (state: RootState) => {
-  const role = state.role.role;
-  if (role === "admin" || role === "superadmin") return true;
-  if (role === "manager") {
-    const branchType = getUserBranchType(state.user.user);
-    return branchType === "REGIONAL" || branchType === "HYBRID";
-  }
-  return false;
-};
-
-const canCreateOrdersByRoleAndBranchType = (state: RootState) => {
-  const role = state.role.role;
-  if (role === "admin" || role === "superadmin" || role === "market" || role === "registrator") {
-    return true;
-  }
-
-  if (role !== "manager") return false;
-
-  const branchType = getUserBranchType(state.user.user);
-  return Boolean(branchType && MANAGER_ORDER_CREATE_BRANCH_TYPES.has(branchType));
-};
-
-const canManageExternalIntegrations = (state: RootState) => {
-  if (state.role.role === "market") return false;
-  return canCreateOrdersByRoleAndBranchType(state);
-};
+const canManageUsers = canViewUsers;
+const canCreateOrdersByRoleAndBranchType = canCreateOrders;
+const canManageExternalIntegrations = canReceiveExternalOrders;
 
 const canManageProducts = (state: RootState) => {
   const role = state.role.role;
@@ -221,23 +179,6 @@ const canViewAdminNewOrderTabs = (state: RootState) => {
   const role = state.role.role;
   return role === "admin" || role === "superadmin";
 };
-
-const canViewSidebarPath = (path: string) => (state: RootState) => {
-  const role = state.role.role;
-  if (!role) return false;
-
-  return getSidebarConfigForUser(role as SidebarUserRole, state.user.user).some(
-    (item) => item.to === path,
-  );
-};
-
-const canViewOrders = canViewSidebarPath("/orders");
-const canViewMails = canViewSidebarPath("/mails");
-const canViewUsers = canViewSidebarPath("/all-users");
-const canViewFinancialBalance = canViewSidebarPath("/financial-balance");
-const canViewNotifications = canViewSidebarPath("/notifications");
-const canViewBranches = canViewSidebarPath("/branches");
-const canViewLogs = canViewSidebarPath("/logs");
 
 const canViewRegionStats = (state: RootState) => {
   const role = state.role.role;
@@ -251,14 +192,8 @@ const canViewRegionStats = (state: RootState) => {
 
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
 const canViewMarketOperators = (state: RootState) => state.role.role === "market";
-const canViewCourierBulk = (state: RootState) => {
-  if (state.role.role === "courier") return true;
+const canViewCourierBulk = canViewCourierBulkPage;
 
-  if (state.role.role !== "manager") return false;
-
-  const branchType = getUserBranchType(state.user.user);
-  return branchType === "REGIONAL" || branchType === "HYBRID";
-};
 
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
@@ -406,6 +341,19 @@ const AppRouter = () => {
             },
             { path: "profile", element: <Profile /> },
             { path: "settings", element: <SettingsPage /> },
+            {
+              /**
+               * Ops vositalari markazi — yettita `*-ops` sahifasi bitta uyda.
+               * Eski to'g'ridan-to'g'ri marshrutlar SAQLANADI (havolalar
+               * buzilmasin), bu esa menyudan ochiladigan kirish nuqtasi.
+               */
+              path: "ops",
+              element: (
+                <ProtectedRoute canActivate={canViewOpsPages}>
+                  <OpsPage />
+                </ProtectedRoute>
+              ),
+            },
             {
               path: "settlement",
               element: (

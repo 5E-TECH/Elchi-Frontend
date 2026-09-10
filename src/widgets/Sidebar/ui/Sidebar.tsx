@@ -1,11 +1,16 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import SidebarLink from "./SidebarItem";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { getSidebarConfigForUser, normalizeSidebarRole } from "../model/menuConfig";
+import {
+  getSidebarGroupsForUser,
+  hasUnknownBranchType,
+  normalizeSidebarRole,
+  type SidebarGroupId,
+} from "../model/menuConfig";
 import { toggleSidebar } from "../model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
 import LogoIcon from "../../../shared/assets/logo qora.png";
 import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
@@ -25,18 +30,65 @@ const Sidebar = () => {
   const user = useSelector((state: RootState) => state.user.user);
   const userRole = normalizeSidebarRole(role, user);
 
-  // ─── Rolga mos navigation items'ni olish ─────────────────────────────────
-  // navItems va links alohida memoized — role/user o'zgarmasa qayta hisoblanmaydi
-  const navItems = useMemo(
-    () => getSidebarConfigForUser(userRole, user),
+  // ─── Rolga mos navigation guruhlarini olish ──────────────────────────────
+  // Guruhlar va tarjimalar alohida memoized — role/user o'zgarmasa qayta
+  // hisoblanmaydi, t() esa faqat til o'zgarganda ishga tushadi.
+  const groups = useMemo(
+    () => getSidebarGroupsForUser(userRole, user),
     [userRole, user],
   );
 
-  // t() faqat til o'zgarganda links yangilanadi
-  const links = useMemo(
-    () => navItems.map((item) => ({ ...item, label: t(item.label) })),
-    [navItems, t],
+  const translatedGroups = useMemo(
+    () =>
+      groups.map((group) => ({
+        ...group,
+        items: group.items.map((item) => ({ ...item, label: t(item.label) })),
+      })),
+    [groups, t],
   );
+
+  /**
+   * Yig'ilgan guruhlar — brauzerda saqlanadi.
+   *
+   * Operator "Tizim" guruhini bir marta yopsa, u har kirganda qayta ochilib
+   * turmasligi kerak. Saqlash localStorage'da: server holati emas, shaxsiy
+   * ko'rinish.
+   */
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem("sidebar:collapsedGroups");
+      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      // Buzilgan/yopiq localStorage sidebarni yiqitmasligi kerak.
+      return new Set();
+    }
+  });
+
+  const toggleGroup = (groupId: SidebarGroupId) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      try {
+        localStorage.setItem(
+          "sidebar:collapsedGroups",
+          JSON.stringify([...next]),
+        );
+      } catch {
+        // Saqlab bo'lmasa ham holat shu sessiyada ishlayveradi.
+      }
+      return next;
+    });
+  };
+
+  /**
+   * Menejerning filial turi aniqlanmagan.
+   *
+   * Bunday holatda menyu bazaviy uch bandga tushadi va u bilan birga pochta,
+   * kassa, xodimlar sahifalari yopiladi. Avval bu JIMGINA sodir bo'lardi —
+   * foydalanuvchi "bandlar yo'qoldi" deb o'ylardi. Endi sabab ochiq aytiladi.
+   */
+  const branchTypeMissing = hasUnknownBranchType(userRole, user);
 
   // ─── Logo rasmlarini tanlash ──────────────────────────────────────────────
   const currentLogoText = isDarkMode ? LogoTextdark : LogoText;
@@ -65,16 +117,57 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto bg-sidebar px-3 py-3 custom-scrollbar dark:bg-maindark">
-        {links.map((link) => (
-          <SidebarLink
-            key={link.to}
-            to={link.to}
-            icon={<link.icon />}
-            label={link.label}
-            end={link.end}
-            isOpen={isOpen}
-          />
-        ))}
+        {branchTypeMissing && (
+          <div
+            className="mb-2 flex items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-500/12 px-3 py-2.5 text-amber-700 dark:text-amber-200"
+            title={t("branchTypeMissingHint")}
+          >
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            {isOpen && (
+              <span className="text-xs font-semibold leading-snug">
+                {t("branchTypeMissing")}
+              </span>
+            )}
+          </div>
+        )}
+        {translatedGroups.map((group, index) => {
+          const collapsed = group.id ? collapsedGroups.has(group.id) : false;
+
+          return (
+            <div key={group.id ?? `ungrouped-${index}`} className="space-y-1">
+              {group.id &&
+                (isOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.id as SidebarGroupId)}
+                    className="mt-3 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-maindark/45 transition hover:text-main dark:text-primary/45"
+                  >
+                    <span>{t(`group_${group.id}`)}</span>
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`}
+                    />
+                  </button>
+                ) : (
+                  /* Yig'ilgan sidebarda sarlavha o'rniga nozik ajratgich —
+                     matn sig'maydi, lekin guruh chegarasi ko'rinib turishi kerak. */
+                  <div className="mx-auto my-2 h-px w-8 bg-maindark/10 dark:bg-primary/10" />
+                ))}
+
+              {!collapsed &&
+                group.items.map((link) => (
+                  <SidebarLink
+                    key={link.to}
+                    to={link.to}
+                    icon={<link.icon />}
+                    label={link.label}
+                    end={link.end}
+                    isOpen={isOpen}
+                  />
+                ))}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Footer — Toggle */}

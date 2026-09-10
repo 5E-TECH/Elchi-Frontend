@@ -26,5 +26,14 @@
   "darkMode": "Dark mode",
   "lightMode": "Light mode",
   "profile": "Profile",
-  "search": "Search..."
+  "search": "Search...",
+  "branchTypeMissing": "Branch type not detected",
+  "branchTypeMissingHint": "Some menu items are hidden because of this. Ask an administrator to attach a branch to your account.",
+  "group_work": "Work",
+  "group_finance": "Finance",
+  "group_directory": "Directory",
+  "group_integrations": "Integrations",
+  "group_system": "System",
+  "settlement": "Settlement",
+  "ops": "Ops tools"
 }

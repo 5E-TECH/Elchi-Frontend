@@ -27,8 +27,24 @@ import {
 } from "../../entities/incoming-orders";
 import { useOrders } from "../../entities/orders";
 
-/** Bu ekranga kimlar kira oladi — backend guardi bilan bir xil. */
-const ALLOWED_ROLES = new Set(["superadmin", "admin", "registrator"]);
+/**
+ * Bu ekranga kimlar kira oladi — backend guardi bilan BIR XIL bo'lishi shart.
+ *
+ * `manager` 2026-09-10 da qo'shildi: hamkordan (BeePost) kelgan posilkalar HQ
+ * da qabul qilinadi va buni HQ menejeri bajaradi.
+ *
+ * ⚠️ ROL O'ZI YETARLI EMAS. Backend menejer va registratorni O'Z FILIALI bilan
+ * cheklaydi (`resolveReceiveBranchScope`): begona filial buyurtmasi bo'lsa
+ * butun so'rov rad etiladi, filiali yo'q xodim esa hech nima qabul qila
+ * olmaydi. Bu yerdagi ro'yxat faqat ekranni ko'rsatadi — haqiqiy chegara
+ * serverda.
+ */
+const ALLOWED_ROLES = new Set([
+  "superadmin",
+  "admin",
+  "registrator",
+  "manager",
+]);
 
 const formatMoney = (value: unknown) =>
   typeof value === "number" ? `${value.toLocaleString("uz-UZ")} so'm` : "—";
