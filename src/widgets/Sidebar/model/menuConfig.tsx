@@ -263,6 +263,126 @@ export const getUserBranchType = (user: User | null | undefined): BranchType | n
   );
 };
 
+/**
+ * ═══════════════ B1 — MENYU GURUHLARI ═══════════════
+ *
+ * Sidebar 14 bandgacha cho'zilgan TEKIS ro'yxat edi: operator kerakli bandni
+ * topish uchun hammasini ko'zdan kechirishi kerak edi, chunki kundalik ish,
+ * ma'lumotnoma va tizim sozlamalari bir darajada turardi.
+ *
+ * ⚠️ Guruhlash faqat B0 dan KEYIN mumkin bo'ldi. Avval marshrut guardlari
+ * menyudan hosil bo'lardi (`canViewSidebarPath`), ya'ni bandni ko'chirish yoki
+ * qayta tartiblash sahifani yopib qo'yardi. Endi ruxsat `app/lib/access.ts`
+ * da alohida, shuning uchun bu yerda faqat KO'RINISH o'zgaradi.
+ *
+ * `to` qiymatlari TEGILMAYDI — marshrutlar o'sha-o'sha.
+ */
+export type SidebarGroupId =
+  | 'work'
+  | 'finance'
+  | 'directory'
+  | 'integrations'
+  | 'system';
+
+/** Guruhlar chiqish tartibi — kundalik ishdan tizim sozlamalari tomon. */
+export const SIDEBAR_GROUP_ORDER: SidebarGroupId[] = [
+  'work',
+  'finance',
+  'directory',
+  'integrations',
+  'system',
+];
+
+/**
+ * Yo'l → guruh.
+ *
+ * Bu yerda YO'Q yo'l guruhsiz qoladi va ro'yxat oxirida ko'rinadi — jimgina
+ * yo'qolmaydi. Testda har bir rol konfiguratsiyasidagi barcha yo'l qamralgani
+ * tekshiriladi.
+ */
+export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
+  // Kundalik ish
+  "/orders": 'work',
+  "/new-orders": 'work',
+  "/mails": 'work',
+  "/dispatch": 'work',
+  "/courier-bulk": 'work',
+  "/batches": 'work',
+  "/returns": 'work',
+  // Moliya
+  "/payments": 'finance',
+  "/cash-box": 'finance',
+  "/financial-balance": 'finance',
+  // Ma'lumotnoma
+  "/products": 'directory',
+  "/all-users": 'directory',
+  "/branches": 'directory',
+  "/regions": 'directory',
+  "/market-operators": 'directory',
+  // Integratsiyalar (B3 da kengayadi)
+  "/partners": 'integrations',
+  // Tizim
+  "/notifications": 'system',
+  "/activity-logs": 'system',
+  "/logs": 'system',
+};
+
+/** Boshqaruv paneli guruhga kirmaydi — u doim eng tepada, yakka turadi. */
+const STANDALONE_PATHS = new Set(["/", "/branch-dashboard"]);
+
+/**
+ * Guruh sarlavhalari shu chegaradan KEYIN ko'rsatiladi.
+ *
+ * Sabab: kuryer yoki market 6 bandli menyuga ega — ular ustiga to'rtta
+ * sarlavha qo'yish yordam bermaydi, aksincha shovqin qo'shadi. Guruhlash
+ * uzun menyularda (admin 13, superadmin 14, HYBRID menejer 11) foyda beradi.
+ */
+export const SIDEBAR_GROUPING_THRESHOLD = 7;
+
+export interface SidebarGroup {
+  /** `null` — guruhsiz (boshqaruv paneli yoki qisqa menyu). */
+  id: SidebarGroupId | null;
+  items: NavItem[];
+}
+
+/**
+ * Rolga mos menyuni guruhlarga ajratadi.
+ *
+ * Guruh ichidagi tartib rol konfiguratsiyasidan olinadi — ya'ni odam
+ * o'rgangan ketma-ketlik saqlanadi, faqat ustiga sarlavha qo'shiladi.
+ */
+export const getSidebarGroupsForUser = (
+  role: SidebarUserRole | string | null | undefined,
+  user?: User | null,
+): SidebarGroup[] => {
+  const items = getSidebarConfigForUser(role, user);
+  if (!items.length) return [];
+
+  const standalone = items.filter((item) => STANDALONE_PATHS.has(item.to));
+  const rest = items.filter((item) => !STANDALONE_PATHS.has(item.to));
+
+  // Qisqa menyu — guruhsiz, avvalgidek tekis.
+  if (items.length <= SIDEBAR_GROUPING_THRESHOLD) {
+    return [{ id: null, items }];
+  }
+
+  const groups: SidebarGroup[] = [];
+  if (standalone.length) groups.push({ id: null, items: standalone });
+
+  for (const groupId of SIDEBAR_GROUP_ORDER) {
+    const groupItems = rest.filter(
+      (item) => SIDEBAR_GROUP_BY_PATH[item.to] === groupId,
+    );
+    if (groupItems.length) groups.push({ id: groupId, items: groupItems });
+  }
+
+  // Guruhga biriktirilmagan bandlar — oxirida, lekin YO'QOLMAYDI.
+  const ungrouped = rest.filter((item) => !SIDEBAR_GROUP_BY_PATH[item.to]);
+  if (ungrouped.length) groups.push({ id: null, items: ungrouped });
+
+  return groups;
+};
+
 export const getSidebarConfigForUser = (
   role: SidebarUserRole | string | null | undefined,
   user?: User | null,

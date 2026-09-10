@@ -28,5 +28,10 @@
   "profile": "Profile",
   "search": "Search...",
   "branchTypeMissing": "Branch type not detected",
-  "branchTypeMissingHint": "Some menu items are hidden because of this. Ask an administrator to attach a branch to your account."
+  "branchTypeMissingHint": "Some menu items are hidden because of this. Ask an administrator to attach a branch to your account.",
+  "group_work": "Work",
+  "group_finance": "Finance",
+  "group_directory": "Directory",
+  "group_integrations": "Integrations",
+  "group_system": "System"
 }

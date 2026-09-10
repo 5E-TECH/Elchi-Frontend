@@ -28,5 +28,10 @@
   "profile": "Profil",
   "search": "Qidiruv...",
   "branchTypeMissing": "Filial turi aniqlanmadi",
-  "branchTypeMissingHint": "Shu sababli menyuning bir qismi ko'rinmayapti. Administratorga murojaat qiling — foydalanuvchingizga filial biriktirilishi kerak."
+  "branchTypeMissingHint": "Shu sababli menyuning bir qismi ko'rinmayapti. Administratorga murojaat qiling — foydalanuvchingizga filial biriktirilishi kerak.",
+  "group_work": "Ish",
+  "group_finance": "Moliya",
+  "group_directory": "Ma'lumotnoma",
+  "group_integrations": "Integratsiyalar",
+  "group_system": "Tizim"
 }
