@@ -149,6 +149,17 @@
     "page_subtitle": "Bugungi buyurtmalar va ko'rsatkichlar",
     "add_order": "Buyurtma qo'shish",
     "view_orders": "Buyurtmalarni ko'rish",
-    "quick_actions": "Tezkor harakatlar"
+    "quick_actions": "Tezkor harakatlar",
+    "extra_cost_approvals": "Qo'shimcha xarajat tasdiqlari",
+    "extra_cost_approvals_count": "{{count}} ta so'rov kutilmoqda",
+    "extra_cost_sell": "Sotishdagi qo'shimcha xarajat",
+    "extra_cost_partly_sell": "Qisman sotishdagi qo'shimcha xarajat",
+    "extra_cost_cancel": "Bekor qilishdagi qo'shimcha xarajat",
+    "extra_cost_requester": "So'rovchi",
+    "extra_cost_proofs": "Isbotlar",
+    "extra_cost_approve": "Tasdiqlash",
+    "extra_cost_reject": "Rad etish",
+    "extra_cost_approving": "Tasdiqlanmoqda",
+    "extra_cost_rejecting": "Rad etilmoqda"
   }
 }

@@ -149,6 +149,17 @@
     "page_subtitle": "Today's orders and metrics",
     "add_order": "Add Order",
     "view_orders": "View Orders",
-    "quick_actions": "Quick Actions"
+    "quick_actions": "Quick Actions",
+    "extra_cost_approvals": "Extra cost approvals",
+    "extra_cost_approvals_count": "{{count}} request pending",
+    "extra_cost_sell": "Sale extra cost",
+    "extra_cost_partly_sell": "Partial sale extra cost",
+    "extra_cost_cancel": "Cancel extra cost",
+    "extra_cost_requester": "Requester",
+    "extra_cost_proofs": "Proofs",
+    "extra_cost_approve": "Approve",
+    "extra_cost_reject": "Reject",
+    "extra_cost_approving": "Approving",
+    "extra_cost_rejecting": "Rejecting"
   }
 }
