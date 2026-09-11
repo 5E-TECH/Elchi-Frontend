@@ -1,5 +1,6 @@
 import { Suspense, lazy, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
+import { OPS_TABS } from "./tabs";
 import {
   Banknote,
   Building2,
@@ -39,66 +40,28 @@ const BranchOpsPage = lazy(() => import("../branch-ops"));
 const IdentityOpsPage = lazy(() => import("../identity-ops"));
 const SystemOpsPage = lazy(() => import("../system-ops"));
 
-interface OpsTab {
-  key: string;
-  label: string;
-  icon: ReactNode;
-  /** Eski to'g'ridan-to'g'ri marshrut — havolalar buzilmagani uchun eslatma. */
-  legacyPath: string;
-  content: ReactNode;
-}
+/** Tab kalitidan komponentga xarita — ma'lumot `tabs.ts` da. */
+const CONTENT: Record<string, ReactNode> = {
+  finance: <FinanceOperatorsPage />,
+  integrations: <IntegrationsOpsPage />,
+  investors: <InvestorsOpsPage />,
+  logistics: <LogisticsOpsPage />,
+  branches: <BranchOpsPage />,
+  identity: <IdentityOpsPage />,
+  system: <SystemOpsPage />,
+};
 
-const TABS: OpsTab[] = [
-  {
-    key: "finance",
-    label: "Moliya operatorlari",
-    icon: <Banknote size={16} />,
-    legacyPath: "/finance-operators",
-    content: <FinanceOperatorsPage />,
-  },
-  {
-    key: "integrations",
-    label: "Integratsiyalar",
-    icon: <Cable size={16} />,
-    legacyPath: "/integrations-ops",
-    content: <IntegrationsOpsPage />,
-  },
-  {
-    key: "investors",
-    label: "Investorlar",
-    icon: <PiggyBank size={16} />,
-    legacyPath: "/investors-ops",
-    content: <InvestorsOpsPage />,
-  },
-  {
-    key: "logistics",
-    label: "Logistika",
-    icon: <Truck size={16} />,
-    legacyPath: "/logistics-ops",
-    content: <LogisticsOpsPage />,
-  },
-  {
-    key: "branches",
-    label: "Filiallar",
-    icon: <Building2 size={16} />,
-    legacyPath: "/branch-ops",
-    content: <BranchOpsPage />,
-  },
-  {
-    key: "identity",
-    label: "Xodimlar",
-    icon: <UsersRound size={16} />,
-    legacyPath: "/identity-ops",
-    content: <IdentityOpsPage />,
-  },
-  {
-    key: "system",
-    label: "Tizim",
-    icon: <Server size={16} />,
-    legacyPath: "/system-ops",
-    content: <SystemOpsPage />,
-  },
-];
+const ICONS: Record<string, ReactNode> = {
+  finance: <Banknote size={16} />,
+  integrations: <Cable size={16} />,
+  investors: <PiggyBank size={16} />,
+  logistics: <Truck size={16} />,
+  branches: <Building2 size={16} />,
+  identity: <UsersRound size={16} />,
+  system: <Server size={16} />,
+};
+
+const TABS = OPS_TABS;
 
 const OpsPage = () => {
   /**
@@ -156,7 +119,7 @@ const OpsPage = () => {
                     : "border-[color:var(--color-border-soft)] bg-white text-maindark/70 hover:border-main/40 hover:text-main dark:bg-white/[0.04] dark:text-primary/70"
                 }`}
               >
-                {tab.icon}
+                {ICONS[tab.key]}
                 {tab.label}
               </button>
             );
@@ -172,7 +135,7 @@ const OpsPage = () => {
             </div>
           }
         >
-          {active.content}
+          {CONTENT[active.key]}
         </Suspense>
       </div>
     </div>
