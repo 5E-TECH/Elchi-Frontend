@@ -51,16 +51,23 @@ export interface OrderListItem {
     deleted: boolean;
     items: {
         id: string;
-        product_id: string;
+        /**
+         * Katalogdagi mahsulot id'si. Hamkor (Partner API) buyurtmalarida
+         * BO'SH — mahsulot bizning katalogda yo'q, nomi `product_name` da
+         * matn bo'lib keladi.
+         */
+        product_id: string | null;
+        product_name?: string | null;
         order_id: string;
         quantity: number;
         createdAt: string;
         updatedAt: string;
+        /** Katalog bog'lanishi yo'q bo'lsa kelmaydi — `product_name`ga qarang. */
         product?: {
             id: string;
             name: string;
             image_url?: string | null;
-        };
+        } | null;
     }[];
     customer?: {
         id: string;

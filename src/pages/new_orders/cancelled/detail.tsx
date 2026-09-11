@@ -176,14 +176,26 @@ const toOrderCardData = (order: OrderListItem): ApiOrder => ({
   createdAt: order.createdAt,
   comment: order.comment,
   address: order.address,
-  items: order.items.map((item) => ({
+  /**
+   * Katalog bog'lanishi bo'lmasa SOXTA `product` yasamaymiz.
+   *
+   * Hamkor (Partner API) buyurtmalarida mahsulot bizning katalogda yo'q:
+   * `product_id` bo'sh, nom esa `product_name` da matn bo'lib keladi.
+   * Avval bu yerda `product: { id: item.product_id, ... }` qurilardi va
+   * id `null` bo'lib ketardi — ya'ni mavjud bo'lmagan mahsulotga havola.
+   * Endi nom o'z maydonida uzatiladi, kartochka esa ikkalasini ham biladi.
+   */
+  items: (order.items ?? []).map((item) => ({
     id: item.id,
     quantity: item.quantity,
-    product: {
-      id: item.product_id,
-      name: item.product?.name ?? `#${item.product_id}`,
-      image_url: item.product?.image_url ?? null,
-    },
+    product_name: item.product_name ?? null,
+    product: item.product
+      ? {
+          id: item.product.id,
+          name: item.product.name,
+          image_url: item.product.image_url ?? null,
+        }
+      : null,
   })),
   customer: {
     id: order.customer?.id ?? order.customer_id,
@@ -205,7 +217,7 @@ const formatCountdown = (seconds: number) => {
 
 const getOrderProductNames = (order: OrderListItem) =>
   order.items
-    .map((item) => item.product?.name ?? `#${item.product_id}`)
+    .map((item) => item.product?.name ?? item.product_name ?? `#${item.product_id}`)
     .filter(Boolean)
     .join(", ");
 
