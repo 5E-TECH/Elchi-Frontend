@@ -5,12 +5,13 @@ import {
   CATEGORY_LABEL,
   ROLE_META,
   connectionHealth,
+  fmtMetric,
   metricsByUid,
   useIntegrationMetrics,
   type IntegrationRole,
 } from '../../entities/integrations';
 import { ROLE_ORDER } from './connections';
-import { useConnections, type Connection } from './useConnections';
+import { isConfigured, useConnections } from './useConnections';
 
 /**
  * MANZARA — integratsiyalar bo'limining kirish nuqtasi.
@@ -32,10 +33,6 @@ const CARD =
   'rounded-2xl border border-[color:var(--color-border-soft)] bg-primary dark:bg-primarydark';
 const MUTED = 'text-[color:var(--color-text-muted)]';
 
-/** O'lchanmagan qiymat — "—". Bu qoida butun ekranda bir xil. */
-const num = (v: number | null | undefined, suffix = '') =>
-  v === null || v === undefined ? '—' : `${v}${suffix}`;
-
 const ago = (iso: string | null) => {
   if (!iso) return '—';
   const diff = Date.now() - new Date(iso).getTime();
@@ -52,14 +49,6 @@ const HEALTH_DOT: Record<string, string> = {
   ok: 'bg-emerald-500',
   attention: 'bg-amber-500',
   off: 'bg-transparent border border-[color:var(--color-text-muted)]',
-};
-
-/** Ulanish sozlanganmi — yo'nalishga qarab boshqa savol. */
-const isConfigured = (c: Connection): boolean => {
-  const raw = c.raw as Record<string, unknown>;
-  return c.kind === 'partner'
-    ? Boolean(raw.webhook_url)
-    : Boolean(raw.base_url || raw.api_url);
 };
 
 const OverviewPage = () => {
@@ -121,10 +110,10 @@ const OverviewPage = () => {
         <Metric label="Faol ulanish" value={`${activeCount} / ${connections.length}`} />
         <Metric
           label={`Hodisa · ${metricsQuery.data?.window_hours ?? 24} soat`}
-          value={num(totals?.events)}
+          value={fmtMetric(totals?.events)}
         />
-        <Metric label="Yetmagan" value={num(totals?.failed)} tone={totals?.failed ? 'bad' : undefined} />
-        <Metric label="Navbatda" value={num(totals?.queued)} tone={totals?.queued ? 'warn' : undefined} />
+        <Metric label="Yetmagan" value={fmtMetric(totals?.failed)} tone={totals?.failed ? 'bad' : undefined} />
+        <Metric label="Navbatda" value={fmtMetric(totals?.queued)} tone={totals?.queued ? 'warn' : undefined} />
       </div>
 
       {/* Muammoni NOMLAB aytadi — "3 xato bor" degan raqam o'zi yetarli emas,
@@ -178,7 +167,7 @@ const OverviewPage = () => {
 
         <button
           type="button"
-          onClick={() => navigate('/integrations/sources/create')}
+          onClick={() => navigate('/integrations/new')}
           className="flex h-9 items-center gap-1.5 rounded-xl bg-main px-3.5 text-xs font-bold text-white"
         >
           <Plus size={14} />
@@ -188,7 +177,7 @@ const OverviewPage = () => {
 
       {/* ═══════ JADVAL ═══════ */}
       {connections.length === 0 ? (
-        <EmptyState onAdd={() => navigate('/integrations/sources/create')} />
+        <EmptyState onAdd={() => navigate('/integrations/new')} />
       ) : rows.length === 0 ? (
         <div className={`${CARD} p-8 text-center text-sm ${MUTED}`}>
           Qidiruvga mos ulanish topilmadi.
@@ -241,7 +230,7 @@ const OverviewPage = () => {
                       {ago(mt?.last_event_at ?? null)}
                     </td>
                     <td className="border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-xs tabular-nums">
-                      {num(mt?.events)}
+                      {fmtMetric(mt?.events)}
                     </td>
                     <td className="border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-xs tabular-nums">
                       {mt?.failed ? (
@@ -249,12 +238,12 @@ const OverviewPage = () => {
                           {mt.failed}
                         </span>
                       ) : (
-                        <span className={MUTED}>{num(mt?.failed)}</span>
+                        <span className={MUTED}>{fmtMetric(mt?.failed)}</span>
                       )}
                     </td>
                     <td className={`border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-xs tabular-nums ${MUTED}`}>
                       {/* Outbound ulanishda javob vaqti o'lchanmaydi — "—". */}
-                      {num(mt?.avg_ms, ' ms')}
+                      {fmtMetric(mt?.avg_ms, ' ms')}
                     </td>
                     <td className="border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-right">
                       <button
