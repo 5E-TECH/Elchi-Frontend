@@ -110,6 +110,9 @@ const IncomingOrdersPage = lazy(
 );
 const PartnersPage = lazy(() => import("../../pages/partners"));
 const IntegrationsPage = lazy(() => import("../../pages/integrations"));
+const ConnectionsPage = lazy(
+  () => import("../../pages/integrations/ConnectionsPage"),
+);
 const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
@@ -317,8 +320,32 @@ const AppRouter = () => {
               path: "integrations",
               element: <IntegrationsPage />,
               children: [
-                { index: true, element: <Navigate replace to="/integrations/partners" /> },
-                { path: "partners", element: <PartnersPage /> },
+                {
+                  /**
+                   * YANGI YAGONA YUZA — ulanish tanlagichi + panel.
+                   *
+                   * Ilgari bu yer ikki tabga bo'lingan edi ("Hamkorlar (API)"
+                   * va "Tashqi tizimlar") va har birida o'z formasi bor edi.
+                   * Foydalanuvchi uchun ikkisi bitta ish, shuning uchun
+                   * birlashtirildi.
+                   */
+                  index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ConnectionsPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * ESKI sahifalar SAQLANADI — yangisi to'liq ishlagani
+                   * tasdiqlanmaguncha ular zaxira bo'lib turadi. Operator
+                   * biror narsani yangi yuzadan qilolmasa, eski manzil
+                   * orqali ishlay oladi.
+                   */
+                  path: "partners",
+                  element: <PartnersPage />,
+                },
                 {
                   path: "sources",
                   element: (
