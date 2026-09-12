@@ -28,41 +28,47 @@ export interface IntegrationTabMeta {
  * chunki platformaning asosiy o'sish yo'nalishi shu. Keyin biz ULANADIGANLAR,
  * oxirida kunlik operatsion ish (kiruvchi posilkalarni qabul qilish).
  */
+/**
+ * ⚠️ "Kiruvchi posilkalar" tabi BU YERDAN OLIB TASHLANDI va
+ * `/new-orders/incoming` ga ko'chirildi.
+ *
+ * Sabab: posilkalarni skanerlab qabul qilish — KUNLIK OPERATSIYA, sozlama
+ * emas. Integratsiyalar sahifasi faqat ulanishlarni sozlash uchun qoladi.
+ * Eski yo'l redirect bilan saqlanadi.
+ */
+/**
+ * ⚠️ TABLAR ENDI "ESKI YUZALAR" — asosiy ish `/integrations` ildizida.
+ *
+ * Ilgari bu yerda uch tab bor edi: "Hamkorlar (API)", "Tashqi tizimlar",
+ * "Kiruvchi posilkalar". Muammolar:
+ *
+ *   1. Kiruvchi posilkalar — KUNLIK OPERATSIYA, sozlama emas. U
+ *      `/new-orders/incoming` ga ko'chirildi.
+ *   2. "Hamkorlar" va "Tashqi tizimlar" — foydalanuvchi uchun BITTA ish
+ *      ("tashqi tizim bilan ulanishni sozlash"), lekin ikki forma, ikki
+ *      terminologiya. Endi ular yagona `ConnectionsPage` da birlashdi.
+ *
+ * Eski sahifalar SAQLANADI: yangisi to'liq ishlagani tasdiqlanmaguncha ular
+ * zaxira. Operator biror narsani yangi yuzadan qilolmasa, eski manzil orqali
+ * ishlay oladi. Shu bois tablar butunlay o'chirilmadi — ular "eski yuza"
+ * sifatida ko'rinadi.
+ */
 export const INTEGRATION_TABS: IntegrationTabMeta[] = [
   {
     key: 'partners',
     path: 'partners',
-    label: 'Hamkorlar (API)',
-    hint: "Bizga API orqali buyurtma yuboradigan tizimlar — marketplace, do'kon, CRM",
+    label: 'Eski: Hamkorlar',
+    hint: "Zaxira yuza — asosiy ish yuqorida, ulanishlar ro'yxatida",
     direction: 'inbound',
     legacyPath: '/partners',
   },
   {
     key: 'sources',
     path: 'sources',
-    /**
-     * ⚠️ NOM TUZATILDI. Avval "Manbalar" deb nomlangan edi, lekin bu XATO:
-     * `external_integrations` yozuvlari aslida YETKAZUVCHI naqshida ishlaydi
-     * (`dispatch_config` bilan posilka yaratamiz, `ProviderReceivable` bilan
-     * ularning COD qarzini yuritamiz). Ya'ni ular bizga buyurtma bermaydi —
-     * bizdan posilka oladi.
-     *
-     * Endi tab rol-neytral nomlanadi va ICHIDA rol guruhlari bor
-     * (yetkazuvchi / manba / to'lov / ko'zgu), chunki bitta ro'yxatda har
-     * xil rol bo'lishi mumkin.
-     */
-    label: 'Tashqi tizimlar',
-    hint: "Biz ulanadigan tizimlar — yetkazuvchi, manba, to'lov, ko'zgu",
+    label: 'Eski: Tashqi tizimlar',
+    hint: 'Zaxira yuza — yangi ulanish qo‘shish hozircha shu yerda',
     direction: 'both',
     legacyPath: '/new-orders/integrations',
-  },
-  {
-    key: 'incoming',
-    path: 'incoming',
-    label: 'Kiruvchi posilkalar',
-    hint: 'Hamkordan kelgan posilkalarni skanerlab qabul qilish',
-    direction: 'inbound',
-    legacyPath: '/new-orders/integrations/incoming',
   },
 ];
 

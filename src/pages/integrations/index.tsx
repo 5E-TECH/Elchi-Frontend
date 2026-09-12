@@ -36,6 +36,14 @@ const ICONS: Record<string, React.ReactNode> = {
 const IntegrationsPage = () => {
   const location = useLocation();
 
+  /**
+   * Zaxira yuzada turibmizmi. Ildiz (`/integrations`) — asosiy yuza, qolgani
+   * eski sahifalar.
+   */
+  const isLegacy = INTEGRATION_TABS.some((tab) =>
+    location.pathname.startsWith(`/integrations/${tab.path}`),
+  );
+
   const active = useMemo(() => {
     /**
      * Eng UZUN mos keladigan segment tanlanadi. `startsWith` bilan qisqa
@@ -66,18 +74,43 @@ const IntegrationsPage = () => {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap items-center gap-1.5">
+          {/*
+            ASOSIY YUZA — barcha ulanish bitta ro'yxatda. Ilgari bu yer ikki
+            tabga bo'lingan edi va foydalanuvchi qaysi sozlamani qayerda
+            qilishni bilmasdi.
+          */}
+          <NavLink
+            to="/integrations"
+            end
+            className={({ isActive }) =>
+              `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-all ${
+                isActive
+                  ? 'border-main bg-main text-white shadow-sm'
+                  : 'border-[color:var(--color-border-soft)] bg-white text-maindark/70 hover:border-main/40 hover:text-main dark:bg-white/[0.04] dark:text-primary/70'
+              }`
+            }
+          >
+            <Cable size={16} />
+            Ulanishlar
+          </NavLink>
+
+          {/*
+            ZAXIRA yuzalar — yangi yuza to'liq ishlagani tasdiqlanmaguncha
+            saqlanadi. Ataylab kichraytirilgan: ular asosiy yo'l emas.
+          */}
+          <span className="mx-1 h-5 w-px bg-[color:var(--color-border-soft)]" />
           {INTEGRATION_TABS.map((tab) => {
-            const on = tab.key === active.key;
+            const on = tab.key === active.key && isLegacy;
             return (
               <NavLink
                 key={tab.key}
                 to={`/integrations/${tab.path}`}
                 title={tab.hint}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-xs font-semibold transition-all ${
                   on
-                    ? 'border-main bg-main text-white shadow-sm'
-                    : 'border-[color:var(--color-border-soft)] bg-white text-maindark/70 hover:border-main/40 hover:text-main dark:bg-white/[0.04] dark:text-primary/70'
+                    ? 'border-main/60 bg-main/10 text-main'
+                    : 'border-[color:var(--color-border-soft)] text-maindark/50 hover:text-main dark:text-primary/50'
                 }`}
               >
                 {ICONS[tab.key]}
@@ -87,11 +120,12 @@ const IntegrationsPage = () => {
           })}
         </div>
 
-        {/* Faol tabning izohi — yo'nalishni aniq qilib turadi, chunki
-            "inbound/outbound" farqi aynan shu yerda chalkashgan edi. */}
-        <p className="m-0 mt-3 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-          {active.hint}
-        </p>
+        {/* Zaxira yuzada turganda nega u yerda ekanini aytamiz. */}
+        {isLegacy && (
+          <p className="m-0 mt-3 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+            {active.hint}
+          </p>
+        )}
       </div>
 
       <Outlet />
