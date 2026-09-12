@@ -6,7 +6,11 @@ import {
   type IntegrationRole,
 } from '../../entities/integrations';
 import { usePartners, type Partner } from '../../entities/partners';
-import type { ConnectionKind } from './connections';
+import {
+  CONNECTION_TYPES,
+  type ConnectionField,
+  type ConnectionKind,
+} from './connections';
 
 /**
  * IKKI RO'YXATNI BITTA RO'YXATGA QO'SHISH.
@@ -124,3 +128,39 @@ export const groupByRole = (
       items: connections.filter((c) => c.role === role),
     }))
     .filter((g) => g.items.length > 0);
+
+/**
+ * Ulanish uchun mos MAYDON ro'yxatini topadi.
+ *
+ * Nega bu yerda: uni ikki panel (Sozlamalar, Xavfsizlik) va Konsol sarlavhasi
+ * ishlatadi. Panel ichida qolsa, ikkinchisi nusxa ko'chirardi va registrga
+ * yangi maydon qo'shilganda bittasi eskirib qolardi.
+ */
+export const fieldsFor = (c: Connection): ConnectionField[] => {
+  const match =
+    CONNECTION_TYPES.find(
+      (t) => t.kind === c.kind && t.role === c.role && t.category === c.category,
+    ) ??
+    // Aniq mos kelmasa — ayni YO'NALISHdagi birinchi tur. Maydonlar yo'nalish
+    // bo'yicha bir xil, farq faqat tasnifda.
+    CONNECTION_TYPES.find((t) => t.kind === c.kind);
+  return match?.fields ?? [];
+};
+
+/**
+ * Ulanish ISHLASHGA sozlanganmi.
+ *
+ * ⚠️ YAGONA QOIDA. Bu javob uch joyda ishlatiladi (Manzara jadvali, Konsol
+ * chap ustuni, holat nuqtasi) va ular AYNI qoidaga tayanishi shart — aks
+ * holda bir ekranda "sozlangan", boshqasida "e'tibor kerak" ko'rinardi.
+ *
+ * Savol YO'NALISHGA qarab boshqa:
+ *   inbound  — webhook manzili bormi (bo'lmasa hodisa hech qayerga ketmaydi)
+ *   outbound — API manzili bormi (bo'lmasa so'rov yuborib bo'lmaydi)
+ */
+export const isConfigured = (c: Connection): boolean => {
+  const raw = c.raw as Record<string, unknown>;
+  return c.kind === 'partner'
+    ? Boolean(raw.webhook_url)
+    : Boolean(raw.base_url || raw.api_url);
+};

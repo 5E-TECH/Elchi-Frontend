@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   connectionHealth,
+  fmtMetric,
   metricsByUid,
   type ConnectionMetrics,
   type IntegrationMetrics,
@@ -102,5 +103,28 @@ describe("metricsByUid", () => {
 
   it("TC8: ma'lumot yo'q -> bo'sh xarita (xato emas)", () => {
     expect(metricsByUid(undefined).size).toBe(0);
+  });
+});
+
+describe('fmtMetric', () => {
+  /**
+   * Bu funksiyaning butun mavjudlik sababi: `null` ni `0` deb ko'rsatmaslik.
+   * `0 ms` "bir zumda javob berdi", `0%` esa "hammasi yiqildi" degan yolg'on.
+   */
+  it('null va undefined — "—"', () => {
+    expect(fmtMetric(null)).toBe('—');
+    expect(fmtMetric(undefined)).toBe('—');
+    expect(fmtMetric(null, ' ms')).toBe('—');
+  });
+
+  it('0 — haqiqiy o\'lchov, "—" EMAS', () => {
+    // Nol hodisa ham o'lchov: "hodisa bo'lmadi" deb aytish kerak.
+    expect(fmtMetric(0)).toBe('0');
+    expect(fmtMetric(0, '%')).toBe('0%');
+  });
+
+  it('qiymatga qo\'shimcha belgi qo\'shiladi', () => {
+    expect(fmtMetric(98.5, '%')).toBe('98.5%');
+    expect(fmtMetric(184, ' ms')).toBe('184 ms');
   });
 });

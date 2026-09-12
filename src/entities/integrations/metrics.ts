@@ -99,3 +99,17 @@ export const connectionHealth = (opts: {
   if ((opts.metrics?.failed ?? 0) > 0) return 'attention';
   return 'ok';
 };
+
+/**
+ * O'LCHANMAGAN QIYMATNI CHIZISH — bitta joyda.
+ *
+ * `null` "—" bo'lib chiqadi, HECH QACHON `0` emas. Nega alohida funksiya:
+ * bu qoida uch ekranda (Manzara jadvali, Konsol metrika qatori, ro'yxat
+ * yon paneli) takrorlanadi. Har joyda qaytadan yozilsa, birida `0` ko'rinib
+ * qolishi aniq — va `0 ms` "bir zumda javob berdi", `0%` esa "hammasi
+ * yiqildi" degan YOLG'ON xabar bo'lardi.
+ */
+export const fmtMetric = (
+  value: number | null | undefined,
+  suffix = '',
+): string => (value === null || value === undefined ? '—' : `${value}${suffix}`);

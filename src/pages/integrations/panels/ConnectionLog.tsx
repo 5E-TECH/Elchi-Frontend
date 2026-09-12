@@ -4,6 +4,11 @@ import {
   usePartnerActions,
   usePartnerWebhooks,
 } from '../../../entities/partners';
+import {
+  syncWhen,
+  useSyncHistory,
+  type SyncHistoryRow,
+} from '../../../entities/integrations/syncHistory';
 import type { Connection } from '../useConnections';
 
 /**
@@ -14,11 +19,10 @@ import type { Connection } from '../useConnections';
  *                              necha urinish, nega yiqildi
  *   outbound (`integration`) — biz yuborgan so'rovlar tarixi
  *
- * ⚠️ Outbound uchun bu panel hozircha BO'SH HOLAT ko'rsatadi. Sinxron tarixi
- * endpointi bor (`integrations/:id/sync-history`), lekin uni bu yerga ulash
- * alohida ish — va yo'qligini YASHIRISH o'rniga ochiq aytish to'g'ri:
- * "jurnal hali ulanmagan" degan xabar "hodisa yo'q" degan yolg'on xabardan
- * yaxshi.
+ * IKKI MANBA — IKKI KO'RINISH, bitta jadval emas. Maydonlari umuman boshqa:
+ * outbox'da "necha urinish / nega yiqildi", sync_history'da "nechta buyurtma
+ * tortildi". Ularni bitta jadvalga tiqish uchun ustunlarni umumlashtirish
+ * kerak bo'lardi va natijada ikkisi ham ma'nosini yo'qotardi.
  */
 
 const STATUS_TONE: Record<string, string> = {
@@ -53,17 +57,7 @@ const ConnectionLog = ({ connection }: { connection: Connection }) => {
   const { retryWebhook } = usePartnerActions();
 
   if (!isPartner) {
-    return (
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-6 text-center dark:bg-primarydark">
-        <p className="m-0 text-sm font-semibold text-maindark dark:text-white">
-          Bu ulanish uchun jurnal hali ulanmagan
-        </p>
-        <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)]">
-          Sinxron tarixi backendda mavjud, lekin bu panelga hali bog'lanmagan.
-          "Hodisa yo'q" deb ko'rsatish chalg'ituvchi bo'lardi.
-        </p>
-      </div>
-    );
+    return <OutboundLog connection={connection} />;
   }
 
   const rows = webhooks.data?.data ?? [];
@@ -151,6 +145,139 @@ const ConnectionLog = ({ connection }: { connection: Connection }) => {
                   <RotateCw className="h-3 w-3" />
                   Qayta
                 </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * CHIQUVCHI JURNAL — biz tortib olgan sinxronlar (`sync_history`).
+ *
+ * Yuqorida xulosa qatori turadi, chunki "oxirgi 20 satr"ni o'qib chiqish
+ * bilan "umuman ishlayaptimi" degan savolga javob bo'lmaydi.
+ */
+const OutboundLog = ({ connection }: { connection: Connection }) => {
+  const [status, setStatus] = useState('all');
+  const history = useSyncHistory({
+    integrationId: connection.id,
+    status,
+    limit: 20,
+  });
+
+  const rows: SyncHistoryRow[] = history.data?.items ?? [];
+  const summary = history.data?.summary;
+
+  /**
+   * ⚠️ Urinish bo'lmasa backend `success_rate: 0` qaytaradi. `0%` deb
+   * ko'rsatish "hammasi yiqildi" degan YOLG'ON bo'lardi — aslida hali
+   * urinish yo'q. Shu holda "—".
+   */
+  const rate =
+    summary && summary.total_attempts > 0 ? `${summary.success_rate}%` : '—';
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
+        >
+          <option value="all">Barcha holat</option>
+          <option value="success">Muvaffaqiyatli</option>
+          <option value="failed">Yiqilgan</option>
+        </select>
+        <button
+          type="button"
+          onClick={() => void history.refetch()}
+          disabled={history.isFetching}
+          className="flex h-9 items-center gap-1.5 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark disabled:opacity-50 dark:text-white"
+        >
+          {history.isFetching ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
+          Yangilash
+        </button>
+      </div>
+
+      {/* Xulosa — filtr bilan birga o'zgaradi, shuning uchun tepada. */}
+      {summary && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            { label: 'Urinish', value: String(summary.total_attempts) },
+            { label: 'Muvaffaqiyat', value: String(summary.success_count) },
+            { label: 'Yiqilgan', value: String(summary.failed_count) },
+            { label: 'Muvaffaqiyat %', value: rate },
+          ].map((cell) => (
+            <div
+              key={cell.label}
+              className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary px-3 py-2 dark:bg-primarydark"
+            >
+              <p className="m-0 text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                {cell.label}
+              </p>
+              <p className="m-0 mt-0.5 text-base font-extrabold tabular-nums text-maindark dark:text-white">
+                {cell.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {history.isLoading ? (
+        <div className="flex min-h-[120px] items-center justify-center">
+          <Loader2 className="animate-spin text-main" size={22} />
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-6 text-center text-sm text-[color:var(--color-text-muted)] dark:bg-primarydark">
+          Sinxron hodisasi yo'q
+        </div>
+      ) : (
+        <div className="divide-y divide-[color:var(--color-border-soft)] overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary dark:bg-primarydark">
+          {rows.map((row) => (
+            <div
+              key={String(row.id)}
+              className="flex flex-wrap items-center gap-3 px-4 py-3"
+            >
+              <span
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
+                  row.status === 'success'
+                    ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
+                    : row.status === 'failed'
+                      ? 'bg-red-500/12 text-red-700 dark:text-red-300'
+                      : 'bg-white/10 text-[color:var(--color-text-muted)]'
+                }`}
+              >
+                {row.status === 'success'
+                  ? 'muvaffaqiyatli'
+                  : row.status === 'failed'
+                    ? 'yiqildi'
+                    : 'noma’lum'}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-bold text-maindark dark:text-white">
+                  {row.synced_orders} buyurtma tortildi
+                </span>
+                <span className="block truncate text-[11px] text-[color:var(--color-text-muted)]">
+                  {syncWhen(row.sync_date)}
+                </span>
+              </span>
+              {/*
+                Xato matni `result` JSON ichida bo'lishi mumkin — "yiqildi"
+                so'zi o'zi sababni aytmaydi.
+              */}
+              {row.status === 'failed' && row.result && (
+                <span className="w-full break-all text-[11px] text-red-600 dark:text-red-300">
+                  {typeof row.result.error === 'string'
+                    ? row.result.error
+                    : JSON.stringify(row.result).slice(0, 300)}
+                </span>
               )}
             </div>
           ))}

@@ -44,6 +44,17 @@ export interface ConnectionField {
    * shifrlangan holda saqlanadi). Bo'sh qoldirilsa tegilmaydi.
    */
   writeOnly?: boolean;
+  /**
+   * Maydon qaysi tabda chiziladi.
+   *
+   *   `connection` (sukut) — "qanday ishlaydi": manzil, nom, kirish turi.
+   *   `security`           — "kim tegishi mumkin": kirishni CHEKLAYDIGAN
+   *                          qiymatlar. Bu yerdagi xato ulanishni butunlay
+   *                          to'sib qo'yishi mumkin, shuning uchun alohida.
+   *
+   * Registr YAGONA qoladi — ikki panel bitta ro'yxatdan o'zini yasaydi.
+   */
+  group?: 'connection' | 'security';
 }
 
 export interface ConnectionTypeMeta {
@@ -63,6 +74,15 @@ export interface ConnectionTypeMeta {
    * Shu bois FORMA UMUMIY komponent, bu yerda faqat MAYDONLAR ro'yxati.
    */
   fields: ConnectionField[];
+  /**
+   * ULANISHDAN OLDIN nima tayyor bo'lishi kerak.
+   *
+   * Nega registrda: katalog kartasida ham, ustaning 1-qadamida ham AYNI
+   * ro'yxat ko'rsatiladi. Operator ustaga kirib, keyin "menda bu yo'q" deb
+   * chiqib ketishi — eng ko'p uchraydigan to'xtash nuqtasi. Ro'yxatni
+   * OLDIN ko'rsatish shuni oldini oladi.
+   */
+  prereqs: string[];
 }
 
 /** Har turda takrorlanadigan maydonlar — bir joyda. */
@@ -74,12 +94,21 @@ const NAME_FIELD: ConnectionField = {
   hint: 'Operator ro‘yxatda shu nomni ko‘radi',
 };
 
-const ACTIVE_FIELD: ConnectionField = {
-  key: 'is_active',
-  label: 'Faol',
-  type: 'switch',
-  hint: 'O‘chirilsa ulanish umuman ishlamaydi (kill-switch)',
-};
+/*
+ * `is_active` ATAYLAB registrda YO'Q.
+ *
+ * ⚠️ U ilgari oddiy `switch` maydoni edi va Sozlamalar formasi bilan birga
+ * saqlanardi. HAMKOR uchun bu JIMGINA ISHLAMASDI: gateway'da
+ * `whitelist: true`, `UpdatePartnerRequestDto` esa `is_active` maydonini
+ * e'lon qilmaydi — ya'ni qiymat yo'lda tashlanardi, forma esa "Saqlandi"
+ * deb yozardi. Foydalanuvchi ulanishni o'chirdim deb o'ylab, u ishlab
+ * turardi.
+ *
+ * Hamkor uchun alohida endpoint bor (`POST partners/:id/status`),
+ * integratsiya uchun esa PATCH'da `is_active` mavjud. Ikki xil yo'l — shu
+ * bois bu umumiy formaga sig'maydi va Xavfsizlik panelida ALOHIDA amal
+ * bo'lib chiqadi (ta'siri katta amal, tasdiq bilan).
+ */
 
 /** Bizga ULANADIGANLAR uchun (inbound) — API kalit bizdan chiqadi. */
 const INBOUND_FIELDS: ConnectionField[] = [
@@ -118,8 +147,8 @@ const INBOUND_FIELDS: ConnectionField[] = [
     type: 'tags',
     placeholder: '203.0.113.10 yoki 203.0.113.0/24',
     hint: 'Bo‘sh bo‘lsa cheklov yo‘q. CIDR qo‘llab-quvvatlanadi',
+    group: 'security',
   },
-  ACTIVE_FIELD,
 ];
 
 /** BIZ ULANADIGANLAR uchun (outbound) — kalit ularda. */
@@ -140,36 +169,56 @@ const OUTBOUND_FIELDS: ConnectionField[] = [
     hint: 'Biz so‘rovlarni shu manzilga yuboramiz',
   },
   {
+    /**
+     * ⚠️ Variantlar BACKEND bilan bir xil bo'lishi SHART. Ilgari bu yerda
+     * `bearer` / `basic` / `none` turardi — backend esa faqat `api_key` va
+     * `login` ni biladi va boshqa hamma qiymatni `api_key` ga aylantiradi
+     * (`integration-service.service.ts:3339`). Ya'ni "Yo'q" tanlansa ham
+     * kalitli rejim yozilardi va sabab hech qayerda ko'rinmasdi.
+     */
     key: 'auth_type',
-    label: 'Autentifikatsiya',
+    label: 'Kirish turi',
     type: 'select',
     options: [
-      { value: 'bearer', label: 'Bearer token' },
-      { value: 'basic', label: 'Login + parol' },
-      { value: 'none', label: 'Yo‘q' },
+      { value: 'api_key', label: 'API kalit' },
+      { value: 'login', label: 'Login + parol' },
     ],
+    hint: 'Ular bizni qanday taniydi',
   },
   {
-    key: 'token',
-    label: 'Token',
+    /**
+     * ⚠️ Kalit `api_key` — `token` EMAS. Ilgari bu maydon `token` deb
+     * atalgan edi va backend DTO'sida bunday maydon yo'q: `whitelist: true`
+     * uni jimgina tashlab yuborardi, ya'ni kalit HECH QACHON saqlanmasdi.
+     */
+    key: 'api_key',
+    label: 'API kalit',
     type: 'secret',
     writeOnly: true,
-    hint: 'Bearer rejimida. Bo‘sh qoldirilsa tegilmaydi',
+    hint: '"API kalit" rejimida. Bo‘sh qoldirilsa tegilmaydi',
+    group: 'security',
+  },
+  {
+    key: 'auth_url',
+    label: 'Kirish manzili',
+    type: 'url',
+    placeholder: 'https://api.example.uz/auth/login',
+    hint: '"Login + parol" rejimida — token shu manzildan olinadi',
   },
   {
     key: 'username',
     label: 'Login',
     type: 'text',
-    hint: 'Basic rejimida',
+    hint: '"Login + parol" rejimida',
   },
   {
     key: 'password',
     label: 'Parol',
     type: 'secret',
     writeOnly: true,
-    hint: 'Basic rejimida. Bo‘sh qoldirilsa tegilmaydi',
+    hint: '"Login + parol" rejimida. Bo‘sh qoldirilsa tegilmaydi',
+    group: 'security',
   },
-  ACTIVE_FIELD,
 ];
 
 /**
@@ -187,6 +236,11 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     role: 'source',
     category: 'marketplace',
     fields: INBOUND_FIELDS,
+    prereqs: [
+      'Ularning tomonida HTTPS webhook manzili (status shu yerga boradi)',
+      'Imzoni tekshirish uchun kelishilgan sekret (ixtiyoriy, lekin tavsiya)',
+      'Ularning so\u2019rov yuboradigan IP manzillari (ixtiyoriy cheklov)',
+    ],
   },
   {
     key: 'marketplace_outbound',
@@ -196,6 +250,11 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     role: 'source',
     category: 'marketplace',
     fields: OUTBOUND_FIELDS,
+    prereqs: [
+      'Ularning API manzili (HTTPS)',
+      'API kalit yoki login+parol',
+      'Qaysi buyurtmalarni tortib olishimiz kelishilgan bo\u2019lishi',
+    ],
   },
   {
     key: 'crm',
@@ -205,6 +264,11 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     role: 'source',
     category: 'crm',
     fields: OUTBOUND_FIELDS,
+    prereqs: [
+      'CRM API manzili (HTTPS)',
+      'API kalit yoki login+parol',
+      'Qaysi voronka/bosqichdan buyurtma olinishi',
+    ],
   },
   {
     key: 'carrier',
@@ -214,6 +278,11 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     role: 'carrier',
     category: 'cargo',
     fields: OUTBOUND_FIELDS,
+    prereqs: [
+      'Yetkazuvchining API manzili (HTTPS)',
+      'API kalit',
+      'Tarif va qaytarish shartlari kelishilgan bo\u2019lishi',
+    ],
   },
   {
     key: 'payment',
@@ -223,6 +292,11 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     role: 'payment',
     category: 'payment',
     fields: OUTBOUND_FIELDS,
+    prereqs: [
+      'To\u2019lov tizimining API manzili (HTTPS)',
+      'Savdo nuqtasi (merchant) kaliti',
+      'Qaysi to\u2019lov holati tasdiq deb qabul qilinishi',
+    ],
   },
   {
     key: 'mirror',
@@ -232,6 +306,11 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     role: 'mirror',
     category: 'spreadsheet',
     fields: OUTBOUND_FIELDS,
+    prereqs: [
+      'Eksport manzili (HTTPS)',
+      'Yozish huquqi bo\u2019lgan kalit',
+      'Qaysi maydonlar chiqarilishi',
+    ],
   },
 ];
 
@@ -245,3 +324,17 @@ export const ROLE_ORDER: IntegrationRole[] = [
 
 export const findConnectionType = (key: string): ConnectionTypeMeta | undefined =>
   CONNECTION_TYPES.find((t) => t.key === key);
+
+/**
+ * Guruh bo'yicha maydonlarni ajratadi.
+ *
+ * Guruhi belgilanmagan maydon `connection` deb hisoblanadi — ya'ni yangi
+ * maydon qo'shganda uni unutib qoldirsak, u Sozlamalarda KO'RINADI. Teskari
+ * sukut xavfli bo'lardi: maydon hech qaysi tabga tushmay, jimgina yo'qolib
+ * ketardi.
+ */
+export const fieldsInGroup = (
+  fields: ConnectionField[],
+  group: 'connection' | 'security',
+): ConnectionField[] =>
+  fields.filter((f) => (f.group ?? 'connection') === group);

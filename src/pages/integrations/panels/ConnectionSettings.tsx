@@ -10,7 +10,7 @@ import ConnectionFields, {
   buildChangedPayload,
   type FieldValues,
 } from '../ConnectionFields';
-import { CONNECTION_TYPES, type ConnectionField } from '../connections';
+import { fieldsInGroup, type ConnectionField } from '../connections';
 import type { Connection } from '../useConnections';
 
 /**
@@ -23,18 +23,6 @@ import type { Connection } from '../useConnections';
  *
  * Yangi ulanish turi qo'shilsa bu fayl O'ZGARMAYDI.
  */
-
-/** Ulanish uchun mos maydon ro'yxatini topadi. */
-const fieldsFor = (c: Connection): ConnectionField[] => {
-  const match =
-    CONNECTION_TYPES.find(
-      (t) => t.kind === c.kind && t.role === c.role && t.category === c.category,
-    ) ??
-    // Aniq mos kelmasa — ayni YO'NALISHdagi birinchi tur. Maydonlar
-    // yo'nalish bo'yicha bir xil, farq faqat tasnifda.
-    CONNECTION_TYPES.find((t) => t.kind === c.kind);
-  return match?.fields ?? [];
-};
 
 /** Asl yozuvdan forma qiymatlarini yasaydi. */
 const initialValues = (c: Connection, fields: ConnectionField[]): FieldValues => {
@@ -70,12 +58,22 @@ type Msg = { tone: 'ok' | 'err'; text: string } | null;
 
 const ConnectionSettings = ({
   connection,
+  fields: allFields,
   onSaved,
 }: {
   connection: Connection;
+  fields: ConnectionField[];
   onSaved: () => void;
 }) => {
-  const fields = useMemo(() => fieldsFor(connection), [connection]);
+  /**
+   * Faqat `connection` guruhi — kirishni cheklaydigan qiymatlar (IP ro'yxati,
+   * kalitlar) Xavfsizlik tabida. Sababi: bu yerdagi tahrir oddiy, o'sha
+   * yerdagisi esa ulanishni butunlay to'sib qo'yishi mumkin.
+   */
+  const fields = useMemo(
+    () => fieldsInGroup(allFields, 'connection'),
+    [allFields],
+  );
   const initial = useMemo(
     () => initialValues(connection, fields),
     [connection, fields],

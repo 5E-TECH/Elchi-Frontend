@@ -116,6 +116,12 @@ const ConnectionsPage = lazy(
 const IntegrationsOverviewPage = lazy(
   () => import("../../pages/integrations/OverviewPage"),
 );
+const IntegrationsCatalogPage = lazy(
+  () => import("../../pages/integrations/CatalogPage"),
+);
+const ConnectWizardPage = lazy(
+  () => import("../../pages/integrations/wizard/ConnectWizard"),
+);
 const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
@@ -356,6 +362,37 @@ const AppRouter = () => {
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
                       <ConnectionsPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * KATALOG — "qanday tizim ulaymiz?".
+                   *
+                   * Ilgari "Yangi ulanish" bitta forma ochardi va operator
+                   * o'zi hal qilishi kerak edi: bu hamkormi yoki tashqi
+                   * tizimmi, kalit bizdanmi yoki ulardanmi. Bu TEXNIK savol
+                   * va ulanish noto'g'ri jadvalga tushardi.
+                   */
+                  path: "new",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <IntegrationsCatalogPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * ULASH USTASI — Nomi → Kalitlar → Sinash → Tayyor.
+                   *
+                   * `:typeKey` registr kaliti (`CONNECTION_TYPES`). Noto'g'ri
+                   * kalit bo'lsa usta katalogga qaytaradi — 404 emas, chunki
+                   * havola eskirgan bo'lishi mumkin.
+                   */
+                  path: "new/:typeKey",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ConnectWizardPage />
                     </ProtectedRoute>
                   ),
                 },

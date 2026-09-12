@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CONNECTION_TYPES,
   ROLE_ORDER,
+  fieldsInGroup,
   findConnectionType,
   type ConnectionTypeMeta,
 } from "./connections";
@@ -109,5 +110,103 @@ describe("Ulanish registri", () => {
     const first = CONNECTION_TYPES[0] as ConnectionTypeMeta;
     expect(findConnectionType(first.key)).toBe(first);
     expect(findConnectionType("yo-q-tur")).toBeUndefined();
+  });
+});
+
+/**
+ * QUYIDAGI TESTLAR UCHTA HAQIQIY BUG'NI QULFLAB QO'YADI.
+ *
+ * Uchtasi ham bir xil turdagi xato edi: forma qiymat so'raydi, "Saqlandi"
+ * deb yozadi, lekin qiymat backendga YETMAYDI yoki boshqa ma'noda yoziladi.
+ * Bunday xato eng yomoni — sahifa ishlayotgandek ko'rinadi.
+ */
+describe("Registr ↔ backend mosligi (bug qulflari)", () => {
+  const outbound = CONNECTION_TYPES.find((t) => t.kind === "integration")!;
+  const inbound = CONNECTION_TYPES.find((t) => t.kind === "partner")!;
+
+  it("⭐ `is_active` registrda YO'Q — u alohida amal", () => {
+    /**
+     * Sabab: gateway'da `whitelist: true`, `UpdatePartnerRequestDto` esa
+     * `is_active` ni e'lon qilmaydi. Umumiy forma bilan yuborilsa qiymat
+     * jimgina tashlanardi va hamkor ulanishi o'chmasdi.
+     */
+    for (const type of CONNECTION_TYPES) {
+      expect(type.fields.map((f) => f.key)).not.toContain("is_active");
+    }
+  });
+
+  it("⭐ chiquvchi kalit `api_key` deb nomlangan — `token` EMAS", () => {
+    // `token` backend DTO'sida yo'q → `whitelist: true` uni tashlaydi.
+    const keys = outbound.fields.map((f) => f.key);
+    expect(keys).toContain("api_key");
+    expect(keys).not.toContain("token");
+  });
+
+  it("⭐ `auth_type` variantlari backend qabul qiladigan qiymatlar", () => {
+    /**
+     * Backend faqat `api_key` va `login` ni biladi; qolgan hamma qiymatni
+     * `api_key` ga aylantiradi. Ilgari bu yerda `bearer`/`basic`/`none`
+     * turardi — "Yo'q" tanlansa ham kalitli rejim yozilardi.
+     */
+    const authType = outbound.fields.find((f) => f.key === "auth_type");
+    expect(authType).toBeDefined();
+    expect(authType!.options?.map((o) => o.value).sort()).toEqual([
+      "api_key",
+      "login",
+    ]);
+  });
+
+  it("kirishni cheklaydigan maydonlar `security` guruhida", () => {
+    // IP ro'yxati xato kiritilsa hamkorni butunlay to'sib qo'yadi.
+    const ip = inbound.fields.find((f) => f.key === "ip_allowlist");
+    expect(ip?.group).toBe("security");
+  });
+
+  it("fieldsInGroup ajratadi va guruhsiz maydon `connection`ga tushadi", () => {
+    const fields = [
+      { key: "a", label: "A", type: "text" as const },
+      { key: "b", label: "B", type: "text" as const, group: "security" as const },
+    ];
+    expect(fieldsInGroup(fields, "connection").map((f) => f.key)).toEqual(["a"]);
+    expect(fieldsInGroup(fields, "security").map((f) => f.key)).toEqual(["b"]);
+  });
+
+  it("ikki guruh birgalikda BARCHA maydonni qamraydi (hech biri yo'qolmaydi)", () => {
+    /**
+     * Eng xavfli xato: maydon hech qaysi tabga tushmasa, u sahifadan
+     * butunlay yo'qoladi va buni hech kim sezmaydi.
+     */
+    for (const type of CONNECTION_TYPES) {
+      const split = [
+        ...fieldsInGroup(type.fields, "connection"),
+        ...fieldsInGroup(type.fields, "security"),
+      ].map((f) => f.key);
+      expect(split.sort()).toEqual(type.fields.map((f) => f.key).sort());
+    }
+  });
+});
+
+describe("Katalog ma'lumoti", () => {
+  it("⭐ har bir turda `prereqs` bor va bo'sh emas", () => {
+    /**
+     * Katalog kartasi va ustaning 1-qadami shu ro'yxatni chizadi. Bo'sh
+     * bo'lsa karta yarim ko'rinardi va operator "menda bu bormi?" degan
+     * savolga javob olmasdi — ya'ni ustaga kirib, o'rtada to'xtardi.
+     */
+    for (const type of CONNECTION_TYPES) {
+      expect(type.prereqs.length).toBeGreaterThan(0);
+      for (const item of type.prereqs) {
+        expect(item.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("usta 1-qadamida so'raydigan maydon HAR turda mavjud", () => {
+    // Usta `name` (va outbound'da `slug`) ni 1-qadamda so'raydi.
+    for (const type of CONNECTION_TYPES) {
+      const keys = type.fields.map((f) => f.key);
+      expect(keys).toContain("name");
+      if (type.kind === "integration") expect(keys).toContain("slug");
+    }
   });
 });
