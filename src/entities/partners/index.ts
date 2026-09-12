@@ -24,6 +24,8 @@ export interface Partner {
   id: string;
   name: string;
   webhook_url: string | null;
+  /** Sinov manzili — hodisa nusxasi shu yerga ham ketadi. */
+  sandbox_webhook_url?: string | null;
   is_active: boolean;
   createdAt: string;
   webhooks?: PartnerWebhookSummary;
@@ -55,7 +57,36 @@ export interface UpdatePartnerDto {
   name?: string;
   webhook_url?: string;
   webhook_secret?: string;
+  /**
+   * SANDBOX manzili — har bir hodisaning NUSXASI shu yerga ham yuboriladi
+   * (`sandbox: true` bayrog'i bilan).
+   *
+   * Prodakshnda `webhook_url` haqiqiy qabul qiluvchiga qaratilgan va unga
+   * tegib bo'lmaydi. Integratsiyani tekshirish uchun esa haqiqiy hodisalar
+   * oqimini ko'rish kerak — sinov buyurtmasi yaratmasdan.
+   *
+   * Sandboxga yuborish "eng yaxshi harakat": xatosi asosiy yetkazishga
+   * TA'SIR QILMAYDI va qayta urinilmaydi.
+   */
+  sandbox_webhook_url?: string;
+  /** Berilmasa ASOSIY sekret ishlatiladi. */
+  sandbox_webhook_secret?: string;
   ip_allowlist?: string[];
+}
+
+/** `POST /admin/partners/:id/webhook-test` javobi. */
+export interface WebhookTestResult {
+  ok: boolean;
+  url: string;
+  used_saved_url: boolean;
+  http_status: number | null;
+  duration_ms: number;
+  response_body: string | null;
+  error: string | null;
+  /** Qabul qiluvchi tomonda solishtirib, sekret mosligini tekshirish uchun. */
+  signature_sent: string;
+  secret_configured: boolean;
+  event_id: string;
 }
 
 export interface CreatePartnerDto {
@@ -179,5 +210,44 @@ export const usePartnerActions = () => {
     onSuccess: invalidate,
   });
 
-  return { createPartner, updatePartner, rotateKey, setActive, retryWebhook };
+  /**
+   * SINOV WEBHOOKI — haqiqiy buyurtmaga tegmaydi.
+   *
+   * Ilgari webhook sozlamasini tekshirishning yagona yo'li HAQIQIY sotuvni
+   * kutish edi. Xato bo'lsa o'sha buyurtmaning hodisasi yo'qolardi.
+   *
+   * `url` berilsa saqlangan manzildan ustun turadi — yangi manzilni
+   * SAQLASHDAN OLDIN sinash mumkin.
+   */
+  const testWebhook = useMutation({
+    mutationFn: (params: { id: string; url?: string }) =>
+      api
+        .post(API_ENDPOINTS.PARTNERS.WEBHOOK_TEST(params.id), {
+          url: params.url?.trim() || undefined,
+        })
+        .then((res) =>
+          unwrap<WebhookTestResult>(res.data, {
+            ok: false,
+            url: "",
+            used_saved_url: true,
+            http_status: null,
+            duration_ms: 0,
+            response_body: null,
+            error: "javob o'qilmadi",
+            signature_sent: "",
+            secret_configured: false,
+            event_id: "",
+          }),
+        ),
+    // Sinov hodisa YARATMAYDI — outbox jurnalini yangilash shart emas.
+  });
+
+  return {
+    createPartner,
+    updatePartner,
+    rotateKey,
+    setActive,
+    retryWebhook,
+    testWebhook,
+  };
 };
