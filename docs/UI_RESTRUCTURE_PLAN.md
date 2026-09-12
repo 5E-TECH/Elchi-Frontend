@@ -215,3 +215,79 @@ ko'rinadigan bo'ladi**.
 | Q3 | 7 ta `*-ops` bitta sahifada 7 tab bo'lsinmi, yoki alohida-alohida? | **Bitta sahifa** — ular kamdan-kam ochiladi |
 | Q4 | `/new-orders` "Qabul va yaratish" deb nomlansinmi? | **Ha** — "Bugungi buyurtmalar" nomi mazmuniga mos emas |
 | Q5 | Menejer uchun 4 xil filial menyusi soddalashtirilsinmi? | Alohida ko'rib chiqish kerak — bu biznes qoidasi |
+
+---
+
+## 9. B4–B6 natijasi — kodni o'qigandan keyin (2026-09-12)
+
+⚠️ **Bu bo'lim rejaning o'z bandlarini rad etadi.** Sabab: 6-bo'limdagi
+ko'chirish jadvali marshrut NOMLARIga qarab yozilgan, komponentlar ichi
+o'qilmagan. Beshta banddan uchtasining asosi noto'g'ri chiqdi.
+
+| Band | Reja aytgan | Kodda nima bor | Natija |
+|---|---|---|---|
+| **M7** | `/activity-logs` + `/logs` → "Jurnallar" (2 tab) | `/logs` jurnal EMAS: ichida `POST /auth/refresh` sinov tugmasi | ✅ **boshqacha tuzatildi** |
+| **M8** | `/notifications` → Tizim guruhiga | B1 allaqachon `'system'` guruhiga biriktirgan | ✅ **allaqachon bajarilgan** |
+| **M3** | `/main-cashbox` + `/cash-box` → ichki tablar | Turli auditoriya; `main-cashbox` allaqachon karta orqali ochiladi | ❌ **qilinmaydi** |
+| **D2** | `/new-orders` nomi mazmunga mos emas | To'g'ri — ustiga menyu va sarlavha IKKI XIL nom ishlatardi | ✅ **bajarildi** |
+| **M10** | `/batches` va `/new-orders/branches` — bitta komponentga | Ikki xil ish: jo'natish vs skanerlab qabul qilish | ❌ **dublikat yo'q** |
+| **B6** | Ops sahifalarini tailwind'ga | antd 43 faylda, asosiy widgetlarda ham | ❌ **maqsadga erishmaydi** |
+
+### M7 — nega birlashtirish YOMON bo'lardi
+
+Menyuda ikki band turardi: "Faoliyat jurnali" va "Loglar". Ikkinchisi jurnal
+ko'rsatmaydi — u `POST /auth/refresh` ga sinov so'rovi yuboradigan
+diagnostika vositasi. Biror hodisani tekshirmoqchi bo'lgan operator
+"Loglar"ni bosib, token yangilash tugmasini ko'rardi.
+
+Rejadagi yechim (ikkisini "Jurnallar" deb birlashtirish) audit jurnalining
+ichiga diagnostika tugmasini qo'yardi — holat yomonlashardi.
+
+Qilingan: `/logs` menyudan olindi va **Ops markaziga tab** bo'lib tushdi
+(u yer aynan shunday vositalar uchun, B2'da yaratilgan). Sahifaning o'z
+sarlavhasi ham "Loglar" dan "Auth diagnostikasi" ga o'zgardi — nomi bilan
+mazmuni endi mos. Marshrut (`/logs`) saqlanadi.
+
+### M3 — nega kassalarni birlashtirmaymiz
+
+```
+/payments   (+ main-cashbox)   isPaymentsManager   = admin | superadmin | menejer(finance)
+/cash-box                      hasSelfCashboxAccess = kuryer | market | menejer
+```
+
+Faqat `manager` ikkisiga ham kira oladi. Admin "mening kassam"ni ko'rmaydi,
+kuryer esa boshqalarning kassasini. Tabga birlashtirsak, ko'pchilik rol
+bitta tabli "Kassa" sahifasini ko'rardi. Ustiga ikkisi bir-biriga
+`redirectTo` bilan bog'langan — "noto'g'ri eshik" holati allaqachon
+ishlangan. Ikkisi ham "Moliya" guruhida (B1).
+
+### M10 — nega dublikat emas
+
+```
+/batches/:id                        useSendTransferBatch        → JO'NATISH
+  (print varaqasi, QR yasash, pochta widgetlari)
+/new-orders/branches/:id/batches    useReceiveTransferBatch     → QABUL QILISH
+  (QR skaner, checkbox tanlash, ovozli qaytarma)
+```
+
+Transferning ikki tomoni. Umumiy kod (`batches/lib/batchFormat`, `useBatches`)
+allaqachon bo'lishilgan. Birlashtirish rejim bayrog'i bilan skaner va
+mutatsiyalarni boshqaradigan komponent yasardi — yomonlashish.
+
+### B6 — nega hozir qilinmaydi
+
+antd **43 faylda** ishlatiladi: `ActivityLogViewer`, `BranchListWidget`,
+`NotificationInbox`, `UzbekistanRegionMap`, `/settlement` va h.k. 7 ta ops
+sahifasini o'tkazish:
+
+- bog'liqlikni **olib tashlamaydi** (36 fayl qoladi),
+- dizayn birligini **bermaydi** — ops sahifalari qolgan antd sahifalardan
+  ajralib qolardi.
+
+Ma'noli variant — butun ilovani ko'chirish, lekin bu alohida va ancha
+kattaroq qaror.
+
+### Yakun
+
+B4–B6 dan **bajarilishi kerak bo'lgani bajarildi** (M7, D2). Qolganlari
+ataylab qilinmaydi va sababi yuqorida. Reja YOPILDI.

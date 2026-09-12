@@ -1,6 +1,6 @@
 {
-  "pageTitle": "Today's Orders",
-  "pageDescription": "List of markets with new orders",
+  "pageTitle": "Intake & create",
+  "pageDescription": "Receive orders from markets, branches and partners",
   "addOrderBtn": "Add Order",
   "newOrdersTab": "New orders",
   "marketsTab": "Markets",

@@ -5,6 +5,7 @@ import {
   Banknote,
   Building2,
   Cable,
+  KeyRound,
   Loader2,
   PiggyBank,
   Server,
@@ -39,6 +40,7 @@ const LogisticsOpsPage = lazy(() => import("../logistics-ops"));
 const BranchOpsPage = lazy(() => import("../branch-ops"));
 const IdentityOpsPage = lazy(() => import("../identity-ops"));
 const SystemOpsPage = lazy(() => import("../system-ops"));
+const AuthDiagnosticsPage = lazy(() => import("../logs"));
 
 /** Tab kalitidan komponentga xarita — ma'lumot `tabs.ts` da. */
 const CONTENT: Record<string, ReactNode> = {
@@ -49,6 +51,7 @@ const CONTENT: Record<string, ReactNode> = {
   branches: <BranchOpsPage />,
   identity: <IdentityOpsPage />,
   system: <SystemOpsPage />,
+  auth: <AuthDiagnosticsPage />,
 };
 
 const ICONS: Record<string, ReactNode> = {
@@ -59,6 +62,7 @@ const ICONS: Record<string, ReactNode> = {
   branches: <Building2 size={16} />,
   identity: <UsersRound size={16} />,
   system: <Server size={16} />,
+  auth: <KeyRound size={16} />,
 };
 
 const TABS = OPS_TABS;

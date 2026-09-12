@@ -28,8 +28,21 @@ import {
  * markazda tabi yo'q bo'lsa test yiqiladi.
  */
 const opsPageModules = import.meta.glob("../*-ops/index.tsx");
-/** `finance-operators` nomi naqshga tushmaydi — alohida qo'shiladi. */
-const extraOpsPages = ["finance-operators"];
+/**
+ * Naqshga (`*-ops`) tushmaydigan, lekin markazga ATAYLAB kiritilgan sahifalar.
+ *
+ * `finance-operators` — nomi boshqacha, mazmuni ops.
+ * `logs`             — ilgari menyuda "Loglar" deb turardi, lekin u jurnal
+ *                      EMAS: ichida `POST /auth/refresh` sinov tugmasi bor.
+ *                      Nomi bilan mazmuni mos kelmagani uchun operator
+ *                      "Loglar"ni bosib haqiqiy jurnalni topolmasdi. Menyudan
+ *                      olindi, o'rni — Ops markazi.
+ *
+ * ⚠️ Bu ro'yxat QO'LDA to'ldiriladi, `*-ops` esa avtomatik sanaladi. Ya'ni
+ * yangi `*-ops` papka qo'shilsa va unga tab berilmasa, test HAMON yiqiladi —
+ * yetim sahifa kafolati buzilmaydi.
+ */
+const extraOpsPages = ["finance-operators", "logs"];
 
 const discoveredDirs = [
   ...Object.keys(opsPageModules).map(
@@ -78,5 +91,39 @@ describe("menyudan ochilishi shart bo'lgan sahifalar", () => {
   it("ikkalasi ham guruhga biriktirilgan", () => {
     expect(SIDEBAR_GROUP_BY_PATH["/settlement"]).toBe("finance");
     expect(SIDEBAR_GROUP_BY_PATH["/ops"]).toBe("system");
+  });
+});
+
+describe("⭐ 'Loglar' bandi menyudan olib tashlandi (M7)", () => {
+  /**
+   * Menyuda ikki band turardi: "Faoliyat jurnali" va "Loglar". Ikkinchisi
+   * jurnal ko'rsatmaydi — ichida `POST /auth/refresh` sinov tugmasi bor.
+   * Biror hodisani tekshirmoqchi bo'lgan operator "Loglar"ni bosib, token
+   * yangilash tugmasini ko'rardi.
+   *
+   * Reja bu ikkisini "Jurnallar" deb BIRLASHTIRISHNI taklif qilgan edi, lekin
+   * bu xato bo'lardi: audit jurnaliga diagnostika tugmasini qo'shish holatni
+   * yomonlashtirardi. To'g'ri yechim — diagnostikani Ops markaziga ko'chirish.
+   */
+  it("hech bir rol menyusida `/logs` yo'q", () => {
+    const allItems = Object.values(SIDEBAR_CONFIG).flat();
+    expect(allItems.some((item) => item.to === "/logs")).toBe(false);
+  });
+
+  it("`/logs` guruh xaritasidan ham olindi", () => {
+    expect(SIDEBAR_GROUP_BY_PATH["/logs"]).toBeUndefined();
+  });
+
+  it("haqiqiy jurnal (`/activity-logs`) menyuda QOLADI", () => {
+    // Diagnostikani olib tashlash jurnalni ham yo'qotib qo'ymasligi kerak.
+    const allItems = Object.values(SIDEBAR_CONFIG).flat();
+    expect(allItems.some((item) => item.to === "/activity-logs")).toBe(true);
+    expect(SIDEBAR_GROUP_BY_PATH["/activity-logs"]).toBe("system");
+  });
+
+  it("diagnostika Ops markazida tab bo'lib mavjud", () => {
+    const tab = OPS_TABS.find((t) => t.legacyPath === "/logs");
+    expect(tab).toBeDefined();
+    expect(tab!.pageDir).toBe("logs");
   });
 });

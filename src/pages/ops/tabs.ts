@@ -59,4 +59,21 @@ export const OPS_TABS: OpsTabMeta[] = [
     legacyPath: "/system-ops",
     pageDir: "system-ops",
   },
+  {
+    /**
+     * ⚠️ ILGARI MENYUDA "Loglar" DEB TURGAN SAHIFA — lekin u jurnal EMAS.
+     *
+     * Ichida `POST /auth/refresh` ga sinov so'rovi yuboradigan bitta tugma
+     * bor. Ya'ni nomi bilan mazmuni bir-biriga mos kelmasdi: biror hodisani
+     * tekshirmoqchi bo'lgan operator "Loglar"ni bosib, token yangilash
+     * tugmasini ko'rardi va haqiqiy jurnalni (`/activity-logs`) topolmasdi.
+     *
+     * Bu DIAGNOSTIKA vositasi — o'rni Ops markazi. Marshrut (`/logs`)
+     * saqlanadi, faqat menyudan olib tashlandi.
+     */
+    key: "auth",
+    label: "Auth diagnostikasi",
+    legacyPath: "/logs",
+    pageDir: "logs",
+  },
 ];
