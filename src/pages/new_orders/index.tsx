@@ -2,12 +2,12 @@ import { memo, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Building2, ClipboardList, Store, XCircle } from "lucide-react";
+import { Building2, ClipboardList, QrCode, Store, XCircle } from "lucide-react";
 import type { RootState } from "../../app/config/store";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
 
-type Tab = "markets" | "branches" | "cancelled";
+type Tab = "markets" | "incoming" | "branches" | "cancelled";
 
 const NewOrders = () => {
   const { t } = useTranslation("newOrders");
@@ -21,6 +21,7 @@ const NewOrders = () => {
   const activeTab = useMemo<Tab>(() => {
     if (location.pathname.startsWith("/new-orders/branches")) return "branches";
     if (location.pathname.startsWith("/new-orders/cancelled")) return "cancelled";
+    if (location.pathname.startsWith("/new-orders/incoming")) return "incoming";
     return "markets";
   }, [location.pathname]);
 
@@ -80,13 +81,27 @@ const NewOrders = () => {
           </div>
 
           {/*
-            "Integratsiyalar" tabi BU YERDAN OLIB TASHLANDI.
+            "Integratsiyalar" tabi BU YERDAN OLIB TASHLANDI — u sozlama yuzasi
+            edi va kunlik buyurtma ekranida turishi mantiqan xato edi. Endi
+            `/integrations` uyida.
 
-            U integratsiya qo'shish/o'chirish va sozlash yuzasi edi — ya'ni
-            sozlama ishi kunlik buyurtma ekranining ichida turardi. Endi
-            `/integrations` uyida (Manbalar tabi). Eski yo'l redirect bilan
-            saqlanadi.
+            Uning O'RNIGA "Kiruvchi posilkalar" keldi: hamkordan (BeePost,
+            marketplace) kelgan posilkalarni skanerlab qabul qilish — bu AYNAN
+            kunlik operatsiya, shuning uchun buyurtma yuzasida turishi to'g'ri.
           */}
+          {isAdminRole && (
+            <div
+              onClick={() => navigate("/new-orders/incoming")}
+              className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
+              ${activeTab === "incoming"
+                ? "bg-main text-white border-main shadow-lg shadow-main/25"
+                : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
+              }`}
+            >
+              <QrCode size={20} />
+              <h4 className="font-semibold">Kiruvchi posilkalar</h4>
+            </div>
+          )}
 
           {isAdminRole && (
             <div

@@ -28,6 +28,14 @@ export interface IntegrationTabMeta {
  * chunki platformaning asosiy o'sish yo'nalishi shu. Keyin biz ULANADIGANLAR,
  * oxirida kunlik operatsion ish (kiruvchi posilkalarni qabul qilish).
  */
+/**
+ * ⚠️ "Kiruvchi posilkalar" tabi BU YERDAN OLIB TASHLANDI va
+ * `/new-orders/incoming` ga ko'chirildi.
+ *
+ * Sabab: posilkalarni skanerlab qabul qilish — KUNLIK OPERATSIYA, sozlama
+ * emas. Integratsiyalar sahifasi faqat ulanishlarni sozlash uchun qoladi.
+ * Eski yo'l redirect bilan saqlanadi.
+ */
 export const INTEGRATION_TABS: IntegrationTabMeta[] = [
   {
     key: 'partners',
@@ -55,14 +63,6 @@ export const INTEGRATION_TABS: IntegrationTabMeta[] = [
     hint: "Biz ulanadigan tizimlar — yetkazuvchi, manba, to'lov, ko'zgu",
     direction: 'both',
     legacyPath: '/new-orders/integrations',
-  },
-  {
-    key: 'incoming',
-    path: 'incoming',
-    label: 'Kiruvchi posilkalar',
-    hint: 'Hamkordan kelgan posilkalarni skanerlab qabul qilish',
-    direction: 'inbound',
-    legacyPath: '/new-orders/integrations/incoming',
   },
 ];
 
