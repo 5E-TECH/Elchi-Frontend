@@ -113,6 +113,9 @@ const IntegrationsPage = lazy(() => import("../../pages/integrations"));
 const ConnectionsPage = lazy(
   () => import("../../pages/integrations/ConnectionsPage"),
 );
+const IntegrationsOverviewPage = lazy(
+  () => import("../../pages/integrations/OverviewPage"),
+);
 const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
@@ -329,7 +332,27 @@ const AppRouter = () => {
                    * Foydalanuvchi uchun ikkisi bitta ish, shuning uchun
                    * birlashtirildi.
                    */
+                  /**
+                   * MANZARA — bo'limning kirish nuqtasi. "Hammasi qalay?"
+                   * degan savolga javob beradi: jami raqamlar + jadval.
+                   *
+                   * Ilgari bo'lim to'g'ridan-to'g'ri bitta ulanish paneliga
+                   * olib borardi va umumiy manzara YO'Q edi — operator har
+                   * bir ulanishni navbatma-navbat ochib tekshirardi.
+                   */
                   index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <IntegrationsOverviewPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * KONSOL — bitta ulanish bilan ishlash. Chapda ro'yxat
+                   * bo'lgani uchun manzaraga qaytmasdan sakrash mumkin.
+                   */
+                  path: "connections",
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
                       <ConnectionsPage />

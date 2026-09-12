@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowDownLeft, ArrowUpRight, Cable, ScanLine } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Cable, LayoutGrid, ScanLine } from 'lucide-react';
 import { INTEGRATION_TABS } from './tabs';
 
 /**
@@ -80,6 +80,11 @@ const IntegrationsPage = () => {
             tabga bo'lingan edi va foydalanuvchi qaysi sozlamani qayerda
             qilishni bilmasdi.
           */}
+          {/*
+            IKKI ASOSIY YUZA. Manzara — "hammasi qalay?", Konsol — "bu
+            ulanish qalay?". Ular bir-birini almashtirmaydi, ketma-ket
+            turadi: jadvaldagi "Ochish" konsolga olib boradi.
+          */}
           <NavLink
             to="/integrations"
             end
@@ -91,8 +96,21 @@ const IntegrationsPage = () => {
               }`
             }
           >
+            <LayoutGrid size={16} />
+            Manzara
+          </NavLink>
+          <NavLink
+            to="/integrations/connections"
+            className={({ isActive }) =>
+              `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-all ${
+                isActive
+                  ? 'border-main bg-main text-white shadow-sm'
+                  : 'border-[color:var(--color-border-soft)] bg-white text-maindark/70 hover:border-main/40 hover:text-main dark:bg-white/[0.04] dark:text-primary/70'
+              }`
+            }
+          >
             <Cable size={16} />
-            Ulanishlar
+            Konsol
           </NavLink>
 
           {/*
