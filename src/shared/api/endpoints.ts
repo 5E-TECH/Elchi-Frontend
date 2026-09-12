@@ -347,6 +347,9 @@ export const API_ENDPOINTS = {
     // hamkor id'si deb o'qilardi.
     WEBHOOKS: "admin/partners/webhooks", // GET outbox jurnali
     WEBHOOK_RETRY: (id: string | number) => `admin/partners/webhooks/${id}/retry`, // POST qayta navbatga
+    // SINOV webhooki — haqiqiy buyurtmaga tegmaydi. Tanada `url` berilsa
+    // saqlangan manzildan ustun turadi (saqlashdan OLDIN sinash uchun).
+    WEBHOOK_TEST: (id: string | number) => `admin/partners/${id}/webhook-test`, // POST
   },
 
   // ── Activity logs / audit trail (admin) — merged across services ─────────

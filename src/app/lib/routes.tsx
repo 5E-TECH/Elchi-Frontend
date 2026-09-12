@@ -109,6 +109,7 @@ const IncomingOrdersPage = lazy(
   () => import("../../pages/incoming-orders"),
 );
 const PartnersPage = lazy(() => import("../../pages/partners"));
+const IntegrationsPage = lazy(() => import("../../pages/integrations"));
 const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
@@ -220,6 +221,16 @@ const LegacyBranchBatchRedirect = () => {
   );
 };
 
+/**
+ * Eski integratsiya detal havolasi — `id` saqlanib Integratsiyalar uyiga
+ * o'tadi. Oddiy `Navigate` yaramaydi, chunki `:id` ni URL'dan olish kerak.
+ */
+const LegacyIntegrationDetailRedirect = () => {
+  const { id } = useParams();
+
+  return <Navigate replace to={`/integrations/sources/${id ?? ""}`} />;
+};
+
 const NewOrdersCancelledDetailEntry = () => {
   const { marketId } = useParams();
   const role = useSelector((state: RootState) => state.role.role);
@@ -290,9 +301,63 @@ const AppRouter = () => {
           children: [
             { index: true, element: <DashboardEntry /> },
             {
-              // Partner API hamkorlari + chiquvchi webhook outbox monitori.
+              /**
+               * INTEGRATSIYALAR UYI — barcha tashqi ulanishlar bir joyda.
+               *
+               * Ilgari integratsiya IKKI joyda boshqarilardi va ikkalasi ham
+               * "Integratsiyalar" deb nomlanardi: `/partners` (bizga
+               * ulanadiganlar) va `/new-orders/integrations` (biz
+               * ulanadiganlar). Ikkinchisi kunlik buyurtma ekranining ICHIDA
+               * turardi — ya'ni integratsiya qo'shish/o'chirish buyurtma
+               * sahifasida edi.
+               *
+               * Ruxsat har bir TAB marshrutida tekshiriladi, uyda emas: bir
+               * tabga ruxsati yo'q foydalanuvchi boshqasini ko'rishi kerak.
+               */
+              path: "integrations",
+              element: <IntegrationsPage />,
+              children: [
+                { index: true, element: <Navigate replace to="/integrations/partners" /> },
+                { path: "partners", element: <PartnersPage /> },
+                {
+                  path: "sources",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <NewOrdersExternalList />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "sources/create",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ExternalIntegrationCreate />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "sources/:id",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ExternalIntegrationDetail />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "incoming",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <IncomingOrdersPage />
+                    </ProtectedRoute>
+                  ),
+                },
+              ],
+            },
+            {
+              // ESKI YO'L — saqlanadi. Tashqi hujjatlarda, xatcho'plarda va
+              // Telegram xabarlarida bo'lishi mumkin.
               path: "partners",
-              element: <PartnersPage />,
+              element: <Navigate replace to="/integrations/partners" />,
             },
             {
               path: "branch-dashboard",
@@ -519,34 +584,25 @@ const AppRouter = () => {
               ),
               children: [
                 { index: true, element: <NewOrdersMarkets /> },
-                { path: "external", element: <Navigate replace to="/new-orders/integrations" /> },
-                { path: "external/:id", element: <Navigate replace to="/new-orders/integrations" /> },
+                /**
+                 * ESKI YO'LLAR — barchasi Integratsiyalar uyiga yo'naltiriladi.
+                 *
+                 * Integratsiya QO'SHISH/O'CHIRISH kunlik buyurtma ekranining
+                 * ichida turishi mantiqan xato edi: bu sozlama ishi, kunlik
+                 * operatsiya emas. Sahifalarning O'ZI o'chirilmadi — faqat
+                 * uyga ko'chdi, shuning uchun bu yerda redirect qoladi
+                 * (xatcho'p, tashqi hujjat, Telegram havolasi buzilmasin).
+                 */
+                { path: "external", element: <Navigate replace to="/integrations/sources" /> },
+                { path: "external/:id", element: <Navigate replace to="/integrations/sources" /> },
+                { path: "integrations", element: <Navigate replace to="/integrations/sources" /> },
                 {
-                  path: "integrations",
-                  element: (
-                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
-                      <NewOrdersExternalList />
-                    </ProtectedRoute>
-                  ),
-                },
-                {
-                  // Hamkordan (BeePost) kelgan posilkalarni skanerlab qabul
-                  // qilish. Integratsiyalar ostida — u alohida bo'lim emas,
-                  // aynan tashqi ulanishlar bilan bir ish oqimining davomi.
                   path: "integrations/incoming",
-                  element: (
-                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
-                      <IncomingOrdersPage />
-                    </ProtectedRoute>
-                  ),
+                  element: <Navigate replace to="/integrations/incoming" />,
                 },
                 {
                   path: "integrations/create",
-                  element: (
-                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
-                      <ExternalIntegrationCreate />
-                    </ProtectedRoute>
-                  ),
+                  element: <Navigate replace to="/integrations/sources/create" />,
                 },
                 {
                   path: "branches",
@@ -590,12 +646,9 @@ const AppRouter = () => {
                 },
                 { path: "cancelled/:marketId", element: <NewOrdersCancelledDetailEntry /> },
                 {
+                  // Eski detal havolasi — id saqlanib uyga o'tadi.
                   path: "integrations/:id",
-                  element: (
-                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
-                      <ExternalIntegrationDetail />
-                    </ProtectedRoute>
-                  ),
+                  element: <LegacyIntegrationDetailRedirect />,
                 },
                 {
                   path: ":marketId",

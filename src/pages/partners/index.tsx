@@ -12,6 +12,7 @@ import {
   Plus,
   RefreshCw,
   RotateCw,
+  Send,
   ShieldAlert,
   X,
 } from "lucide-react";
@@ -23,6 +24,7 @@ import {
   usePartners,
   type Partner,
   type PartnerWebhookRow,
+  type WebhookTestResult,
 } from "../../entities/partners";
 
 /** Bu ekranga kimlar kira oladi — gateway guardi bilan bir xil. */
@@ -37,7 +39,24 @@ const STATUS_TONE: Record<string, string> = {
   completed: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
   pending: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
   processing: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  /**
+   * `webhook_url` sozlanmagan — hodisa KUTIB turadi, yo'qolmaydi.
+   *
+   * Ilgari bunday hodisa `completed` deb yopilardi: sozlama yo'qligi
+   * jimgina "muvaffaqiyat" bo'lib, hodisa butunlay yo'qolardi. Ko'k rang
+   * ataylab — bu XATO emas, sozlama kutilayotgan holat.
+   */
+  awaiting_config: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
   permanently_failed: "bg-red-500/12 text-red-700 dark:text-red-300",
+};
+
+/** Holat nomlarini o'zbekcha ko'rsatish — xom kalit chalkashtiradi. */
+const STATUS_LABEL: Record<string, string> = {
+  completed: "yetkazildi",
+  pending: "navbatda",
+  processing: "yuborilmoqda",
+  awaiting_config: "sozlama kutilmoqda",
+  permanently_failed: "yetkazilmadi",
 };
 
 /**
@@ -60,7 +79,14 @@ const PartnersPage = () => {
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
   const partnersQuery = usePartners();
-  const { createPartner, updatePartner, rotateKey, setActive, retryWebhook } =
+  const {
+    createPartner,
+    updatePartner,
+    rotateKey,
+    setActive,
+    retryWebhook,
+    testWebhook,
+  } =
     usePartnerActions();
 
   const [message, setMessage] = useState<Message | null>(null);
@@ -82,7 +108,12 @@ const PartnersPage = () => {
     name: "",
     webhook_url: "",
     webhook_secret: "",
+    sandbox_webhook_url: "",
+    sandbox_webhook_secret: "",
   });
+
+  /** Sinov webhooki natijasi — modal ichida ko'rsatiladi. */
+  const [testResult, setTestResult] = useState<WebhookTestResult | null>(null);
 
   /** Bir martalik kalit — modal yopilgach BUTUNLAY yo'qoladi. */
   const [revealedKey, setRevealedKey] = useState<{
@@ -147,10 +178,13 @@ const PartnersPage = () => {
 
   const openEdit = (partner: Partner) => {
     setEditing(partner);
+    setTestResult(null);
     setEditForm({
       name: partner.name ?? "",
       webhook_url: partner.webhook_url ?? "",
       webhook_secret: "",
+      sandbox_webhook_url: partner.sandbox_webhook_url ?? "",
+      sandbox_webhook_secret: "",
     });
   };
 
@@ -172,6 +206,15 @@ const PartnersPage = () => {
     if (editForm.webhook_secret.trim()) {
       dto.webhook_secret = editForm.webhook_secret.trim();
     }
+    if (
+      editForm.sandbox_webhook_url.trim() !==
+      (editing.sandbox_webhook_url ?? "")
+    ) {
+      dto.sandbox_webhook_url = editForm.sandbox_webhook_url.trim();
+    }
+    if (editForm.sandbox_webhook_secret.trim()) {
+      dto.sandbox_webhook_secret = editForm.sandbox_webhook_secret.trim();
+    }
 
     if (!Object.keys(dto).length) {
       setEditing(null);
@@ -179,11 +222,48 @@ const PartnersPage = () => {
     }
 
     try {
-      await updatePartner.mutateAsync({ id: String(editing.id), dto });
-      setMessage({ tone: "success", text: t("partnerUpdated") });
+      const res = await updatePartner.mutateAsync({
+        id: String(editing.id),
+        dto,
+      });
+      /**
+       * `webhook_url` qo'yilganda backend sozlama yo'qligi tufayli kutib
+       * turgan hodisalarni navbatga qaytaradi. Bu son JIM o'tmasligi kerak:
+       * operator "nega birdan 12 ta webhook ketdi" degan savolga javob
+       * topa olishi kerak.
+       */
+      const requeued = Number(
+        (res as { data?: { requeued_webhooks?: number } })?.data
+          ?.requeued_webhooks ?? 0,
+      );
+      setMessage({
+        tone: "success",
+        text: requeued
+          ? `${t("partnerUpdated")} — kutib turgan ${requeued} ta hodisa navbatga qaytarildi`
+          : t("partnerUpdated"),
+      });
       setEditing(null);
     } catch (error) {
       fail(error, t("partnerUpdateFailed"));
+    }
+  };
+
+  /**
+   * SINOV WEBHOOKI. Formadagi manzil bilan sinaydi — ya'ni SAQLASHDAN OLDIN
+   * tekshirish mumkin. Natija modal ichida qoladi, chunki operator uni
+   * manzil bilan yonma-yon ko'rishi kerak.
+   */
+  const handleTestWebhook = async () => {
+    if (!editing) return;
+    setTestResult(null);
+    try {
+      const res = await testWebhook.mutateAsync({
+        id: String(editing.id),
+        url: editForm.webhook_url.trim() || undefined,
+      });
+      setTestResult(res);
+    } catch (error) {
+      fail(error, "Sinov webhookini yuborib bo'lmadi");
     }
   };
 
@@ -445,6 +525,10 @@ const PartnersPage = () => {
               <option value="pending">{t("partnerStatusPending")}</option>
               <option value="processing">{t("partnerStatusProcessing")}</option>
               <option value="completed">{t("partnerStatusCompleted")}</option>
+              {/* `webhook_url` sozlanmagani uchun kutib turgan hodisalar.
+                  Ilgari bunday hodisa `completed` deb yopilardi va butunlay
+                  yo'qolardi — shuning uchun alohida filtr kerak. */}
+              <option value="awaiting_config">sozlama kutilmoqda</option>
               <option value="permanently_failed">
                 {t("partnerStatusFailed")}
               </option>
@@ -487,7 +571,9 @@ const PartnersPage = () => {
                     "bg-white/10 text-[color:var(--color-text-muted)]"
                   }`}
                 >
-                  {row.status}
+                  {/* Xom kalit ("awaiting_config") chalkashtiradi —
+                      o'zbekcha yorliq ko'rsatiladi. */}
+                  {STATUS_LABEL[row.status] ?? row.status}
                 </span>
                 <p className="m-0 w-32 shrink-0 text-xs font-semibold text-maindark dark:text-white">
                   {partnerNames.get(String(row.partner_id)) ?? row.partner_id}
@@ -689,6 +775,122 @@ const PartnersPage = () => {
                 />
                 <span className="text-[11px] text-[color:var(--color-text-muted)]">
                   {t("partnerSecretHint")}
+                </span>
+              </label>
+
+              {/* ═══════ SINOV WEBHOOKI ═══════
+                  Ilgari sozlamani tekshirishning yagona yo'li HAQIQIY sotuvni
+                  kutish edi — xato bo'lsa o'sha buyurtmaning hodisasi
+                  yo'qolardi. Tugma yuqoridagi manzil bilan sinaydi, ya'ni
+                  SAQLASHDAN OLDIN tekshirish mumkin. */}
+              <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="m-0 text-xs font-bold text-maindark dark:text-white">
+                      Ulanishni tekshirish
+                    </p>
+                    <p className="m-0 mt-0.5 text-[11px] text-[color:var(--color-text-muted)]">
+                      Sinov hodisasi yuboriladi — buyurtmaga ta'sir qilmaydi
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleTestWebhook}
+                    disabled={
+                      testWebhook.isPending || !editForm.webhook_url.trim()
+                    }
+                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-main px-3 text-xs font-bold text-main disabled:opacity-40"
+                  >
+                    {testWebhook.isPending ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Send size={14} />
+                    )}
+                    Sinov yuborish
+                  </button>
+                </div>
+
+                {testResult && (
+                  <div
+                    className={`mt-3 rounded-xl p-2.5 text-[11px] ${
+                      testResult.ok
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "bg-red-500/10 text-red-700 dark:text-red-300"
+                    }`}
+                  >
+                    <p className="m-0 font-bold">
+                      {testResult.ok
+                        ? `✓ Yetdi — HTTP ${testResult.http_status} (${testResult.duration_ms} ms)`
+                        : `✗ Yetmadi${
+                            testResult.http_status
+                              ? ` — HTTP ${testResult.http_status}`
+                              : ""
+                          }`}
+                    </p>
+                    {/* Sekret sozlanmagan bo'lsa qabul qiluvchi imzoni
+                        tekshira olmaydi — bu eng ko'p uchraydigan sabab. */}
+                    {!testResult.secret_configured && (
+                      <p className="m-0 mt-1">
+                        ⚠️ Webhook sekreti sozlanmagan — qabul qiluvchi imzoni
+                        tekshira olmaydi
+                      </p>
+                    )}
+                    {testResult.error && (
+                      <p className="m-0 mt-1 break-all">{testResult.error}</p>
+                    )}
+                    {/* Javob tanasi MUHIM: qabul qiluvchi 200 qaytarib ham
+                        "imzo yaroqsiz" deyishi mumkin. */}
+                    {testResult.response_body && (
+                      <p className="m-0 mt-1 break-all opacity-80">
+                        Javob: {testResult.response_body.slice(0, 200)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ═══════ SANDBOX ═══════ */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                  Sandbox manzili (ixtiyoriy)
+                </span>
+                <input
+                  value={editForm.sandbox_webhook_url}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      sandbox_webhook_url: e.target.value,
+                    }))
+                  }
+                  placeholder="https://dev..."
+                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                />
+                <span className="text-[11px] text-[color:var(--color-text-muted)]">
+                  Har bir hodisaning NUSXASI shu manzilga ham ketadi
+                  (`sandbox: true` bayrog'i bilan). Prodakshnda asosiy manzilga
+                  tegmasdan haqiqiy oqimni kuzatish uchun. Xatosi asosiy
+                  yetkazishga ta'sir qilmaydi.
+                </span>
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                  Sandbox sekreti (ixtiyoriy)
+                </span>
+                <input
+                  type="password"
+                  value={editForm.sandbox_webhook_secret}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      sandbox_webhook_secret: e.target.value,
+                    }))
+                  }
+                  autoComplete="new-password"
+                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                />
+                <span className="text-[11px] text-[color:var(--color-text-muted)]">
+                  Berilmasa ASOSIY sekret ishlatiladi
                 </span>
               </label>
             </div>

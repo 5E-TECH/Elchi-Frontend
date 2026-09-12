@@ -33,6 +33,7 @@
   "group_finance": "Finance",
   "group_directory": "Directory",
   "group_integrations": "Integrations",
+  "integrations": "Integrations",
   "group_system": "System",
   "settlement": "Settlement",
   "ops": "Ops tools"

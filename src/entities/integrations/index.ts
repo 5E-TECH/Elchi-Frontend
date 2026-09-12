@@ -3,6 +3,58 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
+/**
+ * INTEGRATSIYA ROLI — oqimda nima qiladi.
+ *
+ * ⚠️ `type` (`api`/`webhook`/`ftp`) bilan aralashtirmaslik kerak: u
+ * TRANSPORT, ya'ni "qanday gaplashamiz". Rol esa "nima qiladi".
+ */
+export type IntegrationRole = "carrier" | "source" | "payment" | "mirror";
+
+/** Tizim turi — guruhlash va onboarding shabloni uchun. */
+export type IntegrationCategory =
+  | "marketplace"
+  | "crm"
+  | "cargo"
+  | "payment"
+  | "spreadsheet"
+  | "other";
+
+/** `spec` — biz kontrakt beramiz · `adapter` — biz moslashamiz. */
+export type IntegrationMode = "spec" | "adapter";
+
+/** Rol yorliqlari va izohlari — UI bir joydan o'qiydi. */
+export const ROLE_META: Record<
+  IntegrationRole,
+  { label: string; hint: string }
+> = {
+  carrier: {
+    label: "Yetkazuvchilar",
+    hint: "Bizdan posilka oladi va yetkazadi. COD puli ular orqali qaytadi",
+  },
+  source: {
+    label: "Buyurtma manbalari",
+    hint: "Bizga buyurtma beradi — marketplace, do'kon, CRM",
+  },
+  payment: {
+    label: "To'lov tizimlari",
+    hint: "To'lov holatini tasdiqlaydi. Buyurtma yaratmaydi ham, olmaydi ham",
+  },
+  mirror: {
+    label: "Ko'zgular",
+    hint: "Faqat o'qish uchun eksport — hisobot, jadval, BI",
+  },
+};
+
+export const CATEGORY_LABEL: Record<IntegrationCategory, string> = {
+  marketplace: "Marketplace",
+  crm: "CRM",
+  cargo: "Cargo",
+  payment: "To'lov",
+  spreadsheet: "Jadval",
+  other: "Boshqa",
+};
+
 export type Integration = {
   id: string;
   name: string;
@@ -11,6 +63,10 @@ export type Integration = {
   api_url: string;
   base_url?: string | null;
   type?: string | null;
+  /** Oqimda nima qiladi. Eski yozuvlarda `carrier`. */
+  role?: IntegrationRole | null;
+  category?: IntegrationCategory | null;
+  integration_mode?: IntegrationMode | null;
   auth_type: string;
   auth_url?: string | null;
   username?: string | null;
@@ -36,6 +92,8 @@ export type Integration = {
 export type IntegrationParams = {
   is_active?: string;
   status?: string;
+  role?: string;
+  category?: string;
   market_id?: string;
   from_date?: string;
   to_date?: string;
@@ -46,7 +104,13 @@ export type IntegrationParams = {
 export type CreateIntegrationPayload = {
   name: string;
   slug: string;
+  /** TRANSPORT — `api` | `webhook` | `ftp`. Rol EMAS. */
   type: string;
+  /** XULQ — `carrier` | `source` | `payment` | `mirror`. */
+  role?: IntegrationRole;
+  /** Guruhlash va ulash shabloni. Xulqqa ta'sir qilmaydi. */
+  category?: IntegrationCategory;
+  integration_mode?: IntegrationMode;
   status: string;
   base_url: string;
   auth_type: string;
