@@ -220,3 +220,7 @@ export const useUpdateIntegration = () => {
     },
   });
 };
+
+// Metrika hooklari va holat qoidasi — alohida faylda, chunki ular boshqa
+// endpointga tayanadi va testlari ham alohida.
+export * from "./metrics";

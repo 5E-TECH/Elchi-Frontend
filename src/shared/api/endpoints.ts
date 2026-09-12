@@ -232,6 +232,12 @@ export const API_ENDPOINTS = {
     SYNC_QUEUE: (id: string | number) => `integrations/${id}/sync/queue`, // POST
     SYNC_HISTORY_BY_ID: (id: string | number) => `integrations/${id}/sync-history`,
     SYNC_HISTORY: "integrations/sync/history",
+    /**
+     * Panel metrikasi — hodisa, yetmagan, navbat, javob vaqti.
+     * ⚠️ Backendda `:id` marshrutlaridan OLDIN e'lon qilingan, aks holda
+     * "metrics" integratsiya id'si deb o'qilardi.
+     */
+    METRICS: "integrations/metrics",
     SHIPMENT_BY_ORDER: (orderId: string | number) => `integrations/shipments/${orderId}`,
     DISPATCH: (slug: string | number) => `integrations/${slug}/dispatch`, // POST
     REQUEST: (slug: string | number) => `integrations/${slug}/request`, // POST universal request
