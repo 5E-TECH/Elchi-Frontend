@@ -74,7 +74,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/regions", icon: MapPinned, label: "regions" },
     { to: "/notifications", icon: Bell, label: "notifications" },
     { to: "/branches", icon: Building2, label: "branches" },
-    { to: "/partners", icon: Plug, label: "partners" },
+    { to: "/integrations", icon: Plug, label: "integrations" },
     // Ikkalasi ham avval menyuda YO'Q edi — faqat URL orqali ochilardi (B2).
     { to: "/settlement", icon: Landmark, label: "settlement" },
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
@@ -93,7 +93,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
     { to: "/regions", icon: MapPinned, label: "regions" },
-    { to: "/partners", icon: Plug, label: "partners" },
+    { to: "/integrations", icon: Plug, label: "integrations" },
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
   ],
   market: [
@@ -324,8 +324,10 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/branches": 'directory',
   "/regions": 'directory',
   "/market-operators": 'directory',
-  // Integratsiyalar (B3 da kengayadi)
-  "/partners": 'integrations',
+  // Integratsiyalar — barcha tashqi ulanishlar bir uyda (B3).
+  // Eski `/partners` marshruti redirect bilan saqlanadi, lekin menyuda
+  // ko'rinmaydi: bir tushuncha ikki joyda turmasligi kerak.
+  "/integrations": 'integrations',
   "/settlement": 'finance',
   // Tizim
   "/notifications": 'system',
