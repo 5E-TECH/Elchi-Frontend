@@ -53,8 +53,14 @@ const LogsPage = () => {
     <PageContainer>
       <div className="mb-4">
         <HeaderName
-          name="Loglar"
-          description="Refresh endpointga test so'rov yuborish sahifasi"
+          /*
+            ⚠️ NOMI O'ZGARTIRILDI. Ilgari "Loglar" deb turardi va menyuda ham
+            shunday ko'rinardi — lekin bu sahifa jurnal KO'RSATMAYDI, u
+            `POST /auth/refresh` ga sinov so'rovi yuboradi. Haqiqiy jurnal
+            `/activity-logs` da. Nom mazmunga moslashtirildi.
+          */
+          name="Auth diagnostikasi"
+          description="`POST /auth/refresh` ga sinov so'rovi yuboradi. Jurnal uchun: Tizim → Jurnallar"
           icon={<RefreshCcw size={22} />}
         />
       </div>

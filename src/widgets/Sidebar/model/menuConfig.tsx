@@ -14,7 +14,6 @@ import {
   RotateCcw,
   CreditCard,
   Scale,
-  FileText,
   ScrollText,
   Bell,
   Building2,
@@ -78,7 +77,6 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     // Ikkalasi ham avval menyuda YO'Q edi — faqat URL orqali ochilardi (B2).
     { to: "/settlement", icon: Landmark, label: "settlement" },
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
-    { to: "/logs", icon: FileText, label: "logs" },
     { to: "/ops", icon: Wrench, label: "ops" },
   ],
   admin: [
@@ -333,7 +331,6 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/notifications": 'system',
   "/ops": 'system',
   "/activity-logs": 'system',
-  "/logs": 'system',
 };
 
 /** Boshqaruv paneli guruhga kirmaydi — u doim eng tepada, yakka turadi. */
