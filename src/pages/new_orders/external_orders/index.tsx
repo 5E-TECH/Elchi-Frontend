@@ -15,6 +15,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Shapes,
   SlidersHorizontal,
   Store,
   Trash2,
@@ -39,6 +40,10 @@ import {
   useDeleteIntegration,
   useGetIntegrations,
   useUpdateIntegration,
+  ROLE_META,
+  CATEGORY_LABEL,
+  type IntegrationRole,
+  type IntegrationCategory,
 } from "../../../entities/integrations";
 
 const DEFAULT_LIMIT = 10;
@@ -53,6 +58,10 @@ type IntegrationViewMode = "table" | "cards";
 type IntegrationEditForm = {
   name: string;
   slug: string;
+  /** Oqimda nima qiladi — yetkazuvchi / manba / to'lov / ko'zgu. */
+  role: string;
+  /** Tizim turi — marketplace / CRM / cargo / to'lov / jadval. */
+  category: string;
   base_url: string;
   auth_type: string;
   auth_url: string;
@@ -93,6 +102,10 @@ const getInitialEditForm = (integration?: Integration | null): IntegrationEditFo
   return {
     name: integration?.name ?? "",
     slug: integration?.slug ?? "",
+    // Eski yozuvlarda maydon yo'q — `carrier`/`cargo` ular uchun to'g'ri
+    // standart (migratsiya ham shunday belgilaydi).
+    role: integration?.role ?? "carrier",
+    category: integration?.category ?? "cargo",
     base_url: integration?.base_url || integration?.api_url || "",
     auth_type: authType,
     auth_url: integration?.auth_url ?? credentials.auth_url ?? "",
@@ -131,6 +144,14 @@ const ExternalOrdersPage = () => {
   const { api: notificationApi } = useAppNotification();
 
   const [status, setStatus] = useState("");
+  /**
+   * ROL FILTRI — bo'sh satr "hammasi" degani.
+   *
+   * Ilgari barcha ulanish bitta uyumda ko'rinardi va yetkazuvchini buyurtma
+   * manbasidan yoki to'lov tizimidan ajratib bo'lmasdi. Filtr serverga
+   * yuboriladi (`?role=`), mijozda emas — sahifalash to'g'ri ishlashi kerak.
+   */
+  const [role, setRole] = useState("");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -148,11 +169,12 @@ const ExternalOrdersPage = () => {
   const params = useMemo<IntegrationParams>(() => {
     const nextParams: IntegrationParams = { page, limit };
     if (status) nextParams.status = status;
+    if (role) nextParams.role = role;
     if (search.trim()) nextParams.market_id = search.trim();
     if (dateFrom) nextParams.from_date = dateFrom;
     if (dateTo) nextParams.to_date = dateTo;
     return nextParams;
-  }, [dateFrom, dateTo, limit, page, search, status]);
+  }, [dateFrom, dateTo, limit, page, role, search, status]);
 
   const query = useGetIntegrations(params);
   const deleteIntegration = useDeleteIntegration();
@@ -228,6 +250,13 @@ const ExternalOrdersPage = () => {
           name: editForm.name.trim(),
           slug: editForm.slug.trim(),
           type: editTarget.type || "api",
+          // ⚠️ `type` TRANSPORT (api/webhook/ftp), `role` esa XULQ — ikkisi
+          // boshqa o'lcham va ikkalasi ham yuboriladi.
+          // Forma `string` bilan ishlaydi (select qiymati), kontrakt esa
+          // aniq turni talab qiladi. Qiymatlar select ro'yxatidan keladi,
+          // shuning uchun cast xavfsiz — backend ham normallashtiradi.
+          role: editForm.role as IntegrationRole,
+          category: editForm.category as IntegrationCategory,
           status: editForm.is_active ? "active" : "inactive",
           base_url: editForm.base_url.trim(),
           auth_type: editForm.auth_type,
@@ -509,6 +538,51 @@ const ExternalOrdersPage = () => {
             />
           </div>
 
+          {/* ═══════ ROL FILTRI ═══════
+              Ilgari barcha ulanish bitta uyumda ko'rinardi va yetkazuvchini
+              buyurtma manbasidan yoki to'lov tizimidan ajratib bo'lmasdi.
+              Rol — eng muhim ajratim, shuning uchun statusdan OLDIN. */}
+          <div className="rounded-2xl border border-gray-200 bg-maindark/12 p-3 dark:border-white/10 dark:bg-maindark/70 xl:w-auto">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-maindark/50 dark:text-primary/45">
+              <Shapes size={12} className="text-main/70" />
+              Turi
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setRole("");
+                  updatePage(1);
+                }}
+                className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
+                  role === ""
+                    ? "border-main bg-main text-white"
+                    : "border-gray-200 text-maindark/70 hover:border-main/40 dark:border-white/10 dark:text-primary/70"
+                }`}
+              >
+                {t("all")}
+              </button>
+              {(Object.keys(ROLE_META) as IntegrationRole[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={ROLE_META[key].hint}
+                  onClick={() => {
+                    setRole(key);
+                    updatePage(1);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
+                    role === key
+                      ? "border-main bg-main text-white"
+                      : "border-gray-200 text-maindark/70 hover:border-main/40 dark:border-white/10 dark:text-primary/70"
+                  }`}
+                >
+                  {ROLE_META[key].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-gray-200 bg-maindark/12 p-3 dark:border-white/10 dark:bg-maindark/70 xl:w-72">
             <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-maindark/50 dark:text-primary/45">
               <SlidersHorizontal size={12} className="text-main/70" />
@@ -601,6 +675,30 @@ const ExternalOrdersPage = () => {
                       <p className="truncate text-xs font-semibold text-maindark/45 dark:text-primary/45">
                         {item.slug || t("idLabel", { id: item.id })}
                       </p>
+                      {/* ROL + KATEGORIYA nishoni. Ilgari kartada ulanishning
+                          NIMA QILISHI ko'rinmasdi — yetkazuvchi, manba va
+                          to'lov tizimi bir xil ko'rinardi. */}
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        <span
+                          title={ROLE_META[item.role ?? "carrier"]?.hint}
+                          className="rounded-full bg-main/12 px-2 py-0.5 text-[10px] font-bold text-main"
+                        >
+                          {ROLE_META[item.role ?? "carrier"]?.label ??
+                            item.role}
+                        </span>
+                        {item.category && item.category !== "other" && (
+                          <span className="rounded-full bg-maindark/10 px-2 py-0.5 text-[10px] font-bold text-maindark/70 dark:bg-white/10 dark:text-primary/70">
+                            {CATEGORY_LABEL[item.category] ?? item.category}
+                          </span>
+                        )}
+                        {/* `spec` — biz kontrakt bergan, ya'ni ular bizning
+                            qoidamizni bajaradi. Bu muhim ajratim. */}
+                        {item.integration_mode === "spec" && (
+                          <span className="rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                            spec
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {renderStatusBadge(item.is_active)}
@@ -741,6 +839,50 @@ const ExternalOrdersPage = () => {
               className={editInputClassName}
               placeholder={t("integrationSlugPlaceholder")}
             />
+          </label>
+
+          {/* ═══════ ROL va KATEGORIYA ═══════
+              Ilgari bu o'lcham UMUMAN yo'q edi — operator ulanishning nima
+              qilishini belgilay olmasdi. `type` (api/webhook/ftp) faqat
+              transport, ya'ni "qanday gaplashamiz". */}
+          <label className="space-y-2">
+            <span className={editLabelClassName}>Roli (nima qiladi)</span>
+            <select
+              value={editForm.role}
+              onChange={(event) => updateEditForm("role", event.target.value)}
+              className={editInputClassName}
+            >
+              {(Object.keys(ROLE_META) as IntegrationRole[]).map((key) => (
+                <option key={key} value={key}>
+                  {ROLE_META[key].label}
+                </option>
+              ))}
+            </select>
+            <span className="block text-[11px] text-maindark/45 dark:text-primary/45">
+              {ROLE_META[(editForm.role as IntegrationRole) ?? "carrier"]?.hint}
+            </span>
+          </label>
+
+          <label className="space-y-2">
+            <span className={editLabelClassName}>Tizim turi</span>
+            <select
+              value={editForm.category}
+              onChange={(event) =>
+                updateEditForm("category", event.target.value)
+              }
+              className={editInputClassName}
+            >
+              {(
+                Object.keys(CATEGORY_LABEL) as (keyof typeof CATEGORY_LABEL)[]
+              ).map((key) => (
+                <option key={key} value={key}>
+                  {CATEGORY_LABEL[key]}
+                </option>
+              ))}
+            </select>
+            <span className="block text-[11px] text-maindark/45 dark:text-primary/45">
+              Guruhlash va ulash shabloni uchun — xulqqa ta'sir qilmaydi
+            </span>
           </label>
 
           <label className="space-y-2 md:col-span-2">

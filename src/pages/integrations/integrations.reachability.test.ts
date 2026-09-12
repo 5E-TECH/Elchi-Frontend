@@ -72,6 +72,12 @@ describe("Integratsiyalar uyi — navigatsiya butunligi", () => {
     const sources = INTEGRATION_TABS.find((t) => t.key === "sources");
 
     expect(sources?.legacyPath).toBe("/new-orders/integrations");
-    expect(sources?.direction).toBe("outbound");
+    /**
+     * `both` — chunki bu tab ICHIDA har xil rol bo'ladi: yetkazuvchi
+     * (bizdan posilka oladi), manba (bizga buyurtma beradi), to'lov, ko'zgu.
+     * Avval "outbound" edi va tab "Manbalar" deb nomlangan edi — ikkisi ham
+     * xato, chunki mavjud yozuvlar aslida YETKAZUVCHI naqshida ishlaydi.
+     */
+    expect(sources?.direction).toBe("both");
   });
 });

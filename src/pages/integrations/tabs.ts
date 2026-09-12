@@ -40,9 +40,20 @@ export const INTEGRATION_TABS: IntegrationTabMeta[] = [
   {
     key: 'sources',
     path: 'sources',
-    label: 'Manbalar',
-    hint: "Biz o'zimiz ulanadigan tashqi tizimlar — buyurtma tortib olish va status yuborish",
-    direction: 'outbound',
+    /**
+     * ⚠️ NOM TUZATILDI. Avval "Manbalar" deb nomlangan edi, lekin bu XATO:
+     * `external_integrations` yozuvlari aslida YETKAZUVCHI naqshida ishlaydi
+     * (`dispatch_config` bilan posilka yaratamiz, `ProviderReceivable` bilan
+     * ularning COD qarzini yuritamiz). Ya'ni ular bizga buyurtma bermaydi —
+     * bizdan posilka oladi.
+     *
+     * Endi tab rol-neytral nomlanadi va ICHIDA rol guruhlari bor
+     * (yetkazuvchi / manba / to'lov / ko'zgu), chunki bitta ro'yxatda har
+     * xil rol bo'lishi mumkin.
+     */
+    label: 'Tashqi tizimlar',
+    hint: "Biz ulanadigan tizimlar — yetkazuvchi, manba, to'lov, ko'zgu",
+    direction: 'both',
     legacyPath: '/new-orders/integrations',
   },
   {
