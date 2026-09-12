@@ -108,6 +108,9 @@ const ScanPage = lazy(() => import("../../pages/scan"));
 const IncomingOrdersPage = lazy(
   () => import("../../pages/incoming-orders"),
 );
+const IncomingSourcePicker = lazy(
+  () => import("../../pages/incoming-orders/SourcePicker"),
+);
 const PartnersPage = lazy(() => import("../../pages/partners"));
 const IntegrationsPage = lazy(() => import("../../pages/integrations"));
 const ConnectionsPage = lazy(
@@ -700,7 +703,28 @@ const AppRouter = () => {
                    * skanerlab QABUL QILISH — kunlik operatsiya, shuning uchun
                    * buyurtma yuzasida turadi, integratsiya sozlamalarida emas.
                    */
+                  /**
+                   * MANBA TANLASH — ekranning kirish nuqtasi.
+                   *
+                   * Ilgari bu yo'l to'g'ridan-to'g'ri skanerlash ro'yxatini
+                   * ochardi va unda BARCHA tashqi buyurtma aralash turardi.
+                   * Operator qo'lida bir manbaning qopi turib, ro'yxatda
+                   * boshqasining posilkasini ham ko'rardi.
+                   */
                   path: "incoming",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <IncomingSourcePicker />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * Tanlangan manbaning posilkalarini skanerlab qabul qilish.
+                   * `:marketId` — manba kaliti (hamkor posilka yaratganda
+                   * `elchi_market_id` majburiy, shu bois guruhlash kaliti shu).
+                   */
+                  path: "incoming/:marketId",
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
                       <IncomingOrdersPage />

@@ -73,3 +73,55 @@ export const extractMeta = (
 ): { page?: number; limit?: number; total?: number } | undefined =>
   (raw as { data?: { meta?: { page?: number; limit?: number; total?: number } } })
     ?.data?.meta;
+
+/**
+ * KIRUVCHI POSILKALARNING MANBALARI.
+ *
+ * Ekran ilgari barcha tashqi buyurtmani bitta ro'yxatda ko'rsatardi. Amalda
+ * faqat bitta hamkor (BeePost) yuborgani uchun ekran o'shanga moslangandek
+ * ko'rinardi, lekin ikkinchi manba qo'shilishi bilan operator qo'lida bir
+ * manbaning qopi turib, ro'yxatda boshqasining posilkasini ham ko'rardi.
+ *
+ * Endi avval manba tanlanadi.
+ *
+ * ⚠️ Ro'yxat BUYURTMALARNING O'ZIDAN chiqadi, ulanishlar sozlamasidan emas.
+ * Shu bois: posilkasi yo'q manba ro'yxatda ko'rinmaydi, va sozlamasi
+ * o'chirilgan bo'lsa ham kutayotgan posilka YASHIRILMAYDI — u haqiqatan
+ * omborda turgan bo'lishi mumkin.
+ */
+export type IncomingSource = {
+  market_id: string;
+  orders_count: number;
+  total_price_sum: number;
+  /** Eng eski kutayotgan posilka sanasi (ISO) yoki `null`. */
+  oldest_at: string | null;
+  market?: { id?: string; name?: string | null } | null;
+};
+
+export const incomingSourcesKey = "incoming-external-sources";
+
+export const useIncomingSources = () =>
+  useQuery({
+    queryKey: [incomingSourcesKey],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.ORDERS.EXTERNAL_SOURCES)
+        .then((res) => extractIncomingSources(res.data)),
+  });
+
+/** Qobiq qatlamlari marshrutga qarab farq qiladi — himoyalangan ochish. */
+export const extractIncomingSources = (raw: unknown): IncomingSource[] => {
+  const candidates = [
+    (raw as { data?: { data?: unknown } })?.data?.data,
+    (raw as { data?: unknown })?.data,
+    raw,
+  ];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate as IncomingSource[];
+  }
+  return [];
+};
+
+/** Manba nomi — nom yechilmagan bo'lsa ham foydali matn qaytadi. */
+export const sourceLabel = (source: IncomingSource): string =>
+  source.market?.name?.trim() || `Market #${source.market_id}`;
