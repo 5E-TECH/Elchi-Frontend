@@ -100,6 +100,9 @@ export const API_ENDPOINTS = {
     // External orders (market + integrations)
     EXTERNAL: "orders/external", // GET list / POST create external order
     EXTERNAL_RECEIVE: "orders/external/receive", // POST receive provider payload
+    // Kiruvchi posilkalarning manbalari — qabul kutayotgan tashqi buyurtmalar
+    // manba bo'yicha guruhlangan (soni, summasi, eng eski sanasi).
+    EXTERNAL_SOURCES: "orders/external/sources", // GET grouped incoming sources
     TELEGRAM_BOT_CREATE: "orders/telegram/bot/create", // POST create order via telegram bot
     // COD settlement legs (FIFO per order) — guide §7
     SETTLEMENT_COURIER_TO_BRANCH: "orders/settlement/courier-to-branch", // POST courier

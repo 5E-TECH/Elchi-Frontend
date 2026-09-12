@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   AlertTriangle,
@@ -22,7 +22,9 @@ import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import {
   extractIncomingOrders,
   extractMeta,
+  sourceLabel,
   useIncomingExternalOrders,
+  useIncomingSources,
   type IncomingOrder,
 } from "../../entities/incoming-orders";
 import { useOrders } from "../../entities/orders";
@@ -60,11 +62,17 @@ type Message = { tone: "success" | "error" | "warn"; text: string };
 /**
  * HAMKORDAN KELGAN BUYURTMALARNI SKANERLAB QABUL QILISH (HQ).
  *
- * Nima uchun kerak: hamkor (BeePost) Partner API orqali posilka yaratganda
+ * Nima uchun kerak: tashqi tizim Partner API orqali posilka yaratganda
  * buyurtma bizda `new` holatida paydo bo'ladi, lekin JISMONAN hali yetib
  * kelmagan. Operator posilkalarni qo'lida ushlab QR'ini skanerlaydi — shunda
  * tizimdagi yozuv bilan haqiqiy posilka mos kelishi TASDIQLANADI va faqat
  * skanerlangan buyurtmalar qabul qilinadi.
+ *
+ * ⚠️ EKRAN BITTA MANBAGA BOG'LANGAN (`:marketId`). Ilgari u BARCHA tashqi
+ * buyurtmani aralash ko'rsatardi: operator qo'lida bir manbaning qopi turib,
+ * ro'yxatda boshqasining posilkasini ham ko'rardi va "topilmadi" xabari
+ * nimani bildirishi tushunarsiz bo'lardi. Manba `/new-orders/incoming`
+ * sahifasida tanlanadi.
  *
  * DIZAYN QARORI — skan har safar serverga so'rov YUBORMAYDI. Ro'yxat bir marta
  * yuklanadi va skanerlangan token ro'yxatdagi `qr_code_token` bilan solishtiriladi.
@@ -74,6 +82,7 @@ type Message = { tone: "success" | "error" | "warn"; text: string };
 const IncomingOrdersPage = () => {
   const { t } = useTranslation("common");
   const navigate = useNavigate();
+  const { marketId } = useParams<{ marketId: string }>();
   const role = useSelector((state: RootState) => state.role.role);
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
@@ -82,7 +91,22 @@ const IncomingOrdersPage = () => {
   const [scannedIds, setScannedIds] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<Message | null>(null);
 
-  const query = useIncomingExternalOrders({ status: "new", limit: 200 });
+  /**
+   * ⚠️ `market_id` — manba filtri. Hamkor posilka yaratganda `elchi_market_id`
+   * MAJBURIY, ya'ni Elchi modelida kiruvchi buyurtma aynan shu marketning
+   * buyurtmasi bo'ladi. Buyurtma yozuvida "qaysi tashqi tizimdan keldi"
+   * degan alohida maydon yo'q, shu bois guruhlash kaliti ham shu.
+   */
+  const query = useIncomingExternalOrders({
+    status: "new",
+    market_id: marketId,
+    limit: 200,
+  });
+
+  // Sarlavhada manba nomi ko'rinishi kerak — operator qaysi qopni
+  // skanerlayotganini ekrandan tasdiqlab olsin.
+  const sources = useIncomingSources();
+  const source = (sources.data ?? []).find((s) => s.market_id === marketId);
   const { createReceiveOrder } = useOrders();
 
   const orders = useMemo(
@@ -189,9 +213,9 @@ const IncomingOrdersPage = () => {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate("/new-orders/integrations")}
+              onClick={() => navigate("/new-orders/incoming")}
               className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 dark:text-white"
-              title={t("integrationsTitle")}
+              title="Manbalar ro'yxatiga qaytish"
             >
               <ArrowLeft size={18} />
             </button>
@@ -200,7 +224,7 @@ const IncomingOrdersPage = () => {
             </div>
             <div>
               <h1 className="m-0 text-lg font-extrabold text-maindark dark:text-white">
-                {t("incomingTitle")}
+                {source ? sourceLabel(source) : t("incomingTitle")}
               </h1>
               <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 {t("incomingSubtitle")}
