@@ -1,50 +1,64 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Plus, RefreshCw, Search } from 'lucide-react';
 import {
-  CATEGORY_LABEL,
-  ROLE_META,
+  Activity,
+  CheckCircle,
+  Cable,
+  Link2,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings,
+  Store,
+  Unlink,
+  XCircle,
+} from 'lucide-react';
+import { CATEGORY_LABEL, ROLE_META } from '../../entities/integrations';
+import {
   connectionHealth,
   fmtMetric,
   metricsByUid,
   useIntegrationMetrics,
-  type IntegrationRole,
-} from '../../entities/integrations';
-import { ROLE_ORDER } from './connections';
-import { CARD, HEALTH_DOT, MUTED } from './ui';
-import { isConfigured, useConnections } from './useConnections';
+  type ConnectionHealth,
+  type ConnectionMetrics,
+} from '../../entities/integrations/metrics';
+import { isConfigured, useConnections, type Connection } from './useConnections';
+import {
+  CARD_FOOTER,
+  CTA_BTN,
+  HEADER_ICON,
+  PAGE_SUBTITLE,
+  PAGE_TITLE,
+  SEARCH_INPUT,
+  cardHeader,
+  cardShell,
+  softBtn,
+} from './ui';
 
 /**
- * MANZARA — integratsiyalar bo'limining kirish nuqtasi.
+ * INTEGRATSIYALAR — kartalar to'ri.
  *
- * NEGA BU EKRAN. Ilgari bo'lim to'g'ridan-to'g'ri bitta ulanish paneliga
- * olib borardi va "hammasi qalay?" degan savolga javob beradigan joy YO'Q
- * edi. Operator har bir ulanishni navbatma-navbat ochib tekshirishi kerak
- * edi — 6 ulanishda bu 6 marta bosish, muammo esa faqat bittasida.
+ * Bu yuza PCS (BeePost) `pages/integrations/index.tsx` sahifasidan
+ * KO'CHIRILDI: sahifa sarlavhasi (gradient ikonka + qidiruv + gradient
+ * tugma), kartalar to'ri (holat gradienti bilan sarlavha, ikonka+yozuv
+ * qatorlari, rangli yumshoq amal tugmalari) va bo'sh holat — hammasi
+ * o'sha yerdagi shakl.
  *
- * Endi: yuqorida jami raqamlar, pastda jadval — muammoli ulanish birinchi
- * qarashda ko'rinadi.
+ * NEGA. Avval bu yer jadval edi va undan oldin chiplar ro'yxati. Ikki
+ * variant ham foydalanuvchiga yoqmadi: "UI tomonlama Beepostniki yaxshiroq".
+ * Shu bois shakl o'ylab topilmaydi — tasdiqlangan joydan olinadi.
  *
- * ⚠️ `null` VA 0 ARALASHTIRILMAYDI. Backend o'lchanmagan qiymatni `null`
- * qaytaradi va bu ekran uni "—" deb ko'rsatadi. `0` deb yozish "bir zumda
- * javob berdi" yoki "hammasi yiqildi" degan yolg'on xabar bo'lardi.
+ * ⚠️ BITTA ATAYLAB QILINGAN FARQ. PCS kartasida ikki holat bor
+ * (faol/nofaol). Bizda uchta, chunki `connectionHealth` "sozlama to'g'ri,
+ * lekin hodisalar yetmayapti" holatini ham ajratadi — metrika aynan shu
+ * holat uchun qo'shilgan edi. Uni yashil ko'rsatish muammoni yashirardi.
  */
 
-/*
-  Sinf satrlari `ui.ts` dan keladi — palitra YAGONA manbada. Ilgari ular bu
-  yerda lokal e'lon qilingan edi va Konsol bilan asta farq qila boshlagandi.
-*/
-
-const ago = (iso: string | null) => {
-  if (!iso) return '—';
-  const diff = Date.now() - new Date(iso).getTime();
-  if (diff < 0) return 'hozir';
-  const min = Math.floor(diff / 60_000);
-  if (min < 1) return 'hozir';
-  if (min < 60) return `${min} daq`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} soat`;
-  return `${Math.floor(hr / 24)} kun`;
+const HEALTH_TEXT: Record<ConnectionHealth, string> = {
+  ok: 'Ishlayapti',
+  attention: "E'tibor kerak",
+  off: "O'chirilgan",
 };
 
 const OverviewPage = () => {
@@ -55,293 +69,262 @@ const OverviewPage = () => {
     () => metricsByUid(metricsQuery.data),
     [metricsQuery.data],
   );
-
-  const [role, setRole] = useState<IntegrationRole | ''>('');
-  const [q, setQ] = useState('');
+  const [query, setQuery] = useState('');
 
   const rows = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return connections.filter((c) => {
-      if (role && c.role !== role) return false;
-      if (!needle) return true;
-      return (
-        c.name.toLowerCase().includes(needle) ||
-        c.subtitle.toLowerCase().includes(needle)
-      );
-    });
-  }, [connections, role, q]);
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? connections.filter(
+          (c) =>
+            c.name.toLowerCase().includes(q) ||
+            c.subtitle.toLowerCase().includes(q),
+        )
+      : connections;
+
+    /**
+     * E'tibor kerak bo'lganlar YUQORIDA. Ro'yxat uzun bo'lsa, muammoli
+     * ulanish oxirida qolib e'tibordan chetda qolardi.
+     */
+    const weight: Record<ConnectionHealth, number> = {
+      attention: 0,
+      off: 1,
+      ok: 2,
+    };
+    return [...list].sort(
+      (a, b) => weight[healthOf(a, metrics)] - weight[healthOf(b, metrics)],
+    );
+  }, [connections, query, metrics]);
 
   const totals = metricsQuery.data?.totals;
-  const activeCount = connections.filter((c) => c.is_active).length;
-
-  /** Muammoli ulanishlar — yuqoridagi ogohlantirish uchun. */
-  const troubled = connections.filter((c) => {
-    const h = connectionHealth({
-      isActive: c.is_active,
-      configured: isConfigured(c),
-      metrics: metrics.get(c.uid),
-    });
-    return h === 'attention';
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[240px] items-center justify-center">
-        <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" size={26} />
-      </div>
-    );
-  }
+  const failedCount = totals?.failed ?? 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div>
+      {/* ═══════════ SARLAVHA ═══════════ */}
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3">
+          <div className={HEADER_ICON}>
+            <Settings className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className={`m-0 ${PAGE_TITLE}`}>Integratsiyalar</h1>
+            <p className={`m-0 ${PAGE_SUBTITLE}`}>
+              Tashqi tizimlar bilan ulanishlarni boshqarish
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Qidirish..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className={SEARCH_INPUT}
+            />
+          </div>
+
+          {/*
+            Hodisalar holati — PCS'dagi "Sync Monitor" naqshi: yetmagan
+            hodisa bo'lsa sariq, bo'lmasa yashil. Raqam tugmaning ichida,
+            chunki "nechta" degan savol "bormi" dan keyin darhol keladi.
+          */}
+          <button
+            type="button"
+            onClick={() => void metricsQuery.refetch()}
+            disabled={metricsQuery.isFetching}
+            title="Oxirgi 24 soatdagi hodisalar"
+            className={`${softBtn(failedCount > 0 ? 'amber' : 'green')} px-4 py-2.5`}
+          >
+            {metricsQuery.isFetching ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Activity className="h-5 w-5" />
+            )}
+            <span className="hidden sm:inline">
+              {failedCount > 0
+                ? `${failedCount} hodisa yetmadi`
+                : 'Hodisalar joyida'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/integrations/new')}
+            className={CTA_BTN}
+          >
+            <Plus className="h-5 w-5" />
+            Yangi ulanish
+          </button>
+        </div>
+      </div>
+
+      {/* Qismiy xato — ro'yxat to'liq emasligini AYTISH kerak. */}
       {partialError && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-900/20 dark:text-amber-300">
           Ro'yxatning bir qismini olib bo'lmadi — hamma ulanish ko'rinmayotgan
           bo'lishi mumkin.
         </div>
       )}
 
-      {/* ═══════ METRIKA ═══════ */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Metric label="Faol ulanish" value={`${activeCount} / ${connections.length}`} />
-        <Metric
-          label={`Hodisa · ${metricsQuery.data?.window_hours ?? 24} soat`}
-          value={fmtMetric(totals?.events)}
-        />
-        <Metric label="Yetmagan" value={fmtMetric(totals?.failed)} tone={totals?.failed ? 'bad' : undefined} />
-        <Metric label="Navbatda" value={fmtMetric(totals?.queued)} tone={totals?.queued ? 'warn' : undefined} />
-      </div>
-
-      {/* Muammoni NOMLAB aytadi — "3 xato bor" degan raqam o'zi yetarli emas,
-          operator qaysi ulanishni ochishini bilishi kerak. */}
-      {troubled.length > 0 && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
-          ⚠ E'tibor kerak:{' '}
-          {troubled.map((c) => c.name).join(' · ')}
+      {/* ═══════════ RO'YXAT ═══════════ */}
+      {isLoading ? (
+        <div className="flex min-h-[240px] items-center justify-center">
+          <Loader2 className="animate-spin text-blue-500" size={28} />
         </div>
-      )}
-
-      {/* ═══════ FILTR ═══════ */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className={`flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 ${CARD} min-w-[180px] flex-1`}>
-          <Search size={14} className={MUTED} />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Ulanish qidirish…"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-gray-500 dark:text-gray-400"
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-1.5">
-          <RoleChip on={role === ''} onClick={() => setRole('')}>
-            Hammasi
-          </RoleChip>
-          {ROLE_ORDER.map((r) => (
-            <RoleChip key={r} on={role === r} onClick={() => setRole(r)} title={ROLE_META[r].hint}>
-              {ROLE_META[r].label}
-            </RoleChip>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            refetch();
-            void metricsQuery.refetch();
-          }}
-          disabled={metricsQuery.isFetching}
-          className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 text-xs font-bold text-gray-700 disabled:opacity-50 dark:text-gray-200"
-        >
-          {metricsQuery.isFetching ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <RefreshCw size={14} />
-          )}
-          Yangilash
-        </button>
-
-        <button
-          type="button"
-          onClick={() => navigate('/integrations/new')}
-          className="flex h-9 items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 text-xs font-bold text-white"
-        >
-          <Plus size={14} />
-          Yangi ulanish
-        </button>
-      </div>
-
-      {/* ═══════ JADVAL ═══════ */}
-      {connections.length === 0 ? (
-        <EmptyState onAdd={() => navigate('/integrations/new')} />
       ) : rows.length === 0 ? (
-        <div className={`${CARD} p-8 text-center text-sm ${MUTED}`}>
-          Qidiruvga mos ulanish topilmadi.
+        <div className="flex flex-col items-center justify-center py-12">
+          <Unlink className="mb-4 h-16 w-16 text-gray-300 dark:text-gray-600" />
+          <h3 className="mb-2 text-lg font-semibold text-gray-700 dark:text-gray-300">
+            {query ? 'Ulanish topilmadi' : "Ulanishlar yo'q"}
+          </h3>
+          <p className="max-w-md text-center text-gray-500 dark:text-gray-400">
+            {query
+              ? `"${query}" bo'yicha hech narsa topilmadi`
+              : "Hozircha ulanish yo'q. Yangi qo'shish uchun tugmani bosing."}
+          </p>
         </div>
       ) : (
-        <div className={`${CARD} overflow-x-auto`}>
-          <table className="w-full min-w-[680px] border-collapse text-sm">
-            <thead>
-              <tr>
-                {['Ulanish', 'Rol', 'Oxirgi hodisa', 'Hodisa', 'Yetmagan', 'Javob', '']
-                  .map((h, i) => (
-                    <th
-                      key={h + i}
-                      className={`border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] ${MUTED}`}
-                    >
-                      {h}
-                    </th>
-                  ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((c) => {
-                const mt = metrics.get(c.uid);
-                const health = connectionHealth({
-                  isActive: c.is_active,
-                  configured: isConfigured(c),
-                  metrics: mt,
-                });
-                return (
-                  <tr key={c.uid}>
-                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5">
-                      <span className="flex items-center gap-2">
-                        <span className={`h-2 w-2 shrink-0 rounded-full ${HEALTH_DOT[health]}`} />
-                        <span className="min-w-0">
-                          <span className="block truncate font-bold text-gray-800 dark:text-white">
-                            {c.name}
-                          </span>
-                          <span className={`block truncate text-[11px] ${MUTED}`}>
-                            {CATEGORY_LABEL[c.category]} · {c.subtitle}
-                          </span>
-                        </span>
-                      </span>
-                    </td>
-                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5">
-                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-900/25 dark:text-indigo-300">
-                        {ROLE_META[c.role].label}
-                      </span>
-                    </td>
-                    <td className={`border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs tabular-nums ${MUTED}`}>
-                      {ago(mt?.last_event_at ?? null)}
-                    </td>
-                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs tabular-nums">
-                      {fmtMetric(mt?.events)}
-                    </td>
-                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs tabular-nums">
-                      {mt?.failed ? (
-                        <span className="font-bold text-red-600 dark:text-red-300">
-                          {mt.failed}
-                        </span>
-                      ) : (
-                        <span className={MUTED}>{fmtMetric(mt?.failed)}</span>
-                      )}
-                    </td>
-                    <td className={`border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs tabular-nums ${MUTED}`}>
-                      {/* Outbound ulanishda javob vaqti o'lchanmaydi — "—". */}
-                      {fmtMetric(mt?.avg_ms, ' ms')}
-                    </td>
-                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(
-                            `/integrations/connections?c=${encodeURIComponent(c.uid)}`,
-                          )
-                        }
-                        className="rounded-lg border border-gray-200 dark:border-gray-700 px-2.5 py-1 text-[11px] font-bold text-gray-800 dark:text-white"
-                      >
-                        {isConfigured(c) ? 'Ochish' : 'Davom etish'}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {rows.map((c) => (
+            <ConnectionCard
+              key={c.uid}
+              connection={c}
+              metrics={metrics.get(c.uid)}
+              onOpen={() =>
+                navigate(
+                  `/integrations/connections?c=${encodeURIComponent(c.uid)}`,
+                )
+              }
+              onRefresh={refetch}
+            />
+          ))}
         </div>
       )}
     </div>
   );
 };
 
-const Metric = ({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: 'bad' | 'warn';
-}) => (
-  <div className={`${CARD} px-4 py-3`}>
-    <div className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${MUTED}`}>
-      {label}
-    </div>
-    <div
-      className={`mt-0.5 text-2xl font-bold tabular-nums ${
-        tone === 'bad'
-          ? 'text-red-600 dark:text-red-300'
-          : tone === 'warn'
-            ? 'text-amber-600 dark:text-amber-300'
-            : 'text-gray-800 dark:text-white'
-      }`}
-    >
-      {value}
-    </div>
-  </div>
-);
+/** Holat — `connectionHealth` yagona qoidasi. */
+const healthOf = (
+  c: Connection,
+  metrics: Map<string, ConnectionMetrics>,
+): ConnectionHealth =>
+  connectionHealth({
+    isActive: c.is_active,
+    configured: isConfigured(c),
+    metrics: metrics.get(c.uid),
+  });
 
-const RoleChip = ({
-  on,
-  onClick,
-  title,
-  children,
+const ConnectionCard = ({
+  connection,
+  metrics,
+  onOpen,
+  onRefresh,
 }: {
-  on: boolean;
-  onClick: () => void;
-  title?: string;
-  children: React.ReactNode;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    title={title}
-    className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
-      on
-        ? 'border-indigo-500 bg-indigo-600 text-white'
-        : 'border-gray-200 text-gray-700 hover:border-indigo-300 dark:border-gray-700 dark:text-gray-300'
-    }`}
-  >
-    {children}
-  </button>
-);
+  connection: Connection;
+  metrics?: ConnectionMetrics;
+  onOpen: () => void;
+  onRefresh: () => void;
+}) => {
+  const health = connectionHealth({
+    isActive: connection.is_active,
+    configured: isConfigured(connection),
+    metrics,
+  });
+  const configured = isConfigured(connection);
 
-/**
- * Bo'sh holat — O'RGATADI, shunchaki "ma'lumot yo'q" demaydi.
- *
- * Birinchi ulanishni qo'shish eng chalkash payt: operator qaysi yo'nalishni
- * tanlashini bilmaydi. Shu bois bu yerda yo'nalish farqi ham tushuntiriladi.
- */
-const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
-  <div className={`${CARD} flex flex-col items-center gap-3 p-10 text-center`}>
-    <p className="m-0 text-base font-bold text-gray-800 dark:text-white">
-      Hali ulanish yo'q
-    </p>
-    <p className={`m-0 max-w-sm text-sm ${MUTED}`}>
-      Tashqi tizim ikki xil ulanadi: <strong>bizga buyurtma beradi</strong>{' '}
-      (marketplace, CRM) yoki <strong>bizdan posilka oladi</strong>{' '}
-      (yetkazuvchi). Yo'nalishni ulash paytida tanlaysiz.
-    </p>
-    <button
-      type="button"
-      onClick={onAdd}
-      className="mt-1 flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white"
-    >
-      <Plus size={15} />
-      Birinchi ulanishni qo'shish
-    </button>
-  </div>
-);
+  return (
+    <div className={cardShell(!connection.is_active)}>
+      {/* ── Sarlavha: holat gradienti ── */}
+      <div className={cardHeader(health)}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Cable className="h-5 w-5 shrink-0 text-white" />
+            <h3 className="m-0 truncate text-lg font-bold text-white">
+              {connection.name}
+            </h3>
+          </div>
+          <span className="flex shrink-0 items-center gap-1 rounded-lg bg-white/20 px-2 py-1 text-xs font-medium text-white">
+            {health === 'ok' ? (
+              <CheckCircle className="h-3.5 w-3.5" />
+            ) : (
+              <XCircle className="h-3.5 w-3.5" />
+            )}
+            {HEALTH_TEXT[health]}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Tana ── */}
+      <div className="space-y-3 p-4">
+        <div className="flex items-center gap-2 text-sm">
+          <Store className="h-4 w-4 shrink-0 text-gray-400" />
+          <span className="truncate text-gray-600 dark:text-gray-300">
+            {ROLE_META[connection.role].label} ·{' '}
+            {CATEGORY_LABEL[connection.category]}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm">
+          <Link2 className="h-4 w-4 shrink-0 text-gray-400" />
+          <span className="truncate text-xs text-gray-500 dark:text-gray-400">
+            {connection.subtitle}
+          </span>
+        </div>
+
+        {/*
+          Raqamlar — `fmtMetric` orqali: o'lchanmagan qiymat "—", hech qachon
+          `0`. `0%` "hammasi yiqildi", `0 ms` "bir zumda javob berdi" degan
+          yolg'on xabar bo'lardi.
+        */}
+        <div className="flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            24 soatda:{' '}
+            <span className="font-semibold text-gray-700 dark:text-gray-200">
+              {metrics?.events ?? 0}
+            </span>{' '}
+            hodisa
+            {(metrics?.failed ?? 0) > 0 && (
+              <span className="ml-1 font-semibold text-red-600 dark:text-red-400">
+                · {metrics!.failed} yetmadi
+              </span>
+            )}
+          </span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            {fmtMetric(metrics?.success_rate, '%')}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Amallar ── */}
+      <div className={CARD_FOOTER}>
+        <button
+          type="button"
+          onClick={onOpen}
+          className={`${softBtn('blue')} flex-1`}
+        >
+          <Settings className="h-4 w-4" />
+          {/*
+            Sozlamasi tugallanmagan ulanishda "Ochish" emas, "Davom etish" —
+            operator nima qilish kerakligini tugmadan biladi.
+          */}
+          {configured ? 'Boshqarish' : 'Davom etish'}
+        </button>
+
+        <button
+          type="button"
+          onClick={onRefresh}
+          title="Ro'yxatni yangilash"
+          className={`${softBtn('gray')} shrink-0`}
+        >
+          <RefreshCw className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default OverviewPage;

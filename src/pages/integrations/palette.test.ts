@@ -70,15 +70,26 @@ describe("integratsiyalar palitrasi", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("⭐ yorug' rejimda matn `gray-400` dan ochroq bo'lmaydi", () => {
+  it("⭐ yorug' rejimda MATN `gray-400` dan ochroq bo'lmaydi", () => {
     /**
      * `gray-300` yoki ochrog'i oq fonda o'qilmaydi (< 2:1). `gray-400`
      * chegarada va faqat 11px chip tavsifida ruxsat etilgan (`FAINT`).
+     *
+     * ⚠️ ISTISNO — BEZAK IKONKASI. Bo'sh holatdagi katta glif (`h-16 w-16`)
+     * PCS'da `gray-300` bilan chiziladi va u MATN EMAS: o'qilmaydi, faqat
+     * joyni belgilaydi. Istisno TOR: sinf satrida aniq ikonka o'lchami
+     * bo'lishi shart. Shunchaki `gray-300` ga ruxsat bersak, qoida ma'nosini
+     * yo'qotardi — aynan shu qoida foydalanuvchi shikoyatidan tug'ilgan.
      */
+    const ICON_SIZE = /\b[hw]-(8|10|12|16)\b/;
     const offenders: string[] = [];
+
     for (const [file, src] of entries) {
-      for (const m of src.matchAll(/(?<!dark:)\btext-gray-(100|200|300)\b/g)) {
-        offenders.push(`${file}: ${m[0]}`);
+      for (const m of src.matchAll(/["'`]([^"'`\n]{0,300})["'`]/g)) {
+        const cls = m[1];
+        if (!/(?<!dark:)\btext-gray-(100|200|300)\b/.test(cls)) continue;
+        if (ICON_SIZE.test(cls)) continue;
+        offenders.push(`${file}: ${cls.slice(0, 80)}`);
       }
     }
     expect(offenders).toEqual([]);
