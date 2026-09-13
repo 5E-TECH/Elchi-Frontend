@@ -11,6 +11,7 @@ import {
   type IntegrationRole,
 } from '../../entities/integrations';
 import { ROLE_ORDER } from './connections';
+import { CARD, HEALTH_DOT, MUTED } from './ui';
 import { isConfigured, useConnections } from './useConnections';
 
 /**
@@ -29,9 +30,10 @@ import { isConfigured, useConnections } from './useConnections';
  * javob berdi" yoki "hammasi yiqildi" degan yolg'on xabar bo'lardi.
  */
 
-const CARD =
-  'rounded-2xl border border-[color:var(--color-border-soft)] bg-primary dark:bg-primarydark';
-const MUTED = 'text-[color:var(--color-text-muted)]';
+/*
+  Sinf satrlari `ui.ts` dan keladi — palitra YAGONA manbada. Ilgari ular bu
+  yerda lokal e'lon qilingan edi va Konsol bilan asta farq qila boshlagandi.
+*/
 
 const ago = (iso: string | null) => {
   if (!iso) return '—';
@@ -43,12 +45,6 @@ const ago = (iso: string | null) => {
   const hr = Math.floor(min / 60);
   if (hr < 24) return `${hr} soat`;
   return `${Math.floor(hr / 24)} kun`;
-};
-
-const HEALTH_DOT: Record<string, string> = {
-  ok: 'bg-emerald-500',
-  attention: 'bg-amber-500',
-  off: 'bg-transparent border border-[color:var(--color-text-muted)]',
 };
 
 const OverviewPage = () => {
@@ -91,7 +87,7 @@ const OverviewPage = () => {
   if (isLoading) {
     return (
       <div className="flex min-h-[240px] items-center justify-center">
-        <Loader2 className="animate-spin text-main" size={26} />
+        <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" size={26} />
       </div>
     );
   }
@@ -99,7 +95,7 @@ const OverviewPage = () => {
   return (
     <div className="flex flex-col gap-4">
       {partialError && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
           Ro'yxatning bir qismini olib bo'lmadi — hamma ulanish ko'rinmayotgan
           bo'lishi mumkin.
         </div>
@@ -119,7 +115,7 @@ const OverviewPage = () => {
       {/* Muammoni NOMLAB aytadi — "3 xato bor" degan raqam o'zi yetarli emas,
           operator qaysi ulanishni ochishini bilishi kerak. */}
       {troubled.length > 0 && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
           ⚠ E'tibor kerak:{' '}
           {troubled.map((c) => c.name).join(' · ')}
         </div>
@@ -127,13 +123,13 @@ const OverviewPage = () => {
 
       {/* ═══════ FILTR ═══════ */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className={`flex items-center gap-2 rounded-xl border border-[color:var(--color-border-soft)] px-3 py-2 ${CARD} min-w-[180px] flex-1`}>
+        <div className={`flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 ${CARD} min-w-[180px] flex-1`}>
           <Search size={14} className={MUTED} />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ulanish qidirish…"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-[color:var(--color-text-muted)]"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-gray-500 dark:text-gray-400"
           />
         </div>
 
@@ -155,7 +151,7 @@ const OverviewPage = () => {
             void metricsQuery.refetch();
           }}
           disabled={metricsQuery.isFetching}
-          className="flex h-9 items-center gap-1.5 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark disabled:opacity-50 dark:text-white"
+          className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 text-xs font-bold text-gray-700 disabled:opacity-50 dark:text-gray-200"
         >
           {metricsQuery.isFetching ? (
             <Loader2 size={14} className="animate-spin" />
@@ -168,7 +164,7 @@ const OverviewPage = () => {
         <button
           type="button"
           onClick={() => navigate('/integrations/new')}
-          className="flex h-9 items-center gap-1.5 rounded-xl bg-main px-3.5 text-xs font-bold text-white"
+          className="flex h-9 items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 text-xs font-bold text-white"
         >
           <Plus size={14} />
           Yangi ulanish
@@ -191,7 +187,7 @@ const OverviewPage = () => {
                   .map((h, i) => (
                     <th
                       key={h + i}
-                      className={`border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] ${MUTED}`}
+                      className={`border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] ${MUTED}`}
                     >
                       {h}
                     </th>
@@ -208,11 +204,11 @@ const OverviewPage = () => {
                 });
                 return (
                   <tr key={c.uid}>
-                    <td className="border-b border-[color:var(--color-border-soft)] px-3 py-2.5">
+                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5">
                       <span className="flex items-center gap-2">
                         <span className={`h-2 w-2 shrink-0 rounded-full ${HEALTH_DOT[health]}`} />
                         <span className="min-w-0">
-                          <span className="block truncate font-bold text-maindark dark:text-white">
+                          <span className="block truncate font-bold text-gray-800 dark:text-white">
                             {c.name}
                           </span>
                           <span className={`block truncate text-[11px] ${MUTED}`}>
@@ -221,18 +217,18 @@ const OverviewPage = () => {
                         </span>
                       </span>
                     </td>
-                    <td className="border-b border-[color:var(--color-border-soft)] px-3 py-2.5">
-                      <span className="rounded-full bg-main/12 px-2 py-0.5 text-[10px] font-bold text-main">
+                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5">
+                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-900/25 dark:text-indigo-300">
                         {ROLE_META[c.role].label}
                       </span>
                     </td>
-                    <td className={`border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-xs tabular-nums ${MUTED}`}>
+                    <td className={`border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs tabular-nums ${MUTED}`}>
                       {ago(mt?.last_event_at ?? null)}
                     </td>
-                    <td className="border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-xs tabular-nums">
+                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs tabular-nums">
                       {fmtMetric(mt?.events)}
                     </td>
-                    <td className="border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-xs tabular-nums">
+                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs tabular-nums">
                       {mt?.failed ? (
                         <span className="font-bold text-red-600 dark:text-red-300">
                           {mt.failed}
@@ -241,11 +237,11 @@ const OverviewPage = () => {
                         <span className={MUTED}>{fmtMetric(mt?.failed)}</span>
                       )}
                     </td>
-                    <td className={`border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-xs tabular-nums ${MUTED}`}>
+                    <td className={`border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs tabular-nums ${MUTED}`}>
                       {/* Outbound ulanishda javob vaqti o'lchanmaydi — "—". */}
                       {fmtMetric(mt?.avg_ms, ' ms')}
                     </td>
-                    <td className="border-b border-[color:var(--color-border-soft)] px-3 py-2.5 text-right">
+                    <td className="border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 text-right">
                       <button
                         type="button"
                         onClick={() =>
@@ -253,7 +249,7 @@ const OverviewPage = () => {
                             `/integrations/connections?c=${encodeURIComponent(c.uid)}`,
                           )
                         }
-                        className="rounded-lg border border-[color:var(--color-border-soft)] px-2.5 py-1 text-[11px] font-bold text-maindark dark:text-white"
+                        className="rounded-lg border border-gray-200 dark:border-gray-700 px-2.5 py-1 text-[11px] font-bold text-gray-800 dark:text-white"
                       >
                         {isConfigured(c) ? 'Ochish' : 'Davom etish'}
                       </button>
@@ -288,7 +284,7 @@ const Metric = ({
           ? 'text-red-600 dark:text-red-300'
           : tone === 'warn'
             ? 'text-amber-600 dark:text-amber-300'
-            : 'text-maindark dark:text-white'
+            : 'text-gray-800 dark:text-white'
       }`}
     >
       {value}
@@ -313,8 +309,8 @@ const RoleChip = ({
     title={title}
     className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
       on
-        ? 'border-main bg-main text-white'
-        : 'border-[color:var(--color-border-soft)] text-maindark/70 hover:border-main/40 dark:text-primary/70'
+        ? 'border-indigo-500 bg-indigo-600 text-white'
+        : 'border-gray-200 text-gray-700 hover:border-indigo-300 dark:border-gray-700 dark:text-gray-300'
     }`}
   >
     {children}
@@ -329,7 +325,7 @@ const RoleChip = ({
  */
 const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
   <div className={`${CARD} flex flex-col items-center gap-3 p-10 text-center`}>
-    <p className="m-0 text-base font-bold text-maindark dark:text-white">
+    <p className="m-0 text-base font-bold text-gray-800 dark:text-white">
       Hali ulanish yo'q
     </p>
     <p className={`m-0 max-w-sm text-sm ${MUTED}`}>
@@ -340,7 +336,7 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
     <button
       type="button"
       onClick={onAdd}
-      className="mt-1 flex items-center gap-1.5 rounded-xl bg-main px-4 py-2 text-sm font-bold text-white"
+      className="mt-1 flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white"
     >
       <Plus size={15} />
       Birinchi ulanishni qo'shish

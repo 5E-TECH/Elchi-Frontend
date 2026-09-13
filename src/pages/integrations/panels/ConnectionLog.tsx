@@ -68,7 +68,7 @@ const ConnectionLog = ({ connection }: { connection: Connection }) => {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
+          className="h-9 rounded-xl border border-gray-200 dark:border-gray-700 bg-white px-3 text-xs font-semibold text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
         >
           <option value="all">Barcha holat</option>
           <option value="pending">Navbatda</option>
@@ -82,7 +82,7 @@ const ConnectionLog = ({ connection }: { connection: Connection }) => {
           type="button"
           onClick={() => void webhooks.refetch()}
           disabled={webhooks.isFetching}
-          className="flex h-9 items-center gap-1.5 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark disabled:opacity-50 dark:text-white"
+          className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 text-xs font-bold text-gray-700 disabled:opacity-50 dark:text-gray-200"
         >
           {webhooks.isFetching ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -95,14 +95,14 @@ const ConnectionLog = ({ connection }: { connection: Connection }) => {
 
       {webhooks.isLoading ? (
         <div className="flex min-h-[120px] items-center justify-center">
-          <Loader2 className="animate-spin text-main" size={22} />
+          <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" size={22} />
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-6 text-center text-sm text-[color:var(--color-text-muted)] dark:bg-primarydark">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-6 text-center text-sm text-gray-500 dark:text-gray-400 dark:bg-gray-800/50">
           Hodisa yo'q
         </div>
       ) : (
-        <div className="divide-y divide-[color:var(--color-border-soft)] overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary dark:bg-primarydark">
+        <div className="divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
           {rows.map((row) => (
             <div
               key={row.id}
@@ -111,17 +111,17 @@ const ConnectionLog = ({ connection }: { connection: Connection }) => {
               <span
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
                   STATUS_TONE[row.status] ??
-                  'bg-white/10 text-[color:var(--color-text-muted)]'
+                  'bg-white/10 text-gray-500 dark:text-gray-400'
                 }`}
               >
                 {STATUS_LABEL[row.status] ?? row.status}
               </span>
 
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-bold text-maindark dark:text-white">
+                <span className="block truncate text-xs font-bold text-gray-800 dark:text-white">
                   {row.new_status ?? row.event_type ?? '—'}
                 </span>
-                <span className="block truncate text-[11px] text-[color:var(--color-text-muted)]">
+                <span className="block truncate text-[11px] text-gray-500 dark:text-gray-400">
                   {row.external_order_id ?? row.order_id} · {when(row.created_at)}
                   {row.attempts ? ` · ${row.attempts} urinish` : ''}
                 </span>
@@ -140,7 +140,7 @@ const ConnectionLog = ({ connection }: { connection: Connection }) => {
                   onClick={() => void retryWebhook.mutateAsync(String(row.id))}
                   disabled={retryWebhook.isPending}
                   title="Qayta navbatga qo'yish va darhol urinib ko'rish"
-                  className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-main px-2.5 text-[11px] font-bold text-main disabled:opacity-40"
+                  className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-indigo-500 px-2.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 disabled:opacity-40"
                 >
                   <RotateCw className="h-3 w-3" />
                   Qayta
@@ -185,7 +185,7 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
+          className="h-9 rounded-xl border border-gray-200 dark:border-gray-700 bg-white px-3 text-xs font-semibold text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
         >
           <option value="all">Barcha holat</option>
           <option value="success">Muvaffaqiyatli</option>
@@ -195,7 +195,7 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
           type="button"
           onClick={() => void history.refetch()}
           disabled={history.isFetching}
-          className="flex h-9 items-center gap-1.5 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark disabled:opacity-50 dark:text-white"
+          className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 text-xs font-bold text-gray-700 disabled:opacity-50 dark:text-gray-200"
         >
           {history.isFetching ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -217,12 +217,12 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
           ].map((cell) => (
             <div
               key={cell.label}
-              className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary px-3 py-2 dark:bg-primarydark"
+              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white px-3 py-2 dark:bg-gray-800/50"
             >
-              <p className="m-0 text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+              <p className="m-0 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
                 {cell.label}
               </p>
-              <p className="m-0 mt-0.5 text-base font-extrabold tabular-nums text-maindark dark:text-white">
+              <p className="m-0 mt-0.5 text-base font-extrabold tabular-nums text-gray-800 dark:text-white">
                 {cell.value}
               </p>
             </div>
@@ -232,14 +232,14 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
 
       {history.isLoading ? (
         <div className="flex min-h-[120px] items-center justify-center">
-          <Loader2 className="animate-spin text-main" size={22} />
+          <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" size={22} />
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-6 text-center text-sm text-[color:var(--color-text-muted)] dark:bg-primarydark">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-6 text-center text-sm text-gray-500 dark:text-gray-400 dark:bg-gray-800/50">
           Sinxron hodisasi yo'q
         </div>
       ) : (
-        <div className="divide-y divide-[color:var(--color-border-soft)] overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary dark:bg-primarydark">
+        <div className="divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
           {rows.map((row) => (
             <div
               key={String(row.id)}
@@ -251,7 +251,7 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
                     ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
                     : row.status === 'failed'
                       ? 'bg-red-500/12 text-red-700 dark:text-red-300'
-                      : 'bg-white/10 text-[color:var(--color-text-muted)]'
+                      : 'bg-white/10 text-gray-500 dark:text-gray-400'
                 }`}
               >
                 {row.status === 'success'
@@ -261,10 +261,10 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
                     : 'noma’lum'}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-bold text-maindark dark:text-white">
+                <span className="block truncate text-xs font-bold text-gray-800 dark:text-white">
                   {row.synced_orders} buyurtma tortildi
                 </span>
-                <span className="block truncate text-[11px] text-[color:var(--color-text-muted)]">
+                <span className="block truncate text-[11px] text-gray-500 dark:text-gray-400">
                   {syncWhen(row.sync_date)}
                 </span>
               </span>

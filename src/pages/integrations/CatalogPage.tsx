@@ -56,16 +56,16 @@ const CatalogPage = () => {
         <button
           type="button"
           onClick={() => navigate('/integrations')}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-maindark dark:text-white"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white"
           title="Manzaraga qaytish"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div>
-          <h1 className="m-0 text-lg font-extrabold text-maindark dark:text-white">
+          <h1 className="m-0 text-lg font-extrabold text-gray-800 dark:text-white">
             Yangi ulanish
           </h1>
-          <p className="m-0 mt-0.5 text-xs text-[color:var(--color-text-muted)]">
+          <p className="m-0 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
             Avval yo'nalishni tanlang — kalit kimdan chiqishi shunga bog'liq.
           </p>
         </div>
@@ -74,14 +74,14 @@ const CatalogPage = () => {
       {groups.map((group) => (
         <section key={group.kind}>
           <header className="mb-2 flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-main/12 text-main">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/25 text-indigo-700 dark:text-indigo-300">
               {DIRECTION[group.kind].icon}
             </span>
             <div>
-              <p className="m-0 text-sm font-extrabold text-maindark dark:text-white">
+              <p className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
                 {DIRECTION[group.kind].label}
               </p>
-              <p className="m-0 text-[11px] text-[color:var(--color-text-muted)]">
+              <p className="m-0 text-[11px] text-gray-500 dark:text-gray-400">
                 {DIRECTION[group.kind].detail}
               </p>
             </div>
@@ -112,38 +112,38 @@ const TypeCard = ({
   <button
     type="button"
     onClick={onPick}
-    className="flex h-full flex-col rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 text-left transition hover:border-main/50 hover:shadow-sm dark:bg-primarydark"
+    className="flex h-full flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 text-left transition hover:border-indigo-300 dark:border-indigo-700 hover:shadow-sm dark:bg-gray-800/50"
   >
     <div className="flex items-start justify-between gap-2">
       <div className="min-w-0">
-        <p className="m-0 text-sm font-extrabold text-maindark dark:text-white">
+        <p className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
           {type.label}
         </p>
-        <p className="m-0 mt-0.5 flex flex-wrap gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[color:var(--color-text-muted)]">
+        <p className="m-0 mt-0.5 flex flex-wrap gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
           <span>{ROLE_META[type.role].label}</span>
           <span>·</span>
           <span>{CATEGORY_LABEL[type.category]}</span>
         </p>
       </div>
-      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--color-text-muted)]" />
+      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
     </div>
 
-    <p className="m-0 mt-2 text-xs text-[color:var(--color-text-muted)]">
+    <p className="m-0 mt-2 text-xs text-gray-500 dark:text-gray-400">
       {type.desc}
     </p>
 
     {/* "Sizga nima kerak bo'ladi" — ustaga kirishdan OLDIN. */}
-    <div className="mt-3 border-t border-[color:var(--color-border-soft)] pt-2.5">
-      <p className="m-0 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+    <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-2.5">
+      <p className="m-0 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
         Sizga kerak bo'ladi
       </p>
       <ul className="m-0 list-none space-y-1 p-0">
         {type.prereqs.map((item) => (
           <li
             key={item}
-            className="flex items-start gap-1.5 text-[11px] leading-snug text-maindark/80 dark:text-primary/80"
+            className="flex items-start gap-1.5 text-[11px] leading-snug text-gray-700 dark:text-gray-200"
           >
-            <Check className="mt-0.5 h-3 w-3 shrink-0 text-main" />
+            <Check className="mt-0.5 h-3 w-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
             <span>{item}</span>
           </li>
         ))}

@@ -156,7 +156,7 @@ const ConnectionSettings = ({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
         <ConnectionFields
           fields={fields}
           values={values}
@@ -169,7 +169,7 @@ const ConnectionSettings = ({
             type="button"
             onClick={save}
             disabled={saving}
-            className="flex h-10 items-center gap-2 rounded-xl bg-main px-4 text-sm font-bold text-white disabled:opacity-50"
+            className="flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -193,7 +193,7 @@ const ConnectionSettings = ({
                 !String(values.webhook_url ?? '').trim()
               }
               title="Sinov hodisasi yuboriladi — buyurtmaga ta'sir qilmaydi"
-              className="flex h-10 items-center gap-2 rounded-xl border border-main px-4 text-sm font-bold text-main disabled:opacity-40"
+              className="flex h-10 items-center gap-2 rounded-xl border border-indigo-500 px-4 text-sm font-bold text-indigo-700 dark:text-indigo-300 disabled:opacity-40"
             >
               {testWebhook.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -220,7 +220,7 @@ const ConnectionSettings = ({
 
       {testResult && (
         <div
-          className={`rounded-2xl border px-4 py-3 text-xs ${
+          className={`rounded-xl border px-4 py-3 text-xs ${
             testResult.ok
               ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300'
               : 'border-red-500/30 bg-red-500/5 text-red-700 dark:text-red-300'

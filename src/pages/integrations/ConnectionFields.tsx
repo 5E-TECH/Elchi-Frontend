@@ -16,11 +16,11 @@ import type { ConnectionField } from './connections';
  */
 
 const LABEL_CLS =
-  'text-[11px] font-bold uppercase tracking-[0.16em] text-maindark/50 dark:text-primary/50';
+  'text-[11px] font-bold uppercase tracking-[0.16em] text-gray-800 dark:text-gray-400';
 const INPUT_CLS =
-  'w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white';
+  'w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white px-4 py-3 text-sm font-semibold text-gray-800 outline-none transition focus:border-indigo-400 dark:bg-gray-800/50 dark:text-white';
 const HINT_CLS =
-  'block text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]';
+  'block text-[11px] text-gray-500 dark:text-gray-400';
 
 export type FieldValues = Record<string, string | boolean | string[]>;
 
@@ -41,7 +41,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
         return (
           <label
             key={field.key}
-            className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-border-soft)] px-4 py-3 md:col-span-2"
+            className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 md:col-span-2"
           >
             <span>
               <span className={LABEL_CLS}>{field.label}</span>
@@ -54,7 +54,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
               checked={Boolean(raw)}
               disabled={disabled}
               onChange={(e) => onChange(field.key, e.target.checked)}
-              className="h-5 w-5 accent-[color:var(--color-main)]"
+              className="h-5 w-5 accent-indigo-600"
             />
           </label>
         );

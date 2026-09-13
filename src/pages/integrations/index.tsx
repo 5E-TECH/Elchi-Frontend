@@ -59,16 +59,16 @@ const IntegrationsPage = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[28px] dark:bg-primarydark">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 shadow-sm dark:bg-gray-800/50">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-main/10 text-main">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/25 text-indigo-600 dark:text-indigo-300">
             <Cable size={20} />
           </span>
           <div className="min-w-0">
-            <h1 className="m-0 text-lg font-extrabold text-maindark dark:text-white">
+            <h1 className="m-0 text-lg font-extrabold text-gray-800 dark:text-white">
               Integratsiyalar
             </h1>
-            <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+            <p className="m-0 mt-1 text-xs text-gray-500 dark:text-gray-400">
               Tashqi tizimlar bilan barcha ulanishlar — bir joyda
             </p>
           </div>
@@ -91,8 +91,8 @@ const IntegrationsPage = () => {
             className={({ isActive }) =>
               `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-all ${
                 isActive
-                  ? 'border-main bg-main text-white shadow-sm'
-                  : 'border-[color:var(--color-border-soft)] bg-white text-maindark/70 hover:border-main/40 hover:text-main dark:bg-white/[0.04] dark:text-primary/70'
+                  ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200'
               }`
             }
           >
@@ -104,8 +104,8 @@ const IntegrationsPage = () => {
             className={({ isActive }) =>
               `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-all ${
                 isActive
-                  ? 'border-main bg-main text-white shadow-sm'
-                  : 'border-[color:var(--color-border-soft)] bg-white text-maindark/70 hover:border-main/40 hover:text-main dark:bg-white/[0.04] dark:text-primary/70'
+                  ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200'
               }`
             }
           >
@@ -117,7 +117,7 @@ const IntegrationsPage = () => {
             ZAXIRA yuzalar — yangi yuza to'liq ishlagani tasdiqlanmaguncha
             saqlanadi. Ataylab kichraytirilgan: ular asosiy yo'l emas.
           */}
-          <span className="mx-1 h-5 w-px bg-[color:var(--color-border-soft)]" />
+          <span className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />
           {INTEGRATION_TABS.map((tab) => {
             const on = tab.key === active.key && isLegacy;
             return (
@@ -127,8 +127,8 @@ const IntegrationsPage = () => {
                 title={tab.hint}
                 className={`inline-flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-xs font-semibold transition-all ${
                   on
-                    ? 'border-main/60 bg-main/10 text-main'
-                    : 'border-[color:var(--color-border-soft)] text-maindark/50 hover:text-main dark:text-primary/50'
+                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/25 dark:text-indigo-300'
+                    : 'border-gray-200 text-gray-500 hover:text-indigo-600 dark:border-gray-700 dark:text-gray-400'
                 }`}
               >
                 {ICONS[tab.key]}
@@ -140,7 +140,7 @@ const IntegrationsPage = () => {
 
         {/* Zaxira yuzada turganda nega u yerda ekanini aytamiz. */}
         {isLegacy && (
-          <p className="m-0 mt-3 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+          <p className="m-0 mt-3 text-xs text-gray-500 dark:text-gray-400">
             {active.hint}
           </p>
         )}

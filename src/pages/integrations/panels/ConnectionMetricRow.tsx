@@ -30,7 +30,7 @@ const ConnectionMetricRow = ({
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="h-[58px] animate-pulse rounded-xl border border-[color:var(--color-border-soft)] bg-maindark/[0.04] dark:bg-white/[0.04]"
+            className="h-[58px] animate-pulse rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700/50"
           />
         ))}
       </div>
@@ -39,7 +39,7 @@ const ConnectionMetricRow = ({
 
   if (!metrics) {
     return (
-      <div className="rounded-xl border border-dashed border-[color:var(--color-border-soft)] px-4 py-3 text-xs text-[color:var(--color-text-muted)]">
+      <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
         Oxirgi 24 soatda hodisa bo'lmagan — o'lchash uchun ma'lumot yo'q.
       </div>
     );
@@ -67,9 +67,9 @@ const ConnectionMetricRow = ({
       {cells.map((cell) => (
         <div
           key={cell.label}
-          className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary px-3 py-2 dark:bg-primarydark"
+          className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white px-3 py-2 dark:bg-gray-800/50"
         >
-          <p className="m-0 truncate text-[10px] font-bold uppercase tracking-[0.12em] text-[color:var(--color-text-muted)]">
+          <p className="m-0 truncate text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
             {cell.label}
           </p>
           <p
@@ -78,7 +78,7 @@ const ConnectionMetricRow = ({
                 ? 'text-red-600 dark:text-red-300'
                 : cell.tone === 'warn'
                   ? 'text-amber-600 dark:text-amber-300'
-                  : 'text-maindark dark:text-white'
+                  : 'text-gray-800 dark:text-white'
             }`}
           >
             {cell.value}

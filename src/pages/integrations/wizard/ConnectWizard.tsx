@@ -56,7 +56,7 @@ const STATE_ICON: Record<CheckState, React.ReactNode> = {
   ok: <CheckCircle2 className="h-4 w-4 text-emerald-600" />,
   fail: <XCircle className="h-4 w-4 text-red-600" />,
   warn: <AlertTriangle className="h-4 w-4 text-amber-600" />,
-  skip: <MinusCircle className="h-4 w-4 text-[color:var(--color-text-muted)]" />,
+  skip: <MinusCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />,
 };
 
 const ConnectWizard = () => {
@@ -86,14 +86,14 @@ const ConnectWizard = () => {
 
   if (!type) {
     return (
-      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 text-center">
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-6 text-center">
         <p className="m-0 text-sm font-bold text-amber-700 dark:text-amber-300">
           Bunday ulanish turi yo'q
         </p>
         <button
           type="button"
           onClick={() => navigate('/integrations/new')}
-          className="mt-3 rounded-xl border border-main px-4 py-2 text-xs font-bold text-main"
+          className="mt-3 rounded-xl border border-indigo-500 px-4 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300"
         >
           Katalogga qaytish
         </button>
@@ -197,15 +197,15 @@ const ConnectWizard = () => {
           /* 3-qadamdan keyin ortga qaytish YO'Q: yozuv allaqachon yaratilgan,
              "Kalitlar"ga qaytish yangi yozuv yaratardi. */
           disabled={step >= 3}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-maindark disabled:opacity-30 dark:text-white"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 disabled:opacity-30 dark:text-gray-200"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="min-w-0">
-          <h1 className="m-0 truncate text-base font-extrabold text-maindark dark:text-white">
+          <h1 className="m-0 truncate text-base font-extrabold text-gray-800 dark:text-white">
             {type.label}
           </h1>
-          <p className="m-0 text-[11px] text-[color:var(--color-text-muted)]">
+          <p className="m-0 text-[11px] text-gray-500 dark:text-gray-400">
             {isPartner ? 'Ular bizga ulanadi' : 'Biz ularga ulanamiz'}
           </p>
         </div>
@@ -221,10 +221,10 @@ const ConnectWizard = () => {
               <span
                 className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
                   now
-                    ? 'bg-main text-white'
+                    ? 'bg-indigo-600 text-white'
                     : done
                       ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-maindark/5 text-[color:var(--color-text-muted)] dark:bg-white/5'
+                      : 'bg-indigo-600dark/5 text-gray-500 dark:text-gray-400 dark:bg-gray-700/60'
                 }`}
               >
                 {done ? (
@@ -235,7 +235,7 @@ const ConnectWizard = () => {
                 {n}. {label}
               </span>
               {n < STEP_LABELS.length && (
-                <ChevronRight className="h-3 w-3 text-[color:var(--color-text-muted)]" />
+                <ChevronRight className="h-3 w-3 text-gray-500 dark:text-gray-400" />
               )}
             </li>
           );
@@ -243,7 +243,7 @@ const ConnectWizard = () => {
       </ol>
 
       {error && (
-        <div className="rounded-2xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-xs font-bold text-red-700 dark:text-red-300">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-xs font-bold text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
@@ -251,8 +251,8 @@ const ConnectWizard = () => {
       {/* ═══ 1. NOMI ═══ */}
       {step === 1 && (
         <div className="space-y-3">
-          <section className="rounded-2xl border border-main/25 bg-main/[0.04] p-4">
-            <p className="m-0 mb-2 flex items-center gap-1.5 text-xs font-extrabold text-main">
+          <section className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-900/20 p-4">
+            <p className="m-0 mb-2 flex items-center gap-1.5 text-xs font-extrabold text-indigo-700 dark:text-indigo-300">
               <Info className="h-3.5 w-3.5" />
               Boshlashdan oldin quyidagilar tayyor bo'lsin
             </p>
@@ -260,9 +260,9 @@ const ConnectWizard = () => {
               {type.prereqs.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2 text-xs leading-snug text-maindark dark:text-primary"
+                  className="flex items-start gap-2 text-xs leading-snug text-gray-700 dark:text-gray-200"
                 >
-                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-main" />
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
                   <span>{item}</span>
                 </li>
               ))}
@@ -281,7 +281,7 @@ const ConnectWizard = () => {
             Davom etish
           </Primary>
           {!nameOk && (
-            <p className="m-0 text-[11px] text-[color:var(--color-text-muted)]">
+            <p className="m-0 text-[11px] text-gray-500 dark:text-gray-400">
               Nom kerak — operator ro'yxatda shu nomni ko'radi.
             </p>
           )}
@@ -301,7 +301,7 @@ const ConnectWizard = () => {
           </Panel>
 
           {/* Nima bo'lishini OLDIN aytamiz — kalit bir marta ko'rsatiladi. */}
-          <p className="m-0 rounded-xl border border-[color:var(--color-border-soft)] px-3.5 py-2.5 text-[11px] text-[color:var(--color-text-muted)]">
+          <p className="m-0 rounded-xl border border-gray-200 dark:border-gray-700 px-3.5 py-2.5 text-[11px] text-gray-500 dark:text-gray-400">
             {isPartner
               ? "Bosganingizda ulanish yaratiladi va API kalit BIR MARTA ko'rsatiladi — keyin uni qayta olish mumkin emas."
               : 'Bosganingizda ulanish yaratiladi, so‘ng aloqani sinab ko‘ramiz.'}
@@ -319,12 +319,12 @@ const ConnectWizard = () => {
         <div className="space-y-3">
           {/* Kalit — DARHOL, 4-qadamni kutmasdan. */}
           {created?.apiKey && (
-            <section className="rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/5 p-4">
+            <section className="rounded-xl border-2 border-emerald-500/40 bg-emerald-500/5 p-4">
               <p className="m-0 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
                 API kalit — HOZIR ko'chirib oling, boshqa ko'rsatilmaydi
               </p>
               <div className="mt-2 flex items-center gap-2">
-                <code className="min-w-0 flex-1 break-all rounded-lg bg-white px-2.5 py-2 text-xs font-bold text-maindark dark:bg-black/30 dark:text-white">
+                <code className="min-w-0 flex-1 break-all rounded-lg bg-white px-2.5 py-2 text-xs font-bold text-gray-800 dark:bg-gray-900/60 dark:text-white">
                   {created.apiKey}
                 </code>
                 <button
@@ -344,14 +344,14 @@ const ConnectWizard = () => {
 
           <Panel>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="m-0 text-sm font-extrabold text-maindark dark:text-white">
+              <p className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
                 Ulanishni tekshirish
               </p>
               <button
                 type="button"
                 onClick={runTest}
                 disabled={testing}
-                className="flex h-9 items-center gap-1.5 rounded-xl border border-main px-3 text-xs font-bold text-main disabled:opacity-50"
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-indigo-500 px-3 text-xs font-bold text-indigo-700 dark:text-indigo-300 disabled:opacity-50"
               >
                 {testing ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -362,15 +362,15 @@ const ConnectWizard = () => {
               </button>
             </div>
 
-            <div className="mt-3 divide-y divide-[color:var(--color-border-soft)]">
+            <div className="mt-3 divide-y divide-gray-200 dark:divide-gray-700">
               {checks.map((c) => (
                 <div key={c.label} className="flex items-start gap-2.5 py-2.5">
                   <span className="mt-0.5 shrink-0">{STATE_ICON[c.state]}</span>
                   <span className="min-w-0">
-                    <span className="block text-xs font-bold text-maindark dark:text-white">
+                    <span className="block text-xs font-bold text-gray-800 dark:text-white">
                       {c.label}
                     </span>
-                    <span className="block break-all text-[11px] text-[color:var(--color-text-muted)]">
+                    <span className="block break-all text-[11px] text-gray-500 dark:text-gray-400">
                       {c.detail}
                     </span>
                   </span>
@@ -380,7 +380,7 @@ const ConnectWizard = () => {
 
             {/* Javob tanasi MUHIM: 200 qaytarib "imzo yaroqsiz" deyish mumkin. */}
             {testResult?.response_body && (
-              <p className="m-0 mt-2 break-all rounded-lg bg-maindark/[0.03] px-3 py-2 text-[11px] text-[color:var(--color-text-muted)] dark:bg-white/[0.04]">
+              <p className="m-0 mt-2 break-all rounded-lg bg-indigo-600dark/[0.03] px-3 py-2 text-[11px] text-gray-500 dark:text-gray-400 dark:bg-gray-800/50">
                 Javob: {testResult.response_body.slice(0, 300)}
               </p>
             )}
@@ -399,7 +399,7 @@ const ConnectWizard = () => {
       {/* ═══ 4. TAYYOR ═══ */}
       {step === 4 && (
         <div className="space-y-3">
-          <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+          <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
             <p className="m-0 flex items-center gap-2 text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="h-4 w-4" />
               Ulanish yaratildi
@@ -411,10 +411,10 @@ const ConnectWizard = () => {
           </section>
 
           <Panel>
-            <p className="m-0 mb-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+            <p className="m-0 mb-2 text-xs font-extrabold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
               Keyingi qadamlar
             </p>
-            <ol className="m-0 space-y-2 pl-5 text-xs leading-snug text-maindark dark:text-primary">
+            <ol className="m-0 space-y-2 pl-5 text-xs leading-snug text-gray-700 dark:text-gray-200">
               {isPartner ? (
                 <>
                   <li>API kalitni hamkorga XAVFSIZ kanal orqali yetkazing.</li>
@@ -461,7 +461,7 @@ const ConnectWizard = () => {
             <button
               type="button"
               onClick={() => navigate('/integrations')}
-              className="h-11 rounded-xl border border-[color:var(--color-border-soft)] px-4 text-sm font-bold text-maindark dark:text-white"
+              className="h-11 rounded-xl border border-gray-200 dark:border-gray-700 px-4 text-sm font-bold text-gray-800 dark:text-white"
             >
               Manzaraga
             </button>
@@ -473,7 +473,7 @@ const ConnectWizard = () => {
 };
 
 const Panel = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
+  <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
     {children}
   </div>
 );
@@ -491,7 +491,7 @@ const Primary = ({
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className="flex h-11 items-center justify-center gap-2 rounded-xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
+    className="flex h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white disabled:opacity-50"
   >
     {children}
   </button>
