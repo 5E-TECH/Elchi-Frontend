@@ -16,6 +16,7 @@ import {
   useIncomingSources,
   type IncomingSource,
 } from "../../entities/incoming-orders";
+import { useConnections } from "../integrations/useConnections";
 import { waitingFor } from "./lib";
 
 /**
@@ -55,6 +56,28 @@ const SourcePicker = () => {
   const query = useIncomingSources();
   const sources = query.data ?? [];
   const totalParcels = sources.reduce((sum, s) => sum + s.orders_count, 0);
+
+  /**
+   * ULANGAN, LEKIN POSILKASI YO'Q MANBALAR.
+   *
+   * NEGA KERAK BO'LDI. Yuqoridagi kartalar BUYURTMALARdan chiqadi — ya'ni
+   * posilka yubormagan manba ko'rinmaydi. Foydalanuvchi buni muammo deb
+   * topdi: "nega faqat beepost turibdi?". Kartalar to'g'ri edi, lekin ekran
+   * SABABINI aytmasdi va odam "ulanish buzilganmi?" deb o'ylardi.
+   *
+   * ⚠️ FAQAT CHIQUVCHI YOZUVLAR (`integration`) sanaladi. Hamkor yozuvida
+   * (`partners`) Elchi market bog'lanishi YO'Q — u har posilkada
+   * `elchi_market_id` bilan keladi. Ya'ni hamkorni yuqoridagi karta bilan
+   * solishtirib bo'lmaydi va uni bu ro'yxatga qo'shsak, posilkasi BOR
+   * hamkor (BeePost) ikki joyda ko'rinardi.
+   */
+  const { connections } = useConnections();
+  const shownMarkets = new Set(sources.map((s) => String(s.market_id)));
+  const idleSources = connections.filter((c) => {
+    if (c.kind !== "integration" || c.role !== "source") return false;
+    const marketId = (c.raw as { market_id?: string | null }).market_id;
+    return !marketId || !shownMarkets.has(String(marketId));
+  });
 
   if (!allowed) {
     return (
@@ -141,8 +164,9 @@ const SourcePicker = () => {
           </p>
           <p className="m-0 mt-1.5 text-xs leading-relaxed text-[color:var(--color-text-muted)]">
             Tashqi tizim posilka yuborganda u shu yerda manbasi bilan
-            ko'rinadi. Manba ulanmagan bo'lsa — Integratsiyalar bo'limida
-            ulanish qo'shiladi.
+            ko'rinadi. Ulanish sozlangan bo'lsa ham, posilka kelmaguncha bu
+            yerda karta chiqmaydi — bu normal holat. Manba umuman ulanmagan
+            bo'lsa, Integratsiyalar bo'limida ulanish qo'shiladi.
           </p>
         </div>
       ) : (
@@ -156,6 +180,30 @@ const SourcePicker = () => {
               }
             />
           ))}
+        </div>
+      )}
+
+      {/* ═══ ULANGAN, LEKIN POSILKASI YO'Q ═══ */}
+      {idleSources.length > 0 && (
+        <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] p-4">
+          <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+            Ulangan manbalar — hozircha posilka yo'q
+          </p>
+          <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)]">
+            Yuqoridagi kartalar faqat qabul kutayotgan posilkasi bor manbalarni
+            ko'rsatadi. Quyidagilar ulangan, lekin hali posilka yubormagan.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {idleSources.map((c) => (
+              <span
+                key={c.uid}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border-soft)] px-3 py-1 text-xs font-semibold text-maindark dark:text-white"
+              >
+                <Package size={12} className="text-[color:var(--color-text-muted)]" />
+                {c.name}
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -210,3 +210,48 @@ describe("Katalog ma'lumoti", () => {
     }
   });
 });
+
+describe("Rol va tur formada tahrirlanadi (bug qulfi)", () => {
+  const outbound = CONNECTION_TYPES.find((t) => t.kind === "integration")!;
+
+  it("⭐ `role` maydoni FORMADA bor", () => {
+    /**
+     * Ilgari yo'q edi va buni foydalanuvchi topdi: "Donoxon nega yetkazuvchi
+     * kargo sifatida belgilangan?". Sabab — migratsiya mavjud yozuvlarga
+     * sukut `carrier` yozgan, forma esa bu maydonni so'ramagani uchun
+     * noto'g'ri tasnifni TUZATIB BO'LMASDI.
+     */
+    expect(outbound.fields.map((f) => f.key)).toContain("role");
+  });
+
+  it("⭐ `role` variantlari backend `@IsIn` ro'yxati bilan AYNAN bir xil", () => {
+    // Mos kelmasa backend 400 qaytaradi va forma "saqlab bo'lmadi" deydi.
+    const role = outbound.fields.find((f) => f.key === "role");
+    expect(role?.options?.map((o) => o.value).sort()).toEqual([
+      "carrier",
+      "mirror",
+      "payment",
+      "source",
+    ]);
+  });
+
+  it("⭐ `category` variantlari ham backend ro'yxatiga mos", () => {
+    const category = outbound.fields.find((f) => f.key === "category");
+    expect(category?.options?.map((o) => o.value).sort()).toEqual([
+      "cargo",
+      "crm",
+      "marketplace",
+      "other",
+      "payment",
+      "spreadsheet",
+    ]);
+  });
+
+  it("rol/tur `connection` guruhida — Sozlamalar tabida ko'rinadi", () => {
+    for (const key of ["role", "category"]) {
+      const f = outbound.fields.find((x) => x.key === key);
+      // Guruhi belgilanmagan = `connection` (sukut).
+      expect(f?.group ?? "connection").toBe("connection");
+    }
+  });
+});
