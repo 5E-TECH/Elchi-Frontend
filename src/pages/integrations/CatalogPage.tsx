@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Button, Card, Tag } from 'antd';
 import {
   ArrowDownLeft,
   ArrowLeft,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import { CATEGORY_LABEL, ROLE_META } from '../../entities/integrations';
 import { CONNECTION_TYPES, type ConnectionTypeMeta } from './connections';
+import { PAGE_SUBTITLE, PAGE_TITLE } from './ui';
 
 /**
  * KATALOG — "qanday tizim ulaymiz?" degan savolga javob.
@@ -53,19 +55,14 @@ const CatalogPage = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <button
-          type="button"
+        <Button
+          icon={<ArrowLeft className="h-4 w-4" />}
           onClick={() => navigate('/integrations')}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white"
-          title="Manzaraga qaytish"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+          title="Ulanishlarga qaytish"
+        />
         <div>
-          <h1 className="m-0 text-lg font-extrabold text-gray-800 dark:text-white">
-            Yangi ulanish
-          </h1>
-          <p className="m-0 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          <h1 className={`m-0 ${PAGE_TITLE}`}>Yangi ulanish</h1>
+          <p className={`m-0 ${PAGE_SUBTITLE}`}>
             Avval yo'nalishni tanlang — kalit kimdan chiqishi shunga bog'liq.
           </p>
         </div>
@@ -109,31 +106,28 @@ const TypeCard = ({
   type: ConnectionTypeMeta;
   onPick: () => void;
 }) => (
-  <button
-    type="button"
+  <Card
+    hoverable
     onClick={onPick}
-    className="flex h-full flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 text-left transition hover:border-indigo-300 dark:border-indigo-700 hover:shadow-sm dark:bg-gray-800/50"
-  >
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0">
-        <p className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
-          {type.label}
-        </p>
-        <p className="m-0 mt-0.5 flex flex-wrap gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
-          <span>{ROLE_META[type.role].label}</span>
-          <span>·</span>
-          <span>{CATEGORY_LABEL[type.category]}</span>
-        </p>
+    className="h-full"
+    title={
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate font-bold">{type.label}</span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
       </div>
-      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
+    }
+  >
+    <div className="mb-2 flex flex-wrap gap-1.5">
+      <Tag color="blue">{ROLE_META[type.role].label}</Tag>
+      <Tag>{CATEGORY_LABEL[type.category]}</Tag>
     </div>
 
-    <p className="m-0 mt-2 text-xs text-gray-500 dark:text-gray-400">
-      {type.desc}
-    </p>
+    <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{type.desc}</p>
 
-    {/* "Sizga nima kerak bo'ladi" — ustaga kirishdan OLDIN. */}
-    <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-2.5">
+    {/* "Sizga nima kerak bo'ladi" — ustaga KIRISHDAN OLDIN. Bu eng ko'p
+        uchraydigan to'xtash nuqtasi: odam ustaga kirib, "menda bu yo'q" deb
+        chiqib ketardi. */}
+    <div className="mt-3 border-t border-gray-100 pt-2.5 dark:border-gray-700">
       <p className="m-0 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
         Sizga kerak bo'ladi
       </p>
@@ -141,15 +135,15 @@ const TypeCard = ({
         {type.prereqs.map((item) => (
           <li
             key={item}
-            className="flex items-start gap-1.5 text-[11px] leading-snug text-gray-700 dark:text-gray-200"
+            className="flex items-start gap-1.5 text-[11px] leading-snug text-gray-600 dark:text-gray-300"
           >
-            <Check className="mt-0.5 h-3 w-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <Check className="mt-0.5 h-3 w-3 shrink-0 text-green-500" />
             <span>{item}</span>
           </li>
         ))}
       </ul>
     </div>
-  </button>
+  </Card>
 );
 
 export default CatalogPage;
