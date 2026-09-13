@@ -74,6 +74,14 @@ export interface ConnectionField {
    * Registr YAGONA qoladi — ikki panel bitta ro'yxatdan o'zini yasaydi.
    */
   group?: 'connection' | 'security';
+  /**
+   * Maydon FAQAT boshqa maydon ma'lum qiymatda bo'lganda ko'rinadi.
+   *
+   * ⚠️ NEGA KERAK. `auth_type` "API kalit" bo'lsa login/parol maydonlari
+   * keraksiz, lekin ilgari TO'RTTASI BIRGA ko'rinardi (audit FE-07) va
+   * operator qaysi ikkitasini to'ldirish kerakligini taxmin qilardi.
+   */
+  showWhen?: { key: string; equals: string };
 }
 
 export interface ConnectionTypeMeta {
@@ -171,87 +179,37 @@ const INBOUND_FIELDS: ConnectionField[] = [
 ];
 
 /** BIZ ULANADIGANLAR uchun (outbound) — kalit ularda. */
-const OUTBOUND_FIELDS: ConnectionField[] = [
-  NAME_FIELD,
-  {
-    key: 'slug',
-    label: 'Slug',
-    type: 'text',
-    placeholder: 'uzum',
-    hint: 'Texnik nom — kodda va loglarda ishlatiladi. O‘zgartirilmasligi yaxshi',
-  },
-  {
-    /**
-     * ⚠️ ROL FORMADA BO'LISHI SHART.
-     *
-     * Ilgari u yo'q edi va buni foydalanuvchi topdi: "Donoxon nega
-     * yetkazuvchi kargo sifatida belgilangan? U ham sayt va undan ham
-     * buyurtmalar keladi".
-     *
-     * Sabab — migratsiya: `role`/`category` ustunlari qo'shilganda MAVJUD
-     * yozuvlarga sukut sifatida `carrier`/`cargo` yozilgan (o'sha paytdagi
-     * ulanishlarning ko'pi haqiqatan tashuvchi edi). Lekin formada bu maydon
-     * bo'lmagani uchun noto'g'ri tasniflangan ulanishni TUZATIB
-     * BO'LMASDI — u abadiy "yetkazuvchi" bo'lib qolardi.
-     *
-     * ⚠️ Qiymatlar backend `@IsIn` ro'yxati bilan AYNAN bir xil bo'lishi
-     * kerak, aks holda 400 qaytadi.
-     */
-    key: 'role',
-    label: 'Roli',
-    type: 'select',
-    options: [
-      { value: 'source', label: 'Buyurtma manbasi — bizga buyurtma beradi' },
-      { value: 'carrier', label: 'Yetkazuvchi — bizdan posilka oladi' },
-      { value: 'payment', label: "To'lov tizimi" },
-      { value: 'mirror', label: "Ko'zgu — faqat eksport" },
-    ],
-    hint: 'Ulanish nima qiladi. Ro‘yxatdagi rangi va guruhi shunga bog‘liq',
-  },
-  {
-    key: 'category',
-    label: 'Turi',
-    type: 'select',
-    options: [
-      { value: 'marketplace', label: 'Marketplace / sayt' },
-      { value: 'crm', label: 'CRM' },
-      { value: 'cargo', label: 'Kargo' },
-      { value: 'payment', label: "To'lov" },
-      { value: 'spreadsheet', label: 'Jadval / hisobot' },
-      { value: 'other', label: 'Boshqa' },
-    ],
-    hint: 'Faqat tasnif uchun — xatti-harakatga ta’sir qilmaydi',
-  },
-  {
-    /**
-     * ⚠️ IMPORT UCHUN MAJBURIY (audit EI-02).
-     *
-     * `receiveExternalOrders` `integration.market_id` bo'lmasa 400 beradi
-     * (`order-lifecycle.service.ts:3537`). Bu maydon ILGARI formada YO'Q
-     * edi — ya'ni ustadan o'tgan ulanish import paytida har safar xato
-     * berardi va sabab ekranda ko'rinmasdi (xato faqat import chaqirilganda
-     * chiqadi).
-     */
-    key: 'market_id',
-    label: 'Market akkaunti',
-    type: 'market',
-    hint: 'Kelgan buyurtmalar shu market hisobiga yoziladi. Importsiz ulanishda bo‘sh qoldirish mumkin',
-  },
+/* ═══════════════════════════════════════════════════════════════════════
+   UMUMIY BO'LAKLAR — har tur o'z ro'yxatini SHULARDAN yig'adi.
+
+   ⚠️ ILGARI 6 TURDAN 5 TASI AYNI BITTA MASSIV OBYEKTINI ulashardi
+   (`fields: OUTBOUND_FIELDS`). Natijada katalogda 6 karta ko'rinib, ichida
+   hammasi bir xil forma chiqardi — foydalanuvchi shikoyatining
+   to'g'ridan-to'g'ri sababi (audit FE-01).
+
+   Endi har tur o'ziga KERAKLI bo'laklarni yig'adi. Umumiy bo'lak alohida
+   massiv: bittasi o'zgarsa hammasida o'zgaradi, lekin TO'PLAM turga xos.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** Texnik nom — barcha chiquvchi ulanishda. */
+const SLUG_FIELD: ConnectionField = {
+  key: 'slug',
+  label: 'Slug',
+  type: 'text',
+  placeholder: 'donoxon',
+  hint: 'Texnik nom — kodda, loglarda va webhook manzilida ishlatiladi. O‘zgartirilmasligi yaxshi',
+};
+
+/** Biz ularga so'rov yuboradigan manzil + kirish. */
+const OUTBOUND_AUTH: ConnectionField[] = [
   {
     key: 'base_url',
     label: 'API manzili',
     type: 'url',
-    placeholder: 'https://api.uzum.uz',
+    placeholder: 'https://api.donoxon.uz',
     hint: 'Biz so‘rovlarni shu manzilga yuboramiz',
   },
   {
-    /**
-     * ⚠️ Variantlar BACKEND bilan bir xil bo'lishi SHART. Ilgari bu yerda
-     * `bearer` / `basic` / `none` turardi — backend esa faqat `api_key` va
-     * `login` ni biladi va boshqa hamma qiymatni `api_key` ga aylantiradi
-     * (`integration-service.service.ts:3339`). Ya'ni "Yo'q" tanlansa ham
-     * kalitli rejim yozilardi va sabab hech qayerda ko'rinmasdi.
-     */
     key: 'auth_type',
     label: 'Kirish turi',
     type: 'select',
@@ -262,54 +220,198 @@ const OUTBOUND_FIELDS: ConnectionField[] = [
     hint: 'Ular bizni qanday taniydi',
   },
   {
-    /**
-     * ⚠️ Kalit `api_key` — `token` EMAS. Ilgari bu maydon `token` deb
-     * atalgan edi va backend DTO'sida bunday maydon yo'q: `whitelist: true`
-     * uni jimgina tashlab yuborardi, ya'ni kalit HECH QACHON saqlanmasdi.
-     */
     key: 'api_key',
     label: 'API kalit',
     type: 'secret',
     writeOnly: true,
-    hint: '"API kalit" rejimida. Bo‘sh qoldirilsa tegilmaydi',
+    hint: 'Bo‘sh qoldirilsa tegilmaydi',
     group: 'security',
+    showWhen: { key: 'auth_type', equals: 'api_key' },
   },
   {
     key: 'auth_url',
     label: 'Kirish manzili',
     type: 'url',
-    placeholder: 'https://api.example.uz/auth/login',
-    hint: '"Login + parol" rejimida — token shu manzildan olinadi',
+    placeholder: 'https://api.donoxon.uz/auth/login',
+    hint: 'Token shu manzildan olinadi',
+    showWhen: { key: 'auth_type', equals: 'login' },
   },
   {
     key: 'username',
     label: 'Login',
     type: 'text',
-    hint: '"Login + parol" rejimida',
+    showWhen: { key: 'auth_type', equals: 'login' },
   },
   {
     key: 'password',
     label: 'Parol',
     type: 'secret',
     writeOnly: true,
-    hint: '"Login + parol" rejimida. Bo‘sh qoldirilsa tegilmaydi',
+    hint: 'Bo‘sh qoldirilsa tegilmaydi',
+    group: 'security',
+    showWhen: { key: 'auth_type', equals: 'login' },
+  },
+];
+
+/** Buyurtma KIRADIGAN ulanish uchun: qaysi market hisobiga yozilsin. */
+const MARKET_FIELD: ConnectionField = {
+  /**
+   * ⚠️ IMPORT UCHUN MAJBURIY (audit EI-02). `receiveExternalOrders`
+   * `integration.market_id` bo'lmasa 400 beradi.
+   */
+  key: 'market_id',
+  label: 'Market akkaunti',
+  type: 'market',
+  hint: 'Kelgan buyurtmalar shu market hisobiga yoziladi',
+};
+
+/** Tashqi maydonlarni bizning maydonlarimizga bog'lash. */
+const MAPPING_FIELD: ConnectionField = {
+  key: 'field_mapping',
+  label: 'Maydon xaritasi',
+  type: 'mapping',
+  hint: 'Saytning JSON maydonlari → bizning maydonlar. Bo‘sh bo‘lsa standart nomlar ishlatiladi',
+};
+
+/**
+ * KIRUVCHI WEBHOOK — ular bizga status yuboradi (kargo, to'lov tizimi).
+ *
+ * Bu maydonlar 0-bosqichda backend DTO'siga qo'shildi; ilgari ularni
+ * saqlashning yo'li YO'Q edi (audit EI-04).
+ */
+const INBOUND_WEBHOOK: ConnectionField[] = [
+  {
+    key: 'webhook_secret',
+    label: 'Webhook sekreti',
+    type: 'secret',
+    writeOnly: true,
+    hint: 'HMAC imzo kaliti. Bo‘sh qoldirilsa tegilmaydi',
     group: 'security',
   },
   {
-    /**
-     * MAYDON XARITASI (audit EI-03).
-     *
-     * Tashqi sayt maydonlarini bizning maydonlarimizga bog'laydi. Bo'lmasa
-     * import standart taxminlarga tushadi (`id`/`full_name`/`phone`) va
-     * ko'p saytda ular mos kelmaydi.
-     *
-     * Backend qabul qiladi va saqlaydi, lekin UI ILGARI YUBORMASDI — ya'ni
-     * xaritani faqat SQL orqali to'ldirish mumkin edi.
-     */
-    key: 'field_mapping',
-    label: 'Maydon xaritasi',
+    key: 'webhook_signature_header',
+    label: 'Imzo sarlavhasi',
+    type: 'text',
+    placeholder: 'x-signature',
+    hint: 'Imzo qaysi HTTP sarlavhada keladi',
+    group: 'security',
+  },
+  {
+    key: 'webhook_signature_prefix',
+    label: 'Imzo prefiksi',
+    type: 'text',
+    placeholder: 'sha256=',
+    hint: 'Imzo qiymati oldida turadigan matn (bo‘lsa)',
+    group: 'security',
+  },
+  {
+    key: 'webhook_algorithm',
+    label: 'Algoritm',
+    type: 'select',
+    options: [
+      { value: 'sha256', label: 'SHA-256' },
+      { value: 'sha512', label: 'SHA-512' },
+    ],
+    group: 'security',
+  },
+  {
+    key: 'webhook_id_header',
+    label: 'Hodisa id sarlavhasi',
+    type: 'text',
+    placeholder: 'x-delivery-id',
+    hint: 'Takroriy yetkazishni aniqlash uchun (replay guard)',
+    group: 'security',
+  },
+];
+
+/** Kiruvchi webhook payloadida posilkani va statusni topish yo'llari. */
+const WEBHOOK_PATHS: ConnectionField[] = [
+  {
+    key: 'webhook_payload_paths.order_id',
+    label: 'Buyurtma id yo‘li',
+    type: 'text',
+    placeholder: 'data.order.id',
+    hint: 'Payload ichida bizning buyurtma id qaysi yo‘lda',
+  },
+  {
+    key: 'webhook_payload_paths.external_ref',
+    label: 'Ularning raqami yo‘li',
+    type: 'text',
+    placeholder: 'data.order.external_id',
+  },
+  {
+    key: 'webhook_payload_paths.status',
+    label: 'Status yo‘li',
+    type: 'text',
+    placeholder: 'data.order.state',
+  },
+];
+
+/** Ularning statusi → bizning statusimiz. */
+const INBOUND_STATUS_MAP: ConnectionField = {
+  key: 'inbound_status_mapping',
+  label: 'Kiruvchi status xaritasi',
+  type: 'mapping',
+  hint: 'Ularning status nomi → bizning amal (sell / cancel / return)',
+};
+
+/** Posilka jo'natish shabloni — faqat kargoda. */
+const DISPATCH_FIELDS: ConnectionField[] = [
+  {
+    key: 'dispatch_config.endpoint',
+    label: 'Jo‘natish endpointi',
+    type: 'text',
+    placeholder: '/v1/orders',
+    hint: 'Posilka yaratish uchun chaqiriladigan manzil',
+  },
+  {
+    key: 'dispatch_config.method',
+    label: 'Metod',
+    type: 'select',
+    options: [
+      { value: 'POST', label: 'POST' },
+      { value: 'PUT', label: 'PUT' },
+    ],
+  },
+  {
+    key: 'dispatch_config.body_template',
+    label: 'So‘rov tanasi shabloni',
     type: 'mapping',
-    hint: 'Saytning JSON maydonlari → bizning maydonlar. Bo‘sh bo‘lsa standart nomlar ishlatiladi',
+    hint: 'Ularning maydoni → bizning qiymat. Qiymatda {{customer_name}} kabi o‘rin egallari ishlatiladi',
+  },
+  {
+    key: 'dispatch_config.response_paths',
+    label: 'Javob yo‘llari',
+    type: 'mapping',
+    hint: 'Javobdan nima olinadi: external_ref, tracking_number',
+  },
+];
+
+/** Chiquvchi status yuborish — biz ularga xabar beramiz. */
+const OUTBOUND_STATUS_FIELDS: ConnectionField[] = [
+  {
+    key: 'status_sync_config.external_update.endpoint',
+    label: 'Status yuborish endpointi',
+    type: 'text',
+    placeholder: '/v1/orders/status',
+    hint: 'Status o‘zgarganda shu manzilga so‘rov ketadi',
+  },
+  {
+    key: 'status_sync_config.external_update.method',
+    label: 'Metod',
+    type: 'select',
+    options: [
+      { value: 'POST', label: 'POST' },
+      { value: 'PUT', label: 'PUT' },
+      { value: 'PATCH', label: 'PATCH' },
+      { value: 'GET', label: 'GET' },
+    ],
+  },
+  {
+    key: 'status_mapping',
+    label: 'Chiquvchi status xaritasi',
+    type: 'mapping',
+    hint: 'Bizning status/amal → ularning status nomi. rollback ham kiritilishi kerak',
   },
 ];
 
@@ -341,7 +443,18 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     kind: 'integration',
     role: 'source',
     category: 'marketplace',
-    fields: OUTBOUND_FIELDS,
+    /**
+     * Biz ularning API'sidan buyurtma tortib olamiz. Kargo emas — posilka
+     * jo'natish sozlamasi KERAK EMAS.
+     */
+    fields: [
+      NAME_FIELD,
+      SLUG_FIELD,
+      MARKET_FIELD,
+      ...OUTBOUND_AUTH,
+      MAPPING_FIELD,
+      ...OUTBOUND_STATUS_FIELDS,
+    ],
     prereqs: [
       'Ularning API manzili (HTTPS)',
       'API kalit yoki login+parol',
@@ -355,7 +468,19 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     kind: 'integration',
     role: 'source',
     category: 'crm',
-    fields: OUTBOUND_FIELDS,
+    /**
+     * CRM ham buyurtma MANBASI, lekin bosqich/voronka tushunchasi bor —
+     * u hozircha maydon xaritasi orqali beriladi (voronka modeli kodda
+     * hali yo'q, audit P7).
+     */
+    fields: [
+      NAME_FIELD,
+      SLUG_FIELD,
+      MARKET_FIELD,
+      ...OUTBOUND_AUTH,
+      MAPPING_FIELD,
+      ...OUTBOUND_STATUS_FIELDS,
+    ],
     prereqs: [
       'CRM API manzili (HTTPS)',
       'API kalit yoki login+parol',
@@ -369,7 +494,19 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     kind: 'integration',
     role: 'carrier',
     category: 'cargo',
-    fields: OUTBOUND_FIELDS,
+    /**
+     * YETKAZUVCHI — yagona tur, unda POSILKA JO'NATISH sozlamasi bor.
+     * Market maydoni YO'Q: kargo buyurtma bermaydi, u posilkani oladi.
+     */
+    fields: [
+      NAME_FIELD,
+      SLUG_FIELD,
+      ...OUTBOUND_AUTH,
+      ...DISPATCH_FIELDS,
+      ...INBOUND_WEBHOOK,
+      ...WEBHOOK_PATHS,
+      INBOUND_STATUS_MAP,
+    ],
     prereqs: [
       'Yetkazuvchining API manzili (HTTPS)',
       'API kalit',
@@ -383,7 +520,22 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     kind: 'integration',
     role: 'payment',
     category: 'payment',
-    fields: OUTBOUND_FIELDS,
+    /**
+     * TO'LOV TIZIMI — faqat KIRUVCHI webhook: ular to'lov tasdig'ini
+     * yuboradi. Posilka jo'natish ham, market bog'lanishi ham kerak emas.
+     *
+     * ⚠️ Backendda to'lovni QO'LLAYDIGAN yo'l hali YO'Q (audit P1/P2):
+     * kiruvchi webhook posilka talab qiladi va faqat sell/cancel/return
+     * ni biladi. Bu forma sozlamani saqlaydi, lekin oqim 7-bosqichda
+     * qurilishi kerak.
+     */
+    fields: [
+      NAME_FIELD,
+      SLUG_FIELD,
+      ...OUTBOUND_AUTH,
+      ...INBOUND_WEBHOOK,
+      ...WEBHOOK_PATHS,
+    ],
     prereqs: [
       'To\u2019lov tizimining API manzili (HTTPS)',
       'Savdo nuqtasi (merchant) kaliti',
@@ -397,7 +549,16 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     kind: 'integration',
     role: 'mirror',
     category: 'spreadsheet',
-    fields: OUTBOUND_FIELDS,
+    /**
+     * KO'ZGU — faqat CHIQUVCHI: biz ularga yozamiz. Kiruvchi webhook ham,
+     * market ham, dispatch ham kerak emas.
+     */
+    fields: [
+      NAME_FIELD,
+      SLUG_FIELD,
+      ...OUTBOUND_AUTH,
+      ...OUTBOUND_STATUS_FIELDS,
+    ],
     prereqs: [
       'Eksport manzili (HTTPS)',
       'Yozish huquqi bo\u2019lgan kalit',
@@ -430,3 +591,71 @@ export const fieldsInGroup = (
   group: 'connection' | 'security',
 ): ConnectionField[] =>
   fields.filter((f) => (f.group ?? 'connection') === group);
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TURNI O'ZGARTIRISH — ALOHIDA AMAL, oddiy maydon EMAS.
+
+   ⚠️ ILGARI `role`/`category` oddiy `select` bo'lib Sozlamalar formasida
+   turardi. Ikki muammo tug'ilgandi:
+
+   1) USTADA ham ko'rinardi, lekin qiymati JIMGINA TASHLANARDI — usta
+      `role`/`category`ni KARTADAN oladi va formadagi tanlovni bosib
+      ketardi (audit FE-04). Ya'ni operator tanlaydi, natija esa boshqa.
+
+   2) Katalog tanlovi MA'NOSIZLANARDI: "Marketplace" kartasini tanlab,
+      ichida turni "Yetkazuvchi" ga o'zgartirish mumkin bo'lardi
+      (audit FE-05).
+
+   Endi: usta bu maydonlarni KO'RSATMAYDI, Sozlamalar esa ularni alohida
+   "Turini o'zgartirish" bo'limida, ogohlantirish bilan ko'rsatadi.
+
+   Nega butunlay olib tashlamadik: Donoxon kabi noto'g'ri tasniflangan
+   ulanishni tuzatish kerak (migratsiya mavjud yozuvlarga sukut `carrier`
+   qo'ygan) — busiz u abadiy "yetkazuvchi" bo'lib qolardi.
+
+   ⚠️ Qiymatlar backend `@IsIn` ro'yxati bilan AYNAN bir xil.
+   ═══════════════════════════════════════════════════════════════════════ */
+export const TYPE_CHANGE_FIELDS: ConnectionField[] = [
+  {
+    key: 'role',
+    label: 'Roli',
+    type: 'select',
+    options: [
+      { value: 'source', label: 'Buyurtma manbasi — bizga buyurtma beradi' },
+      { value: 'carrier', label: 'Yetkazuvchi — bizdan posilka oladi' },
+      { value: 'payment', label: "To'lov tizimi" },
+      { value: 'mirror', label: "Ko'zgu — faqat eksport" },
+    ],
+    hint: 'Ulanish nima qiladi',
+  },
+  {
+    key: 'category',
+    label: 'Turi',
+    type: 'select',
+    options: [
+      { value: 'marketplace', label: 'Marketplace / sayt' },
+      { value: 'crm', label: 'CRM' },
+      { value: 'cargo', label: 'Kargo' },
+      { value: 'payment', label: "To'lov" },
+      { value: 'spreadsheet', label: 'Jadval / hisobot' },
+      { value: 'other', label: 'Boshqa' },
+    ],
+    hint: 'Faqat tasnif uchun',
+  },
+];
+
+/**
+ * `showWhen` sharti bajarilgan maydonlarni qaytaradi.
+ *
+ * Sharti yo'q maydon HAR DOIM ko'rinadi — yangi maydon qo'shganda uni
+ * unutib qoldirsak, u yashirinib qolmaydi. Teskari sukut xavfli bo'lardi.
+ */
+export const visibleFields = (
+  fields: ConnectionField[],
+  values: Record<string, unknown>,
+): ConnectionField[] =>
+  fields.filter(
+    (f) =>
+      !f.showWhen || String(values[f.showWhen.key] ?? '') === f.showWhen.equals,
+  );

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   CONNECTION_TYPES,
   ROLE_ORDER,
+  TYPE_CHANGE_FIELDS,
   fieldsInGroup,
   findConnectionType,
+  visibleFields,
   type ConnectionTypeMeta,
 } from "./connections";
 import { ROLE_META, CATEGORY_LABEL } from "../../entities/integrations";
@@ -211,22 +213,33 @@ describe("Katalog ma'lumoti", () => {
   });
 });
 
-describe("Rol va tur formada tahrirlanadi (bug qulfi)", () => {
-  const outbound = CONNECTION_TYPES.find((t) => t.kind === "integration")!;
-
-  it("⭐ `role` maydoni FORMADA bor", () => {
+describe("Rol va tur — ALOHIDA amalda tahrirlanadi (bug qulfi)", () => {
+  it("⭐ `role` maydoni MAVJUD — Donoxon kabi noto'g'ri tasnifni tuzatish uchun", () => {
     /**
-     * Ilgari yo'q edi va buni foydalanuvchi topdi: "Donoxon nega yetkazuvchi
-     * kargo sifatida belgilangan?". Sabab — migratsiya mavjud yozuvlarga
-     * sukut `carrier` yozgan, forma esa bu maydonni so'ramagani uchun
-     * noto'g'ri tasnifni TUZATIB BO'LMASDI.
+     * Migratsiya mavjud yozuvlarga sukut `carrier` qo'ygan. Bu maydon
+     * bo'lmasa noto'g'ri tasniflangan ulanish abadiy "yetkazuvchi" bo'lib
+     * qolardi.
      */
-    expect(outbound.fields.map((f) => f.key)).toContain("role");
+    expect(TYPE_CHANGE_FIELDS.map((f) => f.key)).toContain("role");
+    expect(TYPE_CHANGE_FIELDS.map((f) => f.key)).toContain("category");
+  });
+
+  it("⭐ lekin TUR RO'YXATLARIDA YO'Q — katalog tanlovi ma'nosizlanmasin", () => {
+    /**
+     * Ilgari `role` oddiy maydon bo'lib asosiy formada turardi: ustada
+     * ko'rinib qiymati JIMGINA tashlanardi (usta uni kartadan oladi), va
+     * "Marketplace" kartasini tanlab ichida "Yetkazuvchi" qilish mumkin
+     * bo'lardi (audit FE-04, FE-05).
+     */
+    for (const type of CONNECTION_TYPES) {
+      const keys = type.fields.map((f) => f.key);
+      expect(keys).not.toContain("role");
+      expect(keys).not.toContain("category");
+    }
   });
 
   it("⭐ `role` variantlari backend `@IsIn` ro'yxati bilan AYNAN bir xil", () => {
-    // Mos kelmasa backend 400 qaytaradi va forma "saqlab bo'lmadi" deydi.
-    const role = outbound.fields.find((f) => f.key === "role");
+    const role = TYPE_CHANGE_FIELDS.find((f) => f.key === "role");
     expect(role?.options?.map((o) => o.value).sort()).toEqual([
       "carrier",
       "mirror",
@@ -236,7 +249,7 @@ describe("Rol va tur formada tahrirlanadi (bug qulfi)", () => {
   });
 
   it("⭐ `category` variantlari ham backend ro'yxatiga mos", () => {
-    const category = outbound.fields.find((f) => f.key === "category");
+    const category = TYPE_CHANGE_FIELDS.find((f) => f.key === "category");
     expect(category?.options?.map((o) => o.value).sort()).toEqual([
       "cargo",
       "crm",
@@ -246,12 +259,170 @@ describe("Rol va tur formada tahrirlanadi (bug qulfi)", () => {
       "spreadsheet",
     ]);
   });
+});
 
-  it("rol/tur `connection` guruhida — Sozlamalar tabida ko'rinadi", () => {
-    for (const key of ["role", "category"]) {
-      const f = outbound.fields.find((x) => x.key === key);
-      // Guruhi belgilanmagan = `connection` (sukut).
-      expect(f?.group ?? "connection").toBe("connection");
+describe("4-bosqich — turlar HAQIQATAN farq qiladi", () => {
+  const byKey = (k: string) => CONNECTION_TYPES.find((t) => t.key === k)!;
+  const keysOf = (k: string) => byKey(k).fields.map((f) => f.key);
+
+  it("⭐ hech ikki tur AYNI massiv obyektini ulashmaydi", () => {
+    /**
+     * Foydalanuvchi shikoyatining ildizi: 6 turdan 5 tasi
+     * `fields: OUTBOUND_FIELDS` deb AYNI obyektga ishora qilardi, ya'ni
+     * katalogda 6 karta, ichida bitta forma (audit FE-01).
+     */
+    for (let i = 0; i < CONNECTION_TYPES.length; i += 1) {
+      for (let j = i + 1; j < CONNECTION_TYPES.length; j += 1) {
+        expect(CONNECTION_TYPES[i].fields).not.toBe(CONNECTION_TYPES[j].fields);
+      }
+    }
+  });
+
+  it("⭐ maydon to'plamlari farq qiladi — BITTA ataylab istisno bilan", () => {
+    /**
+     * Boshqa obyekt, lekin ayni tarkib bo'lsa foydalanuvchi uchun farq yo'q.
+     *
+     * ⚠️ ISTISNO: `crm` va `marketplace_outbound` bugun AYNI maydonlarni
+     * so'raydi va bu HALOL holat — ikkisi ham "biz ularning API'sidan
+     * buyurtma tortib olamiz" naqshida ishlaydi. CRM'ni farqlaydigan narsa
+     * voronka/bosqich triggeri bo'lardi, lekin u KODDA YO'Q (audit P7).
+     * Hech narsa o'qimaydigan maydon qo'shish yolg'on bo'lardi — shu bois
+     * istisno ochiq yozildi va CRM oqimi 6-bosqichda qurilganda yopiladi.
+     */
+    const KNOWN_SAME = new Set(["crm", "marketplace_outbound"]);
+    const sets = CONNECTION_TYPES.filter((t) => !KNOWN_SAME.has(t.key)).map(
+      (t) => t.fields.map((f) => f.key).sort().join("|"),
+    );
+    expect(new Set(sets).size).toBe(sets.length);
+
+    // Istisno JUFTLIGI haqiqatan ayni ekanini ham qulflaymiz — kelajakda
+    // biri o'zgarsa test bu izohni eskirganini ko'rsatadi.
+    const crm = CONNECTION_TYPES.find((t) => t.key === "crm")!;
+    const mp = CONNECTION_TYPES.find((t) => t.key === "marketplace_outbound")!;
+    expect(crm.fields.map((f) => f.key)).toEqual(mp.fields.map((f) => f.key));
+  });
+
+  it("⭐ POSILKA JO'NATISH sozlamasi FAQAT yetkazuvchida", () => {
+    /**
+     * `dispatch_config` posilka jo'natish shabloni. To'lov tizimida yoki
+     * ko'zguda u ma'nosiz — u yerda posilka yo'q.
+     */
+    const hasDispatch = (k: string) =>
+      keysOf(k).some((key) => key.startsWith("dispatch_config"));
+    expect(hasDispatch("carrier")).toBe(true);
+    for (const k of ["payment", "mirror", "crm", "marketplace_outbound"]) {
+      expect(hasDispatch(k)).toBe(false);
+    }
+  });
+
+  it("⭐ MARKET bog'lanishi faqat buyurtma KELADIGAN turlarda", () => {
+    // Kargo buyurtma bermaydi — market hisobi kerak emas.
+    expect(keysOf("marketplace_outbound")).toContain("market_id");
+    expect(keysOf("crm")).toContain("market_id");
+    for (const k of ["carrier", "payment", "mirror"]) {
+      expect(keysOf(k)).not.toContain("market_id");
+    }
+  });
+
+  it("KIRUVCHI webhook sozlamasi faqat status QAYTARADIGAN turlarda", () => {
+    for (const k of ["carrier", "payment"]) {
+      expect(keysOf(k)).toContain("webhook_secret");
+    }
+    expect(keysOf("mirror")).not.toContain("webhook_secret");
+  });
+
+  it("KO'ZGU faqat chiquvchi — kiruvchi sozlama yo'q", () => {
+    const keys = keysOf("mirror");
+    expect(keys.some((k) => k.startsWith("webhook_payload_paths"))).toBe(false);
+    expect(keys.some((k) => k.startsWith("status_sync_config"))).toBe(true);
+  });
+
+  it("⭐ 0-bosqichda ochilgan maydonlar formada ISHLATILADI", () => {
+    /**
+     * Backend DTO'siga qo'shilgan 8 maydon formada so'ralmasa, 0-bosqich
+     * behuda ketardi.
+     */
+    const all = new Set(
+      CONNECTION_TYPES.flatMap((t) => t.fields.map((f) => f.key)),
+    );
+    for (const key of [
+      "webhook_secret",
+      "webhook_signature_header",
+      "webhook_signature_prefix",
+      "webhook_algorithm",
+      "webhook_id_header",
+      "inbound_status_mapping",
+    ]) {
+      expect(all.has(key)).toBe(true);
+    }
+    // Ichma-ich kalitlar prefiks bilan tekshiriladi.
+    const flat = [...all];
+    expect(flat.some((k) => k.startsWith("webhook_payload_paths"))).toBe(true);
+    expect(flat.some((k) => k.startsWith("dispatch_config"))).toBe(true);
+  });
+});
+
+describe("visibleFields — shartli maydonlar", () => {
+  const fields = [
+    { key: "auth_type", label: "Kirish", type: "select" as const },
+    {
+      key: "api_key",
+      label: "Kalit",
+      type: "secret" as const,
+      showWhen: { key: "auth_type", equals: "api_key" },
+    },
+    {
+      key: "password",
+      label: "Parol",
+      type: "secret" as const,
+      showWhen: { key: "auth_type", equals: "login" },
+    },
+  ];
+
+  it("⭐ faqat mos maydon ko'rinadi", () => {
+    /**
+     * Ilgari to'rttasi BIRGA ko'rinardi va operator qaysi ikkitasini
+     * to'ldirish kerakligini taxmin qilardi (audit FE-07).
+     */
+    expect(
+      visibleFields(fields, { auth_type: "api_key" }).map((f) => f.key),
+    ).toEqual(["auth_type", "api_key"]);
+    expect(
+      visibleFields(fields, { auth_type: "login" }).map((f) => f.key),
+    ).toEqual(["auth_type", "password"]);
+  });
+
+  it("⭐ sharti YO'Q maydon HAR DOIM ko'rinadi", () => {
+    // Yangi maydon qo'shganda unutib qoldirsak yashirinib qolmasin.
+    expect(visibleFields(fields, {}).map((f) => f.key)).toEqual(["auth_type"]);
+    expect(visibleFields([fields[0]], {}).map((f) => f.key)).toEqual([
+      "auth_type",
+    ]);
+  });
+});
+
+describe("Katalog ma'lumoti", () => {
+  it("⭐ har bir turda `prereqs` bor va bo'sh emas", () => {
+    /**
+     * Katalog kartasi va ustaning 1-qadami shu ro'yxatni chizadi. Bo'sh
+     * bo'lsa karta yarim ko'rinardi va operator "menda bu bormi?" degan
+     * savolga javob olmasdi — ya'ni ustaga kirib, o'rtada to'xtardi.
+     */
+    for (const type of CONNECTION_TYPES) {
+      expect(type.prereqs.length).toBeGreaterThan(0);
+      for (const item of type.prereqs) {
+        expect(item.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("usta 1-qadamida so'raydigan maydon HAR turda mavjud", () => {
+    // Usta `name` (va outbound'da `slug`) ni 1-qadamda so'raydi.
+    for (const type of CONNECTION_TYPES) {
+      const keys = type.fields.map((f) => f.key);
+      expect(keys).toContain("name");
+      if (type.kind === "integration") expect(keys).toContain("slug");
     }
   });
 });
+

@@ -210,7 +210,36 @@ const ConnectionsPage = () => {
       ]
     : [];
 
-  const activeItem = items.find((i) => i.key === tab) ?? items[0];
+  /**
+   * TABLAR ROLGA QARAB FILTRLANADI (audit FE-08 / P11 / M4).
+   *
+   * Ilgari 7 tab HAR ulanishga bir xil ko'rsatilardi: to'lov tizimida ham
+   * "Jo'natmalar" va "Hisob-kitob" turardi — ikkisi ham u yerda ma'nosiz
+   * (to'lov tizimi posilka olmaydi va COD qarzi yo'q). Operator ochib
+   * bo'sh ekran ko'rardi va "buzuqmi?" deb o'ylardi.
+   *
+   * ⚠️ Sukut RUXSAT: yangi tab qo'shilganda uni unutib qoldirsak KO'RINADI.
+   * Teskari sukut xavfli — tab jimgina yo'qolib ketardi.
+   */
+  const hiddenTabs = useMemo(() => {
+    if (!active) return new Set<string>();
+    const hide = new Set<string>();
+    // Posilka faqat manba va yetkazuvchida bo'ladi.
+    if (active.role === 'payment' || active.role === 'mirror') {
+      hide.add('shipments');
+      hide.add('settlement');
+    }
+    // COD qarz daftari FAQAT yetkazuvchida yuritiladi
+    // (`provider_receivable` carrier uchun qurilgan).
+    if (active.role === 'source' && active.kind === 'integration') {
+      hide.add('settlement');
+    }
+    return hide;
+  }, [active]);
+
+  const shownItems = items.filter((i) => !hiddenTabs.has(i.key));
+  const activeItem =
+    shownItems.find((i) => i.key === tab) ?? shownItems[0];
 
   if (isLoading) {
     return (
@@ -359,7 +388,7 @@ const ConnectionsPage = () => {
       {active && activeItem && (
         <div className="space-y-4">
           <ConnectionSubNav
-            items={items}
+            items={shownItems}
             active={activeItem.key}
             onChange={setTab}
           />

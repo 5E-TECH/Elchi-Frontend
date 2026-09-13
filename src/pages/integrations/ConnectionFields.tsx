@@ -1,5 +1,7 @@
 import { Form, Input, Select, Switch } from 'antd';
 import { useMarkets } from '../../entities/markets';
+import { visibleFields } from './connections';
+import { nestPayload } from './fieldPath';
 import type { ConnectionField } from './connections';
 
 /**
@@ -52,7 +54,12 @@ interface Props {
  */
 const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
   <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
-    {fields.map((field) => {
+    {/*
+      Shartli maydonlar yashiriladi: `auth_type` "API kalit" bo'lsa
+      login/parol keraksiz. Ilgari to'rttasi BIRGA ko'rinardi va operator
+      qaysi ikkitasini to'ldirish kerakligini taxmin qilardi (audit FE-07).
+    */}
+    {visibleFields(fields, values).map((field) => {
       const raw = values[field.key];
 
       /* ── Kalit/o'chirgich ── */
@@ -372,5 +379,9 @@ export const buildChangedPayload = (
     if (a !== b) out[field.key] = a;
   }
 
-  return out;
+  /**
+   * Nuqtali kalitlar (`dispatch_config.endpoint`) ichma-ich obyektga
+   * yig'iladi — backend ularni shu shaklda kutadi.
+   */
+  return nestPayload(out);
 };
