@@ -18,6 +18,7 @@ import ConnectionFields, {
   type FieldValues,
 } from '../ConnectionFields';
 import { fieldsInGroup, type ConnectionField } from '../connections';
+import { getPath } from '../fieldPath';
 import type { Connection } from '../useConnections';
 
 /**
@@ -49,7 +50,7 @@ const initialValues = (
      * saqlashda mavjud xaritani O'CHIRIB yuborardi.
      */
     if (f.type === 'mapping') {
-      const val = raw[f.key];
+      const val = getPath(raw, f.key);
       out[f.key] =
         val && typeof val === 'object' && !Array.isArray(val)
           ? (val as Record<string, string>)
@@ -57,10 +58,11 @@ const initialValues = (
       continue;
     }
     if (f.type === 'tags') {
-      out[f.key] = Array.isArray(raw[f.key]) ? (raw[f.key] as string[]) : [];
+      const arr = getPath(raw, f.key);
+      out[f.key] = Array.isArray(arr) ? (arr as string[]) : [];
       continue;
     }
-    out[f.key] = String(raw[f.key] ?? '');
+    out[f.key] = String(getPath(raw, f.key) ?? '');
   }
   return out;
 };

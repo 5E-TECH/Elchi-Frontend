@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Card, Form, message } from 'antd';
-import { PlugZap, Save } from 'lucide-react';
+import { PlugZap, Save, Shuffle } from 'lucide-react';
 import {
   usePartnerActions,
   type WebhookTestResult,
@@ -11,7 +11,12 @@ import ConnectionFields, {
   buildChangedPayload,
   type FieldValues,
 } from '../ConnectionFields';
-import { fieldsInGroup, type ConnectionField } from '../connections';
+import {
+  TYPE_CHANGE_FIELDS,
+  fieldsInGroup,
+  type ConnectionField,
+} from '../connections';
+import { getPath } from '../fieldPath';
 import type { Connection } from '../useConnections';
 
 /**
@@ -45,7 +50,7 @@ const initialValues = (
       continue;
     }
     if (f.type === 'switch') {
-      out[f.key] = Boolean(raw[f.key]);
+      out[f.key] = Boolean(getPath(raw, f.key));
       continue;
     }
     /**
@@ -53,7 +58,7 @@ const initialValues = (
      * saqlashda mavjud xaritani O'CHIRIB yuborardi.
      */
     if (f.type === 'mapping') {
-      const val = raw[f.key];
+      const val = getPath(raw, f.key);
       out[f.key] =
         val && typeof val === 'object' && !Array.isArray(val)
           ? (val as Record<string, string>)
@@ -61,12 +66,16 @@ const initialValues = (
       continue;
     }
     if (f.type === 'tags') {
-      out[f.key] = Array.isArray(raw[f.key]) ? (raw[f.key] as string[]) : [];
+      const arr = getPath(raw, f.key);
+      out[f.key] = Array.isArray(arr) ? (arr as string[]) : [];
       continue;
     }
     // `base_url` eski yozuvlarda `api_url` da bo'lishi mumkin.
+    // ⚠️ `getPath` — kalit nuqtali bo'lishi mumkin
+    // (`dispatch_config.endpoint`). Tekis o'qish bo'sh qaytarardi va
+    // saqlashda mavjud sozlama o'chib ketardi.
     const fallback = f.key === 'base_url' ? raw.api_url : undefined;
-    out[f.key] = String(raw[f.key] ?? fallback ?? '');
+    out[f.key] = String(getPath(raw, f.key) ?? fallback ?? '');
   }
   return out;
 };
@@ -207,6 +216,11 @@ const ConnectionSettings = ({
         </Card>
       </Form>
 
+      {/* ═══════ TURINI O'ZGARTIRISH ═══════ */}
+      {connection.kind === 'integration' && (
+        <TypeChangeCard connection={connection} onSaved={onSaved} />
+      )}
+
       {testResult && (
         <Alert
           type={testResult.ok ? 'success' : 'error'}
@@ -245,6 +259,100 @@ const ConnectionSettings = ({
         />
       )}
     </div>
+  );
+};
+
+/**
+ * TURINI O'ZGARTIRISH — alohida, ogohlantirishli amal.
+ *
+ * NEGA ALOHIDA. Ilgari `role`/`category` oddiy maydon bo'lib asosiy formada
+ * turardi va katalog tanlovini ma'nosizlantirdi: "Marketplace" kartasini
+ * tanlab, ichida turni "Yetkazuvchi" ga o'zgartirish mumkin bo'lardi
+ * (audit FE-05).
+ *
+ * Lekin butunlay olib tashlash ham xato: migratsiya mavjud yozuvlarga
+ * sukut `carrier` qo'ygan va noto'g'ri tasniflangan ulanishni (Donoxon)
+ * tuzatish kerak.
+ *
+ * ⚠️ TUR O'ZGARSA FORMA MAYDONLARI HAM O'ZGARADI — shuning uchun
+ * ogohlantirish beriladi: har tur boshqa sozlama so'raydi va eski
+ * qiymatlar o'z joyida qoladi, lekin ko'rinmay qolishi mumkin.
+ */
+const TypeChangeCard = ({
+  connection,
+  onSaved,
+}: {
+  connection: Connection;
+  onSaved: () => void;
+}) => {
+  const initial = useMemo(
+    () => ({
+      role: String((connection.raw as Record<string, unknown>).role ?? connection.role),
+      category: String(
+        (connection.raw as Record<string, unknown>).category ?? connection.category,
+      ),
+    }),
+    [connection],
+  );
+  const [values, setValues] = useState<FieldValues>(initial);
+  useEffect(() => setValues(initial), [initial]);
+
+  const updateIntegration = useUpdateIntegration();
+  const changed =
+    String(values.role ?? '') !== initial.role ||
+    String(values.category ?? '') !== initial.category;
+
+  const save = async () => {
+    try {
+      const raw = connection.raw as Record<string, unknown>;
+      await updateIntegration.mutateAsync({
+        id: connection.id,
+        payload: {
+          slug: String(raw.slug ?? ''),
+          type: String(raw.type ?? 'api'),
+          role: String(values.role ?? ''),
+          category: String(values.category ?? ''),
+        } as never,
+      });
+      message.success("Turi o'zgartirildi");
+      onSaved();
+    } catch (error) {
+      message.error(getBackendErrorMessage(error) || "O'zgartirib bo'lmadi");
+    }
+  };
+
+  return (
+    <Card
+      title={
+        <span className="flex items-center gap-2">
+          <Shuffle className="h-4 w-4" /> Turini o'zgartirish
+        </span>
+      }
+    >
+      <Alert
+        className="mb-3"
+        type="warning"
+        showIcon
+        message="Bu ulanishning ro'yxatdagi o'rnini va so'raladigan sozlamalarni o'zgartiradi"
+        description="Har tur boshqa maydonlar so'raydi. Eski qiymatlar saqlanib qoladi, lekin yangi turda ko'rinmasligi mumkin."
+      />
+      <Form layout="vertical">
+        <ConnectionFields
+          fields={TYPE_CHANGE_FIELDS}
+          values={values}
+          onChange={(k, v) => setValues((st) => ({ ...st, [k]: v }))}
+          disabled={updateIntegration.isPending}
+        />
+        <Button
+          danger
+          disabled={!changed}
+          loading={updateIntegration.isPending}
+          onClick={save}
+        >
+          {changed ? "Turini o'zgartirish" : "O'zgarish yo'q"}
+        </Button>
+      </Form>
+    </Card>
   );
 };
 
