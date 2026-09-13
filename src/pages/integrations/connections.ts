@@ -73,7 +73,7 @@ export interface ConnectionField {
    *
    * Registr YAGONA qoladi — ikki panel bitta ro'yxatdan o'zini yasaydi.
    */
-  group?: 'connection' | 'security';
+  group?: 'connection' | 'security' | 'sandbox';
   /**
    * Maydon FAQAT boshqa maydon ma'lum qiymatda bo'lganda ko'rinadi.
    *
@@ -154,19 +154,49 @@ const INBOUND_FIELDS: ConnectionField[] = [
     writeOnly: true,
     hint: 'HMAC-SHA256 imzo kaliti. Bo‘sh qoldirilsa tegilmaydi',
   },
+  /**
+   * ⚠️ SANDBOX MAYDONLARI ALOHIDA GURUHDA — prodakshn bilan YONMA-YON EMAS.
+   *
+   * Ilgari ular shu ro'yxatda, asosiy webhook maydonlarining ostida
+   * turardi: "Webhook sekreti" va "Sandbox sekreti" — ikki AYNI
+   * ko'rinishdagi parol maydoni yonma-yon. Foydalanuvchi shikoyati aynan
+   * shu: "sandbox va real rejim bir biriga aralashib ketgan". Xato
+   * maydonga prodakshn sekretini yozib qo'yish juda oson edi.
+   *
+   * Endi ular `sandbox` guruhida — Sozlamalar tabida ALOHIDA kartada
+   * chiziladi va kalit o'chiq bo'lsa umuman ko'rinmaydi.
+   */
+  {
+    key: 'sandbox_enabled',
+    label: 'Sandbox rejimi',
+    type: 'switch',
+    hint: 'Yoqilsa, har hodisaning NUSXASI sinov manziliga ham ketadi',
+    group: 'sandbox',
+  },
   {
     key: 'sandbox_webhook_url',
     label: 'Sandbox manzili',
     type: 'url',
     placeholder: 'https://dev.partner.example.com/elchi/webhook',
-    hint: 'Har hodisaning NUSXASI shu yerga ham ketadi. Xatosi asosiy yetkazishga ta’sir qilmaydi',
+    hint: 'Nusxa shu yerga ketadi. Xatosi asosiy yetkazishga ta’sir qilmaydi',
+    group: 'sandbox',
+    showWhen: { key: 'sandbox_enabled', equals: true },
   },
   {
     key: 'sandbox_webhook_secret',
     label: 'Sandbox sekreti',
     type: 'secret',
     writeOnly: true,
-    hint: 'Berilmasa asosiy sekret ishlatiladi',
+    /**
+     * ⚠️ HINT O'ZGARDI. Ilgari "Berilmasa asosiy sekret ishlatiladi" deb
+     * yozilgan edi — va kod haqiqatan shunday qilardi, ya'ni PRODAKSHN
+     * imzo kaliti dev hostga yuborilardi. Sinov muhitlari kamroq
+     * himoyalangan; kalit oqsa u bilan HAQIQIY webhook imzolash mumkin
+     * bo'lardi. Endi alohida sekret SHART.
+     */
+    hint: 'ALOHIDA sekret shart — prodakshn sekreti sinov muhitiga yuborilmaydi',
+    group: 'sandbox',
+    showWhen: { key: 'sandbox_enabled', equals: true },
   },
   {
     key: 'ip_allowlist',
@@ -614,7 +644,7 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
   },
   {
     key: 'marketplace_outbound',
-    label: 'Marketplace (biz ulanadmiz)',
+    label: 'Marketplace (biz ulanamiz)',
     desc: 'Buyurtmani biz tortib olamiz — ularning API’siga moslashamiz',
     kind: 'integration',
     role: 'source',
@@ -783,7 +813,7 @@ export const findConnectionType = (key: string): ConnectionTypeMeta | undefined 
  */
 export const fieldsInGroup = (
   fields: ConnectionField[],
-  group: 'connection' | 'security',
+  group: 'connection' | 'security' | 'sandbox',
 ): ConnectionField[] =>
   fields.filter((f) => (f.group ?? 'connection') === group);
 

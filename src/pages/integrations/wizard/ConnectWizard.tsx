@@ -370,7 +370,7 @@ const ConnectWizard = () => {
 
             {/* Javob tanasi MUHIM: 200 qaytarib "imzo yaroqsiz" deyish mumkin. */}
             {testResult?.response_body && (
-              <p className="m-0 mt-2 break-all rounded-lg bg-indigo-600dark/[0.03] px-3 py-2 text-[11px] text-gray-500 dark:text-gray-400 dark:bg-gray-800/50">
+              <p className="m-0 mt-2 break-all rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
                 Javob: {testResult.response_body.slice(0, 300)}
               </p>
             )}

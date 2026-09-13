@@ -1,5 +1,6 @@
 import { memo, useMemo, type ReactNode } from 'react';
 import { ConfigProvider, theme as antdTheme } from 'antd';
+import uzUZ from 'antd/locale/uz_UZ';
 import { useTheme } from './ThemeContext';
 
 /**
@@ -68,7 +69,21 @@ const AntdThemeProvider = ({ children }: { children: ReactNode }) => {
     [isDark],
   );
 
-  return <ConfigProvider theme={config}>{children}</ConfigProvider>;
+  /**
+   * ⚠️ LOKAL HAM SHU YERDA. `locale` berilmasa antd INGLIZCHA matn
+   * chiqaradi va u operatorga ko'rinadi: bo'sh jadvalda "No data",
+   * sahifalashda "items per page", nusxa olishda "Copy". O'zbek tilidagi
+   * ekranda inglizcha qatorlar "tizim yarim tarjima qilingan" degan
+   * taassurot beradi.
+   *
+   * antd `uz_UZ` lokalini o'zi taqdim etadi — qo'lda tarjima qilish
+   * kerak emas.
+   */
+  return (
+    <ConfigProvider theme={config} locale={uzUZ}>
+      {children}
+    </ConfigProvider>
+  );
 };
 
 export default memo(AntdThemeProvider);

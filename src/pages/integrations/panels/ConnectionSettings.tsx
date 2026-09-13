@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Card, Form, message } from 'antd';
-import { PlugZap, Save, Shuffle } from 'lucide-react';
+import { FlaskConical, PlugZap, Save, Shuffle } from 'lucide-react';
 import {
   usePartnerActions,
   type WebhookTestResult,
@@ -98,9 +98,26 @@ const ConnectionSettings = ({
     () => fieldsInGroup(allFields, 'connection'),
     [allFields],
   );
+  /**
+   * SANDBOX MAYDONLARI ALOHIDA KARTADA.
+   *
+   * ⚠️ NEGA. Ilgari ular asosiy webhook maydonlari ostida turardi:
+   * "Webhook sekreti" va "Sandbox sekreti" — ikki AYNI ko'rinishdagi parol
+   * maydoni yonma-yon. Foydalanuvchi shikoyati aynan shu: "sandbox va real
+   * rejim bir biriga aralashib ketgan". Xato maydonga prodakshn sekretini
+   * yozib qo'yish juda oson edi.
+   */
+  const sandboxFields = useMemo(
+    () => fieldsInGroup(allFields, 'sandbox'),
+    [allFields],
+  );
+  /**
+   * Boshlang'ich qiymatlar IKKI guruhdan birga yig'iladi — forma holati
+   * yagona, kartalar esa faqat ko'rinish.
+   */
   const initial = useMemo(
-    () => initialValues(connection, fields),
-    [connection, fields],
+    () => initialValues(connection, [...fields, ...sandboxFields]),
+    [connection, fields, sandboxFields],
   );
 
   const [values, setValues] = useState<FieldValues>(initial);
@@ -119,7 +136,11 @@ const ConnectionSettings = ({
   const isPartner = connection.kind === 'partner';
 
   const save = async () => {
-    const payload = buildChangedPayload(fields, values, initial);
+    const payload = buildChangedPayload(
+      [...fields, ...sandboxFields],
+      values,
+      initial,
+    );
     if (!Object.keys(payload).length) {
       message.info("O'zgarish yo'q");
       return;
@@ -215,6 +236,47 @@ const ConnectionSettings = ({
           </Button>
         </Card>
       </Form>
+
+      {/* ═══════ SANDBOX — ALOHIDA KARTA ═══════ */}
+      {sandboxFields.length > 0 && (
+        <Form layout="vertical">
+          <Card
+            title={
+              <span className="flex items-center gap-2">
+                <FlaskConical className="h-4 w-4" /> Sinov rejimi (sandbox)
+              </span>
+            }
+          >
+            {/*
+              Banner ATAYLAB: operator "sinov" nima qilishini bilishi kerak.
+              Eng ko'p uchraydigan tushunmovchilik — sandbox yoqilsa
+              hodisalar sinov muhitiga KO'CHADI deb o'ylash. Aslida NUSXA
+              ketadi, asosiy oqim o'zgarmaydi.
+            */}
+            <div className="mb-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs font-semibold text-sky-800 dark:border-sky-900 dark:bg-sky-900/20 dark:text-sky-200">
+              Yoqilsa har hodisaning NUSXASI sinov manziliga ham yuboriladi.
+              Asosiy yetkazish o‘zgarmaydi va sinov xatosi unga ta’sir
+              qilmaydi. Nusxa faqat BIRINCHI urinishda ketadi.
+            </div>
+
+            <ConnectionFields
+              fields={sandboxFields}
+              values={values}
+              onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
+              disabled={saving}
+            />
+
+            <Button
+              type="primary"
+              icon={<Save className="h-4 w-4" />}
+              loading={saving}
+              onClick={save}
+            >
+              Saqlash
+            </Button>
+          </Card>
+        </Form>
+      )}
 
       {/* ═══════ TURINI O'ZGARTIRISH ═══════ */}
       {connection.kind === 'integration' && (

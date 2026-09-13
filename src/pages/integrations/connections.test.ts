@@ -18,6 +18,18 @@ import { ROLE_META, CATEGORY_LABEL } from "../../entities/integrations";
  * uchun esa bu BITTA ish. Registr shuni birlashtiradi: yangi tizim qo'shish =
  * massivga bitta yozuv, forma va panel o'zini maydon ro'yxatidan yasaydi.
  */
+/**
+ * Maydon guruhlari VA ularni chizadigan joylar.
+ *
+ *   `connection` → `panels/ConnectionSettings.tsx` (Sozlamalar tabi)
+ *   `security`   → `panels/ConnectionSecurity.tsx` (Xavfsizlik tabi)
+ *   `sandbox`    → `panels/ConnectionSettings.tsx` ichidagi ALOHIDA karta
+ *
+ * ⚠️ Yangi guruh qo'shsang, uni chizadigan panel ham yozilishi SHART —
+ * aks holda maydonlar sahifadan jimgina yo'qoladi.
+ */
+const RENDERED_GROUPS = ["connection", "security", "sandbox"] as const;
+
 describe("Ulanish registri", () => {
   it("kalitlar NOYOB", () => {
     const keys = CONNECTION_TYPES.map((t) => t.key);
@@ -173,17 +185,39 @@ describe("Registr ↔ backend mosligi (bug qulflari)", () => {
     expect(fieldsInGroup(fields, "security").map((f) => f.key)).toEqual(["b"]);
   });
 
-  it("ikki guruh birgalikda BARCHA maydonni qamraydi (hech biri yo'qolmaydi)", () => {
+  it("guruhlar birgalikda BARCHA maydonni qamraydi (hech biri yo'qolmaydi)", () => {
     /**
-     * Eng xavfli xato: maydon hech qaysi tabga tushmasa, u sahifadan
-     * butunlay yo'qoladi va buni hech kim sezmaydi.
+     * Eng xavfli xato: maydon hech qaysi guruhga tushmasa, u sahifadan
+     * butunlay yo'qoladi va buni hech kim sezmaydi — xato ham chiqmaydi.
+     *
+     * ⚠️ RO'YXAT QO'LDA YURITILADI VA BU ATAYLAB. Yangi guruh qo'shgan
+     * odam uni CHIZADIGAN panel ham borligini tekshirishi kerak; test
+     * shuni majburlaydi (`RENDERED_GROUPS` izohiga qarang).
      */
     for (const type of CONNECTION_TYPES) {
-      const split = [
-        ...fieldsInGroup(type.fields, "connection"),
-        ...fieldsInGroup(type.fields, "security"),
-      ].map((f) => f.key);
+      const split = RENDERED_GROUPS.flatMap((g) =>
+        fieldsInGroup(type.fields, g),
+      ).map((f) => f.key);
       expect(split.sort()).toEqual(type.fields.map((f) => f.key).sort());
+    }
+  });
+
+  it("⭐ har bir guruhni CHIZADIGAN panel bor", () => {
+    /**
+     * Yuqoridagi test guruhlar ro'yxatiga tayanadi. Agar kimdir ro'yxatga
+     * guruh qo'shib, panel yozishni unutsa — test o'tardi, maydonlar esa
+     * ekranda ko'rinmasdi. Shu bois ro'yxatning O'ZI ham tekshiriladi:
+     *
+     *   `connection` → ConnectionSettings (Sozlamalar tabi)
+     *   `security`   → ConnectionSecurity (Xavfsizlik tabi)
+     *   `sandbox`    → ConnectionSettings ichidagi ALOHIDA karta
+     */
+    const declared = new Set<string>();
+    for (const type of CONNECTION_TYPES) {
+      for (const f of type.fields) declared.add(f.group ?? "connection");
+    }
+    for (const group of declared) {
+      expect(RENDERED_GROUPS).toContain(group);
     }
   });
 });
