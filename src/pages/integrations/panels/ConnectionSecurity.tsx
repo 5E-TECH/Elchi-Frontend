@@ -186,16 +186,16 @@ const ConnectionSecurity = ({
   return (
     <div className="space-y-4">
       {/* ═══ 1. Kirish cheklovlari ═══ */}
-      <section className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
         <header className="mb-3 flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-main" />
-          <h3 className="m-0 text-sm font-extrabold text-maindark dark:text-white">
+          <ShieldCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
             Kirish cheklovlari
           </h3>
         </header>
 
         {fields.length === 0 ? (
-          <p className="m-0 text-xs text-[color:var(--color-text-muted)]">
+          <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
             Bu ulanish turida cheklov sozlamasi yo'q.
           </p>
         ) : (
@@ -211,7 +211,7 @@ const ConnectionSecurity = ({
                 type="button"
                 onClick={save}
                 disabled={saving}
-                className="flex h-10 items-center gap-2 rounded-xl bg-main px-4 text-sm font-bold text-white disabled:opacity-50"
+                className="flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -238,14 +238,14 @@ const ConnectionSecurity = ({
 
       {/* ═══ 2. API kalit — faqat hamkorda ═══ */}
       {isPartner && (
-        <section className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
+        <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
           <header className="mb-2 flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-main" />
-            <h3 className="m-0 text-sm font-extrabold text-maindark dark:text-white">
+            <KeyRound className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
               API kalit
             </h3>
           </header>
-          <p className="m-0 text-xs text-[color:var(--color-text-muted)]">
+          <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
             Kalit bizda ochiq saqlanmaydi — faqat xeshi. Shu sababli uni qayta
             ko'rsatib bo'lmaydi; yo'qolsa yangisini yaratish kerak.
           </p>
@@ -257,7 +257,7 @@ const ConnectionSecurity = ({
                 Yangi kalit — HOZIR ko'chirib oling, boshqa ko'rsatilmaydi
               </p>
               <div className="mt-2 flex items-center gap-2">
-                <code className="min-w-0 flex-1 break-all rounded-lg bg-white px-2.5 py-2 text-xs font-bold text-maindark dark:bg-black/30 dark:text-white">
+                <code className="min-w-0 flex-1 break-all rounded-lg bg-white px-2.5 py-2 text-xs font-bold text-gray-800 dark:bg-gray-900/60 dark:text-white">
                   {freshKey}
                 </code>
                 <button
@@ -310,7 +310,7 @@ const ConnectionSecurity = ({
                 <button
                   type="button"
                   onClick={() => setConfirmRotate(false)}
-                  className="h-9 rounded-lg border border-[color:var(--color-border-soft)] px-3.5 text-xs font-bold text-maindark dark:text-white"
+                  className="h-9 rounded-lg border border-gray-200 dark:border-gray-700 px-3.5 text-xs font-bold text-gray-800 dark:text-white"
                 >
                   Bekor
                 </button>
@@ -321,14 +321,14 @@ const ConnectionSecurity = ({
       )}
 
       {/* ═══ 3. Kill-switch ═══ */}
-      <section className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
         <header className="mb-2 flex items-center gap-2">
-          <Power className="h-4 w-4 text-main" />
-          <h3 className="m-0 text-sm font-extrabold text-maindark dark:text-white">
+          <Power className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
             Ulanish holati
           </h3>
         </header>
-        <p className="m-0 text-xs text-[color:var(--color-text-muted)]">
+        <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
           {connection.is_active
             ? "Ulanish FAOL. O'chirilsa hamkor so'rovlari rad etiladi va hodisalar yuborilmaydi."
             : "Ulanish O'CHIQ. Hech qanday so'rov qabul qilinmaydi va hodisa yuborilmaydi."}
