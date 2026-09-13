@@ -33,11 +33,15 @@ import ConnectionSecurity from './panels/ConnectionSecurity';
 import ConnectionLog from './panels/ConnectionLog';
 import ConnectionMetricRow from './panels/ConnectionMetricRow';
 import {
-  BODY,
   BORDER,
+  CTA_BTN,
   FAINT,
+  HEADER_ICON,
   HEALTH_DOT,
   MUTED,
+  PAGE_SUBTITLE,
+  PAGE_TITLE,
+  SEARCH_INPUT,
   TITLE,
   chip,
   chipIcon,
@@ -204,20 +208,42 @@ const ConnectionsPage = () => {
         </div>
       )}
 
-      {/* ═══════ QIDIRUV ═══════ */}
-      {connections.length > 4 && (
-        <div className="relative max-w-xs">
-          <Search
-            className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${FAINT}`}
-          />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ulanish qidirish"
-            className={`w-full rounded-xl border ${BORDER} bg-white py-2.5 pl-9 pr-4 text-sm ${BODY} outline-none transition placeholder:text-gray-400 focus:border-indigo-400 dark:bg-gray-800/50`}
-          />
+      {/* ═══════ SARLAVHA — PCS shakli ═══════ */}
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3">
+          <div className={HEADER_ICON}>
+            <Cable className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className={`m-0 ${PAGE_TITLE}`}>Boshqaruv</h1>
+            <p className={`m-0 ${PAGE_SUBTITLE}`}>
+              Ulanishni tanlang va sozlang
+            </p>
+          </div>
         </div>
-      )}
+
+        <div className="flex items-center gap-3">
+          {connections.length > 4 && (
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Qidirish..."
+                className={SEARCH_INPUT}
+              />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate('/integrations/new')}
+            className={CTA_BTN}
+          >
+            <Plus className="h-5 w-5" />
+            Yangi ulanish
+          </button>
+        </div>
+      </div>
 
       {/* ═══════ ULANISH CHIPLARI ═══════ */}
       {connections.length === 0 ? (
