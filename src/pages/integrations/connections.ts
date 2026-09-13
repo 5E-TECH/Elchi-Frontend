@@ -28,7 +28,26 @@ import type { IntegrationCategory, IntegrationRole } from '../../entities/integr
 export type ConnectionKind = 'partner' | 'integration';
 
 /** Forma maydonining turi — UI qanday nazorat chizishini belgilaydi. */
-export type FieldType = 'text' | 'url' | 'secret' | 'select' | 'switch' | 'tags';
+export type FieldType =
+  | 'text'
+  | 'url'
+  | 'secret'
+  | 'select'
+  | 'switch'
+  | 'tags'
+  /**
+   * Elchi market akkaunti — ro'yxat API'dan yuklanadi.
+   *
+   * ⚠️ ALOHIDA TUR KERAK BO'LDI. `select` statik variantlar bilan ishlaydi,
+   * market esa bazadan keladi va o'nlab bo'lishi mumkin. Matn maydoni ham
+   * yaramaydi: operator bigint id'ni yodda saqlamaydi.
+   */
+  | 'market'
+  /**
+   * Kalit→qiymat xaritasi (JSON). Tashqi saytning maydon nomlarini bizning
+   * maydonlarimizga bog'laydi.
+   */
+  | 'mapping';
 
 export interface ConnectionField {
   key: string;
@@ -204,6 +223,21 @@ const OUTBOUND_FIELDS: ConnectionField[] = [
     hint: 'Faqat tasnif uchun — xatti-harakatga ta’sir qilmaydi',
   },
   {
+    /**
+     * ⚠️ IMPORT UCHUN MAJBURIY (audit EI-02).
+     *
+     * `receiveExternalOrders` `integration.market_id` bo'lmasa 400 beradi
+     * (`order-lifecycle.service.ts:3537`). Bu maydon ILGARI formada YO'Q
+     * edi — ya'ni ustadan o'tgan ulanish import paytida har safar xato
+     * berardi va sabab ekranda ko'rinmasdi (xato faqat import chaqirilganda
+     * chiqadi).
+     */
+    key: 'market_id',
+    label: 'Market akkaunti',
+    type: 'market',
+    hint: 'Kelgan buyurtmalar shu market hisobiga yoziladi. Importsiz ulanishda bo‘sh qoldirish mumkin',
+  },
+  {
     key: 'base_url',
     label: 'API manzili',
     type: 'url',
@@ -260,6 +294,22 @@ const OUTBOUND_FIELDS: ConnectionField[] = [
     writeOnly: true,
     hint: '"Login + parol" rejimida. Bo‘sh qoldirilsa tegilmaydi',
     group: 'security',
+  },
+  {
+    /**
+     * MAYDON XARITASI (audit EI-03).
+     *
+     * Tashqi sayt maydonlarini bizning maydonlarimizga bog'laydi. Bo'lmasa
+     * import standart taxminlarga tushadi (`id`/`full_name`/`phone`) va
+     * ko'p saytda ular mos kelmaydi.
+     *
+     * Backend qabul qiladi va saqlaydi, lekin UI ILGARI YUBORMASDI — ya'ni
+     * xaritani faqat SQL orqali to'ldirish mumkin edi.
+     */
+    key: 'field_mapping',
+    label: 'Maydon xaritasi',
+    type: 'mapping',
+    hint: 'Saytning JSON maydonlari → bizning maydonlar. Bo‘sh bo‘lsa standart nomlar ishlatiladi',
   },
 ];
 

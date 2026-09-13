@@ -98,3 +98,51 @@ describe("buildChangedPayload", () => {
     expect(out).toEqual({});
   });
 });
+
+describe("Xarita (mapping) maydoni — payload solishtiruvi", () => {
+  const field = { key: "field_mapping", label: "Xarita", type: "mapping" as const };
+
+  it("⭐ o'zgarmagan xarita YUBORILMAYDI", () => {
+    const val = { id_field: "order_id", phone_field: "tel" };
+    const out = buildChangedPayload([field], { field_mapping: val }, {
+      field_mapping: { ...val },
+    });
+    expect(out).toEqual({});
+  });
+
+  it("⭐ kalitlar TARTIBI farq qilsa ham o'zgarmagan hisoblanadi", () => {
+    /**
+     * Aks holda ayni xarita "o'zgargan" bo'lib ko'rinib, har saqlashda
+     * keraksiz yozuv ketardi.
+     */
+    const out = buildChangedPayload(
+      [field],
+      { field_mapping: { b: "2", a: "1" } },
+      { field_mapping: { a: "1", b: "2" } },
+    );
+    expect(out).toEqual({});
+  });
+
+  it("o'zgargan xarita yuboriladi", () => {
+    const out = buildChangedPayload(
+      [field],
+      { field_mapping: { id_field: "uuid" } },
+      { field_mapping: { id_field: "order_id" } },
+    );
+    expect(out).toEqual({ field_mapping: { id_field: "uuid" } });
+  });
+
+  it("⭐ bo'shatilgan xarita `{}` bo'lib yuboriladi — o'chirish ishlaydi", () => {
+    const out = buildChangedPayload(
+      [field],
+      { field_mapping: {} },
+      { field_mapping: { id_field: "order_id" } },
+    );
+    expect(out).toEqual({ field_mapping: {} });
+  });
+
+  it("boshlang'ich qiymat yo'q bo'lsa ham to'g'ri ishlaydi", () => {
+    const out = buildChangedPayload([field], { field_mapping: { a: "1" } }, {});
+    expect(out).toEqual({ field_mapping: { a: "1" } });
+  });
+});

@@ -44,6 +44,18 @@ const initialValues = (
       out[f.key] = '';
       continue;
     }
+    /**
+     * Xarita (obyekt) — asl yozuvdan o'qiladi. Busiz maydon bo'sh boshlanib,
+     * saqlashda mavjud xaritani O'CHIRIB yuborardi.
+     */
+    if (f.type === 'mapping') {
+      const val = raw[f.key];
+      out[f.key] =
+        val && typeof val === 'object' && !Array.isArray(val)
+          ? (val as Record<string, string>)
+          : {};
+      continue;
+    }
     if (f.type === 'tags') {
       out[f.key] = Array.isArray(raw[f.key]) ? (raw[f.key] as string[]) : [];
       continue;

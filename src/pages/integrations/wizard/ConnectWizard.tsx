@@ -24,6 +24,7 @@ import { useIntegrationHealthcheck } from '../../../entities/integrations/health
 import { getBackendErrorMessage } from '../../../shared/lib/backendError';
 import ConnectionFields, {
   buildChangedPayload,
+  type FieldValue,
   type FieldValues,
 } from '../ConnectionFields';
 import { findConnectionType, type ConnectionField } from '../connections';
@@ -110,7 +111,7 @@ const ConnectWizard = () => {
   const step1Fields = type.fields.filter((f) => identityKeys.includes(f.key));
   const step2Fields = type.fields.filter((f) => !identityKeys.includes(f.key));
 
-  const change = (key: string, value: string | boolean | string[]) =>
+  const change = (key: string, value: FieldValue) =>
     setValues((v) => ({ ...v, [key]: value }));
 
   const nameOk = String(values.name ?? '').trim().length > 0;
