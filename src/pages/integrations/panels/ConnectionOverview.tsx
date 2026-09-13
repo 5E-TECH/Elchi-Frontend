@@ -15,6 +15,7 @@ import {
   type ConnectionMetrics,
 } from '../../../entities/integrations/metrics';
 import type { Connection } from '../useConnections';
+import { MUTED } from '../ui';
 
 /**
  * UMUMIY HOLAT — tayyorlik checklisti + jonli raqamlar.
@@ -68,6 +69,8 @@ export const buildChecks = (c: Connection): Check[] => {
     const p = c.raw as {
       webhook_url?: string | null;
       sandbox_webhook_url?: string | null;
+      sandbox_enabled?: boolean;
+      has_sandbox_secret?: boolean;
     };
     return [
       ...common,
@@ -80,15 +83,34 @@ export const buildChecks = (c: Connection): Check[] => {
         fixTab: 'settings',
         fixHint: 'Sozlamalar → Webhook manzili',
       },
+      /**
+       * SINOV REJIMI — KALITDAN hisoblanadi, manzilning borligidan EMAS.
+       *
+       * ⚠️ Ilgari faqat `sandbox_webhook_url` tekshirilardi. Ikki xato
+       * bergan:
+       *  1. manzil bor, kalit o'chiq bo'lsa "sozlangan" deb ko'rsatardi —
+       *     nusxa esa KETMASDI;
+       *  2. kalit yoqilgan, sekret yo'q bo'lsa ham "sozlangan" derdi —
+       *     backend esa nusxani tashlab yuboradi (prodakshn sekreti sinov
+       *     muhitiga yuborilmaydi).
+       *
+       * Endi uchala holat ajratilgan va matn KEYINGI QADAMNI aytadi.
+       */
       {
-        label: 'Sandbox manzili',
-        ok: Boolean(p.sandbox_webhook_url),
+        label: 'Sinov rejimi (sandbox)',
+        ok: Boolean(p.sandbox_enabled && p.has_sandbox_secret),
         optional: true,
-        detail: p.sandbox_webhook_url
-          ? String(p.sandbox_webhook_url)
-          : 'sozlanmagan — sinov nusxasi yuborilmaydi',
+        detail: !p.sandbox_enabled
+          ? p.sandbox_webhook_url
+            ? `o'chirilgan — manzil saqlangan (${String(p.sandbox_webhook_url)})`
+            : "o'chirilgan — sinov nusxasi yuborilmaydi"
+          : !p.sandbox_webhook_url
+            ? 'YOQILGAN, lekin manzil yo‘q — nusxa hech qayerga ketmaydi'
+            : !p.has_sandbox_secret
+              ? 'YOQILGAN, lekin alohida sekret yo‘q — nusxa yuborilmaydi'
+              : `YOQILGAN — har hodisa nusxasi ${String(p.sandbox_webhook_url)} ga ketmoqda`,
         fixTab: 'settings',
-        fixHint: 'Sozlamalar → Sandbox manzili',
+        fixHint: 'Sozlamalar → Sinov rejimi',
       },
     ];
   }
@@ -160,7 +182,7 @@ const ChecklistItem = ({
     {check.ok ? (
       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
     ) : check.optional ? (
-      <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+      <Info className={`mt-0.5 h-4 w-4 shrink-0 ${MUTED}`} />
     ) : (
       <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
     )}
@@ -174,7 +196,13 @@ const ChecklistItem = ({
       >
         {check.label}
       </span>
-      <span className="block break-words text-xs text-gray-400">
+      {/*
+        ⚠️ `MUTED` — ilgari `text-gray-400` (dark juftligi YO'Q) edi.
+        Bu qator eng muhim diagnostik matnni ko'rsatadi ("webhook manzili
+        yo'q — status o'zgarishi hamkorga YETMAYDI"), qorong'ida esa u
+        deyarli o'qilmasdi.
+      */}
+      <span className={`block break-words text-xs ${MUTED}`}>
         {check.detail}
       </span>
       {/* Qayerdan tuzatish — matn bilan aytiladi, taxmin qoldirilmaydi. */}
@@ -318,7 +346,7 @@ const ConnectionOverview = ({
 
               <div className="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm dark:border-gray-700/60">
                 <div className="flex justify-between gap-2">
-                  <span className="text-gray-500">Muvaffaqiyat:</span>
+                  <span className={MUTED}>Muvaffaqiyat:</span>
                   {/*
                     `fmtMetric` — o'lchanmagan qiymat "—", hech qachon `0`.
                     `0%` "hammasi yiqildi" degan yolg'on xabar bo'lardi.
@@ -326,11 +354,11 @@ const ConnectionOverview = ({
                   <b>{fmtMetric(metrics.success_rate, '%')}</b>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span className="text-gray-500">Javob vaqti:</span>
+                  <span className={MUTED}>Javob vaqti:</span>
                   <b>{fmtMetric(metrics.avg_ms, ' ms')}</b>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span className="flex items-center gap-1 text-gray-500">
+                  <span className={`flex items-center gap-1 ${MUTED}`}>
                     <Webhook className="h-3.5 w-3.5" /> Oxirgi hodisa:
                   </span>
                   <span className="font-mono text-xs">

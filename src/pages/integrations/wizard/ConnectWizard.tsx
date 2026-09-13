@@ -57,10 +57,21 @@ import { outboundChecks, partnerChecks, type CheckState, type StepCheck } from '
 
 const STEP_LABELS = ['Nomi', 'Kalitlar', 'Sinash', 'Tayyor'];
 
+/**
+ * ⚠️ HAR BIR RANGDA `dark:` JUFTLIGI BOR. Ilgari faqat `skip` da bor edi,
+ * qolgan uchtasida unutilgan — ya'ni qorong'i yuzada (`#3A3358`) to'q
+ * `-600` tuslari deyarli ko'rinmasdi. Bu ikonkalar ustaning sinov
+ * natijasini ko'rsatadi, ya'ni operator "o'tdimi yoki yiqildimi" degan
+ * savolga javobni aynan shu yerdan oladi.
+ */
 const STATE_ICON: Record<CheckState, React.ReactNode> = {
-  ok: <CheckCircle2 className="h-4 w-4 text-emerald-600" />,
-  fail: <XCircle className="h-4 w-4 text-red-600" />,
-  warn: <AlertTriangle className="h-4 w-4 text-amber-600" />,
+  ok: (
+    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+  ),
+  fail: <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />,
+  warn: (
+    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+  ),
   skip: <MinusCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />,
 };
 
@@ -370,7 +381,7 @@ const ConnectWizard = () => {
 
             {/* Javob tanasi MUHIM: 200 qaytarib "imzo yaroqsiz" deyish mumkin. */}
             {testResult?.response_body && (
-              <p className="m-0 mt-2 break-all rounded-lg bg-indigo-600dark/[0.03] px-3 py-2 text-[11px] text-gray-500 dark:text-gray-400 dark:bg-gray-800/50">
+              <p className="m-0 mt-2 break-all rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
                 Javob: {testResult.response_body.slice(0, 300)}
               </p>
             )}

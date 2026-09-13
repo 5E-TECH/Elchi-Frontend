@@ -111,3 +111,197 @@ describe("integratsiyalar palitrasi", () => {
     }
   });
 });
+
+describe("⭐ QORONG'I YUZA — bitta rang, uch joyda bir xil", () => {
+  /**
+   * NIMA BUZILGAN EDI. Bitta ekranda UCH XIL qorong'i yuza bor edi:
+   *
+   *   sahifa foni    #2a2540  (`index.css` — `--color-dark-bg-py`)
+   *   Tailwind karta #2A263D  ← fondan kontrast 1.00, MUTLAQO ajralmaydi
+   *   antd karta     #141414  ← neytral qora, binafsha sahifada begona
+   *
+   * Foydalanuvchi shikoyati: "bg qora rangga o'tmayapti".
+   *
+   * ⚠️ IKKI NUSXA ATAYLAB: Tailwind sinf satrida hex LITERAL yozilishi
+   * shart (skaner shablon ifodasini o'qiy olmaydi va qoidani umuman
+   * yaratmaydi — karta shaffof bo'lib qolardi), antd esa JS tokenini
+   * oladi. Bu test ikkisini bir xil ushlab turadi.
+   */
+
+  /**
+   * IZOHLARSIZ manba. Izohlarda aynan shu naqshlar TUSHUNTIRILADI
+   * ("`dark:text-gray-500` ishlatmang") — ularni taqiqlash foydali
+   * hujjatni yo'q qilardi. Tekshiruv faqat KODGA tegishli.
+   */
+  const uiCode = () => {
+    const raw = Object.entries(
+      import.meta.glob("./ui.ts", {
+        eager: true,
+        query: "?raw",
+        import: "default",
+      }) as Record<string, string>,
+    )[0]?.[1];
+    return (raw ?? "")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
+  };
+
+  const SURFACE = "#3A3358";
+  const PAGE = "#2a2540";
+
+  const lin = (c: number) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  const lum = (hex: string) => {
+    const h = hex.replace("#", "");
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  };
+  const contrast = (a: string, b: string) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  it("Tailwind sinflari LITERAL hex ishlatadi (shablon ifodasi EMAS)", () => {
+    /**
+     * ⚠️ ENG MUHIM TEKSHIRUV. `` `dark:bg-[${TOKEN}]` `` yozilsa Tailwind
+     * skaneri yaroqsiz nom ko'radi va qoidani YARATMAYDI — karta
+     * qorong'ida shaffof bo'lib qoladi. Xato build'da ham, typecheck'da
+     * ham chiqmaydi: faqat ekranda ko'rinadi.
+     */
+    const code = uiCode();
+
+    expect(code.length).toBeGreaterThan(100);
+    // Sinf satrida interpolyatsiya bo'lmasligi kerak.
+    expect(code).not.toMatch(/dark:bg-\[\$\{/);
+    // Literal yozuv esa bo'lishi kerak.
+    expect(code).toContain("dark:bg-[#3A3358]");
+  });
+
+  it("eski, fonga singib ketgan rang QAYTMAYDI", () => {
+    // `.tsx` fayllarida sinf satrlari; `ui.ts` alohida (izohsiz).
+    for (const [file, src] of entries) {
+      expect(src, `${file} da eski yuza rangi`).not.toContain("#2A263D");
+    }
+    expect(uiCode()).not.toContain("#2A263D");
+  });
+
+  it("⭐ yuza fondan AJRALADI", () => {
+    // 1.00 = ajralmaydi. antd sukuti 1.26 beradi; biz ham shu darajada.
+    expect(contrast(SURFACE, PAGE)).toBeGreaterThan(1.2);
+  });
+
+  it("⭐ yuza ustidagi matnlar AA dan o'tadi", () => {
+    // `MUTED` qorong'ida `gray-400`; `TITLE`/`BODY` oq va `gray-200`.
+    expect(contrast("#ffffff", SURFACE)).toBeGreaterThan(4.5);
+    expect(contrast("#e5e7eb", SURFACE)).toBeGreaterThan(4.5);
+    expect(contrast("#9ca3af", SURFACE)).toBeGreaterThan(4.5);
+  });
+
+  it("⭐ `gray-500` bu yuzada ISHLATILMAYDI", () => {
+    /**
+     * `gray-500` yangi yuzada 2.42:1 — AA katta matn chegarasidan (3.0)
+     * ham past. `FAINT` ilgari qorong'ida aynan shuni ishlatardi.
+     */
+    expect(contrast("#6b7280", SURFACE)).toBeLessThan(3);
+
+    expect(uiCode()).not.toContain("dark:text-gray-500");
+  });
+});
+
+describe("⭐ GRADIENT sarlavhalar — ustida OQ matn", () => {
+  /**
+   * Karta sarlavhasi sahifadagi eng ko'zga tashlanadigan element: ulanish
+   * NOMI va holati aynan shu yerda. Ilgari `-500` tuslari ishlatilardi va
+   * oq matn kontrasti 2.15–2.80 edi — OLTITASI HAM AA katta matn
+   * chegarasidan (3.0) past, ya'ni sarlavha o'qilmasdi.
+   *
+   * ⚠️ Rang HOLATNI bildiradi, shu bois `dark:` varianti YO'Q: yashil
+   * "ishlayapti" degani qorong'ida ham yashil bo'lishi kerak. Demak
+   * kontrast bitta qiymatda ikkala mavzu uchun ham yetarli bo'lishi shart.
+   */
+  const TAILWIND: Record<string, string> = {
+    "green-500": "#22c55e",
+    "emerald-500": "#10b981",
+    "amber-500": "#f59e0b",
+    "orange-500": "#f97316",
+    "gray-400": "#9ca3af",
+    "green-600": "#16a34a",
+    "emerald-700": "#047857",
+    "amber-600": "#d97706",
+    "orange-700": "#c2410c",
+    "gray-500": "#6b7280",
+    "gray-600": "#4b5563",
+  };
+
+  const lin = (c: number) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  const lum = (hex: string) => {
+    const h = hex.replace("#", "");
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  };
+  const onWhite = (hex: string) => (1.05) / (lum(hex) + 0.05);
+
+  const uiRaw = () =>
+    Object.entries(
+      import.meta.glob("./ui.ts", {
+        eager: true,
+        query: "?raw",
+        import: "default",
+      }) as Record<string, string>,
+    )[0]?.[1] ?? "";
+
+  it("⭐ ishlatilgan har bir gradient to'xtashi AA katta matndan o'tadi", () => {
+    const code = uiRaw()
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
+
+    const block = /cardHeader[\s\S]*?\}\[health\]/.exec(code)?.[0] ?? "";
+    expect(block.length).toBeGreaterThan(50);
+
+    const stops = [...block.matchAll(/(?:from|to)-([a-z]+-\d{3})/g)].map(
+      (m) => m[1],
+    );
+    // Uch holat × ikki to'xtash = olti.
+    expect(stops).toHaveLength(6);
+
+    for (const stop of stops) {
+      const hex = TAILWIND[stop];
+      expect(hex, `${stop} uchun hex ro'yxatda yo'q`).toBeTruthy();
+      expect(onWhite(hex!), `${stop} da oq matn o'qilmaydi`).toBeGreaterThan(3);
+    }
+  });
+
+  it("eski, o'qilmaydigan tuslar QAYTMAYDI", () => {
+    const code = uiRaw()
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
+    const block = /cardHeader[\s\S]*?\}\[health\]/.exec(code)?.[0] ?? "";
+
+    for (const bad of ["green-500", "emerald-500", "amber-500", "orange-500"]) {
+      expect(block, `${bad} qaytdi`).not.toContain(bad);
+    }
+  });
+
+  it("⭐ nishon qatlami gradientni YORITMAYDI", () => {
+    /**
+     * `bg-white/20` yarim shaffof oq qatlam gradientni yoritib, ustidagi
+     * oq matnni yo'q qiladi — sarlavha to'qlashtirilgandan keyin ham shu
+     * nishon o'qilmay qolardi.
+     */
+    const overview = Object.entries(
+      import.meta.glob("./OverviewPage.tsx", {
+        eager: true,
+        query: "?raw",
+        import: "default",
+      }) as Record<string, string>,
+    )[0]?.[1] ?? "";
+
+    expect(overview.length).toBeGreaterThan(100);
+    expect(overview).toContain("bg-black/25");
+  });
+});

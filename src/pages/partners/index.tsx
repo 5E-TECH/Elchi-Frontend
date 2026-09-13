@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import {
@@ -108,8 +109,6 @@ const PartnersPage = () => {
     name: "",
     webhook_url: "",
     webhook_secret: "",
-    sandbox_webhook_url: "",
-    sandbox_webhook_secret: "",
   });
 
   /** Sinov webhooki natijasi — modal ichida ko'rsatiladi. */
@@ -183,8 +182,6 @@ const PartnersPage = () => {
       name: partner.name ?? "",
       webhook_url: partner.webhook_url ?? "",
       webhook_secret: "",
-      sandbox_webhook_url: partner.sandbox_webhook_url ?? "",
-      sandbox_webhook_secret: "",
     });
   };
 
@@ -205,15 +202,6 @@ const PartnersPage = () => {
     }
     if (editForm.webhook_secret.trim()) {
       dto.webhook_secret = editForm.webhook_secret.trim();
-    }
-    if (
-      editForm.sandbox_webhook_url.trim() !==
-      (editing.sandbox_webhook_url ?? "")
-    ) {
-      dto.sandbox_webhook_url = editForm.sandbox_webhook_url.trim();
-    }
-    if (editForm.sandbox_webhook_secret.trim()) {
-      dto.sandbox_webhook_secret = editForm.sandbox_webhook_secret.trim();
     }
 
     if (!Object.keys(dto).length) {
@@ -849,50 +837,35 @@ const PartnersPage = () => {
                 )}
               </div>
 
-              {/* ═══════ SANDBOX ═══════ */}
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
-                  Sandbox manzili (ixtiyoriy)
-                </span>
-                <input
-                  value={editForm.sandbox_webhook_url}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      sandbox_webhook_url: e.target.value,
-                    }))
-                  }
-                  placeholder="https://dev..."
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
-                />
-                <span className="text-[11px] text-[color:var(--color-text-muted)]">
-                  Har bir hodisaning NUSXASI shu manzilga ham ketadi
-                  (`sandbox: true` bayrog'i bilan). Prodakshnda asosiy manzilga
-                  tegmasdan haqiqiy oqimni kuzatish uchun. Xatosi asosiy
-                  yetkazishga ta'sir qilmaydi.
-                </span>
-              </label>
+              {/* ═══════ SANDBOX — BU YERDA TAHRIRLANMAYDI ═══════ */}
+              {/*
+                ⚠️ MAYDONLAR OLIB TASHLANDI, IKKI HAQIQAT BO'LMASIN.
 
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
-                  Sandbox sekreti (ixtiyoriy)
-                </span>
-                <input
-                  type="password"
-                  value={editForm.sandbox_webhook_secret}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      sandbox_webhook_secret: e.target.value,
-                    }))
-                  }
-                  autoComplete="new-password"
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
-                />
-                <span className="text-[11px] text-[color:var(--color-text-muted)]">
-                  Berilmasa ASOSIY sekret ishlatiladi
-                </span>
-              </label>
+                Sinov rejimi endi KALIT (`sandbox_enabled`) bilan
+                boshqariladi va yoqish uchun manzil hamda ALOHIDA sekret
+                talab qiladi. Bu forma kalit haqida hech narsa bilmasdi:
+                operator shu yerda manzilni yozib, sinov yoqilgan deb
+                o'ylardi — nusxa esa ketmasdi (kalit o'chiq).
+
+                Ustiga bu yerdagi izoh "berilmasa ASOSIY sekret
+                ishlatiladi" deb yozardi; kod haqiqatan shunday qilardi va
+                bu prodakshn imzo kalitini dev hostga yuborish edi. Endi
+                bunday fallback yo'q.
+
+                Sahifaning o'zi ataylab qoldirilgan (zaxira yo'l), lekin
+                sinov rejimi YAGONA joyda sozlanadi.
+              */}
+              <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-[11px] font-semibold text-sky-800 dark:border-sky-900 dark:bg-sky-900/20 dark:text-sky-200">
+                Sinov rejimi (sandbox) bu yerda emas —{' '}
+                <Link
+                  to="/integrations/connections"
+                  className="underline decoration-dotted"
+                >
+                  Integratsiyalar → Ulanish → Sozlamalar
+                </Link>{' '}
+                bo‘limida yoqiladi. U yerda kalit, manzil va alohida sekret
+                birga sozlanadi.
+              </div>
             </div>
 
             <div className="mt-4 flex justify-end gap-2">

@@ -1,6 +1,6 @@
 import { Form, Input, Select, Switch } from 'antd';
 import { useMarkets } from '../../entities/markets';
-import { visibleFields } from './connections';
+import { isFieldDisabled, visibleFields } from './connections';
 import { nestPayload } from './fieldPath';
 import type { ConnectionField } from './connections';
 
@@ -61,6 +61,15 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
     */}
     {visibleFields(fields, values).map((field) => {
       const raw = values[field.key];
+      /**
+       * ⚠️ `disabled` IKKI manbadan: forma saqlanayotgan bo'lsa hammasi,
+       * yoki maydonning O'ZI shartli o'chirilgan bo'lsa (`disabledWhen`).
+       *
+       * Yashirish (`showWhen`) o'rniga o'chirish tanlangan joylar bor —
+       * masalan sandbox manzili: kalit o'chirilganda qiymat KO'RINISHI
+       * kerak, aks holda operator nima sozlanganini bilmaydi.
+       */
+      const fieldDisabled = disabled || isFieldDisabled(field, values);
 
       /* ── Kalit/o'chirgich ── */
       if (field.type === 'switch') {
@@ -73,7 +82,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
           >
             <Switch
               checked={Boolean(raw)}
-              disabled={disabled}
+              disabled={fieldDisabled}
               onChange={(checked) => onChange(field.key, checked)}
             />
           </Form.Item>
@@ -86,7 +95,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
           <Form.Item key={field.key} label={field.label} extra={field.hint}>
             <Select
               value={String(raw ?? '')}
-              disabled={disabled}
+              disabled={fieldDisabled}
               onChange={(v) => onChange(field.key, v)}
               options={field.options ?? []}
               placeholder={field.placeholder}
@@ -112,7 +121,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
             <Select
               mode="tags"
               value={Array.isArray(raw) ? raw : []}
-              disabled={disabled}
+              disabled={fieldDisabled}
               onChange={(v: string[]) => onChange(field.key, v)}
               tokenSeparators={[',', ' ', '\n']}
               placeholder={field.placeholder}
@@ -130,7 +139,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
             key={field.key}
             field={field}
             value={String(raw ?? '')}
-            disabled={disabled}
+            disabled={fieldDisabled}
             onChange={(v) => onChange(field.key, v)}
           />
         );
@@ -143,7 +152,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
             key={field.key}
             field={field}
             value={raw}
-            disabled={disabled}
+            disabled={fieldDisabled}
             onChange={(v) => onChange(field.key, v)}
           />
         );
@@ -166,7 +175,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
           >
             <Input.Password
               value={String(raw ?? '')}
-              disabled={disabled}
+              disabled={fieldDisabled}
               onChange={(e) => onChange(field.key, e.target.value)}
               placeholder="tegilmaydi"
               autoComplete="new-password"
@@ -180,7 +189,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
         <Form.Item key={field.key} label={field.label} extra={field.hint}>
           <Input
             value={String(raw ?? '')}
-            disabled={disabled}
+            disabled={fieldDisabled}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder}
             inputMode={field.type === 'url' ? 'url' : undefined}

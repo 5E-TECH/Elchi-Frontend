@@ -209,6 +209,20 @@ const OverviewPage = () => {
   );
 };
 
+/**
+ * Sinov rejimi YOQILGANMI — kalit VA sekret ikkisi ham kerak.
+ *
+ * ⚠️ Manzilning borligi yetmaydi: kalit o'chiq bo'lsa nusxa ketmaydi, o'z
+ * sekreti bo'lmasa ham backend nusxani tashlab yuboradi (prodakshn
+ * sekreti sinov muhitiga yuborilmaydi). Yorliqni faqat HAQIQATAN oqim
+ * bor holatda ko'rsatish kerak — aks holda u yolg'on signal bo'lardi.
+ */
+const sandboxOn = (c: Connection): boolean => {
+  if (c.kind !== 'partner') return false;
+  const raw = c.raw as { sandbox_enabled?: boolean; has_sandbox_secret?: boolean };
+  return Boolean(raw.sandbox_enabled && raw.has_sandbox_secret);
+};
+
 /** Holat — `connectionHealth` yagona qoidasi. */
 const healthOf = (
   c: Connection,
@@ -260,7 +274,13 @@ const ConnectionCard = ({
               {connection.name}
             </h3>
           </div>
-          <span className="flex shrink-0 items-center gap-1 rounded-lg bg-white/20 px-2 py-1 text-xs font-medium text-white">
+          {/*
+            ⚠️ `bg-black/25`, `bg-white/20` EMAS. Oq yarim shaffof qatlam
+            gradientni YORITADI va ustidagi oq matnni yo'q qiladi —
+            sarlavha to'qlashtirilgandan keyin ham shu nishon o'qilmay
+            qolardi. Qora qatlam esa aksincha kontrastni oshiradi.
+          */}
+          <span className="flex shrink-0 items-center gap-1 rounded-lg bg-black/25 px-2 py-1 text-xs font-medium text-white">
             {health === 'ok' ? (
               <CheckCircle className="h-3.5 w-3.5" />
             ) : (
@@ -278,6 +298,19 @@ const ConnectionCard = ({
             {ROLE_META[connection.role].label}
           </Tag>
           <Tag>{CATEGORY_LABEL[connection.category]}</Tag>
+          {/*
+            SINOV REJIMI NISHONI — ro'yxatdan ko'rinishi SHART.
+            Ilgari sandbox butunlay ko'rinmas edi: na kartada, na panelda,
+            na metrikada. Operator haqiqiy hodisalar nusxasi sinov muhitiga
+            ketayotganini bilmasdi — ayniqsa uni boshqa odam yoqib qo'ygan
+            bo'lsa. Sariq rang "e'tibor" darajasi: bu xato emas, lekin
+            unutib qoldirilmasligi kerak.
+          */}
+          {sandboxOn(connection) && (
+            <Tag color="orange" title="Har hodisaning nusxasi sinov manziliga ham ketmoqda">
+              SINOV REJIMI
+            </Tag>
+          )}
         </div>
 
         <div className="flex items-center gap-2 text-sm">
