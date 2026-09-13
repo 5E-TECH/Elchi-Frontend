@@ -31,7 +31,6 @@ import ConnectionOverview from './panels/ConnectionOverview';
 import ConnectionSettings from './panels/ConnectionSettings';
 import ConnectionSecurity from './panels/ConnectionSecurity';
 import ConnectionLog from './panels/ConnectionLog';
-import ConnectionMetricRow from './panels/ConnectionMetricRow';
 import {
   BORDER,
   CTA_BTN,
@@ -134,7 +133,12 @@ const ConnectionsPage = () => {
           label: 'Umumiy holat',
           icon: <LayoutDashboard className="h-4 w-4" />,
           desc: 'Tayyorlik',
-          content: <ConnectionOverview connection={active} />,
+          content: (
+            <ConnectionOverview
+              connection={active}
+              metrics={byUid.get(active.uid)}
+            />
+          ),
         },
         {
           key: 'settings',
@@ -311,13 +315,16 @@ const ConnectionsPage = () => {
         </div>
       )}
 
-      {/* ═══════ TANLANGAN ULANISH ═══════ */}
+      {/*
+        ═══════ TANLANGAN ULANISH ═══════
+
+        ⚠️ DOIMIY METRIKA QATORI OLIB TASHLANDI. Raqamlar endi "Umumiy holat"
+        paneli ichida `Statistic` bo'lib turadi — PCS `ElchiDashboardTab` shu
+        naqshni ishlatadi. Ikki joyda ko'rsatish takror bo'lardi va sub-nav
+        pastga surilardi.
+      */}
       {active && activeItem && (
         <div className="space-y-4">
-          <ConnectionMetricRow
-            metrics={byUid.get(active.uid)}
-            isLoading={metricsQuery.isLoading}
-          />
           <ConnectionSubNav
             items={items}
             active={activeItem.key}

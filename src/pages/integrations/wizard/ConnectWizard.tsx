@@ -1,15 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+  Alert,
+  Button,
+  Card,
+  Form,
+  Steps,
+  Typography,
+} from 'antd';
+import {
   AlertTriangle,
   ArrowLeft,
   Check,
   CheckCircle2,
-  ChevronRight,
-  Circle,
-  Copy,
   Info,
-  Loader2,
   MinusCircle,
   RotateCw,
   XCircle,
@@ -78,7 +82,6 @@ const ConnectWizard = () => {
     response_time_ms?: number;
   } | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const { createPartner, testWebhook } = usePartnerActions();
   const createIntegration = useCreateIntegration();
@@ -191,16 +194,15 @@ const ConnectWizard = () => {
     <div className="mx-auto max-w-3xl space-y-4">
       {/* ═══ Sarlavha + qadam ko'rsatkichi ═══ */}
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => (step === 1 ? navigate('/integrations/new') : setStep(step - 1))}
-          /* 3-qadamdan keyin ortga qaytish YO'Q: yozuv allaqachon yaratilgan,
-             "Kalitlar"ga qaytish yangi yozuv yaratardi. */
+        {/* 3-qadamdan keyin ortga qaytish YO'Q: yozuv allaqachon yaratilgan,
+            "Kalitlar"ga qaytish yangi yozuv yaratardi. */}
+        <Button
+          icon={<ArrowLeft className="h-4 w-4" />}
           disabled={step >= 3}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 disabled:opacity-30 dark:text-gray-200"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+          onClick={() =>
+            step === 1 ? navigate('/integrations/new') : setStep(step - 1)
+          }
+        />
         <div className="min-w-0">
           <h1 className="m-0 truncate text-base font-extrabold text-gray-800 dark:text-white">
             {type.label}
@@ -211,36 +213,16 @@ const ConnectWizard = () => {
         </div>
       </div>
 
-      <ol className="m-0 flex list-none flex-wrap gap-1.5 p-0">
-        {STEP_LABELS.map((label, i) => {
-          const n = i + 1;
-          const done = n < step;
-          const now = n === step;
-          return (
-            <li key={label} className="flex items-center gap-1.5">
-              <span
-                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                  now
-                    ? 'bg-indigo-600 text-white'
-                    : done
-                      ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-indigo-600dark/5 text-gray-500 dark:text-gray-400 dark:bg-gray-700/60'
-                }`}
-              >
-                {done ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Circle className="h-3 w-3" />
-                )}
-                {n}. {label}
-              </span>
-              {n < STEP_LABELS.length && (
-                <ChevronRight className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-              )}
-            </li>
-          );
-        })}
-      </ol>
+      {/*
+        antd `Steps` — PCS ham ko'p qadamli oqimlarda shu komponentni
+        ishlatadi. Qo'lda yasalgan chip qatoridan afzalligi: bajarilgan
+        qadam avtomatik belgilanadi va mobil ekranda o'zi siqiladi.
+      */}
+      <Steps
+        size="small"
+        current={step - 1}
+        items={STEP_LABELS.map((label) => ({ title: label }))}
+      />
 
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-xs font-bold text-red-700 dark:text-red-300">
@@ -251,30 +233,34 @@ const ConnectWizard = () => {
       {/* ═══ 1. NOMI ═══ */}
       {step === 1 && (
         <div className="space-y-3">
-          <section className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-900/20 p-4">
-            <p className="m-0 mb-2 flex items-center gap-1.5 text-xs font-extrabold text-indigo-700 dark:text-indigo-300">
-              <Info className="h-3.5 w-3.5" />
-              Boshlashdan oldin quyidagilar tayyor bo'lsin
-            </p>
-            <ul className="m-0 list-none space-y-1.5 p-0">
-              {type.prereqs.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-2 text-xs leading-snug text-gray-700 dark:text-gray-200"
-                >
-                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <Alert
+            type="info"
+            showIcon
+            icon={<Info className="h-4 w-4" />}
+            message="Boshlashdan oldin quyidagilar tayyor bo'lsin"
+            description={
+              <ul className="m-0 list-none space-y-1.5 p-0">
+                {type.prereqs.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-2 text-xs leading-snug"
+                  >
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            }
+          />
 
           <Panel>
-            <ConnectionFields
-              fields={step1Fields}
-              values={values}
-              onChange={change}
-            />
+            <Form layout="vertical">
+              <ConnectionFields
+                fields={step1Fields}
+                values={values}
+                onChange={change}
+              />
+            </Form>
           </Panel>
 
           <Primary disabled={!nameOk} onClick={() => setStep(2)}>
@@ -292,23 +278,33 @@ const ConnectWizard = () => {
       {step === 2 && (
         <div className="space-y-3">
           <Panel>
-            <ConnectionFields
-              fields={step2Fields as ConnectionField[]}
-              values={values}
-              onChange={change}
-              disabled={creating}
-            />
+            {/*
+              ⚠️ `Form` O'RAMASI SHART: `ConnectionFields` antd `Form.Item`
+              chiqaradi va u Form konteksti bo'lmasa yorliq/izohni
+              joylashtira olmaydi (antd ogohlantirish beradi).
+            */}
+            <Form layout="vertical">
+              <ConnectionFields
+                fields={step2Fields as ConnectionField[]}
+                values={values}
+                onChange={change}
+                disabled={creating}
+              />
+            </Form>
           </Panel>
 
           {/* Nima bo'lishini OLDIN aytamiz — kalit bir marta ko'rsatiladi. */}
-          <p className="m-0 rounded-xl border border-gray-200 dark:border-gray-700 px-3.5 py-2.5 text-[11px] text-gray-500 dark:text-gray-400">
-            {isPartner
-              ? "Bosganingizda ulanish yaratiladi va API kalit BIR MARTA ko'rsatiladi — keyin uni qayta olish mumkin emas."
-              : 'Bosganingizda ulanish yaratiladi, so‘ng aloqani sinab ko‘ramiz.'}
-          </p>
+          <Alert
+            type="warning"
+            showIcon
+            message={
+              isPartner
+                ? "Bosganingizda ulanish yaratiladi va API kalit BIR MARTA ko'rsatiladi — keyin uni qayta olish mumkin emas."
+                : 'Bosganingizda ulanish yaratiladi, so‘ng aloqani sinab ko‘ramiz.'
+            }
+          />
 
-          <Primary disabled={creating} onClick={createRecord}>
-            {creating && <Loader2 className="h-4 w-4 animate-spin" />}
+          <Primary loading={creating} onClick={createRecord}>
             Yaratish va sinashga o'tish
           </Primary>
         </div>
@@ -319,27 +315,24 @@ const ConnectWizard = () => {
         <div className="space-y-3">
           {/* Kalit — DARHOL, 4-qadamni kutmasdan. */}
           {created?.apiKey && (
-            <section className="rounded-xl border-2 border-emerald-500/40 bg-emerald-500/5 p-4">
-              <p className="m-0 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
-                API kalit — HOZIR ko'chirib oling, boshqa ko'rsatilmaydi
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <code className="min-w-0 flex-1 break-all rounded-lg bg-white px-2.5 py-2 text-xs font-bold text-gray-800 dark:bg-gray-900/60 dark:text-white">
-                  {created.apiKey}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigator.clipboard?.writeText(created.apiKey!);
-                    setCopied(true);
-                  }}
-                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-600 px-2.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300"
+            <Alert
+              type="success"
+              showIcon
+              message="API kalit — HOZIR ko'chirib oling, boshqa ko'rsatilmaydi"
+              description={
+                /*
+                  antd `copyable` — o'z holatini o'zi boshqaradi ("ko'chirildi"
+                  belgisi ham). Qo'lda yozilgan tugma va `copied` state kerak
+                  emas edi.
+                */
+                <Typography.Paragraph
+                  copyable={{ text: created.apiKey! }}
+                  className="!mb-0 !mt-1 break-all font-mono text-xs"
                 >
-                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? "Ko'chirildi" : "Ko'chirish"}
-                </button>
-              </div>
-            </section>
+                  {created.apiKey}
+                </Typography.Paragraph>
+              }
+            />
           )}
 
           <Panel>
@@ -347,19 +340,15 @@ const ConnectWizard = () => {
               <p className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
                 Ulanishni tekshirish
               </p>
-              <button
-                type="button"
+              <Button
+                icon={<RotateCw className="h-3.5 w-3.5" />}
+                loading={testing}
                 onClick={runTest}
-                disabled={testing}
-                className="flex h-9 items-center gap-1.5 rounded-xl border border-indigo-500 px-3 text-xs font-bold text-indigo-700 dark:text-indigo-300 disabled:opacity-50"
               >
-                {testing ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <RotateCw className="h-3.5 w-3.5" />
-                )}
-                {testResult || outboundResult || testError ? 'Qayta sinash' : 'Sinash'}
-              </button>
+                {testResult || outboundResult || testError
+                  ? 'Qayta sinash'
+                  : 'Sinash'}
+              </Button>
             </div>
 
             <div className="mt-3 divide-y divide-gray-200 dark:divide-gray-700">
@@ -458,13 +447,9 @@ const ConnectWizard = () => {
             >
               Konsolda ochish
             </Primary>
-            <button
-              type="button"
-              onClick={() => navigate('/integrations')}
-              className="h-11 rounded-xl border border-gray-200 dark:border-gray-700 px-4 text-sm font-bold text-gray-800 dark:text-white"
-            >
-              Manzaraga
-            </button>
+            <Button size="large" onClick={() => navigate('/integrations')}>
+              Ulanishlarga
+            </Button>
           </div>
         </div>
       )}
@@ -472,29 +457,25 @@ const ConnectWizard = () => {
   );
 };
 
+/** Panel — antd `Card`, PCS panellari bilan bir xil ko'rinish. */
 const Panel = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
-    {children}
-  </div>
+  <Card size="small">{children}</Card>
 );
 
 const Primary = ({
   children,
   onClick,
   disabled,
+  loading,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
+  loading?: boolean;
 }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className="flex h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white disabled:opacity-50"
-  >
+  <Button type="primary" size="large" onClick={onClick} disabled={disabled} loading={loading}>
     {children}
-  </button>
+  </Button>
 );
 
 export default ConnectWizard;

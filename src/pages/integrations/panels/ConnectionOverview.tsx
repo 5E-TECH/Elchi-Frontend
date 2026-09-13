@@ -1,21 +1,34 @@
-import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { Alert, Card, Statistic, Tag, Tooltip } from 'antd';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Info,
+  ShieldAlert,
+  Webhook,
+  XCircle,
+} from 'lucide-react';
 import { CATEGORY_LABEL, ROLE_META } from '../../../entities/integrations';
+import {
+  fmtMetric,
+  type ConnectionMetrics,
+} from '../../../entities/integrations/metrics';
 import type { Connection } from '../useConnections';
 
 /**
- * UMUMIY HOLAT — ulanish ishlashga tayyormi.
+ * UMUMIY HOLAT — tayyorlik checklisti + jonli raqamlar.
  *
- * NEGA CHECKLIST SHAKLIDA. Ilgari ulanish holati bir necha joyga tarqalgan
- * edi: manzil bir sahifada, sekret boshqasida, oxirgi sinxron uchinchisida.
- * "Nega ishlamayapti?" degan savolga javob topish uchun operator hammasini
- * ochib chiqishi kerak edi.
+ * Shakl PCS `ElchiDashboardTab` dan ko'chirildi: yuqorida xulosa `Alert`,
+ * ostida ikki `Card` — chapda checklist, o'ngda raqamlar (`Statistic`).
  *
- * Endi bitta ro'yxat: nima sozlangan, nima yo'q — va YETISHMAGANI qizil.
+ * NEGA CHECKLIST. "Nega ishlamayapti?" degan savolga javob ilgari bir necha
+ * joyga tarqalgan edi: manzil bir sahifada, sekret boshqasida, oxirgi
+ * sinxron uchinchisida. Endi bitta ro'yxat va YETISHMAGANI qizil.
  *
  * ⚠️ Tekshiruvlar ULANISH TURIGA qarab farq qiladi, chunki inbound va
- * outbound ulanishning "tayyorlik" ma'nosi boshqa:
- *   inbound  — biz ularga webhook YUBORAMIZ, ya'ni manzil+sekret kerak
- *   outbound — biz ularga so'rov yuboramiz, ya'ni API manzili+kalit kerak
+ * outbound uchun "tayyorlik" ma'nosi boshqa:
+ *   inbound  — biz ularga webhook YUBORAMIZ → manzil + sekret kerak
+ *   outbound — biz ularga so'rov yuboramiz → API manzili + kalit kerak
  */
 
 interface Check {
@@ -29,10 +42,10 @@ interface Check {
 const buildChecks = (c: Connection): Check[] => {
   const common: Check[] = [
     {
-      label: 'Faol',
+      label: 'Ulanish yoqilgan',
       ok: c.is_active,
       detail: c.is_active
-        ? 'ulanish yoqilgan'
+        ? 'faol'
         : "o'chirilgan — hech qanday amal bajarilmaydi",
     },
   ];
@@ -67,7 +80,6 @@ const buildChecks = (c: Connection): Check[] => {
     api_url?: string | null;
     auth_type?: string | null;
     last_sync_at?: string | null;
-    total_synced_orders?: number;
   };
   const url = i.base_url || i.api_url || '';
   return [
@@ -78,12 +90,9 @@ const buildChecks = (c: Connection): Check[] => {
       detail: url || "yo'q — so'rov yuborib bo'lmaydi",
     },
     {
-      label: 'Autentifikatsiya',
-      ok: Boolean(i.auth_type) && i.auth_type !== 'none',
-      optional: i.auth_type === 'none',
-      detail: i.auth_type
-        ? `turi: ${i.auth_type}`
-        : 'belgilanmagan',
+      label: 'Kirish turi',
+      ok: Boolean(i.auth_type),
+      detail: i.auth_type ? `turi: ${i.auth_type}` : 'belgilanmagan',
     },
     {
       label: 'Oxirgi sinxron',
@@ -91,82 +100,173 @@ const buildChecks = (c: Connection): Check[] => {
       optional: true,
       detail: i.last_sync_at
         ? new Date(i.last_sync_at).toLocaleString('uz-UZ')
-        : 'hali sinxron bo‘lmagan',
+        : "hali sinxron bo'lmagan",
     },
   ];
 };
 
-const ConnectionOverview = ({ connection }: { connection: Connection }) => {
+/** PCS `ChecklistItem` — yashil belgi / qizil xato + izoh. */
+const ChecklistItem = ({ check }: { check: Check }) => (
+  <div className="flex items-start gap-2 py-1.5">
+    {check.ok ? (
+      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+    ) : check.optional ? (
+      <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+    ) : (
+      <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+    )}
+    <div className="min-w-0">
+      <span
+        className={
+          check.ok || check.optional
+            ? 'text-gray-700 dark:text-gray-200'
+            : 'font-medium text-red-600 dark:text-red-400'
+        }
+      >
+        {check.label}
+      </span>
+      <span className="block break-words text-xs text-gray-400">
+        {check.detail}
+      </span>
+    </div>
+  </div>
+);
+
+const ConnectionOverview = ({
+  connection,
+  metrics,
+}: {
+  connection: Connection;
+  metrics?: ConnectionMetrics;
+}) => {
   const checks = buildChecks(connection);
   const blocking = checks.filter((c) => !c.ok && !c.optional);
+  const failed = metrics?.failed ?? 0;
+  const queued = metrics?.queued ?? 0;
 
   return (
-    <div className="space-y-3">
-      {/* Ulanish pasporti — rol va tur bir qarashda ko'rinsin. */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="m-0 text-base font-extrabold text-gray-800 dark:text-white">
-            {connection.name}
-          </h3>
-          <span
-            className="rounded-full bg-indigo-50 dark:bg-indigo-900/25 px-2 py-0.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300"
-            title={ROLE_META[connection.role].hint}
-          >
-            {ROLE_META[connection.role].label}
-          </span>
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-            {CATEGORY_LABEL[connection.category]}
-          </span>
-          {/* Yo'nalish — eng ko'p chalkashgan joy, shuning uchun aniq yozamiz. */}
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 dark:bg-gray-700/60 dark:text-gray-400">
-            {connection.kind === 'partner'
-              ? 'bizga ulanadi (inbound)'
-              : 'biz ulanamiz (outbound)'}
-          </span>
-        </div>
-
-        <p className="m-0 mt-2 text-xs text-gray-500 dark:text-gray-400">
-          {connection.kind === 'partner'
-            ? "Kalit bizdan chiqadi. Status o'zgarganda biz ularga webhook yuboramiz."
-            : "Kalit ularda. So'rovni biz yuboramiz va javobini o'zimizga moslaymiz."}
-        </p>
-      </div>
-
-      {/* Tayyorlik xulosasi — avval umumiy javob, keyin tafsilot. */}
-      <div
-        className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+    <div className="space-y-4">
+      <Alert
+        type={blocking.length === 0 ? 'success' : 'warning'}
+        showIcon
+        message={
           blocking.length === 0
-            ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300'
-            : 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300'
-        }`}
-      >
-        {blocking.length === 0
-          ? '✓ Ulanish ishlashga tayyor'
-          : `${blocking.length} ta sozlama yetishmaydi`}
-      </div>
-
-      <div className="divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
-        {checks.map((c) => (
-          <div key={c.label} className="flex items-start gap-3 px-4 py-3">
-            <span className="mt-0.5 shrink-0">
-              {c.ok ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              ) : c.optional ? (
-                <Info className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-              )}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-bold text-gray-800 dark:text-white">
-                {c.label}
-              </span>
-              <span className="block break-all text-xs text-gray-500 dark:text-gray-400">
-                {c.detail}
-              </span>
-            </span>
+            ? 'Ulanish ishlashga tayyor'
+            : `${blocking.length} ta sozlama yetishmaydi — checklistni tugatish kerak`
+        }
+        description={
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Tag color="blue">{ROLE_META[connection.role].label}</Tag>
+            <Tag>{CATEGORY_LABEL[connection.category]}</Tag>
+            {/* Yo'nalish — eng ko'p chalkashgan joy, shuning uchun aniq. */}
+            <Tooltip
+              title={
+                connection.kind === 'partner'
+                  ? "Kalit bizdan chiqadi. Status o'zgarganda biz ularga webhook yuboramiz."
+                  : "Kalit ularda. So'rovni biz yuboramiz va javobini o'zimizga moslaymiz."
+              }
+            >
+              <Tag color="purple" className="cursor-help">
+                {connection.kind === 'partner'
+                  ? 'bizga ulanadi'
+                  : 'biz ulanamiz'}
+              </Tag>
+            </Tooltip>
+            {failed > 0 && <Tag color="red">{failed} hodisa yetmadi</Tag>}
+            {queued > 0 && <Tag color="orange">{queued} navbatda</Tag>}
           </div>
-        ))}
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card
+          title={
+            <span className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4" /> Tayyorlik checklisti
+            </span>
+          }
+        >
+          {checks.map((c) => (
+            <ChecklistItem key={c.label} check={c} />
+          ))}
+        </Card>
+
+        <Card
+          title={
+            <span className="flex items-center gap-2">
+              <Clock className="h-4 w-4" /> Oxirgi 24 soat
+            </span>
+          }
+        >
+          {/*
+            ⚠️ Metrika YO'Q bo'lishining ikki sababi bor va ular BOSHQA:
+            hali kelmadi, yoki 24 soatda hodisa bo'lmagan. Ikkisini bir xil
+            ko'rsatish "hodisa yo'q" degan xato xulosaga olib boradi.
+          */}
+          {!metrics ? (
+            <Alert
+              type="info"
+              showIcon
+              message="24 soatda hodisa bo'lmagan"
+              description="O'lchash uchun ma'lumot yo'q — ulanish hali ishlatilmagan bo'lishi mumkin."
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <Statistic title="Hodisa" value={metrics.events} />
+                <Statistic
+                  title="Yetkazildi"
+                  value={metrics.delivered}
+                  valueStyle={{ color: '#16a34a' }}
+                />
+                <Statistic
+                  title="Yetmadi"
+                  value={metrics.failed}
+                  valueStyle={{
+                    color: metrics.failed > 0 ? '#dc2626' : undefined,
+                  }}
+                  prefix={
+                    metrics.failed > 0 ? (
+                      <AlertTriangle className="inline h-4 w-4" />
+                    ) : undefined
+                  }
+                />
+                <Statistic
+                  title="Navbatda"
+                  value={metrics.queued}
+                  valueStyle={{
+                    color: metrics.queued > 0 ? '#ea580c' : undefined,
+                  }}
+                />
+              </div>
+
+              <div className="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm dark:border-gray-700/60">
+                <div className="flex justify-between gap-2">
+                  <span className="text-gray-500">Muvaffaqiyat:</span>
+                  {/*
+                    `fmtMetric` — o'lchanmagan qiymat "—", hech qachon `0`.
+                    `0%` "hammasi yiqildi" degan yolg'on xabar bo'lardi.
+                  */}
+                  <b>{fmtMetric(metrics.success_rate, '%')}</b>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-gray-500">Javob vaqti:</span>
+                  <b>{fmtMetric(metrics.avg_ms, ' ms')}</b>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="flex items-center gap-1 text-gray-500">
+                    <Webhook className="h-3.5 w-3.5" /> Oxirgi hodisa:
+                  </span>
+                  <span className="font-mono text-xs">
+                    {metrics.last_event_at
+                      ? new Date(metrics.last_event_at).toLocaleString('uz-UZ')
+                      : '—'}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+        </Card>
       </div>
     </div>
   );

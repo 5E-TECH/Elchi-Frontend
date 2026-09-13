@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle,
-  Check,
-  Copy,
-  KeyRound,
-  Loader2,
-  Power,
-  Save,
-  ShieldCheck,
-} from 'lucide-react';
+  Alert,
+  Button,
+  Card,
+  Form,
+  Popconfirm,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
+import { KeyRound, Power, Save, ShieldCheck } from 'lucide-react';
 import { usePartnerActions } from '../../../entities/partners';
 import { useUpdateIntegration } from '../../../entities/integrations';
 import { getBackendErrorMessage } from '../../../shared/lib/backendError';
@@ -22,18 +23,14 @@ import type { Connection } from '../useConnections';
 /**
  * XAVFSIZLIK — kirishni CHEKLAYDIGAN qiymatlar va TA'SIRI KATTA amallar.
  *
+ * Shakl PCS `ElchiControlTab` dan: har bir amal o'z `Card`ida, xavfli
+ * amallar `Popconfirm` bilan, tushuntirish `Alert` bilan.
+ *
  * NEGA SOZLAMALARDAN AJRATILDI. Bir tabda "webhook manzilini o'zgartirish"
  * bilan "API kalitni yangilash" yonma-yon turardi. Ikkinchisi hamkorning
- * ulanishini DARHOL uzadi, birinchisi esa oddiy tahrir. Bir xil ko'rinishda
- * turgani xato bosishga olib keladi.
- *
- * Bu yerda uch narsa bor:
- *   1. Kirish cheklovlari — registrdagi `group: 'security'` maydonlari
- *   2. API kalit rotatsiyasi — faqat hamkorda (kalit BIZDAN chiqadi)
- *   3. Kill-switch — ulanishni butunlay to'xtatish
+ * ulanishini DARHOL uzadi, birinchisi esa oddiy tahrir. Bir xil
+ * ko'rinishda turgani xato bosishga olib keladi.
  */
-
-type Msg = { tone: 'ok' | 'err'; text: string } | null;
 
 const initialValues = (
   c: Connection,
@@ -75,17 +72,11 @@ const ConnectionSecurity = ({
   );
 
   const [values, setValues] = useState<FieldValues>(initial);
-  const [msg, setMsg] = useState<Msg>(null);
-  /** Rotatsiya tasdig'i — ta'siri katta amal bir bosishda bajarilmaydi. */
-  const [confirmRotate, setConfirmRotate] = useState(false);
   /** Yangi kalit — FAQAT bir marta ko'rsatiladi, keyin boshqa olinmaydi. */
   const [freshKey, setFreshKey] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setValues(initial);
-    setMsg(null);
-    setConfirmRotate(false);
     setFreshKey(null);
   }, [initial]);
 
@@ -97,7 +88,7 @@ const ConnectionSecurity = ({
   const save = async () => {
     const payload = buildChangedPayload(fields, values, initial);
     if (!Object.keys(payload).length) {
-      setMsg({ tone: 'ok', text: "O'zgarish yo'q" });
+      message.info("O'zgarish yo'q");
       return;
     }
     try {
@@ -117,13 +108,10 @@ const ConnectionSecurity = ({
           } as never,
         });
       }
-      setMsg({ tone: 'ok', text: 'Saqlandi' });
+      message.success('Saqlandi');
       onSaved();
     } catch (error) {
-      setMsg({
-        tone: 'err',
-        text: getBackendErrorMessage(error) || "Saqlab bo'lmadi",
-      });
+      message.error(getBackendErrorMessage(error) || "Saqlab bo'lmadi");
     }
   };
 
@@ -131,14 +119,10 @@ const ConnectionSecurity = ({
     try {
       const res = await rotateKey.mutateAsync(connection.id);
       setFreshKey(res.api_key || null);
-      setConfirmRotate(false);
-      setMsg(null);
+      message.success('Yangi kalit yaratildi');
       onSaved();
     } catch (error) {
-      setMsg({
-        tone: 'err',
-        text: getBackendErrorMessage(error) || "Kalitni yangilab bo'lmadi",
-      });
+      message.error(getBackendErrorMessage(error) || "Kalitni yangilab bo'lmadi");
     }
   };
 
@@ -168,16 +152,12 @@ const ConnectionSecurity = ({
           } as never,
         });
       }
-      setMsg({
-        tone: 'ok',
-        text: next ? 'Ulanish yoqildi' : "Ulanish o'chirildi",
-      });
+      message.success(next ? 'Ulanish yoqildi' : "Ulanish o'chirildi");
       onSaved();
     } catch (error) {
-      setMsg({
-        tone: 'err',
-        text: getBackendErrorMessage(error) || "Holatni o'zgartirib bo'lmadi",
-      });
+      message.error(
+        getBackendErrorMessage(error) || "Holatni o'zgartirib bo'lmadi",
+      );
     }
   };
 
@@ -185,172 +165,151 @@ const ConnectionSecurity = ({
 
   return (
     <div className="space-y-4">
-      {/* ═══ 1. Kirish cheklovlari ═══ */}
-      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
-        <header className="mb-3 flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          <h3 className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
-            Kirish cheklovlari
-          </h3>
-        </header>
-
+      {/* ═══ Kirish cheklovlari ═══ */}
+      <Card
+        title={
+          <span className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4" /> Kirish cheklovlari
+          </span>
+        }
+      >
         {fields.length === 0 ? (
-          <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
-            Bu ulanish turida cheklov sozlamasi yo'q.
-          </p>
+          <Alert
+            type="info"
+            showIcon
+            message="Bu ulanish turida cheklov sozlamasi yo'q"
+          />
         ) : (
-          <>
+          <Form layout="vertical">
             <ConnectionFields
               fields={fields}
               values={values}
               onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
               disabled={saving}
             />
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={save}
-                disabled={saving}
-                className="flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white disabled:opacity-50"
-              >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                Saqlash
-              </button>
-              {msg && (
-                <span
-                  className={`text-xs font-bold ${
-                    msg.tone === 'ok'
-                      ? 'text-emerald-600 dark:text-emerald-300'
-                      : 'text-red-600 dark:text-red-300'
-                  }`}
-                >
-                  {msg.text}
-                </span>
-              )}
-            </div>
-          </>
+            <Button
+              type="primary"
+              icon={<Save className="h-4 w-4" />}
+              loading={saving}
+              onClick={save}
+            >
+              Saqlash
+            </Button>
+          </Form>
         )}
-      </section>
+      </Card>
 
-      {/* ═══ 2. API kalit — faqat hamkorda ═══ */}
+      {/* ═══ API kalit — faqat hamkorda ═══ */}
       {isPartner && (
-        <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
-          <header className="mb-2 flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
-              API kalit
-            </h3>
-          </header>
-          <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
+        <Card
+          title={
+            <span className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4" /> API kalit
+            </span>
+          }
+          extra={
+            <Popconfirm
+              title="Kalitni yangilash"
+              description={
+                <span className="block max-w-xs">
+                  Eski kalit DARHOL ishlamay qoladi. Hamkor yangi kalitni
+                  qo'ymaguncha ularning so'rovlari rad etiladi.
+                </span>
+              }
+              okText="Ha, yangilash"
+              okButtonProps={{ danger: true, loading: rotateKey.isPending }}
+              cancelText="Bekor"
+              onConfirm={doRotate}
+            >
+              <Button danger icon={<KeyRound className="h-4 w-4" />}>
+                Kalitni yangilash
+              </Button>
+            </Popconfirm>
+          }
+        >
+          <p className="m-0 text-sm text-gray-500 dark:text-gray-400">
             Kalit bizda ochiq saqlanmaydi — faqat xeshi. Shu sababli uni qayta
             ko'rsatib bo'lmaydi; yo'qolsa yangisini yaratish kerak.
           </p>
 
           {/* Yangi kalit — BIR MARTA. Sahifadan chiqilsa boshqa olinmaydi. */}
           {freshKey && (
-            <div className="mt-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/5 p-3">
-              <p className="m-0 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
-                Yangi kalit — HOZIR ko'chirib oling, boshqa ko'rsatilmaydi
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <code className="min-w-0 flex-1 break-all rounded-lg bg-white px-2.5 py-2 text-xs font-bold text-gray-800 dark:bg-gray-900/60 dark:text-white">
+            <Alert
+              className="mt-3"
+              type="success"
+              showIcon
+              message="Yangi kalit — HOZIR ko'chirib oling, boshqa ko'rsatilmaydi"
+              description={
+                <Typography.Paragraph
+                  copyable={{ text: freshKey }}
+                  className="!mb-0 !mt-1 break-all font-mono text-xs"
+                >
                   {freshKey}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigator.clipboard?.writeText(freshKey);
-                    setCopied(true);
-                  }}
-                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-600 px-2.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300"
-                >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                  {copied ? "Ko'chirildi" : "Ko'chirish"}
-                </button>
-              </div>
-            </div>
+                </Typography.Paragraph>
+              }
+            />
           )}
-
-          {!confirmRotate ? (
-            <button
-              type="button"
-              onClick={() => setConfirmRotate(true)}
-              className="mt-3 flex h-10 items-center gap-2 rounded-xl border border-amber-600 px-4 text-sm font-bold text-amber-700 dark:text-amber-300"
-            >
-              <KeyRound className="h-4 w-4" />
-              Kalitni yangilash
-            </button>
-          ) : (
-            <div className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/5 p-3">
-              <p className="m-0 flex items-start gap-2 text-xs font-bold text-amber-700 dark:text-amber-300">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                Eski kalit DARHOL ishlamay qoladi. Hamkor yangi kalitni
-                qo'ymaguncha ularning so'rovlari rad etiladi.
-              </p>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={doRotate}
-                  disabled={rotateKey.isPending}
-                  className="flex h-9 items-center gap-2 rounded-lg bg-amber-600 px-3.5 text-xs font-bold text-white disabled:opacity-50"
-                >
-                  {rotateKey.isPending && (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  )}
-                  Ha, yangilash
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmRotate(false)}
-                  className="h-9 rounded-lg border border-gray-200 dark:border-gray-700 px-3.5 text-xs font-bold text-gray-800 dark:text-white"
-                >
-                  Bekor
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+        </Card>
       )}
 
-      {/* ═══ 3. Kill-switch ═══ */}
-      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-4 dark:bg-gray-800/50">
-        <header className="mb-2 flex items-center gap-2">
-          <Power className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          <h3 className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
-            Ulanish holati
-          </h3>
-        </header>
-        <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
-          {connection.is_active
-            ? "Ulanish FAOL. O'chirilsa hamkor so'rovlari rad etiladi va hodisalar yuborilmaydi."
-            : "Ulanish O'CHIQ. Hech qanday so'rov qabul qilinmaydi va hodisa yuborilmaydi."}
-        </p>
-        <button
-          type="button"
-          onClick={toggleActive}
-          disabled={togglePending}
-          className={`mt-3 flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-50 ${
+      {/* ═══ Kill-switch ═══ */}
+      <Card
+        title={
+          <span className="flex items-center gap-2">
+            <Power className="h-4 w-4" /> Ulanish holati
+          </span>
+        }
+        extra={
+          <Tag color={connection.is_active ? 'green' : 'red'}>
+            {connection.is_active ? 'FAOL' : "O'CHIQ"}
+          </Tag>
+        }
+      >
+        <Alert
+          type={connection.is_active ? 'info' : 'warning'}
+          showIcon
+          message={
             connection.is_active
-              ? 'border border-red-600 text-red-700 dark:text-red-300'
-              : 'bg-emerald-600 text-white'
-          }`}
+              ? 'Ulanish faol'
+              : "Ulanish o'chirilgan"
+          }
+          description={
+            connection.is_active
+              ? "O'chirilsa hamkor so'rovlari rad etiladi va hodisalar yuborilmaydi."
+              : "Hech qanday so'rov qabul qilinmaydi va hodisa yuborilmaydi."
+          }
+        />
+
+        <Popconfirm
+          title={
+            connection.is_active
+              ? "Ulanishni o'chirish"
+              : 'Ulanishni yoqish'
+          }
+          description={
+            connection.is_active
+              ? "O'chirilgandan keyin hamkor so'rovlari darhol rad etiladi."
+              : 'Ulanish yoqiladi va hodisalar yana yuboriladi.'
+          }
+          okText="Ha"
+          cancelText="Bekor"
+          okButtonProps={{
+            danger: connection.is_active,
+            loading: togglePending,
+          }}
+          onConfirm={toggleActive}
         >
-          {togglePending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Power className="h-4 w-4" />
-          )}
-          {connection.is_active ? "Ulanishni o'chirish" : 'Ulanishni yoqish'}
-        </button>
-      </section>
+          <Button
+            className="mt-3"
+            danger={connection.is_active}
+            type={connection.is_active ? 'default' : 'primary'}
+            icon={<Power className="h-4 w-4" />}
+            loading={togglePending}
+          >
+            {connection.is_active ? "O'chirish" : 'Yoqish'}
+          </Button>
+        </Popconfirm>
+      </Card>
     </div>
   );
 };

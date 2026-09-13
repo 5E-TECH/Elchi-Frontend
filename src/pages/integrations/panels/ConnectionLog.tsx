@@ -1,165 +1,233 @@
 import { useState } from 'react';
-import { Loader2, RefreshCw, RotateCw } from 'lucide-react';
+import { Button, Card, Table, Tag, Tooltip, message } from 'antd';
+import {
+  CheckCircle2,
+  Clock,
+  RefreshCw,
+  RotateCw,
+  Send,
+  ShieldOff,
+  XCircle,
+} from 'lucide-react';
 import {
   usePartnerActions,
   usePartnerWebhooks,
+  type PartnerWebhookRow,
 } from '../../../entities/partners';
 import {
   syncWhen,
   useSyncHistory,
   type SyncHistoryRow,
 } from '../../../entities/integrations/syncHistory';
+import { getBackendErrorMessage } from '../../../shared/lib/backendError';
+import FilterPills from '../FilterPills';
 import type { Connection } from '../useConnections';
 
 /**
- * JURNAL — ulanish bo'yicha hodisalar.
+ * HODISALAR — ulanish bo'yicha yetkazish tarixi.
  *
- * Manba TURGA qarab boshqa, chunki hodisaning o'zi boshqa:
- *   inbound  (`partner`)     — BIZ yuborgan webhooklar (outbox): yetdimi,
- *                              necha urinish, nega yiqildi
- *   outbound (`integration`) — biz yuborgan so'rovlar tarixi
+ * Shakl PCS `ElchiWebhookLogsTab` dan: yuqorida sanoqli filtr pillari,
+ * ostida antd `Table size="small"` + `Tag` bilan holat.
  *
  * IKKI MANBA — IKKI KO'RINISH, bitta jadval emas. Maydonlari umuman boshqa:
- * outbox'da "necha urinish / nega yiqildi", sync_history'da "nechta buyurtma
- * tortildi". Ularni bitta jadvalga tiqish uchun ustunlarni umumlashtirish
- * kerak bo'lardi va natijada ikkisi ham ma'nosini yo'qotardi.
+ *   inbound  (`partner`)     — BIZ yuborgan webhooklar: yetdimi, necha
+ *                              urinish, nega yiqildi
+ *   outbound (`integration`) — BIZ tortib olgan sinxronlar: nechta buyurtma
+ *
+ * Ularni bitta jadvalga tiqish uchun ustunlarni umumlashtirish kerak
+ * bo'lardi va natijada ikkisi ham ma'nosini yo'qotardi.
  */
 
-const STATUS_TONE: Record<string, string> = {
-  completed: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300',
-  pending: 'bg-amber-500/12 text-amber-700 dark:text-amber-300',
-  processing: 'bg-amber-500/12 text-amber-700 dark:text-amber-300',
-  awaiting_config: 'bg-sky-500/12 text-sky-700 dark:text-sky-300',
-  permanently_failed: 'bg-red-500/12 text-red-700 dark:text-red-300',
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  completed: 'yetkazildi',
-  pending: 'navbatda',
-  processing: 'yuborilmoqda',
-  awaiting_config: 'sozlama kutilmoqda',
-  permanently_failed: 'yetkazilmadi',
+const STATUS_TAG: Record<string, { color: string; label: string }> = {
+  completed: { color: 'green', label: 'yetkazildi' },
+  pending: { color: 'gold', label: 'navbatda' },
+  processing: { color: 'blue', label: 'yuborilmoqda' },
+  awaiting_config: { color: 'cyan', label: 'sozlama kutilmoqda' },
+  permanently_failed: { color: 'red', label: 'yetkazilmadi' },
 };
 
 const when = (v?: string | null) =>
   v ? new Date(v).toLocaleString('uz-UZ') : '—';
 
 const ConnectionLog = ({ connection }: { connection: Connection }) => {
+  if (connection.kind !== 'partner') {
+    return <OutboundLog connection={connection} />;
+  }
+  return <InboundLog connection={connection} />;
+};
+
+/** BIZ yuborgan webhooklar (`partner_webhook_outbox`). */
+const InboundLog = ({ connection }: { connection: Connection }) => {
   const [status, setStatus] = useState('all');
-  const isPartner = connection.kind === 'partner';
+  const [page, setPage] = useState(1);
 
   const webhooks = usePartnerWebhooks({
-    partner_id: isPartner ? connection.id : undefined,
+    partner_id: connection.id,
     status,
-    page: 1,
+    page,
     limit: 20,
   });
   const { retryWebhook } = usePartnerActions();
 
-  if (!isPartner) {
-    return <OutboundLog connection={connection} />;
-  }
-
   const rows = webhooks.data?.data ?? [];
 
+  const retry = async (id: string) => {
+    try {
+      await retryWebhook.mutateAsync(id);
+      message.success("Qayta navbatga qo'yildi");
+    } catch (error) {
+      message.error(getBackendErrorMessage(error) || "Qayta urinib bo'lmadi");
+    }
+  };
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="h-9 rounded-xl border border-gray-200 dark:border-gray-700 bg-white px-3 text-xs font-semibold text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
-        >
-          <option value="all">Barcha holat</option>
-          <option value="pending">Navbatda</option>
-          <option value="processing">Yuborilmoqda</option>
-          <option value="completed">Yetkazildi</option>
-          <option value="awaiting_config">Sozlama kutilmoqda</option>
-          <option value="permanently_failed">Yetkazilmadi</option>
-        </select>
-
-        <button
-          type="button"
+    <Card
+      title={
+        <span className="flex items-center gap-2">
+          <Send className="h-4 w-4" /> Biz yuborgan hodisalar
+        </span>
+      }
+      extra={
+        <Button
+          icon={<RefreshCw className="h-4 w-4" />}
+          loading={webhooks.isFetching}
           onClick={() => void webhooks.refetch()}
-          disabled={webhooks.isFetching}
-          className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 text-xs font-bold text-gray-700 disabled:opacity-50 dark:text-gray-200"
         >
-          {webhooks.isFetching ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
-          )}
           Yangilash
-        </button>
-      </div>
+        </Button>
+      }
+    >
+      <FilterPills
+        value={status}
+        onChange={(v) => {
+          setStatus(v);
+          // Filtr o'zgarganda sahifani boshiga qaytaramiz — aks holda
+          // 3-sahifada turib filtr almashsa bo'sh ro'yxat ko'rinardi.
+          setPage(1);
+        }}
+        options={[
+          { value: 'all', label: 'Hammasi' },
+          {
+            value: 'completed',
+            label: 'Yetkazildi',
+            icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+            activeClass: 'bg-green-600 text-white border-green-600',
+          },
+          {
+            value: 'pending',
+            label: 'Navbatda',
+            icon: <Clock className="h-3.5 w-3.5" />,
+            activeClass: 'bg-amber-600 text-white border-amber-600',
+          },
+          {
+            value: 'awaiting_config',
+            label: 'Sozlama kutilmoqda',
+            icon: <ShieldOff className="h-3.5 w-3.5" />,
+            activeClass: 'bg-cyan-600 text-white border-cyan-600',
+          },
+          {
+            value: 'permanently_failed',
+            label: 'Yetkazilmadi',
+            icon: <XCircle className="h-3.5 w-3.5" />,
+            activeClass: 'bg-red-600 text-white border-red-600',
+          },
+        ]}
+      />
 
-      {webhooks.isLoading ? (
-        <div className="flex min-h-[120px] items-center justify-center">
-          <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" size={22} />
-        </div>
-      ) : rows.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-6 text-center text-sm text-gray-500 dark:text-gray-400 dark:bg-gray-800/50">
-          Hodisa yo'q
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              className="flex flex-wrap items-center gap-3 px-4 py-3"
-            >
-              <span
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                  STATUS_TONE[row.status] ??
-                  'bg-white/10 text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                {STATUS_LABEL[row.status] ?? row.status}
+      <Table<PartnerWebhookRow>
+        className="mt-3"
+        rowKey="id"
+        size="small"
+        scroll={{ x: 800 }}
+        loading={webhooks.isLoading}
+        dataSource={rows}
+        pagination={{
+          current: page,
+          pageSize: 20,
+          total: webhooks.data?.total ?? rows.length,
+          showSizeChanger: false,
+          onChange: setPage,
+        }}
+        columns={[
+          {
+            title: 'Vaqt',
+            width: 160,
+            render: (_: unknown, r) => (
+              <span className="font-mono text-xs">{when(r.created_at)}</span>
+            ),
+          },
+          {
+            title: 'Holat',
+            width: 150,
+            render: (_: unknown, r) => {
+              const t = STATUS_TAG[r.status] ?? {
+                color: 'default',
+                label: r.status,
+              };
+              return (
+                <div className="space-y-1">
+                  <Tag color={t.color}>{t.label}</Tag>
+                  {r.attempts ? (
+                    <Tag>{r.attempts} urinish</Tag>
+                  ) : null}
+                </div>
+              );
+            },
+          },
+          {
+            title: 'Hodisa',
+            render: (_: unknown, r) => (
+              <span className="text-sm">
+                {r.new_status ?? r.event_type ?? '—'}
               </span>
-
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-bold text-gray-800 dark:text-white">
-                  {row.new_status ?? row.event_type ?? '—'}
-                </span>
-                <span className="block truncate text-[11px] text-gray-500 dark:text-gray-400">
-                  {row.external_order_id ?? row.order_id} · {when(row.created_at)}
-                  {row.attempts ? ` · ${row.attempts} urinish` : ''}
-                </span>
+            ),
+          },
+          {
+            title: 'Buyurtma',
+            width: 170,
+            render: (_: unknown, r) => (
+              <span className="font-mono text-xs">
+                {r.external_order_id ?? r.order_id ?? '—'}
               </span>
-
-              {/* Xato matni MUHIM: "yetkazilmadi" o'zi sababni aytmaydi. */}
-              {row.last_error && (
-                <span className="w-full break-all text-[11px] text-red-600 dark:text-red-300">
-                  {row.last_error}
-                </span>
-              )}
-
-              {row.status !== 'completed' && (
-                <button
-                  type="button"
-                  onClick={() => void retryWebhook.mutateAsync(String(row.id))}
-                  disabled={retryWebhook.isPending}
+            ),
+          },
+          {
+            title: 'Xato',
+            /* Xato matni MUHIM: "yetkazilmadi" o'zi sababni aytmaydi. */
+            render: (_: unknown, r) =>
+              r.last_error ? (
+                <Tooltip title={r.last_error}>
+                  <span className="line-clamp-2 break-all text-xs text-red-600 dark:text-red-400">
+                    {r.last_error}
+                  </span>
+                </Tooltip>
+              ) : (
+                <span className="text-gray-400">—</span>
+              ),
+          },
+          {
+            title: 'Amal',
+            width: 90,
+            render: (_: unknown, r) =>
+              r.status === 'completed' ? null : (
+                <Button
+                  size="small"
+                  icon={<RotateCw className="h-3 w-3" />}
+                  loading={retryWebhook.isPending}
+                  onClick={() => void retry(String(r.id))}
                   title="Qayta navbatga qo'yish va darhol urinib ko'rish"
-                  className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-indigo-500 px-2.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 disabled:opacity-40"
                 >
-                  <RotateCw className="h-3 w-3" />
                   Qayta
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+                </Button>
+              ),
+          },
+        ]}
+      />
+    </Card>
   );
 };
 
-/**
- * CHIQUVCHI JURNAL — biz tortib olgan sinxronlar (`sync_history`).
- *
- * Yuqorida xulosa qatori turadi, chunki "oxirgi 20 satr"ni o'qib chiqish
- * bilan "umuman ishlayaptimi" degan savolga javob bo'lmaydi.
- */
+/** BIZ tortib olgan sinxronlar (`sync_history`). */
 const OutboundLog = ({ connection }: { connection: Connection }) => {
   const [status, setStatus] = useState('all');
   const history = useSyncHistory({
@@ -168,122 +236,115 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
     limit: 20,
   });
 
-  const rows: SyncHistoryRow[] = history.data?.items ?? [];
+  const rows = history.data?.items ?? [];
   const summary = history.data?.summary;
 
   /**
    * ⚠️ Urinish bo'lmasa backend `success_rate: 0` qaytaradi. `0%` deb
    * ko'rsatish "hammasi yiqildi" degan YOLG'ON bo'lardi — aslida hali
-   * urinish yo'q. Shu holda "—".
+   * urinish yo'q.
    */
   const rate =
     summary && summary.total_attempts > 0 ? `${summary.success_rate}%` : '—';
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="h-9 rounded-xl border border-gray-200 dark:border-gray-700 bg-white px-3 text-xs font-semibold text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
-        >
-          <option value="all">Barcha holat</option>
-          <option value="success">Muvaffaqiyatli</option>
-          <option value="failed">Yiqilgan</option>
-        </select>
-        <button
-          type="button"
+    <Card
+      title={
+        <span className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" /> Sinxron tarixi
+        </span>
+      }
+      extra={
+        <Button
+          icon={<RefreshCw className="h-4 w-4" />}
+          loading={history.isFetching}
           onClick={() => void history.refetch()}
-          disabled={history.isFetching}
-          className="flex h-9 items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 text-xs font-bold text-gray-700 disabled:opacity-50 dark:text-gray-200"
         >
-          {history.isFetching ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
-          )}
           Yangilash
-        </button>
-      </div>
+        </Button>
+      }
+    >
+      <FilterPills
+        value={status}
+        onChange={setStatus}
+        options={[
+          { value: 'all', label: 'Hammasi', count: summary?.total_attempts },
+          {
+            value: 'success',
+            label: 'Muvaffaqiyatli',
+            count: summary?.success_count,
+            icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+            activeClass: 'bg-green-600 text-white border-green-600',
+          },
+          {
+            value: 'failed',
+            label: 'Yiqilgan',
+            count: summary?.failed_count,
+            icon: <XCircle className="h-3.5 w-3.5" />,
+            activeClass: 'bg-red-600 text-white border-red-600',
+          },
+        ]}
+      />
 
-      {/* Xulosa — filtr bilan birga o'zgaradi, shuning uchun tepada. */}
       {summary && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {[
-            { label: 'Urinish', value: String(summary.total_attempts) },
-            { label: 'Muvaffaqiyat', value: String(summary.success_count) },
-            { label: 'Yiqilgan', value: String(summary.failed_count) },
-            { label: 'Muvaffaqiyat %', value: rate },
-          ].map((cell) => (
-            <div
-              key={cell.label}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white px-3 py-2 dark:bg-gray-800/50"
-            >
-              <p className="m-0 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-                {cell.label}
-              </p>
-              <p className="m-0 mt-0.5 text-base font-extrabold tabular-nums text-gray-800 dark:text-white">
-                {cell.value}
-              </p>
-            </div>
-          ))}
-        </div>
+        <p className="m-0 mt-2 text-xs text-gray-500 dark:text-gray-400">
+          Muvaffaqiyat darajasi: <b>{rate}</b>
+        </p>
       )}
 
-      {history.isLoading ? (
-        <div className="flex min-h-[120px] items-center justify-center">
-          <Loader2 className="animate-spin text-indigo-600 dark:text-indigo-400" size={22} />
-        </div>
-      ) : rows.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white p-6 text-center text-sm text-gray-500 dark:text-gray-400 dark:bg-gray-800/50">
-          Sinxron hodisasi yo'q
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
-          {rows.map((row) => (
-            <div
-              key={String(row.id)}
-              className="flex flex-wrap items-center gap-3 px-4 py-3"
-            >
-              <span
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                  row.status === 'success'
-                    ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
-                    : row.status === 'failed'
-                      ? 'bg-red-500/12 text-red-700 dark:text-red-300'
-                      : 'bg-white/10 text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                {row.status === 'success'
-                  ? 'muvaffaqiyatli'
-                  : row.status === 'failed'
-                    ? 'yiqildi'
-                    : 'noma’lum'}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-bold text-gray-800 dark:text-white">
-                  {row.synced_orders} buyurtma tortildi
+      <Table<SyncHistoryRow>
+        className="mt-3"
+        rowKey={(r) => String(r.id)}
+        size="small"
+        scroll={{ x: 600 }}
+        loading={history.isLoading}
+        dataSource={rows}
+        pagination={false}
+        columns={[
+          {
+            title: 'Vaqt',
+            width: 170,
+            render: (_: unknown, r) => (
+              <span className="font-mono text-xs">{syncWhen(r.sync_date)}</span>
+            ),
+          },
+          {
+            title: 'Holat',
+            width: 140,
+            render: (_: unknown, r) =>
+              r.status === 'success' ? (
+                <Tag color="green">muvaffaqiyatli</Tag>
+              ) : r.status === 'failed' ? (
+                <Tag color="red">yiqildi</Tag>
+              ) : (
+                <Tag>noma'lum</Tag>
+              ),
+          },
+          {
+            title: 'Buyurtma',
+            width: 120,
+            render: (_: unknown, r) => (
+              <span className="text-sm">{r.synced_orders} ta</span>
+            ),
+          },
+          {
+            title: 'Natija',
+            /* Xato `result` JSON ichida bo'lishi mumkin — "yiqildi" so'zi
+               o'zi sababni aytmaydi. */
+            render: (_: unknown, r) =>
+              r.status === 'failed' && r.result ? (
+                <span className="break-all text-xs text-red-600 dark:text-red-400">
+                  {typeof r.result.error === 'string'
+                    ? r.result.error
+                    : JSON.stringify(r.result).slice(0, 200)}
                 </span>
-                <span className="block truncate text-[11px] text-gray-500 dark:text-gray-400">
-                  {syncWhen(row.sync_date)}
-                </span>
-              </span>
-              {/*
-                Xato matni `result` JSON ichida bo'lishi mumkin — "yiqildi"
-                so'zi o'zi sababni aytmaydi.
-              */}
-              {row.status === 'failed' && row.result && (
-                <span className="w-full break-all text-[11px] text-red-600 dark:text-red-300">
-                  {typeof row.result.error === 'string'
-                    ? row.result.error
-                    : JSON.stringify(row.result).slice(0, 300)}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+              ) : (
+                <span className="text-gray-400">—</span>
+              ),
+          },
+        ]}
+      />
+    </Card>
   );
 };
 
