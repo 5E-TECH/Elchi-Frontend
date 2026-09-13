@@ -260,7 +260,13 @@ const ConnectionCard = ({
               {connection.name}
             </h3>
           </div>
-          <span className="flex shrink-0 items-center gap-1 rounded-lg bg-white/20 px-2 py-1 text-xs font-medium text-white">
+          {/*
+            ⚠️ `bg-black/25`, `bg-white/20` EMAS. Oq yarim shaffof qatlam
+            gradientni YORITADI va ustidagi oq matnni yo'q qiladi —
+            sarlavha to'qlashtirilgandan keyin ham shu nishon o'qilmay
+            qolardi. Qora qatlam esa aksincha kontrastni oshiradi.
+          */}
+          <span className="flex shrink-0 items-center gap-1 rounded-lg bg-black/25 px-2 py-1 text-xs font-medium text-white">
             {health === 'ok' ? (
               <CheckCircle className="h-3.5 w-3.5" />
             ) : (

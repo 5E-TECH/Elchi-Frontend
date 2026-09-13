@@ -38,6 +38,27 @@ import { useTheme } from './ThemeContext';
  */
 const ACCENT = '#6366f1';
 
+/**
+ * QORONG'I YUZA — `pages/integrations/ui.ts` dagi `DARK_SURFACE_HEX` bilan
+ * AYNI qiymat.
+ *
+ * ⚠️ NEGA SUKUTNI BOSIB O'TAMIZ. antd `darkAlgorithm` sukuti
+ * `colorBgContainer: #141414` — deyarli qora NEYTRAL tus. Ilovaning
+ * sahifa foni esa binafsha (`#2a2540`, `index.css`). Natijada bitta
+ * ekranda antd kartalari begona qora to'rtburchak bo'lib turardi, Tailwind
+ * kartalari esa (`#2A263D`) fondan kontrast **1.00** bilan butunlay
+ * singib ketardi. Foydalanuvchi buni "bg qora rangga o'tmayapti" deb
+ * ta'rifladi.
+ *
+ * `#3A3358` hisoblab tanlandi: fondan 1.25 (antd sukutidagi ajralish
+ * darajasi), oq matn 11.70:1, `gray-400` 4.61:1 — hammasi AA.
+ *
+ * ⚠️ `colorBgLayout` ham beriladi: antd sukuti QOP-QORA (`#000000`) va
+ * `Layout` ishlatilgan joyda sahifa ichida qora blok paydo bo'lardi.
+ */
+const DARK_SURFACE = '#3A3358';
+const DARK_PAGE = '#2a2540';
+
 const AntdThemeProvider = ({ children }: { children: ReactNode }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -47,6 +68,17 @@ const AntdThemeProvider = ({ children }: { children: ReactNode }) => {
       algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
       token: {
         colorPrimary: ACCENT,
+        ...(isDark
+          ? {
+              colorBgContainer: DARK_SURFACE,
+              // Ko'tarilgan yuzalar (Modal, Dropdown, Select ro'yxati) —
+              // kartadan bir pog'ona ajralib turishi kerak.
+              colorBgElevated: '#423A63',
+              colorBgLayout: DARK_PAGE,
+              colorBorder: '#554c82',
+              colorBorderSecondary: '#4a4270',
+            }
+          : {}),
         /**
          * Burchaklar Tailwind `rounded-xl` (12px) bilan moslashtirildi —
          * antd sukuti 6px va yonma-yon turgan kartalar bilan solishtirganda

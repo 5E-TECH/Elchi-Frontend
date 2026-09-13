@@ -16,6 +16,49 @@
  * kulrang paydo bo'lgan edi.
  */
 
+/**
+ * YAGONA QORONG'I YUZA — hisoblab tanlangan.
+ *
+ * ⚠️ NIMA BUZILGAN EDI. Bitta ekranda UCH XIL qorong'i yuza bor edi:
+ *
+ *   sahifa foni   `#2a2540`  (`index.css` — `--color-dark-bg-py`)
+ *   Tailwind karta `#2A263D` ← fondan kontrast **1.00**, ya'ni MUTLAQO
+ *                              ajralmaydi
+ *   antd karta     `#141414` ← neytral qora, binafsha sahifada butunlay
+ *                              boshqa oiladan
+ *
+ * Foydalanuvchi shikoyati: "bg qora rangga o'tmayapti" — u aynan shuni
+ * ko'rgan: kartalar fonga singib ketgan, antd kartalari esa begona qora
+ * to'rtburchak bo'lib turgan.
+ *
+ * `#3A3358` HISOBLAB tanlandi:
+ *   fondan kontrast 1.25 — antd sukutidagi ajralish darajasi bilan bir xil,
+ *   lekin ilovaning O'Z rang oilasida;
+ *   oq matn 11.70:1, `gray-200` 9.45:1, `gray-400` 4.61:1 — uchalasi ham AA.
+ *
+ * ⚠️ AYNI QIYMAT `AntdThemeProvider` da `colorBgContainer` ga ham beriladi.
+ * Ikki joyda yozilgani ataylab: Tailwind sinf satri va antd tokeni bitta
+ * manbadan kelmaydi. Biri o'zgarsa ikkinchisi ham o'zgarishi SHART —
+ * `palette.test.ts` shuni tekshiradi.
+ */
+/**
+ * ⚠️ SINF SATRLARIDA BU KONSTANTA ISHLATILMAYDI — faqat antd tomoni va
+ * testlar uchun.
+ *
+ * NEGA. Tailwind sinflarni manba faylidan STATIK matn sifatida topadi.
+ * `` `dark:bg-[${DARK_SURFACE_HEX}]` `` yozsak, skaner
+ * `dark:bg-[${DARK_SURFACE_HEX}]` degan yaroqsiz nomni ko'radi va
+ * `dark:bg-[#3A3358]` qoidasini UMUMAN yaratmaydi — natijada karta
+ * qorong'ida SHAFFOF bo'lib qoladi va sahifa foni ko'rinib turadi.
+ * (Bu tuzoqqa aynan shu faylda tushilgan va build CSS'ini tekshirib
+ * aniqlangan.)
+ *
+ * Shu bois sinflarda hex LITERAL yoziladi, bu konstanta esa ikkinchi
+ * nusxani bir joyda ushlab turadi. Ikkisi bir xil qolishini
+ * `palette.test.ts` tekshiradi.
+ */
+export const DARK_SURFACE_HEX = '#3A3358';
+
 /** Sahifa/bo'lim sarlavhasi — eng baland kontrast. */
 export const TITLE = 'text-gray-800 dark:text-white';
 
@@ -28,17 +71,20 @@ export const MUTED = 'text-gray-500 dark:text-gray-400';
 /**
  * Eng och matn — FAQAT chip ostidagi 11px tavsif va bezak ikonkalari uchun.
  *
- * ⚠️ MATN UCHUN BUNDAN OCHROG'I YO'Q. Yorug' rejimda `gray-400` oq fonda
- * ~2.9:1 kontrast beradi — bu normal matn uchun AA dan past. PCS ham uni
- * faqat chip tavsifida ishlatadi, shuning uchun biz ham shu chegarada
- * qolamiz. Katta harfli 10px yorliqlar uchun `MUTED` ishlatiladi: ular
- * kichik va siyrak, `gray-400` da o'qilmay qolardi.
+ * ⚠️ QORONG'I VARIANTI TUZATILDI. Ilgari `dark:text-gray-500` edi va yangi
+ * yuzada (`#3A3358`) u **2.42:1** beradi — AA katta matn chegarasidan (3.0)
+ * ham past, ya'ni o'qilmaydi. Endi `gray-400`: **4.61:1**, AA normal matn
+ * uchun ham o'tadi.
+ *
+ * ⚠️ YORUG' REJIMDA `gray-400` oq fonda ~2.9:1 — normal matn uchun AA dan
+ * past. Shu bois u FAQAT 11px chip tavsifida ishlatiladi (dekorativ,
+ * yonida aniq yorliq bor). Katta harfli 10px yorliqlar uchun `MUTED`.
  */
-export const FAINT = 'text-gray-400 dark:text-gray-500';
+export const FAINT = 'text-gray-400 dark:text-gray-400';
 
 /** Karta/panel yuzasi. */
 export const SURFACE =
-  'bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700';
+  'bg-white dark:bg-[#3A3358] border border-gray-200 dark:border-gray-700';
 
 /** Faqat chegara (yuza alohida berilganda). */
 export const BORDER = 'border-gray-200 dark:border-gray-700';
@@ -55,7 +101,7 @@ export const chip = (on: boolean) =>
   `flex shrink-0 items-center gap-2.5 rounded-xl border-2 px-4 py-2.5 text-left transition-all cursor-pointer ${
     on
       ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/25 shadow-sm'
-      : `${BORDER} bg-white dark:bg-gray-800/50 hover:border-indigo-300 dark:hover:border-indigo-700`
+      : `${BORDER} bg-white dark:bg-[#3A3358] hover:border-indigo-300 dark:hover:border-indigo-700`
   }`;
 
 export const chipIcon = (on: boolean) =>
@@ -102,13 +148,13 @@ export const HEALTH_DOT = {
    ham, o'lchamlar ham. Sabab: foydalanuvchi ikki variantni ko'rib PCS
    shaklini tanladi ("UI tomonlama Beepostniki yaxshiroq").
    
-   ⚠️ `dark:bg-[#2A263D]` — PCS'ning aniq qorong'i yuzasi. Uni `gray-800` ga
+   ⚠️ `dark:bg-[#3A3358]` — PCS'ning aniq qorong'i yuzasi. Uni `gray-800` ga
    almashtirmang: PCS'da butun ilova shu tusda va karta fondan ajralib
    turishi shunga tayanadi.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /** PCS karta yuzasi. */
-export const PCS_SURFACE = 'bg-white dark:bg-[#2A263D]';
+export const PCS_SURFACE = 'bg-white dark:bg-[#3A3358]';
 
 /** Sahifa sarlavhasidagi gradient ikonka qutisi. */
 export const HEADER_ICON =
@@ -121,7 +167,7 @@ export const PAGE_SUBTITLE = 'text-sm text-gray-500 dark:text-gray-400';
 
 /** Qidiruv maydoni — PCS'dagi fokus halqasi bilan. */
 export const SEARCH_INPUT =
-  'w-48 sm:w-64 pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A263D] text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all';
+  'w-48 sm:w-64 pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#3A3358] text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all';
 
 /** Birlamchi amal — ko'k gradient. */
 export const CTA_BTN =
@@ -166,12 +212,29 @@ export const cardShell = (dim: boolean) =>
  * aynan shu holat uchun metrika qo'shilgan edi. Uni yashil ko'rsatish
  * muammoni yashirardi.
  */
+/**
+ * ⚠️ GRADIENT TUSLARI TO'QLASHTIRILDI — ustida OQ matn turadi.
+ *
+ * Ilgari `-500`/`gray-400` ishlatilardi va oq matn kontrasti:
+ *   green-500 2.28 · emerald-500 2.54 · amber-500 2.15 · orange-500 2.80
+ *   gray-400 2.54
+ * — OLTITASI HAM AA katta matn chegarasidan (3.0) past, ya'ni karta
+ * sarlavhasidagi ulanish NOMI va holati o'qilmasdi. Bu sahifadagi eng
+ * ko'zga tashlanadigan element.
+ *
+ * Yangi tuslar: green-600 3.30 · emerald-700 5.48 · amber-600 3.19 ·
+ * orange-700 5.18 · gray-500 4.83 · gray-600 7.56 — hammasi o'tadi.
+ *
+ * ⚠️ Rang HOLATNI bildiradi, shu bois ikkala mavzuda AYNI qoladi
+ * (`dark:` varianti yo'q): yashil "ishlayapti" degani qorong'ida ham
+ * yashil bo'lishi kerak.
+ */
 export const cardHeader = (health: 'ok' | 'attention' | 'off') =>
   `px-4 py-3 border-b ${
     {
-      ok: 'bg-gradient-to-r from-green-500 to-emerald-500',
-      attention: 'bg-gradient-to-r from-amber-500 to-orange-500',
-      off: 'bg-gradient-to-r from-gray-400 to-gray-500',
+      ok: 'bg-gradient-to-r from-green-600 to-emerald-700',
+      attention: 'bg-gradient-to-r from-amber-600 to-orange-700',
+      off: 'bg-gradient-to-r from-gray-500 to-gray-600',
     }[health]
   }`;
 
