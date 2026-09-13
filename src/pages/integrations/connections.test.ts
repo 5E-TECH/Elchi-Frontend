@@ -547,3 +547,121 @@ describe("⭐ ICHMA-ICH ildiz bitta GURUHDA turishi shart", () => {
     }
   });
 });
+
+describe("⭐ `webhook_payload_paths` — UI kalitlari backend bilan MOS", () => {
+  /**
+   * BACKEND AYNAN SHU UCHTASINI O'QIYDI (`applyWebhookToShipment`,
+   * `integration-service.service.ts`): `status`, `external_ref`,
+   * `tracking_number`. Boshqa kalit yozilsa DTO uni tekshirmaydi
+   * (`@IsObject()`), ya'ni jimgina saqlanadi va hech qachon o'qilmaydi.
+   *
+   * Ilgari nomuvofiqlik ikki tomonlama edi:
+   *   • UI `order_id` ni so'rardi — backend uni o'qimaydi (o'lik maydon);
+   *   • `tracking_number` UI'da taklif qilinmasdi — ya'ni kuzatuv raqami
+   *     bo'yicha moslashni sozlash imkoni yo'q edi.
+   *
+   * Xato chiqmagani uchun bu uzoq sezilmadi. Test shuning uchun kerak:
+   * yangi kalit qo'shgan odam backendni ham yangilashi shart.
+   */
+  const BACKEND_READS = new Set(["status", "external_ref", "tracking_number"]);
+
+  it("UI faqat backend o'qiydigan kalitlarni so'raydi", () => {
+    const asked = new Set<string>();
+    for (const type of CONNECTION_TYPES) {
+      for (const f of type.fields) {
+        if (f.key.startsWith("webhook_payload_paths.")) {
+          asked.add(f.key.slice("webhook_payload_paths.".length));
+        }
+      }
+    }
+
+    // Test bo'shab qolmasin — kamida bitta kalit so'ralishi kerak.
+    expect(asked.size).toBeGreaterThan(0);
+    for (const key of asked) {
+      expect(BACKEND_READS.has(key), `${key} backendda o'qilmaydi`).toBe(true);
+    }
+  });
+
+  it("posilkani TOPISH uchun kamida bitta yo'l taklif qilinadi", () => {
+    /**
+     * `status` yolg'iz yetmaydi: qaysi posilka haqida ekanini bilmasak,
+     * hodisa `no_shipment` bo'lib to'xtaydi.
+     */
+    const withPaths = CONNECTION_TYPES.filter((t) =>
+      t.fields.some((f) => f.key.startsWith("webhook_payload_paths.")),
+    );
+    expect(withPaths.length).toBeGreaterThan(0);
+
+    for (const type of withPaths) {
+      const keys = type.fields.map((f) => f.key);
+      const hasLocator =
+        keys.includes("webhook_payload_paths.external_ref") ||
+        keys.includes("webhook_payload_paths.tracking_number");
+      expect(hasLocator, `${type.key} da posilkani topish yo'li yo'q`).toBe(
+        true,
+      );
+    }
+  });
+});
+
+describe("⭐ TO'LOV TIZIMI formasi (7-bosqich)", () => {
+  const payment = () =>
+    CONNECTION_TYPES.find((t) => t.key === "payment")!;
+  const keys = () => payment().fields.map((f) => f.key);
+
+  it("⭐ TIYIN bayrog'i BOR", () => {
+    /**
+     * Payme/Click summani tiyinda yuboradi: 100 000 so'm → 10 000 000.
+     * Bayroq bo'lmasa summa buyurtma narxidan 100 baravar oshib, ortiqcha
+     * to'lov darvozasiga urilardi — ya'ni HAR BIR to'lov rad etilardi va
+     * sabab uzoq izlanardi. Shu bois maydon formada turishi SHART.
+     */
+    expect(keys()).toContain("payment_config.amount_in_tiyin");
+  });
+
+  it("⭐ HOLAT XARITASI bor", () => {
+    /**
+     * Provayderlarning qiymatlari butunlay boshqacha ("paid", 2,
+     * "CONFIRMED"). Backend xaritasiz hech bir hodisani qo'llamaydi —
+     * sozlaydigan joy bo'lmasa to'lov yo'li umuman ishlamasdi.
+     */
+    expect(keys()).toContain("payment_config.status_map");
+  });
+
+  it("tranzaksiya id va buyurtma havolasi so'raladi", () => {
+    // Ikkisi ham majburiy: biri dublikatni to'sadi, ikkinchisi buyurtmani
+    // topadi. Bittasi bo'lmasa to'lov qo'llanmaydi.
+    expect(keys()).toContain("payment_config.transaction_id_path");
+    expect(keys()).toContain("payment_config.order_ref_path");
+  });
+
+  it("⭐ POSILKA yo'llari SO'RALMAYDI", () => {
+    /**
+     * To'lov hodisasida posilka YO'Q. Ilgari bu maydonlar shu yerda turardi
+     * va chalg'itardi: operator ularni to'ldirardi, hech narsa bo'lmasdi.
+     */
+    expect(
+      keys().some((k) => k.startsWith("webhook_payload_paths")),
+    ).toBe(false);
+  });
+
+  it("⭐ KIRUVCHI webhook sekreti so'raladi", () => {
+    // To'lov faqat kiruvchi yo'l bilan keladi — imzo sekreti busiz
+    // `not_configured` bilan 401 qaytadi.
+    expect(keys()).toContain("webhook_secret");
+  });
+
+  it("⭐ to'lov maydonlari FAQAT to'lov turida", () => {
+    /**
+     * Boshqa turda chiqsa operator to'ldirib qo'yadi va hech narsa
+     * o'qimaydi — "sozlangandek ko'rinib ishlamaydi" holati.
+     */
+    for (const type of CONNECTION_TYPES) {
+      if (type.key === "payment") continue;
+      expect(
+        type.fields.some((f) => f.key.startsWith("payment_config")),
+        `${type.key} da to'lov maydoni bo'lmasligi kerak`,
+      ).toBe(false);
+    }
+  });
+});

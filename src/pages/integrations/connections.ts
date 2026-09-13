@@ -324,20 +324,37 @@ const INBOUND_WEBHOOK: ConnectionField[] = [
   },
 ];
 
-/** Kiruvchi webhook payloadida posilkani va statusni topish yo'llari. */
+/**
+ * Kiruvchi webhook payloadida posilkani va statusni topish yo'llari.
+ *
+ * ⚠️ BU RO'YXAT BACKEND O'QIYDIGAN KALITLAR BILAN AYNAN MOS BO'LISHI SHART.
+ *
+ * Ilgari mos emasdi va ikki tomonlama nuqson bor edi:
+ *   • UI `order_id` ni so'rardi — backend uni HECH QACHON o'qimaydi
+ *     (`applyWebhookToShipment` faqat `status`, `external_ref`,
+ *     `tracking_number` ni o'qiydi). Operator to'ldirardi va hech narsa
+ *     bo'lmasdi.
+ *   • Backend o'qiydigan `tracking_number` esa UI'da TAKLIF QILINMASDI —
+ *     ya'ni kuzatuv raqami bo'yicha moslashni sozlashning yo'li yo'q edi.
+ *
+ * DTO ichki kalitlarni tekshirmaydi (`@IsObject()`), shuning uchun noto'g'ri
+ * kalit jimgina saqlanardi va xato chiqmasdi — aynan shuning uchun bu
+ * nomuvofiqlik uzoq sezilmadi.
+ */
 const WEBHOOK_PATHS: ConnectionField[] = [
-  {
-    key: 'webhook_payload_paths.order_id',
-    label: 'Buyurtma id yo‘li',
-    type: 'text',
-    placeholder: 'data.order.id',
-    hint: 'Payload ichida bizning buyurtma id qaysi yo‘lda',
-  },
   {
     key: 'webhook_payload_paths.external_ref',
     label: 'Ularning raqami yo‘li',
     type: 'text',
     placeholder: 'data.order.external_id',
+    hint: 'Posilka shu raqam bo‘yicha topiladi',
+  },
+  {
+    key: 'webhook_payload_paths.tracking_number',
+    label: 'Kuzatuv raqami yo‘li',
+    type: 'text',
+    placeholder: 'data.tracking',
+    hint: 'Ularning raqami mos kelmasa, posilka shu bo‘yicha izlanadi',
   },
   {
     key: 'webhook_payload_paths.status',
@@ -416,6 +433,94 @@ const FUNNEL_FIELDS: ConnectionField[] = [
     placeholder: '7482913',
     hint: 'Bo‘sh bo‘lsa barcha voronka qabul qilinadi',
     showWhen: { key: 'inbound_order_config.enabled', equals: true },
+  },
+];
+
+/**
+ * ONLAYN TO'LOV SOZLAMASI — `role='payment'` uchun (audit P1/P2).
+ *
+ * ⚠️ IKKI TUZOQ, IKKISI HAM JIMGINA ISHLAMASLIKKA OLIB BORADI:
+ *
+ *  1. TIYIN. Payme/Click summani TIYINDA yuboradi: 100 000 so'm →
+ *     10 000 000. Bayroq qo'yilmasa summa buyurtma narxidan 100 baravar
+ *     oshib, ortiqcha to'lov darvozasiga urilardi — ya'ni HAR BIR to'lov
+ *     rad etilardi va sabab uzoq izlanardi.
+ *
+ *  2. HOLAT XARITASI. Provayderlarning qiymatlari butunlay boshqacha
+ *     ("paid", 2, "CONFIRMED"). Xaritasiz hech bir hodisa qo'llanmaydi —
+ *     bu ATAYLAB: noma'lum qiymatni "to'landi" deb o'qish eng xavfli xato
+ *     bo'lardi (kuryer naqd yig'masdi, pul esa kelmasdi).
+ */
+const PAYMENT_FIELDS: ConnectionField[] = [
+  {
+    key: 'payment_config.enabled',
+    label: 'To‘lovni qabul qilish',
+    type: 'switch',
+    hint: 'Yoqilsa, tasdiqlangan to‘lov buyurtmaga yoziladi',
+  },
+  {
+    key: 'payment_config.transaction_id_path',
+    label: 'Tranzaksiya id yo‘li',
+    type: 'text',
+    placeholder: 'data.transaction.id',
+    hint: 'Takroriy to‘lovni to‘sish uchun ASOSIY kalit — bo‘sh bo‘lsa to‘lov qo‘llanmaydi',
+    showWhen: { key: 'payment_config.enabled', equals: true },
+  },
+  {
+    key: 'payment_config.order_ref_path',
+    label: 'Buyurtma havolasi yo‘li',
+    type: 'text',
+    placeholder: 'data.account.order_id',
+    hint: 'To‘lov qaysi buyurtmaga tegishli ekani payload‘da qayerda',
+    showWhen: { key: 'payment_config.enabled', equals: true },
+  },
+  {
+    key: 'payment_config.order_ref_field',
+    label: 'Havola nimaga ishora qiladi',
+    type: 'select',
+    options: [
+      { value: 'id', label: 'Buyurtma raqami (id)' },
+      { value: 'external_id', label: 'Tashqi tizim raqami' },
+      { value: 'qr_code_token', label: 'Skan tokeni' },
+    ],
+    hint: 'Elchi‘da buyurtma raqami — `id`ning o‘zi',
+    showWhen: { key: 'payment_config.enabled', equals: true },
+  },
+  {
+    key: 'payment_config.amount_path',
+    label: 'Summa yo‘li',
+    type: 'text',
+    placeholder: 'data.amount',
+    showWhen: { key: 'payment_config.enabled', equals: true },
+  },
+  {
+    key: 'payment_config.amount_in_tiyin',
+    label: 'Summa TIYINDA keladi',
+    type: 'switch',
+    hint: 'Payme va Click shunday yuboradi. Noto‘g‘ri qoldirilsa har bir to‘lov rad etiladi',
+    showWhen: { key: 'payment_config.enabled', equals: true },
+  },
+  {
+    key: 'payment_config.currency_path',
+    label: 'Valyuta yo‘li',
+    type: 'text',
+    placeholder: 'data.currency',
+    hint: 'Bo‘sh bo‘lsa UZS deb qabul qilinadi',
+    showWhen: { key: 'payment_config.enabled', equals: true },
+  },
+  {
+    key: 'payment_config.status_path',
+    label: 'Holat yo‘li',
+    type: 'text',
+    placeholder: 'data.state',
+    showWhen: { key: 'payment_config.enabled', equals: true },
+  },
+  {
+    key: 'payment_config.status_map',
+    label: 'Holat xaritasi',
+    type: 'mapping',
+    hint: 'Bizning holat → ularning qiymatlari. SHART: xaritasiz hech bir to‘lov qo‘llanmaydi',
+    showWhen: { key: 'payment_config.enabled', equals: true },
   },
 ];
 
@@ -607,17 +712,24 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
      * TO'LOV TIZIMI — faqat KIRUVCHI webhook: ular to'lov tasdig'ini
      * yuboradi. Posilka jo'natish ham, market bog'lanishi ham kerak emas.
      *
-     * ⚠️ Backendda to'lovni QO'LLAYDIGAN yo'l hali YO'Q (audit P1/P2):
-     * kiruvchi webhook posilka talab qiladi va faqat sell/cancel/return
-     * ni biladi. Bu forma sozlamani saqlaydi, lekin oqim 7-bosqichda
-     * qurilishi kerak.
+     * ✅ 7-bosqichda oqim QURILDI (audit P1/P2): `payment_config` bo'yicha
+     * tranzaksiya, summa, holat va buyurtma havolasi o'qiladi; tasdiqlangan
+     * to'lov `payment_transactions` ga yozilib buyurtmaga qo'llanadi.
+     *
+     * ⚠️ POSILKA YO'LLARI (`WEBHOOK_PATHS`) OLIB TASHLANDI — to'lov
+     * hodisasida posilka YO'Q. Ilgari bu yerda turgani chalg'itardi:
+     * operator ularni to'ldirardi va hech narsa bo'lmasdi.
+     *
+     * ⚠️ PUL KASSAGA YOZILMAYDI (foydalanuvchi qarori, 2026-09-13) — faqat
+     * daftarga va buyurtmaning to'lov maydonlariga. Kompaniya balansi bu
+     * pulni hali ko'rmaydi.
      */
     fields: [
       NAME_FIELD,
       SLUG_FIELD,
       ...OUTBOUND_AUTH,
+      ...PAYMENT_FIELDS,
       ...INBOUND_WEBHOOK,
-      ...WEBHOOK_PATHS,
     ],
     prereqs: [
       'To\u2019lov tizimining API manzili (HTTPS)',

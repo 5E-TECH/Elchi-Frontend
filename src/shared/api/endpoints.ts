@@ -241,6 +241,14 @@ export const API_ENDPOINTS = {
      * bo'ladi, ro'yxatda esa savol "nima bo'ldi".
      */
     WEBHOOK_LOGS: "integrations/webhook-logs",
+    /**
+     * ONLAYN TO'LOV tranzaksiyalari.
+     *
+     * `unapplied_only=true` — buyurtmaga qo'llanmagan to'lovlar.
+     * Operatorning birinchi savoli aynan shu: qaysi pul kelib, hech
+     * qayerga yozilmadi?
+     */
+    PAYMENTS: "integrations/payments",
     RECEIVABLES: "integrations/receivables",
     RECEIVABLE_BALANCE: (id: string | number) => `integrations/${id}/receivable-balance`,
     REMITTANCES: (id: string | number) => `integrations/${id}/remittances`, // POST

@@ -5,6 +5,7 @@ import {
   Clock,
   Inbox,
   RefreshCw,
+  Wallet,
   RotateCw,
   Send,
   ShieldOff,
@@ -25,6 +26,11 @@ import {
   webhookOutcome,
   type WebhookLogRow,
 } from '../../../entities/integrations/webhookLogs';
+import {
+  paymentOutcome,
+  usePayments,
+  type PaymentRow,
+} from '../../../entities/integrations/payments';
 import { getBackendErrorMessage } from '../../../shared/lib/backendError';
 import FilterPills from '../FilterPills';
 import type { Connection } from '../useConnections';
@@ -66,12 +72,158 @@ const ConnectionLog = ({ connection }: { connection: Connection }) => {
      */
     return (
       <div className="space-y-4">
+        {/*
+          To'lov tizimida PUL ro'yxati birinchi o'rinda: operatorning
+          savoli "qaysi to'lov keldi va nima bo'ldi?". Hisob-kitob tabi
+          to'lov roli uchun yashiringan (u kargo COD qarzi uchun qurilgan),
+          shu bois pul ro'yxati shu yerda turadi.
+        */}
+        {connection.role === 'payment' && (
+          <PaymentLog connection={connection} />
+        )}
         <OutboundLog connection={connection} />
         <IncomingWebhookLog connection={connection} />
       </div>
     );
   }
   return <InboundLog connection={connection} />;
+};
+
+/**
+ * ONLAYN TO'LOVLAR (`payment_transactions`).
+ *
+ * ⚠️ NEGA BU JADVAL KERAK. 6-bosqichning darsi: JURNALGA YOZISH ≠
+ * KO'RINISH. To'lov yozuvlari bazaga tushardi, lekin ularni ko'rsatadigan
+ * ekran bo'lmasa "pul keldi, lekin buyurtmaga bog'lanmadi" holati hech
+ * kimga ko'rinmaydi — ya'ni yo'qolgan pul.
+ *
+ * ⚠️ PUL KASSAGA YOZILMAYDI (foydalanuvchi qarori, 2026-09-13) — bu jadval
+ * hozircha YAGONA joy, u summani ko'rsatadi. Kompaniya balansi bu pulni
+ * hali hisobga olmaydi, shuning uchun banner qo'yilgan.
+ */
+const PaymentLog = ({ connection }: { connection: Connection }) => {
+  const [unapplied, setUnapplied] = useState('all');
+  const [page, setPage] = useState(1);
+
+  const payments = usePayments({
+    integrationId: connection.id,
+    unappliedOnly: unapplied === 'unapplied',
+    page,
+    limit: 20,
+  });
+
+  const rows = payments.data?.items ?? [];
+  const meta = payments.data?.meta;
+
+  return (
+    <Card
+      title={
+        <span className="flex items-center gap-2">
+          <Wallet className="h-4 w-4" /> Onlayn to‘lovlar
+        </span>
+      }
+      extra={
+        <Button
+          icon={<RefreshCw className="h-4 w-4" />}
+          loading={payments.isFetching}
+          onClick={() => void payments.refetch()}
+        >
+          Yangilash
+        </Button>
+      }
+    >
+      {/*
+        Bu banner ATAYLAB: operator bu summalarni kompaniya balansida
+        izlab, topmasa "tizim buzuq" deb o'ylardi.
+      */}
+      <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-900/20 dark:text-amber-300">
+        Bu to‘lovlar kassaga yozilmaydi — faqat buyurtmaga belgilanadi.
+        Kompaniya balansi ularni hali hisobga olmaydi.
+      </div>
+
+      <FilterPills
+        value={unapplied}
+        onChange={(v) => {
+          setUnapplied(v);
+          setPage(1);
+        }}
+        options={[
+          { value: 'all', label: 'Hammasi', count: meta?.total },
+          {
+            value: 'unapplied',
+            label: 'Qo‘llanmagan',
+            icon: <XCircle className="h-3.5 w-3.5" />,
+            activeClass: 'bg-red-600 text-white border-red-600',
+          },
+        ]}
+      />
+
+      <Table<PaymentRow>
+        className="mt-3"
+        rowKey={(r) => String(r.id)}
+        size="small"
+        scroll={{ x: 780 }}
+        loading={payments.isLoading}
+        dataSource={rows}
+        pagination={{
+          current: meta?.page ?? page,
+          pageSize: meta?.limit ?? 20,
+          total: meta?.total ?? rows.length,
+          onChange: setPage,
+          showSizeChanger: false,
+        }}
+        columns={[
+          {
+            title: 'Vaqt',
+            width: 170,
+            render: (_: unknown, r) => (
+              <span className="font-mono text-xs">{when(r.createdAt)}</span>
+            ),
+          },
+          {
+            title: 'Summa',
+            width: 140,
+            render: (_: unknown, r) => (
+              <span className="font-semibold tabular-nums">
+                {Number(r.amount).toLocaleString('uz-UZ')} {r.currency}
+              </span>
+            ),
+          },
+          {
+            title: 'Buyurtma',
+            width: 130,
+            render: (_: unknown, r) =>
+              r.order_id ? (
+                <span className="font-mono text-xs">#{r.order_id}</span>
+              ) : (
+                /* Bog'lanmagan to'lov — havola nima kelganini ko'rsatamiz,
+                   aks holda operator qaysi to'lov ekanini topa olmaydi. */
+                <span className="text-xs text-red-600 dark:text-red-400">
+                  {r.order_ref ? `? ${r.order_ref}` : 'bog‘lanmagan'}
+                </span>
+              ),
+          },
+          {
+            title: 'Natija',
+            width: 220,
+            render: (_: unknown, r) => {
+              const outcome = paymentOutcome(r);
+              return <Tag color={outcome.color}>{outcome.label}</Tag>;
+            },
+          },
+          {
+            title: 'Tranzaksiya',
+            render: (_: unknown, r) => (
+              <span className="break-all font-mono text-xs text-gray-500 dark:text-gray-400">
+                {r.provider_transaction_id}
+                {r.provider_status ? ` · ${r.provider_status}` : ''}
+              </span>
+            ),
+          },
+        ]}
+      />
+    </Card>
+  );
 };
 
 /**
