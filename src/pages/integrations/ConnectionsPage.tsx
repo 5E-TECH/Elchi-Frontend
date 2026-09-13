@@ -9,6 +9,8 @@ import {
   Search,
   Settings as SettingsIcon,
   ShieldCheck,
+  SlidersHorizontal,
+  Truck,
   Wallet,
 } from 'lucide-react';
 import { CATEGORY_LABEL, ROLE_META } from '../../entities/integrations';
@@ -31,6 +33,8 @@ import ConnectionSettings from './panels/ConnectionSettings';
 import ConnectionSecurity from './panels/ConnectionSecurity';
 import ConnectionLog from './panels/ConnectionLog';
 import ConnectionSettlement from './panels/ConnectionSettlement';
+import ConnectionShipments from './panels/ConnectionShipments';
+import ConnectionControl from './panels/ConnectionControl';
 import {
   BORDER,
   CTA_BTN,
@@ -154,6 +158,13 @@ const ConnectionsPage = () => {
           ),
         },
         {
+          key: 'shipments',
+          label: "Jo'natmalar",
+          icon: <Truck className="h-4 w-4" />,
+          desc: 'Posilkalar va xatolar',
+          content: <ConnectionShipments connection={active} />,
+        },
+        {
           key: 'log',
           label: 'Hodisalar',
           icon: <FileClock className="h-4 w-4" />,
@@ -171,6 +182,15 @@ const ConnectionsPage = () => {
           icon: <Wallet className="h-4 w-4" />,
           desc: 'Qarz va to\'lovlar',
           content: <ConnectionSettlement connection={active} />,
+        },
+        {
+          key: 'control',
+          label: 'Boshqaruv',
+          icon: <SlidersHorizontal className="h-4 w-4" />,
+          desc: 'Kalitlar va jarayonlar',
+          content: (
+            <ConnectionControl connection={active} onChanged={refetch} />
+          ),
         },
         {
           key: 'security',

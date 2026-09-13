@@ -37,7 +37,7 @@ describe("toAmount", () => {
 
 describe("money", () => {
   it("minglik ajratgich bilan chiqadi", () => {
-    // Bo'sh joy turi muhim emas (lokal ` ` ishlatishi mumkin) — raqamlar
+    // Bo'sh joy turi muhim emas (lokal ` ` ishlatishi mumkin) — raqamlar
     // ajratilgani muhim.
     const out = money(1_500_000).replace(/\s/g, " ");
     expect(out).toContain("1 500 000");
