@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
@@ -125,3 +125,44 @@ export const extractIncomingSources = (raw: unknown): IncomingSource[] => {
 /** Manba nomi — nom yechilmagan bo'lsa ham foydali matn qaytadi. */
 export const sourceLabel = (source: IncomingSource): string =>
   source.market?.name?.trim() || `Market #${source.market_id}`;
+
+/**
+ * SKANERLANGAN POSILKALARNI QABUL QILISH.
+ *
+ * ⚠️ SERVERGA TOKEN YUBORILADI, `order_ids` EMAS.
+ *
+ * Ilgari frontend skanerlangan tokenni O'ZI buyurtmaga moslab, serverga
+ * id'lar yuborardi. Ya'ni server skanerlash bo'lgan-bo'lmaganini BILMASDI
+ * va darvozani boshqa ekrandan yoki to'g'ridan-to'g'ri API'dan chetlab
+ * o'tish mumkin edi (audit K2). Endi dalil serverda tekshiriladi.
+ *
+ * Javobda `unmatched` — qabul qilinmagan tokenlar SABABI bilan. Ularni
+ * ko'rsatish SHART: aks holda operator "hammasi qabul qilindi" deb o'ylab,
+ * qolib ketgan posilkani sezmaydi.
+ */
+export interface ReceiveByScanResult {
+  received: number;
+  unmatched: Array<{ token: string; reason: string }>;
+}
+
+export const useReceiveByScan = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (tokens: string[]) =>
+      api
+        .post(API_ENDPOINTS.ORDERS.EXTERNAL_RECEIVE_BY_SCAN, { tokens })
+        .then((res) => {
+          const raw = res.data as { data?: unknown };
+          const inner = (raw?.data as { data?: unknown })?.data ?? raw?.data;
+          const page = inner as Partial<ReceiveByScanResult> | undefined;
+          return {
+            received: Number(page?.received ?? 0),
+            unmatched: Array.isArray(page?.unmatched) ? page!.unmatched : [],
+          } satisfies ReceiveByScanResult;
+        }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [incomingOrdersKey] });
+      client.invalidateQueries({ queryKey: [incomingSourcesKey] });
+    },
+  });
+};
