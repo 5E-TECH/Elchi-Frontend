@@ -162,6 +162,48 @@ const OUTBOUND_FIELDS: ConnectionField[] = [
     hint: 'Texnik nom — kodda va loglarda ishlatiladi. O‘zgartirilmasligi yaxshi',
   },
   {
+    /**
+     * ⚠️ ROL FORMADA BO'LISHI SHART.
+     *
+     * Ilgari u yo'q edi va buni foydalanuvchi topdi: "Donoxon nega
+     * yetkazuvchi kargo sifatida belgilangan? U ham sayt va undan ham
+     * buyurtmalar keladi".
+     *
+     * Sabab — migratsiya: `role`/`category` ustunlari qo'shilganda MAVJUD
+     * yozuvlarga sukut sifatida `carrier`/`cargo` yozilgan (o'sha paytdagi
+     * ulanishlarning ko'pi haqiqatan tashuvchi edi). Lekin formada bu maydon
+     * bo'lmagani uchun noto'g'ri tasniflangan ulanishni TUZATIB
+     * BO'LMASDI — u abadiy "yetkazuvchi" bo'lib qolardi.
+     *
+     * ⚠️ Qiymatlar backend `@IsIn` ro'yxati bilan AYNAN bir xil bo'lishi
+     * kerak, aks holda 400 qaytadi.
+     */
+    key: 'role',
+    label: 'Roli',
+    type: 'select',
+    options: [
+      { value: 'source', label: 'Buyurtma manbasi — bizga buyurtma beradi' },
+      { value: 'carrier', label: 'Yetkazuvchi — bizdan posilka oladi' },
+      { value: 'payment', label: "To'lov tizimi" },
+      { value: 'mirror', label: "Ko'zgu — faqat eksport" },
+    ],
+    hint: 'Ulanish nima qiladi. Ro‘yxatdagi rangi va guruhi shunga bog‘liq',
+  },
+  {
+    key: 'category',
+    label: 'Turi',
+    type: 'select',
+    options: [
+      { value: 'marketplace', label: 'Marketplace / sayt' },
+      { value: 'crm', label: 'CRM' },
+      { value: 'cargo', label: 'Kargo' },
+      { value: 'payment', label: "To'lov" },
+      { value: 'spreadsheet', label: 'Jadval / hisobot' },
+      { value: 'other', label: 'Boshqa' },
+    ],
+    hint: 'Faqat tasnif uchun — xatti-harakatga ta’sir qilmaydi',
+  },
+  {
     key: 'base_url',
     label: 'API manzili',
     type: 'url',

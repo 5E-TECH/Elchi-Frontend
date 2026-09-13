@@ -141,6 +141,8 @@ const ConnectionsPage = () => {
             <ConnectionOverview
               connection={active}
               metrics={byUid.get(active.uid)}
+              /* Checklistdan to'g'ridan-to'g'ri tuzatiladigan tabga o'tish. */
+              onFix={setTab}
             />
           ),
         },

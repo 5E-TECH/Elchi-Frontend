@@ -1,6 +1,7 @@
-import { Alert, Card, Statistic, Tag, Tooltip } from 'antd';
+import { Alert, Button, Card, Statistic, Tag, Tooltip } from 'antd';
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle2,
   Clock,
   Info,
@@ -31,15 +32,26 @@ import type { Connection } from '../useConnections';
  *   outbound — biz ularga so'rov yuboramiz → API manzili + kalit kerak
  */
 
-interface Check {
+export interface Check {
   label: string;
   ok: boolean;
   detail: string;
   /** `false` bo'lsa ham kritik emas — sariq, qizil emas. */
   optional?: boolean;
+  /**
+   * Bu kamchilik QAYSI tabda tuzatiladi.
+   *
+   * ⚠️ BUSIZ CHECKLIST YARIM FOYDALI. Foydalanuvchi aynan shuni aytdi:
+   * "beepostda webhook yo'q deb ko'rsatilayapti, lekin uni qayerdan qo'shish
+   * kerak — nomalumligicha qolayapti". Muammoni ko'rsatib, yechimga yo'l
+   * ko'rsatmaslik operatorni ekranlar bo'ylab qidirishga majbur qiladi.
+   */
+  fixTab?: string;
+  /** Tuzatiladigan maydonning yorlig'i — "qayerda?" savoliga javob. */
+  fixHint?: string;
 }
 
-const buildChecks = (c: Connection): Check[] => {
+export const buildChecks = (c: Connection): Check[] => {
   const common: Check[] = [
     {
       label: 'Ulanish yoqilgan',
@@ -47,6 +59,8 @@ const buildChecks = (c: Connection): Check[] => {
       detail: c.is_active
         ? 'faol'
         : "o'chirilgan — hech qanday amal bajarilmaydi",
+      fixTab: 'control',
+      fixHint: 'Boshqaruv → MASTER kalit',
     },
   ];
 
@@ -63,6 +77,8 @@ const buildChecks = (c: Connection): Check[] => {
         detail: p.webhook_url
           ? String(p.webhook_url)
           : "yo'q — status o'zgarishi hamkorga YETMAYDI (hodisalar kutib qoladi)",
+        fixTab: 'settings',
+        fixHint: 'Sozlamalar → Webhook manzili',
       },
       {
         label: 'Sandbox manzili',
@@ -71,6 +87,8 @@ const buildChecks = (c: Connection): Check[] => {
         detail: p.sandbox_webhook_url
           ? String(p.sandbox_webhook_url)
           : 'sozlanmagan — sinov nusxasi yuborilmaydi',
+        fixTab: 'settings',
+        fixHint: 'Sozlamalar → Sandbox manzili',
       },
     ];
   }
@@ -88,11 +106,15 @@ const buildChecks = (c: Connection): Check[] => {
       label: 'API manzili',
       ok: Boolean(url),
       detail: url || "yo'q — so'rov yuborib bo'lmaydi",
+      fixTab: 'settings',
+      fixHint: 'Sozlamalar → API manzili',
     },
     {
       label: 'Kirish turi',
       ok: Boolean(i.auth_type),
       detail: i.auth_type ? `turi: ${i.auth_type}` : 'belgilanmagan',
+      fixTab: 'settings',
+      fixHint: 'Sozlamalar → Kirish turi',
     },
     {
       label: 'Oxirgi sinxron',
@@ -101,13 +123,40 @@ const buildChecks = (c: Connection): Check[] => {
       detail: i.last_sync_at
         ? new Date(i.last_sync_at).toLocaleString('uz-UZ')
         : "hali sinxron bo'lmagan",
+      fixTab: 'control',
+      fixHint: "Boshqaruv → Navbatni hoziroq yuborish",
     },
   ];
 };
 
-/** PCS `ChecklistItem` — yashil belgi / qizil xato + izoh. */
-const ChecklistItem = ({ check }: { check: Check }) => (
-  <div className="flex items-start gap-2 py-1.5">
+/**
+ * PCS `ChecklistItem` — yashil belgi / qizil xato + izoh.
+ *
+ * Yetishmagan qator BOSILADI va tuzatiladigan tabga o'tkazadi. Bajarilgan
+ * qator bosilmaydi: tuzatadigan narsa yo'q va bosiladigandek ko'rinishi
+ * chalg'itardi.
+ */
+const ChecklistItem = ({
+  check,
+  onFix,
+}: {
+  check: Check;
+  onFix?: (tab: string) => void;
+}) => {
+  const actionable = !check.ok && Boolean(check.fixTab) && Boolean(onFix);
+  const Row = actionable ? 'button' : 'div';
+
+  return (
+  <Row
+    {...(actionable
+      ? {
+          type: 'button' as const,
+          onClick: () => onFix!(check.fixTab!),
+          className:
+            'flex w-full cursor-pointer items-start gap-2 rounded-lg py-1.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40',
+        }
+      : { className: 'flex items-start gap-2 py-1.5' })}
+  >
     {check.ok ? (
       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
     ) : check.optional ? (
@@ -128,16 +177,27 @@ const ChecklistItem = ({ check }: { check: Check }) => (
       <span className="block break-words text-xs text-gray-400">
         {check.detail}
       </span>
+      {/* Qayerdan tuzatish — matn bilan aytiladi, taxmin qoldirilmaydi. */}
+      {actionable && (
+        <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+          {check.fixHint ?? 'Tuzatish'}
+          <ArrowRight className="h-3 w-3" />
+        </span>
+      )}
     </div>
-  </div>
-);
+  </Row>
+  );
+};
 
 const ConnectionOverview = ({
   connection,
   metrics,
+  onFix,
 }: {
   connection: Connection;
   metrics?: ConnectionMetrics;
+  /** Kamchilikni tuzatish uchun tabga o'tkazadi. */
+  onFix?: (tab: string) => void;
 }) => {
   const checks = buildChecks(connection);
   const blocking = checks.filter((c) => !c.ok && !c.optional);
@@ -153,6 +213,22 @@ const ConnectionOverview = ({
           blocking.length === 0
             ? 'Ulanish ishlashga tayyor'
             : `${blocking.length} ta sozlama yetishmaydi — checklistni tugatish kerak`
+        }
+        action={
+          /*
+            Eng muhim kamchilikka BIR BOSISHDA o'tish. Checklistdagi qator
+            ham bosiladi, lekin banner tepada turadi va odam birinchi shuni
+            ko'radi.
+          */
+          blocking.length > 0 && blocking[0].fixTab && onFix ? (
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => onFix(blocking[0].fixTab!)}
+            >
+              Tuzatish
+            </Button>
+          ) : undefined
         }
         description={
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -187,7 +263,7 @@ const ConnectionOverview = ({
           }
         >
           {checks.map((c) => (
-            <ChecklistItem key={c.label} check={c} />
+            <ChecklistItem key={c.label} check={c} onFix={onFix} />
           ))}
         </Card>
 
