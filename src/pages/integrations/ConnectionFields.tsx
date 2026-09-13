@@ -1,4 +1,5 @@
 import { Form, Input, Select, Switch } from 'antd';
+import { useMarkets } from '../../entities/markets';
 import type { ConnectionField } from './connections';
 
 /**
@@ -16,12 +17,24 @@ import type { ConnectionField } from './connections';
  * Endi forma BITTA, farq faqat `connections.ts` dagi maydon ro'yxatida.
  */
 
-export type FieldValues = Record<string, string | boolean | string[]>;
+/**
+ * Maydon qiymatlari.
+ *
+ * `Record<string, string>` — `mapping` turi uchun (kalit→qiymat xaritasi).
+ * Boshqa turlar satr/mantiq/massiv ishlatadi.
+ */
+export type FieldValue =
+  | string
+  | boolean
+  | string[]
+  | Record<string, string>;
+
+export type FieldValues = Record<string, FieldValue>;
 
 interface Props {
   fields: ConnectionField[];
   values: FieldValues;
-  onChange: (key: string, value: string | boolean | string[]) => void;
+  onChange: (key: string, value: FieldValue) => void;
   /** Tahrirlashda sir maydonlari bo'sh ko'rinadi — bu ATAYLAB (pastga qara). */
   disabled?: boolean;
 }
@@ -103,6 +116,32 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
         );
       }
 
+      /* ── Market akkaunti (ro'yxat API'dan) ── */
+      if (field.type === 'market') {
+        return (
+          <MarketField
+            key={field.key}
+            field={field}
+            value={String(raw ?? '')}
+            disabled={disabled}
+            onChange={(v) => onChange(field.key, v)}
+          />
+        );
+      }
+
+      /* ── Maydon xaritasi (JSON) ── */
+      if (field.type === 'mapping') {
+        return (
+          <MappingField
+            key={field.key}
+            field={field}
+            value={raw}
+            disabled={disabled}
+            onChange={(v) => onChange(field.key, v)}
+          />
+        );
+      }
+
       /* ── Sir ── */
       if (field.type === 'secret') {
         return (
@@ -145,7 +184,139 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
   </div>
 );
 
+/**
+ * Market tanlagichi — ro'yxat API'dan yuklanadi.
+ *
+ * ⚠️ QIYMAT SATR bo'lib qoladi (`market_id` bigint). Songa aylantirmaymiz:
+ * JS `number` katta bigint'ni aniq saqlamaydi va id buzilib ketardi.
+ */
+const MarketField = ({
+  field,
+  value,
+  disabled,
+  onChange,
+}: {
+  field: ConnectionField;
+  value: string;
+  disabled?: boolean;
+  onChange: (v: string) => void;
+}) => {
+  const { useGetMarkets } = useMarkets();
+  const query = useGetMarkets({ limit: 200 });
+
+  /**
+   * Javob qobig'i marshrutga qarab farq qiladi — himoyalangan ochish, aks
+   * holda tanlagich bo'sh ko'rinib qolardi va sabab bilinmasdi.
+   */
+  const raw = query.data as
+    | { data?: { items?: unknown[] } | unknown[] }
+    | undefined;
+  const list = Array.isArray(raw?.data)
+    ? (raw!.data as Array<Record<string, unknown>>)
+    : Array.isArray((raw?.data as { items?: unknown[] })?.items)
+      ? ((raw!.data as { items: unknown[] }).items as Array<
+          Record<string, unknown>
+        >)
+      : [];
+
+  return (
+    <Form.Item label={field.label} extra={field.hint}>
+      <Select
+        value={value || undefined}
+        disabled={disabled}
+        loading={query.isLoading}
+        onChange={(v: string) => onChange(v ?? '')}
+        allowClear
+        showSearch
+        optionFilterProp="label"
+        placeholder={
+          query.isError ? "Ro'yxatni olib bo'lmadi" : 'Marketni tanlang'
+        }
+        options={list.map((m) => ({
+          value: String(m.id),
+          label: String(m.name ?? m.username ?? `#${m.id}`),
+        }))}
+      />
+    </Form.Item>
+  );
+};
+
+/**
+ * MAYDON XARITASI — kalit→qiymat juftliklari.
+ *
+ * ⚠️ XOM JSON MAYDONI EMAS. Operator JSON sintaksisini bilishi shart
+ * bo'lmasligi kerak: bitta vergul yoki qavs xatosi butun sozlamani
+ * buzardi va xato faqat importda chiqardi. Shu bois tayyor kalitlar
+ * ro'yxati va har biriga matn maydoni.
+ *
+ * Kalitlar backend o'qiydigan nomlar bilan AYNAN bir xil
+ * (`order-lifecycle.service.ts` → `fieldMapping.*`). Mos kelmasa xarita
+ * jimgina e'tiborsiz qolardi.
+ */
+const MAPPING_KEYS: Array<{ key: string; label: string; hint: string }> = [
+  { key: 'id_field', label: 'Buyurtma raqami', hint: 'sukut: id' },
+  { key: 'customer_name_field', label: 'Mijoz ismi', hint: 'sukut: full_name' },
+  { key: 'phone_field', label: 'Telefon', hint: 'sukut: phone' },
+  { key: 'extra_phone_field', label: "Qo'shimcha telefon", hint: '' },
+  { key: 'address_field', label: 'Manzil', hint: 'sukut: address' },
+  { key: 'district_code_field', label: 'Tuman (SOATO)', hint: 'sukut: district' },
+  { key: 'region_code_field', label: 'Viloyat', hint: 'faqat SON qabul qilinadi' },
+  { key: 'total_price_field', label: 'Summa', hint: 'sukut: total_price' },
+  { key: 'delivery_price_field', label: 'Yetkazish narxi', hint: '' },
+  { key: 'qr_code_field', label: 'QR kod', hint: 'sukut: qr_code' },
+  { key: 'comment_field', label: 'Izoh', hint: 'sukut: comment' },
+  { key: 'items_field', label: 'Mahsulotlar massivi', hint: 'sukut: items' },
+  { key: 'item_name_field', label: 'Mahsulot nomi', hint: 'massiv ichida, sukut: name' },
+  { key: 'item_qty_field', label: 'Mahsulot soni', hint: 'massiv ichida, sukut: quantity' },
+];
+
+const MappingField = ({
+  field,
+  value,
+  disabled,
+  onChange,
+}: {
+  field: ConnectionField;
+  value: unknown;
+  disabled?: boolean;
+  onChange: (v: Record<string, string>) => void;
+}) => {
+  const current =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, string>)
+      : {};
+
+  const set = (key: string, next: string) => {
+    const out = { ...current };
+    // Bo'sh qiymat XARITADAN OLINADI — bo'sh satr saqlash backendni
+    // "maydon bor, lekin nomi yo'q" holatiga tushirardi.
+    if (next.trim()) out[key] = next.trim();
+    else delete out[key];
+    onChange(out);
+  };
+
+  return (
+    <Form.Item label={field.label} extra={field.hint} className="md:col-span-2">
+      <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+        {MAPPING_KEYS.map((m) => (
+          <Form.Item key={m.key} label={m.label} extra={m.hint}>
+            <Input
+              value={current[m.key] ?? ''}
+              disabled={disabled}
+              onChange={(e) => set(m.key, e.target.value)}
+              placeholder={m.hint.replace('sukut: ', '') || undefined}
+            />
+          </Form.Item>
+        ))}
+      </div>
+    </Form.Item>
+  );
+};
+
 export default ConnectionFields;
+
+const isPlainObject = (v: unknown): v is Record<string, string> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
 
 export const buildChangedPayload = (
   fields: ConnectionField[],
@@ -168,6 +339,26 @@ export const buildChangedPayload = (
       const a = Array.isArray(next) ? next : [];
       const b = Array.isArray(prev) ? prev : [];
       if (a.join(',') !== b.join(',')) out[field.key] = a;
+      continue;
+    }
+
+    /**
+     * Xarita (obyekt) — JSON bo'yicha solishtiriladi.
+     *
+     * ⚠️ Kalitlar tartibi turlicha bo'lishi mumkin, shu bois kalitlar
+     * SARALANADI. Aks holda ayni xarita "o'zgargan" bo'lib ko'rinib, har
+     * saqlashda keraksiz yozuv ketardi.
+     */
+    if (isPlainObject(next) || isPlainObject(prev)) {
+      const norm = (v: unknown) =>
+        JSON.stringify(
+          Object.fromEntries(
+            Object.entries(isPlainObject(v) ? v : {}).sort(([x], [y]) =>
+              x.localeCompare(y),
+            ),
+          ),
+        );
+      if (norm(next) !== norm(prev)) out[field.key] = isPlainObject(next) ? next : {};
       continue;
     }
 
