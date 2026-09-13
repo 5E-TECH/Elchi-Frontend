@@ -148,7 +148,46 @@ export const fieldsFor = (c: Connection): ConnectionField[] => {
  */
 export const isConfigured = (c: Connection): boolean => {
   const raw = c.raw as Record<string, unknown>;
-  return c.kind === 'partner'
-    ? Boolean(raw.webhook_url)
-    : Boolean(raw.base_url || raw.api_url);
+
+  if (c.kind === 'partner') {
+    return Boolean(raw.webhook_url);
+  }
+
+  // API manzili — barcha chiquvchi ulanish uchun eng kam shart.
+  if (!raw.base_url && !raw.api_url) return false;
+
+  /**
+   * ⚠️ ROLGA XOS SHARTLAR (audit M2).
+   *
+   * Ilgari FAQAT `base_url` tekshirilardi va kargo YASHIL ko'rinardi —
+   * aslida esa ishlamasdi: `dispatchShipment` `dispatch_config.endpoint`
+   * bo'lmasa 400 beradi, `receiveWebhook` esa `webhook_secret` bo'lmasa 401
+   * `not_configured` qaytaradi.
+   *
+   * Yashil nuqta "ishlaydi" degan ma'noni beradi. Ishlamaydigan ulanishni
+   * yashil ko'rsatish eng yomon holat: operator muammoni posilka
+   * jo'natilmaganda biladi, sababni esa qidirib topishi kerak.
+   */
+  const cfg = raw.dispatch_config as { endpoint?: string } | null | undefined;
+
+  if (c.role === 'carrier') {
+    // Kargo posilka OLADI (dispatch) va status QAYTARADI (webhook).
+    return Boolean(cfg?.endpoint) && Boolean(raw.has_webhook_secret);
+  }
+
+  if (c.role === 'payment') {
+    // To'lov tizimi faqat kiruvchi: imzo sekreti bo'lmasa hodisa rad etiladi.
+    return Boolean(raw.has_webhook_secret);
+  }
+
+  if (c.role === 'source') {
+    /**
+     * Buyurtma KELADIGAN ulanish: `market_id` bo'lmasa import 400 beradi
+     * (`receiveExternalOrders` → `integration.market_id is required`).
+     */
+    return Boolean(raw.market_id);
+  }
+
+  // Ko'zgu va noma'lum rol — manzil yetarli.
+  return true;
 };

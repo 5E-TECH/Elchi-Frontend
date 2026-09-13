@@ -73,6 +73,16 @@ export type Integration = {
   credentials?: Record<string, string> | null;
   is_active: boolean;
   market_id: string | null;
+  /**
+   * Sekret SOZLANGANMI — sekretning o'zi emas.
+   *
+   * Backend `sanitizeIntegrationRow` HMAC sekretini javobdan o'chiradi va
+   * faqat shu bayroqni beradi: "sozlangan" ni ko'rsatish uchun sirni
+   * yuborish shart emas.
+   */
+  has_webhook_secret?: boolean;
+  /** Posilka jo'natish shabloni — kargo uchun. */
+  dispatch_config?: { endpoint?: string } | null;
   market?: {
     id?: string | number;
     name?: string | null;
