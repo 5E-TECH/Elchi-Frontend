@@ -25,9 +25,9 @@ import {
   sourceLabel,
   useIncomingExternalOrders,
   useIncomingSources,
+  useReceiveByScan,
   type IncomingOrder,
 } from "../../entities/incoming-orders";
-import { useOrders } from "../../entities/orders";
 
 /**
  * Bu ekranga kimlar kira oladi — backend guardi bilan BIR XIL bo'lishi shart.
@@ -88,7 +88,18 @@ const IncomingOrdersPage = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState("");
+  /**
+   * ⚠️ ID VA TOKEN IKKISI HAM SAQLANADI.
+   *
+   * `scannedIds` — faqat EKRAN uchun (qaysi qator belgilandi).
+   * `scannedTokens` — SERVERGA yuboriladi.
+   *
+   * Ilgari serverga `order_ids` ketardi, ya'ni skanerlash dalili faqat
+   * frontendda edi va darvozani chetlab o'tish mumkin bo'lardi (audit K2).
+   * Endi token serverga boradi va u o'zi buyurtmaga moslaydi.
+   */
   const [scannedIds, setScannedIds] = useState<Set<string>>(new Set());
+  const [scannedTokens, setScannedTokens] = useState<string[]>([]);
   const [message, setMessage] = useState<Message | null>(null);
 
   /**
@@ -107,7 +118,7 @@ const IncomingOrdersPage = () => {
   // skanerlayotganini ekrandan tasdiqlab olsin.
   const sources = useIncomingSources();
   const source = (sources.data ?? []).find((s) => s.market_id === marketId);
-  const { createReceiveOrder } = useOrders();
+  const receiveByScan = useReceiveByScan();
 
   const orders = useMemo(
     () => extractIncomingOrders(query.data),
@@ -135,6 +146,7 @@ const IncomingOrdersPage = () => {
   // eski belgilar qolib, operatorni chalg'itmasin).
   useEffect(() => {
     setScannedIds(new Set());
+    setScannedTokens([]);
   }, [query.dataUpdatedAt]);
 
   const handleScan = (raw: string) => {
@@ -158,6 +170,7 @@ const IncomingOrdersPage = () => {
 
     void playScanFeedback("success");
     setScannedIds((prev) => new Set(prev).add(order.id));
+    setScannedTokens((prev) => [...prev, token]);
     setMessage({
       tone: "success",
       text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
@@ -165,31 +178,45 @@ const IncomingOrdersPage = () => {
   };
 
   const handleReceive = () => {
-    const ids = Array.from(scannedIds);
-    if (!ids.length) return;
+    if (!scannedTokens.length) return;
 
-    createReceiveOrder.mutate(
-      { order_ids: ids },
-      {
-        onSuccess: () => {
+    receiveByScan.mutate(scannedTokens, {
+      onSuccess: (result) => {
+        /**
+         * ⚠️ QABUL QILINMAGANLARNI KO'RSATISH SHART. Server tokenni
+         * moslay olmasa sababini qaytaradi ("tashqi posilka emas",
+         * "allaqachon received", "tizimda topilmadi"). Ularni yashirsak
+         * operator "hammasi qabul qilindi" deb o'ylab, qolib ketgan
+         * posilkani sezmaydi.
+         */
+        if (result.unmatched.length) {
+          const detail = result.unmatched
+            .map((u) => `${u.token.slice(0, 10)}… — ${u.reason}`)
+            .join("; ");
+          setMessage({
+            tone: result.received > 0 ? "warn" : "error",
+            text: `${result.received} qabul qilindi, ${result.unmatched.length} o'tmadi: ${detail}`,
+          });
+        } else {
           setMessage({
             tone: "success",
-            text: `${ids.length} ${t("incomingReceiveSuccess")}`,
+            text: `${result.received} ${t("incomingReceiveSuccess")}`,
           });
-          setScannedIds(new Set());
-          void query.refetch();
-          inputRef.current?.focus();
-        },
-        onError: (error) => {
-          // Backend sababini ATAYLAB ko'rsatamiz (masalan "ba'zi buyurtmalar
-          // NEW holatida emas") — umumiy xabar operatorni ko'r qoldirardi.
-          setMessage({
-            tone: "error",
-            text: getBackendErrorMessage(error) ?? t("incomingReceiveError"),
-          });
-        },
+        }
+        setScannedIds(new Set());
+        setScannedTokens([]);
+        void query.refetch();
+        inputRef.current?.focus();
       },
-    );
+      onError: (error) => {
+        // Backend sababini ATAYLAB ko'rsatamiz — umumiy xabar operatorni
+        // ko'r qoldirardi.
+        setMessage({
+          tone: "error",
+          text: getBackendErrorMessage(error) ?? t("incomingReceiveError"),
+        });
+      },
+    });
   };
 
   if (!allowed) {
@@ -374,10 +401,10 @@ const IncomingOrdersPage = () => {
       <button
         type="button"
         onClick={handleReceive}
-        disabled={scannedCount === 0 || createReceiveOrder.isPending}
+        disabled={scannedCount === 0 || receiveByScan.isPending}
         className="flex w-full items-center justify-center gap-3 rounded-[24px] bg-emerald-600 px-6 py-5 text-base font-extrabold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {createReceiveOrder.isPending ? (
+        {receiveByScan.isPending ? (
           <>
             <Loader2 size={18} className="animate-spin" />
             {t("incomingReceiving")}

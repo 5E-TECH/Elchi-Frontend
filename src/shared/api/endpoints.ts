@@ -103,6 +103,9 @@ export const API_ENDPOINTS = {
     // Kiruvchi posilkalarning manbalari — qabul kutayotgan tashqi buyurtmalar
     // manba bo'yicha guruhlangan (soni, summasi, eng eski sanasi).
     EXTERNAL_SOURCES: "orders/external/sources", // GET grouped incoming sources
+    // Skanerlangan yorliq tokenlari bilan qabul qilish. `order_ids` EMAS:
+    // server skanerlash dalilini O'ZI tekshirishi kerak.
+    EXTERNAL_RECEIVE_BY_SCAN: "orders/external/receive-by-scan", // POST
     TELEGRAM_BOT_CREATE: "orders/telegram/bot/create", // POST create order via telegram bot
     // COD settlement legs (FIFO per order) — guide §7
     SETTLEMENT_COURIER_TO_BRANCH: "orders/settlement/courier-to-branch", // POST courier
