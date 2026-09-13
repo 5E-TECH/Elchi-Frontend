@@ -69,6 +69,8 @@ export const buildChecks = (c: Connection): Check[] => {
     const p = c.raw as {
       webhook_url?: string | null;
       sandbox_webhook_url?: string | null;
+      sandbox_enabled?: boolean;
+      has_sandbox_secret?: boolean;
     };
     return [
       ...common,
@@ -81,15 +83,34 @@ export const buildChecks = (c: Connection): Check[] => {
         fixTab: 'settings',
         fixHint: 'Sozlamalar → Webhook manzili',
       },
+      /**
+       * SINOV REJIMI — KALITDAN hisoblanadi, manzilning borligidan EMAS.
+       *
+       * ⚠️ Ilgari faqat `sandbox_webhook_url` tekshirilardi. Ikki xato
+       * bergan:
+       *  1. manzil bor, kalit o'chiq bo'lsa "sozlangan" deb ko'rsatardi —
+       *     nusxa esa KETMASDI;
+       *  2. kalit yoqilgan, sekret yo'q bo'lsa ham "sozlangan" derdi —
+       *     backend esa nusxani tashlab yuboradi (prodakshn sekreti sinov
+       *     muhitiga yuborilmaydi).
+       *
+       * Endi uchala holat ajratilgan va matn KEYINGI QADAMNI aytadi.
+       */
       {
-        label: 'Sandbox manzili',
-        ok: Boolean(p.sandbox_webhook_url),
+        label: 'Sinov rejimi (sandbox)',
+        ok: Boolean(p.sandbox_enabled && p.has_sandbox_secret),
         optional: true,
-        detail: p.sandbox_webhook_url
-          ? String(p.sandbox_webhook_url)
-          : 'sozlanmagan — sinov nusxasi yuborilmaydi',
+        detail: !p.sandbox_enabled
+          ? p.sandbox_webhook_url
+            ? `o'chirilgan — manzil saqlangan (${String(p.sandbox_webhook_url)})`
+            : "o'chirilgan — sinov nusxasi yuborilmaydi"
+          : !p.sandbox_webhook_url
+            ? 'YOQILGAN, lekin manzil yo‘q — nusxa hech qayerga ketmaydi'
+            : !p.has_sandbox_secret
+              ? 'YOQILGAN, lekin alohida sekret yo‘q — nusxa yuborilmaydi'
+              : `YOQILGAN — har hodisa nusxasi ${String(p.sandbox_webhook_url)} ga ketmoqda`,
         fixTab: 'settings',
-        fixHint: 'Sozlamalar → Sandbox manzili',
+        fixHint: 'Sozlamalar → Sinov rejimi',
       },
     ];
   }

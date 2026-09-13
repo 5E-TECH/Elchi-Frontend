@@ -257,6 +257,17 @@ const ConnectionSettings = ({
               Yoqilsa har hodisaning NUSXASI sinov manziliga ham yuboriladi.
               Asosiy yetkazish o‘zgarmaydi va sinov xatosi unga ta’sir
               qilmaydi. Nusxa faqat BIRINCHI urinishda ketadi.
+              <br />
+              {/*
+                ⚠️ SHARTLAR AYTILADI. Kalitni yoqib, sekretni bo'sh
+                qoldirish backend'dan 400 oladi. Shartni formada
+                aytmasak, operator xatoni faqat saqlashda ko'rardi va
+                sababini taxmin qilishga majbur bo'lardi.
+              */}
+              <span className="font-normal">
+                Yoqish uchun manzil VA alohida sandbox sekreti shart —
+                prodakshn sekreti sinov muhitiga yuborilmaydi.
+              </span>
             </div>
 
             <ConnectionFields

@@ -5,6 +5,7 @@ import {
   TYPE_CHANGE_FIELDS,
   fieldsInGroup,
   findConnectionType,
+  isFieldDisabled,
   visibleFields,
   type ConnectionTypeMeta,
 } from "./connections";
@@ -696,6 +697,129 @@ describe("⭐ TO'LOV TIZIMI formasi (7-bosqich)", () => {
         type.fields.some((f) => f.key.startsWith("payment_config")),
         `${type.key} da to'lov maydoni bo'lmasligi kerak`,
       ).toBe(false);
+    }
+  });
+});
+
+describe("⭐ HAMKOR maydonlari backend DTO'sida BOR", () => {
+  /**
+   * ⚠️ NEGA BU TEST KERAK. `ConnectionSettings` hamkorni yangilashda
+   * `dto: payload as never` yozadi — ya'ni tip tekshiruvi CHETLAB
+   * O'TILGAN. Gateway'da esa `whitelist: true, forbidNonWhitelisted: true`,
+   * ya'ni DTO'da yo'q maydon 400 beradi.
+   *
+   * Aynan shu kombinatsiya bir marta ishlagan: `sandbox_webhook_url`
+   * faqat `UpdatePartnerRequestDto` da bor edi, `Create` da yo'q — usta
+   * "Sandbox manzili" ni to'ldirib "Yakunlash" bosganda butun ulanish
+   * YARATILMASDI, xato sababi esa maydon nomi bo'lib UI'da ko'rinmasdi.
+   * Typecheck jim turardi, chunki `as never` uni o'chirgan.
+   *
+   * Ro'yxat QO'LDA yuritiladi va bu ataylab: backend DTO'si TypeScript
+   * interfeysi emas, u boshqa repozitoriyada yashaydi. Yangi maydon
+   * qo'shgan odam ikki tomonni ham yangilashi kerak.
+   */
+  const PARTNER_DTO_KEYS = new Set([
+    // CreatePartnerRequestDto + UpdatePartnerRequestDto
+    // (Elchi-Backend/apps/api-gateway/src/dto/partner.swagger.dto.ts)
+    "name",
+    "webhook_url",
+    "webhook_secret",
+    "sandbox_webhook_url",
+    "sandbox_webhook_secret",
+    "sandbox_enabled",
+    "ip_allowlist",
+    // `POST partners/:id/status` alohida amal — forma yubormaydi.
+    "is_active",
+  ]);
+
+  it("har bir hamkor maydoni DTO'da mavjud", () => {
+    const partnerTypes = CONNECTION_TYPES.filter((t) => t.kind === "partner");
+    // Test bo'shliqda ishlamasin.
+    expect(partnerTypes.length).toBeGreaterThan(0);
+
+    for (const type of partnerTypes) {
+      for (const f of type.fields) {
+        expect(
+          PARTNER_DTO_KEYS.has(f.key),
+          `${type.key}.${f.key} backend DTO'sida yo'q — 400 beradi`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("⭐ sandbox KALITI hamkor formasida bor", () => {
+    /**
+     * Kalit bo'lmasa sandbox'ni yoqish/o'chirish imkoni yo'q — foydalanuvchi
+     * aynan shuni so'ragan ("o'chirib yoqadigan qil").
+     */
+    const partner = CONNECTION_TYPES.find((t) => t.kind === "partner")!;
+    expect(partner.fields.map((f) => f.key)).toContain("sandbox_enabled");
+  });
+
+  it("⭐ sandbox maydonlari `sandbox` guruhida", () => {
+    /**
+     * Ular `connection` guruhida qolsa, prodakshn sekreti bilan YONMA-YON
+     * chiziladi — aynan shikoyat qilingan aralashish.
+     */
+    const partner = CONNECTION_TYPES.find((t) => t.kind === "partner")!;
+    for (const f of partner.fields) {
+      if (f.key.startsWith("sandbox")) {
+        expect(f.group, `${f.key} noto'g'ri guruhda`).toBe("sandbox");
+      }
+    }
+  });
+});
+
+describe("⭐ `disabledWhen` — ko'rinadi, lekin tahrirlanmaydi", () => {
+  /**
+   * ⚠️ `showWhen` DAN FARQI MUHIM. Yashirish ma'lumotni ham yashiradi:
+   * sandbox kaliti o'chirilganda saqlangan manzil ko'rinmay qolardi va
+   * operator nima sozlanganini BILMASDI — "o'chirdim, endi qayerga
+   * yozilganini eslay olmayman" holati.
+   */
+  const field = {
+    key: "sandbox_webhook_url",
+    label: "Sandbox manzili",
+    type: "url" as const,
+    disabledWhen: { key: "sandbox_enabled", equals: false },
+  };
+
+  it("shart bajarilsa O'CHIRILADI", () => {
+    expect(isFieldDisabled(field, { sandbox_enabled: false })).toBe(true);
+  });
+
+  it("shart bajarilmasa tahrirlanadi", () => {
+    expect(isFieldDisabled(field, { sandbox_enabled: true })).toBe(false);
+  });
+
+  it("⭐ tegilmagan qiymat (undefined) — `false` deb o'qiladi", () => {
+    /**
+     * Yangi hamkorda `sandbox_enabled` hali yo'q. `undefined` ni "yoqilgan"
+     * deb o'qisak maydonlar tahrirlanardi-yu, saqlashda 400 kelardi.
+     */
+    expect(isFieldDisabled(field, {})).toBe(true);
+  });
+
+  it("sharti YO'Q maydon hech qachon o'chirilmaydi", () => {
+    expect(isFieldDisabled({ ...field, disabledWhen: undefined }, {})).toBe(
+      false,
+    );
+  });
+
+  it("⭐ sandbox maydonlari YASHIRILMAYDI, o'chiriladi", () => {
+    /**
+     * Registrda `showWhen` ishlatilsa maydon butunlay yo'qolardi. Bu test
+     * qarorni qulflaydi: qiymat KO'RINISHI kerak.
+     */
+    const partner = CONNECTION_TYPES.find((t) => t.kind === "partner")!;
+    const sandbox = partner.fields.filter(
+      (f) => f.key.startsWith("sandbox") && f.type !== "switch",
+    );
+    expect(sandbox.length).toBeGreaterThan(0);
+
+    for (const f of sandbox) {
+      expect(f.showWhen, `${f.key} yashirilmasligi kerak`).toBeUndefined();
+      expect(f.disabledWhen, `${f.key} da disabledWhen yo'q`).toBeTruthy();
     }
   });
 });
