@@ -225,6 +225,8 @@ export const API_ENDPOINTS = {
   INTEGRATIONS: {
     BASE: "integrations", // GET list / POST create
     BY_ID: (id: string | number) => `integrations/${id}`, // GET / PATCH / DELETE
+    // Jo'natmalar — chiquvchi ulanishning posilkalari (status, xato, urinish).
+    SHIPMENTS_BY_ID: (id: string | number) => `integrations/${id}/shipments`,
     RECEIVABLES: "integrations/receivables",
     RECEIVABLE_BALANCE: (id: string | number) => `integrations/${id}/receivable-balance`,
     REMITTANCES: (id: string | number) => `integrations/${id}/remittances`, // POST
@@ -359,6 +361,8 @@ export const API_ENDPOINTS = {
     // SINOV webhooki — haqiqiy buyurtmaga tegmaydi. Tanada `url` berilsa
     // saqlangan manzildan ustun turadi (saqlashdan OLDIN sinash uchun).
     WEBHOOK_TEST: (id: string | number) => `admin/partners/${id}/webhook-test`, // POST
+    // Hamkordan kelgan posilkalar bog'lanishi (yupqa: status buyurtmada).
+    SHIPMENTS: (id: string | number) => `admin/partners/${id}/shipments`, // GET
   },
 
   // ── Activity logs / audit trail (admin) — merged across services ─────────
