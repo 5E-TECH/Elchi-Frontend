@@ -83,6 +83,23 @@ export type Integration = {
   has_webhook_secret?: boolean;
   /** Posilka jo'natish shabloni — kargo uchun. */
   dispatch_config?: { endpoint?: string } | null;
+  /**
+   * CRM voronkasidan buyurtma yaratish darvozasi.
+   *
+   * `enabled: true` bo'lsa backend `create_on_stages` yoki
+   * `create_on_events` dan kamida bittasini TALAB qiladi (400) — darvozasiz
+   * CRM "bitim yaratildi" hodisasini mijoz manzili to'lmasdan oldin
+   * yuboradi va chala buyurtma tug'ilardi.
+   */
+  inbound_order_config?: {
+    enabled?: boolean;
+    deal_path?: string;
+    funnel_path?: string;
+    funnel_id?: string;
+    stage_path?: string;
+    create_on_stages?: string[];
+    create_on_events?: string[];
+  } | null;
   market?: {
     id?: string | number;
     name?: string | null;

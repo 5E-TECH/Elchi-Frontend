@@ -146,3 +146,116 @@ describe("Xarita (mapping) maydoni — payload solishtiruvi", () => {
     expect(out).toEqual({ field_mapping: { a: "1" } });
   });
 });
+
+describe("⭐ ICHMA-ICH sozlama TO'LIQ yuboriladi", () => {
+  /**
+   * Backend `Object.assign(row, dto)` ishlatadi — jsonb ustun butunlay
+   * ALMASHTIRILADI, birlashtirilmaydi. Faqat o'zgargan kalitni yuborsak:
+   *
+   *   operator `stage_path` ni tahrirlaydi
+   *     → { inbound_order_config: { stage_path: 'x' } }
+   *     → bazada: { stage_path: 'x' }   ← `enabled` va darvozalar YO'QOLDI
+   *     → CRM'dan buyurtma kelishi JIMGINA to'xtaydi
+   *
+   * Xuddi shu tuzoq `dispatch_config` da ham bor edi: `method` ni
+   * o'zgartirish `endpoint` ni o'chirib, kargoga posilka jo'natishni buzardi.
+   */
+  const funnel = [
+    F({ key: "inbound_order_config.enabled", type: "switch" }),
+    F({ key: "inbound_order_config.stage_path" }),
+    F({ key: "inbound_order_config.create_on_stages", type: "tags" }),
+  ];
+
+  const initial = {
+    "inbound_order_config.enabled": true,
+    "inbound_order_config.stage_path": "status_id",
+    "inbound_order_config.create_on_stages": ["142"],
+  };
+
+  it("bitta kalit o'zgarsa ham BUTUN obyekt ketadi", () => {
+    const out = buildChangedPayload(
+      funnel,
+      { ...initial, "inbound_order_config.stage_path": "stage_id" },
+      initial,
+    );
+
+    expect(out).toEqual({
+      inbound_order_config: {
+        enabled: true,
+        stage_path: "stage_id",
+        create_on_stages: ["142"],
+      },
+    });
+  });
+
+  it("hech narsa o'zgarmasa ichma-ich obyekt YUBORILMAYDI", () => {
+    // Aks holda har "Saqlash" bosilishi keraksiz yozuv qilardi.
+    expect(buildChangedPayload(funnel, initial, initial)).toEqual({});
+  });
+
+  it("BOSHQA ildiz tegilmaydi", () => {
+    /**
+     * Voronka tahrirlansa `dispatch_config` yuborilmasligi kerak — aks holda
+     * bir tabda ishlagan operator boshqa tabdagi sozlamani ustiga yozardi.
+     */
+    const mixed = [
+      ...funnel,
+      F({ key: "dispatch_config.endpoint" }),
+      F({ key: "dispatch_config.method" }),
+    ];
+    const init2 = {
+      ...initial,
+      "dispatch_config.endpoint": "/orders",
+      "dispatch_config.method": "POST",
+    };
+
+    const out = buildChangedPayload(
+      mixed,
+      { ...init2, "inbound_order_config.enabled": false },
+      init2,
+    );
+
+    expect(out).toHaveProperty("inbound_order_config");
+    expect(out).not.toHaveProperty("dispatch_config");
+  });
+
+  it("tegilmagan kalit `undefined` bo'lsa bo'sh qiymat ketadi", () => {
+    /**
+     * `undefined` JSON'da yo'qoladi, ya'ni kalit tushib qolardi — aynan
+     * qutulmoqchi bo'lgan holat. Tur bo'yicha bo'sh qiymat beriladi.
+     */
+    const out = buildChangedPayload(
+      funnel,
+      { "inbound_order_config.stage_path": "status_id" },
+      {},
+    );
+
+    expect(out).toEqual({
+      inbound_order_config: {
+        enabled: false,
+        stage_path: "status_id",
+        create_on_stages: [],
+      },
+    });
+  });
+
+  it("sir maydoni ichma-ich bo'lsa TO'LDIRILMAYDI", () => {
+    /**
+     * Sir server javobida qaytmaydi, ya'ni joriy holatda bo'sh turadi.
+     * Uni to'liq obyekt bilan yuborsak ishlab turgan kalitni O'CHIRARDI.
+     * Bugun ichma-ich sir yo'q, lekin qo'shilsa bu himoya ishlashi kerak.
+     */
+    const withSecret = [
+      ...funnel,
+      F({ key: "inbound_order_config.token", type: "secret", writeOnly: true }),
+    ];
+
+    const out = buildChangedPayload(
+      withSecret,
+      { ...initial, "inbound_order_config.stage_path": "s2" },
+      initial,
+    );
+
+    expect(out.inbound_order_config).not.toHaveProperty("token");
+  });
+});

@@ -230,6 +230,17 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `integrations/${id}`, // GET / PATCH / DELETE
     // Jo'natmalar — chiquvchi ulanishning posilkalari (status, xato, urinish).
     SHIPMENTS_BY_ID: (id: string | number) => `integrations/${id}/shipments`,
+    /**
+     * KIRUVCHI webhook jurnali — ular bizga yuborgan hodisalar.
+     *
+     * ⚠️ `SYNC_HISTORY` bilan ARALASHTIRMANG: u CHIQUVCHI yo'l (biz
+     * tortib olgan/yuborgan sinxronlar). Bu esa teskari yo'nalish:
+     * imzo to'g'rimi, natija nima, xato sababi nima.
+     *
+     * Tana (`raw_body`) QAYTARILMAYDI — ichida mijoz telefoni va manzili
+     * bo'ladi, ro'yxatda esa savol "nima bo'ldi".
+     */
+    WEBHOOK_LOGS: "integrations/webhook-logs",
     RECEIVABLES: "integrations/receivables",
     RECEIVABLE_BALANCE: (id: string | number) => `integrations/${id}/receivable-balance`,
     REMITTANCES: (id: string | number) => `integrations/${id}/remittances`, // POST

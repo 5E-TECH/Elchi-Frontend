@@ -380,6 +380,51 @@ export const buildChangedPayload = (
   }
 
   /**
+   * ⚠️ ICHMA-ICH SOZLAMA TO'LIQ YUBORILADI — YARIM EMAS.
+   *
+   * MUAMMO. Backend `updateIntegration` da `Object.assign(row, dto)` ishlatadi,
+   * ya'ni jsonb ustun butunlay ALMASHTIRILADI, birlashtirilmaydi. Faqat
+   * o'zgargan kalitni yuborsak:
+   *
+   *   operator `inbound_order_config.stage_path` ni tahrirlaydi
+   *     → payload: { inbound_order_config: { stage_path: 'x' } }
+   *     → bazada: { stage_path: 'x' }   ← `enabled` va darvozalar YO'QOLDI
+   *     → CRM'dan buyurtma kelishi JIMGINA to'xtaydi
+   *
+   * Xuddi shu tuzoq `dispatch_config` da ham bor edi: `method` ni
+   * o'zgartirish `endpoint` va `body_template` ni o'chirib, kargoga posilka
+   * jo'natishni buzardi ("dispatch_config.endpoint is required").
+   *
+   * YECHIM. Bir ildiz ostidagi BIRON kalit o'zgargan bo'lsa, o'sha ildizning
+   * BARCHA kalitlari joriy holatdan qo'shiladi — backend to'liq obyekt oladi.
+   *
+   * Nega backendda deep-merge qilinmadi: u holda kalitni O'CHIRISH imkoni
+   * yo'qoladi va API mijozi butun obyektni almashtira olmaydi. Kontrakt
+   * ("yuborganingiz yoziladi") oddiy qolsin, to'liqligini UI ta'minlaydi.
+   *
+   * ⚠️ Bu ildizlarda SIR yo'q (`sanitizeIntegrationRow` faqat `api_key`,
+   * `password`, `webhook_secret` kabi YASSI maydonlarni o'chiradi), shu bois
+   * to'liq yuborish xavfsiz. Ichma-ich `writeOnly` maydon paydo bo'lsa bu
+   * joy qayta ko'rilishi kerak.
+   */
+  const touchedRoots = new Set(
+    Object.keys(out)
+      .filter((k) => k.includes('.'))
+      .map((k) => k.split('.')[0]),
+  );
+  if (touchedRoots.size) {
+    for (const field of fields) {
+      if (!field.key.includes('.') || field.writeOnly) continue;
+      if (!touchedRoots.has(field.key.split('.')[0])) continue;
+      if (field.key in out) continue;
+      const value = values[field.key];
+      // `undefined` ni yuborish kalitni yo'qotardi — bo'sh qiymat beriladi.
+      out[field.key] =
+        value ?? (field.type === 'tags' ? [] : field.type === 'switch' ? false : '');
+    }
+  }
+
+  /**
    * Nuqtali kalitlar (`dispatch_config.endpoint`) ichma-ich obyektga
    * yig'iladi — backend ularni shu shaklda kutadi.
    */

@@ -3,6 +3,7 @@ import { Button, Card, Table, Tag, Tooltip, message } from 'antd';
 import {
   CheckCircle2,
   Clock,
+  Inbox,
   RefreshCw,
   RotateCw,
   Send,
@@ -19,6 +20,11 @@ import {
   useSyncHistory,
   type SyncHistoryRow,
 } from '../../../entities/integrations/syncHistory';
+import {
+  useWebhookLogs,
+  webhookOutcome,
+  type WebhookLogRow,
+} from '../../../entities/integrations/webhookLogs';
 import { getBackendErrorMessage } from '../../../shared/lib/backendError';
 import FilterPills from '../FilterPills';
 import type { Connection } from '../useConnections';
@@ -51,9 +57,140 @@ const when = (v?: string | null) =>
 
 const ConnectionLog = ({ connection }: { connection: Connection }) => {
   if (connection.kind !== 'partner') {
-    return <OutboundLog connection={connection} />;
+    /**
+     * ⚠️ IKKI YO'NALISH BIRGA KO'RSATILADI. Chiquvchi (biz tortib
+     * olgan/yuborgan sinxronlar) VA kiruvchi (ular bizga yuborgan
+     * webhooklar) — ikkisi bir ekranda, chunki operatorning savoli bitta:
+     * "nega ishlamayapti?". Ilgari kiruvchi jurnalni KO'RSATADIGAN joy
+     * umuman yo'q edi va butun diagnostika bazada qolib ketardi.
+     */
+    return (
+      <div className="space-y-4">
+        <OutboundLog connection={connection} />
+        <IncomingWebhookLog connection={connection} />
+      </div>
+    );
   }
   return <InboundLog connection={connection} />;
+};
+
+/**
+ * ULAR BIZGA yuborgan webhooklar (`provider_webhook_logs`).
+ *
+ * Tana ko'rsatilmaydi — serverdan ham qaytmaydi: ichida mijozning telefoni
+ * va manzili bo'ladi, savol esa "nima bo'ldi", "mijoz kim" emas.
+ */
+const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
+  const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+
+  const logs = useWebhookLogs({
+    integrationId: connection.id,
+    status,
+    page,
+    limit: 20,
+  });
+
+  const rows = logs.data?.items ?? [];
+  const meta = logs.data?.meta;
+
+  return (
+    <Card
+      title={
+        <span className="flex items-center gap-2">
+          <Inbox className="h-4 w-4" /> Kiruvchi webhooklar
+        </span>
+      }
+      extra={
+        <Button
+          icon={<RefreshCw className="h-4 w-4" />}
+          loading={logs.isFetching}
+          onClick={() => void logs.refetch()}
+        >
+          Yangilash
+        </Button>
+      }
+    >
+      <FilterPills
+        value={status}
+        onChange={(v) => {
+          setStatus(v);
+          setPage(1);
+        }}
+        options={[
+          { value: 'all', label: 'Hammasi', count: meta?.total },
+          {
+            value: 'processed',
+            label: "Qo'llanildi",
+            icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+            activeClass: 'bg-green-600 text-white border-green-600',
+          },
+          {
+            value: 'rejected',
+            label: 'Rad etildi',
+            icon: <XCircle className="h-3.5 w-3.5" />,
+            activeClass: 'bg-red-600 text-white border-red-600',
+          },
+        ]}
+      />
+
+      <Table<WebhookLogRow>
+        className="mt-3"
+        rowKey={(r) => String(r.id)}
+        size="small"
+        scroll={{ x: 720 }}
+        loading={logs.isLoading}
+        dataSource={rows}
+        pagination={{
+          current: meta?.page ?? page,
+          pageSize: meta?.limit ?? 20,
+          total: meta?.total ?? rows.length,
+          onChange: setPage,
+          showSizeChanger: false,
+        }}
+        columns={[
+          {
+            title: 'Vaqt',
+            width: 170,
+            render: (_: unknown, r) => (
+              <span className="font-mono text-xs">{when(r.createdAt)}</span>
+            ),
+          },
+          {
+            title: 'Hodisa',
+            width: 150,
+            render: (_: unknown, r) => (
+              <span className="text-xs">{r.event_type || '—'}</span>
+            ),
+          },
+          {
+            title: 'Natija',
+            width: 200,
+            /*
+              `status` faqat uch qiymatni biladi (rejected/verified/processed) —
+              operator uchun muhim savol esa boshqa: NIMA bo'ldi. Shuning
+              uchun natija `error` ichidagi `apply: <natija>` dan o'qiladi.
+            */
+            render: (_: unknown, r) => {
+              const outcome = webhookOutcome(r);
+              return <Tag color={outcome.color}>{outcome.label}</Tag>;
+            },
+          },
+          {
+            title: 'Sabab',
+            render: (_: unknown, r) =>
+              r.error ? (
+                <span className="break-all text-xs text-gray-600 dark:text-gray-300">
+                  {r.error}
+                </span>
+              ) : (
+                <span className="text-gray-400">—</span>
+              ),
+          },
+        ]}
+      />
+    </Card>
+  );
 };
 
 /** BIZ yuborgan webhooklar (`partner_webhook_outbox`). */
