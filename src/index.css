@@ -395,6 +395,61 @@ select:-webkit-autofill:focus {
   background: var(--color-dark-bg-py);
 }
 
+/* ─── Klaviatura fokusi ─────────────────────────────────────────────────────── */
+/*
+  ⚠️ ILOVADA `:focus-visible` QOIDASI UMUMAN YO'Q EDI.
+
+  Brauzerlar sukutdagi konturni beradi, lekin `outline: none` yozilgan
+  joylarda (masalan `SEARCH_INPUT`) u yo'qoladi va antd komponentlarining
+  o'z fokus stili ham hammasini qamramaydi. Natijada klaviatura bilan
+  yuradigan odam QAYERDA turganini ko'rmaydi — Tab bosiladi, ekranda hech
+  narsa o'zgarmaydi.
+
+  ⚠️ `:focus-visible`, `:focus` EMAS. Sichqoncha bilan bosilganda kontur
+  chiqmaydi — faqat klaviatura navigatsiyasida. Shu bois bu qoida
+  sichqoncha foydalanuvchisiga umuman ko'rinmaydi va dizaynni buzmaydi.
+
+  ⚠️ `:where()` — nol spetsifikatsiya. Komponentning O'Z fokus stili (antd,
+  Tailwind `focus-visible:ring-*`) bu qoidani osongina bosib o'tadi, ya'ni
+  aniqroq yozilgan joylar o'zgarmaydi.
+*/
+:where(
+  a[href],
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex='-1']),
+  [role='button'],
+  [role='tab'],
+  [role='link']
+):focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/*
+  Qorong'i mavzuda indigo fon bilan qo'shilib ketmasligi uchun ochroq tus.
+  `#a5b4fc` (indigo-300) — yuza `#3A3358` ustida ~6.5:1.
+*/
+.dark
+  :where(
+    a[href],
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex='-1']),
+    [role='button'],
+    [role='tab'],
+    [role='link']
+  ):focus-visible {
+  outline-color: #a5b4fc;
+}
+
 /* ─── Global Cursor Defaults ───────────────────────────────────────────────── */
 :where(
   a[href],

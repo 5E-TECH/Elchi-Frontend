@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Cable,
@@ -77,8 +77,39 @@ const ConnectionsPage = () => {
     useConnections();
   const metricsQuery = useIntegrationMetrics();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [tab, setTab] = useState('overview');
   const [query, setQuery] = useState('');
+
+  /**
+   * OCHIQ TAB — URL'DA, lokal holatda EMAS.
+   *
+   * ⚠️ NIMA BUZILGAN EDI. Tanlangan ulanish (`?c=`) URL'da edi, tab esa
+   * `useState` da. Uch oqibati bor edi:
+   *
+   *  1. Sahifani yangilash tabni yo'qotardi — operator "Hodisalar" da
+   *     xatoni ko'rib turib F5 bossa, "Umumiy holat" ga qaytardi.
+   *  2. Havola yuborib bo'lmasdi: "Xavfsizlik tabiga qara" deb aytish
+   *     uchun URL yetarli emasdi, og'zaki tushuntirish kerak bo'lardi.
+   *  3. Brauzer "orqaga" tugmasi tab almashinuvini bilmasdi.
+   *
+   * `replace` ishlatiladi (`push` emas): har tab bosilishi tarixga yozilsa,
+   * "orqaga" tugmasi sahifadan chiqish uchun o'nta bosishni talab qilardi.
+   * Ulanish tanlash ham AYNI shu naqshda ishlaydi.
+   */
+  const tab = searchParams.get('t') ?? 'overview';
+
+  const setTab = useCallback(
+    (next: string) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          params.set('t', next);
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const navigate = useNavigate();
 
   const byUid = useMemo(
@@ -99,19 +130,37 @@ const ConnectionsPage = () => {
    */
   useEffect(() => {
     if (!activeUid && active) {
-      const next = new URLSearchParams(searchParams);
-      next.set('c', active.uid);
-      setSearchParams(next, { replace: true });
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          params.set('c', active.uid);
+          return params;
+        },
+        { replace: true },
+      );
     }
-  }, [activeUid, active, searchParams, setSearchParams]);
+  }, [activeUid, active, setSearchParams]);
 
   const select = (uid: string) => {
-    const next = new URLSearchParams(searchParams);
-    next.set('c', uid);
-    setSearchParams(next, { replace: true });
-    // Yangi ulanishga o'tganda birinchi tabga qaytamiz: "Hodisalar" tabida
-    // turib boshqa ulanishga o'tish chalkash bo'lardi.
-    setTab('overview');
+    /**
+     * ⚠️ IKKI PARAMETR BITTA YANGILANISHDA. Ilgari `setSearchParams` va
+     * `setTab` alohida chaqirilardi; tab URL'ga ko'chgandan keyin bu ikki
+     * ketma-ket yangilanish bo'lib, ikkinchisi birinchisini bosib o'tishi
+     * mumkin edi (`searchParams` snapshot eskiradi). Funksional shakl bu
+     * poygani butunlay yo'q qiladi.
+     *
+     * Yangi ulanishga o'tganda birinchi tabga qaytamiz: "Hodisalar" tabida
+     * turib boshqa ulanishga o'tish chalkash bo'lardi.
+     */
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        params.set('c', uid);
+        params.set('t', 'overview');
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   /**

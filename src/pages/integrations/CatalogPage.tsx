@@ -109,6 +109,32 @@ const TypeCard = ({
   <Card
     hoverable
     onClick={onPick}
+    /**
+     * ⚠️ KLAVIATURA BILAN OCHILISHI SHART.
+     *
+     * antd `Card` — oddiy `div`. `onClick` bergani bilan u fokus olmaydi,
+     * Enter/Bo'shliq ham ishlamaydi va skrin-riderga "bu bosiladigan narsa"
+     * deb aytilmaydi. Ya'ni butun katalog — ustaga kirishning YAGONA yo'li —
+     * sichqonchasiz foydalanuvchi uchun berk edi.
+     *
+     * `<button>` ga o'rash mumkin emas: karta ichida sarlavha, teglar va
+     * ro'yxat bor, tugma ichida esa blok elementlar va ichma-ich
+     * interaktivlik noto'g'ri semantika beradi. Shu bois ARIA naqshi:
+     * `role="button"` + `tabIndex` + klaviatura ishlovchisi.
+     */
+    role="button"
+    tabIndex={0}
+    onKeyDown={(e: React.KeyboardEvent) => {
+      /**
+       * Enter VA Bo'shliq — ikkisi ham tugma standarti. Bo'shliqda
+       * `preventDefault` shart, aks holda brauzer sahifani pastga suradi.
+       */
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onPick();
+      }
+    }}
+    aria-label={`${type.label} — ulanish yaratish`}
     className="h-full"
     title={
       <div className="flex items-center justify-between gap-2">
