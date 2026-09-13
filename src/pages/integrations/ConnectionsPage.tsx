@@ -9,6 +9,7 @@ import {
   Search,
   Settings as SettingsIcon,
   ShieldCheck,
+  Wallet,
 } from 'lucide-react';
 import { CATEGORY_LABEL, ROLE_META } from '../../entities/integrations';
 import {
@@ -19,10 +20,8 @@ import {
   type ConnectionHealth,
 } from '../../entities/integrations/metrics';
 import ConnectionSubNav, { type SubNavItem } from './ConnectionSubNav';
-import { ROLE_ORDER } from './connections';
 import {
   fieldsFor,
-  groupByRole,
   isConfigured,
   useConnections,
   type Connection,
@@ -31,9 +30,11 @@ import ConnectionOverview from './panels/ConnectionOverview';
 import ConnectionSettings from './panels/ConnectionSettings';
 import ConnectionSecurity from './panels/ConnectionSecurity';
 import ConnectionLog from './panels/ConnectionLog';
+import ConnectionSettlement from './panels/ConnectionSettlement';
 import {
   BORDER,
   CTA_BTN,
+  ROLE_ICON_BG,
   FAINT,
   HEADER_ICON,
   HEALTH_DOT,
@@ -123,7 +124,6 @@ const ConnectionsPage = () => {
     );
   }, [connections, query]);
 
-  const groups = groupByRole(filtered, ROLE_ORDER);
   const fields = useMemo(() => (active ? fieldsFor(active) : []), [active]);
 
   const items: SubNavItem[] = active
@@ -159,6 +159,18 @@ const ConnectionsPage = () => {
           icon: <FileClock className="h-4 w-4" />,
           desc: 'Yetdimi, nega yiqildi',
           content: <ConnectionLog connection={active} />,
+        },
+        {
+          /*
+            HISOB-KITOB — foydalanuvchi talabi: "ikkala kassani solishtirish
+            uchun". Chiquvchi ulanishda tashuvchi qarzi va to'lovlari, hamkorda
+            esa daftar ularning tomonida (panel buni aytadi).
+          */
+          key: 'settlement',
+          label: 'Hisob-kitob',
+          icon: <Wallet className="h-4 w-4" />,
+          desc: 'Qarz va to\'lovlar',
+          content: <ConnectionSettlement connection={active} />,
         },
         {
           key: 'security',
@@ -275,43 +287,42 @@ const ConnectionsPage = () => {
           "{query}" bo'yicha topilmadi.
         </p>
       ) : (
-        <div className="space-y-3">
-          {groups.map((group) => (
-            <div key={group.role}>
-              <p
-                className={`m-0 mb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${MUTED}`}
-                title={ROLE_META[group.role].hint}
-              >
-                {ROLE_META[group.role].label}
-              </p>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                {group.items.map((c) => (
-                  <ConnectionChip
-                    key={c.uid}
-                    connection={c}
-                    active={c.uid === active?.uid}
-                    rate={fmtMetric(byUid.get(c.uid)?.success_rate, '%')}
-                    health={connectionHealth({
-                      isActive: c.is_active,
-                      configured: isConfigured(c),
-                      metrics: byUid.get(c.uid),
-                    })}
-                    onClick={() => select(c.uid)}
-                  />
-                ))}
-
-                {/* "+" oxirida — PCS'dagi naqsh. */}
-                <button
-                  type="button"
-                  onClick={() => navigate('/integrations/new')}
-                  className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed ${BORDER} px-4 py-2.5 text-sm font-medium ${MUTED} transition-colors hover:border-indigo-300 hover:text-indigo-600`}
-                >
-                  <Plus className="h-4 w-4" />
-                  Yangi
-                </button>
-              </div>
-            </div>
+        /*
+          ⚠️ ROL BO'YICHA GURUHLASH OLIB TASHLANDI. Ilgari chiplar
+          "Buyurtma manbalari" / "Yetkazuvchilar" degan sarlavhalar ostida
+          alohida qatorlarda turardi. Foydalanuvchi buni so'radi: "alohida
+          bo'lib turishi kerak emas, faqat icon yoki rang bilan ajralib
+          tursa yetarli".
+          
+          Rol YO'QOLMADI — u chip ikonkasining rangiga ko'chdi va sarlavhada
+          (tooltip) tushuntiriladi. Ro'yxat esa endi bitta qatorda, ya'ni
+          ulanish almashtirish uchun pastga qarash kerak emas.
+        */
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {filtered.map((c) => (
+            <ConnectionChip
+              key={c.uid}
+              connection={c}
+              active={c.uid === active?.uid}
+              rate={fmtMetric(byUid.get(c.uid)?.success_rate, '%')}
+              health={connectionHealth({
+                isActive: c.is_active,
+                configured: isConfigured(c),
+                metrics: byUid.get(c.uid),
+              })}
+              onClick={() => select(c.uid)}
+            />
           ))}
+
+          {/* "+" oxirida — PCS'dagi naqsh. */}
+          <button
+            type="button"
+            onClick={() => navigate('/integrations/new')}
+            className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed ${BORDER} px-4 py-2.5 text-sm font-medium ${MUTED} transition-colors hover:border-indigo-300 hover:text-indigo-600`}
+          >
+            <Plus className="h-4 w-4" />
+            Yangi
+          </button>
         </div>
       )}
 
@@ -357,7 +368,19 @@ const ConnectionChip = ({
     aria-current={active ? 'true' : undefined}
     className={chip(active)}
   >
-    <span className={chipIcon(active)}>
+    {/*
+      Ikonka foni ROL rangida — guruh sarlavhasi o'rniga shu ajratadi.
+      Tanlangan chipda esa to'liq urg'u rangi (indigo) qoladi, aks holda
+      "qaysi biri tanlangan" savoli paydo bo'lardi.
+    */}
+    <span
+      className={
+        active
+          ? chipIcon(true)
+          : `${chipIcon(false)} ${ROLE_ICON_BG[connection.role] ?? ''}`
+      }
+      title={ROLE_META[connection.role].hint}
+    >
       <Cable className="h-4 w-4" />
     </span>
 

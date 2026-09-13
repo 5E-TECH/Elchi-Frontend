@@ -117,18 +117,6 @@ export const useConnections = () => {
   };
 };
 
-/** Rol bo'yicha guruhlaydi — ro'yxat shu tartibda chiziladi. */
-export const groupByRole = (
-  connections: Connection[],
-  order: IntegrationRole[],
-): Array<{ role: IntegrationRole; items: Connection[] }> =>
-  order
-    .map((role) => ({
-      role,
-      items: connections.filter((c) => c.role === role),
-    }))
-    .filter((g) => g.items.length > 0);
-
 /**
  * Ulanish uchun mos MAYDON ro'yxatini topadi.
  *

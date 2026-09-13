@@ -10,7 +10,6 @@ import {
   RefreshCw,
   Search,
   Settings,
-  Store,
   Unlink,
   XCircle,
 } from 'lucide-react';
@@ -24,9 +23,12 @@ import {
   type ConnectionMetrics,
 } from '../../entities/integrations/metrics';
 import { isConfigured, useConnections, type Connection } from './useConnections';
+import { Tag } from 'antd';
 import {
   CARD_FOOTER,
   CTA_BTN,
+  ROLE_ICON_BG,
+  ROLE_TAG_COLOR,
   HEADER_ICON,
   PAGE_SUBTITLE,
   PAGE_TITLE,
@@ -242,7 +244,18 @@ const ConnectionCard = ({
       <div className={cardHeader(health)}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <Cable className="h-5 w-5 shrink-0 text-white" />
+            {/*
+              Ikonka foni ROL rangida. Foydalanuvchi guruh sarlavhalarini
+              olib tashlashni so'radi ("faqat icon yoki rang bilan ajralib
+              tursa yetarli") — rol shu yerda va Tag'da qoladi.
+            */}
+            <span
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                ROLE_ICON_BG[connection.role] ?? 'bg-white/20'
+              }`}
+            >
+              <Cable className="h-4 w-4 text-white" />
+            </span>
             <h3 className="m-0 truncate text-lg font-bold text-white">
               {connection.name}
             </h3>
@@ -260,12 +273,11 @@ const ConnectionCard = ({
 
       {/* ── Tana ── */}
       <div className="space-y-3 p-4">
-        <div className="flex items-center gap-2 text-sm">
-          <Store className="h-4 w-4 shrink-0 text-gray-400" />
-          <span className="truncate text-gray-600 dark:text-gray-300">
-            {ROLE_META[connection.role].label} ·{' '}
-            {CATEGORY_LABEL[connection.category]}
-          </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Tag color={ROLE_TAG_COLOR[connection.role]}>
+            {ROLE_META[connection.role].label}
+          </Tag>
+          <Tag>{CATEGORY_LABEL[connection.category]}</Tag>
         </div>
 
         <div className="flex items-center gap-2 text-sm">

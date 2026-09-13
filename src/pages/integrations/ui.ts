@@ -178,3 +178,32 @@ export const cardHeader = (health: 'ok' | 'attention' | 'off') =>
 /** Karta amallari poyi. */
 export const CARD_FOOTER =
   'px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex items-center gap-2';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ROL BELGISI — GURUH SARLAVHASI EMAS
+   
+   ⚠️ Ro'yxat ilgami rol bo'yicha GURUHLANGAN edi: "Buyurtma manbalari",
+   "Yetkazuvchilar" degan alohida sarlavhalar ostida. Foydalanuvchi buni
+   olib tashlashni so'radi: "alohida bo'lib turishi kerak emas, faqat icon
+   yoki rang bilan ajralib tursa yetarli".
+   
+   Sabab tushunarli: Elchi'da ulanish soni kichik va sarlavhalar ro'yxatni
+   uzaytirib, bir qarashda hammasini ko'rishga to'sqinlik qilardi. Rol esa
+   yo'qolmasligi kerak — u ranga va ikonkaga ko'chdi.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** Har rol uchun antd `Tag` rangi — bir qarashda ajralib turadi. */
+export const ROLE_TAG_COLOR: Record<string, string> = {
+  carrier: 'geekblue',
+  source: 'green',
+  payment: 'gold',
+  mirror: 'purple',
+};
+
+/** Karta sarlavhasidagi ikonka foni — rol bo'yicha. */
+export const ROLE_ICON_BG: Record<string, string> = {
+  carrier: 'bg-blue-500/25',
+  source: 'bg-emerald-500/25',
+  payment: 'bg-amber-500/25',
+  mirror: 'bg-purple-500/25',
+};
