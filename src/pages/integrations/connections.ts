@@ -81,7 +81,7 @@ export interface ConnectionField {
    * keraksiz, lekin ilgari TO'RTTASI BIRGA ko'rinardi (audit FE-07) va
    * operator qaysi ikkitasini to'ldirish kerakligini taxmin qilardi.
    */
-  showWhen?: { key: string; equals: string };
+  showWhen?: { key: string; equals: string | boolean };
 }
 
 export interface ConnectionTypeMeta {
@@ -348,6 +348,77 @@ const WEBHOOK_PATHS: ConnectionField[] = [
 ];
 
 /** Ularning statusi → bizning statusimiz. */
+/**
+ * VORONKA DARVOZASI — CRM bitimi qachon buyurtmaga aylanadi.
+ *
+ * ⚠️ NEGA DARVOZA SHART. CRM bitim hayotining HAR qadamida webhook
+ * yuboradi — shu jumladan mijoz manzili va telefoni hali to'lmagan "bitim
+ * yaratildi" hodisasida ham. Darvoza bo'lmasa birinchi shu chala hodisa
+ * buyurtma yasardi, keyin dublikat tekshiruvi to'g'ri ma'lumot kelganda
+ * "allaqachon bor" deb tashlab yuborardi — natija CHALA buyurtma bo'lib
+ * qotib qolardi.
+ *
+ * Shu bois backend `enabled: true` bo'lsa kamida bitta darvozani TALAB
+ * qiladi (400 qaytaradi). Bu yerdagi izohlar o'sha talabni operator
+ * formadan chiqmasdan tushunishi uchun.
+ */
+const FUNNEL_FIELDS: ConnectionField[] = [
+  {
+    key: 'inbound_order_config.enabled',
+    label: 'Voronkadan buyurtma yaratish',
+    type: 'switch',
+    hint: 'Yoqilsa, darvozadan o’tgan bitim buyurtmaga aylanadi',
+  },
+  {
+    key: 'inbound_order_config.deal_path',
+    label: 'Bitim obyekti yo’li',
+    type: 'text',
+    placeholder: 'data.lead',
+    hint: 'Webhook payload‘ida bitim qaysi yo’lda turadi',
+    showWhen: { key: 'inbound_order_config.enabled', equals: true },
+  },
+  {
+    key: 'inbound_order_config.stage_path',
+    label: 'Bosqich yo’li',
+    type: 'text',
+    placeholder: 'status_id',
+    hint: 'Bosqich id‘si bitim ichida qaysi maydonda',
+    showWhen: { key: 'inbound_order_config.enabled', equals: true },
+  },
+  {
+    key: 'inbound_order_config.create_on_stages',
+    label: 'Qaysi bosqichda yaratilsin',
+    type: 'tags',
+    placeholder: '142',
+    hint: 'FAQAT shu bosqichlarda buyurtma tug‘iladi. Bosqich yoki hodisadan kamida bittasi shart',
+    showWhen: { key: 'inbound_order_config.enabled', equals: true },
+  },
+  {
+    key: 'inbound_order_config.create_on_events',
+    label: 'Yoki qaysi hodisada',
+    type: 'tags',
+    placeholder: 'leads.status',
+    hint: 'Bosqich id‘sini bermaydigan CRM uchun — hodisa turi bo‘yicha',
+    showWhen: { key: 'inbound_order_config.enabled', equals: true },
+  },
+  {
+    key: 'inbound_order_config.funnel_path',
+    label: 'Voronka yo’li',
+    type: 'text',
+    placeholder: 'pipeline_id',
+    hint: 'Ixtiyoriy — bir nechta voronkadan faqat bittasini olish uchun',
+    showWhen: { key: 'inbound_order_config.enabled', equals: true },
+  },
+  {
+    key: 'inbound_order_config.funnel_id',
+    label: 'Faqat shu voronka',
+    type: 'text',
+    placeholder: '7482913',
+    hint: 'Bo‘sh bo‘lsa barcha voronka qabul qilinadi',
+    showWhen: { key: 'inbound_order_config.enabled', equals: true },
+  },
+];
+
 const INBOUND_STATUS_MAP: ConnectionField = {
   key: 'inbound_status_mapping',
   label: 'Kiruvchi status xaritasi',
@@ -469,9 +540,18 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
     role: 'source',
     category: 'crm',
     /**
-     * CRM ham buyurtma MANBASI, lekin bosqich/voronka tushunchasi bor —
-     * u hozircha maydon xaritasi orqali beriladi (voronka modeli kodda
-     * hali yo'q, audit P7).
+     * CRM — YO'NALISH TESKARI. Marketplace buyurtmani tayyor holda beradi;
+     * CRM'da esa bitim voronkada yuradi va faqat KERAKLI bosqichga yetganda
+     * buyurtmaga aylanadi.
+     *
+     * Shu bois bu turda kiruvchi webhook sozlamasi ham (`INBOUND_WEBHOOK` —
+     * imzo sekreti va sarlavhalari) va voronka darvozasi ham bor. Ilgari
+     * turda faqat CHIQUVCHI kirish bor edi, ya'ni CRM bizga hodisa yubora
+     * olmasdi (audit P5) — sozlaydigan joy yo'qligi uchun.
+     *
+     * `MAPPING_FIELD` — bitim maydonlari (telefon, manzil, tuman, narx)
+     * qaysi nomda kelishini aytadi; buyurtma yaratish o'sha xaritaga
+     * tayanadi.
      */
     fields: [
       NAME_FIELD,
@@ -479,12 +559,15 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
       MARKET_FIELD,
       ...OUTBOUND_AUTH,
       MAPPING_FIELD,
+      ...FUNNEL_FIELDS,
+      ...INBOUND_WEBHOOK,
       ...OUTBOUND_STATUS_FIELDS,
     ],
     prereqs: [
       'CRM API manzili (HTTPS)',
       'API kalit yoki login+parol',
-      'Qaysi voronka/bosqichdan buyurtma olinishi',
+      'Qaysi voronka va BOSQICHDA buyurtma yaratilishi',
+      'Bitim maydonlari nomlari (telefon, manzil, tuman, narx)',
     ],
   },
   {
@@ -655,7 +738,19 @@ export const visibleFields = (
   fields: ConnectionField[],
   values: Record<string, unknown>,
 ): ConnectionField[] =>
-  fields.filter(
-    (f) =>
-      !f.showWhen || String(values[f.showWhen.key] ?? '') === f.showWhen.equals,
-  );
+  fields.filter((f) => {
+    if (!f.showWhen) return true;
+    /**
+     * Ikki tomon ham satrga aylantiriladi, chunki `equals` boolean bo'lishi
+     * mumkin (switch maydoni: `enabled: true`). Faqat chap tomonni
+     * aylantirsak `'true' === true` yolg'on chiqib, voronka maydonlari
+     * switch yoqilganda ham KO'RINMAY qolardi.
+     *
+     * Kalit NUQTALI bo'lishi mumkin (`inbound_order_config.enabled`) —
+     * forma holati yassi saqlanadi va `nestPayload` faqat yuborishda
+     * ichma-ich qiladi, shuning uchun to'g'ridan-to'g'ri o'qish ishlaydi.
+     */
+    return (
+      String(values[f.showWhen.key] ?? '') === String(f.showWhen.equals)
+    );
+  });

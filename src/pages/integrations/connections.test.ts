@@ -282,24 +282,51 @@ describe("4-bosqich — turlar HAQIQATAN farq qiladi", () => {
     /**
      * Boshqa obyekt, lekin ayni tarkib bo'lsa foydalanuvchi uchun farq yo'q.
      *
-     * ⚠️ ISTISNO: `crm` va `marketplace_outbound` bugun AYNI maydonlarni
-     * so'raydi va bu HALOL holat — ikkisi ham "biz ularning API'sidan
-     * buyurtma tortib olamiz" naqshida ishlaydi. CRM'ni farqlaydigan narsa
-     * voronka/bosqich triggeri bo'lardi, lekin u KODDA YO'Q (audit P7).
-     * Hech narsa o'qimaydigan maydon qo'shish yolg'on bo'lardi — shu bois
-     * istisno ochiq yozildi va CRM oqimi 6-bosqichda qurilganda yopiladi.
+     * ✅ ISTISNO YOPILDI (6-bosqich). 4-bosqichda `crm` va
+     * `marketplace_outbound` AYNI maydonlarni so'rardi va bu halol holat
+     * deb yozilgan edi: CRM'ni farqlaydigan voronka/bosqich triggeri kodda
+     * YO'Q edi (audit P7), hech narsa o'qimaydigan maydon qo'shish esa
+     * yolg'on bo'lardi.
+     *
+     * Endi trigger bor: `inbound_order_config` — qaysi voronka va
+     * bosqichda bitim buyurtmaga aylanadi — va uni webhook haqiqatan
+     * o'qiydi. Shu bois istisno olib tashlandi va hamma tur farq qiladi.
      */
-    const KNOWN_SAME = new Set(["crm", "marketplace_outbound"]);
-    const sets = CONNECTION_TYPES.filter((t) => !KNOWN_SAME.has(t.key)).map(
-      (t) => t.fields.map((f) => f.key).sort().join("|"),
+    const sets = CONNECTION_TYPES.map((t) =>
+      t.fields.map((f) => f.key).sort().join("|"),
     );
     expect(new Set(sets).size).toBe(sets.length);
+  });
 
-    // Istisno JUFTLIGI haqiqatan ayni ekanini ham qulflaymiz — kelajakda
-    // biri o'zgarsa test bu izohni eskirganini ko'rsatadi.
-    const crm = CONNECTION_TYPES.find((t) => t.key === "crm")!;
-    const mp = CONNECTION_TYPES.find((t) => t.key === "marketplace_outbound")!;
-    expect(crm.fields.map((f) => f.key)).toEqual(mp.fields.map((f) => f.key));
+  it("⭐ VORONKA darvozasi faqat CRM'da", () => {
+    /**
+     * Bitim voronkada yurishi — CRM'ga XOS tushuncha. Marketplace buyurtmani
+     * tayyor holda beradi, kargo esa umuman buyurtma bermaydi. Shu maydon
+     * boshqa turda chiqsa, operator to'ldirib qo'yadi va hech narsa
+     * o'qimaydi — ya'ni sozlangandek ko'rinib ishlamaydi.
+     */
+    const hasFunnel = (k: string) =>
+      keysOf(k).some((key) => key.startsWith("inbound_order_config"));
+    expect(hasFunnel("crm")).toBe(true);
+    for (const k of [
+      "marketplace_outbound",
+      "carrier",
+      "payment",
+      "mirror",
+    ]) {
+      expect(hasFunnel(k)).toBe(false);
+    }
+  });
+
+  it("⭐ CRM kiruvchi webhookni ham sozlaydi", () => {
+    /**
+     * Audit P5: CRM turida FAQAT chiquvchi kirish bor edi, ya'ni CRM bizga
+     * hodisa yubora olmasdi — imzo sekretini sozlaydigan joy yo'qligi
+     * uchun. Voronka darvozasi webhook orqali ishlaydi, shuning uchun
+     * ikkisi birga kelishi shart.
+     */
+    expect(keysOf("crm")).toContain("webhook_secret");
+    expect(keysOf("crm")).toContain("webhook_signature_header");
   });
 
   it("⭐ POSILKA JO'NATISH sozlamasi FAQAT yetkazuvchida", () => {
@@ -392,6 +419,50 @@ describe("visibleFields — shartli maydonlar", () => {
     ).toEqual(["auth_type", "password"]);
   });
 
+  it("⭐ BOOLEAN shart — switch yoqilganda ko'rinadi", () => {
+    /**
+     * Voronka maydonlari `inbound_order_config.enabled` switch'iga bog'liq.
+     * Solishtirishda faqat chap tomonni satrga aylantirgan edik —
+     * `'true' === true` yolg'on chiqib, switch yoqilganda ham maydonlar
+     * KO'RINMAY qolardi va operator voronkani sozlay olmasdi.
+     *
+     * Kalit NUQTALI: forma holati yassi saqlanadi (`nestPayload` faqat
+     * yuborishda ichma-ich qiladi), shuning uchun to'g'ridan-to'g'ri
+     * o'qish ishlaydi.
+     */
+    const gated = [
+      {
+        key: "inbound_order_config.enabled",
+        label: "Yoqish",
+        type: "switch" as const,
+      },
+      {
+        key: "inbound_order_config.stage_path",
+        label: "Bosqich",
+        type: "text" as const,
+        showWhen: { key: "inbound_order_config.enabled", equals: true },
+      },
+    ];
+
+    expect(
+      visibleFields(gated, { "inbound_order_config.enabled": true }).map(
+        (f) => f.key,
+      ),
+    ).toEqual([
+      "inbound_order_config.enabled",
+      "inbound_order_config.stage_path",
+    ]);
+    // O'chirilgan va umuman tegilmagan — ikkisida ham yashiringan.
+    expect(
+      visibleFields(gated, { "inbound_order_config.enabled": false }).map(
+        (f) => f.key,
+      ),
+    ).toEqual(["inbound_order_config.enabled"]);
+    expect(visibleFields(gated, {}).map((f) => f.key)).toEqual([
+      "inbound_order_config.enabled",
+    ]);
+  });
+
   it("⭐ sharti YO'Q maydon HAR DOIM ko'rinadi", () => {
     // Yangi maydon qo'shganda unutib qoldirsak yashirinib qolmasin.
     expect(visibleFields(fields, {}).map((f) => f.key)).toEqual(["auth_type"]);
@@ -426,3 +497,53 @@ describe("Katalog ma'lumoti", () => {
   });
 });
 
+describe("⭐ ICHMA-ICH ildiz bitta GURUHDA turishi shart", () => {
+  /**
+   * `buildChangedPayload` ichma-ich sozlamani TO'LIQ yuboradi, chunki
+   * backend jsonb ustunni almashtiradi (birlashtirmaydi). Lekin u faqat
+   * O'ZIGA BERILGAN maydonlarni ko'radi — Sozlamalar tabi `connection`
+   * guruhini, Xavfsizlik tabi `security` guruhini beradi.
+   *
+   * Agar bitta ildiz (masalan `dispatch_config`) ikki guruhga bo'linsa,
+   * bir tabdan saqlash ikkinchi tabdagi yarmini O'CHIRIB yuborardi — va
+   * buni hech kim sezmasdi, chunki xato chiqmaydi.
+   *
+   * Shu bois qoida test bilan qulflanadi: yangi ichma-ich maydon qo'shgan
+   * odam guruhni ham to'g'ri qo'yishi kerak.
+   */
+  it("har bir nuqtali ildiz faqat bitta guruhda", () => {
+    const groupsByRoot = new Map<string, Set<string>>();
+
+    for (const type of CONNECTION_TYPES) {
+      for (const f of type.fields) {
+        if (!f.key.includes(".")) continue;
+        const root = f.key.split(".")[0];
+        const group = f.group ?? "connection";
+        if (!groupsByRoot.has(root)) groupsByRoot.set(root, new Set());
+        groupsByRoot.get(root)!.add(group);
+      }
+    }
+
+    // Kamida bitta ichma-ich ildiz borligiga ishonch — test bo'shab qolmasin.
+    expect(groupsByRoot.size).toBeGreaterThan(0);
+
+    for (const [root, groups] of groupsByRoot) {
+      expect(groups.size, `${root} ikki guruhga bo'lingan`).toBe(1);
+    }
+  });
+
+  it("ichma-ich maydon SIR bo'lmasligi kerak", () => {
+    /**
+     * To'liq obyekt yuborilganda sir bo'sh ketardi va ishlab turgan kalitni
+     * o'chirardi. `buildChangedPayload` da himoya bor (writeOnly o'tkazib
+     * yuboriladi), lekin bu holat umuman yuzaga kelmasligi to'g'riroq:
+     * sir YASSI maydon bo'lsin, shunda `sanitizeIntegrationRow` ham uni
+     * javobdan o'chira oladi.
+     */
+    for (const type of CONNECTION_TYPES) {
+      for (const f of type.fields) {
+        if (f.key.includes(".")) expect(f.writeOnly).toBeFalsy();
+      }
+    }
+  });
+});
