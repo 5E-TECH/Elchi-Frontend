@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import type { CheckboxChangeEvent } from 'antd/es/checkbox';
 import {
   Alert,
+  Checkbox,
   Button,
   Card,
   Form,
@@ -28,6 +30,7 @@ import ConnectionFields, {
   type FieldValues,
 } from '../ConnectionFields';
 import { findConnectionType, type ConnectionField } from '../connections';
+import { missingForReady } from '../useConnections';
 import { outboundChecks, partnerChecks, type CheckState, type StepCheck } from './steps';
 
 /**
@@ -99,6 +102,49 @@ const ConnectWizard = () => {
   const createIntegration = useCreateIntegration();
   const healthcheck = useIntegrationHealthcheck();
 
+  /**
+   * YETISHMAYOTGAN SOZLAMALAR — ro'yxatdagi karta bilan AYNI qoidadan.
+   *
+   * `missingForReady` `useConnections` da yashaydi va `isConfigured` ham
+   * o'shanga tayanadi. Shu bois usta bilan karta bir xil gapiradi.
+   *
+   * ⚠️ HOOK ERTA `return` DAN YUQORIDA turishi SHART (`if (!type)`).
+   * Shu bois `type` yo'q holati ham shu yerda hisobga olinadi — hooklar
+   * shartli chaqirilsa React tartibni yo'qotadi.
+   *
+   * ⚠️ `has_webhook_secret` — server bayrog'i, ustada u yo'q. Operator
+   * sekretni shu formada kiritgan bo'lsa, uni "sozlangan" deb hisoblaymiz:
+   * aks holda usta yangi yaratilgan ulanishni doim "sekret yo'q" deb
+   * ko'rsatardi.
+   */
+  const gaps = useMemo(
+    () =>
+      type
+        ? missingForReady({
+            kind: type.kind === 'partner' ? 'partner' : 'integration',
+            role: type.role,
+            raw: {
+              ...values,
+              has_webhook_secret: Boolean(
+                String(values.webhook_secret ?? '').trim(),
+              ),
+            },
+          })
+        : [],
+    [type, values],
+  );
+
+  /**
+   * API kalit ko'chirib olinganini operator TASDIQLADIMI.
+   *
+   * ⚠️ NEGA KERAK. Kalit javobda BIR MARTA keladi va bazada faqat uning
+   * hash'i saqlanadi — ya'ni qayta ko'rsatish IMKONSIZ. Ilgari "Yakunlash"
+   * bosilishi bilan kalit ekrandan yo'qolardi va hech qanday ogohlantirish
+   * yo'q edi: operator uni ko'chirmagan bo'lsa, hamkor integratsiyani
+   * BOSHLAY OLMASDI va yechim faqat kalitni almashtirish bo'lardi.
+   */
+  const [keyCopied, setKeyCopied] = useState(false);
+
   if (!type) {
     return (
       <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-6 text-center">
@@ -137,6 +183,19 @@ const ConnectWizard = () => {
     try {
       if (isPartner) {
         const res = await createPartner.mutateAsync(payload as never);
+        if (!String(res.id ?? '').trim()) {
+          /**
+           * ⚠️ Hamkor yo'lida bu YANA xavfliroq: `api_key` javobda BIR
+           * MARTA keladi. Id bo'lmasa kalitni ko'rsatib, keyin uni hech
+           * qaysi ulanishga bog'lab bo'lmasdi.
+           */
+          setError(
+            'Hamkor yaratildi, lekin javobdan id o‘qilmadi. API kalit: ' +
+              `${res.api_key ?? '(kelmadi)'} — HOZIR ko‘chirib oling, ` +
+              'keyin ulanishni ro‘yxatdan topib sozlang.',
+          );
+          return;
+        }
         setCreated({ id: String(res.id), apiKey: res.api_key || undefined });
       } else {
         /**
@@ -159,6 +218,31 @@ const ConnectWizard = () => {
             ?.id ??
           (res as { data?: { id?: string } })?.data?.id ??
           '';
+        /**
+         * ⚠️ ID BO'SH BO'LSA TO'XTAYMIZ.
+         *
+         * Javob qobig'i marshrutga qarab bir-ikki qatlam bo'ladi va id
+         * ajratib olinmasligi mumkin. Ilgari bunda ham 3-qadamga o'tilardi
+         * va ikki narsa jimgina buzilardi:
+         *
+         *   • "Sinash" hech narsa qilmasdi (`if (!created?.id) return`) —
+         *     tugma bosiladi, javob yo'q, sabab ko'rinmaydi;
+         *   • "Konsolda ochish" `partner:` (id'siz) manziliga o'tardi va
+         *     BEGONA ulanish ochilardi — operator boshqa hamkorning
+         *     sozlamasini tahrirlab yuborishi mumkin edi.
+         *
+         * Ulanish YARATILGAN, shu bois xabar buni aytadi va ro'yxatga
+         * yuboradi — yana bir nusxa yaratilmasin.
+         */
+        if (!String(id).trim()) {
+          setError(
+            'Ulanish yaratildi, lekin javobdan uning id‘si o‘qilmadi — ' +
+              'sinov va "Konsolda ochish" ishlamaydi. Ulanishlar ro‘yxatidan ' +
+              'topib ochish kerak (qayta yaratish SHART EMAS, dublikat ' +
+              'bo‘ladi).',
+          );
+          return;
+        }
         setCreated({ id: String(id) });
       }
       setStep(3);
@@ -171,7 +255,19 @@ const ConnectWizard = () => {
     setTestError(null);
     setTestResult(null);
     setOutboundResult(null);
-    if (!created?.id) return;
+    /**
+     * ⚠️ Ilgari bu yerda jimgina `return` bor edi: tugma bosiladi, hech
+     * narsa bo'lmaydi, sabab ko'rinmaydi. Endi holat AYTILADI.
+     * (Yaratish darvozasi tufayli bu holat deyarli yuzaga kelmaydi, lekin
+     * jim qolish hech qachon to'g'ri javob emas.)
+     */
+    if (!created?.id) {
+      setTestError(
+        'Ulanish id‘si yo‘q — sinov yuborib bo‘lmaydi. Ulanishni ro‘yxatdan ' +
+          'topib oching.',
+      );
+      return;
+    }
     try {
       if (isPartner) {
         setTestResult(
@@ -337,12 +433,35 @@ const ConnectWizard = () => {
                   belgisi ham). Qo'lda yozilgan tugma va `copied` state kerak
                   emas edi.
                 */
-                <Typography.Paragraph
-                  copyable={{ text: created.apiKey! }}
-                  className="!mb-0 !mt-1 break-all font-mono text-xs"
-                >
-                  {created.apiKey}
-                </Typography.Paragraph>
+                <>
+                  <Typography.Paragraph
+                    copyable={{
+                      text: created.apiKey!,
+                      // Ko'chirish TASDIQ sifatida ham hisoblanadi — operator
+                      // ikki marta bir narsani bildirmasin.
+                      onCopy: () => setKeyCopied(true),
+                    }}
+                    className="!mb-0 !mt-1 break-all font-mono text-xs"
+                  >
+                    {created.apiKey}
+                  </Typography.Paragraph>
+                  {/*
+                    ⚠️ TASDIQ MAJBURIY. Kalit qayta ko'rsatilmaydi, shu bois
+                    "Yakunlash" shu belgigacha o'chirilgan turadi. Bu
+                    to'sqinlik ATAYLAB: bir marta ko'rsatiladigan sirni
+                    e'tibordan chetda qoldirish oqibati og'ir — hamkor
+                    integratsiyani boshlay olmaydi.
+                  */}
+                  <Checkbox
+                    checked={keyCopied}
+                    onChange={(e: CheckboxChangeEvent) =>
+                      setKeyCopied(e.target.checked)
+                    }
+                    className="mt-2 text-xs"
+                  >
+                    Kalitni ko‘chirib oldim va xavfsiz saqladim
+                  </Checkbox>
+                </>
               }
             />
           )}
@@ -393,23 +512,62 @@ const ConnectWizard = () => {
             allaqachon yaratilgan. To'sib qo'ysak, odam ustadan chiqib
             ketardi va yozuv yarim holatda qolardi.
           */}
-          <Primary onClick={() => setStep(4)}>Yakunlash</Primary>
+          <Primary
+            disabled={Boolean(created?.apiKey) && !keyCopied}
+            onClick={() => setStep(4)}
+          >
+            Yakunlash
+          </Primary>
+          {Boolean(created?.apiKey) && !keyCopied && (
+            <p className="m-0 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+              Davom etish uchun API kalitni ko‘chirib olganingizni
+              tasdiqlang — u boshqa ko‘rsatilmaydi.
+            </p>
+          )}
         </div>
       )}
 
       {/* ═══ 4. TAYYOR ═══ */}
       {step === 4 && (
         <div className="space-y-3">
-          <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-            <p className="m-0 flex items-center gap-2 text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
-              <CheckCircle2 className="h-4 w-4" />
-              Ulanish yaratildi
-            </p>
-            <p className="m-0 mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">
-              {String(values.name ?? '')} — endi Konsolda sozlash va kuzatish
-              mumkin.
-            </p>
-          </section>
+          {/*
+            ⚠️ IKKI EKRAN AYNI GAPNI AYTISHI SHART.
+            Ilgari bu yer HAR DOIM yashil "Ulanish yaratildi ... endi
+            kuzatish mumkin" derdi, ro'yxatdagi karta esa AYNI ulanishni
+            "E'tibor kerak" deb ko'rsatardi — operator qaysi biriga
+            ishonishni bilmasdi va ustadan "tayyor" degan ishonch bilan
+            chiqib ketardi.
+            Endi ikkisi ham `missingForReady` dan kelib chiqadi: karta
+            nuqtani, usta esa YETISHMAGAN NARSALAR ro'yxatini ko'rsatadi.
+          */}
+          {gaps.length === 0 ? (
+            <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+              <p className="m-0 flex items-center gap-2 text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="h-4 w-4" />
+                Ulanish tayyor
+              </p>
+              <p className="m-0 mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                {String(values.name ?? '')} — sozlamalar to‘liq, Konsolda
+                kuzatish mumkin.
+              </p>
+            </section>
+          ) : (
+            <section className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+              <p className="m-0 flex items-center gap-2 text-sm font-extrabold text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-4 w-4" />
+                Ulanish yaratildi, lekin hali ISHLAMAYDI
+              </p>
+              <p className="m-0 mt-1 text-xs text-amber-700/90 dark:text-amber-300/90">
+                {String(values.name ?? '')} — ro‘yxatda "E‘tibor kerak" deb
+                turadi. Quyidagilar to‘ldirilmagan:
+              </p>
+              <ul className="m-0 mt-2 space-y-1 pl-5 text-xs text-amber-800 dark:text-amber-200">
+                {gaps.map((g: string) => (
+                  <li key={g}>{g}</li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <Panel>
             <p className="m-0 mb-2 text-xs font-extrabold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">

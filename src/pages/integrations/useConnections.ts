@@ -146,15 +146,37 @@ export const fieldsFor = (c: Connection): ConnectionField[] => {
  *   inbound  — webhook manzili bormi (bo'lmasa hodisa hech qayerga ketmaydi)
  *   outbound — API manzili bormi (bo'lmasa so'rov yuborib bo'lmaydi)
  */
-export const isConfigured = (c: Connection): boolean => {
-  const raw = c.raw as Record<string, unknown>;
+/**
+ * YETISHMAYOTGAN SOZLAMALAR — nima to'ldirilmagani, o'zbekcha.
+ *
+ * ⚠️ NEGA `isConfigured` DAN AJRATILDI. Ikki ekran AYNI savolga boshqa
+ * javob berardi: usta oxirida "Ulanish yaratildi, endi kuzatish mumkin"
+ * deb yozardi, ro'yxatdagi karta esa AYNI ulanishni "E'tibor kerak" deb
+ * ko'rsatardi. Operator qaysi biriga ishonishni bilmasdi.
+ *
+ * Endi ikkisi ham SHU funksiyadan kelib chiqadi: karta bo'sh/bo'sh emasligiga
+ * qaraydi, usta esa ro'yxatning O'ZINI ko'rsatadi — ya'ni "nima qoldi" degan
+ * savolga javob beradi.
+ */
+export const missingForReady = (input: {
+  kind: 'partner' | 'integration';
+  role?: string;
+  raw: Record<string, unknown>;
+}): string[] => {
+  const { kind, role, raw } = input;
+  const gaps: string[] = [];
 
-  if (c.kind === 'partner') {
-    return Boolean(raw.webhook_url);
+  if (kind === 'partner') {
+    if (!raw.webhook_url) {
+      gaps.push('Webhook manzili — busiz status o‘zgarishi hamkorga yetmaydi');
+    }
+    return gaps;
   }
 
   // API manzili — barcha chiquvchi ulanish uchun eng kam shart.
-  if (!raw.base_url && !raw.api_url) return false;
+  if (!raw.base_url && !raw.api_url) {
+    gaps.push('API manzili — so‘rov qayerga yuborilishi noma‘lum');
+  }
 
   /**
    * ⚠️ ROLGA XOS SHARTLAR (audit M2).
@@ -170,24 +192,36 @@ export const isConfigured = (c: Connection): boolean => {
    */
   const cfg = raw.dispatch_config as { endpoint?: string } | null | undefined;
 
-  if (c.role === 'carrier') {
+  if (role === 'carrier') {
     // Kargo posilka OLADI (dispatch) va status QAYTARADI (webhook).
-    return Boolean(cfg?.endpoint) && Boolean(raw.has_webhook_secret);
-  }
-
-  if (c.role === 'payment') {
+    if (!cfg?.endpoint) {
+      gaps.push('Jo‘natish endpointi — busiz posilka yuborilmaydi (400)');
+    }
+    if (!raw.has_webhook_secret) {
+      gaps.push('Webhook sekreti — busiz kargoning statusi qabul qilinmaydi');
+    }
+  } else if (role === 'payment') {
     // To'lov tizimi faqat kiruvchi: imzo sekreti bo'lmasa hodisa rad etiladi.
-    return Boolean(raw.has_webhook_secret);
-  }
-
-  if (c.role === 'source') {
+    if (!raw.has_webhook_secret) {
+      gaps.push('Webhook sekreti — busiz to‘lov hodisasi rad etiladi (401)');
+    }
+  } else if (role === 'source') {
     /**
      * Buyurtma KELADIGAN ulanish: `market_id` bo'lmasa import 400 beradi
      * (`receiveExternalOrders` → `integration.market_id is required`).
      */
-    return Boolean(raw.market_id);
+    if (!raw.market_id) {
+      gaps.push('Market bog‘lanishi — busiz buyurtma import qilinmaydi (400)');
+    }
   }
 
-  // Ko'zgu va noma'lum rol — manzil yetarli.
-  return true;
+  return gaps;
 };
+
+/** Ulanish ishlashga tayyormi — `missingForReady` ustidagi yupqa qobiq. */
+export const isConfigured = (c: Connection): boolean =>
+  missingForReady({
+    kind: c.kind,
+    role: c.role,
+    raw: c.raw as Record<string, unknown>,
+  }).length === 0;
