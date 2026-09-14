@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Button, Card, Table, Tag, Tooltip, message } from "antd";
+import { useState, type ReactNode } from "react";
+import { Button, Card, Segmented, Table, Tag, Tooltip, message } from "antd";
 import {
   CheckCircle2,
   Clock,
+  ArrowDownUp,
   Inbox,
   RefreshCw,
   Wallet,
@@ -72,30 +73,98 @@ const STATUS_TAG: Record<string, { color: string; label: string }> = {
 
 const when = (v?: string | null) => (v ? new Date(v).toLocaleString("uz-UZ") : "—");
 
+/**
+ * ⚠️ BITTA VAQTDA BITTA JADVAL.
+ *
+ * NIMA BUZILGAN EDI. Chiquvchi va kiruvchi jurnallar (to'lov tizimida esa
+ * ustiga to'lovlar ro'yxati) BIRDAN, ustma-ust chizilardi. Natijada bir
+ * ekranda UCHTA "Yangilash" tugmasi, UCHTA filtr qatori va uchta jadval
+ * turardi: operator qaysi filtr qaysi jadvalga tegishli ekanini
+ * taxmin qilardi va kerakli jadvalga yetish uchun uzoq suradi.
+ *
+ * ⚠️ BITTA UMUMIY JADVALGA BIRLASHTIRILMADI — bu ataylab. Ularning
+ * maydonlari umuman boshqa (yetkazish urinishlari / sinxron qilingan
+ * buyurtma soni / to'lov summasi). Umumlashtirilgan ustunlar uchalasining
+ * ham ma'nosini yo'qotardi.
+ *
+ * Yechim — KO'RINISH ALMASHTIRGICHI: faqat tanlangan jadval MOUNT bo'ladi,
+ * ya'ni ekranda tabiiy ravishda bitta "Yangilash" va bitta filtr qatori
+ * qoladi. Har bir ko'rinish o'z so'rovini o'zi boshqaradi (ilgari ham
+ * shunday edi), shu bois mantiq o'zgarmadi.
+ */
+type LogView = "payments" | "inbound" | "outbound";
+
 const ConnectionLog = ({ connection }: { connection: Connection }) => {
-  if (connection.kind !== "partner") {
-    /**
-     * ⚠️ IKKI YO'NALISH BIRGA KO'RSATILADI. Chiquvchi (biz tortib
-     * olgan/yuborgan sinxronlar) VA kiruvchi (ular bizga yuborgan
-     * webhooklar) — ikkisi bir ekranda, chunki operatorning savoli bitta:
-     * "nega ishlamayapti?". Ilgari kiruvchi jurnalni KO'RSATADIGAN joy
-     * umuman yo'q edi va butun diagnostika bazada qolib ketardi.
-     */
-    return (
-      <div className="space-y-4">
-        {/*
-          To'lov tizimida PUL ro'yxati birinchi o'rinda: operatorning
-          savoli "qaysi to'lov keldi va nima bo'ldi?". Hisob-kitob tabi
-          to'lov roli uchun yashiringan (u kargo COD qarzi uchun qurilgan),
-          shu bois pul ro'yxati shu yerda turadi.
-        */}
-        {connection.role === "payment" && <PaymentLog connection={connection} />}
-        <OutboundLog connection={connection} />
-        <IncomingWebhookLog connection={connection} />
-      </div>
-    );
+  /**
+   * Hamkorda YAGONA ko'rinish bor (biz yuborgan hodisalar) — almashtirgich
+   * ko'rsatish shovqin bo'lardi.
+   */
+  if (connection.kind === "partner") {
+    return <InboundLog connection={connection} />;
   }
-  return <InboundLog connection={connection} />;
+  return <OutboundViews connection={connection} />;
+};
+
+const OutboundViews = ({ connection }: { connection: Connection }) => {
+  const isPayment = connection.role === "payment";
+
+  /**
+   * Tartib ATAYLAB: to'lov tizimida operatorning birinchi savoli "qaysi
+   * to'lov keldi va nima bo'ldi?" — shu bois pul ro'yxati birinchi.
+   * (Hisob-kitob tabi to'lov roli uchun yashiringan: u kargo COD qarzi
+   * uchun qurilgan.)
+   */
+  const views: Array<{ value: LogView; label: string; icon: ReactNode }> = [
+    ...(isPayment
+      ? [
+          {
+            value: "payments" as LogView,
+            label: "Onlayn to'lovlar",
+            icon: <Wallet className="h-3.5 w-3.5" />,
+          },
+        ]
+      : []),
+    {
+      value: "inbound",
+      label: "Kiruvchi webhooklar",
+      icon: <Inbox className="h-3.5 w-3.5" />,
+    },
+    {
+      value: "outbound",
+      label: "Sinxron tarixi",
+      icon: <ArrowDownUp className="h-3.5 w-3.5" />,
+    },
+  ];
+
+  const [view, setView] = useState<LogView>(views[0].value);
+
+  return (
+    <div className="space-y-3">
+      {/*
+        Almashtirgich gorizontal sura oladigan bo'lishi kerak: uch yorliq
+        telefon ekranida sig'maydi.
+      */}
+      <div className="overflow-x-auto pb-1">
+        <Segmented<LogView>
+          value={view}
+          onChange={setView}
+          options={views.map((v) => ({
+            value: v.value,
+            label: (
+              <span className="flex items-center gap-1.5">
+                {v.icon}
+                {v.label}
+              </span>
+            ),
+          }))}
+        />
+      </div>
+
+      {view === "payments" && <PaymentLog connection={connection} />}
+      {view === "inbound" && <IncomingWebhookLog connection={connection} />}
+      {view === "outbound" && <OutboundLog connection={connection} />}
+    </div>
+  );
 };
 
 /**
@@ -126,11 +195,12 @@ const PaymentLog = ({ connection }: { connection: Connection }) => {
 
   return (
     <Card
-      title={
-        <span className="flex items-center gap-2">
-          <Wallet className="h-4 w-4" /> Onlayn to'lovlar
-        </span>
-      }
+      /*
+        ⚠️ SARLAVHA YO'Q — ko'rinishni ALMASHTIRGICH nomlaydi. Ikkisi ham
+        yozilsa ayni matn ustma-ust ikki marta chiqardi (test buni
+        ushlagan). `extra` yolg'iz ham antd sarlavha qatorini chizadi, ya'ni
+        "Yangilash" tugmasi joyida qoladi.
+      */
       extra={
         <Button
           icon={<RefreshCw className="h-4 w-4" />}
@@ -257,11 +327,12 @@ const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
 
   return (
     <Card
-      title={
-        <span className="flex items-center gap-2">
-          <Inbox className="h-4 w-4" /> Kiruvchi webhooklar
-        </span>
-      }
+      /*
+        ⚠️ SARLAVHA YO'Q — ko'rinishni ALMASHTIRGICH nomlaydi. Ikkisi ham
+        yozilsa ayni matn ustma-ust ikki marta chiqardi (test buni
+        ushlagan). `extra` yolg'iz ham antd sarlavha qatorini chizadi, ya'ni
+        "Yangilash" tugmasi joyida qoladi.
+      */
       extra={
         <Button
           icon={<RefreshCw className="h-4 w-4" />}
@@ -539,11 +610,12 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
 
   return (
     <Card
-      title={
-        <span className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" /> Sinxron tarixi
-        </span>
-      }
+      /*
+        ⚠️ SARLAVHA YO'Q — ko'rinishni ALMASHTIRGICH nomlaydi. Ikkisi ham
+        yozilsa ayni matn ustma-ust ikki marta chiqardi (test buni
+        ushlagan). `extra` yolg'iz ham antd sarlavha qatorini chizadi, ya'ni
+        "Yangilash" tugmasi joyida qoladi.
+      */
       extra={
         <Button
           icon={<RefreshCw className="h-4 w-4" />}
