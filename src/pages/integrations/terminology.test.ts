@@ -47,12 +47,22 @@ describe("apostrof — bitta kod nuqtasi", () => {
 });
 
 describe("⭐ ATAMALAR — bir tushuncha, bir nom", () => {
-  /** Barcha foydalanuvchiga ko'rinadigan yorliqlar. */
+  /**
+   * Barcha foydalanuvchiga ko'rinadigan yorliqlar — endi KALITLAR orqali
+   * lokal faylidan olinadi (registrda matn yo'q).
+   */
+  const uzDict = Object.entries(
+    import.meta.glob<Record<string, string>>(
+      "../../locales/uz/integrations.json",
+      { eager: true, import: "default" },
+    ),
+  )[0][1];
+
   const labels = CONNECTION_TYPES.flatMap((t) => [
-    t.label,
-    t.desc,
-    ...t.fields.map((f) => f.label),
-    ...t.fields.map((f) => f.hint ?? ""),
+    uzDict[t.labelKey],
+    uzDict[t.descKey],
+    ...t.fields.map((f) => uzDict[f.labelKey]),
+    ...t.fields.map((f) => (f.hintKey ? uzDict[f.hintKey] : "")),
   ]).filter(Boolean);
 
   it("yorliqlar to'plami bo'sh emas", () => {
@@ -141,7 +151,8 @@ describe("⭐ ATAMALAR — bir tushuncha, bir nom", () => {
     // Yorliqsiz maydon "nima yozish kerak?" degan savol qoldiradi.
     for (const type of CONNECTION_TYPES) {
       for (const f of type.fields) {
-        expect(f.label.trim().length, `${type.key}.${f.key}`).toBeGreaterThan(2);
+        const text = uzDict[f.labelKey] ?? "";
+        expect(text.trim().length, `${type.key}.${f.key}`).toBeGreaterThan(2);
       }
     }
   });
@@ -179,12 +190,14 @@ describe("⭐ TAKSONOMIYA — bir qiymat, bir yozuv", () => {
      * olmaydi.
      */
     for (const opt of categoryOptions) {
-      const key = CATEGORY_LABEL[opt.value as keyof typeof CATEGORY_LABEL];
-      const short = uz[key];
-      expect(short, `${opt.value} uchun tarjima yo'q`).toBeTruthy();
+      const short = uz[CATEGORY_LABEL[opt.value as keyof typeof CATEGORY_LABEL]];
+      // Tanlash yorlig'i ham endi kalit orqali keladi.
+      const long = "labelKey" in opt ? uz[opt.labelKey] : opt.label;
+      expect(short, `${opt.value} uchun qisqa tarjima yo'q`).toBeTruthy();
+      expect(long, `${opt.value} uchun uzun tarjima yo'q`).toBeTruthy();
       expect(
-        opt.label.includes(short!),
-        `"${opt.label}" ichida "${short}" yo'q — ikki xil yozilgan`,
+        long!.includes(short!),
+        `"${long}" ichida "${short}" yo'q — ikki xil yozilgan`,
       ).toBe(true);
     }
   });

@@ -51,13 +51,27 @@ export type FieldType =
 
 export interface ConnectionField {
   key: string;
-  label: string;
+  /**
+   * ⚠️ MATN EMAS, i18n KALITI (`integrations` nomlar fazosi).
+   *
+   * Ilgari bu yerda o'zbekcha matn turardi va sahifa i18n'dan tashqarida
+   * edi: til almashtirilganda barcha forma yorlig'i o'zbekcha qolib
+   * ketardi. Chizuvchi (`ConnectionFields`) `t(field.labelKey)` qiladi.
+   */
+  labelKey: string;
   type: FieldType;
-  /** Bir qatorlik izoh — maydon ostida chiqadi. */
-  hint?: string;
+  /** Bir qatorlik izoh — maydon ostida chiqadi (i18n kaliti). */
+  hintKey?: string;
   placeholder?: string;
-  /** `select` uchun variantlar. */
-  options?: Array<{ value: string; label: string }>;
+  /**
+   * `select` uchun variantlar.
+   *
+   * ⚠️ Protokol tokenlari (`SHA-256`, `POST`, `CRM`) ATAYLAB matn bo'lib
+   * qoladi: ular uchala tilda ayni va tarjimaga qo'shish 20 ta keraksiz
+   * yozuv hamda mistarjima xavfini yaratardi. Shu bois `labelKey` yoki
+   * `label` — ikkisidan biri bo'ladi.
+   */
+  options?: Array<{ value: string } & ({ labelKey: string } | { label: string })>;
   /**
    * Sir maydoni: qiymati HECH QACHON serverdan qaytmaydi (faqat
    * shifrlangan holda saqlanadi). Bo'sh qoldirilsa tegilmaydi.
@@ -97,9 +111,10 @@ export interface ConnectionField {
 export interface ConnectionTypeMeta {
   /** Registr kaliti — "yangi ulanish" oynasida shu tanlanadi. */
   key: string;
-  label: string;
-  /** Tanlash kartasidagi bir qatorlik tavsif. */
-  desc: string;
+  /** i18n kaliti — `ConnectionField.labelKey` bilan ayni sabab. */
+  labelKey: string;
+  /** Tanlash kartasidagi bir qatorlik tavsif (i18n kaliti). */
+  descKey: string;
   kind: ConnectionKind;
   role: IntegrationRole;
   category: IntegrationCategory;
@@ -119,16 +134,17 @@ export interface ConnectionTypeMeta {
    * chiqib ketishi — eng ko'p uchraydigan to'xtash nuqtasi. Ro'yxatni
    * OLDIN ko'rsatish shuni oldini oladi.
    */
-  prereqs: string[];
+  /** Katalog kartasidagi "sizga kerak bo'ladi" ro'yxati (i18n kalitlari). */
+  prereqKeys: string[];
 }
 
 /** Har turda takrorlanadigan maydonlar — bir joyda. */
 const NAME_FIELD: ConnectionField = {
   key: "name",
-  label: "Nomi",
+  labelKey: "fNameLabel",
   type: "text",
   placeholder: "Uzum Market",
-  hint: "Operator ro'yxatda shu nomni ko'radi",
+  hintKey: "fNameHint",
 };
 
 /*
@@ -152,17 +168,17 @@ const INBOUND_FIELDS: ConnectionField[] = [
   NAME_FIELD,
   {
     key: "webhook_url",
-    label: "Webhook manzili",
+    labelKey: "fWebhookUrlLabel",
     type: "url",
     placeholder: "https://partner.example.com/elchi/webhook",
-    hint: "Status o'zgarganda biz SHU manzilga POST qilamiz",
+    hintKey: "fWebhookUrlHint",
   },
   {
     key: "webhook_secret",
-    label: "Webhook sekreti",
+    labelKey: "fWebhookSecretLabel",
     type: "secret",
     writeOnly: true,
-    hint: "HMAC-SHA256 imzo kaliti. Bo'sh qoldirilsa tegilmaydi",
+    hintKey: "fWebhookSecretHint",
   },
   /**
    * ⚠️ SANDBOX MAYDONLARI ALOHIDA GURUHDA — prodakshn bilan YONMA-YON EMAS.
@@ -178,23 +194,23 @@ const INBOUND_FIELDS: ConnectionField[] = [
    */
   {
     key: "sandbox_enabled",
-    label: "Sandbox rejimi",
+    labelKey: "fSandboxEnabledLabel",
     type: "switch",
-    hint: "Yoqilsa, har hodisaning NUSXASI sinov manziliga ham ketadi",
+    hintKey: "fSandboxEnabledHint",
     group: "sandbox",
   },
   {
     key: "sandbox_webhook_url",
-    label: "Sandbox manzili",
+    labelKey: "fSandboxWebhookUrlLabel",
     type: "url",
     placeholder: "https://dev.partner.example.com/elchi/webhook",
-    hint: "Nusxa shu yerga ketadi. Xatosi asosiy yetkazishga ta'sir qilmaydi",
+    hintKey: "fSandboxWebhookUrlHint",
     group: "sandbox",
     disabledWhen: { key: "sandbox_enabled", equals: false },
   },
   {
     key: "sandbox_webhook_secret",
-    label: "Sandbox sekreti",
+    labelKey: "fSandboxWebhookSecretLabel",
     type: "secret",
     writeOnly: true,
     /**
@@ -204,16 +220,16 @@ const INBOUND_FIELDS: ConnectionField[] = [
      * himoyalangan; kalit oqsa u bilan HAQIQIY webhook imzolash mumkin
      * bo'lardi. Endi alohida sekret SHART.
      */
-    hint: "ALOHIDA sekret shart — prodakshn sekreti sinov muhitiga yuborilmaydi",
+    hintKey: "fSandboxWebhookSecretHint",
     group: "sandbox",
     disabledWhen: { key: "sandbox_enabled", equals: false },
   },
   {
     key: "ip_allowlist",
-    label: "Ruxsat etilgan IP",
+    labelKey: "fIpAllowlistLabel",
     type: "tags",
     placeholder: "203.0.113.10 yoki 203.0.113.0/24",
-    hint: "Bo'sh bo'lsa cheklov yo'q. CIDR qo'llab-quvvatlanadi",
+    hintKey: "fIpAllowlistHint",
     group: "security",
   },
 ];
@@ -234,60 +250,60 @@ const INBOUND_FIELDS: ConnectionField[] = [
 /** Texnik nom — barcha chiquvchi ulanishda. */
 const SLUG_FIELD: ConnectionField = {
   key: "slug",
-  label: "Slug",
+  labelKey: "fSlugLabel",
   type: "text",
   placeholder: "donoxon",
-  hint: "Texnik nom — kodda, loglarda va webhook manzilida ishlatiladi. O'zgartirilmasligi yaxshi",
+  hintKey: "fSlugHint",
 };
 
 /** Biz ularga so'rov yuboradigan manzil + kirish. */
 const OUTBOUND_AUTH: ConnectionField[] = [
   {
     key: "base_url",
-    label: "API manzili",
+    labelKey: "fBaseUrlLabel",
     type: "url",
     placeholder: "https://api.donoxon.uz",
-    hint: "Biz so'rovlarni shu manzilga yuboramiz",
+    hintKey: "fBaseUrlHint",
   },
   {
     key: "auth_type",
-    label: "Kirish turi",
+    labelKey: "fAuthTypeLabel",
     type: "select",
     options: [
-      { value: "api_key", label: "API kalit" },
-      { value: "login", label: "Login + parol" },
+      { value: "api_key", labelKey: "fOptApiKeyLabel" },
+      { value: "login", labelKey: "fOptLoginLabel" },
     ],
-    hint: "Ular bizni qanday taniydi",
+    hintKey: "fAuthTypeHint",
   },
   {
     key: "api_key",
-    label: "API kalit",
+    labelKey: "fOptApiKeyLabel",
     type: "secret",
     writeOnly: true,
-    hint: "Bo'sh qoldirilsa tegilmaydi",
+    hintKey: "fApiKeyHint",
     group: "security",
     showWhen: { key: "auth_type", equals: "api_key" },
   },
   {
     key: "auth_url",
-    label: "Kirish manzili",
+    labelKey: "fAuthUrlLabel",
     type: "url",
     placeholder: "https://api.donoxon.uz/auth/login",
-    hint: "Token shu manzildan olinadi",
+    hintKey: "fAuthUrlHint",
     showWhen: { key: "auth_type", equals: "login" },
   },
   {
     key: "username",
-    label: "Login",
+    labelKey: "fUsernameLabel",
     type: "text",
     showWhen: { key: "auth_type", equals: "login" },
   },
   {
     key: "password",
-    label: "Parol",
+    labelKey: "fPasswordLabel",
     type: "secret",
     writeOnly: true,
-    hint: "Bo'sh qoldirilsa tegilmaydi",
+    hintKey: "fApiKeyHint",
     group: "security",
     showWhen: { key: "auth_type", equals: "login" },
   },
@@ -300,17 +316,17 @@ const MARKET_FIELD: ConnectionField = {
    * `integration.market_id` bo'lmasa 400 beradi.
    */
   key: "market_id",
-  label: "Market akkaunti",
+  labelKey: "fMarketIdLabel",
   type: "market",
-  hint: "Kelgan buyurtmalar shu market hisobiga yoziladi",
+  hintKey: "fMarketIdHint",
 };
 
 /** Tashqi maydonlarni bizning maydonlarimizga bog'lash. */
 const MAPPING_FIELD: ConnectionField = {
   key: "field_mapping",
-  label: "Maydon xaritasi",
+  labelKey: "fFieldMappingLabel",
   type: "mapping",
-  hint: "Saytning JSON maydonlari → bizning maydonlar. Bo'sh bo'lsa standart nomlar ishlatiladi",
+  hintKey: "fFieldMappingHint",
 };
 
 /**
@@ -322,31 +338,31 @@ const MAPPING_FIELD: ConnectionField = {
 const INBOUND_WEBHOOK: ConnectionField[] = [
   {
     key: "webhook_secret",
-    label: "Webhook sekreti",
+    labelKey: "fWebhookSecretLabel",
     type: "secret",
     writeOnly: true,
-    hint: "HMAC imzo kaliti. Bo'sh qoldirilsa tegilmaydi",
+    hintKey: "fWebhookSecretHint2",
     group: "security",
   },
   {
     key: "webhook_signature_header",
-    label: "Imzo sarlavhasi",
+    labelKey: "fWebhookSignatureHeaderLabel",
     type: "text",
     placeholder: "x-signature",
-    hint: "Imzo qaysi HTTP sarlavhada keladi",
+    hintKey: "fWebhookSignatureHeaderHint",
     group: "security",
   },
   {
     key: "webhook_signature_prefix",
-    label: "Imzo prefiksi",
+    labelKey: "fWebhookSignaturePrefixLabel",
     type: "text",
     placeholder: "sha256=",
-    hint: "Imzo qiymati oldida turadigan matn (bo'lsa)",
+    hintKey: "fWebhookSignaturePrefixHint",
     group: "security",
   },
   {
     key: "webhook_algorithm",
-    label: "Algoritm",
+    labelKey: "fWebhookAlgorithmLabel",
     type: "select",
     options: [
       { value: "sha256", label: "SHA-256" },
@@ -356,10 +372,10 @@ const INBOUND_WEBHOOK: ConnectionField[] = [
   },
   {
     key: "webhook_id_header",
-    label: "Hodisa id sarlavhasi",
+    labelKey: "fWebhookIdHeaderLabel",
     type: "text",
     placeholder: "x-delivery-id",
-    hint: "Takroriy yetkazishni aniqlash uchun (replay guard)",
+    hintKey: "fWebhookIdHeaderHint",
     group: "security",
   },
 ];
@@ -384,21 +400,21 @@ const INBOUND_WEBHOOK: ConnectionField[] = [
 const WEBHOOK_PATHS: ConnectionField[] = [
   {
     key: "webhook_payload_paths.external_ref",
-    label: "Ularning raqami yo'li",
+    labelKey: "fWebhookPayloadPathsExternalRefLabel",
     type: "text",
     placeholder: "data.order.external_id",
-    hint: "Posilka shu raqam bo'yicha topiladi",
+    hintKey: "fWebhookPayloadPathsExternalRefHint",
   },
   {
     key: "webhook_payload_paths.tracking_number",
-    label: "Kuzatuv raqami yo'li",
+    labelKey: "fWebhookPayloadPathsTrackingNumberLabel",
     type: "text",
     placeholder: "data.tracking",
-    hint: "Ularning raqami mos kelmasa, posilka shu bo'yicha izlanadi",
+    hintKey: "fWebhookPayloadPathsTrackingNumberHint",
   },
   {
     key: "webhook_payload_paths.status",
-    label: "Status yo'li",
+    labelKey: "fWebhookPayloadPathsStatusLabel",
     type: "text",
     placeholder: "data.order.state",
   },
@@ -422,56 +438,56 @@ const WEBHOOK_PATHS: ConnectionField[] = [
 const FUNNEL_FIELDS: ConnectionField[] = [
   {
     key: "inbound_order_config.enabled",
-    label: "Voronkadan buyurtma yaratish",
+    labelKey: "fInboundOrderConfigEnabledLabel",
     type: "switch",
-    hint: "Yoqilsa, darvozadan o'tgan bitim buyurtmaga aylanadi",
+    hintKey: "fInboundOrderConfigEnabledHint",
   },
   {
     key: "inbound_order_config.deal_path",
-    label: "Bitim obyekti yo'li",
+    labelKey: "fInboundOrderConfigDealPathLabel",
     type: "text",
     placeholder: "data.lead",
-    hint: "Webhook payload'ida bitim qaysi yo'lda turadi",
+    hintKey: "fInboundOrderConfigDealPathHint",
     showWhen: { key: "inbound_order_config.enabled", equals: true },
   },
   {
     key: "inbound_order_config.stage_path",
-    label: "Bosqich yo'li",
+    labelKey: "fInboundOrderConfigStagePathLabel",
     type: "text",
     placeholder: "status_id",
-    hint: "Bosqich id'si bitim ichida qaysi maydonda",
+    hintKey: "fInboundOrderConfigStagePathHint",
     showWhen: { key: "inbound_order_config.enabled", equals: true },
   },
   {
     key: "inbound_order_config.create_on_stages",
-    label: "Qaysi bosqichda yaratilsin",
+    labelKey: "fInboundOrderConfigCreateOnStagesLabel",
     type: "tags",
     placeholder: "142",
-    hint: "FAQAT shu bosqichlarda buyurtma tug'iladi. Bosqich yoki hodisadan kamida bittasi shart",
+    hintKey: "fInboundOrderConfigCreateOnStagesHint",
     showWhen: { key: "inbound_order_config.enabled", equals: true },
   },
   {
     key: "inbound_order_config.create_on_events",
-    label: "Yoki qaysi hodisada",
+    labelKey: "fInboundOrderConfigCreateOnEventsLabel",
     type: "tags",
     placeholder: "leads.status",
-    hint: "Bosqich id'sini bermaydigan CRM uchun — hodisa turi bo'yicha",
+    hintKey: "fInboundOrderConfigCreateOnEventsHint",
     showWhen: { key: "inbound_order_config.enabled", equals: true },
   },
   {
     key: "inbound_order_config.funnel_path",
-    label: "Voronka yo'li",
+    labelKey: "fInboundOrderConfigFunnelPathLabel",
     type: "text",
     placeholder: "pipeline_id",
-    hint: "Ixtiyoriy — bir nechta voronkadan faqat bittasini olish uchun",
+    hintKey: "fInboundOrderConfigFunnelPathHint",
     showWhen: { key: "inbound_order_config.enabled", equals: true },
   },
   {
     key: "inbound_order_config.funnel_id",
-    label: "Faqat shu voronka",
+    labelKey: "fInboundOrderConfigFunnelIdLabel",
     type: "text",
     placeholder: "7482913",
-    hint: "Bo'sh bo'lsa barcha voronka qabul qilinadi",
+    hintKey: "fInboundOrderConfigFunnelIdHint",
     showWhen: { key: "inbound_order_config.enabled", equals: true },
   },
 ];
@@ -494,95 +510,95 @@ const FUNNEL_FIELDS: ConnectionField[] = [
 const PAYMENT_FIELDS: ConnectionField[] = [
   {
     key: "payment_config.enabled",
-    label: "To'lovni qabul qilish",
+    labelKey: "fPaymentConfigEnabledLabel",
     type: "switch",
-    hint: "Yoqilsa, tasdiqlangan to'lov buyurtmaga yoziladi",
+    hintKey: "fPaymentConfigEnabledHint",
   },
   {
     key: "payment_config.transaction_id_path",
-    label: "Tranzaksiya id yo'li",
+    labelKey: "fPaymentConfigTransactionIdPathLabel",
     type: "text",
     placeholder: "data.transaction.id",
-    hint: "Takroriy to'lovni to'sish uchun ASOSIY kalit — bo'sh bo'lsa to'lov qo'llanmaydi",
+    hintKey: "fPaymentConfigTransactionIdPathHint",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
   {
     key: "payment_config.order_ref_path",
-    label: "Buyurtma havolasi yo'li",
+    labelKey: "fPaymentConfigOrderRefPathLabel",
     type: "text",
     placeholder: "data.account.order_id",
-    hint: "To'lov qaysi buyurtmaga tegishli ekani payload'da qayerda",
+    hintKey: "fPaymentConfigOrderRefPathHint",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
   {
     key: "payment_config.order_ref_field",
-    label: "Havola nimaga ishora qiladi",
+    labelKey: "fPaymentConfigOrderRefFieldLabel",
     type: "select",
     options: [
-      { value: "id", label: "Buyurtma raqami (id)" },
-      { value: "external_id", label: "Tashqi tizim raqami" },
-      { value: "qr_code_token", label: "Skan tokeni" },
+      { value: "id", labelKey: "fOptIdLabel" },
+      { value: "external_id", labelKey: "fOptExternalIdLabel" },
+      { value: "qr_code_token", labelKey: "fOptQrCodeTokenLabel" },
     ],
-    hint: "Elchi'da buyurtma raqami — `id`ning o'zi",
+    hintKey: "fPaymentConfigOrderRefFieldHint",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
   {
     key: "payment_config.amount_path",
-    label: "Summa yo'li",
+    labelKey: "fPaymentConfigAmountPathLabel",
     type: "text",
     placeholder: "data.amount",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
   {
     key: "payment_config.amount_in_tiyin",
-    label: "Summa TIYINDA keladi",
+    labelKey: "fPaymentConfigAmountInTiyinLabel",
     type: "switch",
-    hint: "Payme va Click shunday yuboradi. Noto'g'ri qoldirilsa har bir to'lov rad etiladi",
+    hintKey: "fPaymentConfigAmountInTiyinHint",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
   {
     key: "payment_config.currency_path",
-    label: "Valyuta yo'li",
+    labelKey: "fPaymentConfigCurrencyPathLabel",
     type: "text",
     placeholder: "data.currency",
-    hint: "Bo'sh bo'lsa UZS deb qabul qilinadi",
+    hintKey: "fPaymentConfigCurrencyPathHint",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
   {
     key: "payment_config.status_path",
-    label: "Holat yo'li",
+    labelKey: "fPaymentConfigStatusPathLabel",
     type: "text",
     placeholder: "data.state",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
   {
     key: "payment_config.status_map",
-    label: "Holat xaritasi",
+    labelKey: "fPaymentConfigStatusMapLabel",
     type: "mapping",
-    hint: "Bizning holat → ularning qiymatlari. SHART: xaritasiz hech bir to'lov qo'llanmaydi",
+    hintKey: "fPaymentConfigStatusMapHint",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
 ];
 
 const INBOUND_STATUS_MAP: ConnectionField = {
   key: "inbound_status_mapping",
-  label: "Kiruvchi status xaritasi",
+  labelKey: "fInboundStatusMappingLabel",
   type: "mapping",
-  hint: "Ularning status nomi → bizning amal (sell / cancel / return)",
+  hintKey: "fInboundStatusMappingHint",
 };
 
 /** Posilka jo'natish shabloni — faqat kargoda. */
 const DISPATCH_FIELDS: ConnectionField[] = [
   {
     key: "dispatch_config.endpoint",
-    label: "Jo'natish endpointi",
+    labelKey: "fDispatchConfigEndpointLabel",
     type: "text",
     placeholder: "/v1/orders",
-    hint: "Posilka yaratish uchun chaqiriladigan manzil",
+    hintKey: "fDispatchConfigEndpointHint",
   },
   {
     key: "dispatch_config.method",
-    label: "Metod",
+    labelKey: "fDispatchConfigMethodLabel",
     type: "select",
     options: [
       { value: "POST", label: "POST" },
@@ -591,15 +607,15 @@ const DISPATCH_FIELDS: ConnectionField[] = [
   },
   {
     key: "dispatch_config.body_template",
-    label: "So'rov tanasi shabloni",
+    labelKey: "fDispatchConfigBodyTemplateLabel",
     type: "mapping",
-    hint: "Ularning maydoni → bizning qiymat. Qiymatda {{customer_name}} kabi o'rin egallari ishlatiladi",
+    hintKey: "fDispatchConfigBodyTemplateHint",
   },
   {
     key: "dispatch_config.response_paths",
-    label: "Javob yo'llari",
+    labelKey: "fDispatchConfigResponsePathsLabel",
     type: "mapping",
-    hint: "Javobdan nima olinadi: external_ref, tracking_number",
+    hintKey: "fDispatchConfigResponsePathsHint",
   },
 ];
 
@@ -607,14 +623,14 @@ const DISPATCH_FIELDS: ConnectionField[] = [
 const OUTBOUND_STATUS_FIELDS: ConnectionField[] = [
   {
     key: "status_sync_config.external_update.endpoint",
-    label: "Status yuborish endpointi",
+    labelKey: "fStatusSyncConfigExternalUpdateEndpointLabel",
     type: "text",
     placeholder: "/v1/orders/status",
-    hint: "Status o'zgarganda shu manzilga so'rov ketadi",
+    hintKey: "fStatusSyncConfigExternalUpdateEndpointHint",
   },
   {
     key: "status_sync_config.external_update.method",
-    label: "Metod",
+    labelKey: "fDispatchConfigMethodLabel",
     type: "select",
     options: [
       { value: "POST", label: "POST" },
@@ -625,9 +641,9 @@ const OUTBOUND_STATUS_FIELDS: ConnectionField[] = [
   },
   {
     key: "status_mapping",
-    label: "Chiquvchi status xaritasi",
+    labelKey: "fStatusMappingLabel",
     type: "mapping",
-    hint: "Bizning status/amal → ularning status nomi. rollback ham kiritilishi kerak",
+    hintKey: "fStatusMappingHint",
   },
 ];
 
@@ -640,22 +656,22 @@ const OUTBOUND_STATUS_FIELDS: ConnectionField[] = [
 export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
   {
     key: "marketplace_inbound",
-    label: "Marketplace (bizga ulanadi)",
-    desc: "Uzum, Olcha va h.k. — bizning API orqali buyurtma yuboradi",
+    labelKey: "fMarketplaceInboundLabel",
+    descKey: "fMarketplaceInboundDesc",
     kind: "partner",
     role: "source",
     category: "marketplace",
     fields: INBOUND_FIELDS,
-    prereqs: [
-      "Ularning tomonida HTTPS webhook manzili (status shu yerga boradi)",
-      "Imzoni tekshirish uchun kelishilgan sekret (ixtiyoriy, lekin tavsiya)",
-      "Ularning so\u2019rov yuboradigan IP manzillari (ixtiyoriy cheklov)",
+    prereqKeys: [
+      "preUlarningTomonidaHttpsWebhookManzil",
+      "preImzoniTekshirishUchunKelishilganSe",
+      "preUlarningSoRovYuboradiganIpManz",
     ],
   },
   {
     key: "marketplace_outbound",
-    label: "Marketplace (biz ulanamiz)",
-    desc: "Buyurtmani biz tortib olamiz — ularning API'siga moslashamiz",
+    labelKey: "fMarketplaceOutboundLabel",
+    descKey: "fMarketplaceOutboundDesc",
     kind: "integration",
     role: "source",
     category: "marketplace",
@@ -671,16 +687,16 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
       MAPPING_FIELD,
       ...OUTBOUND_STATUS_FIELDS,
     ],
-    prereqs: [
-      "Ularning API manzili (HTTPS)",
-      "API kalit yoki login+parol",
-      "Qaysi buyurtmalarni tortib olishimiz kelishilgan bo\u2019lishi",
+    prereqKeys: [
+      "preUlarningApiManziliHttps",
+      "preApiKalitYokiLoginParol",
+      "preQaysiBuyurtmalarniTortibOlishimizK",
     ],
   },
   {
     key: "crm",
-    label: "CRM",
-    desc: "Bitrix24, amoCRM — voronkadan buyurtma",
+    labelKey: "fCrmLabel",
+    descKey: "fCrmDesc",
     kind: "integration",
     role: "source",
     category: "crm",
@@ -708,17 +724,17 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
       ...INBOUND_WEBHOOK,
       ...OUTBOUND_STATUS_FIELDS,
     ],
-    prereqs: [
-      "CRM API manzili (HTTPS)",
-      "API kalit yoki login+parol",
-      "Qaysi voronka va BOSQICHDA buyurtma yaratilishi",
-      "Bitim maydonlari nomlari (telefon, manzil, tuman, narx)",
+    prereqKeys: [
+      "preCrmApiManziliHttps",
+      "preApiKalitYokiLoginParol",
+      "preQaysiVoronkaVaBosqichdaBuyurtmaYar",
+      "preBitimMaydonlariNomlariTelefonManzi",
     ],
   },
   {
     key: "carrier",
-    label: "Yetkazuvchi",
-    desc: "Bizdan posilka oladi va yetkazadi. COD puli ular orqali qaytadi",
+    labelKey: "fCarrierLabel",
+    descKey: "fCarrierDesc",
     kind: "integration",
     role: "carrier",
     category: "cargo",
@@ -735,16 +751,16 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
       ...WEBHOOK_PATHS,
       INBOUND_STATUS_MAP,
     ],
-    prereqs: [
-      "Yetkazuvchining API manzili (HTTPS)",
-      "API kalit",
-      "Tarif va qaytarish shartlari kelishilgan bo\u2019lishi",
+    prereqKeys: [
+      "preYetkazuvchiningApiManziliHttps",
+      "fOptApiKeyLabel",
+      "preTarifVaQaytarishShartlariKelishilg",
     ],
   },
   {
     key: "payment",
-    label: "To'lov tizimi",
-    desc: "Payme, Click, bank — to'lov holatini tasdiqlaydi",
+    labelKey: "fPaymentLabel",
+    descKey: "fPaymentDesc",
     kind: "integration",
     role: "payment",
     category: "payment",
@@ -765,16 +781,16 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
      * pulni hali ko'rmaydi.
      */
     fields: [NAME_FIELD, SLUG_FIELD, ...OUTBOUND_AUTH, ...PAYMENT_FIELDS, ...INBOUND_WEBHOOK],
-    prereqs: [
-      "To\u2019lov tizimining API manzili (HTTPS)",
-      "Savdo nuqtasi (merchant) kaliti",
-      "Qaysi to\u2019lov holati tasdiq deb qabul qilinishi",
+    prereqKeys: [
+      "preToLovTiziminingApiManziliHttps",
+      "preSavdoNuqtasiMerchantKaliti",
+      "preQaysiToLovHolatiTasdiqDebQabul",
     ],
   },
   {
     key: "mirror",
-    label: "Ko'zgu (eksport)",
-    desc: "Sheets, BI — faqat o'qish uchun. Hech narsani o'zgartirmaydi",
+    labelKey: "fMirrorLabel",
+    descKey: "fMirrorDesc",
     kind: "integration",
     role: "mirror",
     category: "spreadsheet",
@@ -783,10 +799,10 @@ export const CONNECTION_TYPES: ConnectionTypeMeta[] = [
      * market ham, dispatch ham kerak emas.
      */
     fields: [NAME_FIELD, SLUG_FIELD, ...OUTBOUND_AUTH, ...OUTBOUND_STATUS_FIELDS],
-    prereqs: [
-      "Eksport manzili (HTTPS)",
-      "Yozish huquqi bo\u2019lgan kalit",
-      "Qaysi maydonlar chiqarilishi",
+    prereqKeys: [
+      "preEksportManziliHttps",
+      "preYozishHuquqiBoLganKalit",
+      "preQaysiMaydonlarChiqarilishi",
     ],
   },
 ];
@@ -836,29 +852,29 @@ export const fieldsInGroup = (
 export const TYPE_CHANGE_FIELDS: ConnectionField[] = [
   {
     key: "role",
-    label: "Roli",
+    labelKey: "fRoleLabel",
     type: "select",
     options: [
-      { value: "source", label: "Buyurtma manbasi — bizga buyurtma beradi" },
-      { value: "carrier", label: "Yetkazuvchi — bizdan posilka oladi" },
-      { value: "payment", label: "To'lov tizimi" },
-      { value: "mirror", label: "Ko'zgu — faqat eksport" },
+      { value: "source", labelKey: "fOptSourceLabel" },
+      { value: "carrier", labelKey: "fOptCarrierLabel" },
+      { value: "payment", labelKey: "fPaymentLabel" },
+      { value: "mirror", labelKey: "fOptMirrorLabel" },
     ],
-    hint: "Ulanish nima qiladi",
+    hintKey: "fRoleHint",
   },
   {
     key: "category",
-    label: "Turi",
+    labelKey: "fCategoryLabel",
     type: "select",
     options: [
-      { value: "marketplace", label: "Marketplace / sayt" },
+      { value: "marketplace", labelKey: "fOptMarketplaceLabel" },
       { value: "crm", label: "CRM" },
-      { value: "cargo", label: "Kargo" },
-      { value: "payment", label: "To'lov" },
-      { value: "spreadsheet", label: "Jadval / hisobot" },
-      { value: "other", label: "Boshqa" },
+      { value: "cargo", labelKey: "fOptCargoLabel" },
+      { value: "payment", labelKey: "fOptPaymentLabel" },
+      { value: "spreadsheet", labelKey: "fOptSpreadsheetLabel" },
+      { value: "other", labelKey: "fOptOtherLabel" },
     ],
-    hint: "Faqat tasnif uchun",
+    hintKey: "fCategoryHint",
   },
 ];
 

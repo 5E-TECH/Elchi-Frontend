@@ -31,6 +31,29 @@ import { ROLE_META, CATEGORY_LABEL } from "../../entities/integrations";
  */
 const RENDERED_GROUPS = ["connection", "security", "sandbox"] as const;
 
+
+/**
+ * LOKAL FAYLLARI — registr endi MATN emas, i18n KALITI saqlaydi.
+ *
+ * ⚠️ ENG MUHIM INVARIANT SHU YERDA: registrda ishlatilgan har bir kalit
+ * UCHALA tilda tarjimaga ega bo'lishi kerak. `i18n.ts` da
+ * `FALLBACK_LANGUAGE = "uz"`, ya'ni ru/en'da yetishmagan kalit ekranda
+ * O'ZBEKCHA chiqadi va xato BILINMAYDI — aynan foydalanuvchi shikoyat
+ * qilgan holat.
+ */
+const LOCALES = ["uz", "ru", "en"] as const;
+
+const bundles = import.meta.glob<Record<string, string>>(
+  "../../locales/*/integrations.json",
+  { eager: true, import: "default" },
+);
+
+const dictOf = (lang: string): Record<string, string> => {
+  const hit = Object.entries(bundles).find(([path]) => path.includes(`/${lang}/`));
+  if (!hit) throw new Error(`${lang} lokali topilmadi`);
+  return hit[1];
+};
+
 describe("Ulanish registri", () => {
   it("kalitlar NOYOB", () => {
     const keys = CONNECTION_TYPES.map((t) => t.key);
@@ -38,12 +61,51 @@ describe("Ulanish registri", () => {
   });
 
   it("har bir turda yorliq, tavsif va maydonlar bor", () => {
+    const uz = dictOf("uz");
     for (const t of CONNECTION_TYPES) {
-      expect(t.label.trim().length).toBeGreaterThan(0);
+      expect(uz[t.labelKey], `${t.key} yorlig'i`).toBeTruthy();
       // Tavsif majburiy: "marketplace (bizga ulanadi)" va "(biz ulanamiz)"
       // farqi o'z-o'zidan tushunarli EMAS.
-      expect(t.desc.trim().length).toBeGreaterThan(0);
+      expect(uz[t.descKey], `${t.key} tavsifi`).toBeTruthy();
       expect(t.fields.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("⭐ REGISTRDAGI HAR BIR KALIT uchala tilda tarjimaga ega", () => {
+    /**
+     * Bu migratsiyaning eng muhim qulfi. Yangi maydon qo'shgan odam
+     * `labelKey` yozib, tarjimani unutsa: `uz` da kalitning O'ZI chiqadi
+     * ("fNewFieldLabel"), ru/en'da esa fallback tufayli ayni narsa.
+     * Ya'ni xato ekranda ko'rinadi, lekin test busiz uni ushlamasdi.
+     */
+    const keys = new Set<string>();
+    for (const t of CONNECTION_TYPES) {
+      keys.add(t.labelKey);
+      keys.add(t.descKey);
+      for (const k of t.prereqKeys) keys.add(k);
+      for (const f of t.fields) {
+        keys.add(f.labelKey);
+        if (f.hintKey) keys.add(f.hintKey);
+        for (const o of f.options ?? []) {
+          if ("labelKey" in o) keys.add(o.labelKey);
+        }
+      }
+    }
+    for (const f of TYPE_CHANGE_FIELDS) {
+      keys.add(f.labelKey);
+      if (f.hintKey) keys.add(f.hintKey);
+      for (const o of f.options ?? []) {
+        if ("labelKey" in o) keys.add(o.labelKey);
+      }
+    }
+
+    // Test bo'shliqda ishlamasin.
+    expect(keys.size).toBeGreaterThan(100);
+
+    for (const lang of LOCALES) {
+      const dict = dictOf(lang);
+      const missing = [...keys].filter((k) => !dict[k]);
+      expect(missing, `${lang} da yetishmagan kalitlar`).toEqual([]);
     }
   });
 
@@ -176,8 +238,8 @@ describe("Registr ↔ backend mosligi (bug qulflari)", () => {
 
   it("fieldsInGroup ajratadi va guruhsiz maydon `connection`ga tushadi", () => {
     const fields = [
-      { key: "a", label: "A", type: "text" as const },
-      { key: "b", label: "B", type: "text" as const, group: "security" as const },
+      { key: "a", labelKey: "A", type: "text" as const },
+      { key: "b", labelKey: "B", type: "text" as const, group: "security" as const },
     ];
     expect(fieldsInGroup(fields, "connection").map((f) => f.key)).toEqual(["a"]);
     expect(fieldsInGroup(fields, "security").map((f) => f.key)).toEqual(["b"]);
@@ -225,10 +287,11 @@ describe("Katalog ma'lumoti", () => {
      * bo'lsa karta yarim ko'rinardi va operator "menda bu bormi?" degan
      * savolga javob olmasdi — ya'ni ustaga kirib, o'rtada to'xtardi.
      */
+    const uz = dictOf("uz");
     for (const type of CONNECTION_TYPES) {
-      expect(type.prereqs.length).toBeGreaterThan(0);
-      for (const item of type.prereqs) {
-        expect(item.trim().length).toBeGreaterThan(0);
+      expect(type.prereqKeys.length).toBeGreaterThan(0);
+      for (const key of type.prereqKeys) {
+        expect(uz[key], `${type.key}: ${key}`).toBeTruthy();
       }
     }
   });
@@ -416,16 +479,16 @@ describe("4-bosqich — turlar HAQIQATAN farq qiladi", () => {
 
 describe("visibleFields — shartli maydonlar", () => {
   const fields = [
-    { key: "auth_type", label: "Kirish", type: "select" as const },
+    { key: "auth_type", labelKey: "Kirish", type: "select" as const },
     {
       key: "api_key",
-      label: "Kalit",
+      labelKey: "Kalit",
       type: "secret" as const,
       showWhen: { key: "auth_type", equals: "api_key" },
     },
     {
       key: "password",
-      label: "Parol",
+      labelKey: "Parol",
       type: "secret" as const,
       showWhen: { key: "auth_type", equals: "login" },
     },
@@ -460,12 +523,12 @@ describe("visibleFields — shartli maydonlar", () => {
     const gated = [
       {
         key: "inbound_order_config.enabled",
-        label: "Yoqish",
+        labelKey: "Yoqish",
         type: "switch" as const,
       },
       {
         key: "inbound_order_config.stage_path",
-        label: "Bosqich",
+        labelKey: "Bosqich",
         type: "text" as const,
         showWhen: { key: "inbound_order_config.enabled", equals: true },
       },
@@ -495,10 +558,11 @@ describe("Katalog ma'lumoti", () => {
      * bo'lsa karta yarim ko'rinardi va operator "menda bu bormi?" degan
      * savolga javob olmasdi — ya'ni ustaga kirib, o'rtada to'xtardi.
      */
+    const uz = dictOf("uz");
     for (const type of CONNECTION_TYPES) {
-      expect(type.prereqs.length).toBeGreaterThan(0);
-      for (const item of type.prereqs) {
-        expect(item.trim().length).toBeGreaterThan(0);
+      expect(type.prereqKeys.length).toBeGreaterThan(0);
+      for (const key of type.prereqKeys) {
+        expect(uz[key], `${type.key}: ${key}`).toBeTruthy();
       }
     }
   });
@@ -755,7 +819,7 @@ describe("⭐ `disabledWhen` — ko'rinadi, lekin tahrirlanmaydi", () => {
    */
   const field = {
     key: "sandbox_webhook_url",
-    label: "Sandbox manzili",
+    labelKey: "Sandbox manzili",
     type: "url" as const,
     disabledWhen: { key: "sandbox_enabled", equals: false },
   };
