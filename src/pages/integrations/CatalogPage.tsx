@@ -125,11 +125,11 @@ const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => vo
           onPick();
         }
       }}
-      aria-label={`${type.label} — ulanish yaratish`}
+      aria-label={`${t(type.labelKey)} — ulanish yaratish`}
       className="h-full"
       title={
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate font-bold">{type.label}</span>
+          <span className="truncate font-bold">{t(type.labelKey)}</span>
           <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
         </div>
       }
@@ -139,7 +139,7 @@ const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => vo
         <Tag>{t(CATEGORY_LABEL[type.category])}</Tag>
       </div>
 
-      <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{type.desc}</p>
+      <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{t(type.descKey)}</p>
 
       {/* "Sizga nima kerak bo'ladi" — ustaga KIRISHDAN OLDIN. Bu eng ko'p
         uchraydigan to'xtash nuqtasi: odam ustaga kirib, "menda bu yo'q" deb
@@ -149,13 +149,13 @@ const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => vo
           Sizga kerak bo'ladi
         </p>
         <ul className="m-0 list-none space-y-1 p-0">
-          {type.prereqs.map((item) => (
+          {type.prereqKeys.map((item: string) => (
             <li
-              key={item}
+              key={t(item)}
               className="flex items-start gap-1.5 text-[11px] leading-snug text-gray-600 dark:text-gray-300"
             >
               <Check className="mt-0.5 h-3 w-3 shrink-0 text-green-500" />
-              <span>{item}</span>
+              <span>{t(item)}</span>
             </li>
           ))}
         </ul>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import type { CheckboxChangeEvent } from "antd/es/checkbox";
 import { Alert, Checkbox, Button, Card, Form, Steps, Typography } from "antd";
@@ -67,6 +68,7 @@ const STATE_ICON: Record<CheckState, React.ReactNode> = {
 };
 
 const ConnectWizard = () => {
+  const { t } = useTranslation("integrations");
   const { typeKey } = useParams();
   const navigate = useNavigate();
   const type = useMemo(() => findConnectionType(String(typeKey ?? "")), [typeKey]);
@@ -290,7 +292,7 @@ const ConnectWizard = () => {
         />
         <div className="min-w-0">
           <h1 className="m-0 truncate text-base font-extrabold text-gray-800 dark:text-white">
-            {type.label}
+            {t(type.labelKey)}
           </h1>
           <p className="m-0 text-[11px] text-gray-500 dark:text-gray-400">
             {isPartner ? "Ular bizga ulanadi" : "Biz ularga ulanamiz"}
@@ -325,10 +327,10 @@ const ConnectWizard = () => {
             message="Boshlashdan oldin quyidagilar tayyor bo'lsin"
             description={
               <ul className="m-0 list-none space-y-1.5 p-0">
-                {type.prereqs.map((item) => (
+                {type.prereqKeys.map((item: string) => (
                   <li key={item} className="flex items-start gap-2 text-xs leading-snug">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />
-                    <span>{item}</span>
+                    <span>{t(item)}</span>
                   </li>
                 ))}
               </ul>

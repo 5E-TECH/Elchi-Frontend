@@ -12,7 +12,8 @@ import type { ConnectionField } from "./connections";
  */
 const F = (over: Partial<ConnectionField>): ConnectionField => ({
   key: "x",
-  label: "X",
+  // ⚠️ `labelKey` — registr i18n kalitlarini saqlaydi, matn emas.
+  labelKey: "fNameLabel",
   type: "text",
   ...over,
 });
@@ -86,7 +87,7 @@ describe("buildChangedPayload", () => {
 });
 
 describe("Xarita (mapping) maydoni — payload solishtiruvi", () => {
-  const field = { key: "field_mapping", label: "Xarita", type: "mapping" as const };
+  const field = { key: "field_mapping", labelKey: "fNameLabel", type: "mapping" as const };
 
   it("⭐ o'zgarmagan xarita YUBORILMAYDI", () => {
     const val = { id_field: "order_id", phone_field: "tel" };
