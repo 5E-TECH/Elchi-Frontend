@@ -324,7 +324,7 @@ const ConnectionsPage = () => {
           </div>
           <div>
             <h1 className={`m-0 ${PAGE_TITLE}`}>{t("navConsole")}</h1>
-            <p className={`m-0 ${PAGE_SUBTITLE}`}>Ulanishni tanlang va sozlang</p>
+            <p className={`m-0 ${PAGE_SUBTITLE}`}>{t("lstSubtitle")}</p>
           </div>
         </div>
 
@@ -351,10 +351,8 @@ const ConnectionsPage = () => {
       {connections.length === 0 ? (
         <div className={`rounded-xl border-2 border-dashed ${BORDER} p-8 text-center`}>
           <Cable className={`mx-auto h-8 w-8 ${FAINT}`} />
-          <p className={`m-0 mt-3 text-sm font-bold ${TITLE}`}>Hali ulanish yo'q</p>
-          <p className={`m-0 mt-1 text-xs ${MUTED}`}>
-            Birinchi ulanishni qo'shish uchun "Yangi ulanish".
-          </p>
+          <p className={`m-0 mt-3 text-sm font-bold ${TITLE}`}>{t("lstEmpty")}</p>
+          <p className={`m-0 mt-1 text-xs ${MUTED}`}>{t("lstEmptyHint")}</p>
           <button
             type="button"
             onClick={() => navigate("/integrations/new")}

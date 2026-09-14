@@ -31,7 +31,6 @@ import { ROLE_META, CATEGORY_LABEL } from "../../entities/integrations";
  */
 const RENDERED_GROUPS = ["connection", "security", "sandbox"] as const;
 
-
 /**
  * LOKAL FAYLLARI — registr endi MATN emas, i18n KALITI saqlaydi.
  *
@@ -43,10 +42,10 @@ const RENDERED_GROUPS = ["connection", "security", "sandbox"] as const;
  */
 const LOCALES = ["uz", "ru", "en"] as const;
 
-const bundles = import.meta.glob<Record<string, string>>(
-  "../../locales/*/integrations.json",
-  { eager: true, import: "default" },
-);
+const bundles = import.meta.glob<Record<string, string>>("../../locales/*/integrations.json", {
+  eager: true,
+  import: "default",
+});
 
 const dictOf = (lang: string): Record<string, string> => {
   const hit = Object.entries(bundles).find(([path]) => path.includes(`/${lang}/`));

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
+import { I18nextProvider } from "react-i18next";
+import i18n from "../../i18n";
 import CatalogPage from "./CatalogPage";
 
 /**
@@ -31,12 +33,19 @@ const WizardStub = () => {
 
 const renderCatalog = () =>
   render(
-    <MemoryRouter initialEntries={["/integrations/new"]}>
-      <Routes>
-        <Route path="/integrations/new" element={<CatalogPage />} />
-        <Route path="/integrations/new/:typeKey" element={<WizardStub />} />
-      </Routes>
-    </MemoryRouter>,
+    /*
+      ⚠️ `I18nextProvider` SHART: matnlar endi i18n kalitlari orqali keladi.
+      Busiz `t()` kalitning ozini qaytaradi va aria-label oqilmas bolib
+      qoladi — test esa "nom yoq" deb yiqiladi.
+    */
+    <I18nextProvider i18n={i18n}>
+      <MemoryRouter initialEntries={["/integrations/new"]}>
+        <Routes>
+          <Route path="/integrations/new" element={<CatalogPage />} />
+          <Route path="/integrations/new/:typeKey" element={<WizardStub />} />
+        </Routes>
+      </MemoryRouter>
+    </I18nextProvider>,
   );
 
 describe("Katalog kartalari — klaviatura", () => {

@@ -172,11 +172,7 @@ const ConnectWizard = () => {
            * MARTA keladi. Id bo'lmasa kalitni ko'rsatib, keyin uni hech
            * qaysi ulanishga bog'lab bo'lmasdi.
            */
-          setError(
-            "Hamkor yaratildi, lekin javobdan id o'qilmadi. API kalit: " +
-              `${res.api_key ?? "(kelmadi)"} — HOZIR ko'chirib oling, ` +
-              "keyin ulanishni ro'yxatdan topib sozlang.",
-          );
+          setError(t("wzPartnerNoId", { key: res.api_key ?? t("wzKeyMissing") }));
           return;
         }
         setCreated({ id: String(res.id), apiKey: res.api_key || undefined });
@@ -217,19 +213,14 @@ const ConnectWizard = () => {
          * yuboradi — yana bir nusxa yaratilmasin.
          */
         if (!String(id).trim()) {
-          setError(
-            "Ulanish yaratildi, lekin javobdan uning id'si o'qilmadi — " +
-              'sinov va "Konsolda ochish" ishlamaydi. Ulanishlar ro\'yxatidan ' +
-              "topib ochish kerak (qayta yaratish SHART EMAS, dublikat " +
-              "bo'ladi).",
-          );
+          setError(t("wzConnNoId"));
           return;
         }
         setCreated({ id: String(id) });
       }
       setStep(3);
     } catch (err) {
-      setError(getBackendErrorMessage(err) || "Yaratib bo'lmadi");
+      setError(getBackendErrorMessage(err) || t("wzCreateFailed"));
     }
   };
 
@@ -244,9 +235,7 @@ const ConnectWizard = () => {
      * jim qolish hech qachon to'g'ri javob emas.)
      */
     if (!created?.id) {
-      setTestError(
-        "Ulanish id'si yo'q — sinov yuborib bo'lmaydi. Ulanishni ro'yxatdan " + "topib oching.",
-      );
+      setTestError(t("wzTestNoId"));
       return;
     }
     try {
@@ -268,7 +257,7 @@ const ConnectWizard = () => {
         if (!res.ok && res.message) setTestError(res.message);
       }
     } catch (err) {
-      setTestError(getBackendErrorMessage(err) || "Sinab bo'lmadi");
+      setTestError(getBackendErrorMessage(err) || t("wzTestFailed"));
     }
   };
 
@@ -324,7 +313,7 @@ const ConnectWizard = () => {
             type="info"
             showIcon
             icon={<Info className="h-4 w-4" />}
-            message="Boshlashdan oldin quyidagilar tayyor bo'lsin"
+            message={t("wzPrereqTitle")}
             description={
               <ul className="m-0 list-none space-y-1.5 p-0">
                 {type.prereqKeys.map((item: string) => (
@@ -377,15 +366,11 @@ const ConnectWizard = () => {
           <Alert
             type="warning"
             showIcon
-            message={
-              isPartner
-                ? "Bosganingizda ulanish yaratiladi va API kalit BIR MARTA ko'rsatiladi — keyin uni qayta olish mumkin emas."
-                : "Bosganingizda ulanish yaratiladi, so'ng aloqani sinab ko'ramiz."
-            }
+            message={isPartner ? t("wzCreateWarnPartner") : t("wzCreateWarnOutbound")}
           />
 
           <Primary loading={creating} onClick={createRecord}>
-            Yaratish va sinashga o'tish
+            {t("wzCreateBtn")}
           </Primary>
         </div>
       )}
@@ -398,7 +383,7 @@ const ConnectWizard = () => {
             <Alert
               type="success"
               showIcon
-              message="API kalit — HOZIR ko'chirib oling, boshqa ko'rsatilmaydi"
+              message={t("wzFreshKey")}
               description={
                 /*
                   antd `copyable` — o'z holatini o'zi boshqaradi ("ko'chirildi"
@@ -439,27 +424,27 @@ const ConnectWizard = () => {
           <Panel>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
-                Ulanishni tekshirish
+                {t("wzCheckTitle")}
               </p>
               <Button
                 icon={<RotateCw className="h-3.5 w-3.5" />}
                 loading={testing}
                 onClick={runTest}
               >
-                {testResult || outboundResult || testError ? "Qayta sinash" : "Sinash"}
+                {testResult || outboundResult || testError ? t("wzRetest") : t("wzTest")}
               </Button>
             </div>
 
             <div className="mt-3 divide-y divide-gray-200 dark:divide-gray-700">
               {checks.map((c) => (
-                <div key={c.label} className="flex items-start gap-2.5 py-2.5">
+                <div key={c.labelKey} className="flex items-start gap-2.5 py-2.5">
                   <span className="mt-0.5 shrink-0">{STATE_ICON[c.state]}</span>
                   <span className="min-w-0">
                     <span className="block text-xs font-bold text-gray-800 dark:text-white">
-                      {c.label}
+                      {t(c.labelKey)}
                     </span>
                     <span className="block break-all text-[11px] text-gray-500 dark:text-gray-400">
-                      {c.detail}
+                      {t(c.detailKey, c.detailParams)}
                     </span>
                   </span>
                 </div>
@@ -469,7 +454,7 @@ const ConnectWizard = () => {
             {/* Javob tanasi MUHIM: 200 qaytarib "imzo yaroqsiz" deyish mumkin. */}
             {testResult?.response_body && (
               <p className="m-0 mt-2 break-all rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
-                Javob: {testResult.response_body.slice(0, 300)}
+                {t("wzResponse", { body: testResult.response_body.slice(0, 300) })}
               </p>
             )}
           </Panel>
@@ -509,25 +494,24 @@ const ConnectWizard = () => {
             <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
               <p className="m-0 flex items-center gap-2 text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
                 <CheckCircle2 className="h-4 w-4" />
-                Ulanish tayyor
+                {t("wzReady")}
               </p>
               <p className="m-0 mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">
-                {String(values.name ?? "")} — sozlamalar to'liq, Konsolda kuzatish mumkin.
+                {t("wzReadyDesc", { name: String(values.name ?? "") })}
               </p>
             </section>
           ) : (
             <section className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
               <p className="m-0 flex items-center gap-2 text-sm font-extrabold text-amber-700 dark:text-amber-300">
                 <AlertTriangle className="h-4 w-4" />
-                Ulanish yaratildi, lekin hali ISHLAMAYDI
+                {t("wzNotReady")}
               </p>
               <p className="m-0 mt-1 text-xs text-amber-700/90 dark:text-amber-300/90">
-                {String(values.name ?? "")} — ro'yxatda "E'tibor kerak" deb turadi. Quyidagilar
-                to'ldirilmagan:
+                {t("wzNotReadyDesc", { name: String(values.name ?? "") })}
               </p>
               <ul className="m-0 mt-2 space-y-1 pl-5 text-xs text-amber-800 dark:text-amber-200">
                 {gaps.map((g: string) => (
-                  <li key={g}>{g}</li>
+                  <li key={g}>{t(g)}</li>
                 ))}
               </ul>
             </section>
@@ -535,29 +519,23 @@ const ConnectWizard = () => {
 
           <Panel>
             <p className="m-0 mb-2 text-xs font-extrabold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-              Keyingi qadamlar
+              {t("wzNextSteps")}
             </p>
             <ol className="m-0 space-y-2 pl-5 text-xs leading-snug text-gray-700 dark:text-gray-200">
               {isPartner ? (
                 <>
-                  <li>API kalitni hamkorga XAVFSIZ kanal orqali yetkazing.</li>
+                  <li>{t("wzNextPartner1")}</li>
                   <li>
-                    Ular so'rovni <code>X-Api-Key</code> sarlavhasi bilan yuboradi.
+                    {t("wzNextPartner2a")} <code>X-Api-Key</code> {t("wzNextPartner2b")}
                   </li>
-                  <li>
-                    Webhook manzili hali tayyor bo'lmasa, hodisalar navbatda kutadi — manzil
-                    qo'yilganda avtomatik yuboriladi.
-                  </li>
-                  <li>IP cheklovini Konsol → Xavfsizlik bo'limida qo'shishingiz mumkin.</li>
+                  <li>{t("wzNextPartner3")}</li>
+                  <li>{t("wzNextPartner4")}</li>
                 </>
               ) : (
                 <>
-                  <li>Konsol → Hodisalar bo'limida birinchi sinxronni kuzating.</li>
-                  <li>
-                    Xato chiqsa, javob matni shu yerda ko'rinadi — kalit yoki manzil xatosi darhol
-                    bilinadi.
-                  </li>
-                  <li>Kalitni almashtirish kerak bo'lsa, Konsol → Xavfsizlik.</li>
+                  <li>{t("wzNextOut1")}</li>
+                  <li>{t("wzNextOut2")}</li>
+                  <li>{t("wzNextOut3")}</li>
                 </>
               )}
             </ol>
@@ -573,10 +551,10 @@ const ConnectWizard = () => {
                 )
               }
             >
-              Konsolda ochish
+              {t("wzOpenConsole")}
             </Primary>
             <Button size="large" onClick={() => navigate("/integrations")}>
-              Ulanishlarga
+              {t("wzToList")}
             </Button>
           </div>
         </div>

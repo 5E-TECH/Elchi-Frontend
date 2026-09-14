@@ -48,8 +48,8 @@ describe("checklist — har kamchilik tuzatish manziliga ega", () => {
     const blocking = buildChecks(c).filter((x) => !x.ok && !x.optional);
     expect(blocking.length).toBeGreaterThan(0);
     for (const check of blocking) {
-      expect(check.fixTab, `${check.label} uchun fixTab yo'q`).toBeTruthy();
-      expect(check.fixHint, `${check.label} uchun fixHint yo'q`).toBeTruthy();
+      expect(check.fixTab, `${check.labelKey} uchun fixTab yo'q`).toBeTruthy();
+      expect(check.fixHintKey, `${check.labelKey} uchun fixHintKey yo'q`).toBeTruthy();
     }
   });
 
@@ -73,10 +73,10 @@ describe("checklist — har kamchilik tuzatish manziliga ega", () => {
 
   it("⭐ webhook manzili yo'q bo'lsa Sozlamalarga yo'naltiradi", () => {
     const checks = buildChecks(conn({ kind: "partner", raw: {} }));
-    const webhook = checks.find((c) => c.label === "Webhook manzili");
+    const webhook = checks.find((c) => c.labelKey === "checkWebhookUrl");
     expect(webhook?.ok).toBe(false);
     expect(webhook?.fixTab).toBe("settings");
-    expect(webhook?.fixHint).toContain("Webhook");
+    expect(webhook?.fixHintKey).toBe("fixSettingsWebhook");
   });
 
   it("hammasi sozlangan bo'lsa bloklovchi kamchilik yo'q", () => {

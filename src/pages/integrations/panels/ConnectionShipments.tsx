@@ -58,14 +58,14 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
   const retry = async (orderId: string) => {
     if (!slug) {
       // Slug bo'lmasa dispatch marshruti yasalmaydi — sababini aytamiz.
-      message.error("Ulanishning `slug` qiymati yo'q — qayta jo'natib bo'lmaydi");
+      message.error(t("shpNoSlug"));
       return;
     }
     try {
       await redispatch.mutateAsync({ slug, orderId });
-      message.success("Qayta jo'natildi");
+      message.success(t("shpResent"));
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "Jo'natib bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("shpResendFailed"));
     }
   };
 
@@ -220,17 +220,12 @@ const PartnerShipments = ({ connection }: { connection: Connection }) => {
 
   return (
     <div className="space-y-4">
-      <Alert
-        type="info"
-        showIcon
-        message="Bu ro'yxat bog'lanishni ko'rsatadi"
-        description="Hamkorning buyurtma raqami ↔ bizdagi buyurtma. Holat va summa buyurtmaning o'zida — qatordagi havola buyurtma sahifasiga olib boradi."
-      />
+      <Alert type="info" showIcon message={t("shpLinkInfo")} description={t("shpLinkInfoDesc")} />
 
       <Card
         title={
           <span className="flex items-center gap-2">
-            <Link2 className="h-4 w-4" /> Kelgan posilkalar
+            <Link2 className="h-4 w-4" /> {t("shpIncoming")}
           </span>
         }
         extra={

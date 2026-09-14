@@ -24,27 +24,28 @@ import { PAGE_SUBTITLE, PAGE_TITLE } from "./ui";
 /** Yo'nalishni SO'Z bilan ham aytamiz — o'q o'zi yetarli emas. */
 const DIRECTION: Record<
   "partner" | "integration",
-  { label: string; detail: string; icon: React.ReactNode }
+  { labelKey: string; detailKey: string; icon: React.ReactNode }
 > = {
   partner: {
-    label: "Ular bizga",
-    detail: "Kalitni BIZ beramiz. Ular buyurtma yuboradi, biz status qaytaramiz.",
+    labelKey: "catDirPartner",
+    detailKey: "catDirPartnerDetail",
     icon: <ArrowDownLeft className="h-4 w-4" />,
   },
   integration: {
-    label: "Biz ularga",
-    detail: "Kalit ULARDA. So'rovni biz yuboramiz va javobini o'zimizga moslaymiz.",
+    labelKey: "catDirIntegration",
+    detailKey: "catDirIntegrationDetail",
     icon: <ArrowUpRight className="h-4 w-4" />,
   },
 };
 
 const CatalogPage = () => {
+  const { t } = useTranslation("integrations");
   const navigate = useNavigate();
 
   /** Yo'nalish bo'yicha guruh — eng muhim farq shu, tur emas. */
   const groups = (["partner", "integration"] as const).map((kind) => ({
     kind,
-    items: CONNECTION_TYPES.filter((t) => t.kind === kind),
+    items: CONNECTION_TYPES.filter((meta) => meta.kind === kind),
   }));
 
   return (
@@ -53,13 +54,11 @@ const CatalogPage = () => {
         <Button
           icon={<ArrowLeft className="h-4 w-4" />}
           onClick={() => navigate("/integrations")}
-          title="Ulanishlarga qaytish"
+          title={t("catBack")}
         />
         <div>
-          <h1 className={`m-0 ${PAGE_TITLE}`}>Yangi ulanish</h1>
-          <p className={`m-0 ${PAGE_SUBTITLE}`}>
-            Avval yo'nalishni tanlang — kalit kimdan chiqishi shunga bog'liq.
-          </p>
+          <h1 className={`m-0 ${PAGE_TITLE}`}>{t("newConnection")}</h1>
+          <p className={`m-0 ${PAGE_SUBTITLE}`}>{t("catSubtitle")}</p>
         </div>
       </div>
 
@@ -71,10 +70,10 @@ const CatalogPage = () => {
             </span>
             <div>
               <p className="m-0 text-sm font-extrabold text-gray-800 dark:text-white">
-                {DIRECTION[group.kind].label}
+                {t(DIRECTION[group.kind].labelKey)}
               </p>
               <p className="m-0 text-[11px] text-gray-500 dark:text-gray-400">
-                {DIRECTION[group.kind].detail}
+                {t(DIRECTION[group.kind].detailKey)}
               </p>
             </div>
           </header>
@@ -125,7 +124,7 @@ const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => vo
           onPick();
         }
       }}
-      aria-label={`${t(type.labelKey)} — ulanish yaratish`}
+      aria-label={t("catCardAria", { name: t(type.labelKey) })}
       className="h-full"
       title={
         <div className="flex items-center justify-between gap-2">

@@ -155,19 +155,20 @@ export const missingForReady = (input: {
   role?: string;
   raw: Record<string, unknown>;
 }): string[] => {
+  /* ⚠️ Qaytariladigan qiymatlar — MATN EMAS, i18n KALITLARI. */
   const { kind, role, raw } = input;
   const gaps: string[] = [];
 
   if (kind === "partner") {
     if (!raw.webhook_url) {
-      gaps.push("Webhook manzili — busiz status o'zgarishi hamkorga yetmaydi");
+      gaps.push("gapWebhookUrl");
     }
     return gaps;
   }
 
   // API manzili — barcha chiquvchi ulanish uchun eng kam shart.
   if (!raw.base_url && !raw.api_url) {
-    gaps.push("API manzili — so'rov qayerga yuborilishi noma'lum");
+    gaps.push("gapApiUrl");
   }
 
   /**
@@ -187,15 +188,15 @@ export const missingForReady = (input: {
   if (role === "carrier") {
     // Kargo posilka OLADI (dispatch) va status QAYTARADI (webhook).
     if (!cfg?.endpoint) {
-      gaps.push("Jo'natish endpointi — busiz posilka yuborilmaydi (400)");
+      gaps.push("gapDispatchEndpoint");
     }
     if (!raw.has_webhook_secret) {
-      gaps.push("Webhook sekreti — busiz kargoning statusi qabul qilinmaydi");
+      gaps.push("gapWebhookSecretCargo");
     }
   } else if (role === "payment") {
     // To'lov tizimi faqat kiruvchi: imzo sekreti bo'lmasa hodisa rad etiladi.
     if (!raw.has_webhook_secret) {
-      gaps.push("Webhook sekreti — busiz to'lov hodisasi rad etiladi (401)");
+      gaps.push("gapWebhookSecretPayment");
     }
   } else if (role === "source") {
     /**
@@ -203,7 +204,7 @@ export const missingForReady = (input: {
      * (`receiveExternalOrders` → `integration.market_id is required`).
      */
     if (!raw.market_id) {
-      gaps.push("Market bog'lanishi — busiz buyurtma import qilinmaydi (400)");
+      gaps.push("gapMarketLink");
     }
   }
 

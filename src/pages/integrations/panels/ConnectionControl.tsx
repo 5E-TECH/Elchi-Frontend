@@ -1,4 +1,5 @@
 import { Alert, Button, Card, Switch, Tag, Tooltip, message } from "antd";
+import { useTranslation } from "react-i18next";
 import { Activity, Info, PlugZap, PowerOff, RotateCw, Send } from "lucide-react";
 import { usePartnerActions } from "../../../entities/partners";
 import { useUpdateIntegration } from "../../../entities/integrations";
@@ -31,6 +32,7 @@ const ConnectionControl = ({
   connection: Connection;
   onChanged: () => void;
 }) => {
+  const { t } = useTranslation("integrations");
   const { setActive } = usePartnerActions();
   const updateIntegration = useUpdateIntegration();
   const healthcheck = useIntegrationHealthcheck();
@@ -54,10 +56,10 @@ const ConnectionControl = ({
           } as never,
         });
       }
-      message.success(next ? "Yoqildi" : "O'chirildi");
+      message.success(next ? t("ctlEnabled") : t("ctlDisabled"));
       onChanged();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "Holatni o'zgartirib bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("toggleFailed"));
     }
   };
 
@@ -65,9 +67,9 @@ const ConnectionControl = ({
   const run = async (label: string, fn: () => Promise<unknown>): Promise<void> => {
     try {
       await fn();
-      message.success(`${label} — bajarildi`);
+      message.success(t("ctlDone", { label }));
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || `${label} — xatolik`);
+      message.error(getBackendErrorMessage(error) || t("ctlFailed", { label }));
     }
   };
 
@@ -86,29 +88,27 @@ const ConnectionControl = ({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="m-0 flex items-center gap-2 text-base font-semibold">
-              <Activity className="h-4 w-4" /> MASTER kalit
+              <Activity className="h-4 w-4" /> {t("ctlMasterKey")}
               <Tag color={connection.is_active ? "green" : "red"}>
-                {connection.is_active ? "FAOL" : "O'CHIQ"}
+                {connection.is_active ? t("secTagActive") : t("secTagOff")}
               </Tag>
             </h3>
             <p className="m-0 mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-              {isPartner
-                ? "O'chirilsa hamkorning so'rovlari rad etiladi va status hodisalari yuborilmaydi."
-                : "O'chirilsa bu tizimga hech qanday so'rov yuborilmaydi — navbat to'planib turadi."}
+              {isPartner ? t("ctlMasterPartner") : t("ctlMasterOutbound")}
             </p>
           </div>
           <Switch
             checked={connection.is_active}
             loading={togglePending}
             onChange={setMaster}
-            checkedChildren="Faol"
-            unCheckedChildren="O'chiq"
+            checkedChildren={t("ctlSwitchOn")}
+            unCheckedChildren={t("ctlSwitchOff")}
           />
         </div>
       </Card>
 
       {/* ═══════ QO'LDA ISHGA TUSHIRISH ═══════ */}
-      <Card title="Qo'lda ishga tushirish">
+      <Card title={t("ctlManualTitle")}>
         <div className="flex flex-wrap gap-2">
           {isPartner ? (
             /*
@@ -120,43 +120,41 @@ const ConnectionControl = ({
               className="w-full"
               type="info"
               showIcon
-              message="Bu ulanishda qo'lda yurgiziladigan jarayon yo'q"
-              description="Hodisalar navbat orqali o'zi yuboriladi. Bitta hodisani qayta urinish uchun 'Hodisalar' bo'limidagi 'Qayta' tugmasi ishlatiladi."
+              message={t("ctlNoManual")}
+              description={t("ctlNoManualDesc")}
             />
           ) : (
             <>
-              <Tooltip title="Navbatdagi status o'zgarishlarini HOZIROQ tashqi tizimga yuboradi (CRON'ni kutmasdan)">
+              <Tooltip title={t("ctlQueueTip")}>
                 <Button
                   icon={<Send className="h-4 w-4" />}
                   loading={processQueue.isPending}
                   onClick={() =>
-                    void run("Navbatni yuborish", () => processQueue.mutateAsync(connection.id))
+                    void run(t("ctlQueueAction"), () => processQueue.mutateAsync(connection.id))
                   }
                 >
-                  Navbatni hoziroq yuborish
+                  {t("ctlQueueBtn")}
                 </Button>
               </Tooltip>
 
-              <Tooltip title="Yiqilgan navbat qatorlarini qayta urinishga qo'yadi">
+              <Tooltip title={t("ctlRetryTip")}>
                 <Button
                   icon={<RotateCw className="h-4 w-4" />}
                   loading={retryFailed.isPending}
                   onClick={() =>
-                    void run("Yiqilganlarni qayta urinish", () =>
-                      retryFailed.mutateAsync(connection.id),
-                    )
+                    void run(t("ctlRetryBtn"), () => retryFailed.mutateAsync(connection.id))
                   }
                 >
-                  Yiqilganlarni qayta urinish
+                  {t("ctlRetryBtn")}
                 </Button>
               </Tooltip>
 
-              <Tooltip title="Tashqi tizim manziliga sinov so'rovi yuboradi">
+              <Tooltip title={t("ctlPingTip")}>
                 <Button
                   icon={<PlugZap className="h-4 w-4" />}
                   loading={healthcheck.isPending}
                   onClick={() =>
-                    void run("Aloqani sinash", async () => {
+                    void run(t("ctlPingBtn"), async () => {
                       const res = await healthcheck.mutateAsync(connection.id);
                       // ⚠️ Backend yiqilganda HTTP xato BERMAYDI — natijani
                       // `ok` bo'yicha o'qish kerak, aks holda "bajarildi"
@@ -167,7 +165,7 @@ const ConnectionControl = ({
                     })
                   }
                 >
-                  Aloqani sinash
+                  {t("ctlPingBtn")}
                 </Button>
               </Tooltip>
             </>
@@ -177,9 +175,7 @@ const ConnectionControl = ({
         {!isPartner && (
           <p className="m-0 mt-3 flex items-start gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            "Navbatni yuborish" tashqi tizimdan buyurtma <b>tortib olmaydi</b> — u faqat bizdagi
-            status o'zgarishlarini ularga yuboradi. Backendda bu amal `sync` deb atalgan va nomi
-            chalg'itadi.
+            {t("ctlQueueNoteA")} <b>{t("ctlQueueNoteBold")}</b> {t("ctlQueueNoteB")}
           </p>
         )}
       </Card>
@@ -189,8 +185,8 @@ const ConnectionControl = ({
         <Alert
           type="error"
           showIcon
-          message="Ulanishni butunlay to'xtatish"
-          description="Master kalitni o'chiradi. Ma'lumot o'chirilmaydi — sozlama, posilka bog'lanishi va pul izi saqlanadi."
+          message={t("ctlStopTitle")}
+          description={t("ctlStopDesc")}
           action={
             <Button
               danger
@@ -198,7 +194,7 @@ const ConnectionControl = ({
               loading={togglePending}
               onClick={() => void setMaster(false)}
             >
-              To'xtatish
+              {t("ctlStopBtn")}
             </Button>
           }
         />
