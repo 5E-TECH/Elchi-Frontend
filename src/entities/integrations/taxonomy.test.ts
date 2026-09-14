@@ -4,15 +4,13 @@ import { CATEGORY_LABEL, ROLE_META, type IntegrationCategory, type IntegrationRo
 const LOCALES = ["uz", "ru", "en"] as const;
 
 /** Uchala lokal fayli — `?raw` emas, JSON sifatida. */
-const bundles = import.meta.glob<Record<string, string>>(
-  "../../locales/*/integrations.json",
-  { eager: true, import: "default" },
-);
+const bundles = import.meta.glob<Record<string, string>>("../../locales/*/integrations.json", {
+  eager: true,
+  import: "default",
+});
 
 const localeOf = (lang: string): Record<string, string> => {
-  const entry = Object.entries(bundles).find(([path]) =>
-    path.includes(`/${lang}/`),
-  );
+  const entry = Object.entries(bundles).find(([path]) => path.includes(`/${lang}/`));
   if (!entry) throw new Error(`${lang} lokali topilmadi`);
   return entry[1];
 };
@@ -74,9 +72,7 @@ describe("Integratsiya taksonomiyasi", () => {
     for (const lang of LOCALES) {
       const dict = localeOf(lang);
       const labels = ROLES.map((r) => dict[ROLE_META[r].labelKey]);
-      expect(new Set(labels).size, `${lang} da takrorlanish`).toBe(
-        labels.length,
-      );
+      expect(new Set(labels).size, `${lang} da takrorlanish`).toBe(labels.length);
     }
   });
 

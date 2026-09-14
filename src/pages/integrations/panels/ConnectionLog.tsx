@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Button, Card, Segmented, Table, Tag, Tooltip, message } from "antd";
 import {
   CheckCircle2,
@@ -63,12 +64,12 @@ import type { Connection } from "../useConnections";
  * Bosh harf bilan: pill mustaqil yorliq, Tag ham jadval katakchasida
  * o'zicha turadi.
  */
-const STATUS_TAG: Record<string, { color: string; label: string }> = {
-  completed: { color: "green", label: "Yetkazildi" },
-  pending: { color: "gold", label: "Navbatda" },
-  processing: { color: "blue", label: "Yuborilmoqda" },
-  awaiting_config: { color: "cyan", label: "Sozlama kutilmoqda" },
-  permanently_failed: { color: "red", label: "Yetkazilmadi" },
+const STATUS_TAG: Record<string, { color: string; labelKey: string }> = {
+  completed: { color: "green", labelKey: "deliveryDelivered" },
+  pending: { color: "gold", labelKey: "deliveryQueued" },
+  processing: { color: "blue", labelKey: "deliverySending" },
+  awaiting_config: { color: "cyan", labelKey: "deliveryAwaitingConfig" },
+  permanently_failed: { color: "red", labelKey: "deliveryFailed" },
 };
 
 const when = (v?: string | null) => (v ? new Date(v).toLocaleString("uz-UZ") : "—");
@@ -180,6 +181,7 @@ const OutboundViews = ({ connection }: { connection: Connection }) => {
  * hali hisobga olmaydi, shuning uchun banner qo'yilgan.
  */
 const PaymentLog = ({ connection }: { connection: Connection }) => {
+  const { t } = useTranslation("integrations");
   const [unapplied, setUnapplied] = useState("all");
   const [page, setPage] = useState(1);
 
@@ -227,10 +229,10 @@ const PaymentLog = ({ connection }: { connection: Connection }) => {
           setPage(1);
         }}
         options={[
-          { value: "all", label: "Hammasi", count: meta?.total },
+          { value: "all", label: t("filterAll"), count: meta?.total },
           {
             value: "unapplied",
-            label: "Qo'llanmagan",
+            label: t("filterUnapplied"),
             icon: <XCircle className="h-3.5 w-3.5" />,
             activeClass: "bg-red-600 text-white border-red-600",
           },
@@ -253,14 +255,14 @@ const PaymentLog = ({ connection }: { connection: Connection }) => {
         }}
         columns={[
           {
-            title: "Vaqt",
+            title: t("colTime"),
             width: 170,
             render: (_: unknown, r) => (
               <span className="font-mono text-xs">{when(r.createdAt)}</span>
             ),
           },
           {
-            title: "Summa",
+            title: t("colAmount"),
             width: 140,
             render: (_: unknown, r) => (
               <span className="font-semibold tabular-nums">
@@ -269,7 +271,7 @@ const PaymentLog = ({ connection }: { connection: Connection }) => {
             ),
           },
           {
-            title: "Buyurtma",
+            title: t("colOrder"),
             width: 130,
             render: (_: unknown, r) =>
               r.order_id ? (
@@ -283,15 +285,15 @@ const PaymentLog = ({ connection }: { connection: Connection }) => {
               ),
           },
           {
-            title: "Natija",
+            title: t("colOutcome"),
             width: 220,
             render: (_: unknown, r) => {
               const outcome = paymentOutcome(r);
-              return <Tag color={outcome.color}>{outcome.label}</Tag>;
+              return <Tag color={outcome.color}>{t(outcome.labelKey)}</Tag>;
             },
           },
           {
-            title: "Tranzaksiya",
+            title: t("colTransaction"),
             render: (_: unknown, r) => (
               <span className="break-all font-mono text-xs text-gray-500 dark:text-gray-400">
                 {r.provider_transaction_id}
@@ -312,6 +314,7 @@ const PaymentLog = ({ connection }: { connection: Connection }) => {
  * va manzili bo'ladi, savol esa "nima bo'ldi", "mijoz kim" emas.
  */
 const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
+  const { t } = useTranslation("integrations");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
 
@@ -350,16 +353,16 @@ const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
           setPage(1);
         }}
         options={[
-          { value: "all", label: "Hammasi", count: meta?.total },
+          { value: "all", label: t("filterAll"), count: meta?.total },
           {
             value: "processed",
-            label: "Qo'llanildi",
+            label: t("filterApplied"),
             icon: <CheckCircle2 className="h-3.5 w-3.5" />,
             activeClass: "bg-green-600 text-white border-green-600",
           },
           {
             value: "rejected",
-            label: "Rad etildi",
+            label: t("filterRejected"),
             icon: <XCircle className="h-3.5 w-3.5" />,
             activeClass: "bg-red-600 text-white border-red-600",
           },
@@ -382,19 +385,19 @@ const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
         }}
         columns={[
           {
-            title: "Vaqt",
+            title: t("colTime"),
             width: 170,
             render: (_: unknown, r) => (
               <span className="font-mono text-xs">{when(r.createdAt)}</span>
             ),
           },
           {
-            title: "Hodisa",
+            title: t("colEvent"),
             width: 150,
             render: (_: unknown, r) => <span className="text-xs">{r.event_type || "—"}</span>,
           },
           {
-            title: "Natija",
+            title: t("colOutcome"),
             width: 200,
             /*
               `status` faqat uch qiymatni biladi (rejected/verified/processed) —
@@ -403,11 +406,11 @@ const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
             */
             render: (_: unknown, r) => {
               const outcome = webhookOutcome(r);
-              return <Tag color={outcome.color}>{outcome.label}</Tag>;
+              return <Tag color={outcome.color}>{t(outcome.labelKey)}</Tag>;
             },
           },
           {
-            title: "Sabab",
+            title: t("colReason"),
             render: (_: unknown, r) =>
               r.error ? (
                 <span className="break-all text-xs text-gray-600 dark:text-gray-300">
@@ -425,6 +428,7 @@ const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
 
 /** BIZ yuborgan webhooklar (`partner_webhook_outbox`). */
 const InboundLog = ({ connection }: { connection: Connection }) => {
+  const { t } = useTranslation("integrations");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
 
@@ -473,29 +477,29 @@ const InboundLog = ({ connection }: { connection: Connection }) => {
           setPage(1);
         }}
         options={[
-          { value: "all", label: "Hammasi" },
+          { value: "all", label: t("filterAll") },
           /* Yorliqlar `STATUS_TAG` dan — jadval Tag'i bilan bir xil bo'lsin. */
           {
             value: "completed",
-            label: STATUS_TAG.completed.label,
+            label: t(STATUS_TAG.completed.labelKey),
             icon: <CheckCircle2 className="h-3.5 w-3.5" />,
             activeClass: "bg-green-600 text-white border-green-600",
           },
           {
             value: "pending",
-            label: STATUS_TAG.pending.label,
+            label: t(STATUS_TAG.pending.labelKey),
             icon: <Clock className="h-3.5 w-3.5" />,
             activeClass: "bg-amber-600 text-white border-amber-600",
           },
           {
             value: "awaiting_config",
-            label: STATUS_TAG.awaiting_config.label,
+            label: t(STATUS_TAG.awaiting_config.labelKey),
             icon: <ShieldOff className="h-3.5 w-3.5" />,
             activeClass: "bg-cyan-600 text-white border-cyan-600",
           },
           {
             value: "permanently_failed",
-            label: STATUS_TAG.permanently_failed.label,
+            label: t(STATUS_TAG.permanently_failed.labelKey),
             icon: <XCircle className="h-3.5 w-3.5" />,
             activeClass: "bg-red-600 text-white border-red-600",
           },
@@ -518,43 +522,54 @@ const InboundLog = ({ connection }: { connection: Connection }) => {
         }}
         columns={[
           {
-            title: "Vaqt",
+            title: t("colTime"),
             width: 160,
             render: (_: unknown, r) => (
               <span className="font-mono text-xs">{when(r.created_at)}</span>
             ),
           },
           {
-            title: "Holat",
+            title: t("colStatus"),
             width: 150,
             render: (_: unknown, r) => {
-              const t = STATUS_TAG[r.status] ?? {
-                color: "default",
-                label: r.status,
-              };
+              /**
+               * ⚠️ O'ZGARUVCHI NOMI `tag`, `t` EMAS. Ilgari u `t` deb
+               * nomlangan edi va i18n funksiyasini SOYA QILARDI — ya'ni
+               * shu blok ichida tarjima chaqirib bo'lmasdi.
+               *
+               * Xato tur darajasida chiqdi (`label` yo'q), lekin u
+               * chiqmasligi ham mumkin edi: agar mahalliy obyektda ham
+               * `label` bo'lsa, `t("colTime")` jimgina noto'g'ri narsa
+               * qaytarardi.
+               */
+              const tag = STATUS_TAG[r.status];
               return (
                 <div className="space-y-1">
-                  <Tag color={t.color}>{t.label}</Tag>
-                  {r.attempts ? <Tag>{r.attempts} urinish</Tag> : null}
+                  <Tag color={tag?.color ?? "default"}>{tag ? t(tag.labelKey) : r.status}</Tag>
+                  {r.attempts ? (
+                    <Tag>
+                      {r.attempts} {t("colAttempt").toLowerCase()}
+                    </Tag>
+                  ) : null}
                 </div>
               );
             },
           },
           {
-            title: "Hodisa",
+            title: t("colEvent"),
             render: (_: unknown, r) => (
               <span className="text-sm">{r.new_status ?? r.event_type ?? "—"}</span>
             ),
           },
           {
-            title: "Buyurtma",
+            title: t("colOrder"),
             width: 170,
             render: (_: unknown, r) => (
               <span className="font-mono text-xs">{r.external_order_id ?? r.order_id ?? "—"}</span>
             ),
           },
           {
-            title: "Xato",
+            title: t("colError"),
             /* Xato matni MUHIM: "yetkazilmadi" o'zi sababni aytmaydi. */
             render: (_: unknown, r) =>
               r.last_error ? (
@@ -568,7 +583,7 @@ const InboundLog = ({ connection }: { connection: Connection }) => {
               ),
           },
           {
-            title: "Amal",
+            title: t("colAction"),
             width: 90,
             render: (_: unknown, r) =>
               r.status === "completed" ? null : (
@@ -591,6 +606,7 @@ const InboundLog = ({ connection }: { connection: Connection }) => {
 
 /** BIZ tortib olgan sinxronlar (`sync_history`). */
 const OutboundLog = ({ connection }: { connection: Connection }) => {
+  const { t } = useTranslation("integrations");
   const [status, setStatus] = useState("all");
   const history = useSyncHistory({
     integrationId: connection.id,
@@ -630,17 +646,17 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
         value={status}
         onChange={setStatus}
         options={[
-          { value: "all", label: "Hammasi", count: summary?.total_attempts },
+          { value: "all", label: t("filterAll"), count: summary?.total_attempts },
           {
             value: "success",
-            label: "Muvaffaqiyatli",
+            label: t("filterSuccess"),
             count: summary?.success_count,
             icon: <CheckCircle2 className="h-3.5 w-3.5" />,
             activeClass: "bg-green-600 text-white border-green-600",
           },
           {
             value: "failed",
-            label: "Yiqilgan",
+            label: t("filterFailed"),
             count: summary?.failed_count,
             icon: <XCircle className="h-3.5 w-3.5" />,
             activeClass: "bg-red-600 text-white border-red-600",
@@ -664,14 +680,14 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
         pagination={false}
         columns={[
           {
-            title: "Vaqt",
+            title: t("colTime"),
             width: 170,
             render: (_: unknown, r) => (
               <span className="font-mono text-xs">{syncWhen(r.sync_date)}</span>
             ),
           },
           {
-            title: "Holat",
+            title: t("colStatus"),
             width: 140,
             render: (_: unknown, r) =>
               r.status === "success" ? (
@@ -683,12 +699,12 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
               ),
           },
           {
-            title: "Buyurtma",
+            title: t("colOrder"),
             width: 120,
             render: (_: unknown, r) => <span className="text-sm">{r.synced_orders} ta</span>,
           },
           {
-            title: "Natija",
+            title: t("colOutcome"),
             /* Xato `result` JSON ichida bo'lishi mumkin — "yiqildi" so'zi
                o'zi sababni aytmaydi. */
             render: (_: unknown, r) =>

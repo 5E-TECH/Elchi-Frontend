@@ -16,9 +16,7 @@ const sources = import.meta.glob("./**/*.{ts,tsx}", {
   import: "default",
 }) as Record<string, string>;
 
-const entries = Object.entries(sources).filter(
-  ([file]) => !file.includes(".test."),
-);
+const entries = Object.entries(sources).filter(([file]) => !file.includes(".test."));
 
 describe("apostrof — bitta kod nuqtasi", () => {
   it("sahifa fayllari topildi (test bo'shliqda ishlamasin)", () => {
@@ -111,9 +109,7 @@ describe("⭐ ATAMALAR — bir tushuncha, bir nom", () => {
   it("⭐ BEKOR QILISH — ilova standarti", () => {
     // `locales/uz/common.json` → `"cancel": "Bekor qilish"`.
     for (const [file, src] of entries) {
-      expect(src, `${file} da qisqartirilgan "Bekor"`).not.toContain(
-        'cancelText="Bekor"',
-      );
+      expect(src, `${file} da qisqartirilgan "Bekor"`).not.toContain('cancelText="Bekor"');
     }
   });
 
@@ -163,14 +159,13 @@ describe("⭐ TAKSONOMIYA — bir qiymat, bir yozuv", () => {
    * ham, rus tilida ham xalqaro atama sifatida ishlatiladi.
    */
   const uz = Object.entries(
-    import.meta.glob<Record<string, string>>(
-      "../../locales/uz/integrations.json",
-      { eager: true, import: "default" },
-    ),
+    import.meta.glob<Record<string, string>>("../../locales/uz/integrations.json", {
+      eager: true,
+      import: "default",
+    }),
   )[0][1];
 
-  const categoryOptions =
-    TYPE_CHANGE_FIELDS.find((f) => f.key === "category")?.options ?? [];
+  const categoryOptions = TYPE_CHANGE_FIELDS.find((f) => f.key === "category")?.options ?? [];
 
   it("kategoriya tanlash ro'yxati topildi", () => {
     expect(categoryOptions.length).toBeGreaterThan(4);

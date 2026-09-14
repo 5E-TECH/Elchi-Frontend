@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, Button, Card, Table, Tag, Tooltip, message } from "antd";
 import { AlertTriangle, Link2, RefreshCw, Send, Truck } from "lucide-react";
 import {
@@ -36,6 +37,7 @@ const ConnectionShipments = ({ connection }: { connection: Connection }) =>
 
 /** Chiquvchi: tashuvchiga berilgan posilkalar. */
 const ProviderShipments = ({ connection }: { connection: Connection }) => {
+  const { t } = useTranslation("integrations");
   const [failedOnly, setFailedOnly] = useState("all");
   const [page, setPage] = useState(1);
   const statusLabel = useStatusLabel();
@@ -91,10 +93,10 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
           setPage(1);
         }}
         options={[
-          { value: "all", label: "Hammasi", count: list.data?.pagination.total },
+          { value: "all", label: t("filterAll"), count: list.data?.pagination.total },
           {
             value: "failed",
-            label: "Yiqilgan",
+            label: t("filterFailed"),
             icon: <AlertTriangle className="h-3.5 w-3.5" />,
             activeClass: "bg-red-600 text-white border-red-600",
           },
@@ -117,12 +119,12 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
         }}
         columns={[
           {
-            title: "Buyurtma",
+            title: t("colOrder"),
             width: 110,
             render: (_: unknown, r) => <span className="font-mono text-xs">{r.order_id}</span>,
           },
           {
-            title: "Kuzatuv kodi",
+            title: t("colTrackingCode"),
             width: 160,
             render: (_: unknown, r) => (
               <span className="font-mono text-xs">
@@ -131,7 +133,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
             ),
           },
           {
-            title: "Holat",
+            title: t("colStatus"),
             width: 190,
             /*
               IKKI STATUS birga ko'rsatiladi va bu ataylab: ular ajralib
@@ -154,13 +156,13 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
             ),
           },
           {
-            title: "Urinish",
+            title: t("colAttempt"),
             width: 90,
             align: "center" as const,
             render: (_: unknown, r) => <span className="tabular-nums">{r.send_attempts}</span>,
           },
           {
-            title: "Xato",
+            title: t("colError"),
             render: (_: unknown, r) =>
               r.last_error ? (
                 <Tooltip title={r.last_error}>
@@ -173,14 +175,14 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
               ),
           },
           {
-            title: "O'zgargan",
+            title: t("colChanged"),
             width: 160,
             render: (_: unknown, r) => (
               <span className="font-mono text-xs">{when(r.status_changed_at)}</span>
             ),
           },
           {
-            title: "Amal",
+            title: t("colAction"),
             width: 120,
             /*
               Qayta jo'natish FAQAT xato bor qatorda. Muvaffaqiyatli
@@ -207,6 +209,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
 
 /** Kiruvchi: hamkordan kelgan posilkalar bog'lanishi. */
 const PartnerShipments = ({ connection }: { connection: Connection }) => {
+  const { t } = useTranslation("integrations");
   const [page, setPage] = useState(1);
   const list = usePartnerShipments({
     partnerId: connection.id,
@@ -255,13 +258,13 @@ const PartnerShipments = ({ connection }: { connection: Connection }) => {
           }}
           columns={[
             {
-              title: "Ularning raqami",
+              title: t("colTheirNumber"),
               render: (_: unknown, r) => (
                 <span className="font-mono text-xs">{r.external_order_id}</span>
               ),
             },
             {
-              title: "Bizdagi buyurtma",
+              title: t("colOurOrder"),
               render: (_: unknown, r) => (
                 <a
                   href={`/orders/${r.order_id}`}
@@ -272,7 +275,7 @@ const PartnerShipments = ({ connection }: { connection: Connection }) => {
               ),
             },
             {
-              title: "Kelgan vaqt",
+              title: t("colArrived"),
               width: 170,
               render: (_: unknown, r) => (
                 <span className="font-mono text-xs">{when(r.createdAt)}</span>

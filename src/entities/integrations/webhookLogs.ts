@@ -90,36 +90,36 @@ export const useWebhookLogs = (params: {
  * uch qiymatni biladi (`rejected`/`verified`/`processed`). Operator uchun
  * esa muhim savol boshqa: NIMA bo'ldi.
  */
-export const webhookOutcome = (row: WebhookLogRow): { label: string; color: string } => {
-  if (!row.signature_valid) return { label: "imzo xato", color: "red" };
-  if (row.status === "rejected") return { label: "rad etildi", color: "red" };
+export const webhookOutcome = (row: WebhookLogRow): { labelKey: string; color: string } => {
+  if (!row.signature_valid) return { labelKey: "woBadSignature", color: "red" };
+  if (row.status === "rejected") return { labelKey: "woRejected", color: "red" };
 
   const raw = row.error ?? "";
   const match = /apply:\s*([a-z_]+)/.exec(raw);
   const outcome = match?.[1] ?? "";
 
-  const MAP: Record<string, { label: string; color: string }> = {
-    inbound_created: { label: "buyurtma yaratildi", color: "green" },
-    inbound_duplicate: { label: "dublikat", color: "default" },
-    inbound_race: { label: "dublikat (parallel)", color: "default" },
-    inbound_stage_skipped: { label: "boshqa bosqich", color: "default" },
-    inbound_other_funnel: { label: "boshqa voronka", color: "default" },
-    inbound_timeout: { label: "javob kelmadi — tekshirish kerak", color: "orange" },
-    inbound_failed: { label: "yaratilmadi", color: "red" },
-    inbound_no_gate: { label: "darvoza sozlanmagan", color: "red" },
-    inbound_no_funnel: { label: "voronka yo'li xato", color: "red" },
-    inbound_no_stage: { label: "bosqich yo'li xato", color: "red" },
-    inbound_no_deal: { label: "bitim topilmadi", color: "red" },
-    inbound_no_external_id: { label: "bitim id'si yo'q", color: "red" },
-    inbound_wrong_role: { label: "rol mos emas", color: "red" },
-    no_shipment: { label: "posilka topilmadi", color: "orange" },
-    no_paths: { label: "yo'llar sozlanmagan", color: "orange" },
-    no_status: { label: "statusi yo'q", color: "orange" },
-    unmapped: { label: "status xaritada yo'q", color: "orange" },
-    integration_inactive: { label: "ulanish o'chirilgan", color: "default" },
+  const MAP: Record<string, { labelKey: string; color: string }> = {
+    inbound_created: { labelKey: "woOrderCreated", color: "green" },
+    inbound_duplicate: { labelKey: "woDuplicate", color: "default" },
+    inbound_race: { labelKey: "woDuplicateRace", color: "default" },
+    inbound_stage_skipped: { labelKey: "woOtherStage", color: "default" },
+    inbound_other_funnel: { labelKey: "woOtherFunnel", color: "default" },
+    inbound_timeout: { labelKey: "woTimeout", color: "orange" },
+    inbound_failed: { labelKey: "woNotCreated", color: "red" },
+    inbound_no_gate: { labelKey: "woNoGate", color: "red" },
+    inbound_no_funnel: { labelKey: "woBadFunnelPath", color: "red" },
+    inbound_no_stage: { labelKey: "woBadStagePath", color: "red" },
+    inbound_no_deal: { labelKey: "woNoDeal", color: "red" },
+    inbound_no_external_id: { labelKey: "woNoDealId", color: "red" },
+    inbound_wrong_role: { labelKey: "woWrongRole", color: "red" },
+    no_shipment: { labelKey: "woNoShipment", color: "orange" },
+    no_paths: { labelKey: "woNoPaths", color: "orange" },
+    no_status: { labelKey: "woNoStatus", color: "orange" },
+    unmapped: { labelKey: "woUnmapped", color: "orange" },
+    integration_inactive: { labelKey: "woInactive", color: "default" },
   };
 
   if (outcome && MAP[outcome]) return MAP[outcome];
   // Xato yo'q — hodisa toza qo'llanildi.
-  return raw ? { label: "xato", color: "red" } : { label: "qo'llanildi", color: "green" };
+  return raw ? { labelKey: "woError", color: "red" } : { labelKey: "woApplied", color: "green" };
 };
