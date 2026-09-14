@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Statistic, Tag, Tooltip } from 'antd';
+import { Alert, Button, Card, Statistic, Tag, Tooltip } from "antd";
 import {
   AlertTriangle,
   ArrowRight,
@@ -8,14 +8,11 @@ import {
   ShieldAlert,
   Webhook,
   XCircle,
-} from 'lucide-react';
-import { CATEGORY_LABEL, ROLE_META } from '../../../entities/integrations';
-import {
-  fmtMetric,
-  type ConnectionMetrics,
-} from '../../../entities/integrations/metrics';
-import type { Connection } from '../useConnections';
-import { MUTED } from '../ui';
+} from "lucide-react";
+import { CATEGORY_LABEL, ROLE_META } from "../../../entities/integrations";
+import { fmtMetric, type ConnectionMetrics } from "../../../entities/integrations/metrics";
+import type { Connection } from "../useConnections";
+import { MUTED } from "../ui";
 
 /**
  * UMUMIY HOLAT — tayyorlik checklisti + jonli raqamlar.
@@ -55,17 +52,15 @@ export interface Check {
 export const buildChecks = (c: Connection): Check[] => {
   const common: Check[] = [
     {
-      label: 'Ulanish yoqilgan',
+      label: "Ulanish yoqilgan",
       ok: c.is_active,
-      detail: c.is_active
-        ? 'faol'
-        : "o'chirilgan — hech qanday amal bajarilmaydi",
-      fixTab: 'control',
-      fixHint: 'Boshqaruv → MASTER kalit',
+      detail: c.is_active ? "faol" : "o'chirilgan — hech qanday amal bajarilmaydi",
+      fixTab: "control",
+      fixHint: "Ish rejimi → asosiy kalit",
     },
   ];
 
-  if (c.kind === 'partner') {
+  if (c.kind === "partner") {
     const p = c.raw as {
       webhook_url?: string | null;
       sandbox_webhook_url?: string | null;
@@ -75,13 +70,13 @@ export const buildChecks = (c: Connection): Check[] => {
     return [
       ...common,
       {
-        label: 'Webhook manzili',
+        label: "Webhook manzili",
         ok: Boolean(p.webhook_url),
         detail: p.webhook_url
           ? String(p.webhook_url)
           : "yo'q — status o'zgarishi hamkorga YETMAYDI (hodisalar kutib qoladi)",
-        fixTab: 'settings',
-        fixHint: 'Sozlamalar → Webhook manzili',
+        fixTab: "settings",
+        fixHint: "Sozlamalar → Webhook manzili",
       },
       /**
        * SINOV REJIMI — KALITDAN hisoblanadi, manzilning borligidan EMAS.
@@ -97,7 +92,7 @@ export const buildChecks = (c: Connection): Check[] => {
        * Endi uchala holat ajratilgan va matn KEYINGI QADAMNI aytadi.
        */
       {
-        label: 'Sinov rejimi (sandbox)',
+        label: "Sinov rejimi (sandbox)",
         ok: Boolean(p.sandbox_enabled && p.has_sandbox_secret),
         optional: true,
         detail: !p.sandbox_enabled
@@ -105,12 +100,12 @@ export const buildChecks = (c: Connection): Check[] => {
             ? `o'chirilgan — manzil saqlangan (${String(p.sandbox_webhook_url)})`
             : "o'chirilgan — sinov nusxasi yuborilmaydi"
           : !p.sandbox_webhook_url
-            ? 'YOQILGAN, lekin manzil yo‘q — nusxa hech qayerga ketmaydi'
+            ? "YOQILGAN, lekin manzil yo'q — nusxa hech qayerga ketmaydi"
             : !p.has_sandbox_secret
-              ? 'YOQILGAN, lekin alohida sekret yo‘q — nusxa yuborilmaydi'
+              ? "YOQILGAN, lekin alohida sekret yo'q — nusxa yuborilmaydi"
               : `YOQILGAN — har hodisa nusxasi ${String(p.sandbox_webhook_url)} ga ketmoqda`,
-        fixTab: 'settings',
-        fixHint: 'Sozlamalar → Sinov rejimi',
+        fixTab: "settings",
+        fixHint: "Sozlamalar → Sinov rejimi",
       },
     ];
   }
@@ -121,32 +116,32 @@ export const buildChecks = (c: Connection): Check[] => {
     auth_type?: string | null;
     last_sync_at?: string | null;
   };
-  const url = i.base_url || i.api_url || '';
+  const url = i.base_url || i.api_url || "";
   return [
     ...common,
     {
-      label: 'API manzili',
+      label: "API manzili",
       ok: Boolean(url),
       detail: url || "yo'q — so'rov yuborib bo'lmaydi",
-      fixTab: 'settings',
-      fixHint: 'Sozlamalar → API manzili',
+      fixTab: "settings",
+      fixHint: "Sozlamalar → API manzili",
     },
     {
-      label: 'Kirish turi',
+      label: "Kirish turi",
       ok: Boolean(i.auth_type),
-      detail: i.auth_type ? `turi: ${i.auth_type}` : 'belgilanmagan',
-      fixTab: 'settings',
-      fixHint: 'Sozlamalar → Kirish turi',
+      detail: i.auth_type ? `turi: ${i.auth_type}` : "belgilanmagan",
+      fixTab: "settings",
+      fixHint: "Sozlamalar → Kirish turi",
     },
     {
-      label: 'Oxirgi sinxron',
+      label: "Oxirgi sinxron",
       ok: Boolean(i.last_sync_at),
       optional: true,
       detail: i.last_sync_at
-        ? new Date(i.last_sync_at).toLocaleString('uz-UZ')
+        ? new Date(i.last_sync_at).toLocaleString("uz-UZ")
         : "hali sinxron bo'lmagan",
-      fixTab: 'control',
-      fixHint: "Boshqaruv → Navbatni hoziroq yuborish",
+      fixTab: "control",
+      fixHint: "Ish rejimi → Navbatni hoziroq yuborish",
     },
   ];
 };
@@ -158,62 +153,54 @@ export const buildChecks = (c: Connection): Check[] => {
  * qator bosilmaydi: tuzatadigan narsa yo'q va bosiladigandek ko'rinishi
  * chalg'itardi.
  */
-const ChecklistItem = ({
-  check,
-  onFix,
-}: {
-  check: Check;
-  onFix?: (tab: string) => void;
-}) => {
+const ChecklistItem = ({ check, onFix }: { check: Check; onFix?: (tab: string) => void }) => {
   const actionable = !check.ok && Boolean(check.fixTab) && Boolean(onFix);
-  const Row = actionable ? 'button' : 'div';
+  const Row = actionable ? "button" : "div";
 
   return (
-  <Row
-    {...(actionable
-      ? {
-          type: 'button' as const,
-          onClick: () => onFix!(check.fixTab!),
-          className:
-            'flex w-full cursor-pointer items-start gap-2 rounded-lg py-1.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40',
-        }
-      : { className: 'flex items-start gap-2 py-1.5' })}
-  >
-    {check.ok ? (
-      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
-    ) : check.optional ? (
-      <Info className={`mt-0.5 h-4 w-4 shrink-0 ${MUTED}`} />
-    ) : (
-      <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-    )}
-    <div className="min-w-0">
-      <span
-        className={
-          check.ok || check.optional
-            ? 'text-gray-700 dark:text-gray-200'
-            : 'font-medium text-red-600 dark:text-red-400'
-        }
-      >
-        {check.label}
-      </span>
-      {/*
+    <Row
+      {...(actionable
+        ? {
+            type: "button" as const,
+            onClick: () => onFix!(check.fixTab!),
+            className:
+              "flex w-full cursor-pointer items-start gap-2 rounded-lg py-1.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40",
+          }
+        : { className: "flex items-start gap-2 py-1.5" })}
+    >
+      {check.ok ? (
+        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+      ) : check.optional ? (
+        <Info className={`mt-0.5 h-4 w-4 shrink-0 ${MUTED}`} />
+      ) : (
+        <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+      )}
+      <div className="min-w-0">
+        <span
+          className={
+            check.ok || check.optional
+              ? "text-gray-700 dark:text-gray-200"
+              : "font-medium text-red-600 dark:text-red-400"
+          }
+        >
+          {check.label}
+        </span>
+        {/*
         ⚠️ `MUTED` — ilgari `text-gray-400` (dark juftligi YO'Q) edi.
         Bu qator eng muhim diagnostik matnni ko'rsatadi ("webhook manzili
         yo'q — status o'zgarishi hamkorga YETMAYDI"), qorong'ida esa u
         deyarli o'qilmasdi.
       */}
-      <span className={`block break-words text-xs ${MUTED}`}>
-        {check.detail}
-      </span>
-      {/* Qayerdan tuzatish — matn bilan aytiladi, taxmin qoldirilmaydi. */}
-      {actionable && (
-        <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
-          {check.fixHint ?? 'Tuzatish'}
-          <ArrowRight className="h-3 w-3" />
-        </span>
-      )}
-    </div>
-  </Row>
+        <span className={`block break-words text-xs ${MUTED}`}>{check.detail}</span>
+        {/* Qayerdan tuzatish — matn bilan aytiladi, taxmin qoldirilmaydi. */}
+        {actionable && (
+          <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+            {check.fixHint ?? "Tuzatish"}
+            <ArrowRight className="h-3 w-3" />
+          </span>
+        )}
+      </div>
+    </Row>
   );
 };
 
@@ -235,11 +222,11 @@ const ConnectionOverview = ({
   return (
     <div className="space-y-4">
       <Alert
-        type={blocking.length === 0 ? 'success' : 'warning'}
+        type={blocking.length === 0 ? "success" : "warning"}
         showIcon
         message={
           blocking.length === 0
-            ? 'Ulanish ishlashga tayyor'
+            ? "Ulanish ishlashga tayyor"
             : `${blocking.length} ta sozlama yetishmaydi — checklistni tugatish kerak`
         }
         action={
@@ -249,11 +236,7 @@ const ConnectionOverview = ({
             ko'radi.
           */
           blocking.length > 0 && blocking[0].fixTab && onFix ? (
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => onFix(blocking[0].fixTab!)}
-            >
+            <Button size="small" type="primary" onClick={() => onFix(blocking[0].fixTab!)}>
               Tuzatish
             </Button>
           ) : undefined
@@ -265,15 +248,13 @@ const ConnectionOverview = ({
             {/* Yo'nalish — eng ko'p chalkashgan joy, shuning uchun aniq. */}
             <Tooltip
               title={
-                connection.kind === 'partner'
+                connection.kind === "partner"
                   ? "Kalit bizdan chiqadi. Status o'zgarganda biz ularga webhook yuboramiz."
                   : "Kalit ularda. So'rovni biz yuboramiz va javobini o'zimizga moslaymiz."
               }
             >
               <Tag color="purple" className="cursor-help">
-                {connection.kind === 'partner'
-                  ? 'bizga ulanadi'
-                  : 'biz ulanamiz'}
+                {connection.kind === "partner" ? "bizga ulanadi" : "biz ulanamiz"}
               </Tag>
             </Tooltip>
             {failed > 0 && <Tag color="red">{failed} hodisa yetmadi</Tag>}
@@ -321,25 +302,23 @@ const ConnectionOverview = ({
                 <Statistic
                   title="Yetkazildi"
                   value={metrics.delivered}
-                  valueStyle={{ color: '#16a34a' }}
+                  valueStyle={{ color: "#16a34a" }}
                 />
                 <Statistic
                   title="Yetmadi"
                   value={metrics.failed}
                   valueStyle={{
-                    color: metrics.failed > 0 ? '#dc2626' : undefined,
+                    color: metrics.failed > 0 ? "#dc2626" : undefined,
                   }}
                   prefix={
-                    metrics.failed > 0 ? (
-                      <AlertTriangle className="inline h-4 w-4" />
-                    ) : undefined
+                    metrics.failed > 0 ? <AlertTriangle className="inline h-4 w-4" /> : undefined
                   }
                 />
                 <Statistic
                   title="Navbatda"
                   value={metrics.queued}
                   valueStyle={{
-                    color: metrics.queued > 0 ? '#ea580c' : undefined,
+                    color: metrics.queued > 0 ? "#ea580c" : undefined,
                   }}
                 />
               </div>
@@ -351,11 +330,11 @@ const ConnectionOverview = ({
                     `fmtMetric` — o'lchanmagan qiymat "—", hech qachon `0`.
                     `0%` "hammasi yiqildi" degan yolg'on xabar bo'lardi.
                   */}
-                  <b>{fmtMetric(metrics.success_rate, '%')}</b>
+                  <b>{fmtMetric(metrics.success_rate, "%")}</b>
                 </div>
                 <div className="flex justify-between gap-2">
                   <span className={MUTED}>Javob vaqti:</span>
-                  <b>{fmtMetric(metrics.avg_ms, ' ms')}</b>
+                  <b>{fmtMetric(metrics.avg_ms, " ms")}</b>
                 </div>
                 <div className="flex justify-between gap-2">
                   <span className={`flex items-center gap-1 ${MUTED}`}>
@@ -363,8 +342,8 @@ const ConnectionOverview = ({
                   </span>
                   <span className="font-mono text-xs">
                     {metrics.last_event_at
-                      ? new Date(metrics.last_event_at).toLocaleString('uz-UZ')
-                      : '—'}
+                      ? new Date(metrics.last_event_at).toLocaleString("uz-UZ")
+                      : "—"}
                   </span>
                 </div>
               </div>

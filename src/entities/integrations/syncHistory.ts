@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../../shared/api/api';
-import { API_ENDPOINTS } from '../../shared/api';
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 /**
  * CHIQUVCHI ULANISHNING HODISALAR JURNALI (`sync_history`).
@@ -21,7 +21,7 @@ export interface SyncHistoryRow {
   integration_id: string;
   integration_name: string;
   synced_orders: number;
-  status: 'success' | 'failed' | null;
+  status: "success" | "failed" | null;
   result: Record<string, unknown> | null;
   /** Epoch millisekund. Postgres `bigint` — satr bo'lib kelishi MUMKIN. */
   sync_date: number | string | null;
@@ -67,7 +67,7 @@ const unwrap = (raw: unknown): SyncHistoryPage => {
   };
 };
 
-export const syncHistoryKey = 'integration-sync-history';
+export const syncHistoryKey = "integration-sync-history";
 
 export const useSyncHistory = (params: {
   integrationId?: string;
@@ -83,9 +83,7 @@ export const useSyncHistory = (params: {
         .get(API_ENDPOINTS.INTEGRATIONS.SYNC_HISTORY_BY_ID(params.integrationId!), {
           params: {
             // Backend faqat `success`/`failed` ni tanadi; qolgani e'tiborsiz.
-            ...(params.status && params.status !== 'all'
-              ? { status: params.status }
-              : {}),
+            ...(params.status && params.status !== "all" ? { status: params.status } : {}),
             limit: params.limit ?? 20,
           },
         })
@@ -95,8 +93,8 @@ export const useSyncHistory = (params: {
 
 /** Epoch (son yoki satr) → o'qiladigan sana. Yaroqsiz bo'lsa "—". */
 export const syncWhen = (value: number | string | null | undefined): string => {
-  if (value === null || value === undefined || value === '') return '—';
-  const ms = typeof value === 'string' ? Number(value) : value;
-  if (!Number.isFinite(ms) || ms <= 0) return '—';
-  return new Date(ms).toLocaleString('uz-UZ');
+  if (value === null || value === undefined || value === "") return "—";
+  const ms = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(ms) || ms <= 0) return "—";
+  return new Date(ms).toLocaleString("uz-UZ");
 };

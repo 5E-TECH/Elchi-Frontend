@@ -96,13 +96,14 @@ describe("⭐ 2-3. USTA MANBA KODI — himoyalar o'rnida", () => {
    * komponent holatida), shu bois manba kodi tekshiriladi. Zaif test, lekin
    * REGRESSIYANI ushlaydi: kimdir himoyani olib tashlasa bilinadi.
    */
-  const wizard = Object.entries(
-    import.meta.glob("./ConnectWizard.tsx", {
-      eager: true,
-      query: "?raw",
-      import: "default",
-    }) as Record<string, string>,
-  )[0]?.[1] ?? "";
+  const wizard =
+    Object.entries(
+      import.meta.glob("./ConnectWizard.tsx", {
+        eager: true,
+        query: "?raw",
+        import: "default",
+      }) as Record<string, string>,
+    )[0]?.[1] ?? "";
 
   it("manba topildi (test bo'shliqda ishlamasin)", () => {
     expect(wizard.length).toBeGreaterThan(1000);
@@ -130,7 +131,7 @@ describe("⭐ 2-3. USTA MANBA KODI — himoyalar o'rnida", () => {
      * "Sinash" hech narsa qilmasdi, "Konsolda ochish" esa `partner:`
      * (id'siz) manziliga o'tib BEGONA ulanishni ochardi.
      */
-    expect(wizard).toContain("id‘si o‘qilmadi");
+    expect(wizard).toContain("id'si o'qilmadi");
     // Hamkor yo'lida kalit ham xabarda qaytariladi (u bir marta keladi).
     expect(wizard).toContain("API kalit:");
   });
@@ -138,7 +139,7 @@ describe("⭐ 2-3. USTA MANBA KODI — himoyalar o'rnida", () => {
   it("⭐ 'Sinash' JIM qolmaydi", () => {
     // Ilgari `if (!created?.id) return;` — tugma bosiladi, javob yo'q.
     expect(wizard).not.toMatch(/if \(!created\?\.id\) return;/);
-    expect(wizard).toContain("sinov yuborib bo‘lmaydi");
+    expect(wizard).toContain("sinov yuborib bo'lmaydi");
   });
 
   it("⭐ usta oxiri YAGONA manbadan hisoblanadi", () => {

@@ -1,25 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Button,
-  Card,
-  Form,
-  Popconfirm,
-  Tag,
-  Typography,
-  message,
-} from 'antd';
-import { KeyRound, Power, Save, ShieldCheck } from 'lucide-react';
-import { usePartnerActions } from '../../../entities/partners';
-import { useUpdateIntegration } from '../../../entities/integrations';
-import { getBackendErrorMessage } from '../../../shared/lib/backendError';
-import ConnectionFields, {
-  buildChangedPayload,
-  type FieldValues,
-} from '../ConnectionFields';
-import { fieldsInGroup, type ConnectionField } from '../connections';
-import { getPath } from '../fieldPath';
-import type { Connection } from '../useConnections';
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Card, Form, Popconfirm, Tag, Typography, message } from "antd";
+import { KeyRound, Power, Save, ShieldCheck } from "lucide-react";
+import { usePartnerActions } from "../../../entities/partners";
+import { useUpdateIntegration } from "../../../entities/integrations";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import ConnectionFields, { buildChangedPayload, type FieldValues } from "../ConnectionFields";
+import { fieldsInGroup, type ConnectionField } from "../connections";
+import { getPath } from "../fieldPath";
+import type { Connection } from "../useConnections";
 
 /**
  * XAVFSIZLIK — kirishni CHEKLAYDIGAN qiymatlar va TA'SIRI KATTA amallar.
@@ -33,36 +21,33 @@ import type { Connection } from '../useConnections';
  * ko'rinishda turgani xato bosishga olib keladi.
  */
 
-const initialValues = (
-  c: Connection,
-  fields: ConnectionField[],
-): FieldValues => {
+const initialValues = (c: Connection, fields: ConnectionField[]): FieldValues => {
   const raw = c.raw as Record<string, unknown>;
   const out: FieldValues = {};
   for (const f of fields) {
     // Sirlar bo'sh boshlanadi — server ularni qaytarmaydi.
     if (f.writeOnly) {
-      out[f.key] = '';
+      out[f.key] = "";
       continue;
     }
     /**
      * Xarita (obyekt) — asl yozuvdan o'qiladi. Busiz maydon bo'sh boshlanib,
      * saqlashda mavjud xaritani O'CHIRIB yuborardi.
      */
-    if (f.type === 'mapping') {
+    if (f.type === "mapping") {
       const val = getPath(raw, f.key);
       out[f.key] =
-        val && typeof val === 'object' && !Array.isArray(val)
+        val && typeof val === "object" && !Array.isArray(val)
           ? (val as Record<string, string>)
           : {};
       continue;
     }
-    if (f.type === 'tags') {
+    if (f.type === "tags") {
       const arr = getPath(raw, f.key);
       out[f.key] = Array.isArray(arr) ? (arr as string[]) : [];
       continue;
     }
-    out[f.key] = String(getPath(raw, f.key) ?? '');
+    out[f.key] = String(getPath(raw, f.key) ?? "");
   }
   return out;
 };
@@ -76,14 +61,8 @@ const ConnectionSecurity = ({
   fields: ConnectionField[];
   onSaved: () => void;
 }) => {
-  const fields = useMemo(
-    () => fieldsInGroup(allFields, 'security'),
-    [allFields],
-  );
-  const initial = useMemo(
-    () => initialValues(connection, fields),
-    [connection, fields],
-  );
+  const fields = useMemo(() => fieldsInGroup(allFields, "security"), [allFields]);
+  const initial = useMemo(() => initialValues(connection, fields), [connection, fields]);
 
   const [values, setValues] = useState<FieldValues>(initial);
   /** Yangi kalit — FAQAT bir marta ko'rsatiladi, keyin boshqa olinmaydi. */
@@ -96,7 +75,7 @@ const ConnectionSecurity = ({
 
   const { updatePartner, rotateKey, setActive } = usePartnerActions();
   const updateIntegration = useUpdateIntegration();
-  const isPartner = connection.kind === 'partner';
+  const isPartner = connection.kind === "partner";
   const saving = updatePartner.isPending || updateIntegration.isPending;
 
   const save = async () => {
@@ -116,13 +95,13 @@ const ConnectionSecurity = ({
         await updateIntegration.mutateAsync({
           id: connection.id,
           payload: {
-            slug: String(raw.slug ?? ''),
-            type: String(raw.type ?? 'api'),
+            slug: String(raw.slug ?? ""),
+            type: String(raw.type ?? "api"),
             ...payload,
           } as never,
         });
       }
-      message.success('Saqlandi');
+      message.success("Saqlandi");
       onSaved();
     } catch (error) {
       message.error(getBackendErrorMessage(error) || "Saqlab bo'lmadi");
@@ -133,7 +112,7 @@ const ConnectionSecurity = ({
     try {
       const res = await rotateKey.mutateAsync(connection.id);
       setFreshKey(res.api_key || null);
-      message.success('Yangi kalit yaratildi');
+      message.success("Yangi kalit yaratildi");
       onSaved();
     } catch (error) {
       message.error(getBackendErrorMessage(error) || "Kalitni yangilab bo'lmadi");
@@ -160,18 +139,16 @@ const ConnectionSecurity = ({
         await updateIntegration.mutateAsync({
           id: connection.id,
           payload: {
-            slug: String(raw.slug ?? ''),
-            type: String(raw.type ?? 'api'),
+            slug: String(raw.slug ?? ""),
+            type: String(raw.type ?? "api"),
             is_active: next,
           } as never,
         });
       }
-      message.success(next ? 'Ulanish yoqildi' : "Ulanish o'chirildi");
+      message.success(next ? "Ulanish yoqildi" : "Ulanish o'chirildi");
       onSaved();
     } catch (error) {
-      message.error(
-        getBackendErrorMessage(error) || "Holatni o'zgartirib bo'lmadi",
-      );
+      message.error(getBackendErrorMessage(error) || "Holatni o'zgartirib bo'lmadi");
     }
   };
 
@@ -188,11 +165,7 @@ const ConnectionSecurity = ({
         }
       >
         {fields.length === 0 ? (
-          <Alert
-            type="info"
-            showIcon
-            message="Bu ulanish turida cheklov sozlamasi yo'q"
-          />
+          <Alert type="info" showIcon message="Bu ulanish turida cheklov sozlamasi yo'q" />
         ) : (
           <Form layout="vertical">
             <ConnectionFields
@@ -226,13 +199,13 @@ const ConnectionSecurity = ({
               title="Kalitni yangilash"
               description={
                 <span className="block max-w-xs">
-                  Eski kalit DARHOL ishlamay qoladi. Hamkor yangi kalitni
-                  qo'ymaguncha ularning so'rovlari rad etiladi.
+                  Eski kalit DARHOL ishlamay qoladi. Hamkor yangi kalitni qo'ymaguncha ularning
+                  so'rovlari rad etiladi.
                 </span>
               }
               okText="Ha, yangilash"
               okButtonProps={{ danger: true, loading: rotateKey.isPending }}
-              cancelText="Bekor"
+              cancelText="Bekor qilish"
               onConfirm={doRotate}
             >
               <Button danger icon={<KeyRound className="h-4 w-4" />}>
@@ -242,8 +215,8 @@ const ConnectionSecurity = ({
           }
         >
           <p className="m-0 text-sm text-gray-500 dark:text-gray-400">
-            Kalit bizda ochiq saqlanmaydi — faqat xeshi. Shu sababli uni qayta
-            ko'rsatib bo'lmaydi; yo'qolsa yangisini yaratish kerak.
+            Kalit bizda ochiq saqlanmaydi — faqat xeshi. Shu sababli uni qayta ko'rsatib bo'lmaydi;
+            yo'qolsa yangisini yaratish kerak.
           </p>
 
           {/* Yangi kalit — BIR MARTA. Sahifadan chiqilsa boshqa olinmaydi. */}
@@ -274,19 +247,15 @@ const ConnectionSecurity = ({
           </span>
         }
         extra={
-          <Tag color={connection.is_active ? 'green' : 'red'}>
-            {connection.is_active ? 'FAOL' : "O'CHIQ"}
+          <Tag color={connection.is_active ? "green" : "red"}>
+            {connection.is_active ? "FAOL" : "O'CHIQ"}
           </Tag>
         }
       >
         <Alert
-          type={connection.is_active ? 'info' : 'warning'}
+          type={connection.is_active ? "info" : "warning"}
           showIcon
-          message={
-            connection.is_active
-              ? 'Ulanish faol'
-              : "Ulanish o'chirilgan"
-          }
+          message={connection.is_active ? "Ulanish faol" : "Ulanish o'chirilgan"}
           description={
             connection.is_active
               ? "O'chirilsa hamkor so'rovlari rad etiladi va hodisalar yuborilmaydi."
@@ -295,18 +264,14 @@ const ConnectionSecurity = ({
         />
 
         <Popconfirm
-          title={
-            connection.is_active
-              ? "Ulanishni o'chirish"
-              : 'Ulanishni yoqish'
-          }
+          title={connection.is_active ? "Ulanishni o'chirish" : "Ulanishni yoqish"}
           description={
             connection.is_active
               ? "O'chirilgandan keyin hamkor so'rovlari darhol rad etiladi."
-              : 'Ulanish yoqiladi va hodisalar yana yuboriladi.'
+              : "Ulanish yoqiladi va hodisalar yana yuboriladi."
           }
           okText="Ha"
-          cancelText="Bekor"
+          cancelText="Bekor qilish"
           okButtonProps={{
             danger: connection.is_active,
             loading: togglePending,
@@ -316,11 +281,11 @@ const ConnectionSecurity = ({
           <Button
             className="mt-3"
             danger={connection.is_active}
-            type={connection.is_active ? 'default' : 'primary'}
+            type={connection.is_active ? "default" : "primary"}
             icon={<Power className="h-4 w-4" />}
             loading={togglePending}
           >
-            {connection.is_active ? "O'chirish" : 'Yoqish'}
+            {connection.is_active ? "O'chirish" : "Yoqish"}
           </Button>
         </Popconfirm>
       </Card>

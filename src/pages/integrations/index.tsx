@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Tabs } from 'antd';
-import { Cable, LayoutGrid } from 'lucide-react';
+import { useMemo } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Tabs } from "antd";
+import { Cable, LayoutGrid } from "lucide-react";
 
 /**
  * INTEGRATSIYALAR UYI — PCS (BeePost) `IntegrationsRoot` shakli.
@@ -13,7 +13,17 @@ import { Cable, LayoutGrid } from 'lucide-react';
  *
  * IKKI YUZA:
  *   Ulanishlar — "hammasi qalay?" → kartalar to'ri
- *   Boshqaruv  — "bu ulanish qalay?" → panellar
+ *   Konsol     — "bu ulanish qalay?" → panellar
+ *
+ * ⚠️ NEGA "KONSOL", "BOSHQARUV" EMAS. "Boshqaruv" UCH xil narsani
+ * nomlardi: (1) shu navigatsiya yuzasi, (2) sahifa sarlavhasi,
+ * (3) panel ichidagi TAB (master kalit va navbat). Ya'ni operator
+ * "Boshqaruv → Boshqaruv" degan yo'lni ko'rardi.
+ *
+ * "Konsol" tanlandi, chunki u matnlarda ALLAQACHON ishlatilgan:
+ * usta "Konsolda ochish", "Konsol → Xavfsizlik", "Konsol → Hodisalar"
+ * deydi. Ya'ni nom o'ylab topilmadi — mavjud atama navigatsiyaga
+ * qaytarildi. Ilgari usta UI'da MAVJUD BO'LMAGAN joyga yo'naltirardi.
  *
  * ⚠️ ESKI SAHIFALAR NAVIGATSIYADAN OLINDI, MARSHRUTLAR QOLDI.
  * Ular ko'chirish davrida zaxira bo'lib turgan edi; yangi yuza to'liq
@@ -27,15 +37,15 @@ import { Cable, LayoutGrid } from 'lucide-react';
 
 const SURFACES = [
   {
-    key: 'overview',
-    path: '/integrations',
-    label: 'Ulanishlar',
+    key: "overview",
+    path: "/integrations",
+    label: "Ulanishlar",
     icon: <LayoutGrid className="h-4 w-4" />,
   },
   {
-    key: 'console',
-    path: '/integrations/connections',
-    label: 'Boshqaruv',
+    key: "console",
+    path: "/integrations/connections",
+    label: "Konsol",
     icon: <Cable className="h-4 w-4" />,
   },
 ] as const;
@@ -49,10 +59,7 @@ const IntegrationsPage = () => {
    * "Ulanishlar" deb hisoblanadi — tab hech qachon bo'sh qolmasligi kerak.
    */
   const active = useMemo(
-    () =>
-      location.pathname.startsWith('/integrations/connections')
-        ? 'console'
-        : 'overview',
+    () => (location.pathname.startsWith("/integrations/connections") ? "console" : "overview"),
     [location.pathname],
   );
 

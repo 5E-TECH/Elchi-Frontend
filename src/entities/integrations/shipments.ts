@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../shared/api/api';
-import { API_ENDPOINTS } from '../../shared/api';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 /**
  * JO'NATMALAR — ulanish bo'yicha posilkalar.
@@ -50,7 +50,7 @@ export interface ShipmentsPage<T> {
 
 const EMPTY = { items: [], pagination: { total: 0, page: 1, limit: 20 } };
 
-const unwrap = <T,>(raw: unknown): ShipmentsPage<T> => {
+const unwrap = <T>(raw: unknown): ShipmentsPage<T> => {
   const outer = raw as { data?: unknown };
   const first = outer?.data ?? raw;
   const inner = (first as { data?: unknown })?.data ?? first;
@@ -61,7 +61,7 @@ const unwrap = <T,>(raw: unknown): ShipmentsPage<T> => {
   };
 };
 
-export const shipmentsKey = 'integration-shipments';
+export const shipmentsKey = "integration-shipments";
 
 /** Chiquvchi ulanishning posilkalari. */
 export const useProviderShipments = (params: {
@@ -71,13 +71,7 @@ export const useProviderShipments = (params: {
   limit?: number;
 }) =>
   useQuery({
-    queryKey: [
-      shipmentsKey,
-      'provider',
-      params.integrationId,
-      params.failedOnly,
-      params.page,
-    ],
+    queryKey: [shipmentsKey, "provider", params.integrationId, params.failedOnly, params.page],
     enabled: Boolean(params.integrationId),
     queryFn: () =>
       api
@@ -85,7 +79,7 @@ export const useProviderShipments = (params: {
           params: {
             // ⚠️ Backend satrni `'true'`/`'1'` bo'yicha o'qiydi; `false`ni
             // umuman yubormaslik aniqroq.
-            ...(params.failedOnly ? { failed_only: 'true' } : {}),
+            ...(params.failedOnly ? { failed_only: "true" } : {}),
             page: params.page ?? 1,
             limit: params.limit ?? 20,
           },
@@ -100,7 +94,7 @@ export const usePartnerShipments = (params: {
   limit?: number;
 }) =>
   useQuery({
-    queryKey: [shipmentsKey, 'partner', params.partnerId, params.page],
+    queryKey: [shipmentsKey, "partner", params.partnerId, params.page],
     enabled: Boolean(params.partnerId),
     queryFn: () =>
       api
@@ -139,9 +133,7 @@ export const useProcessQueue = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      api
-        .post(API_ENDPOINTS.INTEGRATIONS.SYNC(id), {})
-        .then((res) => res.data),
+      api.post(API_ENDPOINTS.INTEGRATIONS.SYNC(id), {}).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: [shipmentsKey] }),
   });
 };
@@ -151,9 +143,7 @@ export const useRetryFailed = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      api
-        .post(API_ENDPOINTS.INTEGRATIONS.RETRY(id), {})
-        .then((res) => res.data),
+      api.post(API_ENDPOINTS.INTEGRATIONS.RETRY(id), {}).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: [shipmentsKey] }),
   });
 };

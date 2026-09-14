@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  SIDEBAR_CONFIG,
-  SIDEBAR_GROUP_BY_PATH,
-} from "../../widgets/Sidebar/model/menuConfig";
+import { SIDEBAR_CONFIG, SIDEBAR_GROUP_BY_PATH } from "../../widgets/Sidebar/model/menuConfig";
 
 /**
  * B3 — INTEGRATSIYALAR UYI.
@@ -45,5 +42,4 @@ describe("Integratsiyalar uyi — navigatsiya butunligi", () => {
 
     expect(allItems.some((item) => item.to === "/partners")).toBe(false);
   });
-
 });

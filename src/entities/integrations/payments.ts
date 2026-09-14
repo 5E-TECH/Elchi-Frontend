@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../../shared/api/api';
-import { API_ENDPOINTS } from '../../shared/api';
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 /**
  * ONLAYN TO'LOV TRANZAKSIYALARI.
@@ -52,7 +52,7 @@ const unwrap = (raw: unknown): PaymentPage => {
   };
 };
 
-export const paymentsKey = 'integration-payments';
+export const paymentsKey = "integration-payments";
 
 export const usePayments = (params: {
   integrationId?: string;
@@ -61,13 +61,7 @@ export const usePayments = (params: {
   limit?: number;
 }) =>
   useQuery({
-    queryKey: [
-      paymentsKey,
-      params.integrationId,
-      params.unappliedOnly,
-      params.page,
-      params.limit,
-    ],
+    queryKey: [paymentsKey, params.integrationId, params.unappliedOnly, params.page, params.limit],
     enabled: Boolean(params.integrationId),
     queryFn: () =>
       api
@@ -90,19 +84,17 @@ export const usePayments = (params: {
  * buyurtmaga tegmagan. Ularni neytral ko'rsatish yo'qolgan pulni
  * yashirardi.
  */
-export const paymentOutcome = (
-  row: PaymentRow,
-): { label: string; color: string } => {
+export const paymentOutcome = (row: PaymentRow): { label: string; color: string } => {
   const MAP: Record<string, { label: string; color: string }> = {
-    recorded: { label: 'buyurtmaga yozildi', color: 'green' },
-    order_not_found: { label: 'buyurtma topilmadi', color: 'red' },
-    order_ref_missing: { label: 'havola yo‘q', color: 'red' },
-    order_already_closed: { label: 'buyurtma yopilgan', color: 'red' },
-    amount_exceeds_total: { label: 'summa oshdi', color: 'red' },
-    amount_invalid: { label: 'summa yaroqsiz', color: 'red' },
-    ignored_status: { label: 'holat qo‘llanmadi', color: 'default' },
-    timeout: { label: 'javob kelmadi — tekshirish kerak', color: 'orange' },
-    error: { label: 'xato', color: 'red' },
+    recorded: { label: "buyurtmaga yozildi", color: "green" },
+    order_not_found: { label: "buyurtma topilmadi", color: "red" },
+    order_ref_missing: { label: "havola yo'q", color: "red" },
+    order_already_closed: { label: "buyurtma yopilgan", color: "red" },
+    amount_exceeds_total: { label: "summa oshdi", color: "red" },
+    amount_invalid: { label: "summa yaroqsiz", color: "red" },
+    ignored_status: { label: "holat qo'llanmadi", color: "default" },
+    timeout: { label: "javob kelmadi — tekshirish kerak", color: "orange" },
+    error: { label: "xato", color: "red" },
   };
   if (row.apply_outcome && MAP[row.apply_outcome]) {
     return MAP[row.apply_outcome];
@@ -113,7 +105,7 @@ export const paymentOutcome = (
    * neytral EMAS.
    */
   if (!row.apply_outcome) {
-    return { label: 'natija yo‘q — uzilgan', color: 'orange' };
+    return { label: "natija yo'q — uzilgan", color: "orange" };
   }
-  return { label: row.apply_outcome, color: 'red' };
+  return { label: row.apply_outcome, color: "red" };
 };

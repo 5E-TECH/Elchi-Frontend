@@ -32,9 +32,9 @@ describe("webhookOutcome", () => {
      * qo'llanmagan. Boshqa yorliq ko'rsatish xavfsizlik hodisasini
      * yashirardi.
      */
-    expect(
-      webhookOutcome(row({ signature_valid: false, status: "rejected" })).label,
-    ).toBe("imzo xato");
+    expect(webhookOutcome(row({ signature_valid: false, status: "rejected" })).label).toBe(
+      "imzo xato",
+    );
   });
 
   it("buyurtma yaratilgani YASHIL", () => {
@@ -48,12 +48,8 @@ describe("webhookOutcome", () => {
      * asosiy oqim, ogohlantirish emas. Uni qizil qilsak jadval soxta
      * signal bilan to'lib, haqiqiy xato ko'rinmay qolardi.
      */
-    expect(webhookOutcome(row({ error: "apply: inbound_no_gate" })).color).toBe(
-      "red",
-    );
-    expect(
-      webhookOutcome(row({ error: "apply: inbound_stage_skipped" })).color,
-    ).toBe("default");
+    expect(webhookOutcome(row({ error: "apply: inbound_no_gate" })).color).toBe("red");
+    expect(webhookOutcome(row({ error: "apply: inbound_stage_skipped" })).color).toBe("default");
   });
 
   it("⭐ TIMEOUT sariq — 'yiqildi' emas, 'tekshirish kerak'", () => {
@@ -76,14 +72,12 @@ describe("webhookOutcome", () => {
   });
 
   it("xato yo'q bo'lsa toza qo'llanildi", () => {
-    expect(webhookOutcome(row()).label).toBe("qo‘llanildi");
+    expect(webhookOutcome(row()).label).toBe("qo'llanildi");
   });
 
   it("noma'lum natija QIZIL bo'lib qoladi", () => {
     // Yangi natija qo'shilib, xarita yangilanmasa — jimgina yashil
     // ko'rsatishdan ko'ra "xato" deb ko'rsatish xavfsizroq.
-    expect(webhookOutcome(row({ error: "apply: something_new" })).color).toBe(
-      "red",
-    );
+    expect(webhookOutcome(row({ error: "apply: something_new" })).color).toBe("red");
   });
 });

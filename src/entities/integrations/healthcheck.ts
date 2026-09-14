@@ -1,6 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
-import { api } from '../../shared/api/api';
-import { API_ENDPOINTS } from '../../shared/api';
+import { useMutation } from "@tanstack/react-query";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 /**
  * CHIQUVCHI ULANISHNI SINASH (`POST integrations/:id/healthcheck`).
@@ -31,34 +31,23 @@ const readResult = (raw: unknown): HealthcheckResult => {
     data?: Record<string, unknown>;
   };
   // Qatlam soni marshrutga qarab farq qilishi mumkin.
-  const inner = (outer?.data?.data ?? outer?.data ?? {}) as Record<
-    string,
-    unknown
-  >;
-  const status = typeof inner.status === 'number' ? inner.status : null;
+  const inner = (outer?.data?.data ?? outer?.data ?? {}) as Record<string, unknown>;
+  const status = typeof inner.status === "number" ? inner.status : null;
   return {
     ok: inner.ok === true,
     status,
-    response_time_ms:
-      typeof inner.response_time_ms === 'number' ? inner.response_time_ms : null,
-    url: typeof inner.url === 'string' ? inner.url : null,
+    response_time_ms: typeof inner.response_time_ms === "number" ? inner.response_time_ms : null,
+    url: typeof inner.url === "string" ? inner.url : null,
     /**
      * Muvaffaqiyatli javobda ham `message` bo'ladi ("healthcheck completed") —
      * uni xato deb ko'rsatmaslik uchun faqat yiqilganda olamiz.
      */
-    message:
-      inner.ok === true
-        ? null
-        : typeof outer?.message === 'string'
-          ? outer.message
-          : null,
+    message: inner.ok === true ? null : typeof outer?.message === "string" ? outer.message : null,
   };
 };
 
 export const useIntegrationHealthcheck = () =>
   useMutation({
     mutationFn: (id: string) =>
-      api
-        .post(API_ENDPOINTS.INTEGRATIONS.HEALTHCHECK(id), {})
-        .then((res) => readResult(res.data)),
+      api.post(API_ENDPOINTS.INTEGRATIONS.HEALTHCHECK(id), {}).then((res) => readResult(res.data)),
   });

@@ -1,8 +1,8 @@
-import { Form, Input, Select, Switch } from 'antd';
-import { useMarkets } from '../../entities/markets';
-import { isFieldDisabled, visibleFields } from './connections';
-import { nestPayload } from './fieldPath';
-import type { ConnectionField } from './connections';
+import { Form, Input, Select, Switch } from "antd";
+import { useMarkets } from "../../entities/markets";
+import { isFieldDisabled, visibleFields } from "./connections";
+import { nestPayload } from "./fieldPath";
+import type { ConnectionField } from "./connections";
 
 /**
  * UMUMIY ULANISH FORMASI — maydon ro'yxatidan o'zini yasaydi.
@@ -25,11 +25,7 @@ import type { ConnectionField } from './connections';
  * `Record<string, string>` — `mapping` turi uchun (kalit→qiymat xaritasi).
  * Boshqa turlar satr/mantiq/massiv ishlatadi.
  */
-export type FieldValue =
-  | string
-  | boolean
-  | string[]
-  | Record<string, string>;
+export type FieldValue = string | boolean | string[] | Record<string, string>;
 
 export type FieldValues = Record<string, FieldValue>;
 
@@ -72,7 +68,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
       const fieldDisabled = disabled || isFieldDisabled(field, values);
 
       /* ── Kalit/o'chirgich ── */
-      if (field.type === 'switch') {
+      if (field.type === "switch") {
         return (
           <Form.Item
             key={field.key}
@@ -90,11 +86,11 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
       }
 
       /* ── Tanlov ── */
-      if (field.type === 'select') {
+      if (field.type === "select") {
         return (
           <Form.Item key={field.key} label={field.label} extra={field.hint}>
             <Select
-              value={String(raw ?? '')}
+              value={String(raw ?? "")}
               disabled={fieldDisabled}
               onChange={(v) => onChange(field.key, v)}
               options={field.options ?? []}
@@ -105,7 +101,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
       }
 
       /* ── Ro'yxat (IP va h.k.) ── */
-      if (field.type === 'tags') {
+      if (field.type === "tags") {
         return (
           <Form.Item
             key={field.key}
@@ -123,7 +119,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
               value={Array.isArray(raw) ? raw : []}
               disabled={fieldDisabled}
               onChange={(v: string[]) => onChange(field.key, v)}
-              tokenSeparators={[',', ' ', '\n']}
+              tokenSeparators={[",", " ", "\n"]}
               placeholder={field.placeholder}
               open={false}
               suffixIcon={null}
@@ -133,12 +129,12 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
       }
 
       /* ── Market akkaunti (ro'yxat API'dan) ── */
-      if (field.type === 'market') {
+      if (field.type === "market") {
         return (
           <MarketField
             key={field.key}
             field={field}
-            value={String(raw ?? '')}
+            value={String(raw ?? "")}
             disabled={fieldDisabled}
             onChange={(v) => onChange(field.key, v)}
           />
@@ -146,7 +142,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
       }
 
       /* ── Maydon xaritasi (JSON) ── */
-      if (field.type === 'mapping') {
+      if (field.type === "mapping") {
         return (
           <MappingField
             key={field.key}
@@ -159,7 +155,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
       }
 
       /* ── Sir ── */
-      if (field.type === 'secret') {
+      if (field.type === "secret") {
         return (
           <Form.Item
             key={field.key}
@@ -174,7 +170,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
             extra={field.hint}
           >
             <Input.Password
-              value={String(raw ?? '')}
+              value={String(raw ?? "")}
               disabled={fieldDisabled}
               onChange={(e) => onChange(field.key, e.target.value)}
               placeholder="tegilmaydi"
@@ -188,11 +184,11 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => (
       return (
         <Form.Item key={field.key} label={field.label} extra={field.hint}>
           <Input
-            value={String(raw ?? '')}
+            value={String(raw ?? "")}
             disabled={fieldDisabled}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder}
-            inputMode={field.type === 'url' ? 'url' : undefined}
+            inputMode={field.type === "url" ? "url" : undefined}
           />
         </Form.Item>
       );
@@ -224,15 +220,11 @@ const MarketField = ({
    * Javob qobig'i marshrutga qarab farq qiladi — himoyalangan ochish, aks
    * holda tanlagich bo'sh ko'rinib qolardi va sabab bilinmasdi.
    */
-  const raw = query.data as
-    | { data?: { items?: unknown[] } | unknown[] }
-    | undefined;
+  const raw = query.data as { data?: { items?: unknown[] } | unknown[] } | undefined;
   const list = Array.isArray(raw?.data)
     ? (raw!.data as Array<Record<string, unknown>>)
     : Array.isArray((raw?.data as { items?: unknown[] })?.items)
-      ? ((raw!.data as { items: unknown[] }).items as Array<
-          Record<string, unknown>
-        >)
+      ? ((raw!.data as { items: unknown[] }).items as Array<Record<string, unknown>>)
       : [];
 
   return (
@@ -241,13 +233,11 @@ const MarketField = ({
         value={value || undefined}
         disabled={disabled}
         loading={query.isLoading}
-        onChange={(v: string) => onChange(v ?? '')}
+        onChange={(v: string) => onChange(v ?? "")}
         allowClear
         showSearch
         optionFilterProp="label"
-        placeholder={
-          query.isError ? "Ro'yxatni olib bo'lmadi" : 'Marketni tanlang'
-        }
+        placeholder={query.isError ? "Ro'yxatni olib bo'lmadi" : "Marketni tanlang"}
         options={list.map((m) => ({
           value: String(m.id),
           label: String(m.name ?? m.username ?? `#${m.id}`),
@@ -270,20 +260,20 @@ const MarketField = ({
  * jimgina e'tiborsiz qolardi.
  */
 const MAPPING_KEYS: Array<{ key: string; label: string; hint: string }> = [
-  { key: 'id_field', label: 'Buyurtma raqami', hint: 'sukut: id' },
-  { key: 'customer_name_field', label: 'Mijoz ismi', hint: 'sukut: full_name' },
-  { key: 'phone_field', label: 'Telefon', hint: 'sukut: phone' },
-  { key: 'extra_phone_field', label: "Qo'shimcha telefon", hint: '' },
-  { key: 'address_field', label: 'Manzil', hint: 'sukut: address' },
-  { key: 'district_code_field', label: 'Tuman (SOATO)', hint: 'sukut: district' },
-  { key: 'region_code_field', label: 'Viloyat', hint: 'faqat SON qabul qilinadi' },
-  { key: 'total_price_field', label: 'Summa', hint: 'sukut: total_price' },
-  { key: 'delivery_price_field', label: 'Yetkazish narxi', hint: '' },
-  { key: 'qr_code_field', label: 'QR kod', hint: 'sukut: qr_code' },
-  { key: 'comment_field', label: 'Izoh', hint: 'sukut: comment' },
-  { key: 'items_field', label: 'Mahsulotlar massivi', hint: 'sukut: items' },
-  { key: 'item_name_field', label: 'Mahsulot nomi', hint: 'massiv ichida, sukut: name' },
-  { key: 'item_qty_field', label: 'Mahsulot soni', hint: 'massiv ichida, sukut: quantity' },
+  { key: "id_field", label: "Buyurtma raqami", hint: "sukut: id" },
+  { key: "customer_name_field", label: "Mijoz ismi", hint: "sukut: full_name" },
+  { key: "phone_field", label: "Telefon", hint: "sukut: phone" },
+  { key: "extra_phone_field", label: "Qo'shimcha telefon", hint: "" },
+  { key: "address_field", label: "Manzil", hint: "sukut: address" },
+  { key: "district_code_field", label: "Tuman (SOATO)", hint: "sukut: district" },
+  { key: "region_code_field", label: "Viloyat", hint: "faqat SON qabul qilinadi" },
+  { key: "total_price_field", label: "Summa", hint: "sukut: total_price" },
+  { key: "delivery_price_field", label: "Yetkazish narxi", hint: "" },
+  { key: "qr_code_field", label: "QR kod", hint: "sukut: qr_code" },
+  { key: "comment_field", label: "Izoh", hint: "sukut: comment" },
+  { key: "items_field", label: "Mahsulotlar massivi", hint: "sukut: items" },
+  { key: "item_name_field", label: "Mahsulot nomi", hint: "massiv ichida, sukut: name" },
+  { key: "item_qty_field", label: "Mahsulot soni", hint: "massiv ichida, sukut: quantity" },
 ];
 
 const MappingField = ({
@@ -298,7 +288,7 @@ const MappingField = ({
   onChange: (v: Record<string, string>) => void;
 }) => {
   const current =
-    value && typeof value === 'object' && !Array.isArray(value)
+    value && typeof value === "object" && !Array.isArray(value)
       ? (value as Record<string, string>)
       : {};
 
@@ -317,10 +307,10 @@ const MappingField = ({
         {MAPPING_KEYS.map((m) => (
           <Form.Item key={m.key} label={m.label} extra={m.hint}>
             <Input
-              value={current[m.key] ?? ''}
+              value={current[m.key] ?? ""}
               disabled={disabled}
               onChange={(e) => set(m.key, e.target.value)}
-              placeholder={m.hint.replace('sukut: ', '') || undefined}
+              placeholder={m.hint.replace("sukut: ", "") || undefined}
             />
           </Form.Item>
         ))}
@@ -332,7 +322,7 @@ const MappingField = ({
 export default ConnectionFields;
 
 const isPlainObject = (v: unknown): v is Record<string, string> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
+  typeof v === "object" && v !== null && !Array.isArray(v);
 
 export const buildChangedPayload = (
   fields: ConnectionField[],
@@ -347,14 +337,14 @@ export const buildChangedPayload = (
 
     if (field.writeOnly) {
       // Sir: faqat yangi qiymat yozilgan bo'lsa.
-      if (typeof next === 'string' && next.trim()) out[field.key] = next.trim();
+      if (typeof next === "string" && next.trim()) out[field.key] = next.trim();
       continue;
     }
 
     if (Array.isArray(next) || Array.isArray(prev)) {
       const a = Array.isArray(next) ? next : [];
       const b = Array.isArray(prev) ? prev : [];
-      if (a.join(',') !== b.join(',')) out[field.key] = a;
+      if (a.join(",") !== b.join(",")) out[field.key] = a;
       continue;
     }
 
@@ -369,22 +359,20 @@ export const buildChangedPayload = (
       const norm = (v: unknown) =>
         JSON.stringify(
           Object.fromEntries(
-            Object.entries(isPlainObject(v) ? v : {}).sort(([x], [y]) =>
-              x.localeCompare(y),
-            ),
+            Object.entries(isPlainObject(v) ? v : {}).sort(([x], [y]) => x.localeCompare(y)),
           ),
         );
       if (norm(next) !== norm(prev)) out[field.key] = isPlainObject(next) ? next : {};
       continue;
     }
 
-    if (typeof next === 'boolean') {
+    if (typeof next === "boolean") {
       if (next !== Boolean(prev)) out[field.key] = next;
       continue;
     }
 
-    const a = String(next ?? '').trim();
-    const b = String(prev ?? '').trim();
+    const a = String(next ?? "").trim();
+    const b = String(prev ?? "").trim();
     if (a !== b) out[field.key] = a;
   }
 
@@ -418,18 +406,17 @@ export const buildChangedPayload = (
    */
   const touchedRoots = new Set(
     Object.keys(out)
-      .filter((k) => k.includes('.'))
-      .map((k) => k.split('.')[0]),
+      .filter((k) => k.includes("."))
+      .map((k) => k.split(".")[0]),
   );
   if (touchedRoots.size) {
     for (const field of fields) {
-      if (!field.key.includes('.') || field.writeOnly) continue;
-      if (!touchedRoots.has(field.key.split('.')[0])) continue;
+      if (!field.key.includes(".") || field.writeOnly) continue;
+      if (!touchedRoots.has(field.key.split(".")[0])) continue;
       if (field.key in out) continue;
       const value = values[field.key];
       // `undefined` ni yuborish kalitni yo'qotardi — bo'sh qiymat beriladi.
-      out[field.key] =
-        value ?? (field.type === 'tags' ? [] : field.type === 'switch' ? false : '');
+      out[field.key] = value ?? (field.type === "tags" ? [] : field.type === "switch" ? false : "");
     }
   }
 

@@ -1,23 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Card, Form, message } from 'antd';
-import { FlaskConical, PlugZap, Save, Shuffle } from 'lucide-react';
-import {
-  usePartnerActions,
-  type WebhookTestResult,
-} from '../../../entities/partners';
-import { useUpdateIntegration } from '../../../entities/integrations';
-import { getBackendErrorMessage } from '../../../shared/lib/backendError';
-import ConnectionFields, {
-  buildChangedPayload,
-  type FieldValues,
-} from '../ConnectionFields';
-import {
-  TYPE_CHANGE_FIELDS,
-  fieldsInGroup,
-  type ConnectionField,
-} from '../connections';
-import { getPath } from '../fieldPath';
-import type { Connection } from '../useConnections';
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Card, Form, message } from "antd";
+import { FlaskConical, PlugZap, Save, Shuffle } from "lucide-react";
+import { usePartnerActions, type WebhookTestResult } from "../../../entities/partners";
+import { useUpdateIntegration } from "../../../entities/integrations";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import ConnectionFields, { buildChangedPayload, type FieldValues } from "../ConnectionFields";
+import { TYPE_CHANGE_FIELDS, fieldsInGroup, type ConnectionField } from "../connections";
+import { getPath } from "../fieldPath";
+import type { Connection } from "../useConnections";
 
 /**
  * SOZLAMALAR — umumiy forma, turga qarab boshqa maydonlar.
@@ -32,10 +22,7 @@ import type { Connection } from '../useConnections';
  */
 
 /** Asl yozuvdan forma qiymatlarini yasaydi. */
-const initialValues = (
-  c: Connection,
-  fields: ConnectionField[],
-): FieldValues => {
+const initialValues = (c: Connection, fields: ConnectionField[]): FieldValues => {
   const raw = c.raw as Record<string, unknown>;
   const out: FieldValues = {};
 
@@ -46,10 +33,10 @@ const initialValues = (
        * shifrlangan holda saqlanadi). Bo'sh qoldirilsa `buildChangedPayload`
        * ularni YUBORMAYDI, ya'ni ishlab turgan kalit saqlanadi.
        */
-      out[f.key] = '';
+      out[f.key] = "";
       continue;
     }
-    if (f.type === 'switch') {
+    if (f.type === "switch") {
       out[f.key] = Boolean(getPath(raw, f.key));
       continue;
     }
@@ -57,15 +44,15 @@ const initialValues = (
      * Xarita (obyekt) — asl yozuvdan o'qiladi. Busiz maydon bo'sh boshlanib,
      * saqlashda mavjud xaritani O'CHIRIB yuborardi.
      */
-    if (f.type === 'mapping') {
+    if (f.type === "mapping") {
       const val = getPath(raw, f.key);
       out[f.key] =
-        val && typeof val === 'object' && !Array.isArray(val)
+        val && typeof val === "object" && !Array.isArray(val)
           ? (val as Record<string, string>)
           : {};
       continue;
     }
-    if (f.type === 'tags') {
+    if (f.type === "tags") {
       const arr = getPath(raw, f.key);
       out[f.key] = Array.isArray(arr) ? (arr as string[]) : [];
       continue;
@@ -74,8 +61,8 @@ const initialValues = (
     // ⚠️ `getPath` — kalit nuqtali bo'lishi mumkin
     // (`dispatch_config.endpoint`). Tekis o'qish bo'sh qaytarardi va
     // saqlashda mavjud sozlama o'chib ketardi.
-    const fallback = f.key === 'base_url' ? raw.api_url : undefined;
-    out[f.key] = String(getPath(raw, f.key) ?? fallback ?? '');
+    const fallback = f.key === "base_url" ? raw.api_url : undefined;
+    out[f.key] = String(getPath(raw, f.key) ?? fallback ?? "");
   }
   return out;
 };
@@ -94,10 +81,7 @@ const ConnectionSettings = ({
    * kalitlar) Xavfsizlik tabida. Sababi: bu yerdagi tahrir oddiy, o'sha
    * yerdagisi esa ulanishni butunlay to'sib qo'yishi mumkin.
    */
-  const fields = useMemo(
-    () => fieldsInGroup(allFields, 'connection'),
-    [allFields],
-  );
+  const fields = useMemo(() => fieldsInGroup(allFields, "connection"), [allFields]);
   /**
    * SANDBOX MAYDONLARI ALOHIDA KARTADA.
    *
@@ -107,10 +91,7 @@ const ConnectionSettings = ({
    * rejim bir biriga aralashib ketgan". Xato maydonga prodakshn sekretini
    * yozib qo'yish juda oson edi.
    */
-  const sandboxFields = useMemo(
-    () => fieldsInGroup(allFields, 'sandbox'),
-    [allFields],
-  );
+  const sandboxFields = useMemo(() => fieldsInGroup(allFields, "sandbox"), [allFields]);
   /**
    * Boshlang'ich qiymatlar IKKI guruhdan birga yig'iladi — forma holati
    * yagona, kartalar esa faqat ko'rinish.
@@ -133,14 +114,10 @@ const ConnectionSettings = ({
   const { updatePartner, testWebhook } = usePartnerActions();
   const updateIntegration = useUpdateIntegration();
   const saving = updatePartner.isPending || updateIntegration.isPending;
-  const isPartner = connection.kind === 'partner';
+  const isPartner = connection.kind === "partner";
 
   const save = async () => {
-    const payload = buildChangedPayload(
-      [...fields, ...sandboxFields],
-      values,
-      initial,
-    );
+    const payload = buildChangedPayload([...fields, ...sandboxFields], values, initial);
     if (!Object.keys(payload).length) {
       message.info("O'zgarish yo'q");
       return;
@@ -163,13 +140,13 @@ const ConnectionSettings = ({
         await updateIntegration.mutateAsync({
           id: connection.id,
           payload: {
-            slug: String(raw.slug ?? ''),
-            type: String(raw.type ?? 'api'),
+            slug: String(raw.slug ?? ""),
+            type: String(raw.type ?? "api"),
             ...payload,
           } as never,
         });
       }
-      message.success('Saqlandi');
+      message.success("Saqlandi");
       onSaved();
     } catch (error) {
       message.error(getBackendErrorMessage(error) || "Saqlab bo'lmadi");
@@ -182,7 +159,7 @@ const ConnectionSettings = ({
       setTestResult(
         await testWebhook.mutateAsync({
           id: connection.id,
-          url: String(values.webhook_url ?? '').trim() || undefined,
+          url: String(values.webhook_url ?? "").trim() || undefined,
         }),
       );
     } catch (error) {
@@ -210,11 +187,11 @@ const ConnectionSettings = ({
               <Button
                 icon={<PlugZap className="h-4 w-4" />}
                 loading={testWebhook.isPending}
-                disabled={!String(values.webhook_url ?? '').trim()}
+                disabled={!String(values.webhook_url ?? "").trim()}
                 onClick={runTest}
                 title="Sinov hodisasi yuboriladi — buyurtmaga ta'sir qilmaydi"
               >
-                Ulanishni sinash
+                Sinash
               </Button>
             ) : undefined
           }
@@ -254,9 +231,9 @@ const ConnectionSettings = ({
               ketadi, asosiy oqim o'zgarmaydi.
             */}
             <div className="mb-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs font-semibold text-sky-800 dark:border-sky-900 dark:bg-sky-900/20 dark:text-sky-200">
-              Yoqilsa har hodisaning NUSXASI sinov manziliga ham yuboriladi.
-              Asosiy yetkazish o‘zgarmaydi va sinov xatosi unga ta’sir
-              qilmaydi. Nusxa faqat BIRINCHI urinishda ketadi.
+              Yoqilsa har hodisaning NUSXASI sinov manziliga ham yuboriladi. Asosiy yetkazish
+              o'zgarmaydi va sinov xatosi unga ta'sir qilmaydi. Nusxa faqat BIRINCHI urinishda
+              ketadi.
               <br />
               {/*
                 ⚠️ SHARTLAR AYTILADI. Kalitni yoqib, sekretni bo'sh
@@ -265,8 +242,8 @@ const ConnectionSettings = ({
                 sababini taxmin qilishga majbur bo'lardi.
               */}
               <span className="font-normal">
-                Yoqish uchun manzil VA alohida sandbox sekreti shart —
-                prodakshn sekreti sinov muhitiga yuborilmaydi.
+                Yoqish uchun manzil VA alohida sandbox sekreti shart — prodakshn sekreti sinov
+                muhitiga yuborilmaydi.
               </span>
             </div>
 
@@ -290,22 +267,18 @@ const ConnectionSettings = ({
       )}
 
       {/* ═══════ TURINI O'ZGARTIRISH ═══════ */}
-      {connection.kind === 'integration' && (
+      {connection.kind === "integration" && (
         <TypeChangeCard connection={connection} onSaved={onSaved} />
       )}
 
       {testResult && (
         <Alert
-          type={testResult.ok ? 'success' : 'error'}
+          type={testResult.ok ? "success" : "error"}
           showIcon
           message={
             testResult.ok
               ? `Yetdi — HTTP ${testResult.http_status} (${testResult.duration_ms} ms)`
-              : `Yetmadi${
-                  testResult.http_status
-                    ? ` — HTTP ${testResult.http_status}`
-                    : ''
-                }`
+              : `Yetmadi${testResult.http_status ? ` — HTTP ${testResult.http_status}` : ""}`
           }
           description={
             <div className="space-y-1 text-xs">
@@ -313,13 +286,10 @@ const ConnectionSettings = ({
                   olmaydi — eng ko'p uchraydigan sabab. */}
               {!testResult.secret_configured && (
                 <p className="m-0">
-                  ⚠️ Webhook sekreti sozlanmagan — qabul qiluvchi imzoni
-                  tekshira olmaydi
+                  ⚠️ Webhook sekreti sozlanmagan — qabul qiluvchi imzoni tekshira olmaydi
                 </p>
               )}
-              {testResult.error && (
-                <p className="m-0 break-all">{testResult.error}</p>
-              )}
+              {testResult.error && <p className="m-0 break-all">{testResult.error}</p>}
               {/* Javob tanasi MUHIM: qabul qiluvchi 200 qaytarib ham "imzo
                   yaroqsiz" deyishi mumkin. */}
               {testResult.response_body && (
@@ -361,9 +331,7 @@ const TypeChangeCard = ({
   const initial = useMemo(
     () => ({
       role: String((connection.raw as Record<string, unknown>).role ?? connection.role),
-      category: String(
-        (connection.raw as Record<string, unknown>).category ?? connection.category,
-      ),
+      category: String((connection.raw as Record<string, unknown>).category ?? connection.category),
     }),
     [connection],
   );
@@ -372,8 +340,8 @@ const TypeChangeCard = ({
 
   const updateIntegration = useUpdateIntegration();
   const changed =
-    String(values.role ?? '') !== initial.role ||
-    String(values.category ?? '') !== initial.category;
+    String(values.role ?? "") !== initial.role ||
+    String(values.category ?? "") !== initial.category;
 
   const save = async () => {
     try {
@@ -381,10 +349,10 @@ const TypeChangeCard = ({
       await updateIntegration.mutateAsync({
         id: connection.id,
         payload: {
-          slug: String(raw.slug ?? ''),
-          type: String(raw.type ?? 'api'),
-          role: String(values.role ?? ''),
-          category: String(values.category ?? ''),
+          slug: String(raw.slug ?? ""),
+          type: String(raw.type ?? "api"),
+          role: String(values.role ?? ""),
+          category: String(values.category ?? ""),
         } as never,
       });
       message.success("Turi o'zgartirildi");
@@ -416,14 +384,21 @@ const TypeChangeCard = ({
           onChange={(k, v) => setValues((st) => ({ ...st, [k]: v }))}
           disabled={updateIntegration.isPending}
         />
-        <Button
-          danger
-          disabled={!changed}
-          loading={updateIntegration.isPending}
-          onClick={save}
-        >
-          {changed ? "Turini o'zgartirish" : "O'zgarish yo'q"}
+        {/*
+          ⚠️ TUGMA MATNI AMALNI AYTADI, HOLATNI EMAS. Ilgari o'zgarish
+          bo'lmasa matn "O'zgarish yo'q" ga aylanardi — ya'ni tugma
+          nima qilishini emas, tizim holatini yozardi. Operator
+          "bosilmaydigan tugma" va "boshqa tugma" ni farqlay olmasdi.
+          Holat tugmaning O'CHIRILGANIDA ko'rinadi, izoh esa ostida.
+        */}
+        <Button danger disabled={!changed} loading={updateIntegration.isPending} onClick={save}>
+          Turini o'zgartirish
         </Button>
+        {!changed && (
+          <p className="m-0 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+            Avval rol yoki kategoriyani o'zgartiring.
+          </p>
+        )}
       </Form>
     </Card>
   );

@@ -16,15 +16,12 @@
 
 /** `a.b.c` yo'li bo'yicha qiymatni o'qiydi. */
 export const getPath = (obj: unknown, path: string): unknown => {
-  if (!path.includes('.')) {
+  if (!path.includes(".")) {
     return (obj as Record<string, unknown> | null)?.[path];
   }
   return path
-    .split('.')
-    .reduce<unknown>(
-      (acc, key) => (acc as Record<string, unknown> | null)?.[key],
-      obj,
-    );
+    .split(".")
+    .reduce<unknown>((acc, key) => (acc as Record<string, unknown> | null)?.[key], obj);
 };
 
 /**
@@ -39,16 +36,16 @@ export const setPath = (
   path: string,
   value: unknown,
 ): Record<string, unknown> => {
-  if (!path.includes('.')) {
+  if (!path.includes(".")) {
     return { ...target, [path]: value };
   }
-  const [head, ...rest] = path.split('.');
+  const [head, ...rest] = path.split(".");
   const existing = target[head];
   const branch =
-    existing && typeof existing === 'object' && !Array.isArray(existing)
+    existing && typeof existing === "object" && !Array.isArray(existing)
       ? (existing as Record<string, unknown>)
       : {};
-  return { ...target, [head]: setPath(branch, rest.join('.'), value) };
+  return { ...target, [head]: setPath(branch, rest.join("."), value) };
 };
 
 /**
@@ -57,9 +54,7 @@ export const setPath = (
  * Kirish:  { 'dispatch_config.endpoint': '/v1', name: 'LDG' }
  * Chiqish: { dispatch_config: { endpoint: '/v1' }, name: 'LDG' }
  */
-export const nestPayload = (
-  flat: Record<string, unknown>,
-): Record<string, unknown> => {
+export const nestPayload = (flat: Record<string, unknown>): Record<string, unknown> => {
   let out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(flat)) {
     out = setPath(out, key, value);

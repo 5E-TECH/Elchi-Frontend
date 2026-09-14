@@ -72,7 +72,7 @@ describe("paymentOutcome", () => {
   it("holat qo'llanmagani NEYTRAL", () => {
     // `pending`/`failed` — kutilgan oqim, ogohlantirish emas.
     expect(paymentOutcome(row({ apply_outcome: "ignored_status" }))).toEqual({
-      label: "holat qo‘llanmadi",
+      label: "holat qo'llanmadi",
       color: "default",
     });
   });

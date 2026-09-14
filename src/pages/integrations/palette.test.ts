@@ -38,9 +38,7 @@ describe("integratsiyalar palitrasi", () => {
      * kontrast shikoyatining manbasi. Ular Elchi'ning boshqa sahifalarida
      * qoladi, lekin BU sahifada PCS shkalasi ishlatiladi.
      */
-    const bad = entries.filter(([, src]) =>
-      /var\(--color-(text-muted|border-soft|main)/.test(src),
-    );
+    const bad = entries.filter(([, src]) => /var\(--color-(text-muted|border-soft|main)/.test(src));
     expect(bad.map(([f]) => f)).toEqual([]);
   });
 
@@ -104,9 +102,7 @@ describe("integratsiyalar palitrasi", () => {
      */
     for (const [file, src] of entries) {
       if (src.includes("border-gray-200")) {
-        expect(src, `${file} — qorong'i chegara yo'q`).toContain(
-          "dark:border-gray-700",
-        );
+        expect(src, `${file} — qorong'i chegara yo'q`).toContain("dark:border-gray-700");
       }
     }
   });
@@ -141,9 +137,7 @@ describe("⭐ QORONG'I YUZA — bitta rang, uch joyda bir xil", () => {
         import: "default",
       }) as Record<string, string>,
     )[0]?.[1];
-    return (raw ?? "")
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/\/\/.*$/gm, "");
+    return (raw ?? "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
   };
 
   const SURFACE = "#3A3358";
@@ -244,7 +238,7 @@ describe("⭐ GRADIENT sarlavhalar — ustida OQ matn", () => {
     const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
     return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
   };
-  const onWhite = (hex: string) => (1.05) / (lum(hex) + 0.05);
+  const onWhite = (hex: string) => 1.05 / (lum(hex) + 0.05);
 
   const uiRaw = () =>
     Object.entries(
@@ -263,9 +257,7 @@ describe("⭐ GRADIENT sarlavhalar — ustida OQ matn", () => {
     const block = /cardHeader[\s\S]*?\}\[health\]/.exec(code)?.[0] ?? "";
     expect(block.length).toBeGreaterThan(50);
 
-    const stops = [...block.matchAll(/(?:from|to)-([a-z]+-\d{3})/g)].map(
-      (m) => m[1],
-    );
+    const stops = [...block.matchAll(/(?:from|to)-([a-z]+-\d{3})/g)].map((m) => m[1]);
     // Uch holat × ikki to'xtash = olti.
     expect(stops).toHaveLength(6);
 
@@ -293,13 +285,14 @@ describe("⭐ GRADIENT sarlavhalar — ustida OQ matn", () => {
      * oq matnni yo'q qiladi — sarlavha to'qlashtirilgandan keyin ham shu
      * nishon o'qilmay qolardi.
      */
-    const overview = Object.entries(
-      import.meta.glob("./OverviewPage.tsx", {
-        eager: true,
-        query: "?raw",
-        import: "default",
-      }) as Record<string, string>,
-    )[0]?.[1] ?? "";
+    const overview =
+      Object.entries(
+        import.meta.glob("./OverviewPage.tsx", {
+          eager: true,
+          query: "?raw",
+          import: "default",
+        }) as Record<string, string>,
+      )[0]?.[1] ?? "";
 
     expect(overview.length).toBeGreaterThan(100);
     expect(overview).toContain("bg-black/25");

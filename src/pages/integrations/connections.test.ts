@@ -165,10 +165,7 @@ describe("Registr ↔ backend mosligi (bug qulflari)", () => {
      */
     const authType = outbound.fields.find((f) => f.key === "auth_type");
     expect(authType).toBeDefined();
-    expect(authType!.options?.map((o) => o.value).sort()).toEqual([
-      "api_key",
-      "login",
-    ]);
+    expect(authType!.options?.map((o) => o.value).sort()).toEqual(["api_key", "login"]);
   });
 
   it("kirishni cheklaydigan maydonlar `security` guruhida", () => {
@@ -196,9 +193,7 @@ describe("Registr ↔ backend mosligi (bug qulflari)", () => {
      * shuni majburlaydi (`RENDERED_GROUPS` izohiga qarang).
      */
     for (const type of CONNECTION_TYPES) {
-      const split = RENDERED_GROUPS.flatMap((g) =>
-        fieldsInGroup(type.fields, g),
-      ).map((f) => f.key);
+      const split = RENDERED_GROUPS.flatMap((g) => fieldsInGroup(type.fields, g)).map((f) => f.key);
       expect(split.sort()).toEqual(type.fields.map((f) => f.key).sort());
     }
   });
@@ -328,7 +323,10 @@ describe("4-bosqich — turlar HAQIQATAN farq qiladi", () => {
      * o'qiydi. Shu bois istisno olib tashlandi va hamma tur farq qiladi.
      */
     const sets = CONNECTION_TYPES.map((t) =>
-      t.fields.map((f) => f.key).sort().join("|"),
+      t.fields
+        .map((f) => f.key)
+        .sort()
+        .join("|"),
     );
     expect(new Set(sets).size).toBe(sets.length);
   });
@@ -343,12 +341,7 @@ describe("4-bosqich — turlar HAQIQATAN farq qiladi", () => {
     const hasFunnel = (k: string) =>
       keysOf(k).some((key) => key.startsWith("inbound_order_config"));
     expect(hasFunnel("crm")).toBe(true);
-    for (const k of [
-      "marketplace_outbound",
-      "carrier",
-      "payment",
-      "mirror",
-    ]) {
+    for (const k of ["marketplace_outbound", "carrier", "payment", "mirror"]) {
       expect(hasFunnel(k)).toBe(false);
     }
   });
@@ -369,8 +362,7 @@ describe("4-bosqich — turlar HAQIQATAN farq qiladi", () => {
      * `dispatch_config` posilka jo'natish shabloni. To'lov tizimida yoki
      * ko'zguda u ma'nosiz — u yerda posilka yo'q.
      */
-    const hasDispatch = (k: string) =>
-      keysOf(k).some((key) => key.startsWith("dispatch_config"));
+    const hasDispatch = (k: string) => keysOf(k).some((key) => key.startsWith("dispatch_config"));
     expect(hasDispatch("carrier")).toBe(true);
     for (const k of ["payment", "mirror", "crm", "marketplace_outbound"]) {
       expect(hasDispatch(k)).toBe(false);
@@ -404,9 +396,7 @@ describe("4-bosqich — turlar HAQIQATAN farq qiladi", () => {
      * Backend DTO'siga qo'shilgan 8 maydon formada so'ralmasa, 0-bosqich
      * behuda ketardi.
      */
-    const all = new Set(
-      CONNECTION_TYPES.flatMap((t) => t.fields.map((f) => f.key)),
-    );
+    const all = new Set(CONNECTION_TYPES.flatMap((t) => t.fields.map((f) => f.key)));
     for (const key of [
       "webhook_secret",
       "webhook_signature_header",
@@ -446,12 +436,14 @@ describe("visibleFields — shartli maydonlar", () => {
      * Ilgari to'rttasi BIRGA ko'rinardi va operator qaysi ikkitasini
      * to'ldirish kerakligini taxmin qilardi (audit FE-07).
      */
-    expect(
-      visibleFields(fields, { auth_type: "api_key" }).map((f) => f.key),
-    ).toEqual(["auth_type", "api_key"]);
-    expect(
-      visibleFields(fields, { auth_type: "login" }).map((f) => f.key),
-    ).toEqual(["auth_type", "password"]);
+    expect(visibleFields(fields, { auth_type: "api_key" }).map((f) => f.key)).toEqual([
+      "auth_type",
+      "api_key",
+    ]);
+    expect(visibleFields(fields, { auth_type: "login" }).map((f) => f.key)).toEqual([
+      "auth_type",
+      "password",
+    ]);
   });
 
   it("⭐ BOOLEAN shart — switch yoqilganda ko'rinadi", () => {
@@ -480,30 +472,19 @@ describe("visibleFields — shartli maydonlar", () => {
     ];
 
     expect(
-      visibleFields(gated, { "inbound_order_config.enabled": true }).map(
-        (f) => f.key,
-      ),
-    ).toEqual([
-      "inbound_order_config.enabled",
-      "inbound_order_config.stage_path",
-    ]);
+      visibleFields(gated, { "inbound_order_config.enabled": true }).map((f) => f.key),
+    ).toEqual(["inbound_order_config.enabled", "inbound_order_config.stage_path"]);
     // O'chirilgan va umuman tegilmagan — ikkisida ham yashiringan.
     expect(
-      visibleFields(gated, { "inbound_order_config.enabled": false }).map(
-        (f) => f.key,
-      ),
+      visibleFields(gated, { "inbound_order_config.enabled": false }).map((f) => f.key),
     ).toEqual(["inbound_order_config.enabled"]);
-    expect(visibleFields(gated, {}).map((f) => f.key)).toEqual([
-      "inbound_order_config.enabled",
-    ]);
+    expect(visibleFields(gated, {}).map((f) => f.key)).toEqual(["inbound_order_config.enabled"]);
   });
 
   it("⭐ sharti YO'Q maydon HAR DOIM ko'rinadi", () => {
     // Yangi maydon qo'shganda unutib qoldirsak yashirinib qolmasin.
     expect(visibleFields(fields, {}).map((f) => f.key)).toEqual(["auth_type"]);
-    expect(visibleFields([fields[0]], {}).map((f) => f.key)).toEqual([
-      "auth_type",
-    ]);
+    expect(visibleFields([fields[0]], {}).map((f) => f.key)).toEqual(["auth_type"]);
   });
 });
 
@@ -632,16 +613,13 @@ describe("⭐ `webhook_payload_paths` — UI kalitlari backend bilan MOS", () =>
       const hasLocator =
         keys.includes("webhook_payload_paths.external_ref") ||
         keys.includes("webhook_payload_paths.tracking_number");
-      expect(hasLocator, `${type.key} da posilkani topish yo'li yo'q`).toBe(
-        true,
-      );
+      expect(hasLocator, `${type.key} da posilkani topish yo'li yo'q`).toBe(true);
     }
   });
 });
 
 describe("⭐ TO'LOV TIZIMI formasi (7-bosqich)", () => {
-  const payment = () =>
-    CONNECTION_TYPES.find((t) => t.key === "payment")!;
+  const payment = () => CONNECTION_TYPES.find((t) => t.key === "payment")!;
   const keys = () => payment().fields.map((f) => f.key);
 
   it("⭐ TIYIN bayrog'i BOR", () => {
@@ -675,9 +653,7 @@ describe("⭐ TO'LOV TIZIMI formasi (7-bosqich)", () => {
      * To'lov hodisasida posilka YO'Q. Ilgari bu maydonlar shu yerda turardi
      * va chalg'itardi: operator ularni to'ldirardi, hech narsa bo'lmasdi.
      */
-    expect(
-      keys().some((k) => k.startsWith("webhook_payload_paths")),
-    ).toBe(false);
+    expect(keys().some((k) => k.startsWith("webhook_payload_paths"))).toBe(false);
   });
 
   it("⭐ KIRUVCHI webhook sekreti so'raladi", () => {
@@ -801,9 +777,7 @@ describe("⭐ `disabledWhen` — ko'rinadi, lekin tahrirlanmaydi", () => {
   });
 
   it("sharti YO'Q maydon hech qachon o'chirilmaydi", () => {
-    expect(isFieldDisabled({ ...field, disabledWhen: undefined }, {})).toBe(
-      false,
-    );
+    expect(isFieldDisabled({ ...field, disabledWhen: undefined }, {})).toBe(false);
   });
 
   it("⭐ sandbox maydonlari YASHIRILMAYDI, o'chiriladi", () => {

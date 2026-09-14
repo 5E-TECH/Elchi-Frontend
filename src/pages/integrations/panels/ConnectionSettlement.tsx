@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Alert,
   Button,
@@ -11,8 +11,8 @@ import {
   Table,
   Tag,
   message,
-} from 'antd';
-import { Banknote, CheckCircle2, Clock, Plus, Wallet, XCircle } from 'lucide-react';
+} from "antd";
+import { Banknote, CheckCircle2, Clock, Plus, Wallet, XCircle } from "lucide-react";
 import {
   money,
   toAmount,
@@ -20,10 +20,10 @@ import {
   useReceivableBalance,
   useReceivables,
   type ReceivableRow,
-} from '../../../entities/integrations/settlement';
-import { getBackendErrorMessage } from '../../../shared/lib/backendError';
-import FilterPills from '../FilterPills';
-import type { Connection } from '../useConnections';
+} from "../../../entities/integrations/settlement";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import FilterPills from "../FilterPills";
+import type { Connection } from "../useConnections";
 
 /**
  * HISOB-KITOB — tashuvchi yig'gan pul va bizga qarzi.
@@ -41,9 +41,9 @@ import type { Connection } from '../useConnections';
  */
 
 const STATUS_TAG: Record<string, { color: string; label: string }> = {
-  pending: { color: 'gold', label: 'kutilmoqda' },
-  settled: { color: 'green', label: 'yopilgan' },
-  cancelled: { color: 'default', label: 'bekor' },
+  pending: { color: "gold", label: "kutilmoqda" },
+  settled: { color: "green", label: "yopilgan" },
+  cancelled: { color: "default", label: "bekor" },
 };
 
 const ConnectionSettlement = ({ connection }: { connection: Connection }) => {
@@ -56,7 +56,7 @@ const ConnectionSettlement = ({ connection }: { connection: Connection }) => {
    * ULARNING tomonida. Elchi'da hamkor uchun bunday jadval YO'Q, shuning
    * uchun soxta raqam ko'rsatmaymiz.
    */
-  if (connection.kind === 'partner') {
+  if (connection.kind === "partner") {
     return (
       <Alert
         type="info"
@@ -65,13 +65,12 @@ const ConnectionSettlement = ({ connection }: { connection: Connection }) => {
         description={
           <div className="space-y-1 text-sm">
             <p className="m-0">
-              Hamkor bizga buyurtma beradi, pulni esa <b>biz</b> yig'amiz va
-              har sotuvda ularga yig'ilgan summani (<code>cod_collected</code>)
-              webhook bilan yuboramiz — ya'ni daftar ularning tomonida.
+              Hamkor bizga buyurtma beradi, pulni esa <b>biz</b> yig'amiz va har sotuvda ularga
+              yig'ilgan summani (<code>cod_collected</code>) webhook bilan yuboramiz — ya'ni daftar
+              ularning tomonida.
             </p>
             <p className="m-0">
-              Yuborilgan summalarni "Hodisalar" bo'limida har hodisa bo'yicha
-              ko'rish mumkin.
+              Yuborilgan summalarni "Hodisalar" bo'limida har hodisa bo'yicha ko'rish mumkin.
             </p>
           </div>
         }
@@ -83,7 +82,7 @@ const ConnectionSettlement = ({ connection }: { connection: Connection }) => {
 };
 
 const CarrierSettlement = ({ connection }: { connection: Connection }) => {
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState("pending");
   const [page, setPage] = useState(1);
   const [payOpen, setPayOpen] = useState(false);
   const [form] = Form.useForm<{
@@ -157,7 +156,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
           <Statistic
             title="Yopilmagan qarz"
             value={money(outstanding)}
-            valueStyle={{ color: outstanding > 0 ? '#ea580c' : '#16a34a' }}
+            valueStyle={{ color: outstanding > 0 ? "#ea580c" : "#16a34a" }}
           />
           <Statistic
             title="Yopilmagan yozuv"
@@ -167,9 +166,8 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
         </div>
 
         <p className="m-0 mt-3 text-xs text-gray-500 dark:text-gray-400">
-          Qarz <b>davr bo'yicha kesilmaydi</b> — u to'planib boradigan qoldiq.
-          Oldingi oyda yig'ilib bu oyda to'langan pul aks holda "ortiqcha
-          to'lov" bo'lib ko'rinardi.
+          Qarz <b>davr bo'yicha kesilmaydi</b> — u to'planib boradigan qoldiq. Oldingi oyda yig'ilib
+          bu oyda to'langan pul aks holda "ortiqcha to'lov" bo'lib ko'rinardi.
         </p>
       </Card>
 
@@ -190,23 +188,23 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
           }}
           options={[
             {
-              value: 'pending',
-              label: 'Kutilmoqda',
+              value: "pending",
+              label: "Kutilmoqda",
               icon: <Clock className="h-3.5 w-3.5" />,
-              activeClass: 'bg-amber-600 text-white border-amber-600',
+              activeClass: "bg-amber-600 text-white border-amber-600",
             },
             {
-              value: 'settled',
-              label: 'Yopilgan',
+              value: "settled",
+              label: "Yopilgan",
               icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-              activeClass: 'bg-green-600 text-white border-green-600',
+              activeClass: "bg-green-600 text-white border-green-600",
             },
             {
-              value: 'cancelled',
-              label: 'Bekor',
+              value: "cancelled",
+              label: "Bekor",
               icon: <XCircle className="h-3.5 w-3.5" />,
             },
-            { value: 'all', label: 'Hammasi' },
+            { value: "all", label: "Hammasi" },
           ]}
         />
 
@@ -241,47 +239,41 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
           }}
           columns={[
             {
-              title: 'Buyurtma',
+              title: "Buyurtma",
               width: 120,
-              render: (_: unknown, r) => (
-                <span className="font-mono text-xs">{r.order_id}</span>
-              ),
+              render: (_: unknown, r) => <span className="font-mono text-xs">{r.order_id}</span>,
             },
             {
-              title: 'Tashqi raqam',
+              title: "Tashqi raqam",
               width: 150,
               render: (_: unknown, r) => (
-                <span className="font-mono text-xs">
-                  {r.external_ref ?? '—'}
-                </span>
+                <span className="font-mono text-xs">{r.external_ref ?? "—"}</span>
               ),
             },
             {
-              title: 'Summa',
+              title: "Summa",
               width: 140,
-              align: 'right' as const,
+              align: "right" as const,
               render: (_: unknown, r) => (
                 <span className="tabular-nums">{money(toAmount(r.amount))}</span>
               ),
             },
             {
-              title: 'Holat',
+              title: "Holat",
               width: 130,
               render: (_: unknown, r) => {
                 const t = STATUS_TAG[r.status] ?? {
-                  color: 'default',
+                  color: "default",
                   label: r.status,
                 };
                 return <Tag color={t.color}>{t.label}</Tag>;
               },
             },
             {
-              title: 'Yopilgan',
+              title: "Yopilgan",
               render: (_: unknown, r) => (
                 <span className="font-mono text-xs">
-                  {r.settled_at
-                    ? new Date(r.settled_at).toLocaleString('uz-UZ')
-                    : '—'}
+                  {r.settled_at ? new Date(r.settled_at).toLocaleString("uz-UZ") : "—"}
                 </span>
               ),
             },
@@ -296,7 +288,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
         onCancel={() => setPayOpen(false)}
         onOk={submitPayment}
         okText="Yozish"
-        cancelText="Bekor"
+        cancelText="Bekor qilish"
         confirmLoading={createRemittance.isPending}
         destroyOnClose
       >
@@ -312,9 +304,9 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
             name="amount"
             label="Summa"
             rules={[
-              { required: true, message: 'Summa kiritilishi shart' },
+              { required: true, message: "Summa kiritilishi shart" },
               {
-                type: 'number',
+                type: "number",
                 min: 1,
                 message: "Summa noldan katta bo'lishi kerak",
               },
@@ -330,10 +322,8 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
               min={1}
               step={1000}
               /* Minglik ajratgich — katta summada nol sanash xatoga olib keladi. */
-              formatter={(v) =>
-                `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-              }
-              parser={(v) => Number((v ?? '').replace(/\s/g, ''))}
+              formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, " ")}
+              parser={(v) => Number((v ?? "").replace(/\s/g, ""))}
               placeholder="1 500 000"
             />
           </Form.Item>
@@ -352,8 +342,8 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
         </Form>
 
         <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
-          Qarzlar <b>eng eskisidan</b> boshlab yopiladi. Hozirgi yopilmagan
-          qoldiq: <b>{money(outstanding)}</b>
+          Qarzlar <b>eng eskisidan</b> boshlab yopiladi. Hozirgi yopilmagan qoldiq:{" "}
+          <b>{money(outstanding)}</b>
         </p>
       </Modal>
     </div>

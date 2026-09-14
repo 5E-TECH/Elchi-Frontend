@@ -1,15 +1,9 @@
-import { useNavigate } from 'react-router-dom';
-import { Button, Card, Tag } from 'antd';
-import {
-  ArrowDownLeft,
-  ArrowLeft,
-  ArrowUpRight,
-  Check,
-  ChevronRight,
-} from 'lucide-react';
-import { CATEGORY_LABEL, ROLE_META } from '../../entities/integrations';
-import { CONNECTION_TYPES, type ConnectionTypeMeta } from './connections';
-import { PAGE_SUBTITLE, PAGE_TITLE } from './ui';
+import { useNavigate } from "react-router-dom";
+import { Button, Card, Tag } from "antd";
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Check, ChevronRight } from "lucide-react";
+import { CATEGORY_LABEL, ROLE_META } from "../../entities/integrations";
+import { CONNECTION_TYPES, type ConnectionTypeMeta } from "./connections";
+import { PAGE_SUBTITLE, PAGE_TITLE } from "./ui";
 
 /**
  * KATALOG — "qanday tizim ulaymiz?" degan savolga javob.
@@ -28,16 +22,16 @@ import { PAGE_SUBTITLE, PAGE_TITLE } from './ui';
 
 /** Yo'nalishni SO'Z bilan ham aytamiz — o'q o'zi yetarli emas. */
 const DIRECTION: Record<
-  'partner' | 'integration',
+  "partner" | "integration",
   { label: string; detail: string; icon: React.ReactNode }
 > = {
   partner: {
-    label: 'Ular bizga',
-    detail: 'Kalitni BIZ beramiz. Ular buyurtma yuboradi, biz status qaytaramiz.',
+    label: "Ular bizga",
+    detail: "Kalitni BIZ beramiz. Ular buyurtma yuboradi, biz status qaytaramiz.",
     icon: <ArrowDownLeft className="h-4 w-4" />,
   },
   integration: {
-    label: 'Biz ularga',
+    label: "Biz ularga",
     detail: "Kalit ULARDA. So'rovni biz yuboramiz va javobini o'zimizga moslaymiz.",
     icon: <ArrowUpRight className="h-4 w-4" />,
   },
@@ -47,7 +41,7 @@ const CatalogPage = () => {
   const navigate = useNavigate();
 
   /** Yo'nalish bo'yicha guruh — eng muhim farq shu, tur emas. */
-  const groups = (['partner', 'integration'] as const).map((kind) => ({
+  const groups = (["partner", "integration"] as const).map((kind) => ({
     kind,
     items: CONNECTION_TYPES.filter((t) => t.kind === kind),
   }));
@@ -57,7 +51,7 @@ const CatalogPage = () => {
       <div className="flex items-center gap-3">
         <Button
           icon={<ArrowLeft className="h-4 w-4" />}
-          onClick={() => navigate('/integrations')}
+          onClick={() => navigate("/integrations")}
           title="Ulanishlarga qaytish"
         />
         <div>
@@ -99,13 +93,7 @@ const CatalogPage = () => {
   );
 };
 
-const TypeCard = ({
-  type,
-  onPick,
-}: {
-  type: ConnectionTypeMeta;
-  onPick: () => void;
-}) => (
+const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => void }) => (
   <Card
     hoverable
     onClick={onPick}
@@ -129,7 +117,7 @@ const TypeCard = ({
        * Enter VA Bo'shliq — ikkisi ham tugma standarti. Bo'shliqda
        * `preventDefault` shart, aks holda brauzer sahifani pastga suradi.
        */
-      if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         onPick();
       }

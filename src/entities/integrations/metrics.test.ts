@@ -31,9 +31,7 @@ const m = (over: Partial<ConnectionMetrics> = {}): ConnectionMetrics => ({
  */
 describe("connectionHealth", () => {
   it("TC1: hammasi joyida -> ok", () => {
-    expect(
-      connectionHealth({ isActive: true, configured: true, metrics: m() }),
-    ).toBe("ok");
+    expect(connectionHealth({ isActive: true, configured: true, metrics: m() })).toBe("ok");
   });
 
   it("TC2: ⭐ o'chirilgan -> `off`, XATO emas", () => {
@@ -50,9 +48,7 @@ describe("connectionHealth", () => {
 
   it("TC3: sozlanmagan -> attention", () => {
     // Hodisalar hech qayerga ketmaydi, shuning uchun e'tibor kerak.
-    expect(
-      connectionHealth({ isActive: true, configured: false, metrics: m() }),
-    ).toBe("attention");
+    expect(connectionHealth({ isActive: true, configured: false, metrics: m() })).toBe("attention");
   });
 
   it("TC4: ⭐ sozlama to'g'ri, lekin YETMAGAN hodisa bor -> attention", () => {
@@ -72,15 +68,11 @@ describe("connectionHealth", () => {
 
   it("TC5: metrika hali yo'q -> ok (xato deb ko'rsatilmaydi)", () => {
     // Yangi ulangan ulanishda hodisa bo'lmagan bo'lishi tabiiy.
-    expect(
-      connectionHealth({ isActive: true, configured: true, metrics: undefined }),
-    ).toBe("ok");
+    expect(connectionHealth({ isActive: true, configured: true, metrics: undefined })).toBe("ok");
   });
 
   it("TC6: o'chirilgan ustuvor — sozlanmagan bo'lsa ham `off`", () => {
-    expect(
-      connectionHealth({ isActive: false, configured: false }),
-    ).toBe("off");
+    expect(connectionHealth({ isActive: false, configured: false })).toBe("off");
   });
 });
 
@@ -106,25 +98,25 @@ describe("metricsByUid", () => {
   });
 });
 
-describe('fmtMetric', () => {
+describe("fmtMetric", () => {
   /**
    * Bu funksiyaning butun mavjudlik sababi: `null` ni `0` deb ko'rsatmaslik.
    * `0 ms` "bir zumda javob berdi", `0%` esa "hammasi yiqildi" degan yolg'on.
    */
   it('null va undefined — "—"', () => {
-    expect(fmtMetric(null)).toBe('—');
-    expect(fmtMetric(undefined)).toBe('—');
-    expect(fmtMetric(null, ' ms')).toBe('—');
+    expect(fmtMetric(null)).toBe("—");
+    expect(fmtMetric(undefined)).toBe("—");
+    expect(fmtMetric(null, " ms")).toBe("—");
   });
 
   it('0 — haqiqiy o\'lchov, "—" EMAS', () => {
     // Nol hodisa ham o'lchov: "hodisa bo'lmadi" deb aytish kerak.
-    expect(fmtMetric(0)).toBe('0');
-    expect(fmtMetric(0, '%')).toBe('0%');
+    expect(fmtMetric(0)).toBe("0");
+    expect(fmtMetric(0, "%")).toBe("0%");
   });
 
-  it('qiymatga qo\'shimcha belgi qo\'shiladi', () => {
-    expect(fmtMetric(98.5, '%')).toBe('98.5%');
-    expect(fmtMetric(184, ' ms')).toBe('184 ms');
+  it("qiymatga qo'shimcha belgi qo'shiladi", () => {
+    expect(fmtMetric(98.5, "%")).toBe("98.5%");
+    expect(fmtMetric(184, " ms")).toBe("184 ms");
   });
 });

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export interface PillOption {
   value: string;
@@ -32,8 +32,7 @@ export const FilterPills = ({ value, onChange, options }: Props) => (
   <div className="flex flex-wrap items-center gap-1.5">
     {options.map((o) => {
       const active = value === o.value;
-      const activeCls =
-        o.activeClass ?? 'bg-violet-600 text-white border-violet-600';
+      const activeCls = o.activeClass ?? "bg-violet-600 text-white border-violet-600";
       return (
         <button
           key={o.value}
@@ -43,7 +42,7 @@ export const FilterPills = ({ value, onChange, options }: Props) => (
           className={`group inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${
             active
               ? `${activeCls} shadow-sm`
-              : 'border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:text-violet-600 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:text-violet-400'
+              : "border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:text-violet-600 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-300 dark:hover:text-violet-400"
           }`}
         >
           {o.icon}
@@ -52,8 +51,8 @@ export const FilterPills = ({ value, onChange, options }: Props) => (
             <span
               className={`inline-flex min-w-[20px] justify-center rounded-full px-1.5 text-xs font-semibold ${
                 active
-                  ? 'bg-white/25 text-white'
-                  : 'bg-gray-100 text-gray-600 group-hover:bg-violet-100 group-hover:text-violet-700 dark:bg-gray-700 dark:text-gray-300'
+                  ? "bg-white/25 text-white"
+                  : "bg-gray-100 text-gray-600 group-hover:bg-violet-100 group-hover:text-violet-700 dark:bg-gray-700 dark:text-gray-300"
               }`}
             >
               {o.count}
