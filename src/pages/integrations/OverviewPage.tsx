@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Activity,
   CheckCircle,
@@ -57,13 +58,15 @@ import {
  * holat uchun qo'shilgan edi. Uni yashil ko'rsatish muammoni yashirardi.
  */
 
-const HEALTH_TEXT: Record<ConnectionHealth, string> = {
-  ok: "Ishlayapti",
-  attention: "E'tibor kerak",
-  off: "O'chirilgan",
+/** Holat yorliqlari — i18n kalitlari (`integrations` nomlar fazosi). */
+const HEALTH_KEY: Record<ConnectionHealth, string> = {
+  ok: "healthOk",
+  attention: "healthAttention",
+  off: "healthOff",
 };
 
 const OverviewPage = () => {
+  const { t } = useTranslation("integrations");
   const navigate = useNavigate();
   const { connections, isLoading, partialError, refetch } = useConnections();
   const metricsQuery = useIntegrationMetrics();
@@ -102,8 +105,8 @@ const OverviewPage = () => {
             <Settings className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className={`m-0 ${PAGE_TITLE}`}>Integratsiyalar</h1>
-            <p className={`m-0 ${PAGE_SUBTITLE}`}>Tashqi tizimlar bilan ulanishlarni boshqarish</p>
+            <h1 className={`m-0 ${PAGE_TITLE}`}>{t("pageTitle")}</h1>
+            <p className={`m-0 ${PAGE_SUBTITLE}`}>{t("pageSubtitle")}</p>
           </div>
         </div>
 
@@ -112,7 +115,7 @@ const OverviewPage = () => {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Qidirish..."
+              placeholder={t("searchPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className={SEARCH_INPUT}
@@ -121,14 +124,14 @@ const OverviewPage = () => {
 
           {/*
             Hodisalar holati — PCS'dagi "Sync Monitor" naqshi: yetmagan
-            hodisa bo'lsa sariq, bo'lmasa yashil. Raqam tugmaning ichida,
+            {t("eventsWord")} bo'lsa sariq, bo'lmasa yashil. Raqam tugmaning ichida,
             chunki "nechta" degan savol "bormi" dan keyin darhol keladi.
           */}
           <button
             type="button"
             onClick={() => void metricsQuery.refetch()}
             disabled={metricsQuery.isFetching}
-            title="Oxirgi 24 soatdagi hodisalar"
+            title={t("eventsTooltip")}
             className={`${softBtn(failedCount > 0 ? "amber" : "green")} px-4 py-2.5`}
           >
             {metricsQuery.isFetching ? (
@@ -137,13 +140,13 @@ const OverviewPage = () => {
               <Activity className="h-5 w-5" />
             )}
             <span className="hidden sm:inline">
-              {failedCount > 0 ? `${failedCount} hodisa yetmadi` : "Hodisalar joyida"}
+              {failedCount > 0 ? t("eventsFailed", { count: failedCount }) : t("eventsOk")}
             </span>
           </button>
 
           <button type="button" onClick={() => navigate("/integrations/new")} className={CTA_BTN}>
             <Plus className="h-5 w-5" />
-            Yangi ulanish
+            {t("newConnection")}
           </button>
         </div>
       </div>
@@ -151,7 +154,7 @@ const OverviewPage = () => {
       {/* Qismiy xato — ro'yxat to'liq emasligini AYTISH kerak. */}
       {partialError && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-900/20 dark:text-amber-300">
-          Ro'yxatning bir qismini olib bo'lmadi — hamma ulanish ko'rinmayotgan bo'lishi mumkin.
+          {t("partialError")}
         </div>
       )}
 
@@ -164,12 +167,10 @@ const OverviewPage = () => {
         <div className="flex flex-col items-center justify-center py-12">
           <Unlink className="mb-4 h-16 w-16 text-gray-300 dark:text-gray-600" />
           <h3 className="mb-2 text-lg font-semibold text-gray-700 dark:text-gray-300">
-            {query ? "Ulanish topilmadi" : "Ulanishlar yo'q"}
+            {query ? t("emptyNotFound") : t("emptyNone")}
           </h3>
           <p className="max-w-md text-center text-gray-500 dark:text-gray-400">
-            {query
-              ? `"${query}" bo'yicha hech narsa topilmadi`
-              : "Hozircha ulanish yo'q. Yangi qo'shish uchun tugmani bosing."}
+            {query ? t("emptySearchHint", { query }) : t("emptyNoneHint")}
           </p>
         </div>
       ) : (
@@ -222,6 +223,7 @@ const ConnectionCard = ({
   onOpen: () => void;
   onRefresh: () => void;
 }) => {
+  const { t } = useTranslation("integrations");
   const health = connectionHealth({
     isActive: connection.is_active,
     configured: isConfigured(connection),
@@ -261,7 +263,7 @@ const ConnectionCard = ({
             ) : (
               <XCircle className="h-3.5 w-3.5" />
             )}
-            {HEALTH_TEXT[health]}
+            {t(HEALTH_KEY[health])}
           </span>
         </div>
       </div>
@@ -269,8 +271,10 @@ const ConnectionCard = ({
       {/* ── Tana ── */}
       <div className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Tag color={ROLE_TAG_COLOR[connection.role]}>{ROLE_META[connection.role].label}</Tag>
-          <Tag>{CATEGORY_LABEL[connection.category]}</Tag>
+          <Tag color={ROLE_TAG_COLOR[connection.role]}>
+            {t(ROLE_META[connection.role].labelKey)}
+          </Tag>
+          <Tag>{t(CATEGORY_LABEL[connection.category])}</Tag>
           {/*
             SINOV REJIMI NISHONI — ro'yxatdan ko'rinishi SHART.
             Ilgari sandbox butunlay ko'rinmas edi: na kartada, na panelda,
@@ -281,7 +285,7 @@ const ConnectionCard = ({
           */}
           {sandboxOn(connection) && (
             <Tag color="orange" title="Har hodisaning nusxasi sinov manziliga ham ketmoqda">
-              SINOV REJIMI
+              {t("sandboxBadge")}
             </Tag>
           )}
         </div>
@@ -300,14 +304,14 @@ const ConnectionCard = ({
         */}
         <div className="flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            24 soatda:{" "}
+            {t("eventsIn24h")}{" "}
             <span className="font-semibold text-gray-700 dark:text-gray-200">
               {metrics?.events ?? 0}
             </span>{" "}
             hodisa
             {(metrics?.failed ?? 0) > 0 && (
               <span className="ml-1 font-semibold text-red-600 dark:text-red-400">
-                · {metrics!.failed} yetmadi
+                · {metrics!.failed} {t("eventsFailedShort")}
               </span>
             )}
           </span>
@@ -325,13 +329,13 @@ const ConnectionCard = ({
             Sozlamasi tugallanmagan ulanishda "Ochish" emas, "Davom etish" —
             operator nima qilish kerakligini tugmadan biladi.
           */}
-          {configured ? "Boshqarish" : "Davom etish"}
+          {configured ? t("manage") : t("continueSetup")}
         </button>
 
         <button
           type="button"
           onClick={onRefresh}
-          title="Ro'yxatni yangilash"
+          title={t("refreshList")}
           className={`${softBtn("gray")} shrink-0`}
         >
           <RefreshCw className="h-4 w-4" />

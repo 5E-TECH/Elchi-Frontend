@@ -49,8 +49,9 @@ const refreshCount = () =>
 
 const clickView = async (label: RegExp) => {
   const user = userEvent.setup();
-  const node = Array.from(document.querySelectorAll("label, .ant-segmented-item"))
-    .find((el) => label.test(el.textContent ?? ""));
+  const node = Array.from(document.querySelectorAll("label, .ant-segmented-item")).find((el) =>
+    label.test(el.textContent ?? ""),
+  );
   if (!node) throw new Error(`"${label}" ko'rinishi topilmadi`);
   await user.click(node);
 };
@@ -73,9 +74,7 @@ describe("Hodisalar tabi — ko'rinish almashtirgichi", () => {
   it("⭐ to'lov tizimida UCH ko'rinish taklif qiladi", async () => {
     renderWithProviders(<ConnectionLog connection={conn()} />);
 
-    await waitFor(() =>
-      expect(screen.getByText(/Onlayn to'lovlar/)).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText(/Onlayn to'lovlar/)).toBeTruthy());
     expect(screen.getByText(/Kiruvchi webhooklar/)).toBeTruthy();
     expect(screen.getByText(/Sinxron tarixi/)).toBeTruthy();
   });
@@ -89,9 +88,7 @@ describe("Hodisalar tabi — ko'rinish almashtirgichi", () => {
       <ConnectionLog connection={conn({ role: "carrier", category: "cargo" })} />,
     );
 
-    await waitFor(() =>
-      expect(screen.getByText(/Kiruvchi webhooklar/)).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText(/Kiruvchi webhooklar/)).toBeTruthy());
     expect(screen.queryByText(/Onlayn to'lovlar/)).toBeNull();
     // Almashtirgich baribir bitta "Yangilash" qoldiradi.
     expect(refreshCount()).toBe(1);
@@ -101,15 +98,11 @@ describe("Hodisalar tabi — ko'rinish almashtirgichi", () => {
     renderWithProviders(<ConnectionLog connection={conn()} />);
 
     // Boshlanishda to'lovlar ko'rinishi — banner shundan bilinadi.
-    await waitFor(() =>
-      expect(screen.getByText(/kassaga yozilmaydi/)).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText(/kassaga yozilmaydi/)).toBeTruthy());
 
     await clickView(/Sinxron tarixi/);
 
-    await waitFor(() =>
-      expect(screen.queryByText(/kassaga yozilmaydi/)).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByText(/kassaga yozilmaydi/)).toBeNull());
     // Almashgandan keyin ham bitta tugma.
     expect(refreshCount()).toBe(1);
   });
@@ -120,9 +113,7 @@ describe("Hodisalar tabi — ko'rinish almashtirgichi", () => {
      * variantli almashtirgich shovqin bo'lardi.
      */
     renderWithProviders(
-      <ConnectionLog
-        connection={conn({ kind: "partner", uid: "partner:7", id: "7" })}
-      />,
+      <ConnectionLog connection={conn({ kind: "partner", uid: "partner:7", id: "7" })} />,
     );
 
     await waitFor(() => expect(refreshCount()).toBe(1));

@@ -153,12 +153,22 @@ describe("⭐ ATAMALAR — bir tushuncha, bir nom", () => {
 
 describe("⭐ TAKSONOMIYA — bir qiymat, bir yozuv", () => {
   /**
-   * ⚠️ NIMA BUZILGAN EDI. `cargo` qiymati kartada inglizcha "Cargo", tanlash
-   * ro'yxatida esa "Kargo" deb yozilardi — bitta tur ikki xil ko'rinardi.
+   * ⚠️ TAKSONOMIYA i18n KALITIGA AYLANDI (2026-09-14), shu bois tekshiruv
+   * lokal FAYLI orqali qilinadi.
    *
-   * `Marketplace` va `CRM` ATAYLAB inglizcha: ular o'zbek tilida ham shu
-   * shaklda ishlatiladi va hamkor hujjatlarida ham shunday.
+   * Ilgari `cargo` kartada inglizcha "Cargo", tanlash ro'yxatida esa
+   * "Kargo" deb yozilardi — bitta tur ikki xil ko'rinardi.
+   *
+   * `Marketplace` va `CRM` ATAYLAB shu shaklda qoladi: ular o'zbek tilida
+   * ham, rus tilida ham xalqaro atama sifatida ishlatiladi.
    */
+  const uz = Object.entries(
+    import.meta.glob<Record<string, string>>(
+      "../../locales/uz/integrations.json",
+      { eager: true, import: "default" },
+    ),
+  )[0][1];
+
   const categoryOptions =
     TYPE_CHANGE_FIELDS.find((f) => f.key === "category")?.options ?? [];
 
@@ -168,16 +178,17 @@ describe("⭐ TAKSONOMIYA — bir qiymat, bir yozuv", () => {
 
   it("⭐ qisqa yorliq TANLASH yorlig'i ichida bo'ladi", () => {
     /**
-     * Kartadagi qisqa yorliq (`CATEGORY_LABEL`) va formadagi uzun yorliq
-     * ("Marketplace / sayt") FARQ QILISHI mumkin — biri nishon, ikkinchisi
-     * tanlov. Lekin ular AYNI so'zdan boshlanishi kerak, aks holda operator
-     * ikkisini bog'lay olmaydi.
+     * Kartadagi qisqa yorliq va formadagi uzun yorliq ("Marketplace / sayt")
+     * FARQ QILISHI mumkin — biri nishon, ikkinchisi tanlov. Lekin ular AYNI
+     * so'zdan boshlanishi kerak, aks holda operator ikkisini bog'lay
+     * olmaydi.
      */
     for (const opt of categoryOptions) {
-      const short = CATEGORY_LABEL[opt.value as keyof typeof CATEGORY_LABEL];
-      expect(short, `${opt.value} uchun qisqa yorliq yo'q`).toBeTruthy();
+      const key = CATEGORY_LABEL[opt.value as keyof typeof CATEGORY_LABEL];
+      const short = uz[key];
+      expect(short, `${opt.value} uchun tarjima yo'q`).toBeTruthy();
       expect(
-        opt.label.includes(short),
+        opt.label.includes(short!),
         `"${opt.label}" ichida "${short}" yo'q — ikki xil yozilgan`,
       ).toBe(true);
     }
@@ -185,14 +196,16 @@ describe("⭐ TAKSONOMIYA — bir qiymat, bir yozuv", () => {
 
   it("⭐ `cargo` O'ZBEKCHA yozilgan", () => {
     // Aniq regressiya qulfi: ilgari "Cargo" edi.
-    expect(CATEGORY_LABEL.cargo).toBe("Kargo");
+    expect(uz[CATEGORY_LABEL.cargo]).toBe("Kargo");
   });
 
   it("rol yorliqlari bo'sh emas va inglizcha kod EMAS", () => {
     for (const [role, meta] of Object.entries(ROLE_META)) {
-      expect(meta.label.length, role).toBeGreaterThan(3);
+      const label = uz[meta.labelKey];
+      expect(label, `${role} tarjimasi yo'q`).toBeTruthy();
+      expect(label!.length).toBeGreaterThan(3);
       // Enum qiymatining o'zi yorliq bo'lib qolmasin ("carrier", "source").
-      expect(meta.label.toLowerCase()).not.toBe(role);
+      expect(label!.toLowerCase()).not.toBe(role);
     }
   });
 });
