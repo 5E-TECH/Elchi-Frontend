@@ -13,21 +13,13 @@ export type IntegrationRole = "carrier" | "source" | "payment" | "mirror";
 
 /** Tizim turi — guruhlash va onboarding shabloni uchun. */
 export type IntegrationCategory =
-  | "marketplace"
-  | "crm"
-  | "cargo"
-  | "payment"
-  | "spreadsheet"
-  | "other";
+  "marketplace" | "crm" | "cargo" | "payment" | "spreadsheet" | "other";
 
 /** `spec` — biz kontrakt beramiz · `adapter` — biz moslashamiz. */
 export type IntegrationMode = "spec" | "adapter";
 
 /** Rol yorliqlari va izohlari — UI bir joydan o'qiydi. */
-export const ROLE_META: Record<
-  IntegrationRole,
-  { label: string; hint: string }
-> = {
+export const ROLE_META: Record<IntegrationRole, { label: string; hint: string }> = {
   carrier: {
     label: "Yetkazuvchilar",
     hint: "Bizdan posilka oladi va yetkazadi. COD puli ular orqali qaytadi",
@@ -49,7 +41,16 @@ export const ROLE_META: Record<
 export const CATEGORY_LABEL: Record<IntegrationCategory, string> = {
   marketplace: "Marketplace",
   crm: "CRM",
-  cargo: "Cargo",
+  /**
+   * ⚠️ "Kargo", "Cargo" EMAS. Ayni qiymat tanlash ro'yxatida "Kargo" deb
+   * yozilgan (`connections.ts` — `TYPE_CHANGE_FIELDS`), kartada esa
+   * inglizcha "Cargo" chiqardi: bitta tur ikki xil yozilib, operator ular
+   * boshqa narsa deb o'ylashi mumkin edi.
+   *
+   * `Marketplace` va `CRM` ATAYLAB inglizcha qoladi — ular o'zbek tilida
+   * ham shu shaklda ishlatiladi va hamkor hujjatlarida ham shunday.
+   */
+  cargo: "Kargo",
   payment: "To'lov",
   spreadsheet: "Jadval",
   other: "Boshqa",
@@ -186,8 +187,7 @@ export const getIntegrationErrorMessage = (err: unknown): string => {
 export const useGetIntegrations = (params: IntegrationParams) =>
   useQuery<IntegrationsResponse>({
     queryKey: integrationKeys.list(params),
-    queryFn: () =>
-      api.get(API_ENDPOINTS.INTEGRATIONS.BASE, { params }).then((res) => res.data),
+    queryFn: () => api.get(API_ENDPOINTS.INTEGRATIONS.BASE, { params }).then((res) => res.data),
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Activity,
   CheckCircle,
@@ -12,8 +12,8 @@ import {
   Settings,
   Unlink,
   XCircle,
-} from 'lucide-react';
-import { CATEGORY_LABEL, ROLE_META } from '../../entities/integrations';
+} from "lucide-react";
+import { CATEGORY_LABEL, ROLE_META } from "../../entities/integrations";
 import {
   connectionHealth,
   fmtMetric,
@@ -21,9 +21,9 @@ import {
   useIntegrationMetrics,
   type ConnectionHealth,
   type ConnectionMetrics,
-} from '../../entities/integrations/metrics';
-import { isConfigured, useConnections, type Connection } from './useConnections';
-import { Tag } from 'antd';
+} from "../../entities/integrations/metrics";
+import { isConfigured, useConnections, type Connection } from "./useConnections";
+import { Tag } from "antd";
 import {
   CARD_FOOTER,
   CTA_BTN,
@@ -36,7 +36,7 @@ import {
   cardHeader,
   cardShell,
   softBtn,
-} from './ui';
+} from "./ui";
 
 /**
  * INTEGRATSIYALAR — kartalar to'ri.
@@ -58,7 +58,7 @@ import {
  */
 
 const HEALTH_TEXT: Record<ConnectionHealth, string> = {
-  ok: 'Ishlayapti',
+  ok: "Ishlayapti",
   attention: "E'tibor kerak",
   off: "O'chirilgan",
 };
@@ -67,19 +67,14 @@ const OverviewPage = () => {
   const navigate = useNavigate();
   const { connections, isLoading, partialError, refetch } = useConnections();
   const metricsQuery = useIntegrationMetrics();
-  const metrics = useMemo(
-    () => metricsByUid(metricsQuery.data),
-    [metricsQuery.data],
-  );
-  const [query, setQuery] = useState('');
+  const metrics = useMemo(() => metricsByUid(metricsQuery.data), [metricsQuery.data]);
+  const [query, setQuery] = useState("");
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = q
       ? connections.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.subtitle.toLowerCase().includes(q),
+          (c) => c.name.toLowerCase().includes(q) || c.subtitle.toLowerCase().includes(q),
         )
       : connections;
 
@@ -92,9 +87,7 @@ const OverviewPage = () => {
       off: 1,
       ok: 2,
     };
-    return [...list].sort(
-      (a, b) => weight[healthOf(a, metrics)] - weight[healthOf(b, metrics)],
-    );
+    return [...list].sort((a, b) => weight[healthOf(a, metrics)] - weight[healthOf(b, metrics)]);
   }, [connections, query, metrics]);
 
   const totals = metricsQuery.data?.totals;
@@ -110,9 +103,7 @@ const OverviewPage = () => {
           </div>
           <div>
             <h1 className={`m-0 ${PAGE_TITLE}`}>Integratsiyalar</h1>
-            <p className={`m-0 ${PAGE_SUBTITLE}`}>
-              Tashqi tizimlar bilan ulanishlarni boshqarish
-            </p>
+            <p className={`m-0 ${PAGE_SUBTITLE}`}>Tashqi tizimlar bilan ulanishlarni boshqarish</p>
           </div>
         </div>
 
@@ -138,7 +129,7 @@ const OverviewPage = () => {
             onClick={() => void metricsQuery.refetch()}
             disabled={metricsQuery.isFetching}
             title="Oxirgi 24 soatdagi hodisalar"
-            className={`${softBtn(failedCount > 0 ? 'amber' : 'green')} px-4 py-2.5`}
+            className={`${softBtn(failedCount > 0 ? "amber" : "green")} px-4 py-2.5`}
           >
             {metricsQuery.isFetching ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -146,17 +137,11 @@ const OverviewPage = () => {
               <Activity className="h-5 w-5" />
             )}
             <span className="hidden sm:inline">
-              {failedCount > 0
-                ? `${failedCount} hodisa yetmadi`
-                : 'Hodisalar joyida'}
+              {failedCount > 0 ? `${failedCount} hodisa yetmadi` : "Hodisalar joyida"}
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => navigate('/integrations/new')}
-            className={CTA_BTN}
-          >
+          <button type="button" onClick={() => navigate("/integrations/new")} className={CTA_BTN}>
             <Plus className="h-5 w-5" />
             Yangi ulanish
           </button>
@@ -166,8 +151,7 @@ const OverviewPage = () => {
       {/* Qismiy xato — ro'yxat to'liq emasligini AYTISH kerak. */}
       {partialError && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-900/20 dark:text-amber-300">
-          Ro'yxatning bir qismini olib bo'lmadi — hamma ulanish ko'rinmayotgan
-          bo'lishi mumkin.
+          Ro'yxatning bir qismini olib bo'lmadi — hamma ulanish ko'rinmayotgan bo'lishi mumkin.
         </div>
       )}
 
@@ -180,7 +164,7 @@ const OverviewPage = () => {
         <div className="flex flex-col items-center justify-center py-12">
           <Unlink className="mb-4 h-16 w-16 text-gray-300 dark:text-gray-600" />
           <h3 className="mb-2 text-lg font-semibold text-gray-700 dark:text-gray-300">
-            {query ? 'Ulanish topilmadi' : "Ulanishlar yo'q"}
+            {query ? "Ulanish topilmadi" : "Ulanishlar yo'q"}
           </h3>
           <p className="max-w-md text-center text-gray-500 dark:text-gray-400">
             {query
@@ -195,11 +179,7 @@ const OverviewPage = () => {
               key={c.uid}
               connection={c}
               metrics={metrics.get(c.uid)}
-              onOpen={() =>
-                navigate(
-                  `/integrations/connections?c=${encodeURIComponent(c.uid)}`,
-                )
-              }
+              onOpen={() => navigate(`/integrations/connections?c=${encodeURIComponent(c.uid)}`)}
               onRefresh={refetch}
             />
           ))}
@@ -218,16 +198,13 @@ const OverviewPage = () => {
  * bor holatda ko'rsatish kerak — aks holda u yolg'on signal bo'lardi.
  */
 const sandboxOn = (c: Connection): boolean => {
-  if (c.kind !== 'partner') return false;
+  if (c.kind !== "partner") return false;
   const raw = c.raw as { sandbox_enabled?: boolean; has_sandbox_secret?: boolean };
   return Boolean(raw.sandbox_enabled && raw.has_sandbox_secret);
 };
 
 /** Holat — `connectionHealth` yagona qoidasi. */
-const healthOf = (
-  c: Connection,
-  metrics: Map<string, ConnectionMetrics>,
-): ConnectionHealth =>
+const healthOf = (c: Connection, metrics: Map<string, ConnectionMetrics>): ConnectionHealth =>
   connectionHealth({
     isActive: c.is_active,
     configured: isConfigured(c),
@@ -265,14 +242,12 @@ const ConnectionCard = ({
             */}
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                ROLE_ICON_BG[connection.role] ?? 'bg-white/20'
+                ROLE_ICON_BG[connection.role] ?? "bg-white/20"
               }`}
             >
               <Cable className="h-4 w-4 text-white" />
             </span>
-            <h3 className="m-0 truncate text-lg font-bold text-white">
-              {connection.name}
-            </h3>
+            <h3 className="m-0 truncate text-lg font-bold text-white">{connection.name}</h3>
           </div>
           {/*
             ⚠️ `bg-black/25`, `bg-white/20` EMAS. Oq yarim shaffof qatlam
@@ -281,7 +256,7 @@ const ConnectionCard = ({
             qolardi. Qora qatlam esa aksincha kontrastni oshiradi.
           */}
           <span className="flex shrink-0 items-center gap-1 rounded-lg bg-black/25 px-2 py-1 text-xs font-medium text-white">
-            {health === 'ok' ? (
+            {health === "ok" ? (
               <CheckCircle className="h-3.5 w-3.5" />
             ) : (
               <XCircle className="h-3.5 w-3.5" />
@@ -294,9 +269,7 @@ const ConnectionCard = ({
       {/* ── Tana ── */}
       <div className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Tag color={ROLE_TAG_COLOR[connection.role]}>
-            {ROLE_META[connection.role].label}
-          </Tag>
+          <Tag color={ROLE_TAG_COLOR[connection.role]}>{ROLE_META[connection.role].label}</Tag>
           <Tag>{CATEGORY_LABEL[connection.category]}</Tag>
           {/*
             SINOV REJIMI NISHONI — ro'yxatdan ko'rinishi SHART.
@@ -327,10 +300,10 @@ const ConnectionCard = ({
         */}
         <div className="flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            24 soatda:{' '}
+            24 soatda:{" "}
             <span className="font-semibold text-gray-700 dark:text-gray-200">
               {metrics?.events ?? 0}
-            </span>{' '}
+            </span>{" "}
             hodisa
             {(metrics?.failed ?? 0) > 0 && (
               <span className="ml-1 font-semibold text-red-600 dark:text-red-400">
@@ -339,31 +312,27 @@ const ConnectionCard = ({
             )}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            {fmtMetric(metrics?.success_rate, '%')}
+            {fmtMetric(metrics?.success_rate, "%")}
           </span>
         </div>
       </div>
 
       {/* ── Amallar ── */}
       <div className={CARD_FOOTER}>
-        <button
-          type="button"
-          onClick={onOpen}
-          className={`${softBtn('blue')} flex-1`}
-        >
+        <button type="button" onClick={onOpen} className={`${softBtn("blue")} flex-1`}>
           <Settings className="h-4 w-4" />
           {/*
             Sozlamasi tugallanmagan ulanishda "Ochish" emas, "Davom etish" —
             operator nima qilish kerakligini tugmadan biladi.
           */}
-          {configured ? 'Boshqarish' : 'Davom etish'}
+          {configured ? "Boshqarish" : "Davom etish"}
         </button>
 
         <button
           type="button"
           onClick={onRefresh}
           title="Ro'yxatni yangilash"
-          className={`${softBtn('gray')} shrink-0`}
+          className={`${softBtn("gray")} shrink-0`}
         >
           <RefreshCw className="h-4 w-4" />
         </button>

@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../shared/api/api';
-import { API_ENDPOINTS } from '../../shared/api';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 /**
  * HISOB-KITOB — tashuvchi yig'gan COD va bizga qarzi.
@@ -19,7 +19,7 @@ import { API_ENDPOINTS } from '../../shared/api';
  * kiritganini bilmay qoladi.
  */
 
-export type ReceivableStatus = 'pending' | 'settled' | 'cancelled';
+export type ReceivableStatus = "pending" | "settled" | "cancelled";
 
 export interface ReceivableRow {
   id: string | number;
@@ -41,7 +41,7 @@ export interface ReceivableBalance {
   outstanding_count: number;
 }
 
-const unwrap = <T,>(raw: unknown, fallback: T): T => {
+const unwrap = <T>(raw: unknown, fallback: T): T => {
   const outer = raw as { data?: unknown };
   const first = outer?.data ?? raw;
   const inner = (first as { data?: unknown })?.data ?? first;
@@ -50,29 +50,26 @@ const unwrap = <T,>(raw: unknown, fallback: T): T => {
 
 /** `numeric` satr bo'lib kelishi mumkin — songa keltiriladi. */
 export const toAmount = (v: string | number | null | undefined): number => {
-  const n = typeof v === 'string' ? Number(v) : v;
+  const n = typeof v === "string" ? Number(v) : v;
   return Number.isFinite(n) ? (n as number) : 0;
 };
 
-export const money = (v: number) =>
-  `${Math.round(v).toLocaleString('uz-UZ')} so'm`;
+export const money = (v: number) => `${Math.round(v).toLocaleString("uz-UZ")} so'm`;
 
-export const settlementKey = 'integration-settlement';
+export const settlementKey = "integration-settlement";
 
 export const useReceivableBalance = (integrationId?: string) =>
   useQuery({
-    queryKey: [settlementKey, 'balance', integrationId],
+    queryKey: [settlementKey, "balance", integrationId],
     enabled: Boolean(integrationId),
     queryFn: () =>
-      api
-        .get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLE_BALANCE(integrationId!))
-        .then((res) =>
-          unwrap<ReceivableBalance>(res.data, {
-            integration_id: integrationId!,
-            outstanding_amount: 0,
-            outstanding_count: 0,
-          }),
-        ),
+      api.get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLE_BALANCE(integrationId!)).then((res) =>
+        unwrap<ReceivableBalance>(res.data, {
+          integration_id: integrationId!,
+          outstanding_amount: 0,
+          outstanding_count: 0,
+        }),
+      ),
   });
 
 export interface ReceivablesPage {
@@ -87,22 +84,14 @@ export const useReceivables = (params: {
   limit?: number;
 }) =>
   useQuery({
-    queryKey: [
-      settlementKey,
-      'list',
-      params.integrationId,
-      params.status,
-      params.page,
-    ],
+    queryKey: [settlementKey, "list", params.integrationId, params.status, params.page],
     enabled: Boolean(params.integrationId),
     queryFn: () =>
       api
         .get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLES, {
           params: {
             integration_id: params.integrationId,
-            ...(params.status && params.status !== 'all'
-              ? { status: params.status }
-              : {}),
+            ...(params.status && params.status !== "all" ? { status: params.status } : {}),
             page: params.page ?? 1,
             limit: params.limit ?? 20,
           },
@@ -133,9 +122,7 @@ export const useCreateRemittance = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ integrationId, ...body }: RemittanceInput) =>
-      api
-        .post(API_ENDPOINTS.INTEGRATIONS.REMITTANCES(integrationId), body)
-        .then((res) => res.data),
+      api.post(API_ENDPOINTS.INTEGRATIONS.REMITTANCES(integrationId), body).then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: [settlementKey] }),
   });
 };

@@ -15,14 +15,14 @@ describe("syncWhen", () => {
     expect(syncWhen("1700000000000")).toBe(syncWhen(1_700_000_000_000));
   });
 
-  it("bo'sh, null va yaroqsiz qiymat — \"—\"", () => {
+  it('bo\'sh, null va yaroqsiz qiymat — "—"', () => {
     expect(syncWhen(null)).toBe("—");
     expect(syncWhen(undefined)).toBe("—");
     expect(syncWhen("")).toBe("—");
     expect(syncWhen("salom")).toBe("—");
   });
 
-  it("⭐ 0 ham \"—\" — epoch boshi haqiqiy sana EMAS", () => {
+  it('⭐ 0 ham "—" — epoch boshi haqiqiy sana EMAS', () => {
     /**
      * `sync_date = 0` "1970-yil" degani emas, "yozilmagan" degani. Uni
      * 1970 deb ko'rsatish operatorni chalg'itardi.

@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  CATEGORY_LABEL,
-  ROLE_META,
-  type IntegrationCategory,
-  type IntegrationRole,
-} from "./index";
+import { CATEGORY_LABEL, ROLE_META, type IntegrationCategory, type IntegrationRole } from "./index";
 
 /**
  * ROL / KATEGORIYA TAKSONOMIYASI — UI qatlami.

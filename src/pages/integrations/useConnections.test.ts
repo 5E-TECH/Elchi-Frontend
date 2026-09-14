@@ -22,10 +22,7 @@ describe("isConfigured — yagona qoida", () => {
       raw: over,
     }) as never;
 
-  const integrationRole = (
-    role: string,
-    over: Record<string, unknown> = {},
-  ) =>
+  const integrationRole = (role: string, over: Record<string, unknown> = {}) =>
     ({
       uid: "integration:1",
       kind: "integration" as const,
@@ -51,12 +48,8 @@ describe("isConfigured — yagona qoida", () => {
      *
      * `mirror` roli tanlandi, chunki unda qo'shimcha shart yo'q.
      */
-    expect(
-      isConfigured(integrationRole("mirror", { base_url: "https://a.uz" })),
-    ).toBe(true);
-    expect(
-      isConfigured(integrationRole("mirror", { api_url: "https://a.uz" })),
-    ).toBe(true);
+    expect(isConfigured(integrationRole("mirror", { base_url: "https://a.uz" }))).toBe(true);
+    expect(isConfigured(integrationRole("mirror", { api_url: "https://a.uz" }))).toBe(true);
     expect(isConfigured(integrationRole("mirror", {}))).toBe(false);
   });
 
@@ -92,18 +85,14 @@ describe("isConfigured — yagona qoida", () => {
 
     it("TO'LOV: imzo sekreti kerak", () => {
       expect(isConfigured(integrationRole("payment", url))).toBe(false);
-      expect(
-        isConfigured(
-          integrationRole("payment", { ...url, has_webhook_secret: true }),
-        ),
-      ).toBe(true);
+      expect(isConfigured(integrationRole("payment", { ...url, has_webhook_secret: true }))).toBe(
+        true,
+      );
     });
 
     it("MANBA: market bog'lanishi kerak (importsiz 400 beradi)", () => {
       expect(isConfigured(integrationRole("source", url))).toBe(false);
-      expect(
-        isConfigured(integrationRole("source", { ...url, market_id: "500" })),
-      ).toBe(true);
+      expect(isConfigured(integrationRole("source", { ...url, market_id: "500" }))).toBe(true);
     });
 
     it("KO'ZGU: manzil yetarli", () => {

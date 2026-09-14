@@ -1,21 +1,11 @@
-import { Alert, Button, Card, Switch, Tag, Tooltip, message } from 'antd';
-import {
-  Activity,
-  Info,
-  PlugZap,
-  PowerOff,
-  RotateCw,
-  Send,
-} from 'lucide-react';
-import { usePartnerActions } from '../../../entities/partners';
-import { useUpdateIntegration } from '../../../entities/integrations';
-import { useIntegrationHealthcheck } from '../../../entities/integrations/healthcheck';
-import {
-  useProcessQueue,
-  useRetryFailed,
-} from '../../../entities/integrations/shipments';
-import { getBackendErrorMessage } from '../../../shared/lib/backendError';
-import type { Connection } from '../useConnections';
+import { Alert, Button, Card, Switch, Tag, Tooltip, message } from "antd";
+import { Activity, Info, PlugZap, PowerOff, RotateCw, Send } from "lucide-react";
+import { usePartnerActions } from "../../../entities/partners";
+import { useUpdateIntegration } from "../../../entities/integrations";
+import { useIntegrationHealthcheck } from "../../../entities/integrations/healthcheck";
+import { useProcessQueue, useRetryFailed } from "../../../entities/integrations/shipments";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import type { Connection } from "../useConnections";
 
 /**
  * BOSHQARUV — kalitlar va qo'lda ishga tushirish.
@@ -47,7 +37,7 @@ const ConnectionControl = ({
   const processQueue = useProcessQueue();
   const retryFailed = useRetryFailed();
 
-  const isPartner = connection.kind === 'partner';
+  const isPartner = connection.kind === "partner";
   const raw = connection.raw as Record<string, unknown>;
 
   const setMaster = async (next: boolean) => {
@@ -58,26 +48,21 @@ const ConnectionControl = ({
         await updateIntegration.mutateAsync({
           id: connection.id,
           payload: {
-            slug: String(raw.slug ?? ''),
-            type: String(raw.type ?? 'api'),
+            slug: String(raw.slug ?? ""),
+            type: String(raw.type ?? "api"),
             is_active: next,
           } as never,
         });
       }
-      message.success(next ? 'Yoqildi' : "O'chirildi");
+      message.success(next ? "Yoqildi" : "O'chirildi");
       onChanged();
     } catch (error) {
-      message.error(
-        getBackendErrorMessage(error) || "Holatni o'zgartirib bo'lmadi",
-      );
+      message.error(getBackendErrorMessage(error) || "Holatni o'zgartirib bo'lmadi");
     }
   };
 
   /** Amalni ishga tushirib, natijasini bir xil shaklda xabar qiladi. */
-  const run = async (
-    label: string,
-    fn: () => Promise<unknown>,
-  ): Promise<void> => {
+  const run = async (label: string, fn: () => Promise<unknown>): Promise<void> => {
     try {
       await fn();
       message.success(`${label} — bajarildi`);
@@ -94,16 +79,16 @@ const ConnectionControl = ({
       <Card
         className={
           connection.is_active
-            ? 'border-green-200 dark:border-green-800'
-            : 'border-red-200 dark:border-red-800'
+            ? "border-green-200 dark:border-green-800"
+            : "border-red-200 dark:border-red-800"
         }
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="m-0 flex items-center gap-2 text-base font-semibold">
               <Activity className="h-4 w-4" /> MASTER kalit
-              <Tag color={connection.is_active ? 'green' : 'red'}>
-                {connection.is_active ? 'FAOL' : "O'CHIQ"}
+              <Tag color={connection.is_active ? "green" : "red"}>
+                {connection.is_active ? "FAOL" : "O'CHIQ"}
               </Tag>
             </h3>
             <p className="m-0 mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
@@ -145,9 +130,7 @@ const ConnectionControl = ({
                   icon={<Send className="h-4 w-4" />}
                   loading={processQueue.isPending}
                   onClick={() =>
-                    void run('Navbatni yuborish', () =>
-                      processQueue.mutateAsync(connection.id),
-                    )
+                    void run("Navbatni yuborish", () => processQueue.mutateAsync(connection.id))
                   }
                 >
                   Navbatni hoziroq yuborish
@@ -159,7 +142,7 @@ const ConnectionControl = ({
                   icon={<RotateCw className="h-4 w-4" />}
                   loading={retryFailed.isPending}
                   onClick={() =>
-                    void run('Yiqilganlarni qayta urinish', () =>
+                    void run("Yiqilganlarni qayta urinish", () =>
                       retryFailed.mutateAsync(connection.id),
                     )
                   }
@@ -173,20 +156,18 @@ const ConnectionControl = ({
                   icon={<PlugZap className="h-4 w-4" />}
                   loading={healthcheck.isPending}
                   onClick={() =>
-                    void run('Aloqani tekshirish', async () => {
+                    void run("Aloqani sinash", async () => {
                       const res = await healthcheck.mutateAsync(connection.id);
                       // ⚠️ Backend yiqilganda HTTP xato BERMAYDI — natijani
                       // `ok` bo'yicha o'qish kerak, aks holda "bajarildi"
                       // deb yolg'on xabar chiqardi.
                       if (!res.ok) {
-                        throw new Error(
-                          res.message ?? `HTTP ${res.status ?? '—'}`,
-                        );
+                        throw new Error(res.message ?? `HTTP ${res.status ?? "—"}`);
                       }
                     })
                   }
                 >
-                  Aloqani tekshirish
+                  Aloqani sinash
                 </Button>
               </Tooltip>
             </>
@@ -196,9 +177,9 @@ const ConnectionControl = ({
         {!isPartner && (
           <p className="m-0 mt-3 flex items-start gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            "Navbatni yuborish" tashqi tizimdan buyurtma <b>tortib olmaydi</b> —
-            u faqat bizdagi status o'zgarishlarini ularga yuboradi. Backendda
-            bu amal `sync` deb atalgan va nomi chalg'itadi.
+            "Navbatni yuborish" tashqi tizimdan buyurtma <b>tortib olmaydi</b> — u faqat bizdagi
+            status o'zgarishlarini ularga yuboradi. Backendda bu amal `sync` deb atalgan va nomi
+            chalg'itadi.
           </p>
         )}
       </Card>

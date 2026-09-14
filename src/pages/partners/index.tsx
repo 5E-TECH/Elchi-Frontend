@@ -33,8 +33,7 @@ const ALLOWED_ROLES = new Set(["superadmin", "admin"]);
 
 type Message = { tone: "success" | "error" | "warn"; text: string };
 
-const when = (value?: string | null) =>
-  value ? new Date(value).toLocaleString("uz-UZ") : "—";
+const when = (value?: string | null) => (value ? new Date(value).toLocaleString("uz-UZ") : "—");
 
 const STATUS_TONE: Record<string, string> = {
   completed: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
@@ -80,14 +79,7 @@ const PartnersPage = () => {
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
   const partnersQuery = usePartners();
-  const {
-    createPartner,
-    updatePartner,
-    rotateKey,
-    setActive,
-    retryWebhook,
-    testWebhook,
-  } =
+  const { createPartner, updatePartner, rotateKey, setActive, retryWebhook, testWebhook } =
     usePartnerActions();
 
   const [message, setMessage] = useState<Message | null>(null);
@@ -132,10 +124,7 @@ const PartnersPage = () => {
     limit: 20,
   });
 
-  const partners = useMemo(
-    () => partnersQuery.data ?? [],
-    [partnersQuery.data],
-  );
+  const partners = useMemo(() => partnersQuery.data ?? [], [partnersQuery.data]);
   const webhooks = webhooksQuery.data?.data ?? [];
   const partnerNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -221,8 +210,7 @@ const PartnersPage = () => {
        * topa olishi kerak.
        */
       const requeued = Number(
-        (res as { data?: { requeued_webhooks?: number } })?.data
-          ?.requeued_webhooks ?? 0,
+        (res as { data?: { requeued_webhooks?: number } })?.data?.requeued_webhooks ?? 0,
       );
       setMessage({
         tone: "success",
@@ -260,8 +248,7 @@ const PartnersPage = () => {
     void (async () => {
       try {
         const res = await rotateKey.mutateAsync(String(partner.id));
-        if (res?.api_key)
-          setRevealedKey({ name: partner.name, key: res.api_key });
+        if (res?.api_key) setRevealedKey({ name: partner.name, key: res.api_key });
         setMessage({ tone: "success", text: t("partnerKeyRotated") });
       } catch (error) {
         fail(error, t("partnerRotateFailed"));
@@ -278,9 +265,7 @@ const PartnersPage = () => {
         });
         setMessage({
           tone: "success",
-          text: partner.is_active
-            ? t("partnerDisabled")
-            : t("partnerEnabled"),
+          text: partner.is_active ? t("partnerDisabled") : t("partnerEnabled"),
         });
       } catch (error) {
         fail(error, t("partnerStatusChangeFailed"));
@@ -349,10 +334,7 @@ const PartnersPage = () => {
               className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
               title={t("refresh")}
             >
-              <RefreshCw
-                size={18}
-                className={partnersQuery.isFetching ? "animate-spin" : ""}
-              />
+              <RefreshCw size={18} className={partnersQuery.isFetching ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
@@ -395,10 +377,7 @@ const PartnersPage = () => {
         ) : (
           <div className="divide-y divide-[color:var(--color-border-soft)] dark:divide-white/10">
             {partners.map((partner) => (
-              <div
-                key={partner.id}
-                className="flex flex-wrap items-center gap-3 px-4 py-3"
-              >
+              <div key={partner.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-[10rem] flex-1">
                   <p className="m-0 text-sm font-extrabold text-maindark dark:text-white">
                     {partner.name}
@@ -421,8 +400,7 @@ const PartnersPage = () => {
                 {/* Webhook xulosasi — hamkor "tirikmi" degan savolga javob. */}
                 <div className="w-44 shrink-0 text-xs">
                   <p className="m-0 text-[color:var(--color-text-muted)]">
-                    {t("partnerLastDelivery")}:{" "}
-                    {when(partner.webhooks?.last_delivered_at)}
+                    {t("partnerLastDelivery")}: {when(partner.webhooks?.last_delivered_at)}
                   </p>
                   <p className="m-0 mt-0.5 flex gap-2 font-bold">
                     <span className="text-amber-600 dark:text-amber-400">
@@ -517,9 +495,7 @@ const PartnersPage = () => {
                   Ilgari bunday hodisa `completed` deb yopilardi va butunlay
                   yo'qolardi — shuning uchun alohida filtr kerak. */}
               <option value="awaiting_config">sozlama kutilmoqda</option>
-              <option value="permanently_failed">
-                {t("partnerStatusFailed")}
-              </option>
+              <option value="permanently_failed">{t("partnerStatusFailed")}</option>
             </select>
             <button
               type="button"
@@ -528,10 +504,7 @@ const PartnersPage = () => {
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
               title={t("refresh")}
             >
-              <RefreshCw
-                size={15}
-                className={webhooksQuery.isFetching ? "animate-spin" : ""}
-              />
+              <RefreshCw size={15} className={webhooksQuery.isFetching ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
@@ -549,14 +522,10 @@ const PartnersPage = () => {
         ) : (
           <div className="divide-y divide-[color:var(--color-border-soft)] dark:divide-white/10">
             {webhooks.map((row) => (
-              <div
-                key={row.id}
-                className="flex flex-wrap items-center gap-3 px-4 py-3"
-              >
+              <div key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <span
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                    STATUS_TONE[row.status] ??
-                    "bg-white/10 text-[color:var(--color-text-muted)]"
+                    STATUS_TONE[row.status] ?? "bg-white/10 text-[color:var(--color-text-muted)]"
                   }`}
                 >
                   {/* Xom kalit ("awaiting_config") chalkashtiradi —
@@ -592,9 +561,7 @@ const PartnersPage = () => {
                   <button
                     type="button"
                     onClick={() => handleRetry(row)}
-                    disabled={
-                      row.status === "completed" || retryWebhook.isPending
-                    }
+                    disabled={row.status === "completed" || retryWebhook.isPending}
                     title={t("partnerWebhookRetry")}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-main text-white transition hover:opacity-90 disabled:opacity-40"
                   >
@@ -663,9 +630,7 @@ const PartnersPage = () => {
                   </span>
                   <input
                     value={form[key]}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, [key]: e.target.value }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
                     className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                   />
@@ -687,9 +652,7 @@ const PartnersPage = () => {
                 disabled={createPartner.isPending}
                 className="flex h-11 items-center gap-2 rounded-2xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
               >
-                {createPartner.isPending && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
+                {createPartner.isPending && <Loader2 size={16} className="animate-spin" />}
                 {t("save")}
               </button>
             </div>
@@ -721,9 +684,7 @@ const PartnersPage = () => {
                 </span>
                 <input
                   value={editForm.name}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, name: e.target.value }))
-                  }
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                   className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
               </label>
@@ -734,9 +695,7 @@ const PartnersPage = () => {
                 </span>
                 <input
                   value={editForm.webhook_url}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, webhook_url: e.target.value }))
-                  }
+                  onChange={(e) => setEditForm((f) => ({ ...f, webhook_url: e.target.value }))}
                   placeholder="https://..."
                   className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
@@ -784,9 +743,7 @@ const PartnersPage = () => {
                   <button
                     type="button"
                     onClick={handleTestWebhook}
-                    disabled={
-                      testWebhook.isPending || !editForm.webhook_url.trim()
-                    }
+                    disabled={testWebhook.isPending || !editForm.webhook_url.trim()}
                     className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-main px-3 text-xs font-bold text-main disabled:opacity-40"
                   >
                     {testWebhook.isPending ? (
@@ -810,22 +767,17 @@ const PartnersPage = () => {
                       {testResult.ok
                         ? `✓ Yetdi — HTTP ${testResult.http_status} (${testResult.duration_ms} ms)`
                         : `✗ Yetmadi${
-                            testResult.http_status
-                              ? ` — HTTP ${testResult.http_status}`
-                              : ""
+                            testResult.http_status ? ` — HTTP ${testResult.http_status}` : ""
                           }`}
                     </p>
                     {/* Sekret sozlanmagan bo'lsa qabul qiluvchi imzoni
                         tekshira olmaydi — bu eng ko'p uchraydigan sabab. */}
                     {!testResult.secret_configured && (
                       <p className="m-0 mt-1">
-                        ⚠️ Webhook sekreti sozlanmagan — qabul qiluvchi imzoni
-                        tekshira olmaydi
+                        ⚠️ Webhook sekreti sozlanmagan — qabul qiluvchi imzoni tekshira olmaydi
                       </p>
                     )}
-                    {testResult.error && (
-                      <p className="m-0 mt-1 break-all">{testResult.error}</p>
-                    )}
+                    {testResult.error && <p className="m-0 mt-1 break-all">{testResult.error}</p>}
                     {/* Javob tanasi MUHIM: qabul qiluvchi 200 qaytarib ham
                         "imzo yaroqsiz" deyishi mumkin. */}
                     {testResult.response_body && (
@@ -856,15 +808,11 @@ const PartnersPage = () => {
                 sinov rejimi YAGONA joyda sozlanadi.
               */}
               <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-[11px] font-semibold text-sky-800 dark:border-sky-900 dark:bg-sky-900/20 dark:text-sky-200">
-                Sinov rejimi (sandbox) bu yerda emas —{' '}
-                <Link
-                  to="/integrations/connections"
-                  className="underline decoration-dotted"
-                >
+                Sinov rejimi (sandbox) bu yerda emas —{" "}
+                <Link to="/integrations/connections" className="underline decoration-dotted">
                   Integratsiyalar → Ulanish → Sozlamalar
-                </Link>{' '}
-                bo‘limida yoqiladi. U yerda kalit, manzil va alohida sekret
-                birga sozlanadi.
+                </Link>{" "}
+                bo'limida yoqiladi. U yerda kalit, manzil va alohida sekret birga sozlanadi.
               </div>
             </div>
 
@@ -882,9 +830,7 @@ const PartnersPage = () => {
                 disabled={updatePartner.isPending}
                 className="flex h-11 items-center gap-2 rounded-2xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
               >
-                {updatePartner.isPending && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
+                {updatePartner.isPending && <Loader2 size={16} className="animate-spin" />}
                 {t("save")}
               </button>
             </div>

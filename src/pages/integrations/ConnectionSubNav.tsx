@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { BODY, BORDER, FAINT } from './ui';
+import type { ReactNode } from "react";
+import { BODY, BORDER, FAINT } from "./ui";
 
 export interface SubNavItem {
   key: string;
@@ -38,18 +38,18 @@ export const ConnectionSubNav = ({ items, active, onChange }: Props) => (
           key={it.key}
           type="button"
           onClick={() => onChange(it.key)}
-          aria-current={on ? 'true' : undefined}
+          aria-current={on ? "true" : undefined}
           className={`group flex shrink-0 cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left transition-all ${
             on
-              ? 'border-violet-500 bg-violet-50 shadow-sm dark:bg-violet-900/25'
+              ? "border-violet-500 bg-violet-50 shadow-sm dark:bg-violet-900/25"
               : `${BORDER} bg-white hover:border-violet-300 dark:bg-gray-800/50 dark:hover:border-violet-700`
           }`}
         >
           <span
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
               on
-                ? 'bg-violet-600 text-white'
-                : 'bg-gray-100 text-gray-500 group-hover:text-violet-600 dark:bg-gray-700 dark:text-gray-300'
+                ? "bg-violet-600 text-white"
+                : "bg-gray-100 text-gray-500 group-hover:text-violet-600 dark:bg-gray-700 dark:text-gray-300"
             }`}
           >
             {it.icon}
@@ -58,19 +58,17 @@ export const ConnectionSubNav = ({ items, active, onChange }: Props) => (
           <span className="hidden sm:block">
             <span
               className={`block text-sm font-semibold leading-tight ${
-                on ? 'text-violet-700 dark:text-violet-300' : BODY
+                on ? "text-violet-700 dark:text-violet-300" : BODY
               }`}
             >
               {it.label}
             </span>
-            <span className={`block text-[11px] leading-tight ${FAINT}`}>
-              {it.desc}
-            </span>
+            <span className={`block text-[11px] leading-tight ${FAINT}`}>{it.desc}</span>
           </span>
 
           <span
             className={`text-sm font-semibold sm:hidden ${
-              on ? 'text-violet-700 dark:text-violet-300' : BODY
+              on ? "text-violet-700 dark:text-violet-300" : BODY
             }`}
           >
             {it.label}

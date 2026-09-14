@@ -1,16 +1,17 @@
-import { useState } from 'react';
-import { Alert, Button, Card, Table, Tag, Tooltip, message } from 'antd';
-import { AlertTriangle, Link2, RefreshCw, Send, Truck } from 'lucide-react';
+import { useState } from "react";
+import { Alert, Button, Card, Table, Tag, Tooltip, message } from "antd";
+import { AlertTriangle, Link2, RefreshCw, Send, Truck } from "lucide-react";
 import {
   usePartnerShipments,
   useProviderShipments,
   useRedispatch,
   type PartnerShipmentRow,
   type ProviderShipmentRow,
-} from '../../../entities/integrations/shipments';
-import { getBackendErrorMessage } from '../../../shared/lib/backendError';
-import FilterPills from '../FilterPills';
-import type { Connection } from '../useConnections';
+} from "../../../entities/integrations/shipments";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import FilterPills from "../FilterPills";
+import type { Connection } from "../useConnections";
+import { useStatusLabel } from "../statusLabel";
 
 /**
  * JO'NATMALAR — ulanish bo'yicha posilkalar.
@@ -24,11 +25,10 @@ import type { Connection } from '../useConnections';
  * bittalab ochib chiqish kerak edi.
  */
 
-const when = (v?: string | null) =>
-  v ? new Date(v).toLocaleString('uz-UZ') : '—';
+const when = (v?: string | null) => (v ? new Date(v).toLocaleString("uz-UZ") : "—");
 
 const ConnectionShipments = ({ connection }: { connection: Connection }) =>
-  connection.kind === 'partner' ? (
+  connection.kind === "partner" ? (
     <PartnerShipments connection={connection} />
   ) : (
     <ProviderShipments connection={connection} />
@@ -36,15 +36,16 @@ const ConnectionShipments = ({ connection }: { connection: Connection }) =>
 
 /** Chiquvchi: tashuvchiga berilgan posilkalar. */
 const ProviderShipments = ({ connection }: { connection: Connection }) => {
-  const [failedOnly, setFailedOnly] = useState('all');
+  const [failedOnly, setFailedOnly] = useState("all");
   const [page, setPage] = useState(1);
+  const statusLabel = useStatusLabel();
 
   const raw = connection.raw as { slug?: string };
-  const slug = String(raw.slug ?? '');
+  const slug = String(raw.slug ?? "");
 
   const list = useProviderShipments({
     integrationId: connection.id,
-    failedOnly: failedOnly === 'failed',
+    failedOnly: failedOnly === "failed",
     page,
     limit: 20,
   });
@@ -90,12 +91,12 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
           setPage(1);
         }}
         options={[
-          { value: 'all', label: 'Hammasi', count: list.data?.pagination.total },
+          { value: "all", label: "Hammasi", count: list.data?.pagination.total },
           {
-            value: 'failed',
-            label: 'Yiqilgan',
+            value: "failed",
+            label: "Yiqilgan",
             icon: <AlertTriangle className="h-3.5 w-3.5" />,
-            activeClass: 'bg-red-600 text-white border-red-600',
+            activeClass: "bg-red-600 text-white border-red-600",
           },
         ]}
       />
@@ -116,23 +117,21 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
         }}
         columns={[
           {
-            title: 'Buyurtma',
+            title: "Buyurtma",
             width: 110,
-            render: (_: unknown, r) => (
-              <span className="font-mono text-xs">{r.order_id}</span>
-            ),
+            render: (_: unknown, r) => <span className="font-mono text-xs">{r.order_id}</span>,
           },
           {
-            title: 'Kuzatuv kodi',
+            title: "Kuzatuv kodi",
             width: 160,
             render: (_: unknown, r) => (
               <span className="font-mono text-xs">
-                {r.tracking_number ?? r.external_ref ?? '—'}
+                {r.tracking_number ?? r.external_ref ?? "—"}
               </span>
             ),
           },
           {
-            title: 'Holat',
+            title: "Holat",
             width: 190,
             /*
               IKKI STATUS birga ko'rsatiladi va bu ataylab: ular ajralib
@@ -142,25 +141,26 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
             */
             render: (_: unknown, r) => (
               <div className="space-y-1">
-                <Tag color={r.last_error ? 'red' : 'blue'}>
-                  biz: {r.internal_status ?? '—'}
+                {/*
+                  ⚠️ BIZNING statusimiz TARJIMA qilinadi ("waiting" emas,
+                  "Kutilmoqda"), ularniki esa XOM qoladi — "ular aynan nima
+                  dedi?" degan savolga javob yo'qolmasligi kerak.
+                */}
+                <Tag color={r.last_error ? "red" : "blue"}>
+                  biz: {statusLabel(r.internal_status)}
                 </Tag>
-                {r.provider_status && (
-                  <Tag>ular: {r.provider_status}</Tag>
-                )}
+                {r.provider_status && <Tag>ular: {r.provider_status}</Tag>}
               </div>
             ),
           },
           {
-            title: 'Urinish',
+            title: "Urinish",
             width: 90,
-            align: 'center' as const,
-            render: (_: unknown, r) => (
-              <span className="tabular-nums">{r.send_attempts}</span>
-            ),
+            align: "center" as const,
+            render: (_: unknown, r) => <span className="tabular-nums">{r.send_attempts}</span>,
           },
           {
-            title: 'Xato',
+            title: "Xato",
             render: (_: unknown, r) =>
               r.last_error ? (
                 <Tooltip title={r.last_error}>
@@ -176,13 +176,11 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
             title: "O'zgargan",
             width: 160,
             render: (_: unknown, r) => (
-              <span className="font-mono text-xs">
-                {when(r.status_changed_at)}
-              </span>
+              <span className="font-mono text-xs">{when(r.status_changed_at)}</span>
             ),
           },
           {
-            title: 'Amal',
+            title: "Amal",
             width: 120,
             /*
               Qayta jo'natish FAQAT xato bor qatorda. Muvaffaqiyatli
@@ -257,13 +255,13 @@ const PartnerShipments = ({ connection }: { connection: Connection }) => {
           }}
           columns={[
             {
-              title: 'Ularning raqami',
+              title: "Ularning raqami",
               render: (_: unknown, r) => (
                 <span className="font-mono text-xs">{r.external_order_id}</span>
               ),
             },
             {
-              title: 'Bizdagi buyurtma',
+              title: "Bizdagi buyurtma",
               render: (_: unknown, r) => (
                 <a
                   href={`/orders/${r.order_id}`}
@@ -274,7 +272,7 @@ const PartnerShipments = ({ connection }: { connection: Connection }) => {
               ),
             },
             {
-              title: 'Kelgan vaqt',
+              title: "Kelgan vaqt",
               width: 170,
               render: (_: unknown, r) => (
                 <span className="font-mono text-xs">{when(r.createdAt)}</span>

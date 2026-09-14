@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../../shared/api/api';
-import { API_ENDPOINTS } from '../../shared/api';
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../shared/api/api";
+import { API_ENDPOINTS } from "../../shared/api";
 
 /**
  * INTEGRATSIYA METRIKASI.
@@ -19,7 +19,7 @@ import { API_ENDPOINTS } from '../../shared/api';
 export interface ConnectionMetrics {
   /** `partner:7` yoki `integration:12` — ro'yxat kaliti bilan bir xil. */
   uid: string;
-  kind: 'partner' | 'integration';
+  kind: "partner" | "integration";
   id: string;
   events: number;
   delivered: number;
@@ -45,10 +45,9 @@ const EMPTY: IntegrationMetrics = {
   connections: [],
 };
 
-const unwrap = <T,>(raw: unknown, fallback: T): T =>
-  ((raw as { data?: T })?.data ?? fallback) as T;
+const unwrap = <T>(raw: unknown, fallback: T): T => ((raw as { data?: T })?.data ?? fallback) as T;
 
-export const metricsKey = ['integration-metrics'] as const;
+export const metricsKey = ["integration-metrics"] as const;
 
 /**
  * `hours` — oyna. Backend 1..168 oralig'iga qisadi.
@@ -72,9 +71,7 @@ export const useIntegrationMetrics = (hours?: number) =>
   });
 
 /** `uid` bo'yicha tez qidirish uchun xarita. */
-export const metricsByUid = (
-  data?: IntegrationMetrics,
-): Map<string, ConnectionMetrics> =>
+export const metricsByUid = (data?: IntegrationMetrics): Map<string, ConnectionMetrics> =>
   new Map((data?.connections ?? []).map((c) => [c.uid, c]));
 
 /**
@@ -84,7 +81,7 @@ export const metricsByUid = (
  * ro'yxat, detal sarlavhasi) va ular AYNI qoidaga tayanishi kerak. Har joyda
  * qaytadan yozilsa, bir ekranda yashil, boshqasida sariq ko'rinardi.
  */
-export type ConnectionHealth = 'ok' | 'attention' | 'off';
+export type ConnectionHealth = "ok" | "attention" | "off";
 
 export const connectionHealth = (opts: {
   isActive: boolean;
@@ -92,12 +89,12 @@ export const connectionHealth = (opts: {
   metrics?: ConnectionMetrics;
 }): ConnectionHealth => {
   // O'chirilgan — ataylab to'xtatilgan, xato EMAS.
-  if (!opts.isActive) return 'off';
+  if (!opts.isActive) return "off";
   // Sozlamasi tugallanmagan — hodisalar hech qayerga ketmaydi.
-  if (!opts.configured) return 'attention';
+  if (!opts.configured) return "attention";
   // Yetmagan hodisa bor — sozlama to'g'ri bo'lsa ham e'tibor kerak.
-  if ((opts.metrics?.failed ?? 0) > 0) return 'attention';
-  return 'ok';
+  if ((opts.metrics?.failed ?? 0) > 0) return "attention";
+  return "ok";
 };
 
 /**
@@ -109,7 +106,5 @@ export const connectionHealth = (opts: {
  * qolishi aniq — va `0 ms` "bir zumda javob berdi", `0%` esa "hammasi
  * yiqildi" degan YOLG'ON xabar bo'lardi.
  */
-export const fmtMetric = (
-  value: number | null | undefined,
-  suffix = '',
-): string => (value === null || value === undefined ? '—' : `${value}${suffix}`);
+export const fmtMetric = (value: number | null | undefined, suffix = ""): string =>
+  value === null || value === undefined ? "—" : `${value}${suffix}`;

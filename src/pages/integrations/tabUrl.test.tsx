@@ -69,8 +69,7 @@ describe("Ulanish paneli — tab URL'da", () => {
       { route },
     );
 
-  const currentSearch = () =>
-    screen.getByTestId("search").textContent ?? "";
+  const currentSearch = () => screen.getByTestId("search").textContent ?? "";
 
   /**
    * ⚠️ `getByRole` ISHLATILMAYDI. antd v6 CSS-in-JS jsdom'da yaroqsiz
@@ -99,30 +98,20 @@ describe("Ulanish paneli — tab URL'da", () => {
      */
     open("/integrations/connections?c=partner:7&t=security");
 
-    await waitFor(() =>
-      expect(
-        tabButton(/Xavfsizlik/i),
-      ).toHaveAttribute("aria-current", "true"),
-    );
+    await waitFor(() => expect(tabButton(/Xavfsizlik/i)).toHaveAttribute("aria-current", "true"));
   });
 
   it("sukut bo'yicha 'Umumiy holat' ochiladi", async () => {
     open("/integrations/connections?c=partner:7");
 
-    await waitFor(() =>
-      expect(
-        tabButton(/Umumiy holat/i),
-      ).toHaveAttribute("aria-current", "true"),
-    );
+    await waitFor(() => expect(tabButton(/Umumiy holat/i)).toHaveAttribute("aria-current", "true"));
   });
 
   it("⭐ tab bosilganda URL O'ZGARADI", async () => {
     const user = userEvent.setup();
     open("/integrations/connections?c=partner:7");
 
-    await waitFor(() =>
-      expect(tabButton(/Xavfsizlik/i)).toBeTruthy(),
-    );
+    await waitFor(() => expect(tabButton(/Xavfsizlik/i)).toBeTruthy());
     await user.click(tabButton(/Xavfsizlik/i));
 
     // URL — yagona haqiqat manbai; holat undan o'qiladi.
@@ -137,11 +126,7 @@ describe("Ulanish paneli — tab URL'da", () => {
      */
     open("/integrations/connections?c=partner:7&t=allaqanday-yoq-tab");
 
-    await waitFor(() =>
-      expect(
-        tabButton(/Umumiy holat/i),
-      ).toHaveAttribute("aria-current", "true"),
-    );
+    await waitFor(() => expect(tabButton(/Umumiy holat/i)).toHaveAttribute("aria-current", "true"));
   });
 
   it("⭐ boshqa ulanishga o'tganda tab BIRINCHISIGA qaytadi", async () => {
@@ -155,11 +140,7 @@ describe("Ulanish paneli — tab URL'da", () => {
      */
     open("/integrations/connections?c=partner:7&t=security");
 
-    await waitFor(() =>
-      expect(
-        tabButton(/Xavfsizlik/i),
-      ).toHaveAttribute("aria-current", "true"),
-    );
+    await waitFor(() => expect(tabButton(/Xavfsizlik/i)).toHaveAttribute("aria-current", "true"));
 
     // Chipni bosish — ro'yxatda bitta ulanish bor, shu bois o'zini bosamiz.
     const user = userEvent.setup();

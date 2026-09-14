@@ -1,15 +1,7 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import type { CheckboxChangeEvent } from 'antd/es/checkbox';
-import {
-  Alert,
-  Checkbox,
-  Button,
-  Card,
-  Form,
-  Steps,
-  Typography,
-} from 'antd';
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import type { CheckboxChangeEvent } from "antd/es/checkbox";
+import { Alert, Checkbox, Button, Card, Form, Steps, Typography } from "antd";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -19,19 +11,19 @@ import {
   MinusCircle,
   RotateCw,
   XCircle,
-} from 'lucide-react';
-import { usePartnerActions, type WebhookTestResult } from '../../../entities/partners';
-import { useCreateIntegration } from '../../../entities/integrations';
-import { useIntegrationHealthcheck } from '../../../entities/integrations/healthcheck';
-import { getBackendErrorMessage } from '../../../shared/lib/backendError';
+} from "lucide-react";
+import { usePartnerActions, type WebhookTestResult } from "../../../entities/partners";
+import { useCreateIntegration } from "../../../entities/integrations";
+import { useIntegrationHealthcheck } from "../../../entities/integrations/healthcheck";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import ConnectionFields, {
   buildChangedPayload,
   type FieldValue,
   type FieldValues,
-} from '../ConnectionFields';
-import { findConnectionType, type ConnectionField } from '../connections';
-import { missingForReady } from '../useConnections';
-import { outboundChecks, partnerChecks, type CheckState, type StepCheck } from './steps';
+} from "../ConnectionFields";
+import { findConnectionType, type ConnectionField } from "../connections";
+import { missingForReady } from "../useConnections";
+import { outboundChecks, partnerChecks, type CheckState, type StepCheck } from "./steps";
 
 /**
  * ULASH USTASI — to'rt qadam.
@@ -58,7 +50,7 @@ import { outboundChecks, partnerChecks, type CheckState, type StepCheck } from '
  * butunlay yo'qotardi va rotatsiya qilishga majbur bo'lardi.
  */
 
-const STEP_LABELS = ['Nomi', 'Kalitlar', 'Sinash', 'Tayyor'];
+const STEP_LABELS = ["Nomi", "Kalitlar", "Sinash", "Tayyor"];
 
 /**
  * ⚠️ HAR BIR RANGDA `dark:` JUFTLIGI BOR. Ilgari faqat `skip` da bor edi,
@@ -68,28 +60,22 @@ const STEP_LABELS = ['Nomi', 'Kalitlar', 'Sinash', 'Tayyor'];
  * savolga javobni aynan shu yerdan oladi.
  */
 const STATE_ICON: Record<CheckState, React.ReactNode> = {
-  ok: (
-    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-  ),
+  ok: <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />,
   fail: <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />,
-  warn: (
-    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-  ),
+  warn: <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />,
   skip: <MinusCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />,
 };
 
 const ConnectWizard = () => {
   const { typeKey } = useParams();
   const navigate = useNavigate();
-  const type = useMemo(() => findConnectionType(String(typeKey ?? '')), [typeKey]);
+  const type = useMemo(() => findConnectionType(String(typeKey ?? "")), [typeKey]);
 
   const [step, setStep] = useState(1);
   const [values, setValues] = useState<FieldValues>({});
   const [error, setError] = useState<string | null>(null);
   /** Yaratilgan yozuv — 2-qadamdan keyin to'ldiriladi. */
-  const [created, setCreated] = useState<{ id: string; apiKey?: string } | null>(
-    null,
-  );
+  const [created, setCreated] = useState<{ id: string; apiKey?: string } | null>(null);
   const [testResult, setTestResult] = useState<WebhookTestResult | null>(null);
   const [outboundResult, setOutboundResult] = useState<{
     ok?: boolean;
@@ -121,13 +107,11 @@ const ConnectWizard = () => {
     () =>
       type
         ? missingForReady({
-            kind: type.kind === 'partner' ? 'partner' : 'integration',
+            kind: type.kind === "partner" ? "partner" : "integration",
             role: type.role,
             raw: {
               ...values,
-              has_webhook_secret: Boolean(
-                String(values.webhook_secret ?? '').trim(),
-              ),
+              has_webhook_secret: Boolean(String(values.webhook_secret ?? "").trim()),
             },
           })
         : [],
@@ -153,7 +137,7 @@ const ConnectWizard = () => {
         </p>
         <button
           type="button"
-          onClick={() => navigate('/integrations/new')}
+          onClick={() => navigate("/integrations/new")}
           className="mt-3 rounded-xl border border-indigo-500 px-4 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300"
         >
           Katalogga qaytish
@@ -162,19 +146,16 @@ const ConnectWizard = () => {
     );
   }
 
-  const isPartner = type.kind === 'partner';
+  const isPartner = type.kind === "partner";
   /** 1-qadamda faqat kimlik maydonlari — qolgani 2-qadamda. */
-  const identityKeys = isPartner ? ['name'] : ['name', 'slug'];
+  const identityKeys = isPartner ? ["name"] : ["name", "slug"];
   const step1Fields = type.fields.filter((f) => identityKeys.includes(f.key));
   const step2Fields = type.fields.filter((f) => !identityKeys.includes(f.key));
 
-  const change = (key: string, value: FieldValue) =>
-    setValues((v) => ({ ...v, [key]: value }));
+  const change = (key: string, value: FieldValue) => setValues((v) => ({ ...v, [key]: value }));
 
-  const nameOk = String(values.name ?? '').trim().length > 0;
-  const urlValue = String(
-    (isPartner ? values.webhook_url : values.base_url) ?? '',
-  );
+  const nameOk = String(values.name ?? "").trim().length > 0;
+  const urlValue = String((isPartner ? values.webhook_url : values.base_url) ?? "");
 
   /** 2-qadam → yozuv yaratiladi va 3-qadamga o'tiladi. */
   const createRecord = async () => {
@@ -183,16 +164,16 @@ const ConnectWizard = () => {
     try {
       if (isPartner) {
         const res = await createPartner.mutateAsync(payload as never);
-        if (!String(res.id ?? '').trim()) {
+        if (!String(res.id ?? "").trim()) {
           /**
            * ⚠️ Hamkor yo'lida bu YANA xavfliroq: `api_key` javobda BIR
            * MARTA keladi. Id bo'lmasa kalitni ko'rsatib, keyin uni hech
            * qaysi ulanishga bog'lab bo'lmasdi.
            */
           setError(
-            'Hamkor yaratildi, lekin javobdan id o‘qilmadi. API kalit: ' +
-              `${res.api_key ?? '(kelmadi)'} — HOZIR ko‘chirib oling, ` +
-              'keyin ulanishni ro‘yxatdan topib sozlang.',
+            "Hamkor yaratildi, lekin javobdan id o'qilmadi. API kalit: " +
+              `${res.api_key ?? "(kelmadi)"} — HOZIR ko'chirib oling, ` +
+              "keyin ulanishni ro'yxatdan topib sozlang.",
           );
           return;
         }
@@ -207,17 +188,16 @@ const ConnectWizard = () => {
          */
         const res = await createIntegration.mutateAsync({
           ...payload,
-          type: 'api',
-          status: 'active',
+          type: "api",
+          status: "active",
           credentials: {},
           role: type.role,
           category: type.category,
         } as never);
         const id =
-          (res as { data?: { data?: { id?: string }; id?: string } })?.data?.data
-            ?.id ??
+          (res as { data?: { data?: { id?: string }; id?: string } })?.data?.data?.id ??
           (res as { data?: { id?: string } })?.data?.id ??
-          '';
+          "";
         /**
          * ⚠️ ID BO'SH BO'LSA TO'XTAYMIZ.
          *
@@ -236,10 +216,10 @@ const ConnectWizard = () => {
          */
         if (!String(id).trim()) {
           setError(
-            'Ulanish yaratildi, lekin javobdan uning id‘si o‘qilmadi — ' +
-              'sinov va "Konsolda ochish" ishlamaydi. Ulanishlar ro‘yxatidan ' +
-              'topib ochish kerak (qayta yaratish SHART EMAS, dublikat ' +
-              'bo‘ladi).',
+            "Ulanish yaratildi, lekin javobdan uning id'si o'qilmadi — " +
+              'sinov va "Konsolda ochish" ishlamaydi. Ulanishlar ro\'yxatidan ' +
+              "topib ochish kerak (qayta yaratish SHART EMAS, dublikat " +
+              "bo'ladi).",
           );
           return;
         }
@@ -263,8 +243,7 @@ const ConnectWizard = () => {
      */
     if (!created?.id) {
       setTestError(
-        'Ulanish id‘si yo‘q — sinov yuborib bo‘lmaydi. Ulanishni ro‘yxatdan ' +
-          'topib oching.',
+        "Ulanish id'si yo'q — sinov yuborib bo'lmaydi. Ulanishni ro'yxatdan " + "topib oching.",
       );
       return;
     }
@@ -287,7 +266,7 @@ const ConnectWizard = () => {
         if (!res.ok && res.message) setTestError(res.message);
       }
     } catch (err) {
-      setTestError(getBackendErrorMessage(err) || 'Sinab bo‘lmadi');
+      setTestError(getBackendErrorMessage(err) || "Sinab bo'lmadi");
     }
   };
 
@@ -307,16 +286,14 @@ const ConnectWizard = () => {
         <Button
           icon={<ArrowLeft className="h-4 w-4" />}
           disabled={step >= 3}
-          onClick={() =>
-            step === 1 ? navigate('/integrations/new') : setStep(step - 1)
-          }
+          onClick={() => (step === 1 ? navigate("/integrations/new") : setStep(step - 1))}
         />
         <div className="min-w-0">
           <h1 className="m-0 truncate text-base font-extrabold text-gray-800 dark:text-white">
             {type.label}
           </h1>
           <p className="m-0 text-[11px] text-gray-500 dark:text-gray-400">
-            {isPartner ? 'Ular bizga ulanadi' : 'Biz ularga ulanamiz'}
+            {isPartner ? "Ular bizga ulanadi" : "Biz ularga ulanamiz"}
           </p>
         </div>
       </div>
@@ -349,10 +326,7 @@ const ConnectWizard = () => {
             description={
               <ul className="m-0 list-none space-y-1.5 p-0">
                 {type.prereqs.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-2 text-xs leading-snug"
-                  >
+                  <li key={item} className="flex items-start gap-2 text-xs leading-snug">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />
                     <span>{item}</span>
                   </li>
@@ -363,11 +337,7 @@ const ConnectWizard = () => {
 
           <Panel>
             <Form layout="vertical">
-              <ConnectionFields
-                fields={step1Fields}
-                values={values}
-                onChange={change}
-              />
+              <ConnectionFields fields={step1Fields} values={values} onChange={change} />
             </Form>
           </Panel>
 
@@ -408,7 +378,7 @@ const ConnectWizard = () => {
             message={
               isPartner
                 ? "Bosganingizda ulanish yaratiladi va API kalit BIR MARTA ko'rsatiladi — keyin uni qayta olish mumkin emas."
-                : 'Bosganingizda ulanish yaratiladi, so‘ng aloqani sinab ko‘ramiz.'
+                : "Bosganingizda ulanish yaratiladi, so'ng aloqani sinab ko'ramiz."
             }
           />
 
@@ -454,12 +424,10 @@ const ConnectWizard = () => {
                   */}
                   <Checkbox
                     checked={keyCopied}
-                    onChange={(e: CheckboxChangeEvent) =>
-                      setKeyCopied(e.target.checked)
-                    }
+                    onChange={(e: CheckboxChangeEvent) => setKeyCopied(e.target.checked)}
                     className="mt-2 text-xs"
                   >
-                    Kalitni ko‘chirib oldim va xavfsiz saqladim
+                    Kalitni ko'chirib oldim va xavfsiz saqladim
                   </Checkbox>
                 </>
               }
@@ -476,9 +444,7 @@ const ConnectWizard = () => {
                 loading={testing}
                 onClick={runTest}
               >
-                {testResult || outboundResult || testError
-                  ? 'Qayta sinash'
-                  : 'Sinash'}
+                {testResult || outboundResult || testError ? "Qayta sinash" : "Sinash"}
               </Button>
             </div>
 
@@ -512,16 +478,13 @@ const ConnectWizard = () => {
             allaqachon yaratilgan. To'sib qo'ysak, odam ustadan chiqib
             ketardi va yozuv yarim holatda qolardi.
           */}
-          <Primary
-            disabled={Boolean(created?.apiKey) && !keyCopied}
-            onClick={() => setStep(4)}
-          >
+          <Primary disabled={Boolean(created?.apiKey) && !keyCopied} onClick={() => setStep(4)}>
             Yakunlash
           </Primary>
           {Boolean(created?.apiKey) && !keyCopied && (
             <p className="m-0 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-              Davom etish uchun API kalitni ko‘chirib olganingizni
-              tasdiqlang — u boshqa ko‘rsatilmaydi.
+              Davom etish uchun API kalitni ko'chirib olganingizni tasdiqlang — u boshqa
+              ko'rsatilmaydi.
             </p>
           )}
         </div>
@@ -547,8 +510,7 @@ const ConnectWizard = () => {
                 Ulanish tayyor
               </p>
               <p className="m-0 mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">
-                {String(values.name ?? '')} — sozlamalar to‘liq, Konsolda
-                kuzatish mumkin.
+                {String(values.name ?? "")} — sozlamalar to'liq, Konsolda kuzatish mumkin.
               </p>
             </section>
           ) : (
@@ -558,8 +520,8 @@ const ConnectWizard = () => {
                 Ulanish yaratildi, lekin hali ISHLAMAYDI
               </p>
               <p className="m-0 mt-1 text-xs text-amber-700/90 dark:text-amber-300/90">
-                {String(values.name ?? '')} — ro‘yxatda "E‘tibor kerak" deb
-                turadi. Quyidagilar to‘ldirilmagan:
+                {String(values.name ?? "")} — ro'yxatda "E'tibor kerak" deb turadi. Quyidagilar
+                to'ldirilmagan:
               </p>
               <ul className="m-0 mt-2 space-y-1 pl-5 text-xs text-amber-800 dark:text-amber-200">
                 {gaps.map((g: string) => (
@@ -578,28 +540,22 @@ const ConnectWizard = () => {
                 <>
                   <li>API kalitni hamkorga XAVFSIZ kanal orqali yetkazing.</li>
                   <li>
-                    Ular so'rovni <code>X-Api-Key</code> sarlavhasi bilan
-                    yuboradi.
+                    Ular so'rovni <code>X-Api-Key</code> sarlavhasi bilan yuboradi.
                   </li>
                   <li>
-                    Webhook manzili hali tayyor bo'lmasa, hodisalar navbatda
-                    kutadi — manzil qo'yilganda avtomatik yuboriladi.
+                    Webhook manzili hali tayyor bo'lmasa, hodisalar navbatda kutadi — manzil
+                    qo'yilganda avtomatik yuboriladi.
                   </li>
-                  <li>
-                    IP cheklovini Konsol → Xavfsizlik bo'limida qo'shishingiz
-                    mumkin.
-                  </li>
+                  <li>IP cheklovini Konsol → Xavfsizlik bo'limida qo'shishingiz mumkin.</li>
                 </>
               ) : (
                 <>
                   <li>Konsol → Hodisalar bo'limida birinchi sinxronni kuzating.</li>
                   <li>
-                    Xato chiqsa, javob matni shu yerda ko'rinadi — kalit yoki
-                    manzil xatosi darhol bilinadi.
+                    Xato chiqsa, javob matni shu yerda ko'rinadi — kalit yoki manzil xatosi darhol
+                    bilinadi.
                   </li>
-                  <li>
-                    Kalitni almashtirish kerak bo'lsa, Konsol → Xavfsizlik.
-                  </li>
+                  <li>Kalitni almashtirish kerak bo'lsa, Konsol → Xavfsizlik.</li>
                 </>
               )}
             </ol>
@@ -610,14 +566,14 @@ const ConnectWizard = () => {
               onClick={() =>
                 navigate(
                   `/integrations/connections?c=${encodeURIComponent(
-                    `${isPartner ? 'partner' : 'integration'}:${created?.id ?? ''}`,
+                    `${isPartner ? "partner" : "integration"}:${created?.id ?? ""}`,
                   )}`,
                 )
               }
             >
               Konsolda ochish
             </Primary>
-            <Button size="large" onClick={() => navigate('/integrations')}>
+            <Button size="large" onClick={() => navigate("/integrations")}>
               Ulanishlarga
             </Button>
           </div>
@@ -628,9 +584,7 @@ const ConnectWizard = () => {
 };
 
 /** Panel — antd `Card`, PCS panellari bilan bir xil ko'rinish. */
-const Panel = ({ children }: { children: React.ReactNode }) => (
-  <Card size="small">{children}</Card>
-);
+const Panel = ({ children }: { children: React.ReactNode }) => <Card size="small">{children}</Card>;
 
 const Primary = ({
   children,

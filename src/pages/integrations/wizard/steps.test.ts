@@ -73,10 +73,7 @@ describe("partnerChecks", () => {
   });
 
   it("⭐ sekret yo'q — OGOHLANTIRISH (ulanish ishlaydi, lekin tasdiqlanmaydi)", () => {
-    const checks = partnerChecks(
-      "https://a.example.uz",
-      res({ secret_configured: false }),
-    );
+    const checks = partnerChecks("https://a.example.uz", res({ secret_configured: false }));
     expect(checks[3].state).toBe("warn");
   });
 });

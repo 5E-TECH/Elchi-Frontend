@@ -26,11 +26,7 @@ describe("buildChangedPayload", () => {
 
   it("TC2: o'zgargan maydon yuboriladi (trim bilan)", () => {
     const fields = [F({ key: "name" })];
-    const out = buildChangedPayload(
-      fields,
-      { name: "  Uzum Market  " },
-      { name: "Uzum" },
-    );
+    const out = buildChangedPayload(fields, { name: "  Uzum Market  " }, { name: "Uzum" });
     expect(out).toEqual({ name: "Uzum Market" });
   });
 
@@ -49,12 +45,10 @@ describe("buildChangedPayload", () => {
 
   it("TC5: switch — faqat haqiqatan o'zgarganda", () => {
     const fields = [F({ key: "is_active", type: "switch" })];
-    expect(
-      buildChangedPayload(fields, { is_active: true }, { is_active: true }),
-    ).toEqual({});
-    expect(
-      buildChangedPayload(fields, { is_active: false }, { is_active: true }),
-    ).toEqual({ is_active: false });
+    expect(buildChangedPayload(fields, { is_active: true }, { is_active: true })).toEqual({});
+    expect(buildChangedPayload(fields, { is_active: false }, { is_active: true })).toEqual({
+      is_active: false,
+    });
   });
 
   it("TC6: tags — tartib bir xil bo'lsa o'zgarmagan hisoblanadi", () => {
@@ -79,22 +73,14 @@ describe("buildChangedPayload", () => {
     // Bo'sh massiv "cheklov yo'q" degani va u YUBORILISHI kerak — aks holda
     // operator IP cheklovini olib tashlay olmasdi.
     const fields = [F({ key: "ip_allowlist", type: "tags" })];
-    const out = buildChangedPayload(
-      fields,
-      { ip_allowlist: [] },
-      { ip_allowlist: ["1.1.1.1"] },
-    );
+    const out = buildChangedPayload(fields, { ip_allowlist: [] }, { ip_allowlist: ["1.1.1.1"] });
     expect(out).toEqual({ ip_allowlist: [] });
   });
 
   it("TC8: maydon ro'yxatida yo'q kalit yuborilmaydi", () => {
     // Forma boshqa turdan qolgan qiymatni tasodifan yubormasligi kerak.
     const fields = [F({ key: "name" })];
-    const out = buildChangedPayload(
-      fields,
-      { name: "Uzum", begona: "qiymat" },
-      { name: "Uzum" },
-    );
+    const out = buildChangedPayload(fields, { name: "Uzum", begona: "qiymat" }, { name: "Uzum" });
     expect(out).toEqual({});
   });
 });
@@ -104,9 +90,13 @@ describe("Xarita (mapping) maydoni — payload solishtiruvi", () => {
 
   it("⭐ o'zgarmagan xarita YUBORILMAYDI", () => {
     const val = { id_field: "order_id", phone_field: "tel" };
-    const out = buildChangedPayload([field], { field_mapping: val }, {
-      field_mapping: { ...val },
-    });
+    const out = buildChangedPayload(
+      [field],
+      { field_mapping: val },
+      {
+        field_mapping: { ...val },
+      },
+    );
     expect(out).toEqual({});
   });
 
@@ -224,11 +214,7 @@ describe("⭐ ICHMA-ICH sozlama TO'LIQ yuboriladi", () => {
      * `undefined` JSON'da yo'qoladi, ya'ni kalit tushib qolardi — aynan
      * qutulmoqchi bo'lgan holat. Tur bo'yicha bo'sh qiymat beriladi.
      */
-    const out = buildChangedPayload(
-      funnel,
-      { "inbound_order_config.stage_path": "status_id" },
-      {},
-    );
+    const out = buildChangedPayload(funnel, { "inbound_order_config.stage_path": "status_id" }, {});
 
     expect(out).toEqual({
       inbound_order_config: {

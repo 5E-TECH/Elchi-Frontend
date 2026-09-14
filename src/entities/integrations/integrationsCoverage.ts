@@ -17,8 +17,7 @@ export const useIntegrationsCoverage = () => {
     useQuery({
       queryKey: ["integ-cov", "receivable-balance", id],
       queryFn: () =>
-        api.get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLE_BALANCE(id))
-          .then((res) => res.data),
+        api.get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLE_BALANCE(id)).then((res) => res.data),
       enabled: enabled && !!id,
     });
 
@@ -40,8 +39,7 @@ export const useIntegrationsCoverage = () => {
   const sync = useMutation({
     mutationFn: ({ id, data }: { id: string; data?: any }) =>
       api.post(API_ENDPOINTS.INTEGRATIONS.SYNC(id), data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: ["integ-cov", "sync-history"] }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["integ-cov", "sync-history"] }),
   });
 
   // ── GET · INTEGRATIONS.SYNC_HISTORY_BY_ID ──────────────────────────────────
@@ -49,8 +47,7 @@ export const useIntegrationsCoverage = () => {
     useQuery({
       queryKey: ["integ-cov", "sync-history", id],
       queryFn: () =>
-        api.get(API_ENDPOINTS.INTEGRATIONS.SYNC_HISTORY_BY_ID(id))
-          .then((res) => res.data),
+        api.get(API_ENDPOINTS.INTEGRATIONS.SYNC_HISTORY_BY_ID(id)).then((res) => res.data),
       enabled: enabled && !!id,
     });
 
@@ -58,8 +55,7 @@ export const useIntegrationsCoverage = () => {
   const syncQueue = useMutation({
     mutationFn: ({ id, data }: { id: string; data?: any }) =>
       api.post(API_ENDPOINTS.INTEGRATIONS.SYNC_QUEUE(id), data),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: ["integ-cov", "sync-history"] }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["integ-cov", "sync-history"] }),
   });
 
   // ── POST · INTEGRATIONS.TEST ────────────────────────────────────────────────
@@ -95,8 +91,7 @@ export const useIntegrationsCoverage = () => {
     useQuery({
       queryKey: ["integ-cov", "receivables", params],
       queryFn: () =>
-        api.get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLES, { params })
-          .then((res) => res.data),
+        api.get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLES, { params }).then((res) => res.data),
     });
 
   // ── GET · INTEGRATIONS.SHIPMENT_BY_ORDER ───────────────────────────────────
@@ -104,8 +99,7 @@ export const useIntegrationsCoverage = () => {
     useQuery({
       queryKey: ["integ-cov", "shipment", orderId],
       queryFn: () =>
-        api.get(API_ENDPOINTS.INTEGRATIONS.SHIPMENT_BY_ORDER(orderId))
-          .then((res) => res.data),
+        api.get(API_ENDPOINTS.INTEGRATIONS.SHIPMENT_BY_ORDER(orderId)).then((res) => res.data),
       enabled: enabled && !!orderId,
     });
 
@@ -114,8 +108,7 @@ export const useIntegrationsCoverage = () => {
     useQuery({
       queryKey: ["integ-cov", "sync-history", params],
       queryFn: () =>
-        api.get(API_ENDPOINTS.INTEGRATIONS.SYNC_HISTORY, { params })
-          .then((res) => res.data),
+        api.get(API_ENDPOINTS.INTEGRATIONS.SYNC_HISTORY, { params }).then((res) => res.data),
     });
 
   return {

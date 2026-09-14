@@ -1,16 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import {
   useGetIntegrations,
   type Integration,
   type IntegrationCategory,
   type IntegrationRole,
-} from '../../entities/integrations';
-import { usePartners, type Partner } from '../../entities/partners';
-import {
-  CONNECTION_TYPES,
-  type ConnectionField,
-  type ConnectionKind,
-} from './connections';
+} from "../../entities/integrations";
+import { usePartners, type Partner } from "../../entities/partners";
+import { CONNECTION_TYPES, type ConnectionField, type ConnectionKind } from "./connections";
 
 /**
  * IKKI RO'YXATNI BITTA RO'YXATGA QO'SHISH.
@@ -52,7 +48,7 @@ export interface Connection {
 
 const partnerToConnection = (p: Partner): Connection => ({
   uid: `partner:${p.id}`,
-  kind: 'partner',
+  kind: "partner",
   id: String(p.id),
   name: p.name,
   /**
@@ -60,25 +56,23 @@ const partnerToConnection = (p: Partner): Connection => ({
    * `role` ustuni yo'q va kerak ham emas, chunki bu jadvalning ma'nosi
    * aynan shu.
    */
-  role: 'source',
-  category: 'marketplace',
+  role: "source",
+  category: "marketplace",
   is_active: Boolean(p.is_active),
-  subtitle: p.webhook_url
-    ? p.webhook_url
-    : "webhook manzili yo'q — status qaytmaydi",
+  subtitle: p.webhook_url ? p.webhook_url : "webhook manzili yo'q — status qaytmaydi",
   raw: p,
 });
 
 const integrationToConnection = (i: Integration): Connection => ({
   uid: `integration:${i.id}`,
-  kind: 'integration',
+  kind: "integration",
   id: String(i.id),
   name: i.name,
   // Eski yozuvlarda maydon yo'q — migratsiya `carrier`/`cargo` qo'yadi.
-  role: i.role ?? 'carrier',
-  category: i.category ?? 'cargo',
+  role: i.role ?? "carrier",
+  category: i.category ?? "cargo",
   is_active: Boolean(i.is_active),
-  subtitle: i.base_url || i.api_url || i.slug || '—',
+  subtitle: i.base_url || i.api_url || i.slug || "—",
   raw: i,
 });
 
@@ -97,9 +91,7 @@ export const useConnections = () => {
 
   const connections = useMemo<Connection[]>(() => {
     const partners = (partnersQuery.data ?? []).map(partnerToConnection);
-    const integrations = (
-      integrationsQuery.data?.data?.items ?? []
-    ).map(integrationToConnection);
+    const integrations = (integrationsQuery.data?.data?.items ?? []).map(integrationToConnection);
     return [...partners, ...integrations];
   }, [partnersQuery.data, integrationsQuery.data]);
 
@@ -159,23 +151,23 @@ export const fieldsFor = (c: Connection): ConnectionField[] => {
  * savolga javob beradi.
  */
 export const missingForReady = (input: {
-  kind: 'partner' | 'integration';
+  kind: "partner" | "integration";
   role?: string;
   raw: Record<string, unknown>;
 }): string[] => {
   const { kind, role, raw } = input;
   const gaps: string[] = [];
 
-  if (kind === 'partner') {
+  if (kind === "partner") {
     if (!raw.webhook_url) {
-      gaps.push('Webhook manzili — busiz status o‘zgarishi hamkorga yetmaydi');
+      gaps.push("Webhook manzili — busiz status o'zgarishi hamkorga yetmaydi");
     }
     return gaps;
   }
 
   // API manzili — barcha chiquvchi ulanish uchun eng kam shart.
   if (!raw.base_url && !raw.api_url) {
-    gaps.push('API manzili — so‘rov qayerga yuborilishi noma‘lum');
+    gaps.push("API manzili — so'rov qayerga yuborilishi noma'lum");
   }
 
   /**
@@ -192,26 +184,26 @@ export const missingForReady = (input: {
    */
   const cfg = raw.dispatch_config as { endpoint?: string } | null | undefined;
 
-  if (role === 'carrier') {
+  if (role === "carrier") {
     // Kargo posilka OLADI (dispatch) va status QAYTARADI (webhook).
     if (!cfg?.endpoint) {
-      gaps.push('Jo‘natish endpointi — busiz posilka yuborilmaydi (400)');
+      gaps.push("Jo'natish endpointi — busiz posilka yuborilmaydi (400)");
     }
     if (!raw.has_webhook_secret) {
-      gaps.push('Webhook sekreti — busiz kargoning statusi qabul qilinmaydi');
+      gaps.push("Webhook sekreti — busiz kargoning statusi qabul qilinmaydi");
     }
-  } else if (role === 'payment') {
+  } else if (role === "payment") {
     // To'lov tizimi faqat kiruvchi: imzo sekreti bo'lmasa hodisa rad etiladi.
     if (!raw.has_webhook_secret) {
-      gaps.push('Webhook sekreti — busiz to‘lov hodisasi rad etiladi (401)');
+      gaps.push("Webhook sekreti — busiz to'lov hodisasi rad etiladi (401)");
     }
-  } else if (role === 'source') {
+  } else if (role === "source") {
     /**
      * Buyurtma KELADIGAN ulanish: `market_id` bo'lmasa import 400 beradi
      * (`receiveExternalOrders` → `integration.market_id is required`).
      */
     if (!raw.market_id) {
-      gaps.push('Market bog‘lanishi — busiz buyurtma import qilinmaydi (400)');
+      gaps.push("Market bog'lanishi — busiz buyurtma import qilinmaydi (400)");
     }
   }
 

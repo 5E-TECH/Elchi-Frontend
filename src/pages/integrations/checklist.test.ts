@@ -73,16 +73,14 @@ describe("checklist — har kamchilik tuzatish manziliga ega", () => {
 
   it("⭐ webhook manzili yo'q bo'lsa Sozlamalarga yo'naltiradi", () => {
     const checks = buildChecks(conn({ kind: "partner", raw: {} }));
-    const webhook = checks.find((c) => c.label === 'Webhook manzili');
+    const webhook = checks.find((c) => c.label === "Webhook manzili");
     expect(webhook?.ok).toBe(false);
-    expect(webhook?.fixTab).toBe('settings');
-    expect(webhook?.fixHint).toContain('Webhook');
+    expect(webhook?.fixTab).toBe("settings");
+    expect(webhook?.fixHint).toContain("Webhook");
   });
 
   it("hammasi sozlangan bo'lsa bloklovchi kamchilik yo'q", () => {
-    const checks = buildChecks(
-      conn({ kind: "partner", raw: { webhook_url: "https://a.uz/h" } }),
-    );
+    const checks = buildChecks(conn({ kind: "partner", raw: { webhook_url: "https://a.uz/h" } }));
     expect(checks.filter((c) => !c.ok && !c.optional)).toEqual([]);
   });
 });
