@@ -62,7 +62,13 @@ export interface ConnectionField {
   type: FieldType;
   /** Bir qatorlik izoh — maydon ostida chiqadi (i18n kaliti). */
   hintKey?: string;
+  /**
+   * Namuna qiymat — `Uzum Market`, `https://...` kabi. ATAYLAB matn:
+   * bular misol, tarjima qilinadigan gap emas.
+   */
   placeholder?: string;
+  /** Tarjima qilinadigan namuna matni (i18n kaliti) — `placeholder` ornida. */
+  placeholderKey?: string;
   /**
    * `select` uchun variantlar.
    *
@@ -228,7 +234,7 @@ const INBOUND_FIELDS: ConnectionField[] = [
     key: "ip_allowlist",
     labelKey: "fIpAllowlistLabel",
     type: "tags",
-    placeholder: "203.0.113.10 yoki 203.0.113.0/24",
+    placeholderKey: "fIpAllowlistPlaceholder",
     hintKey: "fIpAllowlistHint",
     group: "security",
   },

@@ -48,6 +48,7 @@ const STATUS_TAG: Record<string, { color: string; labelKey: string }> = {
 };
 
 const ConnectionSettlement = ({ connection }: { connection: Connection }) => {
+  const { t } = useTranslation("integrations");
   /**
    * ⚠️ HISOB-KITOB FAQAT CHIQUVCHI ULANISHDA.
    *
@@ -62,17 +63,14 @@ const ConnectionSettlement = ({ connection }: { connection: Connection }) => {
       <Alert
         type="info"
         showIcon
-        message="Bu ulanishda hisob-kitob daftari bizda yuritilmaydi"
+        message={t("stlNoLedger")}
         description={
           <div className="space-y-1 text-sm">
             <p className="m-0">
-              Hamkor bizga buyurtma beradi, pulni esa <b>biz</b> yig'amiz va har sotuvda ularga
-              yig'ilgan summani (<code>cod_collected</code>) webhook bilan yuboramiz — ya'ni daftar
-              ularning tomonida.
+              {t("stlPartnerP1a")} <b>{t("stlPartnerP1b")}</b> {t("stlPartnerP1c")} (
+              <code>cod_collected</code>) {t("stlPartnerP1d")}
             </p>
-            <p className="m-0">
-              Yuborilgan summalarni "Hodisalar" bo'limida har hodisa bo'yicha ko'rish mumkin.
-            </p>
+            <p className="m-0">{t("stlPartnerP2")}</p>
           </div>
         }
       />
@@ -114,7 +112,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
         reference: values.reference?.trim() || undefined,
         note: values.note?.trim() || undefined,
       });
-      message.success("To'lov yozildi va qarzlar yopildi");
+      message.success(t("stlPaid"));
       setPayOpen(false);
       form.resetFields();
       void balance.refetch();
@@ -132,15 +130,15 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
       <Alert
         type="info"
         showIcon
-        message="Bu ekran kassa emas"
-        description="Bu yerdagi to'lov yozuvlari kassa balansiga TEGMAYDI — ular faqat 'tashuvchi qancha yig'di / qancha to'ladi' farqini ko'rsatadi. Kassa harakati alohida, odatdagi kassa oqimi orqali kiritiladi."
+        message={t("stlNotCashbox")}
+        description={t("stlNotCashboxDesc")}
       />
 
       {/* ═══════ QOLDIQ ═══════ */}
       <Card
         title={
           <span className="flex items-center gap-2">
-            <Wallet className="h-4 w-4" /> Qoldiq
+            <Wallet className="h-4 w-4" /> {t("stlBalance")}
           </span>
         }
         extra={
@@ -156,20 +154,19 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Statistic
-            title="Yopilmagan qarz"
+            title={t("stlOutstanding")}
             value={money(outstanding)}
             valueStyle={{ color: outstanding > 0 ? "#ea580c" : "#16a34a" }}
           />
           <Statistic
-            title="Yopilmagan yozuv"
+            title={t("stlOutstandingCount")}
             value={balance.data?.outstanding_count ?? 0}
-            suffix="ta"
+            suffix={t("stlCountSuffix")}
           />
         </div>
 
         <p className="m-0 mt-3 text-xs text-gray-500 dark:text-gray-400">
-          Qarz <b>davr bo'yicha kesilmaydi</b> — u to'planib boradigan qoldiq. Oldingi oyda yig'ilib
-          bu oyda to'langan pul aks holda "ortiqcha to'lov" bo'lib ko'rinardi.
+          {t("stlBalanceNoteA")} <b>{t("stlBalanceNoteBold")}</b> {t("stlBalanceNoteB")}
         </p>
       </Card>
 
@@ -177,7 +174,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
       <Card
         title={
           <span className="flex items-center gap-2">
-            <Banknote className="h-4 w-4" /> Qarz yozuvlari
+            <Banknote className="h-4 w-4" /> {t("stlRows")}
           </span>
         }
       >
@@ -191,19 +188,19 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
           options={[
             {
               value: "pending",
-              label: "Kutilmoqda",
+              label: t("settlePending"),
               icon: <Clock className="h-3.5 w-3.5" />,
               activeClass: "bg-amber-600 text-white border-amber-600",
             },
             {
               value: "settled",
-              label: "Yopilgan",
+              label: t("settleSettled"),
               icon: <CheckCircle2 className="h-3.5 w-3.5" />,
               activeClass: "bg-green-600 text-white border-green-600",
             },
             {
               value: "cancelled",
-              label: "Bekor",
+              label: t("settleCancelled"),
               icon: <XCircle className="h-3.5 w-3.5" />,
             },
             { value: "all", label: t("filterAll") },
@@ -230,7 +227,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={2}>
-                  <b>Shu sahifada</b>
+                  <b>{t("stlPageTotal")}</b>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={2}>
                   <b>{money(sum)}</b>
@@ -285,12 +282,12 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
 
       {/* ═══════ TO'LOV OYNASI ═══════ */}
       <Modal
-        title="Tashuvchidan olingan to'lov"
+        title={t("stlPayTitle")}
         open={payOpen}
         onCancel={() => setPayOpen(false)}
         onOk={submitPayment}
-        okText="Yozish"
-        cancelText="Bekor qilish"
+        okText={t("stlPayOk")}
+        cancelText={t("common:cancel")}
         confirmLoading={createRemittance.isPending}
         destroyOnClose
       >
@@ -298,19 +295,19 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
           className="mb-3"
           type="warning"
           showIcon
-          message="Kassaga yozilmaydi"
-          description="Bu yozuv faqat qarzni yopadi. Pulning kassaga kirishi alohida kiritiladi."
+          message={t("stlPayWarn")}
+          description={t("stlPayWarnDesc")}
         />
         <Form form={form} layout="vertical">
           <Form.Item
             name="amount"
-            label="Summa"
+            label={t("stlAmount")}
             rules={[
-              { required: true, message: "Summa kiritilishi shart" },
+              { required: true, message: t("stlAmountRequired") },
               {
                 type: "number",
                 min: 1,
-                message: "Summa noldan katta bo'lishi kerak",
+                message: t("stlAmountPositive"),
               },
             ]}
           >
@@ -330,21 +327,17 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
             />
           </Form.Item>
 
-          <Form.Item
-            name="reference"
-            label="Havola"
-            extra="To'lov topshiriqnomasi raqami yoki bank havolasi"
-          >
+          <Form.Item name="reference" label={t("stlReference")} extra={t("stlReferenceHint")}>
             <Input placeholder="TXN-2026-0912" />
           </Form.Item>
 
-          <Form.Item name="note" label="Izoh">
-            <Input.TextArea rows={2} placeholder="Ixtiyoriy" />
+          <Form.Item name="note" label={t("stlNote")}>
+            <Input.TextArea rows={2} placeholder={t("stlNotePlaceholder")} />
           </Form.Item>
         </Form>
 
         <p className="m-0 text-xs text-gray-500 dark:text-gray-400">
-          Qarzlar <b>eng eskisidan</b> boshlab yopiladi. Hozirgi yopilmagan qoldiq:{" "}
+          {t("stlOldestFirstA")} <b>{t("stlOldestFirstBold")}</b> {t("stlOldestFirstB")}{" "}
           <b>{money(outstanding)}</b>
         </p>
       </Modal>

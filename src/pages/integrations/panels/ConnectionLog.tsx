@@ -209,7 +209,7 @@ const PaymentLog = ({ connection }: { connection: Connection }) => {
           loading={payments.isFetching}
           onClick={() => void payments.refetch()}
         >
-          Yangilash
+          {t("refresh")}
         </Button>
       }
     >
@@ -342,7 +342,7 @@ const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
           loading={logs.isFetching}
           onClick={() => void logs.refetch()}
         >
-          Yangilash
+          {t("refresh")}
         </Button>
       }
     >
@@ -445,9 +445,9 @@ const InboundLog = ({ connection }: { connection: Connection }) => {
   const retry = async (id: string) => {
     try {
       await retryWebhook.mutateAsync(id);
-      message.success("Qayta navbatga qo'yildi");
+      message.success(t("logRequeued"));
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "Qayta urinib bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("logRetryFailed"));
     }
   };
 
@@ -464,7 +464,7 @@ const InboundLog = ({ connection }: { connection: Connection }) => {
           loading={webhooks.isFetching}
           onClick={() => void webhooks.refetch()}
         >
-          Yangilash
+          {t("refresh")}
         </Button>
       }
     >
@@ -592,9 +592,9 @@ const InboundLog = ({ connection }: { connection: Connection }) => {
                   icon={<RotateCw className="h-3 w-3" />}
                   loading={retryWebhook.isPending}
                   onClick={() => void retry(String(r.id))}
-                  title="Qayta navbatga qo'yish va darhol urinib ko'rish"
+                  title={t("logRetryTip")}
                 >
-                  Qayta
+                  {t("logRetryBtn")}
                 </Button>
               ),
           },
@@ -638,7 +638,7 @@ const OutboundLog = ({ connection }: { connection: Connection }) => {
           loading={history.isFetching}
           onClick={() => void history.refetch()}
         >
-          Yangilash
+          {t("refresh")}
         </Button>
       }
     >

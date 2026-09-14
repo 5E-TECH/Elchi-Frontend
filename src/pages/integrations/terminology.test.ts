@@ -52,10 +52,10 @@ describe("⭐ ATAMALAR — bir tushuncha, bir nom", () => {
    * lokal faylidan olinadi (registrda matn yo'q).
    */
   const uzDict = Object.entries(
-    import.meta.glob<Record<string, string>>(
-      "../../locales/uz/integrations.json",
-      { eager: true, import: "default" },
-    ),
+    import.meta.glob<Record<string, string>>("../../locales/uz/integrations.json", {
+      eager: true,
+      import: "default",
+    }),
   )[0][1];
 
   const labels = CONNECTION_TYPES.flatMap((t) => [
@@ -195,10 +195,9 @@ describe("⭐ TAKSONOMIYA — bir qiymat, bir yozuv", () => {
       const long = "labelKey" in opt ? uz[opt.labelKey] : opt.label;
       expect(short, `${opt.value} uchun qisqa tarjima yo'q`).toBeTruthy();
       expect(long, `${opt.value} uchun uzun tarjima yo'q`).toBeTruthy();
-      expect(
-        long!.includes(short!),
-        `"${long}" ichida "${short}" yo'q — ikki xil yozilgan`,
-      ).toBe(true);
+      expect(long!.includes(short!), `"${long}" ichida "${short}" yo'q — ikki xil yozilgan`).toBe(
+        true,
+      );
     }
   });
 

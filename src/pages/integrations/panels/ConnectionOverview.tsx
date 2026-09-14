@@ -32,9 +32,11 @@ import { MUTED } from "../ui";
  */
 
 export interface Check {
-  label: string;
+  labelKey: string;
   ok: boolean;
-  detail: string;
+  detailKey: string;
+  /** `detailKey` ichidagi `{{...}}` orniga qoyiladigan qiymatlar. */
+  detailParams?: Record<string, string>;
   /** `false` bo'lsa ham kritik emas — sariq, qizil emas. */
   optional?: boolean;
   /**
@@ -47,17 +49,17 @@ export interface Check {
    */
   fixTab?: string;
   /** Tuzatiladigan maydonning yorlig'i — "qayerda?" savoliga javob. */
-  fixHint?: string;
+  fixHintKey?: string;
 }
 
 export const buildChecks = (c: Connection): Check[] => {
   const common: Check[] = [
     {
-      label: "Ulanish yoqilgan",
+      labelKey: "checkEnabled",
       ok: c.is_active,
-      detail: c.is_active ? "faol" : "o'chirilgan — hech qanday amal bajarilmaydi",
+      detailKey: c.is_active ? "chkActive" : "chkInactiveDetail",
       fixTab: "control",
-      fixHint: "Ish rejimi → asosiy kalit",
+      fixHintKey: "fixControlMaster",
     },
   ];
 
@@ -71,13 +73,13 @@ export const buildChecks = (c: Connection): Check[] => {
     return [
       ...common,
       {
-        label: "Webhook manzili",
+        labelKey: "checkWebhookUrl",
         ok: Boolean(p.webhook_url),
-        detail: p.webhook_url
-          ? String(p.webhook_url)
-          : "yo'q — status o'zgarishi hamkorga YETMAYDI (hodisalar kutib qoladi)",
+        ...(p.webhook_url
+          ? { detailKey: "rawValue", detailParams: { value: String(p.webhook_url) } }
+          : { detailKey: "chkWebhookMissing" }),
         fixTab: "settings",
-        fixHint: "Sozlamalar → Webhook manzili",
+        fixHintKey: "fixSettingsWebhook",
       },
       /**
        * SINOV REJIMI — KALITDAN hisoblanadi, manzilning borligidan EMAS.
@@ -93,20 +95,21 @@ export const buildChecks = (c: Connection): Check[] => {
        * Endi uchala holat ajratilgan va matn KEYINGI QADAMNI aytadi.
        */
       {
-        label: "Sinov rejimi (sandbox)",
+        labelKey: "checkSandbox",
         ok: Boolean(p.sandbox_enabled && p.has_sandbox_secret),
         optional: true,
-        detail: !p.sandbox_enabled
+        detailKey: !p.sandbox_enabled
           ? p.sandbox_webhook_url
-            ? `o'chirilgan — manzil saqlangan (${String(p.sandbox_webhook_url)})`
-            : "o'chirilgan — sinov nusxasi yuborilmaydi"
+            ? "chkSandboxOffWithUrl"
+            : "chkSandboxOff"
           : !p.sandbox_webhook_url
-            ? "YOQILGAN, lekin manzil yo'q — nusxa hech qayerga ketmaydi"
+            ? "chkSandboxOnNoUrl"
             : !p.has_sandbox_secret
-              ? "YOQILGAN, lekin alohida sekret yo'q — nusxa yuborilmaydi"
-              : `YOQILGAN — har hodisa nusxasi ${String(p.sandbox_webhook_url)} ga ketmoqda`,
+              ? "chkSandboxOnNoSecret"
+              : "chkSandboxOn",
+        detailParams: { url: String(p.sandbox_webhook_url ?? "") },
         fixTab: "settings",
-        fixHint: "Sozlamalar → Sinov rejimi",
+        fixHintKey: "fixSettingsSandbox",
       },
     ];
   }
@@ -121,28 +124,34 @@ export const buildChecks = (c: Connection): Check[] => {
   return [
     ...common,
     {
-      label: "API manzili",
+      labelKey: "checkApiUrl",
       ok: Boolean(url),
-      detail: url || "yo'q — so'rov yuborib bo'lmaydi",
+      ...(url
+        ? { detailKey: "rawValue", detailParams: { value: url } }
+        : { detailKey: "chkApiUrlMissing" }),
       fixTab: "settings",
-      fixHint: "Sozlamalar → API manzili",
+      fixHintKey: "fixSettingsApiUrl",
     },
     {
-      label: "Kirish turi",
+      labelKey: "checkAuthType",
       ok: Boolean(i.auth_type),
-      detail: i.auth_type ? `turi: ${i.auth_type}` : "belgilanmagan",
+      detailKey: i.auth_type ? "chkAuthTypeSet" : "chkAuthTypeMissing",
+      detailParams: { type: String(i.auth_type ?? "") },
       fixTab: "settings",
-      fixHint: "Sozlamalar → Kirish turi",
+      fixHintKey: "fixSettingsAuthType",
     },
     {
-      label: "Oxirgi sinxron",
+      labelKey: "checkLastSync",
       ok: Boolean(i.last_sync_at),
       optional: true,
-      detail: i.last_sync_at
-        ? new Date(i.last_sync_at).toLocaleString("uz-UZ")
-        : "hali sinxron bo'lmagan",
+      ...(i.last_sync_at
+        ? {
+            detailKey: "rawValue",
+            detailParams: { value: new Date(i.last_sync_at).toLocaleString("uz-UZ") },
+          }
+        : { detailKey: "chkNeverSynced" }),
       fixTab: "control",
-      fixHint: "Ish rejimi → Navbatni hoziroq yuborish",
+      fixHintKey: "fixControlQueue",
     },
   ];
 };
@@ -155,6 +164,7 @@ export const buildChecks = (c: Connection): Check[] => {
  * chalg'itardi.
  */
 const ChecklistItem = ({ check, onFix }: { check: Check; onFix?: (tab: string) => void }) => {
+  const { t } = useTranslation("integrations");
   const actionable = !check.ok && Boolean(check.fixTab) && Boolean(onFix);
   const Row = actionable ? "button" : "div";
 
@@ -184,7 +194,7 @@ const ChecklistItem = ({ check, onFix }: { check: Check; onFix?: (tab: string) =
               : "font-medium text-red-600 dark:text-red-400"
           }
         >
-          {check.label}
+          {t(check.labelKey)}
         </span>
         {/*
         ⚠️ `MUTED` — ilgari `text-gray-400` (dark juftligi YO'Q) edi.
@@ -192,11 +202,13 @@ const ChecklistItem = ({ check, onFix }: { check: Check; onFix?: (tab: string) =
         yo'q — status o'zgarishi hamkorga YETMAYDI"), qorong'ida esa u
         deyarli o'qilmasdi.
       */}
-        <span className={`block break-words text-xs ${MUTED}`}>{check.detail}</span>
+        <span className={`block break-words text-xs ${MUTED}`}>
+          {t(check.detailKey, check.detailParams)}
+        </span>
         {/* Qayerdan tuzatish — matn bilan aytiladi, taxmin qoldirilmaydi. */}
         {actionable && (
           <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
-            {check.fixHint ?? "Tuzatish"}
+            {t(check.fixHintKey ?? "fixDefault")}
             <ArrowRight className="h-3 w-3" />
           </span>
         )}
@@ -227,9 +239,7 @@ const ConnectionOverview = ({
         type={blocking.length === 0 ? "success" : "warning"}
         showIcon
         message={
-          blocking.length === 0
-            ? "Ulanish ishlashga tayyor"
-            : `${blocking.length} ta sozlama yetishmaydi — checklistni tugatish kerak`
+          blocking.length === 0 ? t("ovwReady") : t("ovwMissing", { count: blocking.length })
         }
         action={
           /*
@@ -239,7 +249,7 @@ const ConnectionOverview = ({
           */
           blocking.length > 0 && blocking[0].fixTab && onFix ? (
             <Button size="small" type="primary" onClick={() => onFix(blocking[0].fixTab!)}>
-              Tuzatish
+              {t("fixDefault")}
             </Button>
           ) : undefined
         }
@@ -249,18 +259,14 @@ const ConnectionOverview = ({
             <Tag>{t(CATEGORY_LABEL[connection.category])}</Tag>
             {/* Yo'nalish — eng ko'p chalkashgan joy, shuning uchun aniq. */}
             <Tooltip
-              title={
-                connection.kind === "partner"
-                  ? "Kalit bizdan chiqadi. Status o'zgarganda biz ularga webhook yuboramiz."
-                  : "Kalit ularda. So'rovni biz yuboramiz va javobini o'zimizga moslaymiz."
-              }
+              title={connection.kind === "partner" ? t("ovwPartnerTip") : t("ovwIntegrationTip")}
             >
               <Tag color="purple" className="cursor-help">
-                {connection.kind === "partner" ? "bizga ulanadi" : "biz ulanamiz"}
+                {connection.kind === "partner" ? t("ovwTagInbound") : t("ovwTagOutbound")}
               </Tag>
             </Tooltip>
-            {failed > 0 && <Tag color="red">{failed} hodisa yetmadi</Tag>}
-            {queued > 0 && <Tag color="orange">{queued} navbatda</Tag>}
+            {failed > 0 && <Tag color="red">{t("eventsFailed", { count: failed })}</Tag>}
+            {queued > 0 && <Tag color="orange">{t("ovwQueuedTag", { count: queued })}</Tag>}
           </div>
         }
       />
@@ -269,19 +275,19 @@ const ConnectionOverview = ({
         <Card
           title={
             <span className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4" /> Tayyorlik checklisti
+              <ShieldAlert className="h-4 w-4" /> {t("ovwChecklistTitle")}
             </span>
           }
         >
           {checks.map((c) => (
-            <ChecklistItem key={c.label} check={c} onFix={onFix} />
+            <ChecklistItem key={c.labelKey} check={c} onFix={onFix} />
           ))}
         </Card>
 
         <Card
           title={
             <span className="flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Oxirgi 24 soat
+              <Clock className="h-4 w-4" /> {t("ovwLast24h")}
             </span>
           }
         >
@@ -294,20 +300,20 @@ const ConnectionOverview = ({
             <Alert
               type="info"
               showIcon
-              message="24 soatda hodisa bo'lmagan"
-              description="O'lchash uchun ma'lumot yo'q — ulanish hali ishlatilmagan bo'lishi mumkin."
+              message={t("ovwNoEvents24h")}
+              description={t("ovwNoEventsDesc")}
             />
           ) : (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <Statistic title="Hodisa" value={metrics.events} />
+                <Statistic title={t("statEvents")} value={metrics.events} />
                 <Statistic
-                  title="Yetkazildi"
+                  title={t("statDelivered")}
                   value={metrics.delivered}
                   valueStyle={{ color: "#16a34a" }}
                 />
                 <Statistic
-                  title="Yetmadi"
+                  title={t("statFailed")}
                   value={metrics.failed}
                   valueStyle={{
                     color: metrics.failed > 0 ? "#dc2626" : undefined,
@@ -317,7 +323,7 @@ const ConnectionOverview = ({
                   }
                 />
                 <Statistic
-                  title="Navbatda"
+                  title={t("statQueued")}
                   value={metrics.queued}
                   valueStyle={{
                     color: metrics.queued > 0 ? "#ea580c" : undefined,
@@ -327,7 +333,7 @@ const ConnectionOverview = ({
 
               <div className="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm dark:border-gray-700/60">
                 <div className="flex justify-between gap-2">
-                  <span className={MUTED}>Muvaffaqiyat:</span>
+                  <span className={MUTED}>{t("ovwSuccessRate")}</span>
                   {/*
                     `fmtMetric` — o'lchanmagan qiymat "—", hech qachon `0`.
                     `0%` "hammasi yiqildi" degan yolg'on xabar bo'lardi.
@@ -335,12 +341,12 @@ const ConnectionOverview = ({
                   <b>{fmtMetric(metrics.success_rate, "%")}</b>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span className={MUTED}>Javob vaqti:</span>
+                  <span className={MUTED}>{t("ovwAvgMs")}</span>
                   <b>{fmtMetric(metrics.avg_ms, " ms")}</b>
                 </div>
                 <div className="flex justify-between gap-2">
                   <span className={`flex items-center gap-1 ${MUTED}`}>
-                    <Webhook className="h-3.5 w-3.5" /> Oxirgi hodisa:
+                    <Webhook className="h-3.5 w-3.5" /> {t("ovwLastEvent")}
                   </span>
                   <span className="font-mono text-xs">
                     {metrics.last_event_at

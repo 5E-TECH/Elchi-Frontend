@@ -4,6 +4,7 @@ import { FlaskConical, PlugZap, Save, Shuffle } from "lucide-react";
 import { usePartnerActions, type WebhookTestResult } from "../../../entities/partners";
 import { useUpdateIntegration } from "../../../entities/integrations";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { useTranslation } from "react-i18next";
 import ConnectionFields, { buildChangedPayload, type FieldValues } from "../ConnectionFields";
 import { TYPE_CHANGE_FIELDS, fieldsInGroup, type ConnectionField } from "../connections";
 import { getPath } from "../fieldPath";
@@ -76,6 +77,7 @@ const ConnectionSettings = ({
   fields: ConnectionField[];
   onSaved: () => void;
 }) => {
+  const { t } = useTranslation("integrations");
   /**
    * Faqat `connection` guruhi — kirishni cheklaydigan qiymatlar (IP ro'yxati,
    * kalitlar) Xavfsizlik tabida. Sababi: bu yerdagi tahrir oddiy, o'sha
@@ -119,7 +121,7 @@ const ConnectionSettings = ({
   const save = async () => {
     const payload = buildChangedPayload([...fields, ...sandboxFields], values, initial);
     if (!Object.keys(payload).length) {
-      message.info("O'zgarish yo'q");
+      message.info(t("setNoChange"));
       return;
     }
 
@@ -146,10 +148,10 @@ const ConnectionSettings = ({
           } as never,
         });
       }
-      message.success("Saqlandi");
+      message.success(t("savedOk"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "Saqlab bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("saveFailed"));
     }
   };
 
@@ -163,7 +165,7 @@ const ConnectionSettings = ({
         }),
       );
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "Sinov yuborib bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("setTestFailed"));
     }
   };
 
@@ -173,7 +175,7 @@ const ConnectionSettings = ({
         <Card
           title={
             <span className="flex items-center gap-2">
-              <PlugZap className="h-4 w-4" /> Ulanish qiymatlari
+              <PlugZap className="h-4 w-4" /> {t("setConnValues")}
             </span>
           }
           extra={
@@ -189,9 +191,9 @@ const ConnectionSettings = ({
                 loading={testWebhook.isPending}
                 disabled={!String(values.webhook_url ?? "").trim()}
                 onClick={runTest}
-                title="Sinov hodisasi yuboriladi — buyurtmaga ta'sir qilmaydi"
+                title={t("setTestTip")}
               >
-                Sinash
+                {t("setTestBtn")}
               </Button>
             ) : undefined
           }
@@ -209,7 +211,7 @@ const ConnectionSettings = ({
             loading={saving}
             onClick={save}
           >
-            Saqlash
+            {t("common:save")}
           </Button>
         </Card>
       </Form>
@@ -220,7 +222,7 @@ const ConnectionSettings = ({
           <Card
             title={
               <span className="flex items-center gap-2">
-                <FlaskConical className="h-4 w-4" /> Sinov rejimi (sandbox)
+                <FlaskConical className="h-4 w-4" /> {t("setSandboxCard")}
               </span>
             }
           >
@@ -260,7 +262,7 @@ const ConnectionSettings = ({
               loading={saving}
               onClick={save}
             >
-              Saqlash
+              {t("common:save")}
             </Button>
           </Card>
         </Form>
@@ -328,6 +330,7 @@ const TypeChangeCard = ({
   connection: Connection;
   onSaved: () => void;
 }) => {
+  const { t } = useTranslation("integrations");
   const initial = useMemo(
     () => ({
       role: String((connection.raw as Record<string, unknown>).role ?? connection.role),
@@ -355,10 +358,10 @@ const TypeChangeCard = ({
           category: String(values.category ?? ""),
         } as never,
       });
-      message.success("Turi o'zgartirildi");
+      message.success(t("setTypeChanged"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "O'zgartirib bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("setTypeChangeFailed"));
     }
   };
 
@@ -366,7 +369,7 @@ const TypeChangeCard = ({
     <Card
       title={
         <span className="flex items-center gap-2">
-          <Shuffle className="h-4 w-4" /> Turini o'zgartirish
+          <Shuffle className="h-4 w-4" /> {t("setTypeCard")}
         </span>
       }
     >
@@ -374,8 +377,8 @@ const TypeChangeCard = ({
         className="mb-3"
         type="warning"
         showIcon
-        message="Bu ulanishning ro'yxatdagi o'rnini va so'raladigan sozlamalarni o'zgartiradi"
-        description="Har tur boshqa maydonlar so'raydi. Eski qiymatlar saqlanib qoladi, lekin yangi turda ko'rinmasligi mumkin."
+        message={t("setTypeWarn")}
+        description={t("setTypeWarnDesc")}
       />
       <Form layout="vertical">
         <ConnectionFields
@@ -392,11 +395,11 @@ const TypeChangeCard = ({
           Holat tugmaning O'CHIRILGANIDA ko'rinadi, izoh esa ostida.
         */}
         <Button danger disabled={!changed} loading={updateIntegration.isPending} onClick={save}>
-          Turini o'zgartirish
+          {t("setTypeCard")}
         </Button>
         {!changed && (
           <p className="m-0 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-            Avval rol yoki kategoriyani o'zgartiring.
+            {t("setTypeChangeHint")}
           </p>
         )}
       </Form>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, Button, Card, Form, Popconfirm, Tag, Typography, message } from "antd";
 import { KeyRound, Power, Save, ShieldCheck } from "lucide-react";
 import { usePartnerActions } from "../../../entities/partners";
@@ -61,6 +62,7 @@ const ConnectionSecurity = ({
   fields: ConnectionField[];
   onSaved: () => void;
 }) => {
+  const { t } = useTranslation("integrations");
   const fields = useMemo(() => fieldsInGroup(allFields, "security"), [allFields]);
   const initial = useMemo(() => initialValues(connection, fields), [connection, fields]);
 
@@ -101,10 +103,10 @@ const ConnectionSecurity = ({
           } as never,
         });
       }
-      message.success("Saqlandi");
+      message.success(t("savedOk"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "Saqlab bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("saveFailed"));
     }
   };
 
@@ -112,10 +114,10 @@ const ConnectionSecurity = ({
     try {
       const res = await rotateKey.mutateAsync(connection.id);
       setFreshKey(res.api_key || null);
-      message.success("Yangi kalit yaratildi");
+      message.success(t("secKeyCreated"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "Kalitni yangilab bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("secKeyRotateFailed"));
     }
   };
 
@@ -145,10 +147,10 @@ const ConnectionSecurity = ({
           } as never,
         });
       }
-      message.success(next ? "Ulanish yoqildi" : "Ulanish o'chirildi");
+      message.success(next ? t("secEnabled") : t("secDisabled"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || "Holatni o'zgartirib bo'lmadi");
+      message.error(getBackendErrorMessage(error) || t("toggleFailed"));
     }
   };
 
@@ -160,12 +162,12 @@ const ConnectionSecurity = ({
       <Card
         title={
           <span className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" /> Kirish cheklovlari
+            <ShieldCheck className="h-4 w-4" /> {t("secAccessLimits")}
           </span>
         }
       >
         {fields.length === 0 ? (
-          <Alert type="info" showIcon message="Bu ulanish turida cheklov sozlamasi yo'q" />
+          <Alert type="info" showIcon message={t("secNoLimitFields")} />
         ) : (
           <Form layout="vertical">
             <ConnectionFields
@@ -180,7 +182,7 @@ const ConnectionSecurity = ({
               loading={saving}
               onClick={save}
             >
-              Saqlash
+              {t("common:save")}
             </Button>
           </Form>
         )}
@@ -191,33 +193,25 @@ const ConnectionSecurity = ({
         <Card
           title={
             <span className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4" /> API kalit
+              <KeyRound className="h-4 w-4" /> {t("secApiKey")}
             </span>
           }
           extra={
             <Popconfirm
-              title="Kalitni yangilash"
-              description={
-                <span className="block max-w-xs">
-                  Eski kalit DARHOL ishlamay qoladi. Hamkor yangi kalitni qo'ymaguncha ularning
-                  so'rovlari rad etiladi.
-                </span>
-              }
-              okText="Ha, yangilash"
+              title={t("secRotateTitle")}
+              description={<span className="block max-w-xs">{t("secRotateWarning")}</span>}
+              okText={t("secRotateOk")}
               okButtonProps={{ danger: true, loading: rotateKey.isPending }}
-              cancelText="Bekor qilish"
+              cancelText={t("common:cancel")}
               onConfirm={doRotate}
             >
               <Button danger icon={<KeyRound className="h-4 w-4" />}>
-                Kalitni yangilash
+                {t("secRotateTitle")}
               </Button>
             </Popconfirm>
           }
         >
-          <p className="m-0 text-sm text-gray-500 dark:text-gray-400">
-            Kalit bizda ochiq saqlanmaydi — faqat xeshi. Shu sababli uni qayta ko'rsatib bo'lmaydi;
-            yo'qolsa yangisini yaratish kerak.
-          </p>
+          <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{t("secKeyHashNote")}</p>
 
           {/* Yangi kalit — BIR MARTA. Sahifadan chiqilsa boshqa olinmaydi. */}
           {freshKey && (
@@ -225,7 +219,7 @@ const ConnectionSecurity = ({
               className="mt-3"
               type="success"
               showIcon
-              message="Yangi kalit — HOZIR ko'chirib oling, boshqa ko'rsatilmaydi"
+              message={t("secFreshKeyTitle")}
               description={
                 <Typography.Paragraph
                   copyable={{ text: freshKey }}
@@ -243,35 +237,27 @@ const ConnectionSecurity = ({
       <Card
         title={
           <span className="flex items-center gap-2">
-            <Power className="h-4 w-4" /> Ulanish holati
+            <Power className="h-4 w-4" /> {t("secConnState")}
           </span>
         }
         extra={
           <Tag color={connection.is_active ? "green" : "red"}>
-            {connection.is_active ? "FAOL" : "O'CHIQ"}
+            {connection.is_active ? t("secTagActive") : t("secTagOff")}
           </Tag>
         }
       >
         <Alert
           type={connection.is_active ? "info" : "warning"}
           showIcon
-          message={connection.is_active ? "Ulanish faol" : "Ulanish o'chirilgan"}
-          description={
-            connection.is_active
-              ? "O'chirilsa hamkor so'rovlari rad etiladi va hodisalar yuborilmaydi."
-              : "Hech qanday so'rov qabul qilinmaydi va hodisa yuborilmaydi."
-          }
+          message={connection.is_active ? t("secStateActive") : t("secStateOff")}
+          description={connection.is_active ? t("secStateActiveDesc") : t("secStateOffDesc")}
         />
 
         <Popconfirm
-          title={connection.is_active ? "Ulanishni o'chirish" : "Ulanishni yoqish"}
-          description={
-            connection.is_active
-              ? "O'chirilgandan keyin hamkor so'rovlari darhol rad etiladi."
-              : "Ulanish yoqiladi va hodisalar yana yuboriladi."
-          }
-          okText="Ha"
-          cancelText="Bekor qilish"
+          title={connection.is_active ? t("secDisableTitle") : t("secEnableTitle")}
+          description={connection.is_active ? t("secDisableDesc") : t("secEnableDesc")}
+          okText={t("common:yes")}
+          cancelText={t("common:cancel")}
           okButtonProps={{
             danger: connection.is_active,
             loading: togglePending,
@@ -285,7 +271,7 @@ const ConnectionSecurity = ({
             icon={<Power className="h-4 w-4" />}
             loading={togglePending}
           >
-            {connection.is_active ? "O'chirish" : "Yoqish"}
+            {connection.is_active ? t("secBtnOff") : t("secBtnOn")}
           </Button>
         </Popconfirm>
       </Card>

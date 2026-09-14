@@ -17,26 +17,24 @@ import type { WebhookTestResult } from "../../../entities/partners";
 export type CheckState = "ok" | "fail" | "warn" | "skip";
 
 export interface StepCheck {
-  label: string;
+  labelKey: string;
   state: CheckState;
-  detail: string;
+  detailKey: string;
+  /** `detailKey` ichidagi `{{...}}` orniga qoyiladigan qiymatlar. */
+  detailParams?: Record<string, string | number>;
 }
 
 /** Manzil shaklini BIZ tekshiramiz — so'rov yuborishdan oldin. */
 export const checkUrlShape = (raw: string): StepCheck => {
   const url = raw.trim();
   if (!url) {
-    return { label: "Manzil", state: "fail", detail: "manzil kiritilmagan" };
+    return { labelKey: "stpUrl", state: "fail", detailKey: "stpUrlEmpty" };
   }
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
-    return {
-      label: "Manzil",
-      state: "fail",
-      detail: "manzil shakli noto'g'ri (https://... bo'lishi kerak)",
-    };
+    return { labelKey: "stpUrl", state: "fail", detailKey: "stpUrlBadShape" };
   }
   if (parsed.protocol !== "https:") {
     /**
@@ -44,12 +42,18 @@ export const checkUrlShape = (raw: string): StepCheck => {
      * Lekin imzo va ma'lumot ochiq ketadi, shuni aytish kerak.
      */
     return {
-      label: "Manzil",
+      labelKey: "stpUrl",
       state: "warn",
-      detail: `${parsed.protocol} ishlatilgan — ma'lumot shifrlanmagan holda ketadi`,
+      detailKey: "stpUrlNotHttps",
+      detailParams: { protocol: parsed.protocol },
     };
   }
-  return { label: "Manzil", state: "ok", detail: parsed.origin };
+  return {
+    labelKey: "stpUrl",
+    state: "ok",
+    detailKey: "rawValue",
+    detailParams: { value: parsed.origin },
+  };
 };
 
 /** Hamkor webhook sinovi → to'rt qadam. */
@@ -59,39 +63,49 @@ export const partnerChecks = (url: string, res: WebhookTestResult | null): StepC
 
   const reached: StepCheck =
     res.http_status !== null
-      ? { label: "Aloqa", state: "ok", detail: `javob keldi (${res.duration_ms} ms)` }
+      ? {
+          labelKey: "stpReach",
+          state: "ok",
+          detailKey: "stpReached",
+          detailParams: { ms: res.duration_ms ?? 0 },
+        }
       : {
-          label: "Aloqa",
+          labelKey: "stpReach",
           state: "fail",
-          // Tarmoq xatosi — manzil yoki server tomonda.
-          detail: res.error || "javob kelmadi",
+          // Tarmoq xatosi — manzil yoki server tomonda. Server matni
+          // TARJIMA QILINMAYDI: u qanday kelsa shunday korsatiladi.
+          ...(res.error
+            ? { detailKey: "rawValue", detailParams: { value: res.error } }
+            : { detailKey: "stpNoResponse" }),
         };
 
   const code: StepCheck =
     res.http_status === null
-      ? { label: "Javob kodi", state: "skip", detail: "aloqa bo'lmadi" }
+      ? { labelKey: "stpCode", state: "skip", detailKey: "stpCodeSkip" }
       : res.http_status >= 200 && res.http_status < 300
-        ? { label: "Javob kodi", state: "ok", detail: `HTTP ${res.http_status}` }
+        ? {
+            labelKey: "stpCode",
+            state: "ok",
+            detailKey: "rawValue",
+            detailParams: { value: `HTTP ${res.http_status}` },
+          }
         : {
-            label: "Javob kodi",
+            labelKey: "stpCode",
             state: "fail",
-            detail: `HTTP ${res.http_status} — qabul qiluvchi rad etdi`,
+            detailKey: "stpCodeRejected",
+            detailParams: { status: res.http_status },
           };
 
   const sign: StepCheck = res.secret_configured
-    ? {
-        label: "Imzo",
-        state: "ok",
-        detail: "sekret sozlangan — ular imzoni tekshira oladi",
-      }
+    ? { labelKey: "stpSign", state: "ok", detailKey: "stpSignOk" }
     : {
         /**
          * Sekretsiz ham ishlaydi, shuning uchun `warn`. Lekin qabul qiluvchi
          * so'rov BIZDAN kelganini tasdiqlay olmaydi — bu xavfsizlik bo'shligi.
          */
-        label: "Imzo",
+        labelKey: "stpSign",
         state: "warn",
-        detail: "sekret yo'q — ular so'rov bizdan kelganini tasdiqlay olmaydi",
+        detailKey: "stpSignMissing",
       };
 
   return [shape, reached, code, sign];
@@ -111,21 +125,35 @@ export const outboundChecks = (
   const reached: StepCheck =
     status !== null
       ? {
-          label: "Aloqa",
+          labelKey: "stpReach",
           state: "ok",
-          detail: `javob keldi${res?.response_time_ms ? ` (${res.response_time_ms} ms)` : ""}`,
+          ...(res?.response_time_ms
+            ? { detailKey: "stpReached", detailParams: { ms: res.response_time_ms } }
+            : { detailKey: "stpReachedNoMs" }),
         }
-      : { label: "Aloqa", state: "fail", detail: error || "javob kelmadi" };
+      : {
+          labelKey: "stpReach",
+          state: "fail",
+          ...(error
+            ? { detailKey: "rawValue", detailParams: { value: error } }
+            : { detailKey: "stpNoResponse" }),
+        };
 
   const code: StepCheck =
     status === null
-      ? { label: "Javob kodi", state: "skip", detail: "aloqa bo'lmadi" }
+      ? { labelKey: "stpCode", state: "skip", detailKey: "stpCodeSkip" }
       : status >= 200 && status < 300
-        ? { label: "Javob kodi", state: "ok", detail: `HTTP ${status}` }
+        ? {
+            labelKey: "stpCode",
+            state: "ok",
+            detailKey: "rawValue",
+            detailParams: { value: `HTTP ${status}` },
+          }
         : {
-            label: "Javob kodi",
+            labelKey: "stpCode",
             state: "fail",
-            detail: `HTTP ${status} — so'rov qabul qilinmadi`,
+            detailKey: "stpCodeNotAccepted",
+            detailParams: { status },
           };
 
   return [shape, reached, code];

@@ -101,7 +101,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => {
                 disabled={fieldDisabled}
                 onChange={(v) => onChange(field.key, v)}
                 options={field.options ?? []}
-                placeholder={field.placeholder}
+                placeholder={field.placeholderKey ? t(field.placeholderKey) : field.placeholder}
               />
             </Form.Item>
           );
@@ -127,7 +127,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => {
                 disabled={fieldDisabled}
                 onChange={(v: string[]) => onChange(field.key, v)}
                 tokenSeparators={[",", " ", "\n"]}
-                placeholder={field.placeholder}
+                placeholder={field.placeholderKey ? t(field.placeholderKey) : field.placeholder}
                 open={false}
                 suffixIcon={null}
               />
@@ -180,7 +180,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => {
                 value={String(raw ?? "")}
                 disabled={fieldDisabled}
                 onChange={(e) => onChange(field.key, e.target.value)}
-                placeholder="tegilmaydi"
+                placeholder={t("fldSecretUntouched")}
                 autoComplete="new-password"
               />
             </Form.Item>
@@ -198,7 +198,7 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => {
               value={String(raw ?? "")}
               disabled={fieldDisabled}
               onChange={(e) => onChange(field.key, e.target.value)}
-              placeholder={field.placeholder}
+              placeholder={field.placeholderKey ? t(field.placeholderKey) : field.placeholder}
               inputMode={field.type === "url" ? "url" : undefined}
             />
           </Form.Item>
@@ -250,7 +250,7 @@ const MarketField = ({
         allowClear
         showSearch
         optionFilterProp="label"
-        placeholder={query.isError ? "Ro'yxatni olib bo'lmadi" : "Marketni tanlang"}
+        placeholder={query.isError ? t("fldListFailed") : t("fldPickMarket")}
         options={list.map((m) => ({
           value: String(m.id),
           label: String(m.name ?? m.username ?? `#${m.id}`),
@@ -272,21 +272,33 @@ const MarketField = ({
  * (`order-lifecycle.service.ts` → `fieldMapping.*`). Mos kelmasa xarita
  * jimgina e'tiborsiz qolardi.
  */
-const MAPPING_KEYS: Array<{ key: string; label: string; hint: string }> = [
-  { key: "id_field", label: "Buyurtma raqami", hint: "sukut: id" },
-  { key: "customer_name_field", label: "Mijoz ismi", hint: "sukut: full_name" },
-  { key: "phone_field", label: "Telefon", hint: "sukut: phone" },
-  { key: "extra_phone_field", label: "Qo'shimcha telefon", hint: "" },
-  { key: "address_field", label: "Manzil", hint: "sukut: address" },
-  { key: "district_code_field", label: "Tuman (SOATO)", hint: "sukut: district" },
-  { key: "region_code_field", label: "Viloyat", hint: "faqat SON qabul qilinadi" },
-  { key: "total_price_field", label: "Summa", hint: "sukut: total_price" },
-  { key: "delivery_price_field", label: "Yetkazish narxi", hint: "" },
-  { key: "qr_code_field", label: "QR kod", hint: "sukut: qr_code" },
-  { key: "comment_field", label: "Izoh", hint: "sukut: comment" },
-  { key: "items_field", label: "Mahsulotlar massivi", hint: "sukut: items" },
-  { key: "item_name_field", label: "Mahsulot nomi", hint: "massiv ichida, sukut: name" },
-  { key: "item_qty_field", label: "Mahsulot soni", hint: "massiv ichida, sukut: quantity" },
+/**
+ * ⚠️ `def` — backend sukut bo'yicha o'qiydigan maydon nomi. U MATNDAN
+ * AJRATILGAN: ilgari ko'rsatma "sukut: id" satridan `replace("sukut: ")`
+ * bilan kesib olinardi, ya'ni tarjima qilingan zahoti placeholder butun
+ * ko'rsatmani ko'rsatib qo'yardi.
+ */
+const MAPPING_KEYS: Array<{
+  key: string;
+  labelKey: string;
+  def?: string;
+  hintKey?: string;
+  inArray?: boolean;
+}> = [
+  { key: "id_field", labelKey: "mapOrderNumber", def: "id" },
+  { key: "customer_name_field", labelKey: "mapCustomerName", def: "full_name" },
+  { key: "phone_field", labelKey: "mapPhone", def: "phone" },
+  { key: "extra_phone_field", labelKey: "mapExtraPhone" },
+  { key: "address_field", labelKey: "mapAddress", def: "address" },
+  { key: "district_code_field", labelKey: "mapDistrict", def: "district" },
+  { key: "region_code_field", labelKey: "mapRegion", hintKey: "mapNumberOnly" },
+  { key: "total_price_field", labelKey: "mapAmount", def: "total_price" },
+  { key: "delivery_price_field", labelKey: "mapDeliveryPrice" },
+  { key: "qr_code_field", labelKey: "mapQrCode", def: "qr_code" },
+  { key: "comment_field", labelKey: "mapComment", def: "comment" },
+  { key: "items_field", labelKey: "mapItems", def: "items" },
+  { key: "item_name_field", labelKey: "mapItemName", def: "name", inArray: true },
+  { key: "item_qty_field", labelKey: "mapItemQty", def: "quantity", inArray: true },
 ];
 
 const MappingField = ({
@@ -323,12 +335,22 @@ const MappingField = ({
     >
       <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
         {MAPPING_KEYS.map((m) => (
-          <Form.Item key={m.key} label={m.label} extra={m.hint}>
+          <Form.Item
+            key={m.key}
+            label={t(m.labelKey)}
+            extra={
+              m.hintKey
+                ? t(m.hintKey)
+                : m.def
+                  ? t(m.inArray ? "mapDefaultInArray" : "mapDefault", { name: m.def })
+                  : undefined
+            }
+          >
             <Input
               value={current[m.key] ?? ""}
               disabled={disabled}
               onChange={(e) => set(m.key, e.target.value)}
-              placeholder={m.hint.replace("sukut: ", "") || undefined}
+              placeholder={m.def}
             />
           </Form.Item>
         ))}

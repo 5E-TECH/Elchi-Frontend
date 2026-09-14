@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { checkUrlShape, outboundChecks, partnerChecks } from "./steps";
+import uz from "../../../locales/uz/integrations.json";
+
+/**
+ * ⚠️ Qadamlar endi MATN EMAS, i18n KALITI qaytaradi. Shu bois tekshiruv ikki
+ * qatlamli: kalit togri tanlanganmi, VA o'sha kalitning ozbekcha matni hali
+ * ham SABABNI aytadimi. Ikkinchisi bolmasa, kalit togri-yu matn bosh bolib
+ * qolishi mumkin edi.
+ */
+const text = (key: string): string => (uz as Record<string, string>)[key] ?? "";
 import type { WebhookTestResult } from "../../../entities/partners";
 
 const res = (over: Partial<WebhookTestResult> = {}): WebhookTestResult => ({
@@ -37,7 +46,9 @@ describe("checkUrlShape", () => {
      */
     const c = checkUrlShape("http://10.0.0.5/hook");
     expect(c.state).toBe("warn");
-    expect(c.detail).toContain("shifrlanmagan");
+    expect(c.detailKey).toBe("stpUrlNotHttps");
+    expect(c.detailParams?.protocol).toBe("http:");
+    expect(text("stpUrlNotHttps")).toContain("shifrlanmagan");
   });
 });
 
@@ -62,14 +73,17 @@ describe("partnerChecks", () => {
       res({ http_status: null, error: "ECONNREFUSED" }),
     );
     expect(checks[1].state).toBe("fail");
-    expect(checks[1].detail).toContain("ECONNREFUSED");
+    /* Server matni TARJIMA QILINMAYDI — `rawValue` orqali oynadek otadi. */
+    expect(checks[1].detailKey).toBe("rawValue");
+    expect(String(checks[1].detailParams?.value)).toContain("ECONNREFUSED");
     expect(checks[2].state).toBe("skip");
   });
 
   it("2xx bo'lmasa javob kodi xato", () => {
     const checks = partnerChecks("https://a.example.uz", res({ http_status: 500 }));
     expect(checks[2].state).toBe("fail");
-    expect(checks[2].detail).toContain("500");
+    expect(checks[2].detailKey).toBe("stpCodeRejected");
+    expect(checks[2].detailParams?.status).toBe(500);
   });
 
   it("⭐ sekret yo'q — OGOHLANTIRISH (ulanish ishlaydi, lekin tasdiqlanmaydi)", () => {
@@ -100,7 +114,8 @@ describe("outboundChecks", () => {
      */
     const checks = outboundChecks("https://api.example.uz", {}, "getaddrinfo ENOTFOUND");
     expect(checks[1].state).toBe("fail");
-    expect(checks[1].detail).toContain("ENOTFOUND");
+    expect(checks[1].detailKey).toBe("rawValue");
+    expect(String(checks[1].detailParams?.value)).toContain("ENOTFOUND");
     expect(checks[2].state).toBe("skip");
   });
 
