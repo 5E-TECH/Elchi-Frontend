@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Tabs } from "antd";
+import { useTranslation } from "react-i18next";
 import { Cable, LayoutGrid } from "lucide-react";
 
 /**
@@ -39,18 +40,19 @@ const SURFACES = [
   {
     key: "overview",
     path: "/integrations",
-    label: "Ulanishlar",
+    labelKey: "navConnections",
     icon: <LayoutGrid className="h-4 w-4" />,
   },
   {
     key: "console",
     path: "/integrations/connections",
-    label: "Konsol",
+    labelKey: "navConsole",
     icon: <Cable className="h-4 w-4" />,
   },
 ] as const;
 
 const IntegrationsPage = () => {
+  const { t } = useTranslation("integrations");
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -85,7 +87,7 @@ const IntegrationsPage = () => {
           label: (
             <span className="flex items-center gap-2">
               {s.icon}
-              {s.label}
+              {t(s.labelKey)}
             </span>
           ),
         }))}

@@ -10,6 +10,32 @@ import { webhookOutcome, type WebhookLogRow } from "./webhookLogs";
  * `processed` — shu bois natija `error` ichidagi `apply: <natija>` dan
  * o'qiladi.
  */
+
+/**
+ * ⚠️ `webhookOutcome` i18n KALITINI qaytaradi (matn emas). Test ikki
+ * narsani tekshiradi: to'g'ri kalit tanlanganini va u UCHALA tilda
+ * tarjimaga egaligini — `uz` fallback tufayli yetishmagan kalit ekranda
+ * o'zbekcha chiqadi va xato bilinmaydi.
+ */
+const LOCALES = ["uz", "ru", "en"] as const;
+
+const bundles = import.meta.glob<Record<string, string>>(
+  "../../locales/*/integrations.json",
+  { eager: true, import: "default" },
+);
+
+const dictOf = (lang: string): Record<string, string> => {
+  const hit = Object.entries(bundles).find(([p]) => p.includes(`/${lang}/`));
+  if (!hit) throw new Error(`${lang} lokali topilmadi`);
+  return hit[1];
+};
+
+const expectTranslated = (key: string) => {
+  for (const lang of LOCALES) {
+    expect(dictOf(lang)[key], `${lang}/${key} tarjimasi yo'q`).toBeTruthy();
+  }
+};
+
 const row = (over: Partial<WebhookLogRow> = {}): WebhookLogRow => ({
   id: "1",
   createdAt: "2026-09-13T10:00:00Z",
@@ -32,14 +58,17 @@ describe("webhookOutcome", () => {
      * qo'llanmagan. Boshqa yorliq ko'rsatish xavfsizlik hodisasini
      * yashirardi.
      */
-    expect(webhookOutcome(row({ signature_valid: false, status: "rejected" })).label).toBe(
-      "imzo xato",
+    const out = webhookOutcome(
+      row({ signature_valid: false, status: "rejected" }),
     );
+    expect(out.labelKey).toBe("woBadSignature");
+    expectTranslated(out.labelKey);
   });
 
   it("buyurtma yaratilgani YASHIL", () => {
     const out = webhookOutcome(row({ error: "apply: inbound_created" }));
-    expect(out).toEqual({ label: "buyurtma yaratildi", color: "green" });
+    expect(out).toEqual({ labelKey: "woOrderCreated", color: "green" });
+    expectTranslated(out.labelKey);
   });
 
   it("⭐ sozlama xatosi QIZIL, kutilgan holat esa NEYTRAL", () => {
@@ -60,7 +89,8 @@ describe("webhookOutcome", () => {
      */
     const out = webhookOutcome(row({ error: "apply: inbound_timeout" }));
     expect(out.color).toBe("orange");
-    expect(out.label).toContain("tekshirish");
+    expect(out.labelKey).toBe("woTimeout");
+    expect(dictOf("uz")[out.labelKey]).toContain("tekshirish");
   });
 
   it("sabab qo'shimchasi bo'lsa ham natija o'qiladi", () => {
@@ -68,11 +98,11 @@ describe("webhookOutcome", () => {
     const out = webhookOutcome(
       row({ error: "apply: inbound_failed — integration.market_id is required" }),
     );
-    expect(out).toEqual({ label: "yaratilmadi", color: "red" });
+    expect(out).toEqual({ labelKey: "woNotCreated", color: "red" });
   });
 
   it("xato yo'q bo'lsa toza qo'llanildi", () => {
-    expect(webhookOutcome(row()).label).toBe("qo'llanildi");
+    expect(webhookOutcome(row()).labelKey).toBe("woApplied");
   });
 
   it("noma'lum natija QIZIL bo'lib qoladi", () => {

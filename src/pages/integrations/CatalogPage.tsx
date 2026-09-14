@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button, Card, Tag } from "antd";
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Check, ChevronRight } from "lucide-react";
 import { CATEGORY_LABEL, ROLE_META } from "../../entities/integrations";
@@ -93,71 +94,74 @@ const CatalogPage = () => {
   );
 };
 
-const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => void }) => (
-  <Card
-    hoverable
-    onClick={onPick}
-    /**
-     * ⚠️ KLAVIATURA BILAN OCHILISHI SHART.
-     *
-     * antd `Card` — oddiy `div`. `onClick` bergani bilan u fokus olmaydi,
-     * Enter/Bo'shliq ham ishlamaydi va skrin-riderga "bu bosiladigan narsa"
-     * deb aytilmaydi. Ya'ni butun katalog — ustaga kirishning YAGONA yo'li —
-     * sichqonchasiz foydalanuvchi uchun berk edi.
-     *
-     * `<button>` ga o'rash mumkin emas: karta ichida sarlavha, teglar va
-     * ro'yxat bor, tugma ichida esa blok elementlar va ichma-ich
-     * interaktivlik noto'g'ri semantika beradi. Shu bois ARIA naqshi:
-     * `role="button"` + `tabIndex` + klaviatura ishlovchisi.
-     */
-    role="button"
-    tabIndex={0}
-    onKeyDown={(e: React.KeyboardEvent) => {
+const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => void }) => {
+  const { t } = useTranslation("integrations");
+  return (
+    <Card
+      hoverable
+      onClick={onPick}
       /**
-       * Enter VA Bo'shliq — ikkisi ham tugma standarti. Bo'shliqda
-       * `preventDefault` shart, aks holda brauzer sahifani pastga suradi.
+       * ⚠️ KLAVIATURA BILAN OCHILISHI SHART.
+       *
+       * antd `Card` — oddiy `div`. `onClick` bergani bilan u fokus olmaydi,
+       * Enter/Bo'shliq ham ishlamaydi va skrin-riderga "bu bosiladigan narsa"
+       * deb aytilmaydi. Ya'ni butun katalog — ustaga kirishning YAGONA yo'li —
+       * sichqonchasiz foydalanuvchi uchun berk edi.
+       *
+       * `<button>` ga o'rash mumkin emas: karta ichida sarlavha, teglar va
+       * ro'yxat bor, tugma ichida esa blok elementlar va ichma-ich
+       * interaktivlik noto'g'ri semantika beradi. Shu bois ARIA naqshi:
+       * `role="button"` + `tabIndex` + klaviatura ishlovchisi.
        */
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        onPick();
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        /**
+         * Enter VA Bo'shliq — ikkisi ham tugma standarti. Bo'shliqda
+         * `preventDefault` shart, aks holda brauzer sahifani pastga suradi.
+         */
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onPick();
+        }
+      }}
+      aria-label={`${type.label} — ulanish yaratish`}
+      className="h-full"
+      title={
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate font-bold">{type.label}</span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
+        </div>
       }
-    }}
-    aria-label={`${type.label} — ulanish yaratish`}
-    className="h-full"
-    title={
-      <div className="flex items-center justify-between gap-2">
-        <span className="truncate font-bold">{type.label}</span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
+    >
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        <Tag color="blue">{t(ROLE_META[type.role].labelKey)}</Tag>
+        <Tag>{t(CATEGORY_LABEL[type.category])}</Tag>
       </div>
-    }
-  >
-    <div className="mb-2 flex flex-wrap gap-1.5">
-      <Tag color="blue">{ROLE_META[type.role].label}</Tag>
-      <Tag>{CATEGORY_LABEL[type.category]}</Tag>
-    </div>
 
-    <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{type.desc}</p>
+      <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{type.desc}</p>
 
-    {/* "Sizga nima kerak bo'ladi" — ustaga KIRISHDAN OLDIN. Bu eng ko'p
+      {/* "Sizga nima kerak bo'ladi" — ustaga KIRISHDAN OLDIN. Bu eng ko'p
         uchraydigan to'xtash nuqtasi: odam ustaga kirib, "menda bu yo'q" deb
         chiqib ketardi. */}
-    <div className="mt-3 border-t border-gray-100 pt-2.5 dark:border-gray-700">
-      <p className="m-0 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-        Sizga kerak bo'ladi
-      </p>
-      <ul className="m-0 list-none space-y-1 p-0">
-        {type.prereqs.map((item) => (
-          <li
-            key={item}
-            className="flex items-start gap-1.5 text-[11px] leading-snug text-gray-600 dark:text-gray-300"
-          >
-            <Check className="mt-0.5 h-3 w-3 shrink-0 text-green-500" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </Card>
-);
+      <div className="mt-3 border-t border-gray-100 pt-2.5 dark:border-gray-700">
+        <p className="m-0 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+          Sizga kerak bo'ladi
+        </p>
+        <ul className="m-0 list-none space-y-1 p-0">
+          {type.prereqs.map((item) => (
+            <li
+              key={item}
+              className="flex items-start gap-1.5 text-[11px] leading-snug text-gray-600 dark:text-gray-300"
+            >
+              <Check className="mt-0.5 h-3 w-3 shrink-0 text-green-500" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Card>
+  );
+};
 
 export default CatalogPage;

@@ -97,7 +97,8 @@ const getMarketItems = (value: unknown): MarketOptionSource[] => {
 
 const getInitialEditForm = (integration?: Integration | null): IntegrationEditForm => {
   const credentials = integration?.credentials ?? {};
-  const authType = integration?.auth_type === "api_key" ? "bearer" : integration?.auth_type || "none";
+  const authType =
+    integration?.auth_type === "api_key" ? "bearer" : integration?.auth_type || "none";
 
   return {
     name: integration?.name ?? "",
@@ -138,7 +139,14 @@ const getStorageViewMode = (): IntegrationViewMode => {
 };
 
 const ExternalOrdersPage = () => {
-  const { t } = useTranslation(["newOrders", "common"]);
+  const { t } = useTranslation(["newOrders", "common", "integrations"]);
+  /**
+   * Taksonomiya yorliqlari `integrations` nomlar fazosida yashaydi
+   * (`ROLE_META`, `CATEGORY_LABEL` endi MATN emas, KALIT qaytaradi —
+   * ular ikki sahifada ishlatiladi va matnni ikki joyda saqlash bir kuni
+   * ularni ajratib yuborardi).
+   */
+  const tx = (key?: string) => (key ? t(`integrations:${key}`) : "");
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { api: notificationApi } = useAppNotification();
@@ -340,9 +348,7 @@ const ExternalOrdersPage = () => {
               <Cable size={15} />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-maindark dark:text-primary">
-                {value}
-              </p>
+              <p className="truncate text-sm font-bold text-maindark dark:text-primary">{value}</p>
               <p className="mt-0.5 truncate text-xs text-maindark/45 dark:text-primary/45">
                 {row.slug || t("idLabel", { id: row.id })}
               </p>
@@ -444,7 +450,11 @@ const ExternalOrdersPage = () => {
       getMarketItems(marketsQuery.data).map((market) => ({
         value: String(market.id ?? ""),
         label: `${market.name ?? "-"}${
-          market.phone_number ? ` • ${market.phone_number}` : market.username ? ` • ${market.username}` : ""
+          market.phone_number
+            ? ` • ${market.phone_number}`
+            : market.username
+              ? ` • ${market.username}`
+              : ""
         }`,
       })),
     [marketsQuery.data],
@@ -566,7 +576,7 @@ const ExternalOrdersPage = () => {
                 <button
                   key={key}
                   type="button"
-                  title={ROLE_META[key].hint}
+                  title={tx(ROLE_META[key].hintKey)}
                   onClick={() => {
                     setRole(key);
                     updatePage(1);
@@ -577,7 +587,7 @@ const ExternalOrdersPage = () => {
                       : "border-gray-200 text-maindark/70 hover:border-main/40 dark:border-white/10 dark:text-primary/70"
                   }`}
                 >
-                  {ROLE_META[key].label}
+                  {tx(ROLE_META[key].labelKey)}
                 </button>
               ))}
             </div>
@@ -680,15 +690,14 @@ const ExternalOrdersPage = () => {
                           to'lov tizimi bir xil ko'rinardi. */}
                       <div className="mt-1 flex flex-wrap items-center gap-1">
                         <span
-                          title={ROLE_META[item.role ?? "carrier"]?.hint}
+                          title={tx(ROLE_META[item.role ?? "carrier"]?.hintKey)}
                           className="rounded-full bg-main/12 px-2 py-0.5 text-[10px] font-bold text-main"
                         >
-                          {ROLE_META[item.role ?? "carrier"]?.label ??
-                            item.role}
+                          {tx(ROLE_META[item.role ?? "carrier"]?.labelKey) ?? item.role}
                         </span>
                         {item.category && item.category !== "other" && (
                           <span className="rounded-full bg-maindark/10 px-2 py-0.5 text-[10px] font-bold text-maindark/70 dark:bg-white/10 dark:text-primary/70">
-                            {CATEGORY_LABEL[item.category] ?? item.category}
+                            {tx(CATEGORY_LABEL[item.category]) ?? item.category}
                           </span>
                         )}
                         {/* `spec` — biz kontrakt bergan, ya'ni ular bizning
@@ -854,12 +863,12 @@ const ExternalOrdersPage = () => {
             >
               {(Object.keys(ROLE_META) as IntegrationRole[]).map((key) => (
                 <option key={key} value={key}>
-                  {ROLE_META[key].label}
+                  {tx(ROLE_META[key].labelKey)}
                 </option>
               ))}
             </select>
             <span className="block text-[11px] text-maindark/45 dark:text-primary/45">
-              {ROLE_META[(editForm.role as IntegrationRole) ?? "carrier"]?.hint}
+              {tx(ROLE_META[(editForm.role as IntegrationRole) ?? "carrier"]?.hintKey)}
             </span>
           </label>
 
@@ -867,16 +876,12 @@ const ExternalOrdersPage = () => {
             <span className={editLabelClassName}>Tizim turi</span>
             <select
               value={editForm.category}
-              onChange={(event) =>
-                updateEditForm("category", event.target.value)
-              }
+              onChange={(event) => updateEditForm("category", event.target.value)}
               className={editInputClassName}
             >
-              {(
-                Object.keys(CATEGORY_LABEL) as (keyof typeof CATEGORY_LABEL)[]
-              ).map((key) => (
+              {(Object.keys(CATEGORY_LABEL) as (keyof typeof CATEGORY_LABEL)[]).map((key) => (
                 <option key={key} value={key}>
-                  {CATEGORY_LABEL[key]}
+                  {tx(CATEGORY_LABEL[key])}
                 </option>
               ))}
             </select>
@@ -1016,7 +1021,6 @@ const ExternalOrdersPage = () => {
               hideLabel
             />
           </div>
-
         </div>
       </UpdatePopup>
     </div>

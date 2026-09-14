@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Alert, Button, Card, Statistic, Tag, Tooltip } from "antd";
 import {
   AlertTriangle,
@@ -214,6 +215,7 @@ const ConnectionOverview = ({
   /** Kamchilikni tuzatish uchun tabga o'tkazadi. */
   onFix?: (tab: string) => void;
 }) => {
+  const { t } = useTranslation("integrations");
   const checks = buildChecks(connection);
   const blocking = checks.filter((c) => !c.ok && !c.optional);
   const failed = metrics?.failed ?? 0;
@@ -243,8 +245,8 @@ const ConnectionOverview = ({
         }
         description={
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Tag color="blue">{ROLE_META[connection.role].label}</Tag>
-            <Tag>{CATEGORY_LABEL[connection.category]}</Tag>
+            <Tag color="blue">{t(ROLE_META[connection.role].labelKey)}</Tag>
+            <Tag>{t(CATEGORY_LABEL[connection.category])}</Tag>
             {/* Yo'nalish — eng ko'p chalkashgan joy, shuning uchun aniq. */}
             <Tooltip
               title={

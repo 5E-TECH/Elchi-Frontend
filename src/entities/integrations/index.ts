@@ -19,41 +19,40 @@ export type IntegrationCategory =
 export type IntegrationMode = "spec" | "adapter";
 
 /** Rol yorliqlari va izohlari — UI bir joydan o'qiydi. */
-export const ROLE_META: Record<IntegrationRole, { label: string; hint: string }> = {
-  carrier: {
-    label: "Yetkazuvchilar",
-    hint: "Bizdan posilka oladi va yetkazadi. COD puli ular orqali qaytadi",
-  },
-  source: {
-    label: "Buyurtma manbalari",
-    hint: "Bizga buyurtma beradi — marketplace, do'kon, CRM",
-  },
-  payment: {
-    label: "To'lov tizimlari",
-    hint: "To'lov holatini tasdiqlaydi. Buyurtma yaratmaydi ham, olmaydi ham",
-  },
-  mirror: {
-    label: "Ko'zgular",
-    hint: "Faqat o'qish uchun eksport — hisobot, jadval, BI",
-  },
+/**
+ * ROL TAKSONOMIYASI — i18n KALITLARI.
+ *
+ * ⚠️ NEGA MATN EMAS, KALIT. Ilgari bu yerda o'zbekcha matn turardi va
+ * sahifa i18n'dan tashqarida edi: til almashtirilganda barcha yorliq
+ * o'zbekcha qolib ketardi. Endi qiymat — `integrations` nomlar fazosidagi
+ * kalit, tarjima esa `locales/{uz,ru,en}/integrations.json` da.
+ *
+ * ⚠️ IKKI MANBA YARATILMADI. Bu xarita ikki sahifada ishlatiladi
+ * (integratsiyalar konsoli va `new_orders/external_orders`). Matnni bu
+ * yerda qoldirib, yoniga kalit qo'shsak, bir yorliq ikki joyda yashardi va
+ * bir kuni ular ajralib ketardi. Shu bois ikkala iste'molchi ham `t()`
+ * orqali o'qiydi.
+ */
+export const ROLE_META: Record<IntegrationRole, { labelKey: string; hintKey: string }> = {
+  carrier: { labelKey: "roleCarrier", hintKey: "roleCarrierHint" },
+  source: { labelKey: "roleSource", hintKey: "roleSourceHint" },
+  payment: { labelKey: "rolePayment", hintKey: "rolePaymentHint" },
+  mirror: { labelKey: "roleMirror", hintKey: "roleMirrorHint" },
 };
 
+/**
+ * KATEGORIYA TAKSONOMIYASI — i18n KALITLARI (`ROLE_META` bilan ayni sabab).
+ *
+ * ⚠️ `Marketplace` va `CRM` tarjimada ham shu shaklda qoladi: ular o'zbek
+ * tilida ham, ruscha matnda ham xalqaro atama sifatida ishlatiladi.
+ */
 export const CATEGORY_LABEL: Record<IntegrationCategory, string> = {
-  marketplace: "Marketplace",
-  crm: "CRM",
-  /**
-   * ⚠️ "Kargo", "Cargo" EMAS. Ayni qiymat tanlash ro'yxatida "Kargo" deb
-   * yozilgan (`connections.ts` — `TYPE_CHANGE_FIELDS`), kartada esa
-   * inglizcha "Cargo" chiqardi: bitta tur ikki xil yozilib, operator ular
-   * boshqa narsa deb o'ylashi mumkin edi.
-   *
-   * `Marketplace` va `CRM` ATAYLAB inglizcha qoladi — ular o'zbek tilida
-   * ham shu shaklda ishlatiladi va hamkor hujjatlarida ham shunday.
-   */
-  cargo: "Kargo",
-  payment: "To'lov",
-  spreadsheet: "Jadval",
-  other: "Boshqa",
+  marketplace: "categoryMarketplace",
+  crm: "categoryCrm",
+  cargo: "categoryCargo",
+  payment: "categoryPayment",
+  spreadsheet: "categorySpreadsheet",
+  other: "categoryOther",
 };
 
 export type Integration = {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Button,
@@ -40,10 +41,10 @@ import type { Connection } from "../useConnections";
  * pulni ikki marta kiritganini bilmay qoladi.
  */
 
-const STATUS_TAG: Record<string, { color: string; label: string }> = {
-  pending: { color: "gold", label: "kutilmoqda" },
-  settled: { color: "green", label: "yopilgan" },
-  cancelled: { color: "default", label: "bekor" },
+const STATUS_TAG: Record<string, { color: string; labelKey: string }> = {
+  pending: { color: "gold", labelKey: "settlePending" },
+  settled: { color: "green", labelKey: "settleSettled" },
+  cancelled: { color: "default", labelKey: "settleCancelled" },
 };
 
 const ConnectionSettlement = ({ connection }: { connection: Connection }) => {
@@ -82,6 +83,7 @@ const ConnectionSettlement = ({ connection }: { connection: Connection }) => {
 };
 
 const CarrierSettlement = ({ connection }: { connection: Connection }) => {
+  const { t } = useTranslation("integrations");
   const [status, setStatus] = useState("pending");
   const [page, setPage] = useState(1);
   const [payOpen, setPayOpen] = useState(false);
@@ -204,7 +206,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
               label: "Bekor",
               icon: <XCircle className="h-3.5 w-3.5" />,
             },
-            { value: "all", label: "Hammasi" },
+            { value: "all", label: t("filterAll") },
           ]}
         />
 
@@ -239,19 +241,19 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
           }}
           columns={[
             {
-              title: "Buyurtma",
+              title: t("colOrder"),
               width: 120,
               render: (_: unknown, r) => <span className="font-mono text-xs">{r.order_id}</span>,
             },
             {
-              title: "Tashqi raqam",
+              title: t("colExternalNumber"),
               width: 150,
               render: (_: unknown, r) => (
                 <span className="font-mono text-xs">{r.external_ref ?? "—"}</span>
               ),
             },
             {
-              title: "Summa",
+              title: t("colAmount"),
               width: 140,
               align: "right" as const,
               render: (_: unknown, r) => (
@@ -259,18 +261,18 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
               ),
             },
             {
-              title: "Holat",
+              title: t("colStatus"),
               width: 130,
               render: (_: unknown, r) => {
-                const t = STATUS_TAG[r.status] ?? {
-                  color: "default",
-                  label: r.status,
-                };
-                return <Tag color={t.color}>{t.label}</Tag>;
+                /* ⚠️ `tag`, `t` EMAS — i18n funksiyasini soya qilmasin. */
+                const tag = STATUS_TAG[r.status];
+                return (
+                  <Tag color={tag?.color ?? "default"}>{tag ? t(tag.labelKey) : r.status}</Tag>
+                );
               },
             },
             {
-              title: "Yopilgan",
+              title: t("colClosed"),
               render: (_: unknown, r) => (
                 <span className="font-mono text-xs">
                   {r.settled_at ? new Date(r.settled_at).toLocaleString("uz-UZ") : "—"}

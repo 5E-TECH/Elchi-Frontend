@@ -84,17 +84,26 @@ export const usePayments = (params: {
  * buyurtmaga tegmagan. Ularni neytral ko'rsatish yo'qolgan pulni
  * yashirardi.
  */
-export const paymentOutcome = (row: PaymentRow): { label: string; color: string } => {
-  const MAP: Record<string, { label: string; color: string }> = {
-    recorded: { label: "buyurtmaga yozildi", color: "green" },
-    order_not_found: { label: "buyurtma topilmadi", color: "red" },
-    order_ref_missing: { label: "havola yo'q", color: "red" },
-    order_already_closed: { label: "buyurtma yopilgan", color: "red" },
-    amount_exceeds_total: { label: "summa oshdi", color: "red" },
-    amount_invalid: { label: "summa yaroqsiz", color: "red" },
-    ignored_status: { label: "holat qo'llanmadi", color: "default" },
-    timeout: { label: "javob kelmadi — tekshirish kerak", color: "orange" },
-    error: { label: "xato", color: "red" },
+/**
+ * ⚠️ MATN EMAS, i18n KALITI qaytaradi. Chaqiruvchi `t(outcome.labelKey)`
+ * qiladi. Ilgari bu yerda o'zbekcha matn turardi va til almashtirilganda
+ * jadvaldagi yorliqlar o'zbekcha qolib ketardi.
+ *
+ * ⚠️ NOMA'LUM natija XOM qaytariladi (kalit sifatida emas). Yangi natija
+ * qo'shilib tarjima yozilmasa, `t()` kalitning o'zini qaytaradi — ya'ni
+ * operator hech bo'lmasa xom qiymatni ko'radi, bo'sh katak emas.
+ */
+export const paymentOutcome = (row: PaymentRow): { labelKey: string; color: string } => {
+  const MAP: Record<string, { labelKey: string; color: string }> = {
+    recorded: { labelKey: "poRecorded", color: "green" },
+    order_not_found: { labelKey: "poOrderNotFound", color: "red" },
+    order_ref_missing: { labelKey: "poRefMissing", color: "red" },
+    order_already_closed: { labelKey: "poOrderClosed", color: "red" },
+    amount_exceeds_total: { labelKey: "poAmountExceeds", color: "red" },
+    amount_invalid: { labelKey: "poAmountInvalid", color: "red" },
+    ignored_status: { labelKey: "poIgnoredStatus", color: "default" },
+    timeout: { labelKey: "poTimeout", color: "orange" },
+    error: { labelKey: "poError", color: "red" },
   };
   if (row.apply_outcome && MAP[row.apply_outcome]) {
     return MAP[row.apply_outcome];
@@ -105,7 +114,7 @@ export const paymentOutcome = (row: PaymentRow): { label: string; color: string 
    * neytral EMAS.
    */
   if (!row.apply_outcome) {
-    return { label: "natija yo'q — uzilgan", color: "orange" };
+    return { labelKey: "poInterrupted", color: "orange" };
   }
-  return { label: row.apply_outcome, color: "red" };
+  return { labelKey: row.apply_outcome, color: "red" };
 };

@@ -9,6 +9,35 @@ import { paymentOutcome, type PaymentRow } from "./payments";
  * ko'rsatish yo'qolgan pulni yashirardi, ya'ni jadvalning maqsadi
  * buzilardi.
  */
+
+/**
+ * ⚠️ NATIJA XARITALARI i18n KALITINI qaytaradi (matn emas). Shu bois test
+ * ikki narsani tekshiradi: (1) TO'G'RI kalit tanlanganini, (2) o'sha kalit
+ * UCHALA tilda tarjimaga egaligini.
+ *
+ * Ikkinchisi muhim: `uz` fallback tufayli ru/en'da yetishmagan kalit
+ * ekranda o'zbekcha chiqadi va xato BILINMAYDI.
+ */
+const LOCALES = ["uz", "ru", "en"] as const;
+
+const bundles = import.meta.glob<Record<string, string>>(
+  "../../locales/*/integrations.json",
+  { eager: true, import: "default" },
+);
+
+const dictOf = (lang: string): Record<string, string> => {
+  const hit = Object.entries(bundles).find(([p]) => p.includes(`/${lang}/`));
+  if (!hit) throw new Error(`${lang} lokali topilmadi`);
+  return hit[1];
+};
+
+/** Kalit uchala tilda bormi. */
+const expectTranslated = (key: string) => {
+  for (const lang of LOCALES) {
+    expect(dictOf(lang)[key], `${lang}/${key} tarjimasi yo'q`).toBeTruthy();
+  }
+};
+
 const row = (over: Partial<PaymentRow> = {}): PaymentRow => ({
   id: "1",
   createdAt: "2026-09-13T10:00:00Z",
@@ -26,10 +55,9 @@ const row = (over: Partial<PaymentRow> = {}): PaymentRow => ({
 
 describe("paymentOutcome", () => {
   it("buyurtmaga yozilgani YASHIL", () => {
-    expect(paymentOutcome(row())).toEqual({
-      label: "buyurtmaga yozildi",
-      color: "green",
-    });
+    const out = paymentOutcome(row());
+    expect(out).toEqual({ labelKey: "poRecorded", color: "green" });
+    expectTranslated(out.labelKey);
   });
 
   it("⭐ qo'llanmagan to'lovlar QIZIL", () => {
@@ -56,7 +84,10 @@ describe("paymentOutcome", () => {
      */
     const out = paymentOutcome(row({ apply_outcome: null }));
     expect(out.color).toBe("orange");
-    expect(out.label).toContain("uzilgan");
+    expect(out.labelKey).toBe("poInterrupted");
+    expectTranslated(out.labelKey);
+    // O'zbekcha matn "uzilgan" ni o'z ichiga olishi kerak.
+    expect(dictOf("uz")[out.labelKey]).toContain("uzilgan");
   });
 
   it("⭐ TIMEOUT sariq — 'xato' emas, 'tekshirish kerak'", () => {
@@ -66,13 +97,15 @@ describe("paymentOutcome", () => {
      */
     const out = paymentOutcome(row({ apply_outcome: "timeout" }));
     expect(out.color).toBe("orange");
-    expect(out.label).toContain("tekshirish");
+    expect(out.labelKey).toBe("poTimeout");
+    expect(dictOf("uz")[out.labelKey]).toContain("tekshirish");
+    expectTranslated(out.labelKey);
   });
 
   it("holat qo'llanmagani NEYTRAL", () => {
     // `pending`/`failed` — kutilgan oqim, ogohlantirish emas.
     expect(paymentOutcome(row({ apply_outcome: "ignored_status" }))).toEqual({
-      label: "holat qo'llanmadi",
+      labelKey: "poIgnoredStatus",
       color: "default",
     });
   });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Cable,
   FileClock,
@@ -68,6 +69,7 @@ import {
  * yo'qotmaydi.
  */
 const ConnectionsPage = () => {
+  const { t } = useTranslation("integrations");
   const { connections, isLoading, isError, partialError, refetch } = useConnections();
   const metricsQuery = useIntegrationMetrics();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -173,9 +175,9 @@ const ConnectionsPage = () => {
     ? [
         {
           key: "overview",
-          label: "Umumiy holat",
+          label: t("tabOverview"),
           icon: <LayoutDashboard className="h-4 w-4" />,
-          desc: "Tayyorlik",
+          desc: t("tabOverviewDesc"),
           content: (
             <ConnectionOverview
               connection={active}
@@ -187,9 +189,9 @@ const ConnectionsPage = () => {
         },
         {
           key: "settings",
-          label: "Sozlamalar",
+          label: t("tabSettings"),
           icon: <SettingsIcon className="h-4 w-4" />,
-          desc: "Qanday ishlaydi",
+          desc: t("tabSettingsDesc"),
           content: <ConnectionSettings connection={active} fields={fields} onSaved={refetch} />,
         },
         {
@@ -204,16 +206,16 @@ const ConnectionsPage = () => {
            * va "Kelgan posilkalar" (hamkor bizga yubordi) bo'limlari bor.
            * "Jo'natmalar" faqat birinchisini nomlardi.
            */
-          label: "Posilkalar",
+          label: t("tabShipments"),
           icon: <Truck className="h-4 w-4" />,
-          desc: "Jo'natilgan va kelgan",
+          desc: t("tabShipmentsDesc"),
           content: <ConnectionShipments connection={active} />,
         },
         {
           key: "log",
-          label: "Hodisalar",
+          label: t("tabEvents"),
           icon: <FileClock className="h-4 w-4" />,
-          desc: "Yetdimi, nega yiqildi",
+          desc: t("tabEventsDesc"),
           content: <ConnectionLog connection={active} />,
         },
         {
@@ -223,9 +225,9 @@ const ConnectionsPage = () => {
             esa daftar ularning tomonida (panel buni aytadi).
           */
           key: "settlement",
-          label: "Hisob-kitob",
+          label: t("tabSettlement"),
           icon: <Wallet className="h-4 w-4" />,
-          desc: "Qarz va to'lovlar",
+          desc: t("tabSettlementDesc"),
           content: <ConnectionSettlement connection={active} />,
         },
         {
@@ -240,16 +242,16 @@ const ConnectionsPage = () => {
            * bo'lardi. "Ish rejimi" esa aynan shu tabning mazmunini aytadi:
            * ulanish ishlayaptimi va navbat qanday yuboriladi.
            */
-          label: "Ish rejimi",
+          label: t("tabControl"),
           icon: <SlidersHorizontal className="h-4 w-4" />,
-          desc: "To'xtatish, yoqish va navbat",
+          desc: t("tabControlDesc"),
           content: <ConnectionControl connection={active} onChanged={refetch} />,
         },
         {
           key: "security",
-          label: "Xavfsizlik",
+          label: t("tabSecurity"),
           icon: <ShieldCheck className="h-4 w-4" />,
-          desc: "Kim tegishi mumkin",
+          desc: t("tabSecurityDesc"),
           content: <ConnectionSecurity connection={active} fields={fields} onSaved={refetch} />,
         },
       ]
@@ -321,7 +323,7 @@ const ConnectionsPage = () => {
             <Cable className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className={`m-0 ${PAGE_TITLE}`}>Konsol</h1>
+            <h1 className={`m-0 ${PAGE_TITLE}`}>{t("navConsole")}</h1>
             <p className={`m-0 ${PAGE_SUBTITLE}`}>Ulanishni tanlang va sozlang</p>
           </div>
         </div>
@@ -435,43 +437,50 @@ const ConnectionChip = ({
   rate: string;
   health: ConnectionHealth;
   onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-current={active ? "true" : undefined}
-    className={chip(active)}
-  >
-    {/*
+}) => {
+  const { t } = useTranslation("integrations");
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "true" : undefined}
+      className={chip(active)}
+    >
+      {/*
       Ikonka foni ROL rangida — guruh sarlavhasi o'rniga shu ajratadi.
       Tanlangan chipda esa to'liq urg'u rangi (indigo) qoladi, aks holda
       "qaysi biri tanlangan" savoli paydo bo'lardi.
     */}
-    <span
-      className={
-        active ? chipIcon(true) : `${chipIcon(false)} ${ROLE_ICON_BG[connection.role] ?? ""}`
-      }
-      title={ROLE_META[connection.role].hint}
-    >
-      <Cable className="h-4 w-4" />
-    </span>
+      <span
+        className={
+          active ? chipIcon(true) : `${chipIcon(false)} ${ROLE_ICON_BG[connection.role] ?? ""}`
+        }
+        title={t(ROLE_META[connection.role].hintKey)}
+      >
+        <Cable className="h-4 w-4" />
+      </span>
 
-    <span className="min-w-0">
-      <span className="flex items-center gap-1.5">
-        {/* Holat nuqtasi — `connectionHealth` yagona qoidasidan. */}
-        <span
-          className={`h-2 w-2 shrink-0 rounded-full ${HEALTH_DOT[health]}`}
-          title={
-            health === "ok" ? "Ishlayapti" : health === "off" ? "O'chirilgan" : "E'tibor kerak"
-          }
-        />
-        <span className={`truncate ${chipLabel(active)}`}>{connection.name}</span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5">
+          {/* Holat nuqtasi — `connectionHealth` yagona qoidasidan. */}
+          <span
+            className={`h-2 w-2 shrink-0 rounded-full ${HEALTH_DOT[health]}`}
+            title={
+              health === "ok"
+                ? t("healthOk")
+                : health === "off"
+                  ? t("healthOff")
+                  : t("healthAttention")
+            }
+          />
+          <span className={`truncate ${chipLabel(active)}`}>{connection.name}</span>
+        </span>
+        <span className={`block truncate text-[11px] leading-tight ${FAINT}`}>
+          {t(CATEGORY_LABEL[connection.category])} · {rate}
+        </span>
       </span>
-      <span className={`block truncate text-[11px] leading-tight ${FAINT}`}>
-        {CATEGORY_LABEL[connection.category]} · {rate}
-      </span>
-    </span>
-  </button>
-);
+    </button>
+  );
+};
 
 export default ConnectionsPage;
