@@ -7,7 +7,7 @@ import type { RootState } from "../../app/config/store";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
 
-type Tab = "markets" | "integrations" | "branches" | "cancelled";
+type Tab = "markets" | "incoming" | "branches" | "cancelled";
 
 const NewOrders = () => {
   const { t } = useTranslation("newOrders");
@@ -21,7 +21,8 @@ const NewOrders = () => {
   const activeTab = useMemo<Tab>(() => {
     if (location.pathname.startsWith("/new-orders/branches")) return "branches";
     if (location.pathname.startsWith("/new-orders/cancelled")) return "cancelled";
-    return location.pathname.startsWith("/new-orders/integrations") ? "integrations" : "markets";
+    if (location.pathname.startsWith("/new-orders/incoming")) return "incoming";
+    return "markets";
   }, [location.pathname]);
 
   return (
@@ -79,18 +80,28 @@ const NewOrders = () => {
             <h4 className="font-semibold">{t("marketsTab")}</h4>
           </div>
 
-          {/* Tashqi Buyurtmalar tab */}
-          <div
-            onClick={() => navigate("/new-orders/integrations")}
-            className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
-              ${activeTab === "integrations"
+          {/*
+            "Integratsiyalar" tabi BU YERDAN OLIB TASHLANDI — u sozlama yuzasi
+            edi va kunlik buyurtma ekranida turishi mantiqan xato edi. Endi
+            `/integrations` uyida.
+
+            Uning O'RNIGA "Kiruvchi posilkalar" keldi: hamkordan (BeePost,
+            marketplace) kelgan posilkalarni skanerlab qabul qilish — bu AYNAN
+            kunlik operatsiya, shuning uchun buyurtma yuzasida turishi to'g'ri.
+          */}
+          {isAdminRole && (
+            <div
+              onClick={() => navigate("/new-orders/incoming")}
+              className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
+              ${activeTab === "incoming"
                 ? "bg-main text-white border-main shadow-lg shadow-main/25"
                 : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
               }`}
-          >
-            <QrCode size={20} />
-            <h4 className="font-semibold">{t("integrationsTitle")}</h4>
-          </div>
+            >
+              <QrCode size={20} />
+              <h4 className="font-semibold">Kiruvchi posilkalar</h4>
+            </div>
+          )}
 
           {isAdminRole && (
             <div

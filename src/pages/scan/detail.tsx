@@ -101,7 +101,8 @@ const normalizeOrder = (response: any): ScanOrderView => {
   const items = Array.isArray(order?.items)
     ? order.items
         .map((item: any) => {
-          const name = item?.product?.name ?? item?.name;
+          // `product_name` — hamkor buyurtmasi (katalogsiz mahsulot).
+          const name = item?.product?.name ?? item?.product_name ?? item?.name;
           const quantity = item?.quantity ? ` x${item.quantity}` : "";
           return name ? `${name}${quantity}` : null;
         })

@@ -2,7 +2,7 @@
   "dashboard": "Dashboard",
   "orders": "Buyurtmalar",
   "quickAction": "Tezkor amal",
-  "newOrders": "Yangi buyurtmalar",
+  "newOrders": "Qabul va yaratish",
   "mails": "Pochta",
   "batches": "Paketlar",
   "returns": "Returnlar",
@@ -33,6 +33,7 @@
   "group_finance": "Moliya",
   "group_directory": "Ma'lumotnoma",
   "group_integrations": "Integratsiyalar",
+  "integrations": "Integratsiyalar",
   "group_system": "Tizim",
   "settlement": "Hisob-kitob",
   "ops": "Ops vositalari"

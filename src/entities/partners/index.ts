@@ -24,6 +24,23 @@ export interface Partner {
   id: string;
   name: string;
   webhook_url: string | null;
+  /** Sinov manzili — hodisa nusxasi shu yerga ham ketadi. */
+  sandbox_webhook_url?: string | null;
+  /**
+   * SINOV REJIMI YOQILGANMI.
+   *
+   * ⚠️ MANZILNING BORLIGI BILAN ARALASHTIRMANG. Manzil saqlanib, kalit
+   * o'chiq bo'lishi mumkin — o'shanda nusxa KETMAYDI. Ilgari kalit degan
+   * tushuncha yo'q edi va "sozlangan" holati faqat manzildan hisoblanardi.
+   */
+  sandbox_enabled?: boolean;
+  /**
+   * Sinov sekreti sozlanganmi — sekretning O'ZI emas.
+   *
+   * Backend shifrlangan qiymatni javobdan o'chirib, faqat shu bayroqni
+   * beradi: "sozlangan" ni ko'rsatish uchun sirni yuborish shart emas.
+   */
+  has_sandbox_secret?: boolean;
   is_active: boolean;
   createdAt: string;
   webhooks?: PartnerWebhookSummary;
@@ -55,7 +72,50 @@ export interface UpdatePartnerDto {
   name?: string;
   webhook_url?: string;
   webhook_secret?: string;
+  /**
+   * SANDBOX manzili — har bir hodisaning NUSXASI shu yerga ham yuboriladi
+   * (`sandbox: true` bayrog'i bilan).
+   *
+   * Prodakshnda `webhook_url` haqiqiy qabul qiluvchiga qaratilgan va unga
+   * tegib bo'lmaydi. Integratsiyani tekshirish uchun esa haqiqiy hodisalar
+   * oqimini ko'rish kerak — sinov buyurtmasi yaratmasdan.
+   *
+   * Sandboxga yuborish "eng yaxshi harakat": xatosi asosiy yetkazishga
+   * TA'SIR QILMAYDI va qayta urinilmaydi.
+   */
+  sandbox_webhook_url?: string;
+  /**
+   * ⚠️ ALOHIDA SEKRET SHART — izoh ilgari TESKARISINI yozardi ("berilmasa
+   * asosiy sekret ishlatiladi") va kod haqiqatan shunday qilardi, ya'ni
+   * PRODAKSHN imzo kaliti dev hostga yuborilardi. Sinov muhitlari kamroq
+   * himoyalangan; kalit oqsa u bilan HAQIQIY webhook imzolash mumkin
+   * bo'lardi. Endi o'z sekreti bo'lmasa nusxa umuman ketmaydi.
+   */
+  sandbox_webhook_secret?: string;
+  /**
+   * SINOV REJIMI KALITI.
+   *
+   * ⚠️ Yoqish uchun backend manzil VA alohida sekretni talab qiladi (400
+   * qaytaradi) — aks holda operator "yoqdim" deb o'ylab yurardi, nusxa esa
+   * ketmasdi va sabab faqat server logida qolardi.
+   */
+  sandbox_enabled?: boolean;
   ip_allowlist?: string[];
+}
+
+/** `POST /admin/partners/:id/webhook-test` javobi. */
+export interface WebhookTestResult {
+  ok: boolean;
+  url: string;
+  used_saved_url: boolean;
+  http_status: number | null;
+  duration_ms: number;
+  response_body: string | null;
+  error: string | null;
+  /** Qabul qiluvchi tomonda solishtirib, sekret mosligini tekshirish uchun. */
+  signature_sent: string;
+  secret_configured: boolean;
+  event_id: string;
 }
 
 export interface CreatePartnerDto {
@@ -179,5 +239,44 @@ export const usePartnerActions = () => {
     onSuccess: invalidate,
   });
 
-  return { createPartner, updatePartner, rotateKey, setActive, retryWebhook };
+  /**
+   * SINOV WEBHOOKI — haqiqiy buyurtmaga tegmaydi.
+   *
+   * Ilgari webhook sozlamasini tekshirishning yagona yo'li HAQIQIY sotuvni
+   * kutish edi. Xato bo'lsa o'sha buyurtmaning hodisasi yo'qolardi.
+   *
+   * `url` berilsa saqlangan manzildan ustun turadi — yangi manzilni
+   * SAQLASHDAN OLDIN sinash mumkin.
+   */
+  const testWebhook = useMutation({
+    mutationFn: (params: { id: string; url?: string }) =>
+      api
+        .post(API_ENDPOINTS.PARTNERS.WEBHOOK_TEST(params.id), {
+          url: params.url?.trim() || undefined,
+        })
+        .then((res) =>
+          unwrap<WebhookTestResult>(res.data, {
+            ok: false,
+            url: "",
+            used_saved_url: true,
+            http_status: null,
+            duration_ms: 0,
+            response_body: null,
+            error: "javob o'qilmadi",
+            signature_sent: "",
+            secret_configured: false,
+            event_id: "",
+          }),
+        ),
+    // Sinov hodisa YARATMAYDI — outbox jurnalini yangilash shart emas.
+  });
+
+  return {
+    createPartner,
+    updatePartner,
+    rotateKey,
+    setActive,
+    retryWebhook,
+    testWebhook,
+  };
 };

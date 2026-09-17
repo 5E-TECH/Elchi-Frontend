@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import {
@@ -12,6 +13,7 @@ import {
   Plus,
   RefreshCw,
   RotateCw,
+  Send,
   ShieldAlert,
   X,
 } from "lucide-react";
@@ -23,6 +25,7 @@ import {
   usePartners,
   type Partner,
   type PartnerWebhookRow,
+  type WebhookTestResult,
 } from "../../entities/partners";
 
 /** Bu ekranga kimlar kira oladi — gateway guardi bilan bir xil. */
@@ -30,14 +33,30 @@ const ALLOWED_ROLES = new Set(["superadmin", "admin"]);
 
 type Message = { tone: "success" | "error" | "warn"; text: string };
 
-const when = (value?: string | null) =>
-  value ? new Date(value).toLocaleString("uz-UZ") : "—";
+const when = (value?: string | null) => (value ? new Date(value).toLocaleString("uz-UZ") : "—");
 
 const STATUS_TONE: Record<string, string> = {
   completed: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
   pending: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
   processing: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  /**
+   * `webhook_url` sozlanmagan — hodisa KUTIB turadi, yo'qolmaydi.
+   *
+   * Ilgari bunday hodisa `completed` deb yopilardi: sozlama yo'qligi
+   * jimgina "muvaffaqiyat" bo'lib, hodisa butunlay yo'qolardi. Ko'k rang
+   * ataylab — bu XATO emas, sozlama kutilayotgan holat.
+   */
+  awaiting_config: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
   permanently_failed: "bg-red-500/12 text-red-700 dark:text-red-300",
+};
+
+/** Holat nomlarini o'zbekcha ko'rsatish — xom kalit chalkashtiradi. */
+const STATUS_LABEL: Record<string, string> = {
+  completed: "yetkazildi",
+  pending: "navbatda",
+  processing: "yuborilmoqda",
+  awaiting_config: "sozlama kutilmoqda",
+  permanently_failed: "yetkazilmadi",
 };
 
 /**
@@ -60,7 +79,7 @@ const PartnersPage = () => {
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
   const partnersQuery = usePartners();
-  const { createPartner, updatePartner, rotateKey, setActive, retryWebhook } =
+  const { createPartner, updatePartner, rotateKey, setActive, retryWebhook, testWebhook } =
     usePartnerActions();
 
   const [message, setMessage] = useState<Message | null>(null);
@@ -84,6 +103,9 @@ const PartnersPage = () => {
     webhook_secret: "",
   });
 
+  /** Sinov webhooki natijasi — modal ichida ko'rsatiladi. */
+  const [testResult, setTestResult] = useState<WebhookTestResult | null>(null);
+
   /** Bir martalik kalit — modal yopilgach BUTUNLAY yo'qoladi. */
   const [revealedKey, setRevealedKey] = useState<{
     name: string;
@@ -102,10 +124,7 @@ const PartnersPage = () => {
     limit: 20,
   });
 
-  const partners = useMemo(
-    () => partnersQuery.data ?? [],
-    [partnersQuery.data],
-  );
+  const partners = useMemo(() => partnersQuery.data ?? [], [partnersQuery.data]);
   const webhooks = webhooksQuery.data?.data ?? [];
   const partnerNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -147,6 +166,7 @@ const PartnersPage = () => {
 
   const openEdit = (partner: Partner) => {
     setEditing(partner);
+    setTestResult(null);
     setEditForm({
       name: partner.name ?? "",
       webhook_url: partner.webhook_url ?? "",
@@ -179,11 +199,47 @@ const PartnersPage = () => {
     }
 
     try {
-      await updatePartner.mutateAsync({ id: String(editing.id), dto });
-      setMessage({ tone: "success", text: t("partnerUpdated") });
+      const res = await updatePartner.mutateAsync({
+        id: String(editing.id),
+        dto,
+      });
+      /**
+       * `webhook_url` qo'yilganda backend sozlama yo'qligi tufayli kutib
+       * turgan hodisalarni navbatga qaytaradi. Bu son JIM o'tmasligi kerak:
+       * operator "nega birdan 12 ta webhook ketdi" degan savolga javob
+       * topa olishi kerak.
+       */
+      const requeued = Number(
+        (res as { data?: { requeued_webhooks?: number } })?.data?.requeued_webhooks ?? 0,
+      );
+      setMessage({
+        tone: "success",
+        text: requeued
+          ? `${t("partnerUpdated")} — kutib turgan ${requeued} ta hodisa navbatga qaytarildi`
+          : t("partnerUpdated"),
+      });
       setEditing(null);
     } catch (error) {
       fail(error, t("partnerUpdateFailed"));
+    }
+  };
+
+  /**
+   * SINOV WEBHOOKI. Formadagi manzil bilan sinaydi — ya'ni SAQLASHDAN OLDIN
+   * tekshirish mumkin. Natija modal ichida qoladi, chunki operator uni
+   * manzil bilan yonma-yon ko'rishi kerak.
+   */
+  const handleTestWebhook = async () => {
+    if (!editing) return;
+    setTestResult(null);
+    try {
+      const res = await testWebhook.mutateAsync({
+        id: String(editing.id),
+        url: editForm.webhook_url.trim() || undefined,
+      });
+      setTestResult(res);
+    } catch (error) {
+      fail(error, "Sinov webhookini yuborib bo'lmadi");
     }
   };
 
@@ -192,8 +248,7 @@ const PartnersPage = () => {
     void (async () => {
       try {
         const res = await rotateKey.mutateAsync(String(partner.id));
-        if (res?.api_key)
-          setRevealedKey({ name: partner.name, key: res.api_key });
+        if (res?.api_key) setRevealedKey({ name: partner.name, key: res.api_key });
         setMessage({ tone: "success", text: t("partnerKeyRotated") });
       } catch (error) {
         fail(error, t("partnerRotateFailed"));
@@ -210,9 +265,7 @@ const PartnersPage = () => {
         });
         setMessage({
           tone: "success",
-          text: partner.is_active
-            ? t("partnerDisabled")
-            : t("partnerEnabled"),
+          text: partner.is_active ? t("partnerDisabled") : t("partnerEnabled"),
         });
       } catch (error) {
         fail(error, t("partnerStatusChangeFailed"));
@@ -281,10 +334,7 @@ const PartnersPage = () => {
               className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
               title={t("refresh")}
             >
-              <RefreshCw
-                size={18}
-                className={partnersQuery.isFetching ? "animate-spin" : ""}
-              />
+              <RefreshCw size={18} className={partnersQuery.isFetching ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
@@ -327,10 +377,7 @@ const PartnersPage = () => {
         ) : (
           <div className="divide-y divide-[color:var(--color-border-soft)] dark:divide-white/10">
             {partners.map((partner) => (
-              <div
-                key={partner.id}
-                className="flex flex-wrap items-center gap-3 px-4 py-3"
-              >
+              <div key={partner.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-[10rem] flex-1">
                   <p className="m-0 text-sm font-extrabold text-maindark dark:text-white">
                     {partner.name}
@@ -353,8 +400,7 @@ const PartnersPage = () => {
                 {/* Webhook xulosasi — hamkor "tirikmi" degan savolga javob. */}
                 <div className="w-44 shrink-0 text-xs">
                   <p className="m-0 text-[color:var(--color-text-muted)]">
-                    {t("partnerLastDelivery")}:{" "}
-                    {when(partner.webhooks?.last_delivered_at)}
+                    {t("partnerLastDelivery")}: {when(partner.webhooks?.last_delivered_at)}
                   </p>
                   <p className="m-0 mt-0.5 flex gap-2 font-bold">
                     <span className="text-amber-600 dark:text-amber-400">
@@ -445,9 +491,11 @@ const PartnersPage = () => {
               <option value="pending">{t("partnerStatusPending")}</option>
               <option value="processing">{t("partnerStatusProcessing")}</option>
               <option value="completed">{t("partnerStatusCompleted")}</option>
-              <option value="permanently_failed">
-                {t("partnerStatusFailed")}
-              </option>
+              {/* `webhook_url` sozlanmagani uchun kutib turgan hodisalar.
+                  Ilgari bunday hodisa `completed` deb yopilardi va butunlay
+                  yo'qolardi — shuning uchun alohida filtr kerak. */}
+              <option value="awaiting_config">sozlama kutilmoqda</option>
+              <option value="permanently_failed">{t("partnerStatusFailed")}</option>
             </select>
             <button
               type="button"
@@ -456,10 +504,7 @@ const PartnersPage = () => {
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
               title={t("refresh")}
             >
-              <RefreshCw
-                size={15}
-                className={webhooksQuery.isFetching ? "animate-spin" : ""}
-              />
+              <RefreshCw size={15} className={webhooksQuery.isFetching ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
@@ -477,17 +522,15 @@ const PartnersPage = () => {
         ) : (
           <div className="divide-y divide-[color:var(--color-border-soft)] dark:divide-white/10">
             {webhooks.map((row) => (
-              <div
-                key={row.id}
-                className="flex flex-wrap items-center gap-3 px-4 py-3"
-              >
+              <div key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <span
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                    STATUS_TONE[row.status] ??
-                    "bg-white/10 text-[color:var(--color-text-muted)]"
+                    STATUS_TONE[row.status] ?? "bg-white/10 text-[color:var(--color-text-muted)]"
                   }`}
                 >
-                  {row.status}
+                  {/* Xom kalit ("awaiting_config") chalkashtiradi —
+                      o'zbekcha yorliq ko'rsatiladi. */}
+                  {STATUS_LABEL[row.status] ?? row.status}
                 </span>
                 <p className="m-0 w-32 shrink-0 text-xs font-semibold text-maindark dark:text-white">
                   {partnerNames.get(String(row.partner_id)) ?? row.partner_id}
@@ -518,9 +561,7 @@ const PartnersPage = () => {
                   <button
                     type="button"
                     onClick={() => handleRetry(row)}
-                    disabled={
-                      row.status === "completed" || retryWebhook.isPending
-                    }
+                    disabled={row.status === "completed" || retryWebhook.isPending}
                     title={t("partnerWebhookRetry")}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-main text-white transition hover:opacity-90 disabled:opacity-40"
                   >
@@ -589,9 +630,7 @@ const PartnersPage = () => {
                   </span>
                   <input
                     value={form[key]}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, [key]: e.target.value }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
                     className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                   />
@@ -613,9 +652,7 @@ const PartnersPage = () => {
                 disabled={createPartner.isPending}
                 className="flex h-11 items-center gap-2 rounded-2xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
               >
-                {createPartner.isPending && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
+                {createPartner.isPending && <Loader2 size={16} className="animate-spin" />}
                 {t("save")}
               </button>
             </div>
@@ -647,9 +684,7 @@ const PartnersPage = () => {
                 </span>
                 <input
                   value={editForm.name}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, name: e.target.value }))
-                  }
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                   className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
               </label>
@@ -660,9 +695,7 @@ const PartnersPage = () => {
                 </span>
                 <input
                   value={editForm.webhook_url}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, webhook_url: e.target.value }))
-                  }
+                  onChange={(e) => setEditForm((f) => ({ ...f, webhook_url: e.target.value }))}
                   placeholder="https://..."
                   className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
@@ -691,6 +724,96 @@ const PartnersPage = () => {
                   {t("partnerSecretHint")}
                 </span>
               </label>
+
+              {/* ═══════ SINOV WEBHOOKI ═══════
+                  Ilgari sozlamani tekshirishning yagona yo'li HAQIQIY sotuvni
+                  kutish edi — xato bo'lsa o'sha buyurtmaning hodisasi
+                  yo'qolardi. Tugma yuqoridagi manzil bilan sinaydi, ya'ni
+                  SAQLASHDAN OLDIN tekshirish mumkin. */}
+              <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="m-0 text-xs font-bold text-maindark dark:text-white">
+                      Ulanishni tekshirish
+                    </p>
+                    <p className="m-0 mt-0.5 text-[11px] text-[color:var(--color-text-muted)]">
+                      Sinov hodisasi yuboriladi — buyurtmaga ta'sir qilmaydi
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleTestWebhook}
+                    disabled={testWebhook.isPending || !editForm.webhook_url.trim()}
+                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-main px-3 text-xs font-bold text-main disabled:opacity-40"
+                  >
+                    {testWebhook.isPending ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Send size={14} />
+                    )}
+                    Sinov yuborish
+                  </button>
+                </div>
+
+                {testResult && (
+                  <div
+                    className={`mt-3 rounded-xl p-2.5 text-[11px] ${
+                      testResult.ok
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "bg-red-500/10 text-red-700 dark:text-red-300"
+                    }`}
+                  >
+                    <p className="m-0 font-bold">
+                      {testResult.ok
+                        ? `✓ Yetdi — HTTP ${testResult.http_status} (${testResult.duration_ms} ms)`
+                        : `✗ Yetmadi${
+                            testResult.http_status ? ` — HTTP ${testResult.http_status}` : ""
+                          }`}
+                    </p>
+                    {/* Sekret sozlanmagan bo'lsa qabul qiluvchi imzoni
+                        tekshira olmaydi — bu eng ko'p uchraydigan sabab. */}
+                    {!testResult.secret_configured && (
+                      <p className="m-0 mt-1">
+                        ⚠️ Webhook sekreti sozlanmagan — qabul qiluvchi imzoni tekshira olmaydi
+                      </p>
+                    )}
+                    {testResult.error && <p className="m-0 mt-1 break-all">{testResult.error}</p>}
+                    {/* Javob tanasi MUHIM: qabul qiluvchi 200 qaytarib ham
+                        "imzo yaroqsiz" deyishi mumkin. */}
+                    {testResult.response_body && (
+                      <p className="m-0 mt-1 break-all opacity-80">
+                        Javob: {testResult.response_body.slice(0, 200)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ═══════ SANDBOX — BU YERDA TAHRIRLANMAYDI ═══════ */}
+              {/*
+                ⚠️ MAYDONLAR OLIB TASHLANDI, IKKI HAQIQAT BO'LMASIN.
+
+                Sinov rejimi endi KALIT (`sandbox_enabled`) bilan
+                boshqariladi va yoqish uchun manzil hamda ALOHIDA sekret
+                talab qiladi. Bu forma kalit haqida hech narsa bilmasdi:
+                operator shu yerda manzilni yozib, sinov yoqilgan deb
+                o'ylardi — nusxa esa ketmasdi (kalit o'chiq).
+
+                Ustiga bu yerdagi izoh "berilmasa ASOSIY sekret
+                ishlatiladi" deb yozardi; kod haqiqatan shunday qilardi va
+                bu prodakshn imzo kalitini dev hostga yuborish edi. Endi
+                bunday fallback yo'q.
+
+                Sahifaning o'zi ataylab qoldirilgan (zaxira yo'l), lekin
+                sinov rejimi YAGONA joyda sozlanadi.
+              */}
+              <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-[11px] font-semibold text-sky-800 dark:border-sky-900 dark:bg-sky-900/20 dark:text-sky-200">
+                Sinov rejimi (sandbox) bu yerda emas —{" "}
+                <Link to="/integrations/connections" className="underline decoration-dotted">
+                  Integratsiyalar → Ulanish → Sozlamalar
+                </Link>{" "}
+                bo'limida yoqiladi. U yerda kalit, manzil va alohida sekret birga sozlanadi.
+              </div>
             </div>
 
             <div className="mt-4 flex justify-end gap-2">
@@ -707,9 +830,7 @@ const PartnersPage = () => {
                 disabled={updatePartner.isPending}
                 className="flex h-11 items-center gap-2 rounded-2xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
               >
-                {updatePartner.isPending && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
+                {updatePartner.isPending && <Loader2 size={16} className="animate-spin" />}
                 {t("save")}
               </button>
             </div>

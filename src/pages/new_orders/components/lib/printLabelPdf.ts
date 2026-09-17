@@ -116,12 +116,19 @@ const getLandmark = (order: LabelOrder) => {
   return landmark || address || "-";
 };
 
-const getProducts = (order: LabelOrder) =>
-  order.items.length
-    ? order.items
-      .map((item) => `${safe(item.product?.name, tLabel("productFallback"))} x${item.quantity}`)
+const getProducts = (order: LabelOrder) => {
+  // Hamkor buyurtmalarida mahsulot katalogda yo'q: nom `product_name` da
+  // matn bo'lib keladi, `product` esa null bo'ladi.
+  const items = order.items ?? [];
+  return items.length
+    ? items
+      .map(
+        (item) =>
+          `${safe(item.product?.name ?? item.product_name, tLabel("productFallback"))} x${item.quantity}`,
+      )
       .join(", ")
     : "-";
+};
 
 const getDeliveryLabel = (order: LabelOrder) =>
   order.where_deliver === "center" ? tLabel("deliveryCenterUpper") : tLabel("deliveryHomeUpper");

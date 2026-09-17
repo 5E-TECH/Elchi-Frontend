@@ -108,7 +108,23 @@ const ScanPage = lazy(() => import("../../pages/scan"));
 const IncomingOrdersPage = lazy(
   () => import("../../pages/incoming-orders"),
 );
+const IncomingSourcePicker = lazy(
+  () => import("../../pages/incoming-orders/SourcePicker"),
+);
 const PartnersPage = lazy(() => import("../../pages/partners"));
+const IntegrationsPage = lazy(() => import("../../pages/integrations"));
+const ConnectionsPage = lazy(
+  () => import("../../pages/integrations/ConnectionsPage"),
+);
+const IntegrationsOverviewPage = lazy(
+  () => import("../../pages/integrations/OverviewPage"),
+);
+const IntegrationsCatalogPage = lazy(
+  () => import("../../pages/integrations/CatalogPage"),
+);
+const ConnectWizardPage = lazy(
+  () => import("../../pages/integrations/wizard/ConnectWizard"),
+);
 const ScanDetailPage = lazy(() => import("../../pages/scan/detail"));
 
 const FinancialBalance = lazy(() => import("../../pages/financial-balance"));
@@ -220,6 +236,16 @@ const LegacyBranchBatchRedirect = () => {
   );
 };
 
+/**
+ * Eski integratsiya detal havolasi — `id` saqlanib Integratsiyalar uyiga
+ * o'tadi. Oddiy `Navigate` yaramaydi, chunki `:id` ni URL'dan olish kerak.
+ */
+const LegacyIntegrationDetailRedirect = () => {
+  const { id } = useParams();
+
+  return <Navigate replace to={`/integrations/sources/${id ?? ""}`} />;
+};
+
 const NewOrdersCancelledDetailEntry = () => {
   const { marketId } = useParams();
   const role = useSelector((state: RootState) => state.role.role);
@@ -290,9 +316,144 @@ const AppRouter = () => {
           children: [
             { index: true, element: <DashboardEntry /> },
             {
-              // Partner API hamkorlari + chiquvchi webhook outbox monitori.
+              /**
+               * INTEGRATSIYALAR UYI — barcha tashqi ulanishlar bir joyda.
+               *
+               * Ilgari integratsiya IKKI joyda boshqarilardi va ikkalasi ham
+               * "Integratsiyalar" deb nomlanardi: `/partners` (bizga
+               * ulanadiganlar) va `/new-orders/integrations` (biz
+               * ulanadiganlar). Ikkinchisi kunlik buyurtma ekranining ICHIDA
+               * turardi — ya'ni integratsiya qo'shish/o'chirish buyurtma
+               * sahifasida edi.
+               *
+               * Ruxsat har bir TAB marshrutida tekshiriladi, uyda emas: bir
+               * tabga ruxsati yo'q foydalanuvchi boshqasini ko'rishi kerak.
+               */
+              path: "integrations",
+              element: <IntegrationsPage />,
+              children: [
+                {
+                  /**
+                   * YANGI YAGONA YUZA — ulanish tanlagichi + panel.
+                   *
+                   * Ilgari bu yer ikki tabga bo'lingan edi ("Hamkorlar (API)"
+                   * va "Tashqi tizimlar") va har birida o'z formasi bor edi.
+                   * Foydalanuvchi uchun ikkisi bitta ish, shuning uchun
+                   * birlashtirildi.
+                   */
+                  /**
+                   * MANZARA — bo'limning kirish nuqtasi. "Hammasi qalay?"
+                   * degan savolga javob beradi: jami raqamlar + jadval.
+                   *
+                   * Ilgari bo'lim to'g'ridan-to'g'ri bitta ulanish paneliga
+                   * olib borardi va umumiy manzara YO'Q edi — operator har
+                   * bir ulanishni navbatma-navbat ochib tekshirardi.
+                   */
+                  index: true,
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <IntegrationsOverviewPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * KONSOL — bitta ulanish bilan ishlash. Chapda ro'yxat
+                   * bo'lgani uchun manzaraga qaytmasdan sakrash mumkin.
+                   */
+                  path: "connections",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ConnectionsPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * KATALOG — "qanday tizim ulaymiz?".
+                   *
+                   * Ilgari "Yangi ulanish" bitta forma ochardi va operator
+                   * o'zi hal qilishi kerak edi: bu hamkormi yoki tashqi
+                   * tizimmi, kalit bizdanmi yoki ulardanmi. Bu TEXNIK savol
+                   * va ulanish noto'g'ri jadvalga tushardi.
+                   */
+                  path: "new",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <IntegrationsCatalogPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * ULASH USTASI — Nomi → Kalitlar → Sinash → Tayyor.
+                   *
+                   * `:typeKey` registr kaliti (`CONNECTION_TYPES`). Noto'g'ri
+                   * kalit bo'lsa usta katalogga qaytaradi — 404 emas, chunki
+                   * havola eskirgan bo'lishi mumkin.
+                   */
+                  path: "new/:typeKey",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ConnectWizardPage />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * ESKI sahifalar SAQLANADI — yangisi to'liq ishlagani
+                   * tasdiqlanmaguncha ular zaxira bo'lib turadi. Operator
+                   * biror narsani yangi yuzadan qilolmasa, eski manzil
+                   * orqali ishlay oladi.
+                   */
+                  path: "partners",
+                  element: <PartnersPage />,
+                },
+                {
+                  path: "sources",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <NewOrdersExternalList />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "sources/create",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ExternalIntegrationCreate />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: "sources/:id",
+                  element: (
+                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
+                      <ExternalIntegrationDetail />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  /**
+                   * KO'CHIRILDI -> `/new-orders/incoming`.
+                   *
+                   * Kiruvchi posilkalarni skanerlab qabul qilish — KUNLIK
+                   * OPERATSIYA, sozlama emas. Integratsiyalar sahifasi faqat
+                   * ulanishlarni sozlash uchun qolishi kerak.
+                   *
+                   * Marshrut redirect bo'lib saqlanadi: xatcho'p va tashqi
+                   * havolalar buzilmasin.
+                   */
+                  path: "incoming",
+                  element: <Navigate replace to="/new-orders/incoming" />,
+                },
+              ],
+            },
+            {
+              // ESKI YO'L — saqlanadi. Tashqi hujjatlarda, xatcho'plarda va
+              // Telegram xabarlarida bo'lishi mumkin.
               path: "partners",
-              element: <PartnersPage />,
+              element: <Navigate replace to="/integrations/partners" />,
             },
             {
               path: "branch-dashboard",
@@ -519,21 +680,51 @@ const AppRouter = () => {
               ),
               children: [
                 { index: true, element: <NewOrdersMarkets /> },
-                { path: "external", element: <Navigate replace to="/new-orders/integrations" /> },
-                { path: "external/:id", element: <Navigate replace to="/new-orders/integrations" /> },
+                /**
+                 * ESKI YO'LLAR — barchasi Integratsiyalar uyiga yo'naltiriladi.
+                 *
+                 * Integratsiya QO'SHISH/O'CHIRISH kunlik buyurtma ekranining
+                 * ichida turishi mantiqan xato edi: bu sozlama ishi, kunlik
+                 * operatsiya emas. Sahifalarning O'ZI o'chirilmadi — faqat
+                 * uyga ko'chdi, shuning uchun bu yerda redirect qoladi
+                 * (xatcho'p, tashqi hujjat, Telegram havolasi buzilmasin).
+                 */
+                { path: "external", element: <Navigate replace to="/integrations/sources" /> },
+                { path: "external/:id", element: <Navigate replace to="/integrations/sources" /> },
+                { path: "integrations", element: <Navigate replace to="/integrations/sources" /> },
                 {
-                  path: "integrations",
+                  // Eski yo'l — endi ayni sahifaning yangi joyiga.
+                  path: "integrations/incoming",
+                  element: <Navigate replace to="/new-orders/incoming" />,
+                },
+                {
+                  /**
+                   * Hamkordan (BeePost, marketplace) kelgan posilkalarni
+                   * skanerlab QABUL QILISH — kunlik operatsiya, shuning uchun
+                   * buyurtma yuzasida turadi, integratsiya sozlamalarida emas.
+                   */
+                  /**
+                   * MANBA TANLASH — ekranning kirish nuqtasi.
+                   *
+                   * Ilgari bu yo'l to'g'ridan-to'g'ri skanerlash ro'yxatini
+                   * ochardi va unda BARCHA tashqi buyurtma aralash turardi.
+                   * Operator qo'lida bir manbaning qopi turib, ro'yxatda
+                   * boshqasining posilkasini ham ko'rardi.
+                   */
+                  path: "incoming",
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
-                      <NewOrdersExternalList />
+                      <IncomingSourcePicker />
                     </ProtectedRoute>
                   ),
                 },
                 {
-                  // Hamkordan (BeePost) kelgan posilkalarni skanerlab qabul
-                  // qilish. Integratsiyalar ostida — u alohida bo'lim emas,
-                  // aynan tashqi ulanishlar bilan bir ish oqimining davomi.
-                  path: "integrations/incoming",
+                  /**
+                   * Tanlangan manbaning posilkalarini skanerlab qabul qilish.
+                   * `:marketId` — manba kaliti (hamkor posilka yaratganda
+                   * `elchi_market_id` majburiy, shu bois guruhlash kaliti shu).
+                   */
+                  path: "incoming/:marketId",
                   element: (
                     <ProtectedRoute canActivate={canManageExternalIntegrations}>
                       <IncomingOrdersPage />
@@ -542,11 +733,7 @@ const AppRouter = () => {
                 },
                 {
                   path: "integrations/create",
-                  element: (
-                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
-                      <ExternalIntegrationCreate />
-                    </ProtectedRoute>
-                  ),
+                  element: <Navigate replace to="/integrations/sources/create" />,
                 },
                 {
                   path: "branches",
@@ -590,12 +777,9 @@ const AppRouter = () => {
                 },
                 { path: "cancelled/:marketId", element: <NewOrdersCancelledDetailEntry /> },
                 {
+                  // Eski detal havolasi — id saqlanib uyga o'tadi.
                   path: "integrations/:id",
-                  element: (
-                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
-                      <ExternalIntegrationDetail />
-                    </ProtectedRoute>
-                  ),
+                  element: <LegacyIntegrationDetailRedirect />,
                 },
                 {
                   path: ":marketId",

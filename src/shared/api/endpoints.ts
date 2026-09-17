@@ -100,6 +100,12 @@ export const API_ENDPOINTS = {
     // External orders (market + integrations)
     EXTERNAL: "orders/external", // GET list / POST create external order
     EXTERNAL_RECEIVE: "orders/external/receive", // POST receive provider payload
+    // Kiruvchi posilkalarning manbalari — qabul kutayotgan tashqi buyurtmalar
+    // manba bo'yicha guruhlangan (soni, summasi, eng eski sanasi).
+    EXTERNAL_SOURCES: "orders/external/sources", // GET grouped incoming sources
+    // Skanerlangan yorliq tokenlari bilan qabul qilish. `order_ids` EMAS:
+    // server skanerlash dalilini O'ZI tekshirishi kerak.
+    EXTERNAL_RECEIVE_BY_SCAN: "orders/external/receive-by-scan", // POST
     TELEGRAM_BOT_CREATE: "orders/telegram/bot/create", // POST create order via telegram bot
     // COD settlement legs (FIFO per order) — guide §7
     SETTLEMENT_COURIER_TO_BRANCH: "orders/settlement/courier-to-branch", // POST courier
@@ -222,6 +228,27 @@ export const API_ENDPOINTS = {
   INTEGRATIONS: {
     BASE: "integrations", // GET list / POST create
     BY_ID: (id: string | number) => `integrations/${id}`, // GET / PATCH / DELETE
+    // Jo'natmalar — chiquvchi ulanishning posilkalari (status, xato, urinish).
+    SHIPMENTS_BY_ID: (id: string | number) => `integrations/${id}/shipments`,
+    /**
+     * KIRUVCHI webhook jurnali — ular bizga yuborgan hodisalar.
+     *
+     * ⚠️ `SYNC_HISTORY` bilan ARALASHTIRMANG: u CHIQUVCHI yo'l (biz
+     * tortib olgan/yuborgan sinxronlar). Bu esa teskari yo'nalish:
+     * imzo to'g'rimi, natija nima, xato sababi nima.
+     *
+     * Tana (`raw_body`) QAYTARILMAYDI — ichida mijoz telefoni va manzili
+     * bo'ladi, ro'yxatda esa savol "nima bo'ldi".
+     */
+    WEBHOOK_LOGS: "integrations/webhook-logs",
+    /**
+     * ONLAYN TO'LOV tranzaksiyalari.
+     *
+     * `unapplied_only=true` — buyurtmaga qo'llanmagan to'lovlar.
+     * Operatorning birinchi savoli aynan shu: qaysi pul kelib, hech
+     * qayerga yozilmadi?
+     */
+    PAYMENTS: "integrations/payments",
     RECEIVABLES: "integrations/receivables",
     RECEIVABLE_BALANCE: (id: string | number) => `integrations/${id}/receivable-balance`,
     REMITTANCES: (id: string | number) => `integrations/${id}/remittances`, // POST
@@ -232,6 +259,12 @@ export const API_ENDPOINTS = {
     SYNC_QUEUE: (id: string | number) => `integrations/${id}/sync/queue`, // POST
     SYNC_HISTORY_BY_ID: (id: string | number) => `integrations/${id}/sync-history`,
     SYNC_HISTORY: "integrations/sync/history",
+    /**
+     * Panel metrikasi — hodisa, yetmagan, navbat, javob vaqti.
+     * ⚠️ Backendda `:id` marshrutlaridan OLDIN e'lon qilingan, aks holda
+     * "metrics" integratsiya id'si deb o'qilardi.
+     */
+    METRICS: "integrations/metrics",
     SHIPMENT_BY_ORDER: (orderId: string | number) => `integrations/shipments/${orderId}`,
     DISPATCH: (slug: string | number) => `integrations/${slug}/dispatch`, // POST
     REQUEST: (slug: string | number) => `integrations/${slug}/request`, // POST universal request
@@ -347,6 +380,11 @@ export const API_ENDPOINTS = {
     // hamkor id'si deb o'qilardi.
     WEBHOOKS: "admin/partners/webhooks", // GET outbox jurnali
     WEBHOOK_RETRY: (id: string | number) => `admin/partners/webhooks/${id}/retry`, // POST qayta navbatga
+    // SINOV webhooki — haqiqiy buyurtmaga tegmaydi. Tanada `url` berilsa
+    // saqlangan manzildan ustun turadi (saqlashdan OLDIN sinash uchun).
+    WEBHOOK_TEST: (id: string | number) => `admin/partners/${id}/webhook-test`, // POST
+    // Hamkordan kelgan posilkalar bog'lanishi (yupqa: status buyurtmada).
+    SHIPMENTS: (id: string | number) => `admin/partners/${id}/shipments`, // GET
   },
 
   // ── Activity logs / audit trail (admin) — merged across services ─────────

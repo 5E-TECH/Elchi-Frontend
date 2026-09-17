@@ -648,8 +648,18 @@ const Orders = () => {
           id: orderItem.id,
           quantity: orderItem.quantity,
           product: {
-            id: productId,
-            name: orderItem.product?.name ?? `#${productId}`,
+            /**
+             * Hamkor (Partner API) buyurtmalarida mahsulot bizning katalogda
+             * yo'q: `product_id` bo'sh, nom `product_name` da matn bo'lib
+             * keladi. Bunday holatda `id` UMUMAN yuborilmaydi — avval u
+             * `null` bo'lib ketardi va mavjud bo'lmagan mahsulotga havola
+             * yasalardi.
+             */
+            ...(productId ? { id: productId } : {}),
+            name:
+              orderItem.product?.name ??
+              orderItem.product_name ??
+              (productId ? `#${productId}` : "—"),
             image_url: orderItem.product?.image_url ?? null,
           },
         };

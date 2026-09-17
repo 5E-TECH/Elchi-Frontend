@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
@@ -73,3 +73,96 @@ export const extractMeta = (
 ): { page?: number; limit?: number; total?: number } | undefined =>
   (raw as { data?: { meta?: { page?: number; limit?: number; total?: number } } })
     ?.data?.meta;
+
+/**
+ * KIRUVCHI POSILKALARNING MANBALARI.
+ *
+ * Ekran ilgari barcha tashqi buyurtmani bitta ro'yxatda ko'rsatardi. Amalda
+ * faqat bitta hamkor (BeePost) yuborgani uchun ekran o'shanga moslangandek
+ * ko'rinardi, lekin ikkinchi manba qo'shilishi bilan operator qo'lida bir
+ * manbaning qopi turib, ro'yxatda boshqasining posilkasini ham ko'rardi.
+ *
+ * Endi avval manba tanlanadi.
+ *
+ * ⚠️ Ro'yxat BUYURTMALARNING O'ZIDAN chiqadi, ulanishlar sozlamasidan emas.
+ * Shu bois: posilkasi yo'q manba ro'yxatda ko'rinmaydi, va sozlamasi
+ * o'chirilgan bo'lsa ham kutayotgan posilka YASHIRILMAYDI — u haqiqatan
+ * omborda turgan bo'lishi mumkin.
+ */
+export type IncomingSource = {
+  market_id: string;
+  orders_count: number;
+  total_price_sum: number;
+  /** Eng eski kutayotgan posilka sanasi (ISO) yoki `null`. */
+  oldest_at: string | null;
+  market?: { id?: string; name?: string | null } | null;
+};
+
+export const incomingSourcesKey = "incoming-external-sources";
+
+export const useIncomingSources = () =>
+  useQuery({
+    queryKey: [incomingSourcesKey],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.ORDERS.EXTERNAL_SOURCES)
+        .then((res) => extractIncomingSources(res.data)),
+  });
+
+/** Qobiq qatlamlari marshrutga qarab farq qiladi — himoyalangan ochish. */
+export const extractIncomingSources = (raw: unknown): IncomingSource[] => {
+  const candidates = [
+    (raw as { data?: { data?: unknown } })?.data?.data,
+    (raw as { data?: unknown })?.data,
+    raw,
+  ];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate as IncomingSource[];
+  }
+  return [];
+};
+
+/** Manba nomi — nom yechilmagan bo'lsa ham foydali matn qaytadi. */
+export const sourceLabel = (source: IncomingSource): string =>
+  source.market?.name?.trim() || `Market #${source.market_id}`;
+
+/**
+ * SKANERLANGAN POSILKALARNI QABUL QILISH.
+ *
+ * ⚠️ SERVERGA TOKEN YUBORILADI, `order_ids` EMAS.
+ *
+ * Ilgari frontend skanerlangan tokenni O'ZI buyurtmaga moslab, serverga
+ * id'lar yuborardi. Ya'ni server skanerlash bo'lgan-bo'lmaganini BILMASDI
+ * va darvozani boshqa ekrandan yoki to'g'ridan-to'g'ri API'dan chetlab
+ * o'tish mumkin edi (audit K2). Endi dalil serverda tekshiriladi.
+ *
+ * Javobda `unmatched` — qabul qilinmagan tokenlar SABABI bilan. Ularni
+ * ko'rsatish SHART: aks holda operator "hammasi qabul qilindi" deb o'ylab,
+ * qolib ketgan posilkani sezmaydi.
+ */
+export interface ReceiveByScanResult {
+  received: number;
+  unmatched: Array<{ token: string; reason: string }>;
+}
+
+export const useReceiveByScan = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (tokens: string[]) =>
+      api
+        .post(API_ENDPOINTS.ORDERS.EXTERNAL_RECEIVE_BY_SCAN, { tokens })
+        .then((res) => {
+          const raw = res.data as { data?: unknown };
+          const inner = (raw?.data as { data?: unknown })?.data ?? raw?.data;
+          const page = inner as Partial<ReceiveByScanResult> | undefined;
+          return {
+            received: Number(page?.received ?? 0),
+            unmatched: Array.isArray(page?.unmatched) ? page!.unmatched : [],
+          } satisfies ReceiveByScanResult;
+        }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: [incomingOrdersKey] });
+      client.invalidateQueries({ queryKey: [incomingSourcesKey] });
+    },
+  });
+};

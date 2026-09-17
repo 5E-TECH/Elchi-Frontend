@@ -38,7 +38,19 @@ export interface ApiOrder {
     createdAt: string;
     comment: string | null;
     address: string | null;
-    items: { id: string; quantity: number; product: { id: string; name: string; image_url: string | null } }[];
+    /**
+     * ⚠️ `product` BO'LMASLIGI mumkin. Hamkor (Partner API) orqali kelgan
+     * buyurtmalarda mahsulot katalogimizda yo'q — nomi `product_name` da
+     * matn sifatida keladi, `product_id` esa bo'sh bo'ladi.
+     */
+    items?:
+        | {
+              id: string;
+              quantity: number;
+              product?: { id: string; name: string; image_url: string | null } | null;
+              product_name?: string | null;
+          }[]
+        | null;
     customer: { id: string; name: string; phone_number: string; district?: { name: string }; region?: { name: string } };
     district?: { name: string };
     region?: { name: string };
@@ -150,10 +162,12 @@ export const OrderCard = memo(({ order, isSelected, onToggle, onEdit, onDelete, 
 
                     {/* Mahsulotlar */}
                     <div className="flex flex-wrap gap-1.5">
-                        {order.items.map((item) => (
+                        {(order.items ?? []).map((item) => (
                             <div key={item.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-white/4 border border-gray-100 dark:border-white/8">
                                 <Package size={10} className="text-gray-400 shrink-0" />
-                                <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{item.product.name}</span>
+                                <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+                                    {item.product?.name ?? item.product_name ?? "—"}
+                                </span>
                                 <span className="text-[10px] bg-main/10 text-main px-1 py-0.5 rounded font-black">×{item.quantity}</span>
                             </div>
                         ))}

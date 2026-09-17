@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   AlertTriangle,
@@ -22,10 +22,12 @@ import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import {
   extractIncomingOrders,
   extractMeta,
+  sourceLabel,
   useIncomingExternalOrders,
+  useIncomingSources,
+  useReceiveByScan,
   type IncomingOrder,
 } from "../../entities/incoming-orders";
-import { useOrders } from "../../entities/orders";
 
 /**
  * Bu ekranga kimlar kira oladi — backend guardi bilan BIR XIL bo'lishi shart.
@@ -60,11 +62,17 @@ type Message = { tone: "success" | "error" | "warn"; text: string };
 /**
  * HAMKORDAN KELGAN BUYURTMALARNI SKANERLAB QABUL QILISH (HQ).
  *
- * Nima uchun kerak: hamkor (BeePost) Partner API orqali posilka yaratganda
+ * Nima uchun kerak: tashqi tizim Partner API orqali posilka yaratganda
  * buyurtma bizda `new` holatida paydo bo'ladi, lekin JISMONAN hali yetib
  * kelmagan. Operator posilkalarni qo'lida ushlab QR'ini skanerlaydi — shunda
  * tizimdagi yozuv bilan haqiqiy posilka mos kelishi TASDIQLANADI va faqat
  * skanerlangan buyurtmalar qabul qilinadi.
+ *
+ * ⚠️ EKRAN BITTA MANBAGA BOG'LANGAN (`:marketId`). Ilgari u BARCHA tashqi
+ * buyurtmani aralash ko'rsatardi: operator qo'lida bir manbaning qopi turib,
+ * ro'yxatda boshqasining posilkasini ham ko'rardi va "topilmadi" xabari
+ * nimani bildirishi tushunarsiz bo'lardi. Manba `/new-orders/incoming`
+ * sahifasida tanlanadi.
  *
  * DIZAYN QARORI — skan har safar serverga so'rov YUBORMAYDI. Ro'yxat bir marta
  * yuklanadi va skanerlangan token ro'yxatdagi `qr_code_token` bilan solishtiriladi.
@@ -74,16 +82,43 @@ type Message = { tone: "success" | "error" | "warn"; text: string };
 const IncomingOrdersPage = () => {
   const { t } = useTranslation("common");
   const navigate = useNavigate();
+  const { marketId } = useParams<{ marketId: string }>();
   const role = useSelector((state: RootState) => state.role.role);
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState("");
+  /**
+   * ⚠️ ID VA TOKEN IKKISI HAM SAQLANADI.
+   *
+   * `scannedIds` — faqat EKRAN uchun (qaysi qator belgilandi).
+   * `scannedTokens` — SERVERGA yuboriladi.
+   *
+   * Ilgari serverga `order_ids` ketardi, ya'ni skanerlash dalili faqat
+   * frontendda edi va darvozani chetlab o'tish mumkin bo'lardi (audit K2).
+   * Endi token serverga boradi va u o'zi buyurtmaga moslaydi.
+   */
   const [scannedIds, setScannedIds] = useState<Set<string>>(new Set());
+  const [scannedTokens, setScannedTokens] = useState<string[]>([]);
   const [message, setMessage] = useState<Message | null>(null);
 
-  const query = useIncomingExternalOrders({ status: "new", limit: 200 });
-  const { createReceiveOrder } = useOrders();
+  /**
+   * ⚠️ `market_id` — manba filtri. Hamkor posilka yaratganda `elchi_market_id`
+   * MAJBURIY, ya'ni Elchi modelida kiruvchi buyurtma aynan shu marketning
+   * buyurtmasi bo'ladi. Buyurtma yozuvida "qaysi tashqi tizimdan keldi"
+   * degan alohida maydon yo'q, shu bois guruhlash kaliti ham shu.
+   */
+  const query = useIncomingExternalOrders({
+    status: "new",
+    market_id: marketId,
+    limit: 200,
+  });
+
+  // Sarlavhada manba nomi ko'rinishi kerak — operator qaysi qopni
+  // skanerlayotganini ekrandan tasdiqlab olsin.
+  const sources = useIncomingSources();
+  const source = (sources.data ?? []).find((s) => s.market_id === marketId);
+  const receiveByScan = useReceiveByScan();
 
   const orders = useMemo(
     () => extractIncomingOrders(query.data),
@@ -111,6 +146,7 @@ const IncomingOrdersPage = () => {
   // eski belgilar qolib, operatorni chalg'itmasin).
   useEffect(() => {
     setScannedIds(new Set());
+    setScannedTokens([]);
   }, [query.dataUpdatedAt]);
 
   const handleScan = (raw: string) => {
@@ -134,6 +170,7 @@ const IncomingOrdersPage = () => {
 
     void playScanFeedback("success");
     setScannedIds((prev) => new Set(prev).add(order.id));
+    setScannedTokens((prev) => [...prev, token]);
     setMessage({
       tone: "success",
       text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
@@ -141,31 +178,45 @@ const IncomingOrdersPage = () => {
   };
 
   const handleReceive = () => {
-    const ids = Array.from(scannedIds);
-    if (!ids.length) return;
+    if (!scannedTokens.length) return;
 
-    createReceiveOrder.mutate(
-      { order_ids: ids },
-      {
-        onSuccess: () => {
+    receiveByScan.mutate(scannedTokens, {
+      onSuccess: (result) => {
+        /**
+         * ⚠️ QABUL QILINMAGANLARNI KO'RSATISH SHART. Server tokenni
+         * moslay olmasa sababini qaytaradi ("tashqi posilka emas",
+         * "allaqachon received", "tizimda topilmadi"). Ularni yashirsak
+         * operator "hammasi qabul qilindi" deb o'ylab, qolib ketgan
+         * posilkani sezmaydi.
+         */
+        if (result.unmatched.length) {
+          const detail = result.unmatched
+            .map((u) => `${u.token.slice(0, 10)}… — ${u.reason}`)
+            .join("; ");
+          setMessage({
+            tone: result.received > 0 ? "warn" : "error",
+            text: `${result.received} qabul qilindi, ${result.unmatched.length} o'tmadi: ${detail}`,
+          });
+        } else {
           setMessage({
             tone: "success",
-            text: `${ids.length} ${t("incomingReceiveSuccess")}`,
+            text: `${result.received} ${t("incomingReceiveSuccess")}`,
           });
-          setScannedIds(new Set());
-          void query.refetch();
-          inputRef.current?.focus();
-        },
-        onError: (error) => {
-          // Backend sababini ATAYLAB ko'rsatamiz (masalan "ba'zi buyurtmalar
-          // NEW holatida emas") — umumiy xabar operatorni ko'r qoldirardi.
-          setMessage({
-            tone: "error",
-            text: getBackendErrorMessage(error) ?? t("incomingReceiveError"),
-          });
-        },
+        }
+        setScannedIds(new Set());
+        setScannedTokens([]);
+        void query.refetch();
+        inputRef.current?.focus();
       },
-    );
+      onError: (error) => {
+        // Backend sababini ATAYLAB ko'rsatamiz — umumiy xabar operatorni
+        // ko'r qoldirardi.
+        setMessage({
+          tone: "error",
+          text: getBackendErrorMessage(error) ?? t("incomingReceiveError"),
+        });
+      },
+    });
   };
 
   if (!allowed) {
@@ -189,9 +240,9 @@ const IncomingOrdersPage = () => {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate("/new-orders/integrations")}
+              onClick={() => navigate("/new-orders/incoming")}
               className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 dark:text-white"
-              title={t("integrationsTitle")}
+              title="Manbalar ro'yxatiga qaytish"
             >
               <ArrowLeft size={18} />
             </button>
@@ -200,7 +251,7 @@ const IncomingOrdersPage = () => {
             </div>
             <div>
               <h1 className="m-0 text-lg font-extrabold text-maindark dark:text-white">
-                {t("incomingTitle")}
+                {source ? sourceLabel(source) : t("incomingTitle")}
               </h1>
               <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 {t("incomingSubtitle")}
@@ -350,10 +401,10 @@ const IncomingOrdersPage = () => {
       <button
         type="button"
         onClick={handleReceive}
-        disabled={scannedCount === 0 || createReceiveOrder.isPending}
+        disabled={scannedCount === 0 || receiveByScan.isPending}
         className="flex w-full items-center justify-center gap-3 rounded-[24px] bg-emerald-600 px-6 py-5 text-base font-extrabold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {createReceiveOrder.isPending ? (
+        {receiveByScan.isPending ? (
           <>
             <Loader2 size={18} className="animate-spin" />
             {t("incomingReceiving")}
