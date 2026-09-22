@@ -104,6 +104,15 @@ const courierState = {
   },
 } as never;
 
+const operatorState = {
+  role: {
+    id: "operator-1",
+    role: "operator",
+    region: null,
+    name: "Operator",
+  },
+} as never;
+
 describe("DashboardPage", () => {
   beforeEach(() => {
     getDashboardMock.mockReturnValue({
@@ -336,5 +345,19 @@ describe("DashboardPage", () => {
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
     expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent("0-0-0-0");
+  });
+
+  it("gives operators their own stat cards instead of a blank page, without company-wide rankings", () => {
+    renderWithProviders(<DashboardPage />, { preloadedState: operatorState });
+
+    // Not blank: the operator sees the same base statistics widget admins do.
+    expect(screen.getByTestId("dashboard-statistics")).toBeInTheDocument();
+    // But company-wide ranking/region widgets are held back until the backend
+    // actually scopes analytics-service to the operator's own market — showing
+    // them today would leak every market's and courier's data to an operator.
+    expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
+    // Revenue analytics stay SUPERADMIN/ADMIN-only (Audit P1-2) — unaffected by this change.
+    expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
   });
 });
