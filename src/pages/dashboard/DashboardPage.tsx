@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { LayoutDashboard, Package, TrendingUp, Wallet, XCircle } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, Wallet, XCircle, BarChart2, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
@@ -14,6 +14,7 @@ import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
+import MobileCollapsibleSection from "../../shared/ui/MobileCollapsibleSection";
 import { formatNumber } from "../../shared/config/designSystem";
 import type { RootState } from "../../app/config/store";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
@@ -36,9 +37,15 @@ const DashboardPage = () => {
   const isAnalyticsAdmin = ["superadmin", "admin"].includes(normalizedRole);
   const isRegistrator = normalizedRole === "registrator";
   const isCourier = normalizedRole === "courier";
+  // Operator uchun backend hali rolga xos scoping qilmaydi (analytics-service
+  // uni ADMIN tarmog'iga tushiradi) — shu sabab kompaniya bo'ylab reyting va
+  // hudud xaritasi kabi keng ko'lamli bloklar operatorga ko'rsatilmaydi,
+  // faqat asosiy stat kartalar qoladi. To'liq scoping backend tuzatilgach
+  // qo'shiladi (bog'liq: "Backend: /analytics/dashboard har qanday rolga...").
+  const isOperator = normalizedRole === "operator";
   const canShowFinancialMetrics = !isRegistrator && !isCourier;
-  const canShowTopPerformers = !isCourier;
-  const canShowRegionStats = !isCourier;
+  const canShowTopPerformers = !isCourier && !isOperator;
+  const canShowRegionStats = !isCourier && !isOperator;
   const [fromDate, setFromDate] = useState(
     typeof storedFromDate === "string" ? storedFromDate : "",
   );
@@ -240,25 +247,32 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Financial analysis — revenue endpoint is SUPERADMIN/ADMIN-only. */}
+      {/* Financial analysis — revenue endpoint is SUPERADMIN/ADMIN-only.
+          Og'ir blok (822px) — telefonda yopiq akkordeon, desktop/planshetda ochiq. */}
       {widgets.financial && isAnalyticsAdmin && !isAllTime && (
-        <div className="mb-5">
+        <MobileCollapsibleSection
+          title={t("financial_analysis.title")}
+          icon={<BarChart2 size={16} />}
+          className="mb-5"
+        >
           <FinancialAnalysis
             startDate={hasDateFilter ? fromDate : ""}
             endDate={hasDateFilter ? toDate : ""}
             analyticsScope={analyticsScope}
             isAllTime={isAllTime}
           />
-        </div>
+        </MobileCollapsibleSection>
       )}
 
-      {/* Hududlar bo'yicha xarita */}
+      {/* Hududlar bo'yicha xarita — og'ir blok (~830px), telefonda yopiq akkordeon. */}
       {widgets.region && canShowRegionStats && (
-        <RegionStatsCard
-          startDate={hasDateFilter ? fromDate : ""}
-          endDate={hasDateFilter ? toDate : ""}
-          showFinancialMetrics={canShowFinancialMetrics}
-        />
+        <MobileCollapsibleSection title={t("region.title")} icon={<MapPin size={16} />}>
+          <RegionStatsCard
+            startDate={hasDateFilter ? fromDate : ""}
+            endDate={hasDateFilter ? toDate : ""}
+            showFinancialMetrics={canShowFinancialMetrics}
+          />
+        </MobileCollapsibleSection>
       )}
     </PageContainer>
   );

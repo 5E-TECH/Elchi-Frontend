@@ -8,6 +8,10 @@ import {
   Send,
   ArrowUpRight,
   TrendingDown,
+  Clock,
+  CheckCircle2,
+  Package,
+  TrendingUp,
 } from "lucide-react";
 import MetricCard, { MetricCardSkeleton } from "../../../shared/ui/MetricCard";
 import OrderStatusDonut from "./OrderStatusDonut";
@@ -16,6 +20,7 @@ import {
   formatCompactMoney,
   formatPercent,
   formatNumber,
+  formatHours,
   ratio,
   type Tone,
 } from "../../../shared/config/designSystem";
@@ -48,13 +53,17 @@ const DashboardStatistics = memo(
     profit,
     totalRevenue,
     avgOrderValue,
+    avgFulfillmentHours,
+    onTimeRate,
     showFinancialMetrics = true,
     loading = false,
   }: DashboardStatisticsProps) => {
     const { t } = useTranslation("dashboard");
 
+    // "grid" o'rniga "hidden sm:grid" — bu blok endi faqat sm+ ekranlarda
+    // ko'rinadi, telefonda uning o'rnini yuqoridagi ixcham 2x2 KPI bosadi.
     const gridClass =
-      "grid grid-cols-2 gap-4 lg:grid-cols-12 lg:auto-rows-[142px]";
+      "hidden sm:grid grid-cols-2 gap-4 lg:grid-cols-12 lg:auto-rows-[142px]";
 
     if (loading) {
       return (
@@ -75,6 +84,45 @@ const DashboardStatistics = memo(
 
     return (
       <div className="space-y-4">
+        {/* ── Telefon uchun ixcham KPI (2x2) ──
+            Donut+gauge+featured+cancelled+inProgress bloki telefonda ~900px
+            balandlik olardi va birinchi ekranda faqat takrorlanuvchi nollar
+            ko'rinardi. Shu 4 ta raqam ularning o'rnini bosadi (sm dan yuqorida
+            yashiringan — desktop/planshetda donut+gauge o'zi yetarli). */}
+        <div className="grid grid-cols-2 gap-3 sm:hidden">
+          <MetricCard
+            title={t("status.center")}
+            value={formatNumber(accepted)}
+            icon={<Package size={18} />}
+            tone="brand"
+            compact
+          />
+          <MetricCard
+            title={t("cards.sold")}
+            value={formatNumber(sold)}
+            icon={<TrendingUp size={18} />}
+            tone="success"
+            compact
+            badge={formatPercent(successRate)}
+          />
+          <MetricCard
+            title={t("cards.in_progress")}
+            value={formatNumber(inProgress)}
+            icon={<Truck size={18} />}
+            tone="warning"
+            compact
+          />
+          <MetricCard
+            title={t("cards.cancelled")}
+            value={formatNumber(cancelled)}
+            icon={<XCircle size={18} />}
+            tone="danger"
+            compact
+            badge={formatPercent(cancelRate)}
+            badgeUp={false}
+          />
+        </div>
+
         <div className={gridClass}>
           {/* ── Donut: buyurtma holati (katta, chap) ── */}
           <div className="col-span-2 lg:col-span-4 lg:row-span-2">
@@ -142,41 +190,56 @@ const DashboardStatistics = memo(
           </div>
         </div>
 
-        {/* ── Ikkilamchi metrikalar qatori ── */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-          {showFinancialMetrics ? (
-            <>
-              <MetricCard
-                title={t("cards.total_revenue")}
-                value={formatCompactMoney(totalRevenue)}
-                suffix={t("currency_sum")}
-                icon={<Receipt size={20} />}
-                tone="brand"
-                compact
-                hint={t("cards.total_revenue_hint")}
-              />
-              <MetricCard
-                title={t("cards.profit")}
-                value={formatCompactMoney(profit)}
-                suffix={t("currency_sum")}
-                icon={<Wallet size={20} />}
-                tone={profitTone}
-                compact
-                hint={t("cards.profit_hint")}
-              />
-              <MetricCard
-                title={t("cards.avg_order_value")}
-                value={formatCompactMoney(avgOrderValue)}
-                suffix={t("currency_sum")}
-                icon={<Receipt size={20} />}
-                tone="brand"
-                compact
-                hint={t("cards.avg_order_value_hint")}
-              />
-            </>
-          ) : null}
-          {/* Yo'qotilgan daromad */}
-          {showFinancialMetrics ? (
+        {/* ── Ikkilamchi metrikalar qatori ──
+            6 ustunli grid, 6 ta karta — showFinancialMetrics=false bo'lganda
+            (registrator, kuryer) butun blok render bo'lmaydi, bo'sh <div> qolmaydi. */}
+        {showFinancialMetrics && (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+            <MetricCard
+              title={t("cards.total_revenue")}
+              value={formatCompactMoney(totalRevenue)}
+              suffix={t("currency_sum")}
+              icon={<Receipt size={20} />}
+              tone="brand"
+              compact
+              hint={t("cards.total_revenue_hint")}
+            />
+            <MetricCard
+              title={t("cards.profit")}
+              value={formatCompactMoney(profit)}
+              suffix={t("currency_sum")}
+              icon={<Wallet size={20} />}
+              tone={profitTone}
+              compact
+              hint={t("cards.profit_hint")}
+            />
+            <MetricCard
+              title={t("cards.avg_order_value")}
+              value={formatCompactMoney(avgOrderValue)}
+              suffix={t("currency_sum")}
+              icon={<Receipt size={20} />}
+              tone="brand"
+              compact
+              hint={t("cards.avg_order_value_hint")}
+            />
+            <MetricCard
+              title={t("cards.avg_fulfillment")}
+              value={formatHours(avgFulfillmentHours)}
+              icon={<Clock size={20} />}
+              tone="info"
+              compact
+              hint={t("cards.avg_fulfillment_hint")}
+            />
+            <MetricCard
+              title={t("cards.on_time")}
+              value={formatPercent(onTimeRate)}
+              suffix={t("cards.on_time_badge")}
+              icon={<CheckCircle2 size={20} />}
+              tone="success"
+              compact
+              hint={t("cards.on_time_hint")}
+            />
+            {/* Yo'qotilgan daromad */}
             <MetricCard
               title={t("cards.lost_revenue")}
               value={formatCompactMoney(lostRevenue)}
@@ -186,8 +249,8 @@ const DashboardStatistics = memo(
               compact
               hint={t("cards.lost_revenue_hint")}
             />
-          ) : null}
-        </div>
+          </div>
+        )}
       </div>
     );
   },
