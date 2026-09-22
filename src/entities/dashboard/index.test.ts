@@ -118,6 +118,39 @@ describe("dashboard response normalization", () => {
       inProgress: 12,
       profit: 19060000,
     });
+    expect(result.data.myStat).toEqual({
+      totalOrders: 38,
+      soldOrders: 7,
+      canceledOrders: 0,
+      profit: 19060000,
+      successRate: 18.42,
+    });
+  });
+
+  it("normalizes a market's operator leaderboard", () => {
+    const result = normalizeDashboardResponse({
+      data: {
+        topOperators: [
+          {
+            operator_id: "operator-1",
+            operator_name: "Operator Ali",
+            total_orders: "20",
+            successful_orders: "16",
+            success_rate: "80",
+          },
+        ],
+      },
+    });
+
+    expect(result.data.topOperators).toEqual([
+      {
+        operator_id: "operator-1",
+        operator_name: "Operator Ali",
+        total_orders: 20,
+        successful_orders: 16,
+        success_rate: 80,
+      },
+    ]);
   });
 
   it("normalizes top branches payload", () => {
@@ -202,6 +235,11 @@ describe("dashboard response normalization", () => {
   it("normalizes revenue chart and finance numeric strings", () => {
     const result = normalizeRevenueResponse({
       data: {
+        summary: {
+          totalRevenue: "150000",
+          totalOrders: "3",
+          avgRevenue: "150000",
+        },
         chart: {
           labels: ["2026-06-10"],
           values: ["150000"],
@@ -218,6 +256,11 @@ describe("dashboard response normalization", () => {
     expect(result.data.chart).toEqual({
       labels: ["2026-06-10"],
       values: [150000],
+    });
+    expect(result.data.summary).toEqual({
+      totalRevenue: 150000,
+      totalOrders: 3,
+      avgRevenue: 150000,
     });
     expect(result.data.finance).toMatchObject({
       currentSituation: 90000,

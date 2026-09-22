@@ -34,7 +34,22 @@ vi.mock("../../widgets/financial-analysis/ui/FinancialAnalysis", () => ({
 }));
 
 vi.mock("../../widgets/dashboard-top-performers/ui/TopPerformers", () => ({
-  default: () => <div data-testid="top-performers" />,
+  // Renders the wired-in market/branch names (instead of swallowing props) so a
+  // regression test can confirm the admin dashboard actually passes real ranking
+  // data through, not just that a wrapper div mounts.
+  default: (props: {
+    markets?: Array<{ market_name: string | null }>;
+    branches?: Array<{ branch_name: string | null }>;
+  }) => (
+    <div data-testid="top-performers">
+      {(props.markets ?? []).map((m, i) => (
+        <span key={`market-${i}`} data-testid="top-market-name">{m.market_name}</span>
+      ))}
+      {(props.branches ?? []).map((b, i) => (
+        <span key={`branch-${i}`} data-testid="top-branch-name">{b.branch_name}</span>
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock("../../widgets/dashboard-region/ui/RegionStatsCard", () => ({
@@ -163,6 +178,33 @@ describe("DashboardPage", () => {
     expect(screen.getByTestId("financial-analysis")).toHaveTextContent('"startDate"');
   });
 
+  it("wires real top market and branch rankings into the Top performers block for admins", () => {
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          orders: {
+            acceptedCount: 12,
+            soldAndPaid: 5,
+            cancelled: 2,
+            profit: 480000,
+            totalRevenue: 960000,
+          },
+          topMarkets: [
+            { market_id: "m-1", market_name: "Chilonzor filiali", total_orders: 50, successful_orders: 45, success_rate: 90 },
+          ],
+          topBranches: [
+            { branch_id: "b-1", branch_name: "Yunusobod filiali", total_orders: 40, successful_orders: 32, success_rate: 80 },
+          ],
+        },
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    expect(screen.getByTestId("top-performers")).toBeInTheDocument();
+    expect(screen.getByTestId("top-market-name")).toHaveTextContent("Chilonzor filiali");
+    expect(screen.getByTestId("top-branch-name")).toHaveTextContent("Yunusobod filiali");
+  });
+
   it("hides financial dashboard metrics from registrators", () => {
     renderWithProviders(<DashboardPage />, { preloadedState: registratorState });
 
@@ -179,12 +221,34 @@ describe("DashboardPage", () => {
   });
 
   it("shows only courier-relevant dashboard widgets for couriers", () => {
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          myStat: {
+            totalOrders: 28,
+            soldOrders: 19,
+            canceledOrders: 3,
+            profit: 480000,
+            successRate: 67.86,
+          },
+        },
+      },
+    });
     renderWithProviders(<DashboardPage />, { preloadedState: courierState });
 
-    expect(screen.getByTestId("dashboard-statistics")).toHaveAttribute(
-      "data-financial",
-      "false",
-    );
+    const grid = screen.getByTestId("courier-stats-grid");
+    // 2x2 at mobile widths (no `sm`/`lg` breakpoint applies below 640px, so this
+    // stays a 2-column grid at 390px — Tailwind's grid-cols-N uses minmax(0,1fr)
+    // tracks, so long values wrap instead of forcing horizontal scroll) and a
+    // single row of 4 from the `lg` breakpoint up.
+    expect(grid).toHaveClass("grid-cols-2", "lg:grid-cols-4");
+    expect(grid.children).toHaveLength(4);
+    expect(screen.getByText("Jami buyurtmalar").parentElement).toHaveTextContent("28");
+    expect(screen.getByText("Sotilgan").parentElement).toHaveTextContent("19");
+    expect(grid).toHaveTextContent("67.86%");
+    expect(screen.getByText("Bekor qilingan").parentElement).toHaveTextContent("3");
+    expect(screen.getByText("Foyda").parentElement).toHaveTextContent("480 000");
+    expect(screen.queryByTestId("dashboard-statistics")).not.toBeInTheDocument();
     expect(getDashboardMock).toHaveBeenCalledWith(
       { start_day: "", end_day: "" },
       true,
@@ -198,6 +262,59 @@ describe("DashboardPage", () => {
     expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
     expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
     expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
+  });
+
+  it("shows four skeleton cards while courier data is loading", () => {
+    getDashboardMock.mockReturnValue({ data: undefined, isLoading: true });
+    const { container } = renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+
+    expect(screen.getByTestId("courier-stats-grid").children).toHaveLength(4);
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Jami buyurtmalar")).not.toBeInTheDocument();
+  });
+
+  it("shows an error instead of zero cards when courier myStat is absent", () => {
+    getDashboardMock.mockReturnValue({ data: { data: { orders: {} } }, isLoading: false });
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+
+    expect(screen.getByText("Kuryer statistikasi hozircha mavjud emas.")).toBeInTheDocument();
+    expect(screen.queryByTestId("courier-stats-grid")).not.toBeInTheDocument();
+  });
+
+  it("retries a failed courier dashboard request", async () => {
+    const refetch = vi.fn();
+    getDashboardMock.mockReturnValue({ isError: true, isLoading: false, refetch });
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+
+    expect(screen.getByText("Dashboard ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("requests courier statistics again after changing the date range", async () => {
+    getDashboardMock.mockImplementation((params: { start_day?: string }) => ({
+      data: {
+        data: {
+          myStat: {
+            totalOrders: params.start_day ? 9 : 28,
+            soldOrders: 5,
+            canceledOrders: 1,
+            profit: 120000,
+            successRate: 55.56,
+          },
+        },
+      },
+    }));
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+
+    await userEvent.setup().click(screen.getByLabelText("Boshlanish → Tugash"));
+
+    expect(getDashboardMock).toHaveBeenLastCalledWith(
+      { start_day: "2026-04-01", end_day: "2026-04-14" },
+      true,
+      "courier:unknown",
+    );
+    expect(screen.getByText("Jami buyurtmalar").parentElement).toHaveTextContent("9");
   });
 
   it("switches to filtered title when dates are selected", async () => {

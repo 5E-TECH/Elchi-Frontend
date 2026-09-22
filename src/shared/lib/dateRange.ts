@@ -66,6 +66,27 @@ export const getAllTimeRange = (): ISODateRange => ({
   to: toISODate(new Date()),
 });
 
+/** Inclusive date range immediately preceding the selected range. UTC day math avoids DST shifts. */
+export const getPreviousPeriodRange = ({ from, to }: ISODateRange): ISODateRange | null => {
+  const parseDay = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const timestamp = Date.parse(`${value}T00:00:00Z`);
+    return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value
+      ? timestamp
+      : null;
+  };
+  const start = parseDay(from);
+  const end = parseDay(to);
+  if (start === null || end === null || end < start) return null;
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const days = Math.round((end - start) / dayMs) + 1;
+  return {
+    from: new Date(start - days * dayMs).toISOString().slice(0, 10),
+    to: new Date(start - dayMs).toISOString().slice(0, 10),
+  };
+};
+
 export const getPresetDateRange = (preset: DateRangePreset): ISODateRange => {
   if (preset === "all") {
     return getAllTimeRange();
