@@ -14,39 +14,56 @@ vi.mock("../../entities/dashboard", () => ({
   }),
 }));
 
-vi.mock("../../widgets/dashboard-top-performers/ui/TopPerformers", () => ({
-  default: ({ markets }: { markets?: unknown[] }) => (
-    <div data-testid="top-performers">markets:{markets?.length ?? 0}</div>
-  ),
-}));
+// Shared fixture builder — tests that need a modified variant (e.g. empty
+// topOperators) clone a FRESH call of this instead of reading the mock's
+// return value back (vi.fn().mockReturnValue() has no recorded
+// "implementation" to read back via getMockImplementation(), so that pattern
+// silently produced `undefined` and dropped the rest of the fixture).
+const buildDashboardResponse = () => ({
+  data: {
+    data: {
+      orders: {
+        acceptedCount: 4,
+        soldAndPaid: 1,
+        cancelled: 1,
+        inProgress: 1,
+        profit: 120000,
+      },
+      myStat: {
+        totalOrders: 38,
+        soldOrders: 7,
+        canceledOrders: 2,
+        profit: 19060000,
+        successRate: 18.42,
+      },
+      topMarkets: [
+        {
+          market_id: "market-1",
+          market_name: "Market",
+          total_orders: 4,
+          successful_orders: 1,
+          success_rate: 25,
+        },
+      ],
+      topOperators: [
+        {
+          operator_id: "operator-1",
+          operator_name: "Operator Ali",
+          total_orders: 20,
+          successful_orders: 16,
+          success_rate: 80,
+        },
+      ],
+    },
+  },
+  isLoading: false,
+  isError: false,
+  refetch: vi.fn(),
+});
 
 describe("MarketDashboardPage", () => {
   beforeEach(() => {
-    getDashboardMock.mockReturnValue({
-      data: {
-        data: {
-          orders: {
-            acceptedCount: 4,
-            soldAndPaid: 1,
-            cancelled: 1,
-            inProgress: 1,
-            profit: 120000,
-          },
-          topMarkets: [
-            {
-              market_id: "market-1",
-              market_name: "Market",
-              total_orders: 4,
-              successful_orders: 1,
-              success_rate: 25,
-            },
-          ],
-        },
-      },
-      isLoading: false,
-      isError: false,
-      refetch: vi.fn(),
-    });
+    getDashboardMock.mockReturnValue(buildDashboardResponse());
   });
 
   it("uses only the market-authorized dashboard endpoint", () => {
@@ -62,8 +79,18 @@ describe("MarketDashboardPage", () => {
       "market:unknown",
     );
     expect(getKpiMock).not.toHaveBeenCalled();
-    expect(screen.getByText("4")).toBeInTheDocument();
-    expect(screen.getByTestId("top-performers")).toHaveTextContent("markets:1");
+    const grid = screen.getByTestId("market-stats-grid");
+    expect(grid).toHaveClass("grid-cols-2");
+    expect(grid.children).toHaveLength(4);
+    expect(screen.getByText("Jami buyurtmalar").parentElement).toHaveTextContent("38");
+    expect(screen.getByText("Sotilgan").parentElement).toHaveTextContent("7");
+    expect(grid).toHaveTextContent("18.42%");
+    expect(screen.getByText("Bekor qilingan").parentElement).toHaveTextContent("2");
+    expect(screen.getByText("Sof foyda").parentElement).toHaveTextContent("19 060 000");
+    expect(screen.getByText("Top marketlar")).toBeInTheDocument();
+    expect(screen.getByText("Siz")).toBeInTheDocument();
+    expect(screen.getByText("Top operatorlar")).toBeInTheDocument();
+    expect(screen.getByText("Operator Ali")).toBeInTheDocument();
   });
 
   it("sends explicit dates when market selects all-time range", async () => {
@@ -88,6 +115,36 @@ describe("MarketDashboardPage", () => {
     );
     expect(lastParams).not.toHaveProperty("all");
     expect(getKpiMock).not.toHaveBeenCalled();
-    expect(screen.getByTestId("top-performers")).toHaveTextContent("markets:1");
+    expect(screen.getByText("Top marketlar")).toBeInTheDocument();
+    expect(screen.getByText("Top operatorlar")).toBeInTheDocument();
+  });
+
+  it("omits the operator leaderboard without leaving an empty card", () => {
+    const response = buildDashboardResponse();
+    getDashboardMock.mockReturnValue({
+      ...response,
+      data: {
+        ...response.data,
+        data: { ...response.data.data, topOperators: [] },
+      },
+    });
+    renderWithProviders(<MarketDashboardPage />, {
+      preloadedState: {
+        role: { id: "market-1", role: "market", region: null, name: "Market" },
+      },
+    });
+
+    expect(screen.queryByText("Top operatorlar")).not.toBeInTheDocument();
+
+    // Regression guard: dropping the operators leaderboard must not blank out
+    // or shrink the still-populated markets leaderboard next to it — the
+    // markets section keeps rendering its real ranking, not just its title.
+    expect(screen.getByText("Top marketlar")).toBeInTheDocument();
+    expect(screen.getByRole("listitem", { name: "1. Market" })).toBeInTheDocument();
+
+    // The layout must not reserve a phantom second grid column for the
+    // now-absent operators card — only one leaderboard is showing.
+    const marketsCard = screen.getByRole("list", { name: "Top marketlar" }).closest("section");
+    expect(marketsCard?.parentElement).not.toHaveClass("md:grid-cols-2");
   });
 });

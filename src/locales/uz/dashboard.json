@@ -27,6 +27,7 @@
   "page_title_all": "Umumiy statistika",
   "page_subtitle_all": "Barcha davr ko'rsatkichlari",
   "load_error": "Dashboard ma'lumotlarini yuklab bo'lmadi.",
+  "courier_stats_unavailable": "Kuryer statistikasi hozircha mavjud emas.",
   "quickRanges": {
     "today": "Bugun",
     "week": "Bu hafta",
@@ -64,6 +65,7 @@
     "in_progress": "Jarayonda",
     "in_progress_hint": "Hali yetkazilmagan, yo'ldagi buyurtmalar",
     "profit": "Sof foyda",
+    "courier_profit": "Foyda",
     "total_revenue": "Jami daromad",
     "total_revenue_hint": "Barcha sotilgan buyurtmalar qiymati",
     "profit_hint": "Market tarifi − kuryer tarifi (sotilganlar)",
@@ -79,9 +81,12 @@
   },
   "top": {
     "markets_title": "Top marketlar",
-    "couriers_title": "Top filiallar",
+    "couriers_title": "Top kuryerlar",
     "branches_title": "Top filiallar",
-    "empty": "Yetarli ma'lumot yo'q (kamida 30 buyurtma kerak)"
+    "operators_title": "Top operatorlar",
+    "you": "Siz",
+    "limited": "Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin.",
+    "empty": "Ma'lumot hali kam (reyting uchun kamida 30 buyurtma kerak)."
   },
   "region": {
     "title": "Hududlar bo'yicha",
@@ -126,6 +131,16 @@
   "financial_analysis": {
     "title": "Moliyaviy tahlil",
     "subtitle": "Davr tahlili"
+  },
+  "comparison": {
+    "toggle": "Solishtirish",
+    "current": "Joriy davr",
+    "previous": "Oldingi davr",
+    "total_revenue": "Jami daromad",
+    "total_orders": "Buyurtmalar",
+    "avg_revenue": "O'rtacha davriy daromad",
+    "load_error": "Oldingi davr ma'lumotlarini yuklab bo'lmadi.",
+    "loading": "Yuklanmoqda..."
   },
   "financial_cards": {
     "today_revenue": {

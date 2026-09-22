@@ -8,6 +8,7 @@ export const PREFERENCE_STORAGE_KEYS = {
   sidebar: "sidebarIsOpen",
   scannerSuccessSound: "scanner-success-sound",
   scannerErrorSound: "scanner-error-sound",
+  dashboardComparison: "dashboard-comparison",
 } as const;
 
 const read = (key: string) => {
@@ -57,6 +58,17 @@ export const readStoredSidebar = (): boolean | null => {
 
 export const writeStoredSidebar = (isOpen: boolean) => {
   write(PREFERENCE_STORAGE_KEYS.sidebar, String(isOpen));
+};
+
+export const readStoredDashboardComparison = (): boolean | null => {
+  const value = read(PREFERENCE_STORAGE_KEYS.dashboardComparison);
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return null;
+};
+
+export const writeStoredDashboardComparison = (enabled: boolean) => {
+  write(PREFERENCE_STORAGE_KEYS.dashboardComparison, String(enabled));
 };
 
 const normalizeScannerSound = (value: string | null): StoredScannerSound | null => {

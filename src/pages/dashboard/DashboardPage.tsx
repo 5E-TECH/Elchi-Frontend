@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, Wallet, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
@@ -13,6 +13,8 @@ import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
+import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
+import { formatNumber } from "../../shared/config/designSystem";
 import type { RootState } from "../../app/config/store";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 
@@ -25,6 +27,7 @@ const DashboardPage = () => {
   const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
   const user = useSelector((state: RootState) => state.user.user);
   const role = useSelector((state: RootState) => state.role.role);
+  const roleId = useSelector((state: RootState) => state.role.id);
   const analyticsScope = `${role || "unknown"}:${user?.id || "unknown"}`;
   const normalizedRole = String(role || "").toLowerCase();
   // KPI and revenue analytics are backend-restricted to SUPERADMIN/ADMIN.
@@ -74,7 +77,7 @@ const DashboardPage = () => {
           },
     [fromDate, hasDateFilter, isAllTime, toDate],
   );
-  const needsDashboard = widgets.stats || widgets.topPerformers;
+  const needsDashboard = isCourier || widgets.stats || widgets.topPerformers;
   const {
     data,
     isLoading,
@@ -93,9 +96,11 @@ const DashboardPage = () => {
   );
 
   const orders = data?.data?.orders;
+  const courierStat = data?.data?.myStat;
   const kpi = kpiData?.data;
   const topMarkets = data?.data?.topMarkets ?? [];
   const topBranches = data?.data?.topBranches ?? [];
+  const topCouriers = data?.data?.topCouriers ?? [];
 
   const clearRange = useCallback(() => {
     setFromDate("");
@@ -135,8 +140,61 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {isCourier && (
+        <div className="mb-5">
+          {dashboardError || (!isLoading && !courierStat) ? (
+            <QueryErrorState
+              description={t(dashboardError ? "load_error" : "courier_stats_unavailable")}
+              onRetry={() => void refetchDashboard()}
+            />
+          ) : (
+            <div data-testid="courier-stats-grid" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              {isLoading || !courierStat ? (
+                Array.from({ length: 4 }).map((_, index) => <MetricCardSkeleton key={index} />)
+              ) : (
+                <>
+                  <MetricCard
+                    title={t("cards.total_orders")}
+                    value={formatNumber(courierStat.totalOrders)}
+                    icon={<Package size={20} />}
+                    tone="brand"
+                  />
+                  <MetricCard
+                    title={t("cards.sold")}
+                    value={formatNumber(courierStat.soldOrders)}
+                    icon={<TrendingUp size={20} />}
+                    tone="success"
+                    badge={`${courierStat.successRate}%`}
+                  />
+                  <MetricCard
+                    title={t("cards.cancelled")}
+                    value={formatNumber(courierStat.canceledOrders)}
+                    icon={<XCircle size={20} />}
+                    tone="danger"
+                  />
+                  <MetricCard
+                    title={t("cards.courier_profit")}
+                    value={new Intl.NumberFormat("uz-UZ", { maximumFractionDigits: 20 }).format(courierStat.profit)}
+                    suffix={t("currency_sum")}
+                    icon={<Wallet size={20} />}
+                    tone={courierStat.profit < 0 ? "danger" : "success"}
+                    compact
+                  />
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {isCourier && !dashboardError && topCouriers.length > 0 && (
+        <div className="mb-5">
+          <TopPerformers couriers={topCouriers} currentUserId={user?.id ?? roleId} />
+        </div>
+      )}
+
       {/* Stat cards */}
-      {widgets.stats && (dashboardError || (!isAllTime && kpiError)) && (
+      {!isCourier && widgets.stats && (dashboardError || (!isAllTime && kpiError)) && (
         <div className="mb-5">
           <QueryErrorState
             description={t("load_error")}
@@ -149,7 +207,7 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {widgets.stats && !dashboardError && (isAllTime || !kpiError) && (
+      {!isCourier && widgets.stats && !dashboardError && (isAllTime || !kpiError) && (
         <div className="mb-5">
           <DashboardStatistics
             accepted={orders?.acceptedCount ?? 0}
@@ -167,7 +225,7 @@ const DashboardPage = () => {
       )}
 
       {/* Top performers — marketlar & kuryerlar reytingi */}
-      {widgets.topPerformers && dashboardError && !widgets.stats && (
+      {!isCourier && widgets.topPerformers && dashboardError && !widgets.stats && (
         <div className="mb-5">
           <QueryErrorState
             description={t("load_error")}
@@ -178,7 +236,7 @@ const DashboardPage = () => {
 
       {widgets.topPerformers && canShowTopPerformers && !dashboardError && (
         <div className="mb-5">
-          <TopPerformers markets={topMarkets} branches={topBranches} />
+          <TopPerformers markets={topMarkets} branches={topBranches} currentUserId={user?.id ?? roleId} />
         </div>
       )}
 

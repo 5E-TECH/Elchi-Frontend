@@ -136,7 +136,10 @@ const MetricCard = memo(
 
           {/* Izoh */}
           {hint && (
-            <p className="mt-2 text-[11px] leading-tight" style={{ color: TEXT.soft }}>
+            <p
+              className="mt-2 line-clamp-2 break-words text-[11px] leading-tight"
+              style={{ color: TEXT.soft }}
+            >
               {hint}
             </p>
           )}

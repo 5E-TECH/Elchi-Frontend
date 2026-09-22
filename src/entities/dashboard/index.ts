@@ -29,6 +29,14 @@ export interface DashboardOrdersSummary {
   to?: number;
 }
 
+export interface DashboardMyStat {
+  totalOrders: number;
+  soldOrders: number;
+  canceledOrders: number;
+  profit: number;
+  successRate: number;
+}
+
 export interface BranchDashboardOrdersCard {
   total: number;
   new: number;
@@ -97,6 +105,14 @@ export interface TopCourier {
   success_rate: number;
 }
 
+export interface TopOperator {
+  operator_id: string;
+  operator_name: string | null;
+  total_orders: number;
+  successful_orders: number;
+  success_rate: number;
+}
+
 export interface TopBranch {
   branch_id: string;
   branch_name: string | null;
@@ -110,10 +126,12 @@ export interface DashboardResponse {
   message: string;
   data: {
     orders: DashboardOrdersSummary;
+    myStat?: DashboardMyStat;
     markets?: unknown[];
     couriers?: unknown[];
     topMarkets?: TopMarket[];
     topCouriers?: TopCourier[];
+    topOperators?: TopOperator[];
     topBranches?: TopBranch[];
     branchDashboard?: BranchDashboardPayload | null;
   };
@@ -130,6 +148,11 @@ export interface RevenueResponse {
   statusCode: number;
   message: string;
   data: {
+    summary?: {
+      totalRevenue: number;
+      totalOrders: number;
+      avgRevenue: number;
+    };
     chart?: {
       labels?: string[];
       values?: number[];
@@ -265,6 +288,21 @@ const normalizeTopCourier = (value: unknown): TopCourier => {
   };
 };
 
+const normalizeTopOperator = (value: unknown): TopOperator => {
+  const metrics = normalizePerformerMetrics(value);
+  return {
+    operator_id: String(
+      metrics.item.operator_id ?? metrics.item.operatorId ?? metrics.item.id ?? "",
+    ),
+    operator_name: String(
+      metrics.item.operator_name ?? metrics.item.operatorName ?? metrics.item.name ?? "",
+    ) || null,
+    total_orders: metrics.total_orders,
+    successful_orders: metrics.successful_orders,
+    success_rate: metrics.success_rate,
+  };
+};
+
 const normalizeTopBranch = (value: unknown): TopBranch => {
   const metrics = normalizePerformerMetrics(value);
   return {
@@ -354,8 +392,10 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
   const response = asRecord(payload);
   const data = asRecord(response.data);
   const orders = getDashboardOrdersRecord(data);
+  const myStat = asRecord(data.myStat ?? data.my_stat);
   const topMarkets = data.topMarkets ?? data.top_markets;
   const topCouriers = data.topCouriers ?? data.top_couriers;
+  const topOperators = data.topOperators ?? data.top_operators;
   const topBranches = data.topBranches ?? data.top_branches;
   const branchDashboard = data.branchDashboard ?? data.branch_dashboard;
 
@@ -364,6 +404,15 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
     message: String(response.message ?? ""),
     data: {
       ...data,
+      myStat: Object.keys(myStat).length
+        ? {
+            totalOrders: toNumber(myStat.totalOrders ?? myStat.total_orders),
+            soldOrders: toNumber(myStat.soldOrders ?? myStat.sold_orders),
+            canceledOrders: toNumber(myStat.canceledOrders ?? myStat.canceled_orders),
+            profit: toNumber(myStat.profit),
+            successRate: toNumber(myStat.successRate ?? myStat.success_rate),
+          }
+        : undefined,
       orders: {
         acceptedCount: toNumber(
           firstDefined(
@@ -449,6 +498,9 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
       topCouriers: Array.isArray(topCouriers)
         ? topCouriers.map(normalizeTopCourier)
         : [],
+      topOperators: Array.isArray(topOperators)
+        ? topOperators.map(normalizeTopOperator)
+        : [],
       topBranches: Array.isArray(topBranches)
         ? topBranches.map(normalizeTopBranch)
         : [],
@@ -482,6 +534,7 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
   const response = asRecord(payload);
   const data = asRecord(response.data);
   const chart = asRecord(data.chart);
+  const summary = asRecord(data.summary);
   const finance = asRecord(data.finance);
   const main = asRecord(finance.main);
   const markets = asRecord(finance.markets);
@@ -493,6 +546,13 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
     message: String(response.message ?? ""),
     data: {
       ...data,
+      summary: Object.keys(summary).length
+        ? {
+            totalRevenue: toNumber(summary.totalRevenue ?? summary.total_revenue),
+            totalOrders: toNumber(summary.totalOrders ?? summary.total_orders),
+            avgRevenue: toNumber(summary.avgRevenue ?? summary.avg_revenue),
+          }
+        : undefined,
       chart: {
         labels: Array.isArray(chart.labels) ? chart.labels.map(String) : [],
         values: Array.isArray(chart.values) ? chart.values.map(toNumber) : [],

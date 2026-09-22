@@ -27,6 +27,7 @@
   "page_title_all": "Overall statistics",
   "page_subtitle_all": "Metrics for all time",
   "load_error": "Dashboard data could not be loaded.",
+  "courier_stats_unavailable": "Courier statistics are currently unavailable.",
   "quickRanges": {
     "today": "Today",
     "week": "This week",
@@ -64,6 +65,7 @@
     "in_progress": "In progress",
     "in_progress_hint": "Orders still on the way, not yet delivered",
     "profit": "Net profit",
+    "courier_profit": "Profit",
     "total_revenue": "Total revenue",
     "total_revenue_hint": "Value of all sold orders",
     "profit_hint": "Market tariff − courier tariff (sold only)",
@@ -79,9 +81,12 @@
   },
   "top": {
     "markets_title": "Top markets",
-    "couriers_title": "Top branches",
+    "couriers_title": "Top couriers",
     "branches_title": "Top branches",
-    "empty": "Not enough data (min 30 orders required)"
+    "operators_title": "Top operators",
+    "you": "You",
+    "limited": "Data is still limited — rankings may change.",
+    "empty": "Data is still limited (at least 30 orders are needed for rankings)."
   },
   "region": {
     "title": "By region",
@@ -126,6 +131,16 @@
   "financial_analysis": {
     "title": "Financial analysis",
     "subtitle": "Period analysis"
+  },
+  "comparison": {
+    "toggle": "Compare",
+    "current": "Current period",
+    "previous": "Previous period",
+    "total_revenue": "Total revenue",
+    "total_orders": "Orders",
+    "avg_revenue": "Average period revenue",
+    "load_error": "Could not load the previous period.",
+    "loading": "Loading..."
   },
   "financial_cards": {
     "today_revenue": {

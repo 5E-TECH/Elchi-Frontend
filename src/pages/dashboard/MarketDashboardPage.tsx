@@ -8,7 +8,6 @@ import {
   ShoppingBag,
   XCircle,
   TrendingUp,
-  Package,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,9 +24,7 @@ import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import {
-  formatCompactMoney,
   formatNumber,
-  formatPercent,
   ratio,
 } from "../../shared/config/designSystem";
 
@@ -43,6 +40,7 @@ const MarketDashboardPage = () => {
   const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
   const user = useSelector((state: RootState) => state.user.user);
   const role = useSelector((state: RootState) => state.role.role);
+  const roleId = useSelector((state: RootState) => state.role.id);
 
   // ─── Sana filtri holati ───────────────────────────────────────────────────────
   const [fromDate, setFromDate] = useState(
@@ -88,15 +86,16 @@ const MarketDashboardPage = () => {
 
   // ─── Hisoblangan qiymatlar ────────────────────────────────────────────────────
   const orders = data?.data?.orders;
+  const myStat = data?.data?.myStat;
 
-  const accepted = orders?.acceptedCount ?? 0;
-  const sold = orders?.soldAndPaid ?? 0;
-  const cancelled = orders?.cancelled ?? 0;
-  const profit = orders?.profit ?? 0;
+  const accepted = myStat?.totalOrders ?? orders?.acceptedCount ?? 0;
+  const sold = myStat?.soldOrders ?? orders?.soldAndPaid ?? 0;
+  const cancelled = myStat?.canceledOrders ?? orders?.cancelled ?? 0;
+  const profit = myStat?.profit ?? orders?.profit ?? 0;
   const topMarkets = data?.data?.topMarkets ?? [];
+  const topOperators = data?.data?.topOperators ?? [];
 
-  const inProgress = orders?.inProgress ?? Math.max(0, accepted - sold - cancelled);
-  const successRate = ratio(sold, accepted);
+  const successRate = myStat?.successRate ?? ratio(sold, accepted);
 
   // ─── Market add_order ruxsati ─────────────────────────────────────────────────
   const canAddOrder = Boolean((user as Record<string, unknown> | null)?.add_order);
@@ -215,7 +214,6 @@ const MarketDashboardPage = () => {
             accepted={accepted}
             sold={sold}
             cancelled={cancelled}
-            inProgress={inProgress}
             profit={profit}
             successRate={successRate}
             loading={isDataLoading}
@@ -226,7 +224,11 @@ const MarketDashboardPage = () => {
 
       {!dashboardError && !isDataLoading && (
         <div className="mb-5">
-          <TopPerformers markets={topMarkets} />
+          <TopPerformers
+            markets={topMarkets}
+            operators={topOperators.length ? topOperators : undefined}
+            currentUserId={user?.id ?? roleId}
+          />
         </div>
       )}
 
@@ -387,7 +389,6 @@ interface MarketStatsGridProps {
   accepted: number;
   sold: number;
   cancelled: number;
-  inProgress: number;
   profit: number;
   successRate: number;
   loading: boolean;
@@ -399,7 +400,6 @@ const MarketStatsGrid = memo(
     accepted,
     sold,
     cancelled,
-    inProgress,
     profit,
     successRate,
     loading,
@@ -407,8 +407,8 @@ const MarketStatsGrid = memo(
   }: MarketStatsGridProps) => {
     if (loading) {
       return (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 5 }).map((_, i) => (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
             <MetricCardSkeleton key={i} />
           ))}
         </div>
@@ -417,63 +417,39 @@ const MarketStatsGrid = memo(
 
     const profitTone = profit < 0 ? "danger" : ("success" as const);
     return (
-      <div className="space-y-4">
-        {/* Asosiy statistika */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {/* Jami qabul qilingan */}
-          <div className="col-span-2 md:col-span-1">
-            <MetricCard
-              title={t("cards.accepted")}
-              value={formatNumber(accepted)}
-              suffix={t("unit.orders")}
-              icon={<ShoppingBag size={20} />}
-              tone="brand"
-              hint={t("cards.accepted_hint")}
-            />
-          </div>
-
-          {/* Sotilgan */}
-          <MetricCard
-            title={t("cards.sold")}
-            value={formatNumber(sold)}
-            suffix={t("unit.orders")}
-            icon={<TrendingUp size={20} />}
-            tone="success"
-            badge={formatPercent(successRate)}
-            badgeUp={successRate > 50}
-          />
-
-          {/* Bekor qilingan */}
-          <MetricCard
-            title={t("cards.cancelled")}
-            value={formatNumber(cancelled)}
-            suffix={t("unit.orders")}
-            icon={<XCircle size={20} />}
-            tone="danger"
-          />
-
-          {/* Jarayonda */}
-          <MetricCard
-            title={t("cards.in_progress")}
-            value={formatNumber(inProgress)}
-            suffix={t("unit.orders")}
-            icon={<Package size={20} />}
-            tone="warning"
-            hint={t("cards.in_progress_hint")}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            title={t("cards.profit")}
-            value={formatCompactMoney(profit)}
-            suffix={t("currency_sum")}
-            icon={<TrendingUp size={20} />}
-            tone={profitTone}
-            compact
-            hint={t("cards.profit_hint")}
-          />
-        </div>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4" data-testid="market-stats-grid">
+        <MetricCard
+          title={t("cards.total_orders")}
+          value={formatNumber(accepted)}
+          suffix={t("unit.orders")}
+          icon={<ShoppingBag size={20} />}
+          tone="brand"
+        />
+        <MetricCard
+          title={t("cards.sold")}
+          value={formatNumber(sold)}
+          suffix={t("unit.orders")}
+          icon={<TrendingUp size={20} />}
+          tone="success"
+          badge={`${successRate}%`}
+          badgeUp={successRate > 50}
+        />
+        <MetricCard
+          title={t("cards.cancelled")}
+          value={formatNumber(cancelled)}
+          suffix={t("unit.orders")}
+          icon={<XCircle size={20} />}
+          tone="danger"
+        />
+        <MetricCard
+          title={t("cards.profit")}
+          value={new Intl.NumberFormat("uz-UZ", { maximumFractionDigits: 20 }).format(profit)}
+          suffix={t("currency_sum")}
+          icon={<TrendingUp size={20} />}
+          tone={profitTone}
+          compact
+          hint={t("cards.profit_hint")}
+        />
       </div>
     );
   },
