@@ -1,9 +1,19 @@
 import type { ReactNode } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useLocation } from "react-router-dom";
 import { vi } from "vitest";
 import ProductTable from "./index";
 import { renderWithProviders } from "../../../test/test-utils";
+
+/**
+ * `MemoryRouter` brauzer manzilini o'zgartirmaydi — URL holati router'ning
+ * o'zidan (`useLocation`) o'qiladi (integrations/tabUrl.test.tsx patterni).
+ */
+const LocationProbe = () => {
+  const { search } = useLocation();
+  return <span data-testid="search">{search}</span>;
+};
 
 const navigateMock = vi.fn();
 const deleteMutateMock = vi.fn();
@@ -229,6 +239,27 @@ describe("ProductTable", () => {
         expect.objectContaining({ search: "test", page: 3 }),
         expect.any(Boolean),
       );
+    });
+  });
+
+  it("writes the selected market filter to the URL immediately, so a refresh keeps it", async () => {
+    // jsdom does not implement scrollIntoView; SearchableSelect calls it when
+    // its dropdown opens. Pre-existing gap, unrelated to this fix.
+    Element.prototype.scrollIntoView = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ProductTable />
+        <LocationProbe />
+      </>,
+      { route: "/products", preloadedState: { role: adminRoleState } },
+    );
+
+    await user.click(document.getElementById("market_id")!);
+    await user.click(await screen.findByRole("button", { name: "Fresh" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("search").textContent).toContain("market_id=1");
     });
   });
 });

@@ -332,11 +332,16 @@ const ProductTable = () => {
     }
   }, [dispatch, filterValue, marketIdFromUrl, searchFromUrl, searchValue, setFilterValue]);
 
-  useEffect(() => {
-    if (!isUrlHydratedRef.current) return;
-    if (filterValue === marketIdFromUrl) return;
-    setParam("market_id", filterValue);
-  }, [filterValue, marketIdFromUrl, setParam]);
+  // Foydalanuvchi marketni tanlaganda react-hook-form holati bilan BIRGA
+  // URL ham sinxron yoziladi (UserFilters.tsx dagi patternga o'xshash).
+  // ATAYLAB reaktiv "write-back effect" ishlatilmadi — u yuqoridagi
+  // hydratsiya effekti bilan poyga holatiga tushib, foydalanuvchi hali
+  // URL'ga yozilmagan yangi tanlovini eski URL qiymati bilan qayta
+  // ustidan yozib yuborardi (payments/index.tsx da xuddi shu xato topilib
+  // tuzatilgan edi — bu yerda ham bir xil sabab bilan tuzatildi).
+  const handleMarketFilterChange = (value: string) => {
+    setParam("market_id", value);
+  };
 
   const apiParams = useMemo(() => {
     const params: Record<string, string | number> = { page, limit };
@@ -649,7 +654,10 @@ const ProductTable = () => {
                   label={t("marketName")}
                   name={field.name}
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    handleMarketFilterChange(value);
+                  }}
                   options={marketOptions}
                   placeholder={t("selectMarket")}
                   icon={Store}

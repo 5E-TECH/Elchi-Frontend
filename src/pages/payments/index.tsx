@@ -258,7 +258,6 @@ const Payments = () => {
     }),
     [cashboxType, createdBy, operationType, sourceType],
   );
-  const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
 
   const { getAllParams, setMultipleParams } = useQueryParams();
   const allParams = getAllParams();
@@ -272,26 +271,26 @@ const Payments = () => {
     [allParams.cashbox_type, allParams.created_by, allParams.operation_type, allParams.source_type],
   );
   const filtersFromUrlKey = useMemo(() => JSON.stringify(filtersFromUrl), [filtersFromUrl]);
-  // Sahifa yangilanganda (F5) react-hook-form holati INIT'ga qaytadi, lekin
-  // URL o'zgarmaydi — shu sabab quyidagi effekt filtrlarni URL'dan qayta
-  // tiklaydi (aks holda sahifa raqami saqlanadi-yu, filtr yo'qoladi va
-  // butunlay boshqa ma'lumotlar to'plami ko'rsatiladi).
-  const isUrlHydratedRef = useRef(false);
+  // Sahifa yuklanganda (F5) yoki brauzer orqaga/oldinga navigatsiyasida
+  // react-hook-form'ni URL'dan tiklaydi. ATAYLAB faqat URL o'zgarganda
+  // ishlaydi (react-hook-form holatini solishtirmaydi!) — chunki
+  // reset(INIT) (pastdagi "Tozalash" tugmasi) va setMultipleParams bir xil
+  // click'da chaqirilsa-da, ikkalasi HAR DOIM bitta React render'da birga
+  // yakunlanishiga kafolat yo'q (reset() ba'zan bir render kech qoladi).
+  // Agar bu effekt "filtrlar URL bilan mos kelmasa tiklash" mantig'iga
+  // asoslansa, o'sha bir renderlik kechikish paytida hali eski URL'ga mos
+  // "reset(eski qiymat)" chaqirilib, foydalanuvchining "Tozalash" bosishini
+  // bekor qilib yuborardi — aynan shu xato jonli serverda topilib tuzatildi.
+  const lastSyncedUrlKeyRef = useRef<string | null>(null);
 
-  // Foydalanuvchi filtrni o'zgartirganda (pastdagi FilterSelect onChange)
-  // Redux/react-hook-form holati bilan BIRGA URL ham yoziladi (sinxron), shu
-  // sabab bu effekt faqat "URL formadan boshqacha" holatlarni — sahifa
-  // yuklanishi yoki orqaga/oldinga navigatsiya — ko'radi va filtrlarni
-  // URL'dan qayta tiklaydi.
   useEffect(() => {
-    if (filtersKey === filtersFromUrlKey) {
-      isUrlHydratedRef.current = true;
+    if (lastSyncedUrlKeyRef.current === filtersFromUrlKey) {
       return;
     }
 
-    isUrlHydratedRef.current = false;
+    lastSyncedUrlKeyRef.current = filtersFromUrlKey;
     reset(filtersFromUrl);
-  }, [filtersFromUrl, filtersFromUrlKey, filtersKey, reset]);
+  }, [filtersFromUrl, filtersFromUrlKey, reset]);
 
   const handleFilterChange = (name: DropdownKey, value: string) => {
     setMultipleParams({ [name]: value });
@@ -561,37 +560,36 @@ const Payments = () => {
     ],
   };
 
+  // API so'rovi va pagination-reset URL'dan (filtersFromUrl) olinadi, react-
+  // hook-form'dan (filters) EMAS — forma faqat UI boshqaruvlarini
+  // ko'rsatish uchun. Ikkalasi (forma va URL) bitta React render'da birga
+  // yangilanishiga kafolat yo'q edi (reset() vs setMultipleParams), shu
+  // sabab avval shu joyda "sahifa raqami noto'g'ri 1 ga qaytarilishi"
+  // xatosi bo'lgan — endi yagona manba URL bo'lgani uchun bunday poyga
+  // umuman yo'q.
   const queryParams = useMemo(() => {
     const params: Record<string, string | number> = { page, limit };
-    (Object.entries(filters) as [keyof typeof INIT, string][]).forEach(
+    (Object.entries(filtersFromUrl) as [keyof typeof INIT, string][]).forEach(
       ([key, value]) => {
         if (value) params[key] = value;
       },
     );
     return params;
-  }, [page, limit, filters]);
+  }, [page, limit, filtersFromUrl]);
 
   useEffect(() => {
-    // URL'dan hydratsiya tugamaguncha kutamiz — aks holda F5 dan keyin
-    // filtrlar URL'dan tiklanayotgani "foydalanuvchi filtrni o'zgartirdi"
-    // deb noto'g'ri talqin qilinib, saqlanib qolgan sahifa raqami (masalan
-    // paymentsPage=4) 1 ga qaytarib yuboriladi.
-    if (!isUrlHydratedRef.current) {
-      return;
-    }
-
     if (!previousFiltersKeyRef.current) {
-      previousFiltersKeyRef.current = filtersKey;
+      previousFiltersKeyRef.current = filtersFromUrlKey;
       return;
     }
 
-    if (previousFiltersKeyRef.current === filtersKey) {
+    if (previousFiltersKeyRef.current === filtersFromUrlKey) {
       return;
     }
 
-    previousFiltersKeyRef.current = filtersKey;
+    previousFiltersKeyRef.current = filtersFromUrlKey;
     resetPagination(limit);
-  }, [filtersKey, limit, resetPagination]);
+  }, [filtersFromUrlKey, limit, resetPagination]);
 
   const { data: historyData, isLoading: historyLoading } =
     useGetFinanceHistory(queryParams);
@@ -730,8 +728,16 @@ const Payments = () => {
             <FilterClearButton
               onClick={() => {
                 reset(INIT);
-                setMultipleParams(INIT);
-                resetPagination(limit);
+                // Filtr va sahifa raqami BITTA setMultipleParams chaqiruvida
+                // birga yoziladi. Alohida resetPagination() chaqirish shu
+                // yerda XATO edi: ikkalasi ham mustaqil useSearchParams
+                // yangilanishi bo'lib, ikkinchisi ("resetPagination")
+                // o'zining eski (hali filtrsiz tozalanmagan) `prev` asosida
+                // yangi URL yasab, birinchisi ("setMultipleParams")ning
+                // filtrni o'chirishini bosib yuborardi — jonli serverda
+                // "Tozalash" tugmasi filtrni URL'dan olib tashlamasligi
+                // shu sabab bo'lgan.
+                setMultipleParams({ ...INIT, paymentsPage: "1" });
               }}
             />
           </div>
