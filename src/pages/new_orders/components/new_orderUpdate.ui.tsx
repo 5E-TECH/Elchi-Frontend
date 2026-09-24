@@ -1,6 +1,6 @@
-import { memo, type ReactNode } from "react";
+import { memo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Edit2, LockKeyhole, type LucideIcon } from "lucide-react";
+import { ChevronDown, Edit2, LockKeyhole, MessageSquare, type LucideIcon } from "lucide-react";
 
 // Presentational subcomponents extracted from new_orderUpdate.tsx. Pure (props →
 // JSX, memoized); no coupling to the page's state.
@@ -104,6 +104,47 @@ export const LockNotice = memo(({ children }: { children: string }) => (
     <span>{children}</span>
   </div>
 ));
+
+// Buyurtma izohi (comment) — avval faqat tahrirlash popupi ichida ko'rinardi,
+// ba'zi statuslarda esa popup qulflangani uchun umuman ko'rinmasdi. Endi
+// detal sahifaning o'zida doim ko'rinadi (BeePostdagi kabi).
+export const OrderCommentCard = memo(({ comment }: { comment: string }) => {
+  const { t } = useTranslation(["orders", "common"]);
+  const [expanded, setExpanded] = useState(false);
+  // 3 qatordan yoki ~220 belgidan uzun bo'lsa qisqartiriladi (Tailwind
+  // line-clamp-3 klass nomi statik yozilishi kerak — JIT dinamik nomni
+  // skanerlay olmaydi).
+  const isLong = comment.split("\n").length > 3 || comment.length > 220;
+
+  return (
+    <div className="flex items-start gap-2.5 rounded-xl border border-amber-300/60 bg-amber-50 px-3.5 py-3 dark:border-amber-400/25 dark:bg-amber-400/10">
+      <div className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-300">
+        <MessageSquare size={15} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-200">
+          {t("note", { ns: "orders" })}
+        </p>
+        <p
+          className={`mt-1 whitespace-pre-line break-words text-sm font-semibold text-amber-900 dark:text-amber-100 ${
+            !expanded && isLong ? "line-clamp-3" : ""
+          }`}
+        >
+          {comment}
+        </p>
+        {isLong && (
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="mt-1.5 text-xs font-bold text-amber-700 underline decoration-amber-400 underline-offset-2 dark:text-amber-200"
+          >
+            {expanded ? t("hide", { ns: "common" }) : t("showMore", { ns: "common" })}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});
 
 export const Skeleton = memo(() => (
   <div className="animate-pulse space-y-4">

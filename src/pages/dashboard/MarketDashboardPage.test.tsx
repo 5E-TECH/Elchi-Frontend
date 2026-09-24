@@ -14,6 +14,18 @@ vi.mock("../../entities/dashboard", () => ({
   }),
 }));
 
+vi.mock("../../widgets/dashboard-performance-chart/ui/PerformanceChart", () => ({
+  // `couriers === undefined` is the signal that the couriers section is
+  // intentionally omitted for the market role (not relevant to a market user).
+  default: (props: { markets?: unknown[]; couriers?: unknown[] }) => (
+    <div
+      data-testid="performance-chart"
+      data-markets-count={props.markets?.length ?? -1}
+      data-couriers-count={props.couriers === undefined ? "undefined" : props.couriers.length}
+    />
+  ),
+}));
+
 // Shared fixture builder — tests that need a modified variant (e.g. empty
 // topOperators) clone a FRESH call of this instead of reading the mock's
 // return value back (vi.fn().mockReturnValue() has no recorded
@@ -146,5 +158,17 @@ describe("MarketDashboardPage", () => {
     // now-absent operators card — only one leaderboard is showing.
     const marketsCard = screen.getByRole("list", { name: "Top marketlar" }).closest("section");
     expect(marketsCard?.parentElement).not.toHaveClass("md:grid-cols-2");
+  });
+
+  it("shows the markets-only performance chart (no couriers section for the market role)", () => {
+    renderWithProviders(<MarketDashboardPage />, {
+      preloadedState: {
+        role: { id: "market-1", role: "market", region: null, name: "Market" },
+      },
+    });
+
+    const chart = screen.getByTestId("performance-chart");
+    expect(chart).toHaveAttribute("data-markets-count", "1");
+    expect(chart).toHaveAttribute("data-couriers-count", "undefined");
   });
 });

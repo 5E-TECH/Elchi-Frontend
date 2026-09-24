@@ -28,6 +28,7 @@ import {
   InfoRow,
   EditBtn,
   LockNotice,
+  OrderCommentCard,
   Skeleton,
   SelectField,
   InputField,
@@ -891,6 +892,7 @@ const NewOrderUpdate = () => {
                     {t(DELIVER_LABELS[order.where_deliver] ?? "deliverAddress")}
                   </span>
                 </div>
+                {order.comment && <OrderCommentCard comment={order.comment} />}
               </div>
             </Card>
 

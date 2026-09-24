@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import ProductTable from "./index";
@@ -95,16 +95,22 @@ vi.mock("../../../shared/components/popupUpdate", () => ({
   }) => (isOpen ? <div><div>{title}</div>{children}</div> : null),
 }));
 
+const getProductsMock = vi.fn((params: unknown, enabled: unknown) => {
+  void params;
+  void enabled;
+  return {
+    data: {
+      data: [{ id: 1, name: "Olma", market: { id: 1, name: "Fresh" } }],
+      total: 1,
+    },
+    isLoading: false,
+    isFetching: false,
+  };
+});
+
 vi.mock("../../../entities/product", () => ({
   useProducts: () => ({
-    useGetProducts: () => ({
-      data: {
-        data: [{ id: 1, name: "Olma", market: { id: 1, name: "Fresh" } }],
-        total: 1,
-      },
-      isLoading: false,
-      isFetching: false,
-    }),
+    useGetProducts: (params: unknown, enabled: unknown) => getProductsMock(params, enabled),
     useGetMyProducts: () => ({
       data: { data: [] },
       isLoading: false,
@@ -143,8 +149,9 @@ vi.mock("../../../features/search", () => ({
 }));
 
 describe("ProductTable", () => {
-  const renderProductTable = () =>
+  const renderProductTable = (route = "/products") =>
     renderWithProviders(<ProductTable />, {
+      route,
       preloadedState: { role: adminRoleState },
     });
 
@@ -152,6 +159,7 @@ describe("ProductTable", () => {
     navigateMock.mockReset();
     deleteMutateMock.mockReset();
     updateMutateAsyncMock.mockReset();
+    getProductsMock.mockClear();
   });
 
   it("renders product page header and count", () => {
@@ -189,5 +197,38 @@ describe("ProductTable", () => {
 
     expect(screen.getByText("Mahsulotni tahrirlash")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Olma")).toBeInTheDocument();
+  });
+
+  it("restores the search filter from the URL after a refresh, instead of showing an unfiltered list", async () => {
+    renderProductTable("/products?product_search=test");
+
+    await waitFor(() => {
+      expect(getProductsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ search: "test" }),
+        expect.any(Boolean),
+      );
+    });
+  });
+
+  it("restores the market filter from the URL after a refresh", async () => {
+    renderProductTable("/products?market_id=1");
+
+    await waitFor(() => {
+      expect(getProductsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ market_id: "1" }),
+        expect.any(Boolean),
+      );
+    });
+  });
+
+  it("does not reset back to page 1 while restoring search/filter state from the URL", async () => {
+    renderProductTable("/products?product_search=test&page=3");
+
+    await waitFor(() => {
+      expect(getProductsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ search: "test", page: 3 }),
+        expect.any(Boolean),
+      );
+    });
   });
 });
