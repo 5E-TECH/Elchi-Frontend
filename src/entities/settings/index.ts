@@ -22,6 +22,7 @@ export const DASHBOARD_WIDGET_IDS = [
   "topPerformers",
   "financial",
   "region",
+  "performanceChart",
 ] as const;
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGET_IDS)[number];
 
@@ -63,6 +64,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
       topPerformers: true,
       financial: true,
       region: true,
+      performanceChart: true,
     },
   },
   interface: { sidebarOpen: true },

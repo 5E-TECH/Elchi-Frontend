@@ -21,8 +21,12 @@ export const Table = memo(<T extends object>({
   bordered = true,
   hoverable = true,
   preserveTableOnDesktop = false,
+  sortConfig: controlledSortConfig,
+  onSortChange,
+  sortLabel = 'Saralash:',
 }: TableProps<T>) => {
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [internalSortConfig, setInternalSortConfig] = useState<SortConfig | null>(null);
+  const sortConfig = controlledSortConfig !== undefined ? controlledSortConfig : internalSortConfig;
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [viewportWidth, setViewportWidth] = useState<number>(
@@ -147,15 +151,24 @@ export const Table = memo(<T extends object>({
     if (!column.sortable) return;
 
     const key = String(column.key);
-    setSortConfig((prev) => {
-      if (prev?.key === key) {
-        return prev.direction === 'asc'
+    const next: SortConfig | null =
+      sortConfig?.key === key
+        ? sortConfig.direction === 'asc'
           ? { key, direction: 'desc' }
-          : null;
-      }
-      return { key, direction: 'asc' };
-    });
+          : null
+        : { key, direction: 'asc' };
+
+    if (onSortChange) {
+      onSortChange(next);
+    } else {
+      setInternalSortConfig(next);
+    }
   };
+
+  const sortableColumns = useMemo(
+    () => columns.filter((column) => column.sortable && !column.hideOnMobile),
+    [columns],
+  );
 
   const getLabelText = (value: unknown) => {
     if (typeof value === "string") return value;
@@ -172,6 +185,32 @@ export const Table = memo(<T extends object>({
       ref={wrapperRef}
       className={`min-w-0 overflow-hidden rounded-xl bg-primary shadow-sm sm:rounded-2xl dark:bg-white/[0.025] ${bordered ? 'border border-[color:var(--color-border-strong)] dark:border-white/10' : ''}`}
     >
+      {isCardMode && sortableColumns.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto border-b border-[color:var(--color-border-strong)] px-2 py-2 custom-scrollbar dark:border-primarydark/40">
+          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-maindark/50 dark:text-sidebar/50">
+            {sortLabel}
+          </span>
+          {sortableColumns.map((column) => {
+            const key = String(column.key);
+            const isActive = sortConfig?.key === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleSort(column)}
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                  isActive
+                    ? 'border-main bg-main text-white'
+                    : 'border-[color:var(--color-border-strong)] text-maindark/70 dark:border-primarydark/40 dark:text-sidebar/70'
+                }`}
+              >
+                <span>{column.label}</span>
+                {isActive && <span>{sortConfig!.direction === 'asc' ? '↑' : '↓'}</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
       <div className={`${isCardMode ? "overflow-visible" : "overflow-x-auto"} custom-scrollbar`}>
         <table className={`w-full min-w-full border-collapse ${isCompactMode ? 'table-fixed' : ''} ${className}`}>
           <thead className={isCardMode ? 'hidden' : 'table-header-group'}>

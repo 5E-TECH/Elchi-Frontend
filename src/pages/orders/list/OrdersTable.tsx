@@ -11,6 +11,7 @@ import {
     CheckCircle,
     XCircle,
     RotateCcw,
+    Copy,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -18,10 +19,28 @@ import { Table } from "../../../shared/components/Table/Table";
 import EmptyState from "../../../shared/ui/EmptyState";
 import TableSkeleton from "../../../shared/ui/TableSkeleton";
 import OrderStatusBadge from "./OrderStatusBadge";
-import type { OrderListItem } from "../../../entities/order/types/order";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import type { OrderListItem, OrderStatus } from "../../../entities/order/types/order";
 import type { RootState } from "../../../app/config/store";
+import type { SortConfig } from "../../../shared/components/Table/Table.types";
 
 const EMPTY_SELECTED_IDS = new Set<string>();
+
+// Buyurtma hayot siklidagi tabiiy tartib — "Holat" ustunini saralashda
+// alifbo bo'yicha emas, shu ketma-ketlik bo'yicha solishtirish uchun.
+const ORDER_STATUS_RANK: Record<OrderStatus, number> = {
+    created: 0,
+    new: 1,
+    received: 2,
+    "on the road": 3,
+    waiting: 4,
+    sold: 5,
+    paid: 6,
+    partly_paid: 7,
+    closed: 8,
+    cancelled: 9,
+    "cancelled (sent)": 10,
+};
 
 interface Props {
     data: OrderListItem[];
@@ -38,6 +57,8 @@ interface Props {
     selectedIds?: Set<string>;
     onSelectChange?: (id: string, checked: boolean) => void;
     onSelectAll?: (checked: boolean) => void;
+    sortConfig?: SortConfig | null;
+    onSortChange?: (config: SortConfig | null) => void;
 }
 
 const formatPhoneNumber = (phone: string | null | undefined) => {
@@ -102,6 +123,32 @@ const ActionButton = ({
     );
 };
 
+const OrderIdBadge = ({
+    id,
+    label,
+    onCopy,
+    className = "",
+}: {
+    id: string;
+    label: string;
+    onCopy: (id: string) => void;
+    className?: string;
+}) => (
+    <button
+        type="button"
+        title={label}
+        aria-label={label}
+        onClick={(event) => {
+            event.stopPropagation();
+            onCopy(id);
+        }}
+        className={`inline-flex items-center gap-1 text-xs font-mono font-semibold text-gray-400 transition-colors hover:text-main ${className}`}
+    >
+        <span>№{id}</span>
+        <Copy size={11} className="shrink-0" />
+    </button>
+);
+
 const formatDate = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString("uz-UZ", {
@@ -113,7 +160,12 @@ const formatDate = (iso: string) => {
     });
 };
 
-const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => string) => [
+const createColumns = (
+    rowNumberOffset: number,
+    formatPrice: (num: number) => string,
+    onCopyId: (id: string) => void,
+    copyLabel: string,
+) => [
     {
         key: "id" as const,
         label: "#",
@@ -127,7 +179,7 @@ const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => st
         label: "Mijoz",
         sortable: true as const,
         sortValue: (row: OrderListItem) => row.customer?.name?.trim().toLocaleLowerCase() ?? "",
-        render: (customer: OrderListItem["customer"]) => (
+        render: (customer: OrderListItem["customer"], row: OrderListItem) => (
             <div className="min-w-0">
                 <p className="text-sm font-semibold text-maindark dark:text-primary truncate">
                     {customer?.name ?? "—"}
@@ -135,6 +187,7 @@ const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => st
                 <p className="text-xs text-gray-400 font-mono">
                     {formatPhoneNumber(customer?.phone_number)}
                 </p>
+                <OrderIdBadge id={row.id} label={copyLabel} onCopy={onCopyId} className="mt-0.5" />
             </div>
         ),
     },
@@ -172,6 +225,8 @@ const createColumns = (rowNumberOffset: number, formatPrice: (num: number) => st
     {
         key: "status" as const,
         label: "Holat",
+        sortable: true as const,
+        sortValue: (row: OrderListItem) => ORDER_STATUS_RANK[row.status] ?? 99,
         render: (status: OrderListItem["status"]) => (
             <OrderStatusBadge status={status} />
         ),
@@ -234,13 +289,23 @@ const OrdersTable = ({
     selectedIds = EMPTY_SELECTED_IDS,
     onSelectChange,
     onSelectAll,
+    sortConfig,
+    onSortChange,
 }: Props) => {
     const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
+    const { api } = useAppNotification();
     const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
     const formatPrice = useCallback(
         (num: number) => `${(num ?? 0).toLocaleString(locale)} ${t("currency")}`,
         [locale, t],
+    );
+    const handleCopyOrderId = useCallback(
+        (id: string) => {
+            void navigator.clipboard?.writeText(id);
+            api.success({ message: t("orderNumberCopied"), placement: "topRight" });
+        },
+        [api, t],
     );
     const selectableOrders = useMemo(
         () => data.filter((order) => isSelectable?.(order)),
@@ -250,7 +315,7 @@ const OrdersTable = ({
         selectableOrders.length > 0 && selectableOrders.every((order) => selectedIds.has(order.id));
     const someSelected = selectableOrders.some((order) => selectedIds.has(order.id));
     const tableColumns = useMemo(() => {
-        const translatedColumns = createColumns(rowNumberOffset, formatPrice).map((column) => {
+        const translatedColumns = createColumns(rowNumberOffset, formatPrice, handleCopyOrderId, t("copyOrderNumber")).map((column) => {
             if (column.key === "customer") return { ...column, label: t("customer") };
             if (column.key === "district") return { ...column, label: t("filterRegion") + " / " + t("district") };
             if (column.key === "market") return { ...column, label: t("market") };
@@ -374,6 +439,7 @@ const OrdersTable = ({
         canUseOrderActions,
         allSelected,
         formatPrice,
+        handleCopyOrderId,
         isOrderActionPending,
         isSelectable,
         onCancelOrder,
@@ -416,7 +482,7 @@ const OrdersTable = ({
         );
     }
 
-    const renderMobileCard = (order: OrderListItem, index: number) => (
+    const renderMobileCard = (order: OrderListItem) => (
         <div className={`rounded-xl border bg-white p-4 shadow-sm transition-transform active:scale-[0.98] dark:bg-primarydark/70 ${
             selectedIds.has(order.id)
                 ? "border-red-400/60 ring-1 ring-red-400/30 dark:border-red-400/60"
@@ -436,7 +502,7 @@ const OrdersTable = ({
                     ) : null}
                     <OrderStatusBadge status={order.status} />
                 </div>
-                <span className="text-xs text-gray-400">#{rowNumberOffset + index + 1}</span>
+                <OrderIdBadge id={order.id} label={t("copyOrderNumber")} onCopy={handleCopyOrderId} />
             </div>
 
             <div className="mb-3 flex items-center gap-3">
@@ -552,6 +618,9 @@ const OrdersTable = ({
             loading={false}
             onRowClick={onRowClick}
             mobileRowRender={renderMobileCard}
+            sortConfig={sortConfig}
+            onSortChange={onSortChange}
+            sortLabel={t("sortLabel")}
             striped
             hoverable
             bordered

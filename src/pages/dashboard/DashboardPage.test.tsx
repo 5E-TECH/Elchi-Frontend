@@ -56,6 +56,18 @@ vi.mock("../../widgets/dashboard-region/ui/RegionStatsCard", () => ({
   default: () => <div data-testid="region-stats" />,
 }));
 
+vi.mock("../../widgets/dashboard-performance-chart/ui/PerformanceChart", () => ({
+  // `couriers === undefined` (as opposed to `[]`) is the signal the market
+  // role uses to hide the couriers section entirely — surface that distinction.
+  default: (props: { markets?: unknown[]; couriers?: unknown[] }) => (
+    <div
+      data-testid="performance-chart"
+      data-markets-count={props.markets?.length ?? -1}
+      data-couriers-count={props.couriers === undefined ? "undefined" : props.couriers.length}
+    />
+  ),
+}));
+
 vi.mock("../../shared/ui/DateRangePicker", () => ({
   default: ({
     value,
@@ -110,6 +122,15 @@ const operatorState = {
     role: "operator",
     region: null,
     name: "Operator",
+  },
+} as never;
+
+const marketState = {
+  role: {
+    id: "market-1",
+    role: "market",
+    region: null,
+    name: "Market",
   },
 } as never;
 
@@ -212,6 +233,71 @@ describe("DashboardPage", () => {
     expect(screen.getByTestId("top-performers")).toBeInTheDocument();
     expect(screen.getByTestId("top-market-name")).toHaveTextContent("Chilonzor filiali");
     expect(screen.getByTestId("top-branch-name")).toHaveTextContent("Yunusobod filiali");
+  });
+
+  it("wires both markets and couriers into the performance chart for admins", () => {
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          orders: {
+            acceptedCount: 12,
+            soldAndPaid: 5,
+            cancelled: 2,
+            profit: 480000,
+            totalRevenue: 960000,
+          },
+          topMarkets: [
+            { market_id: "m-1", market_name: "Chilonzor filiali", total_orders: 50, successful_orders: 45, success_rate: 90 },
+          ],
+          topCouriers: [
+            { courier_id: "c-1", courier_name: "Aziz", total_orders: 30, successful_orders: 24, success_rate: 80 },
+          ],
+        },
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const chart = screen.getByTestId("performance-chart");
+    expect(chart).toHaveAttribute("data-markets-count", "1");
+    expect(chart).toHaveAttribute("data-couriers-count", "1");
+  });
+
+  it("shows only the markets section of the performance chart for the market role (couriers not relevant)", () => {
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          orders: {
+            acceptedCount: 12,
+            soldAndPaid: 5,
+            cancelled: 2,
+            profit: 480000,
+            totalRevenue: 960000,
+          },
+          topMarkets: [
+            { market_id: "m-1", market_name: "Chilonzor filiali", total_orders: 50, successful_orders: 45, success_rate: 90 },
+          ],
+          topCouriers: [
+            { courier_id: "c-1", courier_name: "Aziz", total_orders: 30, successful_orders: 24, success_rate: 80 },
+          ],
+        },
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: marketState });
+
+    const chart = screen.getByTestId("performance-chart");
+    expect(chart).toHaveAttribute("data-markets-count", "1");
+    expect(chart).toHaveAttribute("data-couriers-count", "undefined");
+  });
+
+  it("hides the performance chart for couriers and operators", () => {
+    getDashboardMock.mockReturnValue({
+      data: { data: { myStat: { totalOrders: 1, soldOrders: 1, canceledOrders: 0, profit: 0, successRate: 100 } } },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+    expect(screen.queryByTestId("performance-chart")).not.toBeInTheDocument();
+
+    renderWithProviders(<DashboardPage />, { preloadedState: operatorState });
+    expect(screen.queryByTestId("performance-chart")).not.toBeInTheDocument();
   });
 
   it("hides financial dashboard metrics from registrators", () => {

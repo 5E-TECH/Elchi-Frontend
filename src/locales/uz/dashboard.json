@@ -92,6 +92,16 @@
     "title": "Hududlar bo'yicha",
     "subtitle": "Viloyatlar kesimida buyurtma va sotuv ko'rsatkichlari"
   },
+  "performance": {
+    "title": "Marketlar/kuryerlar solishtiruvi",
+    "markets_title": "Marketlar bo'yicha sotuv foizi",
+    "couriers_title": "Kuryerlar bo'yicha sotuv foizi",
+    "rate_label": "Sotuv foizi",
+    "orders_label": "ta buyurtma",
+    "empty": "Hali solishtirish uchun yetarli ma'lumot yo'q.",
+    "show_more": "Yana ko'rsatish",
+    "show_less": "Kamroq ko'rsatish"
+  },
   "balance": {
     "title": "Kassa balansi",
     "main": "Pochta kassasi",

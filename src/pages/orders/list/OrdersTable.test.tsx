@@ -96,4 +96,68 @@ describe("OrdersTable", () => {
     await user.click(enabledCheckbox!);
     expect(onSelectChange).toHaveBeenCalledWith("cancelled-1", true);
   });
+
+  it("shows the real order id next to the customer instead of just the row index", () => {
+    renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
+
+    expect(screen.getByText("№o-1")).toBeInTheDocument();
+  });
+
+  it("copies the order id to the clipboard without triggering the row click", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+
+    renderWithProviders(
+      <OrdersTable data={orders as never} isLoading={false} onRowClick={onRowClick} />,
+    );
+
+    await user.click(screen.getByText("№o-1"));
+
+    expect(writeText).toHaveBeenCalledWith("o-1");
+    expect(onRowClick).not.toHaveBeenCalled();
+    expect(await screen.findByText("Buyurtma raqami nusxalandi")).toBeInTheDocument();
+  });
+
+  it("makes the status column sortable and reports the click to the parent", async () => {
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+
+    renderWithProviders(
+      <OrdersTable
+        data={orders as never}
+        isLoading={false}
+        sortConfig={null}
+        onSortChange={onSortChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("columnheader", { name: "Holat" }));
+
+    expect(onSortChange).toHaveBeenCalledWith({ key: "status", direction: "asc" });
+  });
+
+  it("orders rows by the natural order-lifecycle rank when sorted by status", () => {
+    const mixedStatusOrders = [
+      { ...orders[0], id: "sold-1", status: "sold" },
+      { ...orders[0], id: "new-1", status: "new" },
+      { ...orders[0], id: "cancelled-1", status: "cancelled" },
+    ];
+
+    renderWithProviders(
+      <OrdersTable
+        data={mixedStatusOrders as never}
+        isLoading={false}
+        sortConfig={{ key: "status", direction: "asc" }}
+        onSortChange={vi.fn()}
+      />,
+    );
+
+    const idBadges = screen.getAllByText(/^№/).map((node) => node.textContent);
+    expect(idBadges).toEqual(["№new-1", "№sold-1", "№cancelled-1"]);
+  });
 });

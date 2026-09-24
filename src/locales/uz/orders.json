@@ -293,6 +293,10 @@
   "exportEmpty": "Export qilish uchun order topilmadi",
   "exportSuccess": "{{count}} ta order Excelga saqlandi",
   "exportError": "Orderlarni Excelga saqlashda xatolik yuz berdi",
+  "orderNumber": "Buyurtma raqami",
+  "copyOrderNumber": "Raqamni nusxalash",
+  "orderNumberCopied": "Buyurtma raqami nusxalandi",
+  "sortLabel": "Saralash:",
   "excel": {
     "fileName": "barcha_buyurtmalar",
     "headers": {

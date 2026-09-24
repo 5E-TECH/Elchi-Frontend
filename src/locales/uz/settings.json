@@ -31,7 +31,9 @@
     "w_financial": "Moliyaviy tahlil",
     "w_financial_hint": "Daromad grafigi va kassa balansi",
     "w_region": "Hududlar xaritasi",
-    "w_region_hint": "Viloyatlar bo'yicha statistika"
+    "w_region_hint": "Viloyatlar bo'yicha statistika",
+    "w_performance": "Marketlar/kuryerlar solishtiruvi",
+    "w_performance_hint": "Barcha marketlar yoki kuryerlarni sotuv foizi bo'yicha solishtiruvchi diagramma"
   },
   "interface": {
     "sidebar": "Yon panel ochiq turishi",

@@ -34,6 +34,10 @@ export interface TableProps<T> {
   bordered?: boolean;
   hoverable?: boolean;
   preserveTableOnDesktop?: boolean;
+  /** Berilsa, sort holati tashqaridan boshqariladi (masalan URL query bilan). */
+  sortConfig?: SortConfig | null;
+  onSortChange?: (config: SortConfig | null) => void;
+  sortLabel?: string;
 }
 
 export interface SortConfig {

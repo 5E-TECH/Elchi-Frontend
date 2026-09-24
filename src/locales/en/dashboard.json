@@ -92,6 +92,16 @@
     "title": "By region",
     "subtitle": "Orders and sales metrics across provinces"
   },
+  "performance": {
+    "title": "Market/courier comparison",
+    "markets_title": "Sell-through rate by market",
+    "couriers_title": "Sell-through rate by courier",
+    "rate_label": "Sell-through rate",
+    "orders_label": "orders",
+    "empty": "Not enough data to compare yet.",
+    "show_more": "Show more",
+    "show_less": "Show less"
+  },
   "balance": {
     "title": "Cashbox balance",
     "main": "Post cashbox",
