@@ -24,6 +24,7 @@ import { useUser } from "../../entities/user/api/userApi";
 import { useMarkets } from "../../entities/markets";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../shared/lib/usePagination";
+import { useQueryParams } from "../../shared/lib/useQueryParams";
 import PageContainer from "../../shared/ui/PageContainer";
 import type { RootState } from "../../app/config/store";
 import PaymentSummaryCards from "./components/PaymentSummaryCards";
@@ -258,6 +259,43 @@ const Payments = () => {
     [cashboxType, createdBy, operationType, sourceType],
   );
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
+
+  const { getAllParams, setMultipleParams } = useQueryParams();
+  const allParams = getAllParams();
+  const filtersFromUrl = useMemo<PaymentsFilterFormValues>(
+    () => ({
+      operation_type: allParams.operation_type ?? "",
+      source_type: allParams.source_type ?? "",
+      cashbox_type: allParams.cashbox_type ?? "",
+      created_by: allParams.created_by ?? "",
+    }),
+    [allParams.cashbox_type, allParams.created_by, allParams.operation_type, allParams.source_type],
+  );
+  const filtersFromUrlKey = useMemo(() => JSON.stringify(filtersFromUrl), [filtersFromUrl]);
+  // Sahifa yangilanganda (F5) react-hook-form holati INIT'ga qaytadi, lekin
+  // URL o'zgarmaydi — shu sabab quyidagi effekt filtrlarni URL'dan qayta
+  // tiklaydi (aks holda sahifa raqami saqlanadi-yu, filtr yo'qoladi va
+  // butunlay boshqa ma'lumotlar to'plami ko'rsatiladi).
+  const isUrlHydratedRef = useRef(false);
+
+  // Foydalanuvchi filtrni o'zgartirganda (pastdagi FilterSelect onChange)
+  // Redux/react-hook-form holati bilan BIRGA URL ham yoziladi (sinxron), shu
+  // sabab bu effekt faqat "URL formadan boshqacha" holatlarni — sahifa
+  // yuklanishi yoki orqaga/oldinga navigatsiya — ko'radi va filtrlarni
+  // URL'dan qayta tiklaydi.
+  useEffect(() => {
+    if (filtersKey === filtersFromUrlKey) {
+      isUrlHydratedRef.current = true;
+      return;
+    }
+
+    isUrlHydratedRef.current = false;
+    reset(filtersFromUrl);
+  }, [filtersFromUrl, filtersFromUrlKey, filtersKey, reset]);
+
+  const handleFilterChange = (name: DropdownKey, value: string) => {
+    setMultipleParams({ [name]: value });
+  };
 
   const navigate = useNavigate();
   const { useGetFinanceHistory, useGetCashBoxInfo } = useCashBox();
@@ -534,6 +572,14 @@ const Payments = () => {
   }, [page, limit, filters]);
 
   useEffect(() => {
+    // URL'dan hydratsiya tugamaguncha kutamiz — aks holda F5 dan keyin
+    // filtrlar URL'dan tiklanayotgani "foydalanuvchi filtrni o'zgartirdi"
+    // deb noto'g'ri talqin qilinib, saqlanib qolgan sahifa raqami (masalan
+    // paymentsPage=4) 1 ga qaytarib yuboriladi.
+    if (!isUrlHydratedRef.current) {
+      return;
+    }
+
     if (!previousFiltersKeyRef.current) {
       previousFiltersKeyRef.current = filtersKey;
       return;
@@ -662,7 +708,10 @@ const Payments = () => {
                   name={field.name}
                   label={t(labelKey)}
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    handleFilterChange(name, value);
+                  }}
                   options={filterOptionsMap[name] || []}
                   placeholder={
                     name === "cashbox_type"
@@ -681,6 +730,7 @@ const Payments = () => {
             <FilterClearButton
               onClick={() => {
                 reset(INIT);
+                setMultipleParams(INIT);
                 resetPagination(limit);
               }}
             />

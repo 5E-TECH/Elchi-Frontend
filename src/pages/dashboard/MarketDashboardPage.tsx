@@ -20,6 +20,7 @@ import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
+import PerformanceChart from "../../widgets/dashboard-performance-chart/ui/PerformanceChart";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
@@ -229,6 +230,15 @@ const MarketDashboardPage = () => {
             operators={topOperators.length ? topOperators : undefined}
             currentUserId={user?.id ?? roleId}
           />
+        </div>
+      )}
+
+      {/* Marketlar solishtiruv diagrammasi — kuryerlar bo'limi yo'q, chunki
+          market foydalanuvchisiga tegishli emas (DashboardPage'dagi bilan
+          bir xil qoida). */}
+      {!dashboardError && !isDataLoading && (
+        <div className="mb-5">
+          <PerformanceChart markets={topMarkets} />
         </div>
       )}
 

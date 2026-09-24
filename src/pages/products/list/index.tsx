@@ -23,8 +23,10 @@ import { useNavigate } from "react-router-dom";
 import { useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
 import { GlobalSearchInput } from "../../../features/search";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
+import { setMultipleSearchValues } from "../../../shared/model/searchSlice";
+import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
@@ -214,6 +216,7 @@ const ProductTable = () => {
   const {
     control: filterControl,
     watch: watchFilter,
+    setValue: setFilterValue,
   } = useForm<ProductFilterFormValues>({
     defaultValues: {
       market_id: "",
@@ -288,6 +291,8 @@ const ProductTable = () => {
     [navigate],
   );
 
+  const dispatch = useDispatch();
+  const { getAllParams, setParam } = useQueryParams();
   const searchFilters = useSelector((state: RootState) => state.search);
   const searchValue = typeof searchFilters.product_search === "string"
     ? searchFilters.product_search
@@ -296,10 +301,42 @@ const ProductTable = () => {
     key: "products",
     defaultLimit: 10,
   });
-  const previousFilterSyncRef = useRef({
-    filterValue,
-    searchValue,
-  });
+  const allParams = getAllParams();
+  const searchFromUrl = allParams.product_search ?? "";
+  const marketIdFromUrl = allParams.market_id ?? "";
+  // Sahifa yangilanganda (F5) Redux va react-hook-form holati tozalanadi,
+  // lekin URL o'zgarmaydi — shu sabab pastdagi effekt URL'dan qidiruv va
+  // market filtrini qayta tiklaydi (aks holda havola boshqa natija ko'rsatadi).
+  const isUrlHydratedRef = useRef(false);
+  // Hydratsiya bir necha render davom etishi mumkin (Redux va
+  // react-hook-form turli tsikllarda yangilanadi) — shu oraliqda
+  // pagination-reset effekti "filtr o'zgardi" deb noto'g'ri xulosa
+  // chiqarmasligi uchun, hydratsiya tugagandan keyingi birinchi ishga
+  // tushishda faqat asos (baseline) yoziladi, reset qilinmaydi.
+  const hasPrimedAfterHydrationRef = useRef(false);
+  const previousFilterSyncRef = useRef({ filterValue: "", searchValue: "" });
+
+  useEffect(() => {
+    if (searchValue === searchFromUrl && filterValue === marketIdFromUrl) {
+      isUrlHydratedRef.current = true;
+      return;
+    }
+
+    isUrlHydratedRef.current = false;
+
+    if (searchValue !== searchFromUrl) {
+      dispatch(setMultipleSearchValues({ product_search: searchFromUrl }));
+    }
+    if (filterValue !== marketIdFromUrl) {
+      setFilterValue("market_id", marketIdFromUrl);
+    }
+  }, [dispatch, filterValue, marketIdFromUrl, searchFromUrl, searchValue, setFilterValue]);
+
+  useEffect(() => {
+    if (!isUrlHydratedRef.current) return;
+    if (filterValue === marketIdFromUrl) return;
+    setParam("market_id", filterValue);
+  }, [filterValue, marketIdFromUrl, setParam]);
 
   const apiParams = useMemo(() => {
     const params: Record<string, string | number> = { page, limit };
@@ -339,6 +376,16 @@ const ProductTable = () => {
   ) ?? productData.length;
 
   useEffect(() => {
+    if (!isUrlHydratedRef.current) {
+      return;
+    }
+
+    if (!hasPrimedAfterHydrationRef.current) {
+      hasPrimedAfterHydrationRef.current = true;
+      previousFilterSyncRef.current = { filterValue, searchValue };
+      return;
+    }
+
     const previous = previousFilterSyncRef.current;
     const hasFilterChanged =
       previous.filterValue !== filterValue ||
