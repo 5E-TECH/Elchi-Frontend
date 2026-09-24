@@ -111,4 +111,16 @@ describe("Payments filters", () => {
 
     await waitFor(() => expect(currentSearch()).toContain("operation_type=income"));
   });
+
+  it("clears the filter from the URL (not just the form) when 'Tozalash' is clicked", async () => {
+    const user = userEvent.setup();
+    open("/payments?operation_type=income");
+
+    await waitFor(() => expect(currentSearch()).toContain("operation_type=income"));
+
+    await user.click(screen.getByRole("button", { name: "Tozalash" }));
+
+    await waitFor(() => expect(currentSearch()).not.toContain("operation_type=income"));
+    expect(screen.getByLabelText("Operatsiya turi")).toHaveTextContent("Tanlang");
+  });
 });
