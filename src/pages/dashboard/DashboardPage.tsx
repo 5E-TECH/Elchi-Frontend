@@ -1,11 +1,12 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { LayoutDashboard, Package, TrendingUp, Wallet, XCircle, BarChart2, MapPin } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, Wallet, XCircle, BarChart2, MapPin, BarChart3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
 import RegionStatsCard from "../../widgets/dashboard-region/ui/RegionStatsCard";
+import PerformanceChart from "../../widgets/dashboard-performance-chart/ui/PerformanceChart";
 import { useDashboard } from "../../entities/dashboard";
 import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
@@ -43,9 +44,14 @@ const DashboardPage = () => {
   // faqat asosiy stat kartalar qoladi. To'liq scoping backend tuzatilgach
   // qo'shiladi (bog'liq: "Backend: /analytics/dashboard har qanday rolga...").
   const isOperator = normalizedRole === "operator";
+  const isMarket = normalizedRole === "market";
   const canShowFinancialMetrics = !isRegistrator && !isCourier;
   const canShowTopPerformers = !isCourier && !isOperator;
   const canShowRegionStats = !isCourier && !isOperator;
+  // Kuryer va operator uchun yashirin (canShowTopPerformers bilan bir xil
+  // sabab). Market roli faqat marketlar diagrammasini ko'radi — kuryerlar
+  // solishtiruvi market foydalanuvchisiga tegishli emas.
+  const canShowPerformanceChart = !isCourier && !isOperator;
   const [fromDate, setFromDate] = useState(
     typeof storedFromDate === "string" ? storedFromDate : "",
   );
@@ -84,7 +90,7 @@ const DashboardPage = () => {
           },
     [fromDate, hasDateFilter, isAllTime, toDate],
   );
-  const needsDashboard = isCourier || widgets.stats || widgets.topPerformers;
+  const needsDashboard = isCourier || widgets.stats || widgets.topPerformers || widgets.performanceChart;
   const {
     data,
     isLoading,
@@ -245,6 +251,23 @@ const DashboardPage = () => {
         <div className="mb-5">
           <TopPerformers markets={topMarkets} branches={topBranches} currentUserId={user?.id ?? roleId} />
         </div>
+      )}
+
+      {/* Marketlar/kuryerlar solishtiruv diagrammasi — top 5 bilan
+          cheklanmagan, barcha marketlar/kuryerlarni ko'rsatadi. Market
+          roliga faqat marketlar bo'limi beriladi (kuryerlar bo'limi olib
+          tashlanadi — market foydalanuvchisiga tegishli emas). */}
+      {widgets.performanceChart && canShowPerformanceChart && !dashboardError && (
+        <MobileCollapsibleSection
+          title={t("performance.title")}
+          icon={<BarChart3 size={16} />}
+          className="mb-5"
+        >
+          <PerformanceChart
+            markets={topMarkets}
+            couriers={isMarket ? undefined : topCouriers}
+          />
+        </MobileCollapsibleSection>
       )}
 
       {/* Financial analysis — revenue endpoint is SUPERADMIN/ADMIN-only.

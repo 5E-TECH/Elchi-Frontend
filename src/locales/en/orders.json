@@ -293,6 +293,10 @@
   "exportEmpty": "No orders found for export",
   "exportSuccess": "{{count}} orders saved to Excel",
   "exportError": "An error occurred while saving orders to Excel",
+  "orderNumber": "Order number",
+  "copyOrderNumber": "Copy number",
+  "orderNumberCopied": "Order number copied",
+  "sortLabel": "Sort:",
   "excel": {
     "fileName": "all_orders",
     "headers": {

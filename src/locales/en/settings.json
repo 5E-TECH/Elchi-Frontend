@@ -31,7 +31,9 @@
     "w_financial": "Financial analysis",
     "w_financial_hint": "Revenue chart and cashbox balance",
     "w_region": "Region map",
-    "w_region_hint": "Province-level statistics"
+    "w_region_hint": "Province-level statistics",
+    "w_performance": "Market/courier comparison",
+    "w_performance_hint": "Chart comparing all markets or couriers by sell-through rate"
   },
   "interface": {
     "sidebar": "Sidebar open",

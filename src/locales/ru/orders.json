@@ -293,6 +293,10 @@
   "exportEmpty": "Заказы для экспорта не найдены",
   "exportSuccess": "{{count}} заказов сохранено в Excel",
   "exportError": "Произошла ошибка при сохранении заказов в Excel",
+  "orderNumber": "Номер заказа",
+  "copyOrderNumber": "Скопировать номер",
+  "orderNumberCopied": "Номер заказа скопирован",
+  "sortLabel": "Сортировка:",
   "excel": {
     "fileName": "vse_zakazy",
     "headers": {

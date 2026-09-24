@@ -57,6 +57,7 @@ const WIDGET_META: { id: DashboardWidgetId; label: string; hint: string }[] = [
   { id: "topPerformers", label: "w_top", hint: "w_top_hint" },
   { id: "financial", label: "w_financial", hint: "w_financial_hint" },
   { id: "region", label: "w_region", hint: "w_region_hint" },
+  { id: "performanceChart", label: "w_performance", hint: "w_performance_hint" },
 ];
 
 const SOUND_META: { id: ScannerSoundId; label: string }[] = SCANNER_SOUND_IDS.map((id) => ({

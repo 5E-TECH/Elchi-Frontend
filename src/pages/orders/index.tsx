@@ -12,6 +12,7 @@ import { useMarkets } from "../../entities/markets";
 import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
 import OrderFilters, { ORDER_FILTER_KEYS, ORDER_STATUS_URL_KEY } from "./list/OrderFilters";
 import OrdersTable from "./list/OrdersTable";
+import type { SortConfig } from "../../shared/components/Table/Table.types";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
 import CourierOrders from "./list/courier/index";
@@ -37,6 +38,8 @@ import { playScanFeedback } from "../scan/lib/scanShared";
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
 const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
+const ORDER_SORT_BY_KEY = "orderSortBy";
+const ORDER_SORT_DIR_KEY = "orderSortDir";
 const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
@@ -358,6 +361,12 @@ const Orders = () => {
   const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams.orderDateFrom ?? "";
   const urlDateTo = urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams.orderDateTo ?? "";
   const urlSearch = urlParams[ORDER_FILTER_KEYS.search] ?? "";
+  const urlSortBy = urlParams[ORDER_SORT_BY_KEY] ?? "";
+  const urlSortDir = urlParams[ORDER_SORT_DIR_KEY] ?? "";
+  const sortConfig: SortConfig | null =
+    urlSortBy && (urlSortDir === "asc" || urlSortDir === "desc")
+      ? { key: urlSortBy, direction: urlSortDir }
+      : null;
   const activeManagerTab = getManagerOrdersTab(parseStatusFilterValue(urlStatusRaw));
 
   useEffect(() => {
@@ -510,6 +519,30 @@ const Orders = () => {
     previousFiltersKeyRef.current = filtersKey;
     resetPagination(LIMIT);
   }, [filtersKey, resetPagination]);
+
+  // Saralash o'zgarganda sahifani 1 ga qaytarish — aks holda foydalanuvchi
+  // masalan 3-sahifada turib narx bo'yicha saralasa, u yerdagi tasodifiy
+  // tartiblangan qatorlarni ko'rib chalg'iydi.
+  const sortKey = `${sortConfig?.key ?? ""}:${sortConfig?.direction ?? ""}`;
+  const previousSortKeyRef = useRef(sortKey);
+  useEffect(() => {
+    if (previousSortKeyRef.current === sortKey) {
+      return;
+    }
+
+    previousSortKeyRef.current = sortKey;
+    setPage(1);
+  }, [setPage, sortKey]);
+
+  const handleSortChange = useCallback(
+    (config: SortConfig | null) => {
+      setMultipleParams({
+        [ORDER_SORT_BY_KEY]: config?.key ?? "",
+        [ORDER_SORT_DIR_KEY]: config?.direction ?? "",
+      });
+    },
+    [setMultipleParams],
+  );
 
   const { data, isLoading } = useGetOrders(apiParams);
   const { data: marketsResponse, isLoading: isMarketsLoading } = useGetMarkets(
@@ -959,6 +992,8 @@ const Orders = () => {
           selectedIds={selectedCancelledIds}
           onSelectChange={canSendCancelledToHq ? handleSelectCancelled : undefined}
           onSelectAll={canSendCancelledToHq ? handleSelectAllCancelled : undefined}
+          sortConfig={sortConfig}
+          onSortChange={handleSortChange}
           isOrderActionPending={
             SellOrder.isPending ||
             PartlySellOrder.isPending ||
