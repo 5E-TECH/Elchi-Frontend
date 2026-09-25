@@ -296,12 +296,14 @@
   "orderNumber": "Buyurtma raqami",
   "copyOrderNumber": "Raqamni nusxalash",
   "orderNumberCopied": "Buyurtma raqami nusxalandi",
+  "orderNumberCopyFailed": "Nusxa olib bo'lmadi — buyurtma raqami: {{id}}",
   "extraCostApprovalNotice": "Qo'shimcha xarajat market tasdig'idan o'tadi — market tasdiqlamaguncha buyurtma holati o'zgarmaydi.",
   "extraCostApprovalPendingTitle": "Market tasdig'i kutilmoqda",
   "extraCostApprovalPendingDescription": "{{amount}} qo'shimcha xarajat marketga tasdiqqa yuborildi. Market tasdiqlasa, amal avtomatik bajariladi; rad etsa, buyurtma hozirgi holatida qoladi.",
   "extraCostApprovalBadge": "Tasdiqqa yuborilgan",
   "extraCostApprovalSentAt": "{{amount}} qo'shimcha xarajat {{time}} da market tasdig'iga yuborilgan",
   "sortLabel": "Saralash:",
+  "sortCurrentPageOnly": "Saralash faqat shu sahifadagi buyurtmalarga qo'llanadi",
   "excel": {
     "fileName": "barcha_buyurtmalar",
     "headers": {

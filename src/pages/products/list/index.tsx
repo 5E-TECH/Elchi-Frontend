@@ -1,5 +1,5 @@
 // Migrated to React Hook Form
-import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { memo, useState, useMemo, useCallback, useEffect } from "react";
 import { Controller, useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -23,10 +23,10 @@ import { useNavigate } from "react-router-dom";
 import { useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
 import { GlobalSearchInput } from "../../../features/search";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
-import { setMultipleSearchValues } from "../../../shared/model/searchSlice";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
+import { useDebounce } from "../../../shared/lib/useDebounce";
 import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
@@ -76,6 +76,10 @@ const toPositiveNumber = (value: unknown): number | null => {
   if (!Number.isFinite(parsed) || parsed < 1) return null;
   return Math.floor(parsed);
 };
+
+// Qidiruv URL'ga (va so'rovga) yozishdan oldingi kutish — GlobalSearchInput
+// global rejimidagi bilan bir xil.
+const SEARCH_DEBOUNCE_MS = 1000;
 
 const productFilterSchema: yup.ObjectSchema<ProductFilterFormValues> = yup.object({
   market_id: yup.string().defined(),
@@ -291,66 +295,64 @@ const ProductTable = () => {
     [navigate],
   );
 
-  const dispatch = useDispatch();
-  const { getAllParams, setParam } = useQueryParams();
-  const searchFilters = useSelector((state: RootState) => state.search);
-  const searchValue = typeof searchFilters.product_search === "string"
-    ? searchFilters.product_search
-    : "";
-  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
+  const { getAllParams, setMultipleParams } = useQueryParams();
+  const { page, limit, setPage, setLimit } = usePagination({
     key: "products",
     defaultLimit: 10,
   });
   const allParams = getAllParams();
+  // URL — qidiruv va market filtrining YAGONA manbai: F5, havola va
+  // orqaga/oldinga o'tish shu bilan bir xil natija beradi. So'rov ham faqat
+  // URL'dan quriladi.
+  //
+  // ⚠️ Qidiruv Redux'da saqlanmaydi: `useResetInputsOnPathChange` yo'l
+  // o'zgarganda barcha Redux qidiruvlarini sahifa effektlaridan KEYIN
+  // tozalaydi va URL'dan tiklangan qiymatni o'chirib yuborardi. Uni
+  // "har renderda URL'ga qaytarish" bilan davolash esa har bir bosilgan
+  // harfni o'chirardi (URL 1 s debounce bilan yoziladi).
   const searchFromUrl = allParams.product_search ?? "";
   const marketIdFromUrl = allParams.market_id ?? "";
-  // Sahifa yangilanganda (F5) Redux va react-hook-form holati tozalanadi,
-  // lekin URL o'zgarmaydi — shu sabab pastdagi effekt URL'dan qidiruv va
-  // market filtrini qayta tiklaydi (aks holda havola boshqa natija ko'rsatadi).
-  const isUrlHydratedRef = useRef(false);
-  // Hydratsiya bir necha render davom etishi mumkin (Redux va
-  // react-hook-form turli tsikllarda yangilanadi) — shu oraliqda
-  // pagination-reset effekti "filtr o'zgardi" deb noto'g'ri xulosa
-  // chiqarmasligi uchun, hydratsiya tugagandan keyingi birinchi ishga
-  // tushishda faqat asos (baseline) yoziladi, reset qilinmaydi.
-  const hasPrimedAfterHydrationRef = useRef(false);
-  const previousFilterSyncRef = useRef({ filterValue: "", searchValue: "" });
+  const [searchInput, setSearchInput] = useState(searchFromUrl);
+  // Oxirgi marta URL'ga yozilgan/URL'dan olingan qidiruv — URL tashqaridan
+  // o'zgargandagina (orqaga/oldinga, havola) input yangilanadi, o'zimiz
+  // yozganda esa foydalanuvchi yozayotgan matnga tegilmaydi.
+  const [syncedSearch, setSyncedSearch] = useState(searchFromUrl);
+  if (searchFromUrl !== syncedSearch) {
+    setSyncedSearch(searchFromUrl);
+    setSearchInput(searchFromUrl);
+  }
 
+  // Qidiruv va 1-sahifa bitta URL yangilanishida yoziladi.
+  const writeSearchToUrl = useDebounce((value: string) => {
+    setSyncedSearch(value);
+    setMultipleParams({ product_search: value, page: "" });
+  }, SEARCH_DEBOUNCE_MS);
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    writeSearchToUrl(value);
+  };
+
+  // Forma faqat tanlangan marketni ko'rsatadi; uni URL yozadi.
   useEffect(() => {
-    if (searchValue === searchFromUrl && filterValue === marketIdFromUrl) {
-      isUrlHydratedRef.current = true;
-      return;
-    }
-
-    isUrlHydratedRef.current = false;
-
-    if (searchValue !== searchFromUrl) {
-      dispatch(setMultipleSearchValues({ product_search: searchFromUrl }));
-    }
     if (filterValue !== marketIdFromUrl) {
       setFilterValue("market_id", marketIdFromUrl);
     }
-  }, [dispatch, filterValue, marketIdFromUrl, searchFromUrl, searchValue, setFilterValue]);
+  }, [filterValue, marketIdFromUrl, setFilterValue]);
 
-  // Foydalanuvchi marketni tanlaganda react-hook-form holati bilan BIRGA
-  // URL ham sinxron yoziladi (UserFilters.tsx dagi patternga o'xshash).
-  // ATAYLAB reaktiv "write-back effect" ishlatilmadi — u yuqoridagi
-  // hydratsiya effekti bilan poyga holatiga tushib, foydalanuvchi hali
-  // URL'ga yozilmagan yangi tanlovini eski URL qiymati bilan qayta
-  // ustidan yozib yuborardi (payments/index.tsx da xuddi shu xato topilib
-  // tuzatilgan edi — bu yerda ham bir xil sabab bilan tuzatildi).
+  // Tanlangan market va 1-sahifa BITTA URL yangilanishida yoziladi.
   const handleMarketFilterChange = (value: string) => {
-    setParam("market_id", value);
+    setMultipleParams({ market_id: value, page: "" });
   };
 
   const apiParams = useMemo(() => {
     const params: Record<string, string | number> = { page, limit };
 
-    if (searchValue) params.search = searchValue;
-    if (!isMarketRole && filterValue) params.market_id = filterValue;
+    if (searchFromUrl) params.search = searchFromUrl;
+    if (!isMarketRole && marketIdFromUrl) params.market_id = marketIdFromUrl;
 
     return params;
-  }, [filterValue, isMarketRole, limit, page, searchValue]);
+  }, [isMarketRole, limit, marketIdFromUrl, page, searchFromUrl]);
 
   const { useGetProducts, useGetMyProducts, useGetProductById, deleteProduct, updateProduct } = useProducts();
   const { data: productsData, isLoading: isProductsLoading } = useGetProducts(
@@ -380,33 +382,6 @@ const ProductTable = () => {
     products?.total ?? rawPagination?.total,
   ) ?? productData.length;
 
-  useEffect(() => {
-    if (!isUrlHydratedRef.current) {
-      return;
-    }
-
-    if (!hasPrimedAfterHydrationRef.current) {
-      hasPrimedAfterHydrationRef.current = true;
-      previousFilterSyncRef.current = { filterValue, searchValue };
-      return;
-    }
-
-    const previous = previousFilterSyncRef.current;
-    const hasFilterChanged =
-      previous.filterValue !== filterValue ||
-      previous.searchValue !== searchValue;
-
-    if (!hasFilterChanged) {
-      return;
-    }
-
-    previousFilterSyncRef.current = {
-      filterValue,
-      searchValue,
-    };
-
-    resetPagination(limit);
-  }, [filterValue, limit, resetPagination, searchValue]);
 
   // ─── Delete Handlers ────────────────────────────────────────────────────
 
@@ -638,7 +613,9 @@ const ProductTable = () => {
       <div className="mb-6 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-primarydark dark:bg-primarydark lg:flex-row lg:items-center">
         <div className="w-full lg:flex-1">
           <GlobalSearchInput
-            searchKey="product_search"
+            name="product_search"
+            value={searchInput}
+            onValueChange={handleSearchChange}
             placeholder={t("searchInputPlaceholder")}
             className="w-full"
           />
@@ -654,10 +631,7 @@ const ProductTable = () => {
                   label={t("marketName")}
                   name={field.name}
                   value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value);
-                    handleMarketFilterChange(value);
-                  }}
+                  onChange={handleMarketFilterChange}
                   options={marketOptions}
                   placeholder={t("selectMarket")}
                   icon={Store}

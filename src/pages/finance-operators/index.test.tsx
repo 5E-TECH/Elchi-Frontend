@@ -14,6 +14,11 @@ vi.mock("../../shared/api/api", () => ({
   },
 }));
 
+// antd sahifasi jsdom'da har bir yangilanishda ~0.5 s qayta chiziladi —
+// shu sabab maydonlar harfma-harf emas, paste bilan to'ldiriladi (tekshirilayotgani
+// so'rov tanasi), to'lov oqimiga esa yuklama ostida ham yetadigan limit berilgan.
+const PAYOUT_FLOW_TIMEOUT_MS = 20_000;
+
 describe("Finance operators page", () => {
   beforeEach(() => {
     apiGetMock.mockImplementation((url: string) => {
@@ -37,7 +42,8 @@ describe("Finance operators page", () => {
     const user = userEvent.setup();
     renderWithProviders(<FinanceOperatorsPage />);
 
-    await user.type(screen.getByLabelText("operator-id"), "op1");
+    await user.click(screen.getByLabelText("operator-id"));
+    await user.paste("op1");
     await user.click(screen.getByRole("button", { name: /Yuklash/ }));
 
     await waitFor(() =>
@@ -51,11 +57,14 @@ describe("Finance operators page", () => {
     const user = userEvent.setup();
     renderWithProviders(<FinanceOperatorsPage />);
 
-    await user.type(screen.getByLabelText("operator-id"), "op1");
+    await user.click(screen.getByLabelText("operator-id"));
+    await user.paste("op1");
     await user.click(screen.getByRole("button", { name: /Yuklash/ }));
 
-    await user.type(await screen.findByLabelText("payout-amount"), "50000");
-    await user.type(screen.getByLabelText("payout-comment"), "oylik avans");
+    await user.click(await screen.findByLabelText("payout-amount"));
+    await user.paste("50000");
+    await user.click(screen.getByLabelText("payout-comment"));
+    await user.paste("oylik avans");
     await user.click(screen.getByRole("button", { name: "To'lovni saqlash" }));
 
     await waitFor(() =>
@@ -65,5 +74,5 @@ describe("Finance operators page", () => {
       ),
     );
     expect(await screen.findByText("To'lov qayd qilindi")).toBeInTheDocument();
-  });
+  }, PAYOUT_FLOW_TIMEOUT_MS);
 });

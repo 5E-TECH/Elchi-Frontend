@@ -123,6 +123,21 @@ describe("OrdersTable", () => {
     expect(await screen.findByText("Buyurtma raqami nusxalandi")).toBeInTheDocument();
   });
 
+  it("does not claim the number was copied when the browser refuses the clipboard write", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn().mockRejectedValue(new DOMException("denied", "NotAllowedError")) },
+      configurable: true,
+    });
+
+    renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
+
+    await user.click(screen.getByText("№o-1"));
+
+    expect(await screen.findByText("Nusxa olib bo'lmadi — buyurtma raqami: o-1")).toBeInTheDocument();
+    expect(screen.queryByText("Buyurtma raqami nusxalandi")).not.toBeInTheDocument();
+  });
+
   it("makes the status column sortable and reports the click to the parent", async () => {
     const user = userEvent.setup();
     const onSortChange = vi.fn();

@@ -99,6 +99,7 @@
     "rate_label": "Sell-through rate",
     "orders_label": "orders",
     "empty": "Not enough data to compare yet.",
+    "couriers_all_time_unavailable": "The courier breakdown is not calculated for the “All” period — pick a date range.",
     "show_more": "Show more",
     "show_less": "Show less"
   },

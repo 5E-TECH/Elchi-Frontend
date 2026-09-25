@@ -25,6 +25,22 @@ const SOURCE_PARAM = `${HISTORY_PARAM_PREFIX}Source`;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const readDateParam = (value: string | null) => (value && DATE_PATTERN.test(value) ? value : "");
 
+// Backend FinancialSource_type enum qiymatlari va ularning yorliqlari.
+// URL'dan kelgan boshqa qiymat (eski yoki qo'lda tahrirlangan havola,
+// masalan "sell") backend'da 500 berardi — u "barcha manbalar" deb o'qiladi.
+const SOURCE_TYPE_LABEL_KEYS = {
+  sell_profit: "financialBalanceSourceProfit",
+  sell_extra_cost: "financialBalanceSourceExtraCost",
+  cancel_extra_cost: "financialBalanceSourceExtraCost",
+  manual_income: "financialBalanceSourceManualIncome",
+  manual_expense: "financialBalanceSourceManualExpense",
+  salary: "financialBalanceSourceSalary",
+  correction: "financialBalanceSourceCorrection",
+  bills: "financialBalanceSourceBills",
+} as const;
+const readSourceParam = (value: string | null) =>
+  value && Object.hasOwn(SOURCE_TYPE_LABEL_KEYS, value) ? value : "";
+
 interface HistoryRow {
   id: string;
   date: unknown;
@@ -143,7 +159,7 @@ const HistoryTab = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const fromDate = readDateParam(searchParams.get(FROM_PARAM));
   const toDate = readDateParam(searchParams.get(TO_PARAM));
-  const sourceType = searchParams.get(SOURCE_PARAM) ?? "";
+  const sourceType = readSourceParam(searchParams.get(SOURCE_PARAM));
 
   // Filtr va sahifa bitta setSearchParams chaqiruvida yangilanadi: ikkita
   // alohida chaqiruv bir-birining o'zgarishini bosib ketishi mumkin.
@@ -276,16 +292,11 @@ const HistoryTab = () => {
   );
 
   const sourceTypeOptions = useMemo(
-    () => [
-      { value: "sell_profit", label: t("financialBalanceSourceProfit") },
-      { value: "sell_extra_cost", label: t("financialBalanceSourceExtraCost") },
-      { value: "cancel_extra_cost", label: t("financialBalanceSourceExtraCost") },
-      { value: "manual_income", label: t("financialBalanceSourceManualIncome") },
-      { value: "manual_expense", label: t("financialBalanceSourceManualExpense") },
-      { value: "salary", label: t("financialBalanceSourceSalary") },
-      { value: "correction", label: t("financialBalanceSourceCorrection") },
-      { value: "bills", label: t("financialBalanceSourceBills") },
-    ],
+    () =>
+      Object.entries(SOURCE_TYPE_LABEL_KEYS).map(([value, labelKey]) => ({
+        value,
+        label: t(labelKey),
+      })),
     [t],
   );
 

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { RootState } from "../../app/config/store";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
+import { copyToClipboard } from "../../shared/lib/clipboard";
 import {
   usePartnerActions,
   usePartnerWebhooks,
@@ -285,8 +286,13 @@ const PartnersPage = () => {
   };
 
   const copyKey = (key: string) => {
-    void navigator.clipboard?.writeText(key);
-    setMessage({ tone: "success", text: t("partnerKeyCopied") });
+    void copyToClipboard(key).then((copied) => {
+      setMessage(
+        copied
+          ? { tone: "success", text: t("partnerKeyCopied") }
+          : { tone: "error", text: t("partnerKeyCopyFailed") },
+      );
+    });
   };
 
   if (!allowed) {

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookMarked, ListOrdered, Plus, Send } from "lucide-react";
+import { BookMarked, Info, ListOrdered, Plus, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -540,11 +540,14 @@ const Orders = () => {
     setPage(1);
   }, [setPage, sortKey]);
 
+  // Saralash va 1-sahifa bitta URL yangilanishida yoziladi — aks holda
+  // avval yangi saralash + ESKI sahifa bilan ortiqcha so'rov ketardi.
   const handleSortChange = useCallback(
     (config: SortConfig | null) => {
       setMultipleParams({
         [ORDER_SORT_BY_KEY]: config?.key ?? "",
         [ORDER_SORT_DIR_KEY]: config?.direction ?? "",
+        page: "1",
       });
     },
     [setMultipleParams],
@@ -1023,6 +1026,20 @@ const Orders = () => {
           <div className="rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-sm font-semibold text-maindark dark:border-white/10 dark:bg-white/6 dark:text-white">
             {t("scanSelectHint")}
           </div>
+        ) : null}
+
+        {/* Backend ro'yxatni doim createdAt DESC bilan qaytaradi va saralash
+            parametrini qabul qilmaydi — saralash faqat yuklangan sahifaga
+            ta'sir qiladi. Buni aytmasak "eskidan yangiga" butun ro'yxatning
+            eng eskisini ko'rsatadi deb o'ylanadi. */}
+        {sortConfig && total > items.length ? (
+          <p
+            role="note"
+            className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300"
+          >
+            <Info size={13} className="shrink-0" />
+            {t("sortCurrentPageOnly")}
+          </p>
         ) : null}
 
         {/* Table */}

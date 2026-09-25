@@ -17,11 +17,13 @@ const order = {
   items: [],
 };
 
+const orderState: { comment: string | null } = { comment: null };
+
 const idleMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
 
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
-    useGetOrderById: () => ({ data: { data: order }, isLoading: false }),
+    useGetOrderById: () => ({ data: { data: { ...order, comment: orderState.comment } }, isLoading: false }),
     updateNewOrder: idleMutation,
     SellOrder: idleMutation,
     PartlySellOrder: idleMutation,
@@ -55,6 +57,28 @@ const renderPage = () =>
     </Routes>,
     { route: "/orders/edit/1251175" },
   );
+
+describe("NewOrderUpdate comment", () => {
+  afterEach(() => {
+    orderState.comment = null;
+  });
+
+  it("shows the order comment on the detail page itself, keeping its line breaks", () => {
+    orderState.comment = "!!! Bu buyurtmadan qo'shimcha 10000 miqdorda pul ushlab qolingan\nKuryer: Ali";
+    renderPage();
+
+    const text = screen.getByText(/Bu buyurtmadan qo'shimcha 10000 miqdorda pul ushlab qolingan/);
+    expect(text.textContent).toBe("!!! Bu buyurtmadan qo'shimcha 10000 miqdorda pul ushlab qolingan\nKuryer: Ali");
+    expect(text).toHaveClass("whitespace-pre-line");
+  });
+
+  it.each([null, "", "   ", "\n\n"])("renders no comment card for an empty comment (%j)", (comment) => {
+    orderState.comment = comment;
+    const { container } = renderPage();
+
+    expect(container.querySelector(".whitespace-pre-line")).toBeNull();
+  });
+});
 
 describe("NewOrderUpdate header", () => {
   it("shows the order number on the detail page, matching the list's №id", () => {

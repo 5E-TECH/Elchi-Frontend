@@ -22,7 +22,10 @@ const BottomNav = () => {
     // ─── Redux dan haqiqiy rolni oling ───────────────────────────────────────
     const { role } = useSelector((state: RootState) => state.role);
     const user = useSelector((state: RootState) => state.user.user);
-    const userRole = normalizeSidebarRole(role, user) ?? "admin";
+    // ⚠️ "admin" ga fallback YO'Q: menyusi yo'q rol (masalan operator) avval
+    // telefonda admin havolalarini ko'rardi va ularning hammasi 403 berardi.
+    // Desktop Sidebar ham shunday rolga bo'sh menyu ko'rsatadi.
+    const userRole = normalizeSidebarRole(role, user);
 
     // ─── navItems memoized — role/user o'zgarmasa qayta hisoblanmaydi ─────────
     const navItems = useMemo(() => {
@@ -42,6 +45,8 @@ const BottomNav = () => {
 
         return sourceItems.slice(0, MOBILE_MAX_ITEMS);
     }, [userRole, user]);
+
+    if (navItems.length === 0) return null;
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up pb-[env(safe-area-inset-bottom)] lg:hidden">

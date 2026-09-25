@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useDashboard } from "../../entities/dashboard";
 import { useOrders, type ExtraCostApproval } from "../../entities/orders";
+import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
@@ -48,6 +49,11 @@ const MarketDashboardPage = () => {
     typeof storedFromDate === "string" ? storedFromDate : "",
   );
   const [toDate, setToDate] = useState(typeof storedToDate === "string" ? storedToDate : "");
+
+  // Sozlamalardagi "Dashboard vidjetlari" market uchun ham ko'rsatiladi —
+  // shu sabab bu yerda ham hurmat qilinadi.
+  const { data: settingsData } = useSettings();
+  const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
 
   const hasDateFilter = Boolean(fromDate && toDate);
   const allTimeRange = getAllTimeRange();
@@ -223,7 +229,7 @@ const MarketDashboardPage = () => {
         </div>
       )}
 
-      {!dashboardError && !isDataLoading && (
+      {widgets.topPerformers && !dashboardError && !isDataLoading && (
         <div className="mb-5">
           <TopPerformers
             markets={topMarkets}
@@ -236,7 +242,7 @@ const MarketDashboardPage = () => {
       {/* Marketlar solishtiruv diagrammasi — kuryerlar bo'limi yo'q, chunki
           market foydalanuvchisiga tegishli emas (DashboardPage'dagi bilan
           bir xil qoida). */}
-      {!dashboardError && !isDataLoading && (
+      {widgets.performanceChart && !dashboardError && !isDataLoading && (
         <div className="mb-5">
           <PerformanceChart markets={topMarkets} />
         </div>

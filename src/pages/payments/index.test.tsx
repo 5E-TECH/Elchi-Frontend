@@ -112,6 +112,25 @@ describe("Payments filters", () => {
     await waitFor(() => expect(currentSearch()).toContain("operation_type=income"));
   });
 
+  it("goes back to page 1 together with a new filter, without a request for the new filter on the old page", async () => {
+    const user = userEvent.setup();
+    open("/payments?paymentsPage=3");
+
+    await user.click(screen.getByLabelText("Operatsiya turi"));
+    const incomeOption = await screen.findByRole("option", { name: "Kirim" });
+    getFinanceHistoryMock.mockClear();
+    await user.click(incomeOption);
+
+    await waitFor(() => expect(currentSearch()).toContain("operation_type=income"));
+    expect(currentSearch()).toContain("paymentsPage=1");
+    expect(getFinanceHistoryMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ operation_type: "income", page: 3 }),
+    );
+    expect(getFinanceHistoryMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ operation_type: "income", page: 1 }),
+    );
+  });
+
   it("clears the filter from the URL (not just the form) when 'Tozalash' is clicked", async () => {
     const user = userEvent.setup();
     open("/payments?operation_type=income");

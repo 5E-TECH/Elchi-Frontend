@@ -296,12 +296,14 @@
   "orderNumber": "Номер заказа",
   "copyOrderNumber": "Скопировать номер",
   "orderNumberCopied": "Номер заказа скопирован",
+  "orderNumberCopyFailed": "Не удалось скопировать — номер заказа: {{id}}",
   "extraCostApprovalNotice": "Дополнительный расход требует подтверждения магазина — до подтверждения статус заказа не изменится.",
   "extraCostApprovalPendingTitle": "Ожидается подтверждение магазина",
   "extraCostApprovalPendingDescription": "Дополнительный расход {{amount}} отправлен магазину на подтверждение. Если магазин подтвердит, действие выполнится автоматически; если отклонит — заказ останется в текущем статусе.",
   "extraCostApprovalBadge": "На подтверждении",
   "extraCostApprovalSentAt": "Дополнительный расход {{amount}} отправлен на подтверждение магазину в {{time}}",
   "sortLabel": "Сортировка:",
+  "sortCurrentPageOnly": "Сортировка применяется только к заказам на этой странице",
   "excel": {
     "fileName": "vse_zakazy",
     "headers": {

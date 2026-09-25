@@ -67,6 +67,12 @@ describe("HistoryTab URL state", () => {
     expect(getHistoryMock).toHaveBeenLastCalledWith(true, { page: 1, limit: 10 });
   });
 
+  it("ignores an unknown source type in the URL instead of sending it to the API (which answers 500)", () => {
+    open("/financial-balance?tab=history&financialBalanceHistorySource=sell");
+
+    expect(getHistoryMock).toHaveBeenLastCalledWith(true, { page: 1, limit: 10 });
+  });
+
   it("writes a newly selected source filter to the URL and resets to page 1", async () => {
     const user = userEvent.setup();
     open("/financial-balance?tab=history&financialBalanceHistoryPage=3");

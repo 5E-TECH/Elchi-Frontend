@@ -18,7 +18,7 @@ vi.mock("recharts", () => ({
     </div>
   ),
   Bar: ({ children }: { children?: ReactNode }) => <div data-testid="bar">{children}</div>,
-  Cell: () => null,
+  Cell: ({ fill }: { fill: string }) => <span data-testid="bar-cell" data-fill={fill} />,
   XAxis: () => null,
   YAxis: ({ tickFormatter }: { tickFormatter?: (value: string) => string }) => (
     <div data-testid="y-axis" data-long-label={tickFormatter?.("E2E-AND13-KURYER2-EXTRA") ?? ""} />
@@ -113,6 +113,42 @@ describe("PerformanceChart", () => {
     renderWithProviders(<PerformanceChart couriers={[buildCourier({ courier_id: "c1" })]} />);
 
     expect(screen.getByTestId("y-axis")).toHaveAttribute("data-long-label", "E2E-AND13-KURYE…");
+  });
+
+  it("paints rates below 50% red, 50–69% amber and 70%+ green", () => {
+    renderWithProviders(
+      <PerformanceChart
+        markets={[
+          buildMarket({ market_id: "a", success_rate: 80 }),
+          buildMarket({ market_id: "b", success_rate: 60 }),
+          buildMarket({ market_id: "c", success_rate: 49.9 }),
+          buildMarket({ market_id: "d", success_rate: 45 }),
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByTestId("bar-cell").map((cell) => cell.getAttribute("data-fill"))).toEqual([
+      "var(--color-success)",
+      "var(--color-warning)",
+      "var(--color-error)",
+      "var(--color-error)",
+    ]);
+  });
+
+  it("shows a loading skeleton — not the 'not enough data' text — while the data is still loading", () => {
+    const { container } = renderWithProviders(<PerformanceChart markets={[]} couriers={[]} loading />);
+
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Hali solishtirish uchun yetarli ma'lumot yo'q.")).not.toBeInTheDocument();
+  });
+
+  it("explains why the couriers section is empty when a specific reason is given", () => {
+    renderWithProviders(
+      <PerformanceChart markets={[]} couriers={[]} couriersEmptyText="Kuryerlar bu davr uchun yo'q" />,
+    );
+
+    expect(screen.getByText("Kuryerlar bu davr uchun yo'q")).toBeInTheDocument();
+    expect(screen.getByText("Hali solishtirish uchun yetarli ma'lumot yo'q.")).toBeInTheDocument();
   });
 
   it("does not show a Show more button when there are 10 or fewer rows", () => {

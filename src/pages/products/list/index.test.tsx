@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useLocation } from "react-router-dom";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { vi } from "vitest";
 import ProductTable from "./index";
 import { renderWithProviders } from "../../../test/test-utils";
+import { useResetInputsOnPathChange } from "../../../shared/lib/useResetInputsOnPathChange";
 
 /**
  * `MemoryRouter` brauzer manzilini o'zgartirmaydi — URL holati router'ning
@@ -154,10 +155,6 @@ vi.mock("../../../features/Select/selectInput", () => ({
   default: ({ placeholder }: { placeholder: string }) => <div>{placeholder}</div>,
 }));
 
-vi.mock("../../../features/search", () => ({
-  GlobalSearchInput: ({ placeholder }: { placeholder: string }) => <input placeholder={placeholder} />,
-}));
-
 describe("ProductTable", () => {
   const renderProductTable = (route = "/products") =>
     renderWithProviders(<ProductTable />, {
@@ -242,6 +239,58 @@ describe("ProductTable", () => {
     });
   });
 
+  it("keeps every typed character, then writes the search to the URL and the request together with page 1", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ProductTable />
+        <LocationProbe />
+      </>,
+      { route: "/products?page=3", preloadedState: { role: adminRoleState } },
+    );
+
+    const input = screen.getByPlaceholderText("Qidirish...");
+    await user.type(input, "test");
+
+    expect(input).toHaveValue("test");
+    await waitFor(
+      () => expect(screen.getByTestId("search").textContent).toBe("?product_search=test"),
+      { timeout: 2500 },
+    );
+    expect(input).toHaveValue("test");
+    expect(getProductsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: "test", page: 1 }),
+      expect.any(Boolean),
+    );
+    // So'rov har bir harfga emas, yozish to'xtagach bir marta ketadi.
+    expect(getProductsMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ search: "tes" }),
+      expect.any(Boolean),
+    );
+  });
+
+  it("restores the search from a link even though the app clears searches on every path change", async () => {
+    const user = userEvent.setup();
+    const AppShell = () => {
+      useResetInputsOnPathChange();
+      return (
+        <Routes>
+          <Route path="/" element={<Link to="/products?product_search=olma">products</Link>} />
+          <Route path="/products" element={<ProductTable />} />
+        </Routes>
+      );
+    };
+    renderWithProviders(<AppShell />, { route: "/", preloadedState: { role: adminRoleState } });
+
+    await user.click(screen.getByRole("link", { name: "products" }));
+
+    expect(await screen.findByPlaceholderText("Qidirish...")).toHaveValue("olma");
+    expect(getProductsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: "olma" }),
+      expect.any(Boolean),
+    );
+  });
+
   it("writes the selected market filter to the URL immediately, so a refresh keeps it", async () => {
     // jsdom does not implement scrollIntoView; SearchableSelect calls it when
     // its dropdown opens. Pre-existing gap, unrelated to this fix.
@@ -261,5 +310,33 @@ describe("ProductTable", () => {
     await waitFor(() => {
       expect(screen.getByTestId("search").textContent).toContain("market_id=1");
     });
+  });
+
+  it("goes back to page 1 in the same URL update when a market is picked, without an extra request for the old page", async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ProductTable />
+        <LocationProbe />
+      </>,
+      { route: "/products?page=3", preloadedState: { role: adminRoleState } },
+    );
+
+    await user.click(document.getElementById("market_id")!);
+    getProductsMock.mockClear();
+    await user.click(await screen.findByRole("button", { name: "Fresh" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("search").textContent).toBe("?market_id=1");
+    });
+    expect(getProductsMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ market_id: "1", page: 3 }),
+      expect.any(Boolean),
+    );
+    expect(getProductsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ market_id: "1", page: 1 }),
+      expect.any(Boolean),
+    );
   });
 });

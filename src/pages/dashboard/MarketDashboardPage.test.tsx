@@ -14,6 +14,13 @@ vi.mock("../../entities/dashboard", () => ({
   }),
 }));
 
+const settingsState: { data: unknown } = { data: undefined };
+
+vi.mock("../../entities/settings", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/settings")>()),
+  useSettings: () => settingsState,
+}));
+
 vi.mock("../../widgets/dashboard-performance-chart/ui/PerformanceChart", () => ({
   // `couriers === undefined` is the signal that the couriers section is
   // intentionally omitted for the market role (not relevant to a market user).
@@ -76,6 +83,27 @@ const buildDashboardResponse = () => ({
 describe("MarketDashboardPage", () => {
   beforeEach(() => {
     getDashboardMock.mockReturnValue(buildDashboardResponse());
+    settingsState.data = undefined;
+  });
+
+  it("hides the comparison chart and rankings when those widgets are turned off in Settings", async () => {
+    const { DEFAULT_SETTINGS } = await import("../../entities/settings");
+    settingsState.data = {
+      ...DEFAULT_SETTINGS,
+      dashboard: {
+        widgets: { ...DEFAULT_SETTINGS.dashboard.widgets, performanceChart: false, topPerformers: false },
+      },
+    };
+
+    renderWithProviders(<MarketDashboardPage />, {
+      preloadedState: {
+        role: { id: "market-1", role: "market", region: null, name: "Market" },
+      },
+    });
+
+    expect(screen.getByTestId("market-stats-grid")).toBeInTheDocument();
+    expect(screen.queryByTestId("performance-chart")).not.toBeInTheDocument();
+    expect(screen.queryByText("Top marketlar")).not.toBeInTheDocument();
   });
 
   it("uses only the market-authorized dashboard endpoint", () => {
