@@ -1,4 +1,5 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CalendarDays, Funnel } from "lucide-react";
 import { Table } from "../../../shared/components/Table/Table";
@@ -6,12 +7,23 @@ import type { ColumnConfig } from "../../../shared/components/Table/Table.types"
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import FilterDateInput from "../../../shared/ui/FilterDateInput";
 import Pagination from "../../../shared/components/pagination";
+import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { usePagination } from "../../../shared/lib/usePagination";
 import {
+  HISTORY_PARAM_PREFIX,
   extractFinancialLedgerItems,
   extractFinancialLedgerPagination,
 } from "../lib/financialBalance";
+
+const PAGE_PARAM = `${HISTORY_PARAM_PREFIX}Page`;
+const LIMIT_PARAM = `${HISTORY_PARAM_PREFIX}Limit`;
+const FROM_PARAM = `${HISTORY_PARAM_PREFIX}From`;
+const TO_PARAM = `${HISTORY_PARAM_PREFIX}To`;
+const SOURCE_PARAM = `${HISTORY_PARAM_PREFIX}Source`;
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const readDateParam = (value: string | null) => (value && DATE_PATTERN.test(value) ? value : "");
 
 interface HistoryRow {
   id: string;
@@ -119,21 +131,37 @@ const HistoryTab = () => {
   const { t } = useTranslation("payments");
   const currencyLabel = t("currency");
   const { useGetFinancialBalanceHistory } = useFinanceCoverage();
-  const { page, limit, setPage, setLimit, resetPagination } = usePagination({
+  const { page, limit, setPage, setLimit } = usePagination({
     key: "payments",
     defaultLimit: 10,
-    pageParam: "financialBalanceHistoryPage",
-    limitParam: "financialBalanceHistoryLimit",
+    pageParam: PAGE_PARAM,
+    limitParam: LIMIT_PARAM,
   });
 
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [sourceType, setSourceType] = useState("");
-  const previousFiltersRef = useRef({
-    fromDate: "",
-    toDate: "",
-    sourceType: "",
-  });
+  // Filtrlar faqat URL'da yashaydi (lokal nusxa yo'q) — F5 yoki havola
+  // filtrni ham, sahifani ham birga tiklaydi.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const fromDate = readDateParam(searchParams.get(FROM_PARAM));
+  const toDate = readDateParam(searchParams.get(TO_PARAM));
+  const sourceType = searchParams.get(SOURCE_PARAM) ?? "";
+
+  // Filtr va sahifa bitta setSearchParams chaqiruvida yangilanadi: ikkita
+  // alohida chaqiruv bir-birining o'zgarishini bosib ketishi mumkin.
+  const setFilter = useCallback(
+    (param: string, value: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (value) next.set(param, value);
+          else next.delete(param);
+          next.delete(PAGE_PARAM);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const queryParams = useMemo(() => {
     const params: Record<string, string | number> = { page, limit };
@@ -145,20 +173,7 @@ const HistoryTab = () => {
     return params;
   }, [fromDate, limit, page, sourceType, toDate]);
 
-  useEffect(() => {
-    const previous = previousFiltersRef.current;
-    const hasChanged =
-      previous.fromDate !== fromDate ||
-      previous.toDate !== toDate ||
-      previous.sourceType !== sourceType;
-
-    if (!hasChanged) return;
-
-    previousFiltersRef.current = { fromDate, toDate, sourceType };
-    resetPagination(limit);
-  }, [fromDate, toDate, sourceType, limit, resetPagination]);
-
-  const { data, isLoading } = useGetFinancialBalanceHistory(true, queryParams);
+  const { data, isLoading, isError, refetch } = useGetFinancialBalanceHistory(true, queryParams);
 
   const rows = useMemo<HistoryRow[]>(
     () =>
@@ -262,7 +277,7 @@ const HistoryTab = () => {
 
   const sourceTypeOptions = useMemo(
     () => [
-      { value: "sell", label: t("financialBalanceSourceProfit") },
+      { value: "sell_profit", label: t("financialBalanceSourceProfit") },
       { value: "sell_extra_cost", label: t("financialBalanceSourceExtraCost") },
       { value: "cancel_extra_cost", label: t("financialBalanceSourceExtraCost") },
       { value: "manual_income", label: t("financialBalanceSourceManualIncome") },
@@ -288,13 +303,13 @@ const HistoryTab = () => {
           <FilterDateInput
             label={t("startDate")}
             value={fromDate}
-            onChange={setFromDate}
+            onChange={(value) => setFilter(FROM_PARAM, value)}
             placement="bottom"
           />
           <FilterDateInput
             label={t("endDate")}
             value={toDate}
-            onChange={setToDate}
+            onChange={(value) => setFilter(TO_PARAM, value)}
             minDate={fromDate || undefined}
             placement="bottom"
           />
@@ -302,7 +317,7 @@ const HistoryTab = () => {
             name="financial_balance_source_type"
             label={t("financialBalanceSourceType")}
             value={sourceType}
-            onChange={setSourceType}
+            onChange={(value) => setFilter(SOURCE_PARAM, value)}
             options={sourceTypeOptions}
             placeholder={t("financialBalanceAllSources")}
             icon={CalendarDays}
@@ -310,31 +325,35 @@ const HistoryTab = () => {
         </div>
       </div>
 
-      <div>
-        <Table<HistoryRow>
-          data={rows}
-          columns={columns}
-          loading={isLoading}
-          keyExtractor={(row) => row.id}
-          emptyMessage={t("financialBalanceHistoryEmpty")}
-        />
-
-        <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <span className="text-xs text-gray-500 dark:text-white/45">
-            {t("pageLabel", { page: pagination.page, totalPages: pagination.totalPages })}
-          </span>
-
-          <Pagination
-            totalItems={pagination.total}
-            itemsPerPage={pagination.limit}
-            currentPage={pagination.page}
-            onPageChange={setPage}
-            onItemsPerPageChange={setLimit}
-            className="w-full pt-0 sm:w-auto"
-            summary={null}
+      {isError ? (
+        <QueryErrorState onRetry={() => void refetch()} />
+      ) : (
+        <div>
+          <Table<HistoryRow>
+            data={rows}
+            columns={columns}
+            loading={isLoading}
+            keyExtractor={(row) => row.id}
+            emptyMessage={t("financialBalanceHistoryEmpty")}
           />
+
+          <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <span className="text-xs text-gray-500 dark:text-white/45">
+              {t("pageLabel", { page: pagination.page, totalPages: pagination.totalPages })}
+            </span>
+
+            <Pagination
+              totalItems={pagination.total}
+              itemsPerPage={pagination.limit}
+              currentPage={pagination.page}
+              onPageChange={setPage}
+              onItemsPerPageChange={setLimit}
+              className="w-full pt-0 sm:w-auto"
+              summary={null}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

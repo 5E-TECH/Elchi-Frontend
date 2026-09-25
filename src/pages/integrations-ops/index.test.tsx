@@ -35,6 +35,79 @@ describe("IntegrationsOps page", () => {
     );
   });
 
+  it("renders receivables from the backend's { data: { items } } envelope without crashing", async () => {
+    apiGetMock.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        message: "Provider receivables",
+        data: {
+          items: [{ id: "rcv-1", amount: "15000.00", status: "pending" }],
+          pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+        },
+      },
+    });
+
+    renderWithProviders(<IntegrationsOpsPage />);
+
+    expect(await screen.findByText("rcv-1")).toBeInTheDocument();
+    expect(screen.getByText("15000.00")).toBeInTheDocument();
+  });
+
+  it("shows an error Alert (not an empty table) when the receivables request fails", async () => {
+    apiGetMock.mockRejectedValue({
+      response: { status: 500, data: { message: "Integratsiya xizmati javob bermadi" } },
+    });
+
+    renderWithProviders(<IntegrationsOpsPage />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Debitorlik qarzlarini yuklab bo'lmadi");
+    expect(alert).toHaveTextContent("Integratsiya xizmati javob bermadi");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("refetches receivables when 'Qayta urinish' is clicked", async () => {
+    const user = userEvent.setup();
+    apiGetMock.mockRejectedValue({ response: { status: 500, data: { message: "down" } } });
+
+    renderWithProviders(<IntegrationsOpsPage />);
+    await screen.findByRole("alert");
+    const callsBefore = apiGetMock.mock.calls.length;
+
+    await user.click(screen.getByRole("button", { name: /Qayta urinish/ }));
+
+    await waitFor(() => expect(apiGetMock.mock.calls.length).toBe(callsBefore + 1));
+  });
+
+  it("shows the empty table state only when the request succeeded with zero rows", async () => {
+    apiGetMock.mockResolvedValue({
+      data: { statusCode: 200, data: { items: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } } },
+    });
+
+    renderWithProviders(<IntegrationsOpsPage />);
+
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows an error Alert when Sync fails", async () => {
+    const user = userEvent.setup();
+    apiPostMock.mockRejectedValue({ response: { status: 404, data: { message: "Integratsiya topilmadi" } } });
+
+    renderWithProviders(<IntegrationsOpsPage />);
+    await user.type(screen.getByLabelText("integration-id"), "missing");
+    await user.click(screen.getByRole("button", { name: "Sync" }));
+
+    const alert = await screen.findByText("Sinxronizatsiya bajarilmadi");
+    expect(alert.closest("[role='alert']")).toHaveTextContent("Integratsiya topilmadi");
+  });
+
+  it("keeps Sync disabled until an integration id is entered", () => {
+    renderWithProviders(<IntegrationsOpsPage />);
+
+    expect(screen.getByRole("button", { name: "Sync" })).toBeDisabled();
+  });
+
   it("calls POST sync with correct endpoint when Sync is clicked", async () => {
     const user = userEvent.setup();
     renderWithProviders(<IntegrationsOpsPage />);

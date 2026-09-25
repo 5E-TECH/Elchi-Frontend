@@ -35,6 +35,14 @@ import {
 } from "./new_orderUpdate.ui";
 import HeaderName from "../../../shared/components/headerName";
 import BackButton from "../../../shared/ui/BackButton";
+import OrderIdBadge from "../../../shared/ui/OrderIdBadge";
+import {
+  getActivePendingApproval,
+  pollWhileApprovalPending,
+  resolveOrderActionResponse,
+  usePendingExtraCostApprovals,
+} from "../../../entities/orders/extraCostApproval";
+import { ExtraCostApprovalSentNote } from "../../../entities/orders/ui/ExtraCostApproval";
 import { useOrders } from "../../../entities/orders";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
@@ -307,6 +315,14 @@ const getPaymentRows = (order: OrderDetail, formatMoney: (value: number) => stri
 ];
 
 
+const unwrapOrderDetail = (res: unknown): OrderDetail | null => {
+  if (!res) return null;
+  if ("data" in (res as Record<string, unknown>) && (res as { data?: OrderDetail }).data) {
+    return (res as { data: OrderDetail }).data;
+  }
+  return res as OrderDetail;
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderUpdate = () => {
   const { t, i18n } = useTranslation(["newOrders", "orders"]);
@@ -326,6 +342,13 @@ const NewOrderUpdate = () => {
     (value: number) => `${numberFormatter.format(value)} ${currencyLabel}`,
     [currencyLabel, numberFormatter],
   );
+  const handleCopyOrderId = useCallback(
+    (id: string) => {
+      void navigator.clipboard?.writeText(id);
+      notificationApi.success({ message: t("orderNumberCopied", { ns: "orders" }), placement: "topRight" });
+    },
+    [notificationApi, t],
+  );
   const productsLockReason = t("productsLockReason");
   const destinationLockReason = t("destinationLockReason");
 
@@ -344,6 +367,8 @@ const NewOrderUpdate = () => {
   });
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
+  const [isApprovalRequested, setIsApprovalRequested] = useState(false);
   const [isRollbackConfirmOpen, setIsRollbackConfirmOpen] = useState(false);
 
   // ─── Data fetching ───────────────────────────────────────────────────────────
@@ -358,14 +383,13 @@ const NewOrderUpdate = () => {
   const { updateUser } = useUser();
   const { useGetRegions, useGetDistricts } = useLogistics();
 
-  const { data: res, isLoading } = useGetOrderById(orderId ?? "", !!orderId);
-  const order = useMemo<OrderDetail | null>(() => {
-    if (!res) return null;
-    if ("data" in (res as Record<string, unknown>) && (res as { data?: OrderDetail }).data) {
-      return (res as { data: OrderDetail }).data;
-    }
-    return res as OrderDetail;
-  }, [res]);
+  const { data: res, isLoading } = useGetOrderById(orderId ?? "", !!orderId, (current) => {
+    const detail = unwrapOrderDetail(current);
+    return pollWhileApprovalPending(detail ? [detail] : []);
+  });
+  const order = useMemo(() => unwrapOrderDetail(res), [res]);
+  const pendingApprovals = usePendingExtraCostApprovals();
+  const pendingApproval = getActivePendingApproval(pendingApprovals, order);
   const userId = order?.customer?.id;
 
   const { data: regionsData } = useGetRegions();
@@ -679,17 +703,35 @@ const NewOrderUpdate = () => {
     },
     [navigate, userId],
   );
+  const closeSellModal = useCallback(() => {
+    setIsSellModalOpen(false);
+    setIsApprovalRequested(false);
+  }, []);
+
+  const closeCancelModal = useCallback(() => {
+    setIsCancelModalOpen(false);
+    setIsApprovalRequested(false);
+  }, []);
+
   const handleSell = useCallback(
     (id: string, payload: { comment: string; extraCost: number; proof?: File }) => {
+      const actionOrder = order ?? { id };
       SellOrder.mutate(
         { orderId: id, data: payload },
         {
-          onSuccess: () => setIsSellModalOpen(false),
+          onSuccess: (response) =>
+            resolveOrderActionResponse(response, {
+              order: actionOrder,
+              action: "sell",
+              extraCost: payload.extraCost,
+              onCompleted: closeSellModal,
+              onApprovalRequested: () => setIsApprovalRequested(true),
+            }),
           onError: showActionError,
         },
       );
     },
-    [SellOrder, showActionError],
+    [SellOrder, closeSellModal, order, showActionError],
   );
 
   const handlePartlySell = useCallback(
@@ -703,28 +745,44 @@ const NewOrderUpdate = () => {
         proof?: File;
       },
     ) => {
+      const actionOrder = order ?? { id };
       PartlySellOrder.mutate(
         { orderId: id, data: payload },
         {
-          onSuccess: () => setIsSellModalOpen(false),
+          onSuccess: (response) =>
+            resolveOrderActionResponse(response, {
+              order: actionOrder,
+              action: "partly_sell",
+              extraCost: payload.extraCost,
+              onCompleted: closeSellModal,
+              onApprovalRequested: () => setIsApprovalRequested(true),
+            }),
           onError: showActionError,
         },
       );
     },
-    [PartlySellOrder, showActionError],
+    [PartlySellOrder, closeSellModal, order, showActionError],
   );
 
   const handleCancelOrder = useCallback(
     (id: string, payload: { comment: string; extraCost: number; paidAmount: number; proof?: File }) => {
+      const actionOrder = order ?? { id };
       CancelOrder.mutate(
         { orderId: id, data: payload },
         {
-          onSuccess: () => setIsCancelModalOpen(false),
+          onSuccess: (response) =>
+            resolveOrderActionResponse(response, {
+              order: actionOrder,
+              action: "cancel",
+              extraCost: payload.extraCost,
+              onCompleted: closeCancelModal,
+              onApprovalRequested: () => setIsApprovalRequested(true),
+            }),
           onError: showActionError,
         },
       );
     },
-    [CancelOrder, showActionError],
+    [CancelOrder, closeCancelModal, order, showActionError],
   );
   const handleRollbackConfirm = useCallback(() => {
     if (!order?.id) return;
@@ -785,44 +843,56 @@ const NewOrderUpdate = () => {
             description={t("viewOrderDetails")}
           />
         </div>
-        {order?.status && (
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg?.cls ?? DEFAULT_STATUS_CLS}`}>
-              {statusCfg
-                ? t(statusCfg.labelKey, { ns: statusCfg.ns ?? "orders", defaultValue: order.status })
-                : order.status}
-            </span>
-            {canUseCourierActions && (
+        {order && (
+          <div className="flex flex-wrap items-center gap-2">
+            <OrderIdBadge
+              id={String(order.id)}
+              label={t("copyOrderNumber", { ns: "orders" })}
+              onCopy={handleCopyOrderId}
+              className="text-sm"
+            />
+            {order.status && (
               <>
-                <button
-                  type="button"
-                  onClick={() => setIsSellModalOpen(true)}
-                  className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
-                >
-                  {t("sell", { ns: "orders" })}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsCancelModalOpen(true)}
-                  className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
-                >
-                  {t("cancelOrderAction", { ns: "orders" })}
-                </button>
+                <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg?.cls ?? DEFAULT_STATUS_CLS}`}>
+                  {statusCfg
+                    ? t(statusCfg.labelKey, { ns: statusCfg.ns ?? "orders", defaultValue: order.status })
+                    : order.status}
+                </span>
+                {canUseCourierActions && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsSellModalOpen(true)}
+                      className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                    >
+                      {t("sell", { ns: "orders" })}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCancelModalOpen(true)}
+                      className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                    >
+                      {t("cancelOrderAction", { ns: "orders" })}
+                    </button>
+                  </>
+                )}
+                {canRollbackSoldOrder && (
+                  <button
+                    type="button"
+                    onClick={() => setIsRollbackConfirmOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/70 bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-200 dark:border-amber-400/35 dark:bg-amber-400/12 dark:text-amber-100 dark:hover:border-amber-300/60 dark:hover:bg-amber-400/20"
+                  >
+                    <RotateCcw size={13} />
+                    {t("restoreOrder", { ns: "orders" })}
+                  </button>
+                )}
               </>
-            )}
-            {canRollbackSoldOrder && (
-              <button
-                type="button"
-                onClick={() => setIsRollbackConfirmOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/70 bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-200 dark:border-amber-400/35 dark:bg-amber-400/12 dark:text-amber-100 dark:hover:border-amber-300/60 dark:hover:bg-amber-400/20"
-              >
-                <RotateCcw size={13} />
-                {t("restoreOrder", { ns: "orders" })}
-              </button>
             )}
           </div>
         )}
       </div>
+
+      {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
 
       {/* Content */}
       {isLoading ? (
@@ -1159,18 +1229,20 @@ const NewOrderUpdate = () => {
       <SellModal
         order={sellModalOrder}
         open={isSellModalOpen}
-        onClose={() => setIsSellModalOpen(false)}
+        onClose={closeSellModal}
         onSell={handleSell}
         onPartlySell={handlePartlySell}
         isLoading={SellOrder.isPending || PartlySellOrder.isPending}
+        awaitingApproval={isApprovalRequested}
       />
 
       <CancelModal
         order={sellModalOrder}
         open={isCancelModalOpen}
-        onClose={() => setIsCancelModalOpen(false)}
+        onClose={closeCancelModal}
         onCancel={handleCancelOrder}
         isLoading={CancelOrder.isPending}
+        awaitingApproval={isApprovalRequested}
       />
 
       <PopupConfirm

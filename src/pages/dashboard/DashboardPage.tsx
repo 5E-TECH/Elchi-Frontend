@@ -114,6 +114,12 @@ const DashboardPage = () => {
   const topMarkets = data?.data?.topMarkets ?? [];
   const topBranches = data?.data?.topBranches ?? [];
   const topCouriers = data?.data?.topCouriers ?? [];
+  // Backend "All" davrida to'liq statistikani bo'sh qaytaradi — shunda
+  // grafik top-reytingga qaytadi; admin uchun topCouriers umuman kelmaydi.
+  const marketStats = data?.data?.markets ?? [];
+  const courierStats = data?.data?.couriers ?? [];
+  const chartMarkets = marketStats.length ? marketStats : topMarkets;
+  const chartCouriers = courierStats.length ? courierStats : topCouriers;
 
   const clearRange = useCallback(() => {
     setFromDate("");
@@ -261,7 +267,7 @@ const DashboardPage = () => {
           icon={<BarChart3 size={16} />}
           className="mb-5"
         >
-          <PerformanceChart markets={topMarkets} couriers={topCouriers} />
+          <PerformanceChart markets={chartMarkets} couriers={chartCouriers} />
         </MobileCollapsibleSection>
       )}
 

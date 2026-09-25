@@ -126,6 +126,11 @@ const IncomingOrdersPage = () => {
   );
   const meta = extractMeta(query.data);
   const total = meta?.total ?? orders.length;
+  // So'rov yiqilganda bo'sh massiv "posilka kelmagan" bilan bir xil ko'rinib
+  // qolmasligi kerak — buzuq tizim va bo'sh ro'yxat alohida ko'rsatiladi.
+  const listFailed = query.isError && orders.length === 0;
+  const listStale = query.isError && orders.length > 0;
+  const listErrorText = getBackendErrorMessage(query.error) ?? t("incomingLoadError");
 
   /** Skanerlangan token → buyurtma. Har skanda qayta qurilmaydi. */
   const byToken = useMemo(() => {
@@ -266,7 +271,7 @@ const IncomingOrdersPage = () => {
                 {t("incomingArrived")}
               </p>
               <p className="m-0 text-xl font-extrabold text-maindark dark:text-white">
-                {total}
+                {listFailed ? "—" : total}
               </p>
             </div>
             <div className="text-right">
@@ -274,7 +279,7 @@ const IncomingOrdersPage = () => {
                 {t("incomingScanned")}
               </p>
               <p className="m-0 text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                {scannedCount} / {orders.length}
+                {listFailed ? "—" : `${scannedCount} / ${orders.length}`}
               </p>
             </div>
             <button
@@ -339,10 +344,46 @@ const IncomingOrdersPage = () => {
       </div>
 
       {/* ===== Ro'yxat ===== */}
+      {listStale ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/12 px-4 py-3 text-sm font-semibold text-amber-700 dark:text-amber-200"
+        >
+          <AlertTriangle size={18} className="shrink-0" />
+          <span className="flex-1 [overflow-wrap:anywhere]">{t("incomingStaleWarning")}</span>
+          <button
+            type="button"
+            onClick={() => void query.refetch()}
+            disabled={query.isFetching}
+            className="rounded-xl border border-current px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+          >
+            {t("retry")}
+          </button>
+        </div>
+      ) : null}
       <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary shadow-sm sm:rounded-[28px] dark:bg-primarydark">
         {query.isLoading ? (
           <div className="flex min-h-[220px] items-center justify-center">
             <Loader2 className="animate-spin text-main" size={28} />
+          </div>
+        ) : listFailed ? (
+          <div
+            role="alert"
+            className="flex min-h-[220px] flex-col items-center justify-center gap-3 border-l-4 border-red-500 bg-red-500/8 px-4 text-center"
+          >
+            <AlertTriangle size={32} className="text-red-600 dark:text-red-400" />
+            <p className="m-0 text-sm font-bold text-red-700 dark:text-red-200 [overflow-wrap:anywhere]">
+              {listErrorText}
+            </p>
+            <button
+              type="button"
+              onClick={() => void query.refetch()}
+              disabled={query.isFetching}
+              className="inline-flex items-center gap-2 rounded-xl bg-main px-4 py-2.5 text-sm font-bold text-white transition hover:bg-main/90 disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={query.isFetching ? "animate-spin" : ""} />
+              {t("retry")}
+            </button>
           </div>
         ) : orders.length === 0 ? (
           <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center">

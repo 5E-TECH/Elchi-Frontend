@@ -1,3 +1,6 @@
+// Tarix tabining barcha URL parametrlari shu prefiks bilan boshlanadi.
+export const HISTORY_PARAM_PREFIX = "financialBalanceHistory";
+
 export interface FinancialBalanceData {
   currentSituation: number;
   difference: number;

@@ -30,12 +30,17 @@ export const useOrders = () => {
         },
     });
 
-    const useGetOrders = (params?: OrderListParams, enabled = true) =>
+    const useGetOrders = (
+        params?: OrderListParams,
+        enabled = true,
+        refetchInterval?: (data: OrderListResponse | undefined) => number | false,
+    ) =>
         useQuery<OrderListResponse>({
             queryKey: [ORDER_KEY, params],
             queryFn: () => api.get(API_ENDPOINTS.ORDERS.BASE, { params }).then((res) => res.data),
             enabled,
             placeholderData: (prev) => prev,
+            refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
         });
 
     const useGetExternalOrders = (params?: ExternalOrdersParams) =>

@@ -2,9 +2,12 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { OrderStatus } from "../../../entities/order/types/order";
 import { getStatusColor } from "../../../shared/config/statusColorMap";
+import { ExtraCostApprovalBadge } from "../../../entities/orders/ui/ExtraCostApproval";
 
 interface Props {
     status: OrderStatus;
+    /** Berilsa, market tasdig'iga yuborilgan qo'shimcha xarajat belgisi ham ko'rsatiladi. */
+    orderId?: string;
 }
 
 const STATUS_CONFIG: Record<
@@ -24,17 +27,26 @@ const STATUS_CONFIG: Record<
     closed: { labelKey: "statusClosed", colorKey: "closed" },
 };
 
-const OrderStatusBadge = ({ status }: Props) => {
+const OrderStatusBadge = ({ status, orderId }: Props) => {
     const { t } = useTranslation("orders");
     const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG["new"];
     const colors = getStatusColor(cfg.colorKey);
 
-    return (
+    const statusChip = (
         <span
             className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-semibold ${colors.bg} ${colors.text} ${colors.border}`}
         >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {t(cfg.labelKey)}
+        </span>
+    );
+
+    if (!orderId) return statusChip;
+
+    return (
+        <span className="inline-flex flex-wrap items-center gap-1">
+            {statusChip}
+            <ExtraCostApprovalBadge orderId={orderId} status={status} />
         </span>
     );
 };

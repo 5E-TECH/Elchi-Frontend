@@ -15,6 +15,12 @@ import type { TopMarket, TopCourier } from "../../../entities/dashboard";
 import { TYPO, TEXT, formatPercent, formatNumber } from "../../../shared/config/designSystem";
 
 const INITIAL_ROWS = 10;
+// Y o'qi eni 110px — bo'shliqsiz uzun nom (masalan "E2E-AND13-KURYER2")
+// qatorga bo'linmaydi va chapdan kesilib qoladi; to'liq nom tooltip'da.
+const MAX_LABEL_LENGTH = 16;
+
+const truncateLabel = (value: string): string =>
+  value.length > MAX_LABEL_LENGTH ? `${value.slice(0, MAX_LABEL_LENGTH - 1)}…` : value;
 
 const AXIS_PROPS = {
   tick: { fill: "var(--color-dashboard-chart-axis)", fontSize: 11, fontWeight: 600 },
@@ -112,7 +118,7 @@ const PerformanceSection = memo(
               <BarChart data={visibleRows} layout="vertical" margin={{ top: 4, right: 28, bottom: 4, left: 0 }}>
                 <CartesianGrid {...GRID_PROPS} />
                 <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} {...AXIS_PROPS} />
-                <YAxis type="category" dataKey="name" width={110} {...AXIS_PROPS} />
+                <YAxis type="category" dataKey="name" width={110} tickFormatter={truncateLabel} {...AXIS_PROPS} />
                 <Tooltip content={<RateTooltip ordersLabel={ordersLabel} />} cursor={{ fill: "transparent" }} />
                 <Bar dataKey="rate" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive={false}>
                   {visibleRows.map((row) => (

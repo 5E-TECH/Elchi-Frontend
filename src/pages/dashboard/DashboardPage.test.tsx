@@ -253,6 +253,49 @@ describe("DashboardPage", () => {
     expect(chart).toHaveAttribute("data-couriers-count", "1");
   });
 
+  it("charts every market and courier from the full stats, not just the top-5 rankings", () => {
+    const performer = (id: string) => ({ total_orders: 10, successful_orders: 5, success_rate: 50, id });
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          orders: { acceptedCount: 12, soldAndPaid: 5, cancelled: 2, profit: 0, totalRevenue: 0 },
+          markets: Array.from({ length: 7 }, (_, i) => ({ ...performer(`m${i}`), market_id: `m${i}`, market_name: `Market ${i}` })),
+          couriers: Array.from({ length: 8 }, (_, i) => ({ ...performer(`c${i}`), courier_id: `c${i}`, courier_name: `Kuryer ${i}` })),
+          topMarkets: [
+            { market_id: "m-1", market_name: "Top market", total_orders: 50, successful_orders: 45, success_rate: 90 },
+          ],
+        },
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const chart = screen.getByTestId("performance-chart");
+    expect(chart).toHaveAttribute("data-markets-count", "7");
+    expect(chart).toHaveAttribute("data-couriers-count", "8");
+  });
+
+  it("falls back to the top rankings when the full stats come back empty (all-time period)", () => {
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          orders: { acceptedCount: 12, soldAndPaid: 5, cancelled: 2, profit: 0, totalRevenue: 0 },
+          markets: [],
+          couriers: [],
+          topMarkets: [
+            { market_id: "m-1", market_name: "A", total_orders: 50, successful_orders: 22, success_rate: 44 },
+            { market_id: "m-2", market_name: "B", total_orders: 66, successful_orders: 16, success_rate: 24 },
+            { market_id: "m-3", market_name: "C", total_orders: 33, successful_orders: 7, success_rate: 21 },
+          ],
+        },
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const chart = screen.getByTestId("performance-chart");
+    expect(chart).toHaveAttribute("data-markets-count", "3");
+    expect(chart).toHaveAttribute("data-couriers-count", "0");
+  });
+
   it("hides the performance chart for couriers and operators", () => {
     getDashboardMock.mockReturnValue({
       data: { data: { myStat: { totalOrders: 1, soldOrders: 1, canceledOrders: 0, profit: 0, successRate: 100 } } },
