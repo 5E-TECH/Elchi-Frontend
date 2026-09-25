@@ -120,6 +120,21 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
 
   const isAtMinimumSelection = isPartial && getSelectedItemsCount() === 1;
 
+  // Backend qisman sotishda kamida BITTA donani kamaytirishni va kamida
+  // bitta dona qoldirishni talab qiladi — ya'ni jami 1 donali buyurtmani
+  // (BeePost posilkalari doim shunday) qisman sotib bo'lmaydi. Ilgari rejim
+  // baribir ochilib, o'zgarmagan son bilan yuborilgan so'rov 400 qaytarardi.
+  const totalItemUnits = (order.items ?? []).reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
+  const canSellPartially = totalItemUnits >= 2;
+  const hasDecreasedItem = (order.items ?? []).some((item) => getItemQty(item) < item.quantity);
+  const partialBlockReason = !isPartial
+    ? null
+    : !hasDecreasedItem
+      ? t("partialSellDecreaseRequired")
+      : totalPrice === ""
+        ? t("partialSellPriceRequired")
+        : null;
+
   const canDecreaseItem = (item: OrderItem) => {
     const currentQty = getItemQty(item);
 
@@ -147,7 +162,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
     }
 
     if (isPartial) {
-      if (getSelectedItemsCount() < 1) {
+      if (getSelectedItemsCount() < 1 || partialBlockReason) {
         return;
       }
 
@@ -239,9 +254,14 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
               {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
 
               {/* Qisman sotish toggle */}
-              <div
+              <button
+                type="button"
                 onClick={() => setIsPartial((p) => !p)}
-                className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 transition-all select-none ${
+                disabled={!canSellPartially}
+                aria-pressed={isPartial}
+                className={`flex w-full items-center gap-3 p-3 rounded-xl border-2 text-left transition-all select-none disabled:cursor-not-allowed disabled:opacity-60 ${
+                  canSellPartially ? "cursor-pointer" : ""
+                } ${
                   isPartial
                     ? "border-orange-400 bg-orange-50 dark:border-orange-400/45 dark:bg-orange-400/10"
                     : "border-orange-200 bg-orange-50 dark:border-orange-400/20 dark:bg-orange-400/10"
@@ -255,7 +275,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                     {t("partialSell")}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {t("sellSeparately")}
+                    {canSellPartially ? t("sellSeparately") : t("partialSellUnavailableSingle")}
                   </p>
                 </div>
                 <div
@@ -267,7 +287,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                 >
                   {isPartial && <div className="w-2 h-2 rounded-full bg-white" />}
                 </div>
-              </div>
+              </button>
 
               {/* Items — qisman rejimda */}
               {isPartial && order.items?.length > 0 && (
@@ -291,6 +311,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                           <button
                             onClick={() => setItemQty(item, getItemQty(item) - 1)}
                             disabled={!canDecreaseItem(item)}
+                            aria-label={t("decreaseQuantity", { name: item.product?.name ?? "" })}
                             className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
                             <Minus size={12} />
@@ -300,6 +321,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                           </span>
                           <button
                             onClick={() => setItemQty(item, getItemQty(item) + 1)}
+                            aria-label={t("increaseQuantity", { name: item.product?.name ?? "" })}
                             className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center hover:bg-emerald-200 dark:hover:bg-emerald-500/25 transition-colors"
                           >
                             <Plus size={12} className="text-emerald-600 dark:text-emerald-200" />
@@ -426,11 +448,15 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={isLoading || isProofMissing}
+              disabled={isLoading || isProofMissing || Boolean(partialBlockReason)}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-500 hover:to-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <CheckCircle size={18} />
-              {isLoading ? t("loading", { ns: "common" }) : isProofMissing ? t("sellMediaProofRequiredNotice") : t("sell")}
+              {isLoading
+                ? t("loading", { ns: "common" })
+                : isProofMissing
+                  ? t("sellMediaProofRequiredNotice")
+                  : partialBlockReason ?? t("sell")}
             </button>
           )}
         </div>

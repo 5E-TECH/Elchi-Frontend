@@ -20,6 +20,7 @@ import {
 import type { RootState } from "../../app/config/store";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { copyToClipboard } from "../../shared/lib/clipboard";
+import QueryErrorState from "../../shared/ui/QueryErrorState";
 import {
   usePartnerActions,
   usePartnerWebhooks,
@@ -373,6 +374,12 @@ const PartnersPage = () => {
           <div className="flex min-h-[180px] items-center justify-center">
             <Loader2 className="animate-spin text-main" size={28} />
           </div>
+        ) : partnersQuery.isError ? (
+          // Xato "hamkor yo'q" bilan bir xil ko'rinmasligi kerak.
+          <QueryErrorState
+            description={getBackendErrorMessage(partnersQuery.error)}
+            onRetry={() => void partnersQuery.refetch()}
+          />
         ) : partners.length === 0 ? (
           <div className="flex min-h-[180px] flex-col items-center justify-center gap-3 text-center">
             <Plug size={32} className="text-[color:var(--color-text-muted)]" />
@@ -519,6 +526,13 @@ const PartnersPage = () => {
           <div className="flex min-h-[160px] items-center justify-center">
             <Loader2 className="animate-spin text-main" size={24} />
           </div>
+        ) : webhooksQuery.isError ? (
+          // Jurnal — yetkazilmagan hodisalarni ko'radigan yagona ekran: xato
+          // "Yozuv topilmadi" deb ko'rsatilsa muammo butunlay yashirinadi.
+          <QueryErrorState
+            description={getBackendErrorMessage(webhooksQuery.error)}
+            onRetry={() => void webhooksQuery.refetch()}
+          />
         ) : webhooks.length === 0 ? (
           <div className="flex min-h-[160px] items-center justify-center">
             <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)]">
