@@ -8,6 +8,10 @@ import Button from "../../shared/components/button";
 import HeaderName from "../../shared/components/headerName";
 import { useOrders } from "../../entities/order/api/orderApi";
 import { useOrders as useOrderActions } from "../../entities/orders";
+import {
+  pollWhileApprovalPending,
+  resolveOrderActionResponse,
+} from "../../entities/orders/extraCostApproval";
 import { useMarkets } from "../../entities/markets";
 import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
 import OrderFilters, { ORDER_FILTER_KEYS, ORDER_STATUS_URL_KEY } from "./list/OrderFilters";
@@ -325,6 +329,8 @@ const Orders = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [sellOrder, setSellOrder] = useState<OrderListItem | null>(null);
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
+  // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
+  const [approvalOrderId, setApprovalOrderId] = useState<string | null>(null);
   const [rollbackOrder, setRollbackOrder] = useState<OrderListItem | null>(null);
   const [selectedCancelledIds, setSelectedCancelledIds] = useState<Set<string>>(new Set());
   const rollbackSummary = useMemo(() => getRollbackOrderSummary(rollbackOrder), [rollbackOrder]);
@@ -544,7 +550,9 @@ const Orders = () => {
     [setMultipleParams],
   );
 
-  const { data, isLoading } = useGetOrders(apiParams);
+  const { data, isLoading } = useGetOrders(apiParams, true, (current) =>
+    pollWhileApprovalPending(current?.data ?? []),
+  );
   const { data: marketsResponse, isLoading: isMarketsLoading } = useGetMarkets(
     { status: "active", limit: 100 },
     showMarketSelect,
@@ -700,14 +708,34 @@ const Orders = () => {
     };
   }, [selectedActionOrder]);
 
+  const closeSellModal = useCallback(() => {
+    setSellOrder(null);
+    setApprovalOrderId(null);
+  }, []);
+
+  const closeCancelModal = useCallback(() => {
+    setCancelOrder(null);
+    setApprovalOrderId(null);
+  }, []);
+
   const handleSellOrder = useCallback(
     (orderId: string, payload: { comment: string; extraCost: number; proof?: File }) => {
+      const order = sellOrder ?? { id: orderId };
       SellOrder.mutate(
         { orderId, data: payload },
-        { onSuccess: () => setSellOrder(null) },
+        {
+          onSuccess: (response) =>
+            resolveOrderActionResponse(response, {
+              order,
+              action: "sell",
+              extraCost: payload.extraCost,
+              onCompleted: closeSellModal,
+              onApprovalRequested: () => setApprovalOrderId(orderId),
+            }),
+        },
       );
     },
-    [SellOrder],
+    [SellOrder, closeSellModal, sellOrder],
   );
 
   const handlePartlySellOrder = useCallback(
@@ -721,12 +749,22 @@ const Orders = () => {
         proof?: File;
       },
     ) => {
+      const order = sellOrder ?? { id: orderId };
       PartlySellOrder.mutate(
         { orderId, data: payload },
-        { onSuccess: () => setSellOrder(null) },
+        {
+          onSuccess: (response) =>
+            resolveOrderActionResponse(response, {
+              order,
+              action: "partly_sell",
+              extraCost: payload.extraCost,
+              onCompleted: closeSellModal,
+              onApprovalRequested: () => setApprovalOrderId(orderId),
+            }),
+        },
       );
     },
-    [PartlySellOrder],
+    [PartlySellOrder, closeSellModal, sellOrder],
   );
 
   const handleCancelOrder = useCallback(
@@ -734,12 +772,22 @@ const Orders = () => {
       orderId: string,
       payload: { comment: string; extraCost: number; paidAmount: number; proof?: File },
     ) => {
+      const order = cancelOrder ?? { id: orderId };
       CancelOrder.mutate(
         { orderId, data: payload },
-        { onSuccess: () => setCancelOrder(null) },
+        {
+          onSuccess: (response) =>
+            resolveOrderActionResponse(response, {
+              order,
+              action: "cancel",
+              extraCost: payload.extraCost,
+              onCompleted: closeCancelModal,
+              onApprovalRequested: () => setApprovalOrderId(orderId),
+            }),
+        },
       );
     },
-    [CancelOrder],
+    [CancelOrder, cancelOrder, closeCancelModal],
   );
 
   const handleRollbackOrder = useCallback(() => {
@@ -1055,17 +1103,19 @@ const Orders = () => {
       <SellModal
         order={sellOrder ? selectedActionModalOrder : null}
         open={!!sellOrder}
-        onClose={() => setSellOrder(null)}
+        onClose={closeSellModal}
         onSell={handleSellOrder}
         onPartlySell={handlePartlySellOrder}
         isLoading={SellOrder.isPending || PartlySellOrder.isPending}
+        awaitingApproval={!!sellOrder && approvalOrderId === sellOrder.id}
       />
       <CancelModal
         order={cancelOrder ? selectedActionModalOrder : null}
         open={!!cancelOrder}
-        onClose={() => setCancelOrder(null)}
+        onClose={closeCancelModal}
         onCancel={handleCancelOrder}
         isLoading={CancelOrder.isPending}
+        awaitingApproval={!!cancelOrder && approvalOrderId === cancelOrder.id}
       />
       <PopupConfirm
         isOpen={!!rollbackOrder}

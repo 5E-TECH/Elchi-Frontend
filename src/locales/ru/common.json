@@ -129,6 +129,8 @@
   "incomingReceiveSuccess": "заказ(ов) принято",
   "incomingReceiveError": "Не удалось принять заказы",
   "incomingEmpty": "Пока нет поступивших заказов",
+  "incomingLoadError": "Не удалось загрузить список заказов",
+  "incomingStaleWarning": "Список не обновился — показанные данные могут быть устаревшими",
   "incomingNoAccess": "У вас нет доступа к этой странице",
   "incomingOrders": "Поступившие заказы",
   "partners": "Партнёры",

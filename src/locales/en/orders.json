@@ -296,6 +296,11 @@
   "orderNumber": "Order number",
   "copyOrderNumber": "Copy number",
   "orderNumberCopied": "Order number copied",
+  "extraCostApprovalNotice": "Extra cost needs the market's approval — the order status won't change until the market approves.",
+  "extraCostApprovalPendingTitle": "Waiting for market approval",
+  "extraCostApprovalPendingDescription": "An extra cost of {{amount}} was sent to the market for approval. If the market approves, the action completes automatically; if it rejects, the order stays as it is.",
+  "extraCostApprovalBadge": "Sent for approval",
+  "extraCostApprovalSentAt": "Extra cost of {{amount}} sent for market approval at {{time}}",
   "sortLabel": "Sort:",
   "excel": {
     "fileName": "all_orders",

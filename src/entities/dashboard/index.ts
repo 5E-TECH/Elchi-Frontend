@@ -127,8 +127,8 @@ export interface DashboardResponse {
   data: {
     orders: DashboardOrdersSummary;
     myStat?: DashboardMyStat;
-    markets?: unknown[];
-    couriers?: unknown[];
+    markets?: TopMarket[];
+    couriers?: TopCourier[];
     topMarkets?: TopMarket[];
     topCouriers?: TopCourier[];
     topOperators?: TopOperator[];
@@ -250,22 +250,31 @@ const getDashboardOrdersRecord = (data: UnknownRecord): UnknownRecord => {
   return data;
 };
 
+// `soldOrders`/`sellingRate` — to'liq `markets`/`couriers` statistikasining
+// (market_stats/courier_stats) nomlari; top-reytinglar esa snake_case beradi.
 const normalizePerformerMetrics = (value: unknown) => {
   const item = asRecord(value);
   return {
     item,
     total_orders: toNumber(item.total_orders ?? item.totalOrders),
-    successful_orders: toNumber(item.successful_orders ?? item.successfulOrders),
-    success_rate: toNumber(item.success_rate ?? item.successRate),
+    successful_orders: toNumber(
+      item.successful_orders ?? item.successfulOrders ?? item.sold_orders ?? item.soldOrders,
+    ),
+    success_rate: toNumber(
+      item.success_rate ?? item.successRate ?? item.selling_rate ?? item.sellingRate,
+    ),
   };
 };
 
 const normalizeTopMarket = (value: unknown): TopMarket => {
   const metrics = normalizePerformerMetrics(value);
+  const market = asRecord(metrics.item.market);
   return {
-    market_id: String(metrics.item.market_id ?? metrics.item.marketId ?? metrics.item.id ?? ""),
+    market_id: String(
+      metrics.item.market_id ?? metrics.item.marketId ?? market.id ?? metrics.item.id ?? "",
+    ),
     market_name: String(
-      metrics.item.market_name ?? metrics.item.marketName ?? metrics.item.name ?? "",
+      metrics.item.market_name ?? metrics.item.marketName ?? market.name ?? metrics.item.name ?? "",
     ) || null,
     total_orders: metrics.total_orders,
     successful_orders: metrics.successful_orders,
@@ -275,12 +284,13 @@ const normalizeTopMarket = (value: unknown): TopMarket => {
 
 const normalizeTopCourier = (value: unknown): TopCourier => {
   const metrics = normalizePerformerMetrics(value);
+  const courier = asRecord(metrics.item.courier);
   return {
     courier_id: String(
-      metrics.item.courier_id ?? metrics.item.courierId ?? metrics.item.id ?? "",
+      metrics.item.courier_id ?? metrics.item.courierId ?? courier.id ?? metrics.item.id ?? "",
     ),
     courier_name: String(
-      metrics.item.courier_name ?? metrics.item.courierName ?? metrics.item.name ?? "",
+      metrics.item.courier_name ?? metrics.item.courierName ?? courier.name ?? metrics.item.name ?? "",
     ) || null,
     total_orders: metrics.total_orders,
     successful_orders: metrics.successful_orders,
@@ -492,6 +502,8 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
         from: orders.from === undefined ? undefined : toNumber(orders.from),
         to: orders.to === undefined ? undefined : toNumber(orders.to),
       },
+      markets: Array.isArray(data.markets) ? data.markets.map(normalizeTopMarket) : [],
+      couriers: Array.isArray(data.couriers) ? data.couriers.map(normalizeTopCourier) : [],
       topMarkets: Array.isArray(topMarkets)
         ? topMarkets.map(normalizeTopMarket)
         : [],

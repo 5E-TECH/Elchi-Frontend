@@ -20,7 +20,9 @@ vi.mock("recharts", () => ({
   Bar: ({ children }: { children?: ReactNode }) => <div data-testid="bar">{children}</div>,
   Cell: () => null,
   XAxis: () => null,
-  YAxis: () => null,
+  YAxis: ({ tickFormatter }: { tickFormatter?: (value: string) => string }) => (
+    <div data-testid="y-axis" data-long-label={tickFormatter?.("E2E-AND13-KURYER2-EXTRA") ?? ""} />
+  ),
   CartesianGrid: () => null,
   Tooltip: () => null,
 }));
@@ -105,6 +107,12 @@ describe("PerformanceChart", () => {
 
     const rowsAfter = JSON.parse(screen.getByTestId("bar-chart").getAttribute("data-rows")!);
     expect(rowsAfter).toHaveLength(14);
+  });
+
+  it("truncates long axis labels so space-less courier names are not clipped", () => {
+    renderWithProviders(<PerformanceChart couriers={[buildCourier({ courier_id: "c1" })]} />);
+
+    expect(screen.getByTestId("y-axis")).toHaveAttribute("data-long-label", "E2E-AND13-KURYE…");
   });
 
   it("does not show a Show more button when there are 10 or fewer rows", () => {

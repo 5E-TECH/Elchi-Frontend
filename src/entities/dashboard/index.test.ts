@@ -179,6 +179,28 @@ describe("dashboard response normalization", () => {
     });
   });
 
+  it("normalizes the full per-market / per-courier stats (market_stats / courier_stats shape)", () => {
+    const result = normalizeDashboardResponse({
+      statusCode: 200,
+      message: "Dashboard infos",
+      data: {
+        markets: [
+          { market: { id: "3", name: "Yandex" }, totalOrders: "66", soldOrders: "16", sellingRate: "24.24" },
+        ],
+        couriers: [
+          { courier: { id: "75", name: "Surxon courier 1" }, totalOrders: 3, soldOrders: 3, successRate: 100 },
+        ],
+      },
+    });
+
+    expect(result.data.markets).toEqual([
+      { market_id: "3", market_name: "Yandex", total_orders: 66, successful_orders: 16, success_rate: 24.24 },
+    ]);
+    expect(result.data.couriers).toEqual([
+      { courier_id: "75", courier_name: "Surxon courier 1", total_orders: 3, successful_orders: 3, success_rate: 100 },
+    ]);
+  });
+
   it("normalizes KPI fields", () => {
     const result = normalizeKpiResponse({
       data: {

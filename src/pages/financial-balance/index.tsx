@@ -1,4 +1,5 @@
-import { memo, useState } from "react";
+import { memo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import HeaderName from "../../shared/components/headerName";
 import { Scale, Briefcase, Store, Truck, History, ChartColumn, MapPin } from "lucide-react";
@@ -10,10 +11,17 @@ import PageContainer from "../../shared/ui/PageContainer";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import EmptyState from "../../shared/ui/EmptyState";
 import {
+  HISTORY_PARAM_PREFIX,
   formatFinancialAmount,
   normalizeFinancialBalance,
   type FinancialBalanceParty,
 } from "./lib/financialBalance";
+
+const FINANCIAL_BALANCE_TABS = ["overview", "history", "analysis"] as const;
+type FinancialBalanceTab = (typeof FINANCIAL_BALANCE_TABS)[number];
+
+const isFinancialBalanceTab = (value: string | null): value is FinancialBalanceTab =>
+  FINANCIAL_BALANCE_TABS.includes(value as FinancialBalanceTab);
 
 interface BalanceCard {
   label: string;
@@ -142,7 +150,26 @@ const FinancialBalance = () => {
   const { data: response, isLoading, isError, refetch } = useGetFinancialBalance();
   const data = normalizeFinancialBalance(response);
   const currencyLabel = t("currency");
-  const [activeTab, setActiveTab] = useState<"overview" | "history" | "analysis">("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get("tab");
+  const activeTab: FinancialBalanceTab = isFinancialBalanceTab(rawTab) ? rawTab : "overview";
+
+  // Tab almashganda Tarixning sahifa/filtr parametrlari tozalanadi — aks holda
+  // keyingi safar "Tarix" ochilganda eski sahifa/filtrga jimgina tushib qoladi.
+  const selectTab = (tab: FinancialBalanceTab) => {
+    if (tab === activeTab) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", tab);
+        Array.from(next.keys())
+          .filter((key) => key.startsWith(HISTORY_PARAM_PREFIX))
+          .forEach((key) => next.delete(key));
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   if (isError) {
     return (
@@ -329,7 +356,7 @@ const FinancialBalance = () => {
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => selectTab(tab.key)}
                 className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
                   ? "border-main bg-main text-white shadow-lg shadow-main/25"
                   : "border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] text-[color:var(--color-maindark)] shadow-sm hover:border-main/50 hover:bg-main/10 hover:text-main dark:border-white/10 dark:bg-white/5 dark:text-primary dark:hover:bg-white/10 dark:hover:text-white"

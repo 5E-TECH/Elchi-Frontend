@@ -11,12 +11,12 @@ import {
     CheckCircle,
     XCircle,
     RotateCcw,
-    Copy,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Table } from "../../../shared/components/Table/Table";
 import EmptyState from "../../../shared/ui/EmptyState";
+import OrderIdBadge from "../../../shared/ui/OrderIdBadge";
 import TableSkeleton from "../../../shared/ui/TableSkeleton";
 import OrderStatusBadge from "./OrderStatusBadge";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
@@ -123,32 +123,6 @@ const ActionButton = ({
     );
 };
 
-const OrderIdBadge = ({
-    id,
-    label,
-    onCopy,
-    className = "",
-}: {
-    id: string;
-    label: string;
-    onCopy: (id: string) => void;
-    className?: string;
-}) => (
-    <button
-        type="button"
-        title={label}
-        aria-label={label}
-        onClick={(event) => {
-            event.stopPropagation();
-            onCopy(id);
-        }}
-        className={`inline-flex items-center gap-1 text-xs font-mono font-semibold text-gray-400 transition-colors hover:text-main ${className}`}
-    >
-        <span>№{id}</span>
-        <Copy size={11} className="shrink-0" />
-    </button>
-);
-
 const formatDate = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString("uz-UZ", {
@@ -227,8 +201,8 @@ const createColumns = (
         label: "Holat",
         sortable: true as const,
         sortValue: (row: OrderListItem) => ORDER_STATUS_RANK[row.status] ?? 99,
-        render: (status: OrderListItem["status"]) => (
-            <OrderStatusBadge status={status} />
+        render: (status: OrderListItem["status"], row: OrderListItem) => (
+            <OrderStatusBadge orderId={row.id} status={status} />
         ),
     },
     {
@@ -500,7 +474,7 @@ const OrdersTable = ({
                             className="h-4 w-4 cursor-pointer accent-red-500 disabled:cursor-not-allowed disabled:opacity-25"
                         />
                     ) : null}
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge orderId={order.id} status={order.status} />
                 </div>
                 <OrderIdBadge id={order.id} label={t("copyOrderNumber")} onCopy={handleCopyOrderId} />
             </div>

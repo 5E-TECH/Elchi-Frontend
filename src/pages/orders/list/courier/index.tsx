@@ -11,6 +11,10 @@ import PendingOrdersTable from "./list/ordertable/pendingOrderTable";
 import AllOrdersTable from "./list/ordertable/AllOrdersTable";
 import CancelledOrdersTable from "./list/ordertable/CancelledOrdersTable";
 import { useOrders } from "../../../../entities/orders";
+import {
+  pollWhileApprovalPending,
+  resolveOrderActionResponse,
+} from "../../../../entities/orders/extraCostApproval";
 import { useQueryParams } from "../../../../shared/lib/useQueryParams";
 import { usePagination } from "../../../../shared/lib/usePagination";
 import Pagination from "../../../../shared/components/pagination";
@@ -313,6 +317,8 @@ const CourierOrders = () => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [sellOrder, setSellOrder] = useState<Order | null>(null);
   const [cancelOrder, setCancelOrder] = useState<Order | null>(null);
+  // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
+  const [approvalOrderId, setApprovalOrderId] = useState<string | null>(null);
   const [rollbackOrder, setRollbackOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [hiddenSentCancelledOrderIds, setHiddenSentCancelledOrderIds] =
@@ -352,7 +358,9 @@ const CourierOrders = () => {
     limit,
   };
 
-  const { data, isLoading } = useGetOrderCourier(params);
+  const { data, isLoading } = useGetOrderCourier(params, (current) =>
+    pollWhileApprovalPending(extractOrderRows(current)),
+  );
 
   const { mutate: sellMutate, isPending: isSelling } = SellOrder;
   const { mutate: partlySellMutate, isPending: isPartlySelling } = PartlySellOrder;
@@ -468,13 +476,33 @@ const CourierOrders = () => {
   });
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
+  const closeSellModal = () => {
+    setSellOrder(null);
+    setApprovalOrderId(null);
+  };
+
+  const closeCancelModal = () => {
+    setCancelOrder(null);
+    setApprovalOrderId(null);
+  };
+
   const handleSell = (
     orderId: string,
     payload: { comment: string; extraCost: number; proof?: File },
   ) => {
+    const order = sellOrder ?? { id: orderId };
     sellMutate(
       { orderId, data: payload },
-      { onSuccess: () => setSellOrder(null) },
+      {
+        onSuccess: (response) =>
+          resolveOrderActionResponse(response, {
+            order,
+            action: "sell",
+            extraCost: payload.extraCost,
+            onCompleted: closeSellModal,
+            onApprovalRequested: () => setApprovalOrderId(orderId),
+          }),
+      },
     );
   };
 
@@ -488,9 +516,19 @@ const CourierOrders = () => {
       proof?: File;
     },
   ) => {
+    const order = sellOrder ?? { id: orderId };
     partlySellMutate(
       { orderId, data: payload },
-      { onSuccess: () => setSellOrder(null) },
+      {
+        onSuccess: (response) =>
+          resolveOrderActionResponse(response, {
+            order,
+            action: "partly_sell",
+            extraCost: payload.extraCost,
+            onCompleted: closeSellModal,
+            onApprovalRequested: () => setApprovalOrderId(orderId),
+          }),
+      },
     );
   };
 
@@ -498,9 +536,19 @@ const CourierOrders = () => {
     orderId: string,
     payload: { comment: string; extraCost: number; paidAmount: number; proof?: File },
   ) => {
+    const order = cancelOrder ?? { id: orderId };
     cancelMutate(
       { orderId, data: payload },
-      { onSuccess: () => setCancelOrder(null) },
+      {
+        onSuccess: (response) =>
+          resolveOrderActionResponse(response, {
+            order,
+            action: "cancel",
+            extraCost: payload.extraCost,
+            onCompleted: closeCancelModal,
+            onApprovalRequested: () => setApprovalOrderId(orderId),
+          }),
+      },
     );
   };
 
@@ -646,19 +694,21 @@ const CourierOrders = () => {
       <SellModal
         order={sellOrder}
         open={!!sellOrder}
-        onClose={() => setSellOrder(null)}
+        onClose={closeSellModal}
         onSell={handleSell}
         onPartlySell={handlePartlySell}
         isLoading={isSelling || isPartlySelling}
+        awaitingApproval={!!sellOrder && approvalOrderId === sellOrder.id}
       />
 
       {/* Cancel Modal */}
       <CancelModal
         order={cancelOrder}
         open={!!cancelOrder}
-        onClose={() => setCancelOrder(null)}
+        onClose={closeCancelModal}
         onCancel={handleCancel}
         isLoading={isCancelling}
+        awaitingApproval={!!cancelOrder && approvalOrderId === cancelOrder.id}
       />
 
       {/* Rollback Confirm */}

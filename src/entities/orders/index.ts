@@ -153,18 +153,27 @@ export const useOrders = () => {
       enabled: enabled && Boolean(marketId),
     });
 
-  const useGetOrderById = (orderId: string, enabled: boolean = true) =>
+  const useGetOrderById = (
+    orderId: string,
+    enabled: boolean = true,
+    refetchInterval?: (data: unknown) => number | false,
+  ) =>
     useQuery({
       queryKey: [orders, orderId],
       queryFn: () => api.get(API_ENDPOINTS.ORDERS.BY_ID(orderId)).then((res) => res.data),
       enabled: enabled && Boolean(orderId),
+      refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
     });
 
-  const useGetOrderCourier = (params?: { status?: string; page?: number; limit?: number }) =>
+  const useGetOrderCourier = (
+    params?: { status?: string; page?: number; limit?: number },
+    refetchInterval?: (data: unknown) => number | false,
+  ) =>
     useQuery({
       queryKey: [orders, "courier", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ORDERS.COURIER_ORDERS, { params }).then((res) => res.data),
+      refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
     });
 
   const useCancelledMarkets = (params?: { search?: string }) =>

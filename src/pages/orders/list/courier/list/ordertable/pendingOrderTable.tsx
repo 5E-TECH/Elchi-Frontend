@@ -75,7 +75,7 @@ const PendingOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel }
     },
     {
       key: "status", label: t("orderStatus"),
-      render: (val) => <OrderStatusBadge status={(val === Order_status.CANCELLED_SENT ? Order_status.CANCELLED : val) as Exclude<Order_status, "cancelled (sent)">} />,
+      render: (val, row) => <OrderStatusBadge orderId={row.id} status={(val === Order_status.CANCELLED_SENT ? Order_status.CANCELLED : val) as Exclude<Order_status, "cancelled (sent)">} />,
     },
     {
       key: "total_price", label: t("price"), sortable: true,
@@ -129,6 +129,7 @@ const PendingOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel }
               </p>
             </div>
             <OrderStatusBadge
+              orderId={row.id}
               status={(row.status === Order_status.CANCELLED_SENT ? Order_status.CANCELLED : row.status) as Exclude<Order_status, "cancelled (sent)">}
             />
           </div>

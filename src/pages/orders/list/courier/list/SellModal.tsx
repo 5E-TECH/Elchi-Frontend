@@ -5,6 +5,15 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../../shared/ui/Popup";
+import {
+  getActivePendingApproval,
+  usePendingExtraCostApprovals,
+} from "../../../../../entities/orders/extraCostApproval";
+import {
+  ExtraCostApprovalNotice,
+  ExtraCostApprovalPendingBanner,
+  ExtraCostApprovalSentNote,
+} from "../../../../../entities/orders/ui/ExtraCostApproval";
 
 type OrderItem = {
   id: string;
@@ -49,6 +58,8 @@ type SellModalProps = {
   onSell: (orderId: string, payload: SellPayload) => void;
   onPartlySell: (orderId: string, payload: PartlySellPayload) => void;
   isLoading?: boolean;
+  /** Yuborilgan amal market tasdig'iga tushdi — forma o'rniga holat ko'rsatiladi. */
+  awaitingApproval?: boolean;
 };
 
 const formatAmountInput = (value: string, locale: string) => {
@@ -61,8 +72,9 @@ const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
 const MAX_PROOF_SIZE_MB = 10;
 const MAX_PROOF_SIZE_BYTES = MAX_PROOF_SIZE_MB * 1024 * 1024;
 
-const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: SellModalProps) => {
+const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awaitingApproval }: SellModalProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
+  const approvals = usePendingExtraCostApprovals();
   const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const [isPartial, setIsPartial] = useState(false);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
@@ -86,6 +98,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
 
   if (!open || !order) return null;
 
+  const pendingApproval = getActivePendingApproval(approvals, order);
   const orderFlags = order as Order & Record<string, unknown>;
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
@@ -219,189 +232,207 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading }: Se
 
         {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {/* Qisman sotish toggle */}
-          <div
-            onClick={() => setIsPartial((p) => !p)}
-            className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 transition-all select-none ${
-              isPartial
-                ? "border-orange-400 bg-orange-50 dark:border-orange-400/45 dark:bg-orange-400/10"
-                : "border-orange-200 bg-orange-50 dark:border-orange-400/20 dark:bg-orange-400/10"
-            }`}
-          >
-            <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
-              <Info size={15} className="text-orange-500" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                {t("partialSell")}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t("sellSeparately")}
-              </p>
-            </div>
-            <div
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                isPartial
-                  ? "bg-orange-500 border-orange-500"
-                  : "border-gray-300 dark:border-gray-600"
-              }`}
-            >
-              {isPartial && <div className="w-2 h-2 rounded-full bg-white" />}
-            </div>
-          </div>
+          {awaitingApproval ? (
+            <ExtraCostApprovalPendingBanner amount={pendingApproval?.amount ?? (Number(extraCost) || 0)} />
+          ) : (
+            <>
+              {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
 
-          {/* Items — qisman rejimda */}
-          {isPartial && order.items?.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
-                {t("products")}
-              </p>
-              <div className="space-y-2">
-                {order.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/80 p-3 dark:border-white/10 dark:bg-primarydark/35"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate text-gray-800 dark:text-gray-100">
-                        {item.product?.name}
-                      </p>
-                      <p className="text-xs text-gray-400">{t("maxQuantity", { count: item.quantity })}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => setItemQty(item, getItemQty(item) - 1)}
-                        disabled={!canDecreaseItem(item)}
-                        className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="w-6 text-center text-sm font-bold">
-                        {getItemQty(item)}
-                      </span>
-                      <button
-                        onClick={() => setItemQty(item, getItemQty(item) + 1)}
-                        className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center hover:bg-emerald-200 dark:hover:bg-emerald-500/25 transition-colors"
-                      >
-                        <Plus size={12} className="text-emerald-600 dark:text-emerald-200" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {isAtMinimumSelection && (
-                <div className="mt-3 rounded-xl border border-error/20 bg-error/10 px-3 py-2">
-                  <p className="text-sm font-bold text-error">
-                    {t("minimumSelectionError")}
+              {/* Qisman sotish toggle */}
+              <div
+                onClick={() => setIsPartial((p) => !p)}
+                className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 transition-all select-none ${
+                  isPartial
+                    ? "border-orange-400 bg-orange-50 dark:border-orange-400/45 dark:bg-orange-400/10"
+                    : "border-orange-200 bg-orange-50 dark:border-orange-400/20 dark:bg-orange-400/10"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                  <Info size={15} className="text-orange-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                    {t("partialSell")}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {t("sellSeparately")}
                   </p>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* totalPrice — faqat qisman rejimda */}
-          {isPartial && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                {t("paymentAmount")} <span className="text-red-400">*</span>
-              </p>
-              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={formatAmountInput(totalPrice, locale)}
-                  onChange={(e) =>
-                    setTotalPrice(sanitizeAmountInput(e.target.value))
-                  }
-                  placeholder="0"
-                  className="flex-1 bg-transparent text-sm text-gray-800 outline-none dark:text-gray-100"
-                />
-                <span className="text-sm text-gray-400">{t("currency")}</span>
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    isPartial
+                      ? "bg-orange-500 border-orange-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                >
+                  {isPartial && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
               </div>
-            </div>
+
+              {/* Items — qisman rejimda */}
+              {isPartial && order.items?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                    {t("products")}
+                  </p>
+                  <div className="space-y-2">
+                    {order.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/80 p-3 dark:border-white/10 dark:bg-primarydark/35"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate text-gray-800 dark:text-gray-100">
+                            {item.product?.name}
+                          </p>
+                          <p className="text-xs text-gray-400">{t("maxQuantity", { count: item.quantity })}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => setItemQty(item, getItemQty(item) - 1)}
+                            disabled={!canDecreaseItem(item)}
+                            className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span className="w-6 text-center text-sm font-bold">
+                            {getItemQty(item)}
+                          </span>
+                          <button
+                            onClick={() => setItemQty(item, getItemQty(item) + 1)}
+                            className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center hover:bg-emerald-200 dark:hover:bg-emerald-500/25 transition-colors"
+                          >
+                            <Plus size={12} className="text-emerald-600 dark:text-emerald-200" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {isAtMinimumSelection && (
+                    <div className="mt-3 rounded-xl border border-error/20 bg-error/10 px-3 py-2">
+                      <p className="text-sm font-bold text-error">
+                        {t("minimumSelectionError")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* totalPrice — faqat qisman rejimda */}
+              {isPartial && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+                    {t("paymentAmount")} <span className="text-red-400">*</span>
+                  </p>
+                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatAmountInput(totalPrice, locale)}
+                      onChange={(e) =>
+                        setTotalPrice(sanitizeAmountInput(e.target.value))
+                      }
+                      placeholder="0"
+                      className="flex-1 bg-transparent text-sm text-gray-800 outline-none dark:text-gray-100"
+                    />
+                    <span className="text-sm text-gray-400">{t("currency")}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* extraCost — har doim ko'rsatiladi */}
+              <div>
+                <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+                  <Plus size={12} className="text-green-500" />
+                  {t("extraPayment")}
+                </p>
+                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatAmountInput(extraCost, locale)}
+                    onChange={(e) =>
+                      setExtraCost(sanitizeAmountInput(e.target.value))
+                    }
+                    placeholder="0"
+                    className="flex-1 bg-transparent text-sm text-gray-800 outline-none dark:text-gray-100"
+                  />
+                  <span className="text-sm text-gray-400">{t("currency")}</span>
+                </div>
+                {Number(extraCost) > 0 ? <ExtraCostApprovalNotice /> : null}
+              </div>
+
+              {/* Izoh */}
+              <div>
+                <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+                  <MessageSquare size={12} className="text-purple-400" />
+                  {t("note")}{" "}
+                  <span className="normal-case font-normal text-gray-400">({t("optional", { ns: "common" })})</span>
+                </p>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder={t("writeNote")}
+                  rows={3}
+                  className="w-full resize-none rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-100 dark:placeholder:text-white/35"
+                />
+              </div>
+
+              <div>
+                <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
+                  <Camera size={12} className="text-emerald-500" />
+                  {t("mediaProof")}
+                  {sellRequiresMedia ? <span className="text-red-400">*</span> : null}
+                </p>
+                {sellRequiresMedia ? (
+                  <p className="mb-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+                    {t("sellMediaProofRequiredNotice")}
+                  </p>
+                ) : null}
+                <label className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-3 py-4 text-center transition-colors ${
+                  proofError
+                    ? "border-error/50 bg-error/10"
+                    : "border-gray-200 bg-white/70 hover:border-emerald-400 dark:border-white/10 dark:bg-primarydark/35"
+                }`}>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(event) => handleProofChange(event.target.files?.[0])}
+                  />
+                  <Camera size={20} className="text-emerald-500" />
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-100">
+                    {proof ? proof.name : t("mediaProofUpload")}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}
+                  </span>
+                </label>
+                {proofError ? <p className="mt-1 text-xs font-semibold text-error">{proofError}</p> : null}
+              </div>
+            </>
           )}
-
-          {/* extraCost — har doim ko'rsatiladi */}
-          <div>
-            <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-              <Plus size={12} className="text-green-500" />
-              {t("extraPayment")}
-            </p>
-            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={formatAmountInput(extraCost, locale)}
-                onChange={(e) =>
-                  setExtraCost(sanitizeAmountInput(e.target.value))
-                }
-                placeholder="0"
-                className="flex-1 bg-transparent text-sm text-gray-800 outline-none dark:text-gray-100"
-              />
-              <span className="text-sm text-gray-400">{t("currency")}</span>
-            </div>
-          </div>
-
-          {/* Izoh */}
-          <div>
-            <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-              <MessageSquare size={12} className="text-purple-400" />
-              {t("note")}{" "}
-              <span className="normal-case font-normal text-gray-400">({t("optional", { ns: "common" })})</span>
-            </p>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder={t("writeNote")}
-              rows={3}
-              className="w-full resize-none rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-100 dark:placeholder:text-white/35"
-            />
-          </div>
-
-          <div>
-            <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-              <Camera size={12} className="text-emerald-500" />
-              {t("mediaProof")}
-              {sellRequiresMedia ? <span className="text-red-400">*</span> : null}
-            </p>
-            {sellRequiresMedia ? (
-              <p className="mb-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
-                {t("sellMediaProofRequiredNotice")}
-              </p>
-            ) : null}
-            <label className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-3 py-4 text-center transition-colors ${
-              proofError
-                ? "border-error/50 bg-error/10"
-                : "border-gray-200 bg-white/70 hover:border-emerald-400 dark:border-white/10 dark:bg-primarydark/35"
-            }`}>
-              <input
-                type="file"
-                accept="image/*,video/*"
-                className="hidden"
-                onChange={(event) => handleProofChange(event.target.files?.[0])}
-              />
-              <Camera size={20} className="text-emerald-500" />
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-100">
-                {proof ? proof.name : t("mediaProofUpload")}
-              </span>
-              <span className="text-xs text-gray-400">
-                {t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}
-              </span>
-            </label>
-            {proofError ? <p className="mt-1 text-xs font-semibold text-error">{proofError}</p> : null}
-          </div>
         </div>
 
         {/* Footer */}
         <div className="shrink-0 border-t border-gray-200 bg-primary px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-4 dark:border-white/10 dark:bg-maindark sm:pb-5">
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading || isProofMissing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-500 hover:to-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <CheckCircle size={18} />
-            {isLoading ? t("loading", { ns: "common" }) : isProofMissing ? t("sellMediaProofRequiredNotice") : t("sell")}
-          </button>
+          {awaitingApproval ? (
+            <button
+              onClick={onClose}
+              className="flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white/70 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:bg-white/6 dark:text-white/80 dark:hover:bg-white/10"
+            >
+              {t("close", { ns: "common" })}
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || isProofMissing}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-500 hover:to-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <CheckCircle size={18} />
+              {isLoading ? t("loading", { ns: "common" }) : isProofMissing ? t("sellMediaProofRequiredNotice") : t("sell")}
+            </button>
+          )}
         </div>
       </div>
     </Popup>

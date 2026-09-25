@@ -129,6 +129,8 @@
   "incomingReceiveSuccess": "buyurtma qabul qilindi",
   "incomingReceiveError": "Buyurtmalarni qabul qilishda xatolik yuz berdi",
   "incomingEmpty": "Hozircha kelgan buyurtma yo'q",
+  "incomingLoadError": "Buyurtmalar ro'yxatini yuklab bo'lmadi",
+  "incomingStaleWarning": "Ro'yxat yangilanmadi — ko'rsatilgan ma'lumot eskirgan bo'lishi mumkin",
   "incomingNoAccess": "Bu sahifaga kirish huquqingiz yo'q",
   "incomingOrders": "Kelgan buyurtmalar",
   "partners": "Hamkorlar",

@@ -129,6 +129,8 @@
   "incomingReceiveSuccess": "order(s) received",
   "incomingReceiveError": "Could not receive the orders",
   "incomingEmpty": "No incoming orders yet",
+  "incomingLoadError": "Couldn't load the order list",
+  "incomingStaleWarning": "The list failed to refresh — the data shown may be out of date",
   "incomingNoAccess": "You do not have access to this page",
   "incomingOrders": "Incoming orders",
   "partners": "Partners",

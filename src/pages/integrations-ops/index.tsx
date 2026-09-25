@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { Alert, Button, Input, Space, Table, Typography } from "antd";
 import { useIntegrationsCoverage } from "../../entities/integrations/integrationsCoverage";
+import { getBackendErrorMessage } from "../../shared/lib/backendError";
 
 const { Title, Text } = Typography;
 
@@ -10,10 +11,21 @@ const receivablesColumns = [
   { title: "Holat", dataIndex: "status", key: "status" },
 ];
 
+// Backend `{ data: { items, pagination } }` qaytaradi; massiv bo'lmagan
+// obyekt antd Table'ga tushsa butun sahifa qulaydi.
+const extractReceivableItems = (body: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(body)) return body;
+  const record = (body ?? {}) as { items?: unknown; data?: { items?: unknown } };
+  if (Array.isArray(record.data?.items)) return record.data.items as Record<string, unknown>[];
+  if (Array.isArray(record.items)) return record.items as Record<string, unknown>[];
+  return [];
+};
+
 const IntegrationsOpsPage = () => {
   const { useGetReceivables, sync } = useIntegrationsCoverage();
 
   const receivables = useGetReceivables();
+  const receivableItems = extractReceivableItems(receivables.data);
 
   const [integrationId, setIntegrationId] = useState("");
 
@@ -25,15 +37,34 @@ const IntegrationsOpsPage = () => {
       </Text>
 
       <Space direction="vertical" size="large" style={{ display: "flex", marginTop: 20 }}>
-        <Table
-          size="small"
-          rowKey="id"
-          pagination={false}
-          columns={receivablesColumns}
-          dataSource={(receivables.data as any[]) ?? []}
-          loading={receivables.isLoading}
-          scroll={{ x: "max-content" }}
-        />
+        {receivables.isError ? (
+          <Alert
+            type="error"
+            showIcon
+            title="Debitorlik qarzlarini yuklab bo'lmadi"
+            description={getBackendErrorMessage(receivables.error)}
+            action={
+              <Button
+                size="small"
+                danger
+                loading={receivables.isFetching}
+                onClick={() => void receivables.refetch()}
+              >
+                Qayta urinish
+              </Button>
+            }
+          />
+        ) : (
+          <Table
+            size="small"
+            rowKey="id"
+            pagination={false}
+            columns={receivablesColumns}
+            dataSource={receivableItems}
+            loading={receivables.isLoading}
+            scroll={{ x: "max-content" }}
+          />
+        )}
 
         <Space direction="vertical" style={{ display: "flex" }}>
           <Input
@@ -45,12 +76,21 @@ const IntegrationsOpsPage = () => {
           <Button
             type="primary"
             loading={sync.isPending}
-            onClick={() => sync.mutate({ id: integrationId })}
+            disabled={!integrationId.trim()}
+            onClick={() => sync.mutate({ id: integrationId.trim() })}
           >
             Sync
           </Button>
           {sync.isSuccess ? (
-            <Alert type="success" showIcon message="Sinxronizatsiya muvaffaqiyatli bajarildi" />
+            <Alert type="success" showIcon title="Sinxronizatsiya muvaffaqiyatli bajarildi" />
+          ) : null}
+          {sync.isError ? (
+            <Alert
+              type="error"
+              showIcon
+              title="Sinxronizatsiya bajarilmadi"
+              description={getBackendErrorMessage(sync.error)}
+            />
           ) : null}
         </Space>
       </Space>

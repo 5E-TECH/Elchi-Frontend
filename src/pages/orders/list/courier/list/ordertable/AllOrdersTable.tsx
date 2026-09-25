@@ -129,7 +129,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
       {
         key: "status",
         label: t("orderStatus"),
-        render: (val) => <OrderStatusBadge status={val} />,
+        render: (val, row) => <OrderStatusBadge orderId={row.id} status={val} />,
       },
       {
         key: "total_price",
@@ -188,6 +188,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
               </p>
             </div>
             <OrderStatusBadge
+              orderId={row.id}
               status={row.status as OrderStatus}
             />
           </div>
