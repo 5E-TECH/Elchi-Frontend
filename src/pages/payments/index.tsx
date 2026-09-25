@@ -292,8 +292,11 @@ const Payments = () => {
     reset(filtersFromUrl);
   }, [filtersFromUrl, filtersFromUrlKey, reset]);
 
+  // Filtr va 1-sahifa bitta URL yangilanishida yoziladi — aks holda avval
+  // yangi filtr + ESKI sahifa bilan ortiqcha so'rov ketib, keyin pastdagi
+  // pagination-reset effekti uni 1-ga qaytarardi.
   const handleFilterChange = (name: DropdownKey, value: string) => {
-    setMultipleParams({ [name]: value });
+    setMultipleParams({ [name]: value, paymentsPage: "1" });
   };
 
   const navigate = useNavigate();

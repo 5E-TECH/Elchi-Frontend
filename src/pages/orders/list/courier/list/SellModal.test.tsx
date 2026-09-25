@@ -65,6 +65,73 @@ describe("SellModal extra cost approval", () => {
   });
 });
 
+describe("SellModal partial sell", () => {
+  const singleUnitOrder = {
+    ...order,
+    product_quantity: 1,
+    items: [{ id: "i1", quantity: 1, product: { id: "24", name: "product", image_url: null } }],
+  };
+  const twoUnitOrder = {
+    ...order,
+    product_quantity: 2,
+    items: [{ id: "i1", quantity: 2, product: { id: "24", name: "Krossovka", image_url: null } }],
+  };
+  const partialToggle = () => screen.getByRole("button", { name: /Qisman sotish/ });
+  const sellButton = () => screen.getByRole("button", { name: /Sotish$|mahsulot sonini kamaytiring|summasini kiriting/ });
+
+  it("blocks partial sell for a single-unit order (every BeePost parcel) and says why", () => {
+    renderSell({ order: singleUnitOrder });
+
+    expect(partialToggle()).toBeDisabled();
+    expect(partialToggle()).toHaveTextContent("Buyurtmada bitta mahsulot — qisman sotib bo'lmaydi");
+    // To'liq sotish ta'sirlanmaydi.
+    expect(sellButton()).toBeEnabled();
+  });
+
+  it("keeps 'Sotish' disabled in partial mode until a quantity is actually reduced", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: twoUnitOrder, onPartlySell });
+
+    await user.click(partialToggle());
+    await user.type(screen.getAllByPlaceholderText("0")[0], "60000");
+
+    expect(sellButton()).toBeDisabled();
+    expect(sellButton()).toHaveTextContent("Kamida bitta mahsulot sonini kamaytiring");
+    await user.click(sellButton());
+    expect(onPartlySell).not.toHaveBeenCalled();
+  });
+
+  it("keeps 'Sotish' disabled in partial mode while the payment amount is empty", async () => {
+    const user = userEvent.setup();
+    renderSell({ order: twoUnitOrder });
+
+    await user.click(partialToggle());
+    await user.click(screen.getByRole("button", { name: "Krossovka sonini kamaytirish" }));
+
+    expect(sellButton()).toBeDisabled();
+    expect(sellButton()).toHaveTextContent("To'lov summasini kiriting");
+  });
+
+  it("sends a valid partial sell for a two-unit order (regression)", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: twoUnitOrder, onPartlySell });
+
+    await user.click(partialToggle());
+    await user.click(screen.getByRole("button", { name: "Krossovka sonini kamaytirish" }));
+    await user.type(screen.getAllByPlaceholderText("0")[0], "60000");
+    await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
+
+    expect(onPartlySell).toHaveBeenCalledWith("o-1", {
+      order_item_info: [{ product_id: "24", quantity: 1 }],
+      totalPrice: 60000,
+      extraCost: 0,
+      comment: "",
+    });
+  });
+});
+
 describe("CancelModal extra cost approval", () => {
   afterEach(() => clearPendingExtraCostApproval("o-1"));
 

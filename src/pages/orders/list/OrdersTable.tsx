@@ -23,6 +23,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import type { OrderListItem, OrderStatus } from "../../../entities/order/types/order";
 import type { RootState } from "../../../app/config/store";
 import type { SortConfig } from "../../../shared/components/Table/Table.types";
+import { copyToClipboard } from "../../../shared/lib/clipboard";
 
 const EMPTY_SELECTED_IDS = new Set<string>();
 
@@ -276,8 +277,13 @@ const OrdersTable = ({
     );
     const handleCopyOrderId = useCallback(
         (id: string) => {
-            void navigator.clipboard?.writeText(id);
-            api.success({ message: t("orderNumberCopied"), placement: "topRight" });
+            void copyToClipboard(id).then((copied) => {
+                if (copied) {
+                    api.success({ message: t("orderNumberCopied"), placement: "topRight" });
+                } else {
+                    api.error({ message: t("orderNumberCopyFailed", { id }), placement: "topRight" });
+                }
+            });
         },
         [api, t],
     );

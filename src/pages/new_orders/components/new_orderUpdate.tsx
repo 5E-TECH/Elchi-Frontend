@@ -68,6 +68,7 @@ import {
   type EditableOrderSnapshot,
 } from "./newOrderUpdateRules";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { copyToClipboard } from "../../../shared/lib/clipboard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -344,8 +345,13 @@ const NewOrderUpdate = () => {
   );
   const handleCopyOrderId = useCallback(
     (id: string) => {
-      void navigator.clipboard?.writeText(id);
-      notificationApi.success({ message: t("orderNumberCopied", { ns: "orders" }), placement: "topRight" });
+      void copyToClipboard(id).then((copied) => {
+        if (copied) {
+          notificationApi.success({ message: t("orderNumberCopied", { ns: "orders" }), placement: "topRight" });
+        } else {
+          notificationApi.error({ message: t("orderNumberCopyFailed", { ns: "orders", id }), placement: "topRight" });
+        }
+      });
     },
     [notificationApi, t],
   );
@@ -962,7 +968,8 @@ const NewOrderUpdate = () => {
                     {t(DELIVER_LABELS[order.where_deliver] ?? "deliverAddress")}
                   </span>
                 </div>
-                {order.comment && <OrderCommentCard comment={order.comment} />}
+                {/* Faqat bo'shliq yoki "\n" dan iborat izoh bo'sh sariq karta chiqarmasin. */}
+                {order.comment?.trim() && <OrderCommentCard comment={order.comment.trim()} />}
               </div>
             </Card>
 

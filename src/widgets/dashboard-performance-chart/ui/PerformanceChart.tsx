@@ -42,9 +42,10 @@ const toFiniteNumber = (value: unknown): number => {
 const clampPercent = (value: number): number => Math.min(100, Math.max(0, value));
 
 // Sotuv foizi bo'yicha rang: yaxshi/o'rtacha/past — foydalanuvchi bir
-// qarashda muammoli marketlar/kuryerlarni ajrata olishi uchun.
+// qarashda muammoli marketlar/kuryerlarni ajrata olishi uchun. 50% dan
+// pasti qizil (kartadagi talab).
 const rateColor = (rate: number): string =>
-  rate >= 70 ? "var(--color-success)" : rate >= 40 ? "var(--color-warning)" : "var(--color-error)";
+  rate >= 70 ? "var(--color-success)" : rate >= 50 ? "var(--color-warning)" : "var(--color-error)";
 
 interface PerformanceRow {
   id: string;
@@ -82,6 +83,7 @@ interface PerformanceSectionProps {
   title: string;
   icon: React.ReactNode;
   rows: PerformanceRow[];
+  loading: boolean;
   emptyText: string;
   ordersLabel: string;
   showMoreLabel: string;
@@ -89,7 +91,7 @@ interface PerformanceSectionProps {
 }
 
 const PerformanceSection = memo(
-  ({ title, icon, rows, emptyText, ordersLabel, showMoreLabel, showLessLabel }: PerformanceSectionProps) => {
+  ({ title, icon, rows, loading, emptyText, ordersLabel, showMoreLabel, showLessLabel }: PerformanceSectionProps) => {
     const [expanded, setExpanded] = useState(false);
     const sortedRows = useMemo(() => [...rows].sort((a, b) => b.rate - a.rate), [rows]);
     const hasMore = sortedRows.length > INITIAL_ROWS;
@@ -105,7 +107,18 @@ const PerformanceSection = memo(
           <h3 className={`${TYPO.sectionTitle} text-maindark dark:text-primary`}>{title}</h3>
         </div>
 
-        {rows.length === 0 ? (
+        {loading ? (
+          // Ma'lumot kelguncha "yetarli ma'lumot yo'q" deyish yolg'on bo'lardi.
+          <div className="flex flex-col gap-3 py-2" aria-hidden="true">
+            {[92, 74, 58, 40].map((width) => (
+              <div
+                key={width}
+                className="h-4 animate-pulse rounded bg-gray-200 dark:bg-white/10"
+                style={{ width: `${width}%` }}
+              />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
             <Inbox size={28} style={{ color: TEXT.soft, opacity: 0.5 }} />
             <p className="text-[12px] font-medium" style={{ color: TEXT.soft }}>
@@ -149,9 +162,12 @@ PerformanceSection.displayName = "PerformanceSection";
 export interface PerformanceChartProps {
   markets?: TopMarket[];
   couriers?: TopCourier[];
+  loading?: boolean;
+  /** Kuryerlar bo'sh bo'lganda umumiy matn o'rniga aniq sabab. */
+  couriersEmptyText?: string;
 }
 
-const PerformanceChart = memo(({ markets, couriers }: PerformanceChartProps) => {
+const PerformanceChart = memo(({ markets, couriers, loading = false, couriersEmptyText }: PerformanceChartProps) => {
   const { t } = useTranslation("dashboard");
 
   const marketRows: PerformanceRow[] = useMemo(
@@ -191,6 +207,7 @@ const PerformanceChart = memo(({ markets, couriers }: PerformanceChartProps) => 
           title={t("performance.markets_title")}
           icon={<Store size={16} />}
           rows={marketRows}
+          loading={loading}
           emptyText={t("performance.empty")}
           ordersLabel={t("performance.orders_label")}
           showMoreLabel={t("performance.show_more")}
@@ -202,7 +219,8 @@ const PerformanceChart = memo(({ markets, couriers }: PerformanceChartProps) => 
           title={t("performance.couriers_title")}
           icon={<Truck size={16} />}
           rows={courierRows}
-          emptyText={t("performance.empty")}
+          loading={loading}
+          emptyText={couriersEmptyText ?? t("performance.empty")}
           ordersLabel={t("performance.orders_label")}
           showMoreLabel={t("performance.show_more")}
           showLessLabel={t("performance.show_less")}

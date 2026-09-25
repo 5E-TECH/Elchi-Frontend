@@ -32,19 +32,60 @@ export type IncomingOrder = {
 export type IncomingOrdersParams = {
   status?: string | string[];
   market_id?: string;
-  page?: number;
-  limit?: number;
+};
+
+export type IncomingOrdersList = {
+  items: IncomingOrder[];
+  /** Server aytgan jami son (bo'lmasa — yuklangan qatorlar soni). */
+  total: number;
 };
 
 export const incomingOrdersKey = "incoming-external-orders";
 
+/**
+ * ⚠️ BACKEND `limit` NI FAQAT 10/25/50/100 QABUL QILADI (gateway
+ * `parsePaginationQuery`), boshqa qiymatga 400 qaytadi. Skaner esa
+ * manbaning BARCHA kutayotgan posilkalarini bilishi shart — aks holda
+ * 100-dan keyingi posilka "ro'yxatda yo'q" deb rad etilardi. Shu sabab
+ * sahifalar `total` ga yetguncha ketma-ket olinib, bitta ro'yxatga
+ * birlashtiriladi.
+ */
+export const INCOMING_PAGE_LIMIT = 100;
+/** Cheksiz tsikldan himoya: 20 × 100 = 2000 posilka. */
+const INCOMING_MAX_PAGES = 20;
+
+const readTotal = (raw: unknown): number | undefined => {
+  const body = raw as { total?: unknown; data?: { meta?: { total?: unknown } } } | undefined;
+  const value = Number(body?.total ?? body?.data?.meta?.total);
+  return Number.isFinite(value) ? value : undefined;
+};
+
+export const fetchAllIncomingOrders = async (
+  params?: IncomingOrdersParams,
+): Promise<IncomingOrdersList> => {
+  const items: IncomingOrder[] = [];
+  let total: number | undefined;
+
+  for (let page = 1; page <= INCOMING_MAX_PAGES; page += 1) {
+    const res = await api.get(API_ENDPOINTS.ORDERS.EXTERNAL, {
+      params: { ...params, page, limit: INCOMING_PAGE_LIMIT },
+    });
+    const pageItems = extractIncomingOrders(res.data);
+    items.push(...pageItems);
+    total = readTotal(res.data) ?? total;
+
+    if (pageItems.length < INCOMING_PAGE_LIMIT || (total !== undefined && items.length >= total)) {
+      break;
+    }
+  }
+
+  return { items, total: total ?? items.length };
+};
+
 export const useIncomingExternalOrders = (params?: IncomingOrdersParams) =>
   useQuery({
     queryKey: [incomingOrdersKey, params],
-    queryFn: () =>
-      api
-        .get(API_ENDPOINTS.ORDERS.EXTERNAL, { params })
-        .then((res) => res.data),
+    queryFn: () => fetchAllIncomingOrders(params),
   });
 
 /**
@@ -66,13 +107,6 @@ export const extractIncomingOrders = (raw: unknown): IncomingOrder[] => {
   }
   return [];
 };
-
-/** Sahifalash meta'si (bo'lmasa `undefined`). */
-export const extractMeta = (
-  raw: unknown,
-): { page?: number; limit?: number; total?: number } | undefined =>
-  (raw as { data?: { meta?: { page?: number; limit?: number; total?: number } } })
-    ?.data?.meta;
 
 /**
  * KIRUVCHI POSILKALARNING MANBALARI.

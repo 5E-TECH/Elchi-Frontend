@@ -129,30 +129,36 @@ export const partnersKey = "admin-partners";
 export const partnerWebhooksKey = "admin-partner-webhooks";
 
 /**
- * Javob qobig'ini himoyalangan ochish.
+ * Gateway `successRes` qobig'ini (`{ statusCode, message, data }`) BIR qatlam
+ * ochadi; qobiqsiz javob o'zgarmay qaytadi.
  *
- * Gateway `successRes` bilan `{ statusCode, message, data }` qaytaradi, lekin
- * qatlam soni marshrutga qarab farq qilishi mumkin — bir qatlam o'zgarsa
- * sahifa bo'sh ko'rinib qolmasin.
+ * ⚠️ Ilgari bu yerda "ochib bo'lgunicha och" mantig'i bor edi: `data.data`
+ * topilsa darhol o'sha qaytarilardi. Webhook jurnali esa sahifa obyektini
+ * qobiq ichida beradi (`data: { data: [...], total, totalPages }`), ya'ni
+ * ikkinchi `data` — bu QATORLAR. Sahifa obyekti o'rniga massiv qaytib,
+ * jurnal doim "Yozuv topilmadi" ko'rsatardi. Endi qobiq bir marta ochiladi
+ * va har bir o'quvchi o'zi kutgan SHAKLNI tekshiradi.
  */
-const unwrap = <T,>(raw: unknown, fallback: T): T => {
-  const outer = raw as { data?: unknown };
-  if (outer?.data !== undefined) {
-    const inner = (outer.data as { data?: unknown })?.data;
-    if (inner !== undefined) return inner as T;
-    return outer.data as T;
+export const readEnvelope = (raw: unknown): unknown => {
+  if (raw && typeof raw === "object" && !Array.isArray(raw) && "statusCode" in raw && "data" in raw) {
+    return (raw as { data: unknown }).data;
   }
-  return (raw as T) ?? fallback;
+  return raw;
 };
 
-export const usePartners = () =>
-  useQuery({
-    queryKey: [partnersKey],
-    queryFn: () =>
-      api
-        .get(API_ENDPOINTS.PARTNERS.BASE)
-        .then((res) => unwrap<Partner[]>(res.data, [])),
-  });
+const readObject = <T,>(raw: unknown, fallback: T): T => {
+  const payload = readEnvelope(raw);
+  return payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as T) : fallback;
+};
+
+export const readPartnerList = (raw: unknown): Partner[] => {
+  const payload = readEnvelope(raw);
+  if (Array.isArray(payload)) return payload as Partner[];
+  const nested = (payload as { data?: unknown } | null)?.data;
+  if (Array.isArray(nested)) return nested as Partner[];
+  // Bo'sh ro'yxat qaytarsak "hamkor yo'q" deb yolg'on ko'rsatilardi.
+  throw new Error("Hamkorlar ro'yxati kutilmagan shaklda keldi");
+};
 
 export interface PartnerWebhooksPage {
   data: PartnerWebhookRow[];
@@ -161,6 +167,43 @@ export interface PartnerWebhooksPage {
   limit: number;
   totalPages: number;
 }
+
+const toCount = (value: unknown, fallback: number): number => {
+  const parsed = Number(value);
+  return value !== null && value !== undefined && Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+};
+
+export const readWebhooksPage = (raw: unknown): PartnerWebhooksPage => {
+  const payload = readEnvelope(raw);
+
+  if (Array.isArray(payload)) {
+    const rows = payload as PartnerWebhookRow[];
+    return { data: rows, total: rows.length, page: 1, limit: rows.length, totalPages: 1 };
+  }
+
+  const page = payload as Partial<PartnerWebhooksPage> | null;
+  if (page && Array.isArray(page.data)) {
+    return {
+      data: page.data,
+      total: toCount(page.total, page.data.length),
+      page: Math.max(1, toCount(page.page, 1)),
+      limit: toCount(page.limit, page.data.length),
+      totalPages: Math.max(1, toCount(page.totalPages, 1)),
+    };
+  }
+
+  // Bo'sh sahifa qaytarsak "Yozuv topilmadi" deb yolg'on ko'rsatilardi.
+  throw new Error("Webhook jurnali kutilmagan shaklda keldi");
+};
+
+export const usePartners = () =>
+  useQuery({
+    queryKey: [partnersKey],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.PARTNERS.BASE)
+        .then((res) => readPartnerList(res.data)),
+  });
 
 export const usePartnerWebhooks = (params: {
   partner_id?: string;
@@ -173,15 +216,7 @@ export const usePartnerWebhooks = (params: {
     queryFn: () =>
       api
         .get(API_ENDPOINTS.PARTNERS.WEBHOOKS, { params })
-        .then((res) =>
-          unwrap<PartnerWebhooksPage>(res.data, {
-            data: [],
-            total: 0,
-            page: 1,
-            limit: 20,
-            totalPages: 1,
-          }),
-        ),
+        .then((res) => readWebhooksPage(res.data)),
   });
 
 export const usePartnerActions = () => {
@@ -195,7 +230,7 @@ export const usePartnerActions = () => {
     mutationFn: (dto: CreatePartnerDto) =>
       api
         .post(API_ENDPOINTS.PARTNERS.BASE, dto)
-        .then((res) => unwrap<{ id: string; api_key: string }>(res.data, {
+        .then((res) => readObject<{ id: string; api_key: string }>(res.data, {
           id: "",
           api_key: "",
         })),
@@ -214,7 +249,7 @@ export const usePartnerActions = () => {
     mutationFn: (id: string) =>
       api
         .post(API_ENDPOINTS.PARTNERS.ROTATE_KEY(id))
-        .then((res) => unwrap<{ id: string; api_key: string }>(res.data, {
+        .then((res) => readObject<{ id: string; api_key: string }>(res.data, {
           id: "",
           api_key: "",
         })),
@@ -255,7 +290,7 @@ export const usePartnerActions = () => {
           url: params.url?.trim() || undefined,
         })
         .then((res) =>
-          unwrap<WebhookTestResult>(res.data, {
+          readObject<WebhookTestResult>(res.data, {
             ok: false,
             url: "",
             used_saved_url: true,

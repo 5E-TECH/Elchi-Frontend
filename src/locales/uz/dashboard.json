@@ -99,6 +99,7 @@
     "rate_label": "Sotuv foizi",
     "orders_label": "ta buyurtma",
     "empty": "Hali solishtirish uchun yetarli ma'lumot yo'q.",
+    "couriers_all_time_unavailable": "«Barchasi» davri uchun kuryerlar kesimi hisoblanmaydi — sana oralig'ini tanlang.",
     "show_more": "Yana ko'rsatish",
     "show_less": "Kamroq ko'rsatish"
   },

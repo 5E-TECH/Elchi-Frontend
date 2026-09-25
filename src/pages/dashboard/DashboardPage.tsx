@@ -36,7 +36,6 @@ const DashboardPage = () => {
   // Firing them for other roles returns 403 and breaks the shared dashboard
   // landing page on every login — gate them client-side too. (Audit P1-2.)
   const isAnalyticsAdmin = ["superadmin", "admin"].includes(normalizedRole);
-  const isRegistrator = normalizedRole === "registrator";
   const isCourier = normalizedRole === "courier";
   // Operator uchun backend hali rolga xos scoping qilmaydi (analytics-service
   // uni ADMIN tarmog'iga tushiradi) — shu sabab kompaniya bo'ylab reyting va
@@ -44,7 +43,10 @@ const DashboardPage = () => {
   // faqat asosiy stat kartalar qoladi. To'liq scoping backend tuzatilgach
   // qo'shiladi (bog'liq: "Backend: /analytics/dashboard har qanday rolga...").
   const isOperator = normalizedRole === "operator";
-  const canShowFinancialMetrics = !isRegistrator && !isCourier;
+  // Moliyaviy qator (daromad, foyda) + KPI kartalari faqat admin uchun:
+  // KPI so'rovi boshqa rollarga yuborilmaydi (403), ya'ni ularda kartalar
+  // soxta 0 ko'rsatardi, operatorga esa butun kompaniya daromadi chiqardi.
+  const canShowFinancialMetrics = isAnalyticsAdmin;
   const canShowTopPerformers = !isCourier && !isOperator;
   const canShowRegionStats = !isCourier && !isOperator;
   // Market roli bu sahifaga umuman kelmaydi (routes.tsx market uchun
@@ -267,7 +269,15 @@ const DashboardPage = () => {
           icon={<BarChart3 size={16} />}
           className="mb-5"
         >
-          <PerformanceChart markets={chartMarkets} couriers={chartCouriers} />
+          <PerformanceChart
+            markets={chartMarkets}
+            couriers={chartCouriers}
+            loading={isLoading}
+            // "Barchasi" davrida backend kuryerlar kesimini hisoblamaydi
+            // (couriers: [], admin uchun topCouriers ham yo'q) — ma'lumot
+            // bor, lekin bu davr uchun kelmaydi.
+            couriersEmptyText={isAllTime ? t("performance.couriers_all_time_unavailable") : undefined}
+          />
         </MobileCollapsibleSection>
       )}
 

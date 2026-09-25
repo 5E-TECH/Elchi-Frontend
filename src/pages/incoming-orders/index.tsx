@@ -20,8 +20,6 @@ import { extractScannerToken } from "../../shared/lib/scanToken";
 import { playScanFeedback } from "../scan/lib/scanShared";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import {
-  extractIncomingOrders,
-  extractMeta,
   sourceLabel,
   useIncomingExternalOrders,
   useIncomingSources,
@@ -111,7 +109,6 @@ const IncomingOrdersPage = () => {
   const query = useIncomingExternalOrders({
     status: "new",
     market_id: marketId,
-    limit: 200,
   });
 
   // Sarlavhada manba nomi ko'rinishi kerak — operator qaysi qopni
@@ -120,17 +117,18 @@ const IncomingOrdersPage = () => {
   const source = (sources.data ?? []).find((s) => s.market_id === marketId);
   const receiveByScan = useReceiveByScan();
 
-  const orders = useMemo(
-    () => extractIncomingOrders(query.data),
-    [query.data],
-  );
-  const meta = extractMeta(query.data);
-  const total = meta?.total ?? orders.length;
+  const orders = useMemo(() => query.data?.items ?? [], [query.data]);
+  const total = query.data?.total ?? orders.length;
   // So'rov yiqilganda bo'sh massiv "posilka kelmagan" bilan bir xil ko'rinib
   // qolmasligi kerak — buzuq tizim va bo'sh ro'yxat alohida ko'rsatiladi.
   const listFailed = query.isError && orders.length === 0;
   const listStale = query.isError && orders.length > 0;
-  const listErrorText = getBackendErrorMessage(query.error) ?? t("incomingLoadError");
+  // Server javob bergan bo'lsa uning sababi ko'rsatiladi; tarmoq xatosi yoki
+  // timeout'da esa axios'ning inglizcha "Network Error" matni o'rniga
+  // tushunarli xabar.
+  const hasServerResponse = Boolean((query.error as { response?: unknown } | null)?.response);
+  const listErrorText =
+    (hasServerResponse ? getBackendErrorMessage(query.error) : undefined) ?? t("incomingLoadError");
 
   /** Skanerlangan token → buyurtma. Har skanda qayta qurilmaydi. */
   const byToken = useMemo(() => {
@@ -157,6 +155,14 @@ const IncomingOrdersPage = () => {
   const handleScan = (raw: string) => {
     const token = extractScannerToken(raw) ?? raw.trim();
     if (!token) return;
+
+    // Ro'yxat yuklanmagan bo'lsa "ro'yxatda yo'q" deyish yolg'on bo'lardi —
+    // posilkani hali hech narsa bilan solishtirib bo'lmaydi.
+    if (query.isLoading || listFailed) {
+      void playScanFeedback("error");
+      setMessage({ tone: "error", text: t("incomingScanListNotReady") });
+      return;
+    }
 
     const order = byToken.get(token);
     if (!order) {

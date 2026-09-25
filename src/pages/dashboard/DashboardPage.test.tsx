@@ -59,11 +59,18 @@ vi.mock("../../widgets/dashboard-region/ui/RegionStatsCard", () => ({
 vi.mock("../../widgets/dashboard-performance-chart/ui/PerformanceChart", () => ({
   // `couriers === undefined` (as opposed to `[]`) is the signal the market
   // role uses to hide the couriers section entirely — surface that distinction.
-  default: (props: { markets?: unknown[]; couriers?: unknown[] }) => (
+  default: (props: {
+    markets?: unknown[];
+    couriers?: unknown[];
+    loading?: boolean;
+    couriersEmptyText?: string;
+  }) => (
     <div
       data-testid="performance-chart"
       data-markets-count={props.markets?.length ?? -1}
       data-couriers-count={props.couriers === undefined ? "undefined" : props.couriers.length}
+      data-loading={String(Boolean(props.loading))}
+      data-couriers-empty-text={props.couriersEmptyText ?? ""}
     />
   ),
 }));
@@ -188,6 +195,21 @@ describe("DashboardPage", () => {
       "admin:unknown",
     );
     expect(screen.getByTestId("top-performers")).toBeInTheDocument();
+    // Backend "Barchasi" davrida kuryerlar kesimini qaytarmaydi — bo'sh
+    // bo'lim umumiy "ma'lumot yo'q" emas, aniq sabab bilan ko'rsatiladi.
+    expect(screen.getByTestId("performance-chart")).toHaveAttribute(
+      "data-couriers-empty-text",
+      "«Barchasi» davri uchun kuryerlar kesimi hisoblanmaydi — sana oralig'ini tanlang.",
+    );
+  });
+
+  it("tells the comparison chart the data is still loading instead of letting it show an empty state", () => {
+    getDashboardMock.mockReturnValue({ data: undefined, isLoading: true, isError: false, refetch: vi.fn() });
+
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-loading", "true");
+    expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-couriers-empty-text", "");
   });
 
   it("passes dashboard metrics into child widgets", () => {
@@ -452,5 +474,8 @@ describe("DashboardPage", () => {
     expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
     // Revenue analytics stay SUPERADMIN/ADMIN-only (Audit P1-2) — unaffected by this change.
     expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
+    // Company-wide revenue/profit and the admin-only KPI cards (which would
+    // show fake zeros without the KPI request) are not shown to an operator.
+    expect(screen.getByTestId("dashboard-statistics")).toHaveAttribute("data-financial", "false");
   });
 });
