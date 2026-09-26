@@ -84,6 +84,30 @@ describe("Table sorting", () => {
     expect(bodyOrder[0]).toContain("Apple");
   });
 
+  it("keeps the given row order with manualSort (the server already sorted it)", async () => {
+    setViewportWidth(1440);
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+
+    render(
+      <Table
+        data={rows}
+        columns={columns}
+        keyExtractor={(row) => row.id}
+        sortConfig={{ key: "price", direction: "asc" }}
+        onSortChange={onSortChange}
+        manualSort
+      />,
+    );
+
+    const bodyOrder = screen.getAllByRole("row").slice(1).map((row) => row.textContent);
+    expect(bodyOrder[0]).toContain("Banana");
+    expect(screen.getByRole("columnheader", { name: /Narx/ })).toHaveTextContent("↑");
+
+    await user.click(screen.getByRole("columnheader", { name: /Narx/ }));
+    expect(onSortChange).toHaveBeenCalledWith({ key: "price", direction: "desc" });
+  });
+
   it("shows a mobile sort chip bar in card mode and lets the user sort by tapping a chip", async () => {
     setViewportWidth(500);
     const user = userEvent.setup();

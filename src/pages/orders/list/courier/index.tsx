@@ -509,7 +509,7 @@ const CourierOrders = () => {
   const handlePartlySell = (
     orderId: string,
     payload: {
-      order_item_info: { product_id: string; quantity: number }[];
+      order_item_info: { order_item_id: string; product_id?: string; quantity: number }[];
       totalPrice: number;
       extraCost: number;
       comment: string;

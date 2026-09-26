@@ -55,7 +55,7 @@
   "filterCourier": "Courier",
   "filterRegion": "Region",
   "filterStatus": "Status",
-  "filterSearchPlaceholder": "Search order...",
+  "filterSearchPlaceholder": "Name, phone or order number...",
   "filterMarketPlaceholder": "Select market",
   "filterCourierPlaceholder": "Select courier",
   "filterRegionPlaceholder": "Select region",
@@ -133,7 +133,6 @@
   "maxQuantity": "Max: {{count}} pcs",
   "minimumSelectionError": "You cannot reduce more. At least 1 product must remain, otherwise use cancel.",
   "partialSellUnavailableSingle": "The order has a single item — it cannot be sold partially. Sell it in full or cancel.",
-  "partialSellUnavailableNoCatalog": "The product is not linked to the catalog (partner parcel) — it cannot be sold partially. Sell it in full or cancel.",
   "partialSellUnavailableNoItems": "The order has no product lines — it cannot be sold partially. Sell it in full or cancel.",
   "partialSellUnavailableDuplicate": "The same product is on several lines — it cannot be sold partially. Sell it in full or cancel.",
   "partialSellUnavailableInvalidQuantity": "The product quantities are invalid — it cannot be sold partially. Sell it in full or cancel.",
@@ -312,7 +311,7 @@
   "extraCostApprovalBadge": "Sent for approval",
   "extraCostApprovalSentAt": "Extra cost of {{amount}} sent for market approval at {{time}}",
   "sortLabel": "Sort:",
-  "sortCurrentPageOnly": "Sorting applies only to the orders on this page",
+  "searchTruncatedWarning": "The results are incomplete — refine your search",
   "excel": {
     "fileName": "all_orders",
     "headers": {

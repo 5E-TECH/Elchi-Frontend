@@ -44,6 +44,13 @@ const EXPORT_PAGE_SIZE = 100;
 const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
 const ORDER_SORT_BY_KEY = "orderSortBy";
 const ORDER_SORT_DIR_KEY = "orderSortDir";
+// Jadval ustuni -> GET /orders `sort_by` (backend oq ro'yxati). Boshqa ustun
+// bo'yicha server saralay olmaydi.
+const ORDER_SORT_BY_FIELD: Record<string, NonNullable<OrderListParams["sort_by"]>> = {
+  createdAt: "created_at",
+  total_price: "total_price",
+  status: "status",
+};
 const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
@@ -370,7 +377,7 @@ const Orders = () => {
   const urlSortBy = urlParams[ORDER_SORT_BY_KEY] ?? "";
   const urlSortDir = urlParams[ORDER_SORT_DIR_KEY] ?? "";
   const sortConfig: SortConfig | null =
-    urlSortBy && (urlSortDir === "asc" || urlSortDir === "desc")
+    ORDER_SORT_BY_FIELD[urlSortBy] && (urlSortDir === "asc" || urlSortDir === "desc")
       ? { key: urlSortBy, direction: urlSortDir }
       : null;
   const activeManagerTab = getManagerOrdersTab(parseStatusFilterValue(urlStatusRaw));
@@ -459,6 +466,13 @@ const Orders = () => {
     const search = urlSearch;
     if (search) params.search = search;
 
+    // Saralash serverda — butun ro'yxat bo'yicha.
+    const sortBy = ORDER_SORT_BY_FIELD[urlSortBy];
+    if (sortBy && (urlSortDir === "asc" || urlSortDir === "desc")) {
+      params.sort_by = sortBy;
+      params.sort_dir = urlSortDir;
+    }
+
     return params;
   }, [
     page,
@@ -475,6 +489,8 @@ const Orders = () => {
     urlDateFrom,
     urlDateTo,
     urlSearch,
+    urlSortBy,
+    urlSortDir,
   ]);
 
   const filtersKey = useMemo(
@@ -745,7 +761,7 @@ const Orders = () => {
     (
       orderId: string,
       payload: {
-        order_item_info: { product_id: string; quantity: number }[];
+        order_item_info: { order_item_id: string; product_id?: string; quantity: number }[];
         totalPrice: number;
         extraCost: number;
         comment: string;
@@ -1028,17 +1044,15 @@ const Orders = () => {
           </div>
         ) : null}
 
-        {/* Backend ro'yxatni doim createdAt DESC bilan qaytaradi va saralash
-            parametrini qabul qilmaydi — saralash faqat yuklangan sahifaga
-            ta'sir qiladi. Buni aytmasak "eskidan yangiga" butun ro'yxatning
-            eng eskisini ko'rsatadi deb o'ylanadi. */}
-        {sortConfig && total > items.length ? (
+        {/* Backend 1000 tadan ortiq mos mijozni kesadi va buni `search_truncated`
+            bilan bildiradi — aks holda "bunday buyurtma yo'q" deb o'ylanadi. */}
+        {urlSearch && data?.search_truncated ? (
           <p
             role="note"
             className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300"
           >
             <Info size={13} className="shrink-0" />
-            {t("sortCurrentPageOnly")}
+            {t("searchTruncatedWarning")}
           </p>
         ) : null}
 

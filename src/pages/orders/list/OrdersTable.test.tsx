@@ -156,8 +156,8 @@ describe("OrdersTable", () => {
     expect(onSortChange).toHaveBeenCalledWith({ key: "status", direction: "asc" });
   });
 
-  it("orders rows by the natural order-lifecycle rank when sorted by status", () => {
-    const mixedStatusOrders = [
+  it("keeps the server's row order when sorted (the whole list is sorted on the server)", () => {
+    const serverSortedOrders = [
       { ...orders[0], id: "sold-1", status: "sold" },
       { ...orders[0], id: "new-1", status: "new" },
       { ...orders[0], id: "cancelled-1", status: "cancelled" },
@@ -165,7 +165,7 @@ describe("OrdersTable", () => {
 
     renderWithProviders(
       <OrdersTable
-        data={mixedStatusOrders as never}
+        data={serverSortedOrders as never}
         isLoading={false}
         sortConfig={{ key: "status", direction: "asc" }}
         onSortChange={vi.fn()}
@@ -173,6 +173,24 @@ describe("OrdersTable", () => {
     );
 
     const idBadges = screen.getAllByText(/^№/).map((node) => node.textContent);
-    expect(idBadges).toEqual(["№new-1", "№sold-1", "№cancelled-1"]);
+    expect(idBadges).toEqual(["№sold-1", "№new-1", "№cancelled-1"]);
+  });
+
+  it("does not offer sorting by customer name (the server cannot sort by it)", async () => {
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+
+    renderWithProviders(
+      <OrdersTable
+        data={orders as never}
+        isLoading={false}
+        sortConfig={null}
+        onSortChange={onSortChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("columnheader", { name: "Mijoz" }));
+
+    expect(onSortChange).not.toHaveBeenCalled();
   });
 });

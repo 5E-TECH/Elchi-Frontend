@@ -55,7 +55,7 @@
   "filterCourier": "Kuryer",
   "filterRegion": "Viloyat",
   "filterStatus": "Holat",
-  "filterSearchPlaceholder": "Buyurtmani qidiring...",
+  "filterSearchPlaceholder": "Ism, telefon yoki buyurtma raqami...",
   "filterMarketPlaceholder": "Marketni tanlang",
   "filterCourierPlaceholder": "Kuryerni tanlang",
   "filterRegionPlaceholder": "Hududni tanlang",
@@ -133,7 +133,6 @@
   "maxQuantity": "Max: {{count}} ta",
   "minimumSelectionError": "Bundan ortiq kamaytirib bo'lmaydi. Kamida 1 ta mahsulot qolishi kerak, aks holda bekor qilishdan foydalaning.",
   "partialSellUnavailableSingle": "Buyurtmada bitta mahsulot — qisman sotib bo'lmaydi. To'liq soting yoki bekor qiling.",
-  "partialSellUnavailableNoCatalog": "Mahsulot katalogga bog'lanmagan (hamkor posilkasi) — qisman sotib bo'lmaydi. To'liq soting yoki bekor qiling.",
   "partialSellUnavailableNoItems": "Buyurtmada mahsulot qatorlari yo'q — qisman sotib bo'lmaydi. To'liq soting yoki bekor qiling.",
   "partialSellUnavailableDuplicate": "Bir xil mahsulot bir necha qatorda — qisman sotib bo'lmaydi. To'liq soting yoki bekor qiling.",
   "partialSellUnavailableInvalidQuantity": "Mahsulot sonlari noto'g'ri — qisman sotib bo'lmaydi. To'liq soting yoki bekor qiling.",
@@ -312,7 +311,7 @@
   "extraCostApprovalBadge": "Tasdiqqa yuborilgan",
   "extraCostApprovalSentAt": "{{amount}} qo'shimcha xarajat {{time}} da market tasdig'iga yuborilgan",
   "sortLabel": "Saralash:",
-  "sortCurrentPageOnly": "Saralash faqat shu sahifadagi buyurtmalarga qo'llanadi",
+  "searchTruncatedWarning": "Natija to'liq emas, qidiruvni aniqlashtiring",
   "excel": {
     "fileName": "barcha_buyurtmalar",
     "headers": {
