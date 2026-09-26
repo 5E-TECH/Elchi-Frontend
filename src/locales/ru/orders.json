@@ -55,7 +55,7 @@
   "filterCourier": "Курьер",
   "filterRegion": "Область",
   "filterStatus": "Статус",
-  "filterSearchPlaceholder": "Поиск заказа...",
+  "filterSearchPlaceholder": "Имя, телефон или номер заказа...",
   "filterMarketPlaceholder": "Выберите маркет",
   "filterCourierPlaceholder": "Выберите курьера",
   "filterRegionPlaceholder": "Выберите область",
@@ -133,7 +133,6 @@
   "maxQuantity": "Макс: {{count}} шт",
   "minimumSelectionError": "Нельзя уменьшить больше. Должен остаться хотя бы 1 товар, иначе используйте отмену.",
   "partialSellUnavailableSingle": "В заказе один товар — частичная продажа невозможна. Продайте полностью или отмените.",
-  "partialSellUnavailableNoCatalog": "Товар не привязан к каталогу (посылка партнёра) — частичная продажа невозможна. Продайте полностью или отмените.",
   "partialSellUnavailableNoItems": "В заказе нет товарных позиций — частичная продажа невозможна. Продайте полностью или отмените.",
   "partialSellUnavailableDuplicate": "Один и тот же товар в нескольких позициях — частичная продажа невозможна. Продайте полностью или отмените.",
   "partialSellUnavailableInvalidQuantity": "Некорректное количество товаров — частичная продажа невозможна. Продайте полностью или отмените.",
@@ -312,7 +311,7 @@
   "extraCostApprovalBadge": "На подтверждении",
   "extraCostApprovalSentAt": "Дополнительный расход {{amount}} отправлен на подтверждение магазину в {{time}}",
   "sortLabel": "Сортировка:",
-  "sortCurrentPageOnly": "Сортировка применяется только к заказам на этой странице",
+  "searchTruncatedWarning": "Результаты неполные — уточните поиск",
   "excel": {
     "fileName": "vse_zakazy",
     "headers": {

@@ -20,28 +20,12 @@ import OrderIdBadge from "../../../shared/ui/OrderIdBadge";
 import TableSkeleton from "../../../shared/ui/TableSkeleton";
 import OrderStatusBadge from "./OrderStatusBadge";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
-import type { OrderListItem, OrderStatus } from "../../../entities/order/types/order";
+import type { OrderListItem } from "../../../entities/order/types/order";
 import type { RootState } from "../../../app/config/store";
 import type { SortConfig } from "../../../shared/components/Table/Table.types";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 
 const EMPTY_SELECTED_IDS = new Set<string>();
-
-// Buyurtma hayot siklidagi tabiiy tartib — "Holat" ustunini saralashda
-// alifbo bo'yicha emas, shu ketma-ketlik bo'yicha solishtirish uchun.
-const ORDER_STATUS_RANK: Record<OrderStatus, number> = {
-    created: 0,
-    new: 1,
-    received: 2,
-    "on the road": 3,
-    waiting: 4,
-    sold: 5,
-    paid: 6,
-    partly_paid: 7,
-    closed: 8,
-    cancelled: 9,
-    "cancelled (sent)": 10,
-};
 
 interface Props {
     data: OrderListItem[];
@@ -152,8 +136,6 @@ const createColumns = (
     {
         key: "customer" as const,
         label: "Mijoz",
-        sortable: true as const,
-        sortValue: (row: OrderListItem) => row.customer?.name?.trim().toLocaleLowerCase() ?? "",
         render: (customer: OrderListItem["customer"], row: OrderListItem) => (
             <div className="min-w-0">
                 <p className="text-sm font-semibold text-maindark dark:text-primary truncate">
@@ -201,7 +183,6 @@ const createColumns = (
         key: "status" as const,
         label: "Holat",
         sortable: true as const,
-        sortValue: (row: OrderListItem) => ORDER_STATUS_RANK[row.status] ?? 99,
         render: (status: OrderListItem["status"], row: OrderListItem) => (
             <OrderStatusBadge orderId={row.id} status={status} />
         ),
@@ -221,7 +202,6 @@ const createColumns = (
         width: "150px",
         className: "whitespace-nowrap",
         sortable: true as const,
-        sortValue: (row: OrderListItem) => row.total_price ?? 0,
         render: (val: number) => (
             <div className="flex items-center gap-1.5">
                 <Banknote size={13} className="text-main/60 shrink-0" />
@@ -237,7 +217,6 @@ const createColumns = (
         width: "170px",
         className: "whitespace-nowrap",
         sortable: true as const,
-        sortValue: (row: OrderListItem) => new Date(row.createdAt).getTime(),
         render: (val: string) => (
             <div className="flex items-center gap-2">
                 <Calendar size={14} className="shrink-0 text-gray-600 dark:text-gray-300/80" />
@@ -600,6 +579,9 @@ const OrdersTable = ({
             mobileRowRender={renderMobileCard}
             sortConfig={sortConfig}
             onSortChange={onSortChange}
+            // Ro'yxat serverda (butun ro'yxat bo'yicha) saralanadi — sahifa
+            // ichida qayta tartiblanmaydi.
+            manualSort
             sortLabel={t("sortLabel")}
             striped
             hoverable

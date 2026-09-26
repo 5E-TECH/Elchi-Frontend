@@ -19,9 +19,15 @@ const orderRows = Array.from({ length: 10 }, (_, i) => ({
   created_at: "2026-09-20T10:00:00.000Z",
 }));
 
-const ordersResponse = { total: 25 };
+const ordersResponse = { total: 25, search_truncated: false };
 const getOrdersMock = vi.fn((params: { page: number; limit: number }) => ({
-  data: { data: orderRows, total: ordersResponse.total, page: params.page, limit: params.limit },
+  data: {
+    data: orderRows,
+    total: ordersResponse.total,
+    page: params.page,
+    limit: params.limit,
+    search_truncated: ordersResponse.search_truncated,
+  },
   isLoading: false,
 }));
 
@@ -93,6 +99,7 @@ describe("Orders list sorting", () => {
   beforeEach(() => {
     getOrdersMock.mockClear();
     ordersResponse.total = 25;
+    ordersResponse.search_truncated = false;
   });
 
   it("restores the sort from the URL after a refresh and keeps the saved page", () => {
@@ -122,19 +129,58 @@ describe("Orders list sorting", () => {
     expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ market_id: "5" }));
   });
 
-  it("says the sort only covers the current page when the list has more pages", () => {
-    open("/orders?orderSortBy=total_price&orderSortDir=asc");
-
-    expect(screen.getByRole("note")).toHaveTextContent("Saralash faqat shu sahifadagi buyurtmalarga qo'llanadi");
+  it("sends the sort to the server so it covers the whole list, not just this page", () => {
+    open("/orders?orderSortBy=total_price&orderSortDir=desc");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sort_by: "total_price", sort_dir: "desc" }),
+    );
   });
 
-  it("does not show the current-page note without a sort or when everything fits on one page", () => {
-    const { unmount } = open("/orders");
-    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  it("maps the date column to the API field and keeps no sort params without a sort", () => {
+    const { unmount } = open("/orders?orderSortBy=createdAt&orderSortDir=asc");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sort_by: "created_at", sort_dir: "asc" }),
+    );
     unmount();
 
-    ordersResponse.total = 10;
+    getOrdersMock.mockClear();
+    open("/orders");
+    const params = getOrdersMock.mock.lastCall?.[0] as Record<string, unknown>;
+    expect(params).not.toHaveProperty("sort_by");
+    expect(params).not.toHaveProperty("sort_dir");
+  });
+
+  it("ignores a URL sort the server cannot do (old customer-name link)", () => {
+    open("/orders?orderSortBy=customer&orderSortDir=asc");
+
+    expect(screen.getByTestId("orders-table")).toHaveAttribute("data-sort", "");
+    expect(getOrdersMock.mock.lastCall?.[0]).not.toHaveProperty("sort_by");
+  });
+
+  it("no longer shows the current-page-only sort note", () => {
     open("/orders?orderSortBy=total_price&orderSortDir=asc");
+
+    expect(screen.queryByText(/faqat shu sahifadagi/)).not.toBeInTheDocument();
+  });
+});
+
+describe("Orders list search", () => {
+  beforeEach(() => {
+    getOrdersMock.mockClear();
+    ordersResponse.total = 25;
+    ordersResponse.search_truncated = false;
+  });
+
+  it("warns that the results are incomplete when the server cut the customer list", () => {
+    ordersResponse.search_truncated = true;
+    open("/orders?orderSearch=ali");
+
+    expect(screen.getByRole("note")).toHaveTextContent("Natija to'liq emas, qidiruvni aniqlashtiring");
+  });
+
+  it("shows no warning when the search result is complete", () => {
+    open("/orders?orderSearch=ali");
+
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 });

@@ -98,6 +98,8 @@ export interface OrderListResponse {
     total: number;
     page: number;
     limit: number;
+    /** Qidiruvga 1000 tadan ortiq mijoz mos keldi — natija to'liq emas. */
+    search_truncated?: boolean;
 }
 
 export interface OrderListParams {
@@ -116,6 +118,8 @@ export interface OrderListParams {
     start_day?: string;
     end_day?: string;
     fetch_all?: boolean | string;
+    sort_by?: "created_at" | "total_price" | "status";
+    sort_dir?: "asc" | "desc";
 }
 
 export interface ExternalOrderItem {

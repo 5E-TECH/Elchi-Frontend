@@ -23,6 +23,7 @@ export const Table = memo(<T extends object>({
   preserveTableOnDesktop = false,
   sortConfig: controlledSortConfig,
   onSortChange,
+  manualSort = false,
   sortLabel = 'Saralash:',
 }: TableProps<T>) => {
   const [internalSortConfig, setInternalSortConfig] = useState<SortConfig | null>(null);
@@ -109,7 +110,7 @@ export const Table = memo(<T extends object>({
 
   // Sorting logikasi
   const sortedData = useMemo(() => {
-    if (!sortConfig) return data;
+    if (!sortConfig || manualSort) return data;
 
     const activeColumn = columns.find(
       (column) => String(column.key) === sortConfig.key,
@@ -145,7 +146,7 @@ export const Table = memo(<T extends object>({
     });
 
     return sorted;
-  }, [columns, data, sortConfig]);
+  }, [columns, data, manualSort, sortConfig]);
 
   const handleSort = (column: ColumnConfig<T>) => {
     if (!column.sortable) return;

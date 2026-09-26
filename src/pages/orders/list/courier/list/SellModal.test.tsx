@@ -104,12 +104,21 @@ describe("SellModal partial sell", () => {
     expect(sellButton()).toBeEnabled();
   });
 
-  it("blocks partial sell for a multi-unit partner parcel whose product is not in the catalog (real BeePost #120)", () => {
-    renderSell({ order: beePostMultiUnitOrder as never });
+  it("allows partial sell for a multi-unit partner parcel without a catalog product and sends the order-item id (real BeePost #120)", async () => {
+    const user = userEvent.setup();
+    const onPartlySell = vi.fn();
+    renderSell({ order: beePostMultiUnitOrder as never, onPartlySell });
 
-    expect(partialToggle()).toBeDisabled();
-    expect(partialToggle()).toHaveTextContent("Mahsulot katalogga bog'lanmagan (hamkor posilkasi) — qisman sotib bo'lmaydi");
-    expect(sellButton()).toBeEnabled();
+    expect(partialToggle()).toBeEnabled();
+    await user.click(partialToggle());
+    await user.click(screen.getByRole("button", { name: "tv sonini kamaytirish" }));
+    await user.type(screen.getAllByPlaceholderText("0")[0], "500000");
+    await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
+
+    expect(onPartlySell).toHaveBeenCalledWith("120", expect.objectContaining({
+      order_item_info: [{ order_item_id: "124", quantity: 1 }],
+      totalPrice: 500000,
+    }));
   });
 
   it("blocks partial sell with its own reason when the order has no product lines", () => {
@@ -119,7 +128,7 @@ describe("SellModal partial sell", () => {
     expect(partialToggle()).toHaveTextContent("Buyurtmada mahsulot qatorlari yo'q");
   });
 
-  it("blocks an order that mixes a catalog line with a catalog-less one (catalog line first)", async () => {
+  it("sends every line by its order-item id when a catalog line and a catalog-less one are mixed", async () => {
     const user = userEvent.setup();
     const onPartlySell = vi.fn();
     renderSell({
@@ -134,10 +143,33 @@ describe("SellModal partial sell", () => {
       onPartlySell,
     });
 
-    expect(partialToggle()).toBeDisabled();
-    expect(partialToggle()).toHaveTextContent("Mahsulot katalogga bog'lanmagan (hamkor posilkasi)");
-    await user.click(sellButton());
-    expect(onPartlySell).not.toHaveBeenCalled();
+    expect(partialToggle()).toBeEnabled();
+    await user.click(partialToggle());
+    await user.click(screen.getByRole("button", { name: "tv sonini kamaytirish" }));
+    await user.type(screen.getAllByPlaceholderText("0")[0], "700000");
+    await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
+
+    expect(onPartlySell).toHaveBeenCalledWith("o-1", expect.objectContaining({
+      order_item_info: [
+        { order_item_id: "14", product_id: "4", quantity: 2 },
+        { order_item_id: "15", quantity: 0 },
+      ],
+    }));
+  });
+
+  it("does not treat two catalog-less lines as the same product", () => {
+    renderSell({
+      order: {
+        ...order,
+        product_quantity: 3,
+        items: [
+          { id: "31", quantity: 2, product_id: null, product_name: "kurtka", product: null },
+          { id: "32", quantity: 1, product_id: null, product_name: "shim", product: null },
+        ],
+      } as never,
+    });
+
+    expect(partialToggle()).toBeEnabled();
   });
 
   it("blocks an order where the same catalog product sits on two lines", () => {
@@ -204,14 +236,14 @@ describe("SellModal partial sell", () => {
     await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
 
     expect(onPartlySell).toHaveBeenCalledWith("o-1", {
-      order_item_info: [{ product_id: "24", quantity: 1 }],
+      order_item_info: [{ order_item_id: "i1", product_id: "24", quantity: 1 }],
       totalPrice: 60000,
       extraCost: 0,
       comment: "",
     });
   });
 
-  it("sends the catalog product_id — never the order-item id — when the row has no product object (admin list)", async () => {
+  it("sends the catalog product_id next to the order-item id when the row has no product object (admin list)", async () => {
     const user = userEvent.setup();
     const onPartlySell = vi.fn();
     renderSell({ order: adminRowOrder as never, onPartlySell });
@@ -224,7 +256,7 @@ describe("SellModal partial sell", () => {
     await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
 
     expect(onPartlySell).toHaveBeenCalledWith("1251132", expect.objectContaining({
-      order_item_info: [{ product_id: "8", quantity: 2 }],
+      order_item_info: [{ order_item_id: "1251136", product_id: "8", quantity: 2 }],
       totalPrice: 80000,
     }));
   });
@@ -253,8 +285,8 @@ describe("SellModal partial sell", () => {
 
     expect(onPartlySell).toHaveBeenCalledWith("o-1", expect.objectContaining({
       order_item_info: [
-        { product_id: "24", quantity: 0 },
-        { product_id: "25", quantity: 1 },
+        { order_item_id: "i1", product_id: "24", quantity: 0 },
+        { order_item_id: "i2", product_id: "25", quantity: 1 },
       ],
     }));
   });

@@ -29,11 +29,10 @@ type OrderItem = {
 };
 
 /**
- * Qisman sotishda backend qatorni KATALOG `product_id` si bo'yicha topadi.
- * Ilgari bu yerda `?? item.id` (buyurtma QATORI id'si) zaxirasi bor edi —
- * katalogsiz qatorda backend uni topolmay "Product not found" bilan rad
- * etardi, `product` obyekti kelmagan admin qatorlarida esa mavjud mahsulot
- * ham noto'g'ri id bilan ketardi.
+ * Katalog mahsuloti id'si (katalogsiz hamkor qatorida — `null`). Qisman
+ * sotishda qator `order_item_id` bilan yuboriladi; `product_id` katalog
+ * qatorlarida qo'shimcha yuboriladi. Ilgari bu yerda `?? item.id` (buyurtma
+ * QATORI id'si) zaxirasi bor edi — `product_id` o'rnida ketib, rad etilardi.
  */
 const getCatalogProductId = (item: OrderItem): string | null => {
   const id = item.product?.id ?? item.product_id;
@@ -66,7 +65,7 @@ type SellPayload = {
 };
 
 type PartlySellPayload = {
-  order_item_info: { product_id: string; quantity: number }[];
+  order_item_info: { order_item_id: string; product_id?: string; quantity: number }[];
   totalPrice: number;
   extraCost: number;
   comment: string;
@@ -146,14 +145,16 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
   // ochiladi. Ilgari rejim har doim ochilar va so'rov baribir rad etilardi:
   //  • jami 1 dona — kamida bitta donani kamaytirish shart (backend), kamida
   //    bitta dona qolishi shart (UI qoidasi) — ikkalasi birga bajarilmaydi;
-  //  • katalogsiz qator (hamkor posilkasi) — backend qatorni `product_id`
-  //    bo'yicha topadi, `null` ni topa olmaydi;
   //  • mahsulot qatorlari umuman yo'q — yuboriladigan narsa yo'q;
   //  • bir xil katalog mahsuloti ikki qatorda — backend har ikkala qatorni
   //    so'rovdagi BIRINCHI yozuv bilan solishtiradi va rad etadi.
   const orderItems = order.items ?? [];
   const totalItemUnits = orderItems.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
-  const catalogIds = orderItems.map(getCatalogProductId);
+  // Katalogsiz qatorlar (id `null`) dublikat hisoblanmaydi — ular
+  // `order_item_id` bilan har biri alohida topiladi.
+  const catalogIds = orderItems
+    .map(getCatalogProductId)
+    .filter((id): id is string => Boolean(id));
   const partialUnavailableReason =
     orderItems.length === 0
       ? t("partialSellUnavailableNoItems")
@@ -161,11 +162,9 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
         ? t("partialSellUnavailableInvalidQuantity")
         : totalItemUnits < 2
           ? t("partialSellUnavailableSingle")
-          : catalogIds.some((id) => !id)
-            ? t("partialSellUnavailableNoCatalog")
-            : new Set(catalogIds).size !== catalogIds.length
-              ? t("partialSellUnavailableDuplicate")
-              : null;
+          : new Set(catalogIds).size !== catalogIds.length
+            ? t("partialSellUnavailableDuplicate")
+            : null;
   const canSellPartially = partialUnavailableReason === null;
   const hasDecreasedItem = orderItems.some((item) => getItemQty(item) < item.quantity);
   const partialBlockReason = !isPartial
@@ -214,11 +213,14 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
 
       // POST /orders/partly-sell/{id}
       onPartlySell(order.id, {
-        order_item_info: orderItems.map((item) => ({
-          // canSellPartially har bir qatorda katalog id borligini kafolatlaydi.
-          product_id: getCatalogProductId(item) as string,
-          quantity: getItemQty(item),
-        })),
+        order_item_info: orderItems.map((item) => {
+          const productId = getCatalogProductId(item);
+          return {
+            order_item_id: String(item.id),
+            ...(productId ? { product_id: productId } : {}),
+            quantity: getItemQty(item),
+          };
+        }),
         totalPrice: Number(totalPrice) || 0,
         extraCost: Number(extraCost) || 0,
         comment: note,

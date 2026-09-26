@@ -37,6 +37,11 @@ export interface TableProps<T> {
   /** Berilsa, sort holati tashqaridan boshqariladi (masalan URL query bilan). */
   sortConfig?: SortConfig | null;
   onSortChange?: (config: SortConfig | null) => void;
+  /**
+   * `true` bo'lsa qatorlar qayta tartiblanmaydi — ma'lumot allaqachon serverda
+   * saralangan (sarlavha/chip faqat `onSortChange` ni chaqiradi).
+   */
+  manualSort?: boolean;
   sortLabel?: string;
 }
 

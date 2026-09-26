@@ -747,7 +747,7 @@ const NewOrderUpdate = () => {
     (
       id: string,
       payload: {
-        order_item_info: { product_id: string; quantity: number }[];
+        order_item_info: { order_item_id: string; product_id?: string; quantity: number }[];
         totalPrice: number;
         extraCost: number;
         comment: string;
@@ -827,10 +827,9 @@ const NewOrderUpdate = () => {
         orderFlags.require_cancel_proof ??
         orderFlags.cancel_proof_required,
       ),
-      // Katalog id bo'lmasa (hamkor posilkasi) qator id'si O'RNIGA qo'yilmaydi:
-      // backend qisman sotishda qatorni product_id bo'yicha topadi va qator
-      // id'sini "Product not found" bilan rad etardi. SellModal bunday
-      // buyurtmada qisman sotishni sabab bilan bloklaydi.
+      // Katalog id bo'lmasa (hamkor posilkasi) qator id'si product_id O'RNIGA
+      // qo'yilmaydi — SellModal qatorni `order_item_id` (item.id) bilan
+      // yuboradi.
       items: order.items.map((item) => ({
         id: item.id,
         quantity: item.quantity,
