@@ -138,3 +138,55 @@ describe("muted matn dark rejimda oq qoladigan fonda", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+/**
+ * REPO SKAN: `…-[color:var(--color-text-muted)]` class'i ishlatilgan HAR BIR
+ * joyda o'sha class satrida `dark:` jufti bo'lsin (7L68tqsa).
+ *
+ * Token dark'da o'zi ham qayta aniqlanadi (yuqoridagi test), lekin karta
+ * talabi — juftni unutish imkoniyati qolmasin: yangi joyda `dark:` yozilmasa
+ * bu test yiqiladi.
+ */
+describe("--color-text-muted class'larida dark: jufti", () => {
+  const all = {
+    ...sources,
+    ...(import.meta.glob("../../**/*.ts", { eager: true, query: "?raw", import: "default" }) as Record<string, string>),
+  };
+  const files = Object.entries(all).filter(([path]) => !/\.test\.tsx?$/.test(path));
+  const TOKEN =
+    /(?<![\w:\-[])((?:[a-z0-9-]+:)*)([a-z]+(?:-[a-z]+)*)-\[color:var\(--color-text-muted\)\](\/\d+)?/g;
+
+  /** Token turgan class satri: eng yaqin qo'shtirnoqlar orasi. */
+  const enclosing = (source: string, index: number): string => {
+    const start = Math.max(
+      source.lastIndexOf('"', index),
+      source.lastIndexOf("'", index),
+      source.lastIndexOf("`", index),
+    );
+    if (start < 0) return source;
+    const end = source.indexOf(source[start], index);
+    return source.slice(start, end < 0 ? source.length : end);
+  };
+
+  it("fayllar va muted class'lar topildi (test bo'shliqda ishlamasin)", () => {
+    const uses = files.reduce((sum, [, source]) => sum + (source.match(TOKEN)?.length ?? 0), 0);
+    expect(files.length).toBeGreaterThan(50);
+    expect(uses).toBeGreaterThan(100);
+  });
+
+  it("⭐ har bir `…-[color:var(--color-text-muted)]` yonida `dark:` jufti bor", () => {
+    const missing: string[] = [];
+    for (const [path, source] of files) {
+      for (const match of source.matchAll(TOKEN)) {
+        const [token, variants, utility] = match;
+        if (variants.includes("dark:")) continue;
+        const pair = new RegExp(`dark:${variants.replace(/[-:]/g, "\\$&")}${utility}-`);
+        if (!pair.test(enclosing(source, match.index ?? 0))) {
+          const line = source.slice(0, match.index).split("\n").length;
+          missing.push(`${path.replace("../../", "src/")}:${line} ${token}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+});

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { getBackendErrorMessage } from "../../shared/lib/backendError";
 
 /**
  * Hamkor tizimlardan (BeePost va h.k.) kelgan buyurtmalar.
@@ -179,21 +180,62 @@ export interface ReceiveByScanResult {
   unmatched: Array<{ token: string; reason: string }>;
 }
 
+/**
+ * ⚠️ BACKEND BIR SO'ROVDA 200 TADAN ORTIQ TOKENNI RAD ETADI (400 "bir
+ * so'rovda 200 tadan ko'p token yuborib bo'lmaydi"). Ilgari hamma skanerlangan
+ * tokenlar bitta so'rovda ketardi — 200 dan ko'p posilka skanerlangan qop
+ * umuman qabul qilinmasdi. Endi tokenlar 200 tadan bo'lib ketma-ket
+ * yuboriladi va natijalar jamlanadi.
+ */
+export const RECEIVE_BY_SCAN_MAX_TOKENS = 200;
+
+const postReceiveByScan = (tokens: string[]): Promise<ReceiveByScanResult> =>
+  api
+    .post(API_ENDPOINTS.ORDERS.EXTERNAL_RECEIVE_BY_SCAN, { tokens })
+    .then((res) => {
+      const raw = res.data as { data?: unknown };
+      const inner = (raw?.data as { data?: unknown })?.data ?? raw?.data;
+      const page = inner as Partial<ReceiveByScanResult> | undefined;
+      return {
+        received: Number(page?.received ?? 0),
+        unmatched: Array.isArray(page?.unmatched) ? page!.unmatched : [],
+      } satisfies ReceiveByScanResult;
+    });
+
+/**
+ * Bo'laklab qabul qilish. Birinchi bo'lak yiqilsa hech narsa qabul
+ * qilinmagan — xato odatdagidek yuqoriga chiqadi. Keyingi bo'lak yiqilsa
+ * oldingilari ALLAQACHON qabul qilingan: ularni yo'qotmaslik uchun natija
+ * qaytariladi, yuborilmay qolgan tokenlar esa sababi bilan `unmatched` ga
+ * qo'shiladi (operator qisman qabulni ko'rsin).
+ */
+export const receiveTokensInChunks = async (
+  tokens: string[],
+  send: (chunk: string[]) => Promise<ReceiveByScanResult> = postReceiveByScan,
+): Promise<ReceiveByScanResult> => {
+  const result: ReceiveByScanResult = { received: 0, unmatched: [] };
+
+  for (let start = 0; start < tokens.length; start += RECEIVE_BY_SCAN_MAX_TOKENS) {
+    const chunk = tokens.slice(start, start + RECEIVE_BY_SCAN_MAX_TOKENS);
+    try {
+      const part = await send(chunk);
+      result.received += part.received;
+      result.unmatched.push(...part.unmatched);
+    } catch (error) {
+      if (start === 0) throw error;
+      const reason = getBackendErrorMessage(error) ?? "yuborib bo'lmadi";
+      result.unmatched.push(...tokens.slice(start).map((token) => ({ token, reason })));
+      break;
+    }
+  }
+
+  return result;
+};
+
 export const useReceiveByScan = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (tokens: string[]) =>
-      api
-        .post(API_ENDPOINTS.ORDERS.EXTERNAL_RECEIVE_BY_SCAN, { tokens })
-        .then((res) => {
-          const raw = res.data as { data?: unknown };
-          const inner = (raw?.data as { data?: unknown })?.data ?? raw?.data;
-          const page = inner as Partial<ReceiveByScanResult> | undefined;
-          return {
-            received: Number(page?.received ?? 0),
-            unmatched: Array.isArray(page?.unmatched) ? page!.unmatched : [],
-          } satisfies ReceiveByScanResult;
-        }),
+    mutationFn: (tokens: string[]) => receiveTokensInChunks(tokens),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [incomingOrdersKey] });
       client.invalidateQueries({ queryKey: [incomingSourcesKey] });

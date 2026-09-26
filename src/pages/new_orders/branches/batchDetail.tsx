@@ -184,7 +184,7 @@ const BranchBatchDetailPage = () => {
           </div>
 
           {data ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 text-xs font-semibold text-[color:var(--color-text-muted)] dark:bg-primarydark lg:justify-end">
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-primarydark lg:justify-end">
               <span className={`inline-flex rounded-full border px-3 py-1 ${batchStatusClass[data.status]}`}>
                 {translatedBatchStatus}
               </span>

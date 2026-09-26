@@ -77,6 +77,11 @@ const AntdThemeProvider = ({ children }: { children: ReactNode }) => {
               colorBgLayout: DARK_PAGE,
               colorBorder: '#554c82',
               colorBorderSecondary: '#4a4270',
+              /**
+               * Sukutdagi placeholder (`white/25`) yuzada 2.15:1 — o'qib
+               * bo'lmaydi (7L68tqsa kontrast o'lchovi). `white/60` ≈ 6:1.
+               */
+              colorTextPlaceholder: 'rgba(255, 255, 255, 0.6)',
             }
           : {}),
         /**
@@ -96,6 +101,20 @@ const AntdThemeProvider = ({ children }: { children: ReactNode }) => {
          */
         Table: { headerBg: 'transparent' },
         Card: { paddingLG: 16 },
+        /**
+         * Dark'da faol tab sukutda `ACCENT` ning qoraytirilgan tusi —
+         * yuzada 2.38:1 (7L68tqsa). `indigo-300` bilan ≥ 4.5:1.
+         */
+        ...(isDark
+          ? {
+              Tabs: {
+                itemSelectedColor: '#a5b4fc',
+                itemActiveColor: '#a5b4fc',
+                itemHoverColor: '#c7d2fe',
+                inkBarColor: '#a5b4fc',
+              },
+            }
+          : {}),
       },
     }),
     [isDark],

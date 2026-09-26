@@ -137,8 +137,8 @@ const PopupSelect = <T extends object>({
               placeholder={resolvedPlaceholder}
               className="mb-4 px-2"
               inputClassName="bg-white/95 text-maindark border-[color:var(--color-border-soft)] py-3 placeholder:text-[color:var(--color-text-muted)] shadow-[0_8px_18px_rgba(68,78,125,0.06)] focus:shadow-[0_0_0_4px_rgba(124,92,255,0.12)] dark:border-white/10 dark:bg-primarydark dark:text-primary dark:placeholder:text-primary/45"
-              iconClassName="text-[color:var(--color-text-muted)] group-focus-within:text-main"
-              clearButtonClassName="text-[color:var(--color-text-muted)] hover:text-main"
+              iconClassName="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] group-focus-within:text-main"
+              clearButtonClassName="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] hover:text-main"
             />
           )}
         />

@@ -102,7 +102,7 @@ const SourcePicker = () => {
               <h1 className="m-0 text-lg font-extrabold text-maindark dark:text-white">
                 Kiruvchi posilkalar
               </h1>
-              <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)]">
+              <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 Qaysi manbadan qabul qilamiz? Manbani tanlang, so'ng
                 posilkalarni skanerlang.
               </p>
@@ -111,7 +111,7 @@ const SourcePicker = () => {
 
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 Kutilmoqda
               </p>
               <p className="m-0 text-xl font-extrabold tabular-nums text-maindark dark:text-white">
@@ -157,12 +157,12 @@ const SourcePicker = () => {
         <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] p-8 text-center">
           <Inbox
             size={32}
-            className="mx-auto text-[color:var(--color-text-muted)]"
+            className="mx-auto text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
           />
           <p className="m-0 mt-3 text-sm font-bold text-maindark dark:text-white">
             Qabul kutayotgan posilka yo'q
           </p>
-          <p className="m-0 mt-1.5 text-xs leading-relaxed text-[color:var(--color-text-muted)]">
+          <p className="m-0 mt-1.5 text-xs leading-relaxed text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
             Tashqi tizim posilka yuborganda u shu yerda manbasi bilan
             ko'rinadi. Ulanish sozlangan bo'lsa ham, posilka kelmaguncha bu
             yerda karta chiqmaydi — bu normal holat. Manba umuman ulanmagan
@@ -186,10 +186,10 @@ const SourcePicker = () => {
       {/* ═══ ULANGAN, LEKIN POSILKASI YO'Q ═══ */}
       {idleSources.length > 0 && (
         <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] p-4">
-          <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+          <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
             Ulangan manbalar — hozircha posilka yo'q
           </p>
-          <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)]">
+          <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
             Yuqoridagi kartalar faqat qabul kutayotgan posilkasi bor manbalarni
             ko'rsatadi. Quyidagilar ulangan, lekin hali posilka yubormagan.
           </p>
@@ -199,7 +199,7 @@ const SourcePicker = () => {
                 key={c.uid}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border-soft)] px-3 py-1 text-xs font-semibold text-maindark dark:text-white"
               >
-                <Package size={12} className="text-[color:var(--color-text-muted)]" />
+                <Package size={12} className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]" />
                 {c.name}
               </span>
             ))}
@@ -233,7 +233,7 @@ const SourceCard = ({
         <span className="block truncate text-sm font-extrabold text-maindark dark:text-white">
           {sourceLabel(source)}
         </span>
-        <span className="mt-0.5 block text-xs text-[color:var(--color-text-muted)]">
+        <span className="mt-0.5 block text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
           {source.orders_count} posilka · {money(source.total_price_sum)}
         </span>
         {/* Uzoq kutgan posilka alohida belgilanadi. */}
@@ -241,7 +241,7 @@ const SourceCard = ({
           className={`mt-1 flex items-center gap-1 text-[11px] font-semibold ${
             waiting.stale
               ? "text-amber-600 dark:text-amber-300"
-              : "text-[color:var(--color-text-muted)]"
+              : "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
           }`}
         >
           <Clock size={11} />
@@ -252,7 +252,7 @@ const SourceCard = ({
 
       <ChevronRight
         size={18}
-        className="shrink-0 text-[color:var(--color-text-muted)]"
+        className="shrink-0 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
       />
     </button>
   );

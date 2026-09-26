@@ -264,7 +264,7 @@ const StepActions = ({
         {step === 1 || isMarketRole ? t("back", { ns: "common" }) : t("previous", { ns: "common" })}
       </button>
 
-      <div className="hidden text-center text-xs font-semibold text-[color:var(--color-text-muted)] sm:block">
+      <div className="hidden text-center text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] sm:block">
         {isSubmitting
           ? t("createSubmitting")
           : canNext

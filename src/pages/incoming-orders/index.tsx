@@ -273,7 +273,7 @@ const IncomingOrdersPage = () => {
           {/* Raqamlar doim ko'rinadi — operator taxmin qilmasligi kerak. */}
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 {t("incomingArrived")}
               </p>
               <p className="m-0 text-xl font-extrabold text-maindark dark:text-white">
@@ -281,7 +281,7 @@ const IncomingOrdersPage = () => {
               </p>
             </div>
             <div className="text-right">
-              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 {t("incomingScanned")}
               </p>
               <p className="m-0 text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
@@ -395,9 +395,9 @@ const IncomingOrdersPage = () => {
           <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center">
             <Inbox
               size={32}
-              className="text-[color:var(--color-text-muted)]"
+              className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
             />
-            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)]">
+            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
               {t("incomingEmpty")}
             </p>
           </div>
@@ -421,7 +421,7 @@ const IncomingOrdersPage = () => {
                     ) : (
                       <Circle
                         size={22}
-                        className="text-[color:var(--color-text-muted)]/40"
+                        className="text-[color:var(--color-text-muted)]/40 dark:text-[color:var(--color-text-muted-dark)]/40"
                       />
                     )}
                   </div>
