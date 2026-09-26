@@ -107,6 +107,10 @@ export const API_ENDPOINTS = {
     // server skanerlash dalilini O'ZI tekshirishi kerak.
     EXTERNAL_RECEIVE_BY_SCAN: "orders/external/receive-by-scan", // POST
     TELEGRAM_BOT_CREATE: "orders/telegram/bot/create", // POST create order via telegram bot
+    // AI bilan buyurtma: matn/rasmdan preview (hech narsa yaratmaydi) va
+    // operator tasdiqlagan buyurtmalarni yaratish (har biriga alohida natija).
+    AI_PARSE: "orders/ai-parse", // POST multipart: text, market_id, images[]
+    AI_CONFIRM: "orders/ai-confirm", // POST { market_id?, orders[] }
     // COD settlement legs (FIFO per order) — guide §7
     SETTLEMENT_COURIER_TO_BRANCH: "orders/settlement/courier-to-branch", // POST courier
     SETTLEMENT_BRANCH_TO_HQ: "orders/settlement/branch-to-hq", // POST

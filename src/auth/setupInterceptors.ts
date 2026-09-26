@@ -39,8 +39,11 @@ const shouldAttemptRefresh = (error: AxiosError) => {
   return !requestUrl.includes("/auth/login") && !requestUrl.includes("/auth/refresh");
 };
 
+// ⚠️ Foydalanuvchi o'zi bekor qilgan so'rov (AbortController) ham `response`
+// siz keladi — u tarmoq xatosi EMAS, "tarmoq xatosi" toast'i chiqmasin.
 const isNetworkError = (error: AxiosError) =>
-  !error.response || error.code === "ERR_NETWORK" || error.code === "ECONNABORTED";
+  error.code !== "ERR_CANCELED" &&
+  (!error.response || error.code === "ERR_NETWORK" || error.code === "ECONNABORTED");
 
 const emitNetworkError = (error: AxiosError) => {
   if (typeof window === "undefined" || !isNetworkError(error)) {
