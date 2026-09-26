@@ -299,7 +299,7 @@ const PartnersPage = () => {
   if (!allowed) {
     return (
       <div className="flex min-h-[240px] items-center justify-center">
-        <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)]">
+        <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
           {t("partnerNoAccess")}
         </p>
       </div>
@@ -382,8 +382,8 @@ const PartnersPage = () => {
           />
         ) : partners.length === 0 ? (
           <div className="flex min-h-[180px] flex-col items-center justify-center gap-3 text-center">
-            <Plug size={32} className="text-[color:var(--color-text-muted)]" />
-            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)]">
+            <Plug size={32} className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]" />
+            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
               {t("partnersEmpty")}
             </p>
           </div>
@@ -395,7 +395,7 @@ const PartnersPage = () => {
                   <p className="m-0 text-sm font-extrabold text-maindark dark:text-white">
                     {partner.name}
                   </p>
-                  <p className="m-0 text-xs text-[color:var(--color-text-muted)] [overflow-wrap:anywhere]">
+                  <p className="m-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] [overflow-wrap:anywhere]">
                     {partner.webhook_url || t("partnerNoWebhookUrl")}
                   </p>
                 </div>
@@ -412,7 +412,7 @@ const PartnersPage = () => {
 
                 {/* Webhook xulosasi — hamkor "tirikmi" degan savolga javob. */}
                 <div className="w-44 shrink-0 text-xs">
-                  <p className="m-0 text-[color:var(--color-text-muted)]">
+                  <p className="m-0 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                     {t("partnerLastDelivery")}: {when(partner.webhooks?.last_delivered_at)}
                   </p>
                   <p className="m-0 mt-0.5 flex gap-2 font-bold">
@@ -423,7 +423,7 @@ const PartnersPage = () => {
                       className={
                         (partner.webhooks?.failed ?? 0) > 0
                           ? "text-red-600 dark:text-red-400"
-                          : "text-[color:var(--color-text-muted)]"
+                          : "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
                       }
                     >
                       ✕ {partner.webhooks?.failed ?? 0}
@@ -458,7 +458,7 @@ const PartnersPage = () => {
                     className={`flex h-9 items-center rounded-xl px-3 text-xs font-bold text-white transition disabled:opacity-50 ${
                       partner.is_active
                         ? "bg-red-600 hover:bg-red-500"
-                        : "bg-emerald-600 hover:bg-emerald-500"
+                        : "bg-emerald-700 hover:bg-emerald-600"
                     }`}
                   >
                     {partner.is_active ? t("partnerDisable") : t("partnerEnable")}
@@ -535,7 +535,7 @@ const PartnersPage = () => {
           />
         ) : webhooks.length === 0 ? (
           <div className="flex min-h-[160px] items-center justify-center">
-            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)]">
+            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
               {t("partnerWebhookEmpty")}
             </p>
           </div>
@@ -545,7 +545,7 @@ const PartnersPage = () => {
               <div key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <span
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                    STATUS_TONE[row.status] ?? "bg-white/10 text-[color:var(--color-text-muted)]"
+                    STATUS_TONE[row.status] ?? "bg-white/10 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
                   }`}
                 >
                   {/* Xom kalit ("awaiting_config") chalkashtiradi —
@@ -555,19 +555,19 @@ const PartnersPage = () => {
                 <p className="m-0 w-32 shrink-0 text-xs font-semibold text-maindark dark:text-white">
                   {partnerNames.get(String(row.partner_id)) ?? row.partner_id}
                 </p>
-                <p className="m-0 w-28 shrink-0 font-mono text-xs text-[color:var(--color-text-muted)]">
+                <p className="m-0 w-28 shrink-0 font-mono text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {row.new_status ?? row.event_type}
                 </p>
-                <p className="m-0 w-40 shrink-0 font-mono text-xs text-[color:var(--color-text-muted)] [overflow-wrap:anywhere]">
+                <p className="m-0 w-40 shrink-0 font-mono text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] [overflow-wrap:anywhere]">
                   {row.external_order_id}
                 </p>
-                <p className="m-0 w-20 shrink-0 text-xs text-[color:var(--color-text-muted)]">
+                <p className="m-0 w-20 shrink-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {row.attempts}/{row.max_attempts}
                 </p>
                 <p className="m-0 min-w-[8rem] flex-1 text-xs text-red-600 dark:text-red-400 [overflow-wrap:anywhere]">
                   {row.last_error ?? ""}
                 </p>
-                <p className="m-0 w-40 shrink-0 text-xs text-[color:var(--color-text-muted)]">
+                <p className="m-0 w-40 shrink-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {when(row.delivered_at ?? row.created_at)}
                 </p>
                 <div className="flex shrink-0 gap-2">
@@ -603,7 +603,7 @@ const PartnersPage = () => {
             >
               ‹
             </button>
-            <span className="text-xs font-bold text-[color:var(--color-text-muted)]">
+            <span className="text-xs font-bold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
               {webhookPage} / {webhooksQuery.data?.totalPages ?? 1}
             </span>
             <button
@@ -629,7 +629,7 @@ const PartnersPage = () => {
               <button
                 type="button"
                 onClick={() => setCreateOpen(false)}
-                className="text-[color:var(--color-text-muted)]"
+                className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
               >
                 <X size={20} />
               </button>
@@ -645,7 +645,7 @@ const PartnersPage = () => {
                 ] as const
               ).map(([key, label, placeholder]) => (
                 <label key={key} className="flex flex-col gap-1">
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                     {label}
                   </span>
                   <input
@@ -691,7 +691,7 @@ const PartnersPage = () => {
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="text-[color:var(--color-text-muted)]"
+                className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
               >
                 <X size={20} />
               </button>
@@ -699,7 +699,7 @@ const PartnersPage = () => {
 
             <div className="mt-4 flex flex-col gap-3">
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {t("partnerName")}
                 </span>
                 <input
@@ -710,7 +710,7 @@ const PartnersPage = () => {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {t("partnerWebhookUrl")}
                 </span>
                 <input
@@ -719,13 +719,13 @@ const PartnersPage = () => {
                   placeholder="https://..."
                   className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
-                <span className="text-[11px] text-[color:var(--color-text-muted)]">
+                <span className="text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {t("partnerWebhookUrlHint")}
                 </span>
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)]">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {t("partnerWebhookSecret")}
                 </span>
                 <input
@@ -740,7 +740,7 @@ const PartnersPage = () => {
                   autoComplete="new-password"
                   className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
-                <span className="text-[11px] text-[color:var(--color-text-muted)]">
+                <span className="text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {t("partnerSecretHint")}
                 </span>
               </label>
@@ -756,7 +756,7 @@ const PartnersPage = () => {
                     <p className="m-0 text-xs font-bold text-maindark dark:text-white">
                       Ulanishni tekshirish
                     </p>
-                    <p className="m-0 mt-0.5 text-[11px] text-[color:var(--color-text-muted)]">
+                    <p className="m-0 mt-0.5 text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                       Sinov hodisasi yuboriladi — buyurtmaga ta'sir qilmaydi
                     </p>
                   </div>
@@ -914,7 +914,7 @@ const PartnersPage = () => {
               <button
                 type="button"
                 onClick={() => setPayloadRow(null)}
-                className="text-[color:var(--color-text-muted)]"
+                className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
               >
                 <X size={20} />
               </button>

@@ -741,34 +741,34 @@ const UzbekistanRegionMap = ({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-main"><Package size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.totalOrders")}</div>
+                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.totalOrders")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.totalOrders ?? 0}</div>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-emerald-600"><CheckCircle2 size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.delivered")}</div>
+                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.delivered")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.deliveredOrders ?? 0}</div>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-rose-600"><XCircle size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.cancelled")}</div>
+                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.cancelled")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.cancelledOrders ?? 0}</div>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-amber-600"><Clock3 size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.pending")}</div>
+                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.pending")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.pendingOrders ?? 0}</div>
               </div>
               {showFinancialMetrics ? (
                 <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                   <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-fuchsia-600"><Wallet size={16} /></div>
-                  <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.totalRevenue")}</div>
+                  <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.totalRevenue")}</div>
                   <div className="text-xl font-black text-main dark:text-primary">{(selectedRegion?.totalRevenue ?? 0).toLocaleString()} {t("currencySum")}</div>
                 </div>
               ) : null}
               <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-red-500"><TrendingUp size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.success")}</div>
+                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.success")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.successRate ?? 0}%</div>
               </div>
             </div>
@@ -787,7 +787,7 @@ const UzbekistanRegionMap = ({
                           <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">{index + 1}</span>
                           <div>
                             <div className="font-bold text-main dark:text-primary">{courier.name}</div>
-                            <div className="flex items-center gap-1 text-xs text-[color:var(--color-text-muted)]">
+                            <div className="flex items-center gap-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                               <Phone size={12} />
                               {courier.phone}
                             </div>
@@ -797,10 +797,10 @@ const UzbekistanRegionMap = ({
                           ) : null}
                         </div>
                         <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div><span className="text-[color:var(--color-text-muted)]">{t("map.metrics.order")}:</span> <b>{courier.totalOrders}</b></div>
-                          <div><span className="text-[color:var(--color-text-muted)]">{t("map.metrics.success")}:</span> <b>{courier.successRate}%</b></div>
+                          <div><span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.order")}:</span> <b>{courier.totalOrders}</b></div>
+                          <div><span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.success")}:</span> <b>{courier.successRate}%</b></div>
                           {showFinancialMetrics ? (
-                            <div><span className="text-[color:var(--color-text-muted)]">{t("map.metrics.revenue")}:</span> <b>{courier.revenue.toLocaleString()} {t("currencySum")}</b></div>
+                            <div><span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.revenue")}:</span> <b>{courier.revenue.toLocaleString()} {t("currencySum")}</b></div>
                           ) : null}
                         </div>
                       </div>
@@ -808,7 +808,7 @@ const UzbekistanRegionMap = ({
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 text-sm text-[color:var(--color-text-muted)] dark:bg-primarydark/40">
+                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-primarydark/40">
                   {t("map.couriersNotFound")}
                 </div>
               )}
@@ -827,7 +827,7 @@ const UzbekistanRegionMap = ({
                         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                         <span className="font-semibold text-main dark:text-primary">{district.name}</span>
                         {district.satoCode ? (
-                          <span className="rounded-md bg-primary px-2 py-0.5 text-xs text-[color:var(--color-text-muted)] dark:bg-white/10">{district.satoCode}</span>
+                          <span className="rounded-md bg-primary px-2 py-0.5 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-white/10">{district.satoCode}</span>
                         ) : null}
                       </div>
                       <div className="flex items-center gap-4 text-sm">
@@ -836,13 +836,13 @@ const UzbekistanRegionMap = ({
                         {showFinancialMetrics ? (
                           <span className="font-bold text-main">{district.revenue.toLocaleString()} {t("currencySum")}</span>
                         ) : null}
-                        <span className="text-[color:var(--color-text-muted)]">{t("map.metrics.courier")}: {district.activeCouriers}</span>
+                        <span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.courier")}: {district.activeCouriers}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 text-sm text-[color:var(--color-text-muted)] dark:bg-primarydark/40">
+                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-primarydark/40">
                   {t("map.districtsNotFound")}
                 </div>
               )}

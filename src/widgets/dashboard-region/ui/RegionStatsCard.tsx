@@ -82,7 +82,7 @@ const MetricCard = ({
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="truncate text-xs text-[color:var(--color-text-muted)]">{label}</p>
+          <p className="truncate text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{label}</p>
           <p className="text-lg font-black text-main dark:text-primary">{value}</p>
         </div>
       </div>
@@ -113,7 +113,7 @@ const DistrictStatRow = ({
             {district.name || "—"}
           </div>
           {district.satoCode ? (
-            <div className="mt-1 text-[11px] font-semibold text-[color:var(--color-text-muted)]">
+            <div className="mt-1 text-[11px] font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
               {district.satoCode}
             </div>
           ) : null}
@@ -125,7 +125,7 @@ const DistrictStatRow = ({
       <div className="mb-3 h-2 overflow-hidden rounded-full bg-primary dark:bg-maindark">
         <div className="h-full rounded-full bg-main" style={{ width: `${percent}%` }} />
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs text-[color:var(--color-text-muted)] sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] sm:grid-cols-4">
         <span><b className="text-main dark:text-primary">{district.totalOrders}</b> {labels.orders}</span>
         <span><b className="text-emerald-500">{district.deliveredOrders}</b> {labels.delivered}</span>
         <span><b className="text-rose-500">{district.cancelledOrders}</b> {labels.cancelled}</span>
@@ -231,7 +231,7 @@ const RegionStatsCard = memo(({
                 <div className="text-sm font-extrabold text-main dark:text-primary">
                   {regionT("map.districtsTitle", { count: districts.length })}
                 </div>
-                <div className="text-xs font-semibold text-[color:var(--color-text-muted)]">
+                <div className="text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {regionT("map.metrics.couriers")}: {scopedSummary?.activeCouriers ?? 0}
                 </div>
               </div>
@@ -251,7 +251,7 @@ const RegionStatsCard = memo(({
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-4 text-sm text-[color:var(--color-text-muted)] dark:bg-primarydark/40">
+                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-4 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-primarydark/40">
                   {regionT("map.districtsNotFound")}
                 </div>
               )}

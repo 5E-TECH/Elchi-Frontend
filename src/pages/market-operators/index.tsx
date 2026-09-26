@@ -144,7 +144,7 @@ const MarketOperatorsPage = () => {
       <section className="flex min-h-[calc(100vh-18rem)] flex-1 flex-col overflow-hidden rounded-[24px] border border-white/10 bg-primary/45 shadow-sm dark:bg-white/[0.025]">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3 text-[color:var(--color-text-muted)]">
+            <div className="flex flex-col items-center gap-3 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
               <Loader2 className="h-8 w-8 animate-spin text-main" />
               <p className="m-0 text-sm font-semibold">{t("loading")}</p>
             </div>
@@ -168,7 +168,7 @@ const MarketOperatorsPage = () => {
         ) : operators.length === 0 ? (
           <div className="flex flex-1 items-center justify-center px-4 py-20 text-center">
             <div>
-              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[color:var(--color-text-muted)] dark:bg-white/5">
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-white/5">
                 <UsersRound size={34} />
               </div>
               <p className="m-0 text-base font-semibold text-[color:var(--color-text-muted)] dark:text-white/60">

@@ -140,7 +140,7 @@ const Sidebar = () => {
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.id as SidebarGroupId)}
-                    className="mt-3 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-maindark/45 transition hover:text-main dark:text-primary/45"
+                    className="mt-3 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-maindark/45 transition hover:text-main dark:text-primary/60"
                   >
                     <span>{t(`group_${group.id}`)}</span>
                     <ChevronDown

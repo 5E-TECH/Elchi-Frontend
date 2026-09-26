@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
@@ -6,11 +6,12 @@ import IncomingOrdersPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 
 const apiGetMock = vi.fn();
+const apiPostMock = vi.fn();
 
 vi.mock("../../shared/api/api", () => ({
   api: {
     get: (...args: unknown[]) => apiGetMock(...args),
-    post: vi.fn(),
+    post: (...args: unknown[]) => apiPostMock(...args),
   },
 }));
 
@@ -151,5 +152,102 @@ describe("IncomingOrdersPage list states", () => {
 
     expect(await screen.findByText("Hozircha kelgan buyurtma yo'q")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * KATTA MANBA: 100 tadan ko'p kutayotgan posilka.
+ *
+ * ⚠️ Backend `limit` ni faqat 10/25/50/100 qabul qiladi, qabul qilishda esa
+ * bir so'rovda 200 tadan ortiq tokenni rad etadi (hT7E05R9, V74wNugv).
+ */
+describe("IncomingOrdersPage large sources", () => {
+  const token = (n: number) => `token-${String(n).padStart(4, "0")}`;
+  const mockSource = (total: number) =>
+    apiGetMock.mockImplementation((url: string, config?: { params?: { page?: number; limit?: number } }) => {
+      if (url !== "orders/external") return Promise.resolve({ data: [] });
+      if (config?.params?.limit !== 100) {
+        return Promise.reject({ response: { status: 400, data: { message: "limit faqat 10, 25, 50, 100 bo'lishi mumkin" } } });
+      }
+      const page = config.params.page ?? 1;
+      const from = (page - 1) * 100;
+      const count = Math.max(0, Math.min(100, total - from));
+      const data = Array.from({ length: count }, (_, i) => ({
+        id: `o-${from + i + 1}`,
+        order_number: from + i + 1,
+        qr_code_token: token(from + i + 1),
+        customer: { name: `Mijoz ${from + i + 1}` },
+      }));
+      return Promise.resolve({ data: { data, total, page, limit: 100 } });
+    });
+
+  const scan = (value: string) => {
+    const input = screen.getByPlaceholderText("QR kodni skanerlang yoki kiriting...");
+    fireEvent.change(input, { target: { value } });
+    fireEvent.submit(input.closest("form")!);
+  };
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+  });
+
+  it("150 ta posilkaning hammasi (sahifalar chegarasidagilari ham) skanerlanadi", async () => {
+    mockSource(150);
+    renderPage();
+    expect(await screen.findByText("Mijoz 150")).toBeInTheDocument();
+
+    for (const n of [1, 100, 101, 150]) {
+      scan(token(n));
+      expect(await screen.findByText(new RegExp(`${n} — ro'yxatga qo'shildi`))).toBeInTheDocument();
+    }
+    expect(screen.getByText("4 / 150")).toBeInTheDocument();
+  });
+
+  it("250 ta skanerlangan posilka 200 + 50 bo'lib qabul qilinadi (bitta 400 emas)", async () => {
+    mockSource(250);
+    apiPostMock.mockImplementation((_url: string, body: { tokens: string[] }) =>
+      body.tokens.length > 200
+        ? Promise.reject({ response: { status: 400, data: { message: "bir so'rovda 200 tadan ko'p token yuborib bo'lmaydi" } } })
+        : Promise.resolve({ data: { data: { received: body.tokens.length, unmatched: [] } } }),
+    );
+    renderPage();
+    expect(await screen.findByText("Mijoz 250")).toBeInTheDocument();
+
+    for (let n = 1; n <= 250; n += 1) scan(token(n));
+    expect(await screen.findByText(/250 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /QABUL QILISH \(250\)/ }));
+
+    expect(await screen.findByText("250 buyurtma qabul qilindi")).toBeInTheDocument();
+    expect(apiPostMock.mock.calls.map(([, body]) => (body as { tokens: string[] }).tokens.length)).toEqual([200, 50]);
+    expect((apiPostMock.mock.calls[1][1] as { tokens: string[] }).tokens.at(-1)).toBe(token(250));
+    // 250 ta skan har safar 250 qatorli ro'yxatni qayta chizadi — sekin, lekin real senariy.
+  }, 60_000);
+
+  it("begona token hamon rad etiladi va sababi ko'rsatiladi", async () => {
+    mockSource(3);
+    renderPage();
+    expect(await screen.findByText("Mijoz 3")).toBeInTheDocument();
+
+    scan("BEGONA-TOKEN-9999");
+
+    expect(
+      await screen.findByText("Bu QR ro'yxatda topilmadi — posilka boshqa hamkordanmi yoki allaqachon qabul qilinganmi?"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("0 / 3")).toBeInTheDocument();
+  });
+
+  it("takroriy skan hamon ogohlantiradi va qayta qo'shilmaydi", async () => {
+    mockSource(3);
+    renderPage();
+    expect(await screen.findByText("Mijoz 3")).toBeInTheDocument();
+
+    scan(token(2));
+    expect(await screen.findByText(/2 — ro'yxatga qo'shildi/)).toBeInTheDocument();
+    scan(token(2));
+
+    expect(await screen.findByText(/2 — allaqachon skanerlangan/)).toBeInTheDocument();
+    expect(screen.getByText("1 / 3")).toBeInTheDocument();
   });
 });

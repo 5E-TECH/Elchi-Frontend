@@ -18,8 +18,14 @@ const humanize = (action: string): string =>
 
 const ActivityActionTag = ({ action }: { action: string }) => {
   if (!action) return <span>—</span>;
+  const color = colorForAction(action);
   return (
-    <Tag color={colorForAction(action)} style={{ marginInlineEnd: 0 }}>
+    <Tag
+      color={color}
+      // Dark'da `geekblue` matni o'z fonida 4.16:1 — AA dan past (7L68tqsa).
+      className={color === "geekblue" ? "dark:text-[#adc6ff]!" : undefined}
+      style={{ marginInlineEnd: 0 }}
+    >
       {humanize(action)}
     </Tag>
   );

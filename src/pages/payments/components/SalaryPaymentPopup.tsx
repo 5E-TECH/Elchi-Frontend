@@ -182,7 +182,7 @@ const SalaryPaymentPopup = ({
               onChange={(event) => handleAmountChange(event.target.value)}
               inputMode="numeric"
               placeholder="0"
-              className="h-12 w-full rounded-xl border border-main/20 bg-main/8 px-4 text-base font-semibold outline-none transition placeholder:text-[color:var(--color-text-muted)] focus:border-main focus:ring-2 focus:ring-main/20 dark:border-white/10 dark:bg-white/8"
+              className="h-12 w-full rounded-xl border border-main/20 bg-main/8 px-4 text-base font-semibold outline-none transition placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-[color:var(--color-text-muted-dark)] focus:border-main focus:ring-2 focus:ring-main/20 dark:border-white/10 dark:bg-white/8"
             />
           </label>
 
@@ -235,7 +235,7 @@ const SalaryPaymentPopup = ({
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               placeholder={t("commentPlaceholder")}
-              className="h-11 w-full rounded-xl border border-main/20 bg-main/8 px-4 text-sm outline-none transition placeholder:text-[color:var(--color-text-muted)] focus:border-main focus:ring-2 focus:ring-main/20 dark:border-white/10 dark:bg-white/8"
+              className="h-11 w-full rounded-xl border border-main/20 bg-main/8 px-4 text-sm outline-none transition placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-[color:var(--color-text-muted-dark)] focus:border-main focus:ring-2 focus:ring-main/20 dark:border-white/10 dark:bg-white/8"
             />
           </label>
 

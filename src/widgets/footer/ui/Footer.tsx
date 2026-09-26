@@ -9,7 +9,7 @@ const Footer = () => {
             <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6">
                 <p className="text-xs" style={{ color: "var(--color-footer-text)" }}>
                     &copy; {new Date().getFullYear()}{" "}
-                    <span className="text-main font-bold">Elchi</span>
+                    <span className="text-main font-bold dark:text-violet-300">Elchi</span>
                     . {t("footerRightsReserved")}
                 </p>
                 <div className="hidden md:block h-3 w-px" style={{ backgroundColor: "var(--color-footer-divider)" }} />

@@ -26,7 +26,9 @@ const ActivityLogDetail = ({ log }: { log: ActivityLog }) => {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="text-xs uppercase text-[color:var(--color-text-muted)]">
+              {/* Tafsilot kengaygan qator ichida — u fon biroz och, muted-dark u yerda
+                  4.32:1 berardi (7L68tqsa); `white/70` bilan AA >= 4.5:1. */}
+              <tr className="text-xs uppercase text-[color:var(--color-text-muted)] dark:text-white/70">
                 <th className="py-1 pr-4 font-bold">{t("detail.field")}</th>
                 <th className="py-1 pr-4 font-bold">{t("detail.before")}</th>
                 <th className="py-1 font-bold">{t("detail.after")}</th>
@@ -48,12 +50,12 @@ const ActivityLogDetail = ({ log }: { log: ActivityLog }) => {
           </table>
         </div>
       ) : (
-        <span className="text-[color:var(--color-text-muted)]">{t("detail.noChanges")}</span>
+        <span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("detail.noChanges")}</span>
       )}
 
       {log.metadata ? (
         <div>
-          <span className="text-xs font-bold uppercase text-[color:var(--color-text-muted)]">
+          <span className="text-xs font-bold uppercase text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
             {t("detail.metadata")}
           </span>
           <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-black/5 p-2 text-xs dark:bg-white/5">
@@ -63,7 +65,7 @@ const ActivityLogDetail = ({ log }: { log: ActivityLog }) => {
       ) : null}
 
       {log.trace_id ? (
-        <span className="text-xs text-[color:var(--color-text-muted)]">
+        <span className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
           {t("detail.traceId")}: <code>{log.trace_id}</code>
         </span>
       ) : null}
