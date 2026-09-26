@@ -17,13 +17,19 @@ const order = {
   items: [],
 };
 
-const orderState: { comment: string | null } = { comment: null };
+const orderState: { comment: string | null; items: unknown[] } = { comment: null, items: [] };
+
+// SellModal'ga uzatilgan `order` — qisman sotish payload'i shundan quriladi.
+const sellModalProps = vi.hoisted(() => ({ last: null as null | { order: { items: unknown[] } | null } }));
 
 const idleMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
 
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
-    useGetOrderById: () => ({ data: { data: { ...order, comment: orderState.comment } }, isLoading: false }),
+    useGetOrderById: () => ({
+      data: { data: { ...order, comment: orderState.comment, items: orderState.items } },
+      isLoading: false,
+    }),
     updateNewOrder: idleMutation,
     SellOrder: idleMutation,
     PartlySellOrder: idleMutation,
@@ -47,7 +53,12 @@ vi.mock("../../../widgets/order-tracking", () => ({
   OrderTracking: () => null,
 }));
 
-vi.mock("../../orders/list/courier/list/SellModal", () => ({ default: () => null }));
+vi.mock("../../orders/list/courier/list/SellModal", () => ({
+  default: (props: { order: { items: unknown[] } | null }) => {
+    sellModalProps.last = props;
+    return null;
+  },
+}));
 vi.mock("../../orders/list/courier/list/CancelModal", () => ({ default: () => null }));
 
 const renderPage = () =>
@@ -95,5 +106,26 @@ describe("NewOrderUpdate header", () => {
 
     expect(await navigator.clipboard.readText()).toBe("1251175");
     expect(await screen.findByText("Buyurtma raqami nusxalandi")).toBeInTheDocument();
+  });
+});
+
+describe("NewOrderUpdate partial-sell items", () => {
+  afterEach(() => {
+    orderState.items = [];
+  });
+
+  it("passes the catalog product_id to SellModal and never substitutes the order-item id", () => {
+    orderState.items = [
+      // Hamkor posilkasi (prod #120): katalogsiz qator.
+      { id: "124", quantity: 2, product_id: null, product_name: "tv", product: null },
+      // Katalogdagi mahsulot, lekin `product` obyekti kelmagan.
+      { id: "1251136", quantity: 3, product_id: "8", product_name: "psarinorm", product: null },
+    ];
+    renderPage();
+
+    expect(sellModalProps.last?.order?.items).toEqual([
+      expect.objectContaining({ id: "124", product_id: null, product: expect.objectContaining({ id: null, name: "tv" }) }),
+      expect.objectContaining({ id: "1251136", product_id: "8", product: expect.objectContaining({ id: "8", name: "psarinorm" }) }),
+    ]);
   });
 });

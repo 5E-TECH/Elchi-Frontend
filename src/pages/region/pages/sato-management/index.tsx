@@ -162,7 +162,7 @@ const RegionSatoManagementPage = () => {
     <PageContainer>
         <BackButton to="/regions" className="mb-4 h-10 min-w-10 rounded-xl px-3" />
 
-        <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 md:p-4">
+        <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 md:p-4 dark:bg-primarydark">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h1 className="text-xl font-bold text-main dark:text-primary">{t("sato.title")}</h1>
@@ -211,14 +211,14 @@ const RegionSatoManagementPage = () => {
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="truncate text-sm font-semibold text-main dark:text-primary">{region.name}</div>
-                    <div className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-[color:var(--color-text-muted)]">
+                    <div className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-[color:var(--color-text-muted)] dark:bg-white/10">
                       {t("sato.districtCount", { count: region.assignedDistricts.length })}
                     </div>
                   </div>
 
                   <div className="max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
                     {region.assignedDistricts.length === 0 ? (
-                      <div className="rounded-lg border border-dashed border-[color:var(--color-border-soft)] bg-primary px-2 py-3 text-center text-xs text-[color:var(--color-text-muted)]">
+                      <div className="rounded-lg border border-dashed border-[color:var(--color-border-soft)] bg-primary px-2 py-3 text-center text-xs text-[color:var(--color-text-muted)] dark:bg-white/5">
                         {t("sato.noDistricts")}
                       </div>
                     ) : (
@@ -235,7 +235,7 @@ const RegionSatoManagementPage = () => {
                               setDraggingId(district.id);
                             }}
                             onDragEnd={() => setDraggingId(null)}
-                            className={`flex items-center justify-between rounded-lg border border-[color:var(--color-border-soft)] bg-primary px-2.5 py-1.5 ${
+                            className={`flex items-center justify-between rounded-lg border border-[color:var(--color-border-soft)] bg-primary px-2.5 py-1.5 dark:bg-white/5 ${
                               isDragging ? "opacity-60" : ""
                             }`}
                           >

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Building2,
@@ -15,7 +15,7 @@ import {
   Truck,
   UserRound,
 } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -33,6 +33,7 @@ import {
 import ScanPackageDetail from "./ui/ScanPackageDetail";
 import ScanPostDetail from "./ui/ScanPostDetail";
 import BackButton from "../../shared/ui/BackButton";
+import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import type { RootState } from "../../app/config/store";
 
 type ScanOrderView = {
@@ -160,6 +161,8 @@ const ScanDetailPage = () => {
   // bo'lardi (bosgan zahoti 403 olardi).
   const role = useSelector((state: RootState) => state.role.role);
   const isCourier = role === "courier";
+  const assignRedirectRef = useRef<number | null>(null);
+  const pendingMutations = useIsMutating();
   const [assignMessage, setAssignMessage] = useState<
     { tone: "success" | "error"; text: string } | null
   >(null);
@@ -170,7 +173,7 @@ const ScanDetailPage = () => {
       void playScanFeedback("success");
       setAssignMessage({ tone: "success", text: t("scannerOrderAssignSuccess") });
       // Kuryer ketma-ket bir necha buyurtma skan qiladi — skanerga qaytaramiz.
-      window.setTimeout(() => navigate("/scan"), 1500);
+      assignRedirectRef.current = window.setTimeout(() => navigate("/scan"), 1500);
     },
     onError: (error) => {
       void playScanFeedback("error");
@@ -188,6 +191,46 @@ const ScanDetailPage = () => {
   useEffect(() => {
     setAssignMessage(null);
   }, [normalizedToken]);
+
+  useEffect(() => () => {
+    if (assignRedirectRef.current) window.clearTimeout(assignRedirectRef.current);
+  }, []);
+
+  /**
+   * Detal ochiq turganda HID skaneri bilan keyingi posilka skanerlansa, u
+   * JIMGINA yo'qolmasin (ilgari bu sahifa skanerni umuman tinglamasdi —
+   * /scan'dan tez ketma-ket kelgan ikkinchi skan shu yerda izsiz yo'qolardi):
+   * o'sha posilka ochiladi.
+   */
+  const handleNextScan = useCallback(
+    (rawValue: string) => {
+      const nextToken = extractScannerToken(rawValue, window.location.origin);
+      if (!nextToken) {
+        void playScanFeedback("error", t("scannerInvalidQr"));
+        return true;
+      }
+      if (nextToken === normalizedToken) {
+        void playScanFeedback("duplicate");
+        return true;
+      }
+      if (pendingMutations > 0) {
+        // "O'zimga olish" yoki paketni qabul qilish so'rovi tugamasdan
+        // sahifadan ketilsa, natijasi operatorga ko'rinmay qolardi.
+        void playScanFeedback("error", t("scannerWaitForAction"));
+        return true;
+      }
+      if (assignRedirectRef.current) {
+        window.clearTimeout(assignRedirectRef.current);
+        assignRedirectRef.current = null;
+      }
+      void playScanFeedback("success");
+      navigate(`/scan/${encodeURIComponent(nextToken)}`);
+      return true;
+    },
+    [navigate, normalizedToken, pendingMutations, t],
+  );
+
+  useKeyboardScanner({ enabled: true, onScan: handleNextScan });
 
   useEffect(() => {
     if (isError) {

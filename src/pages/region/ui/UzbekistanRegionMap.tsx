@@ -739,41 +739,41 @@ const UzbekistanRegionMap = ({
             ) : null}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
+              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-main"><Package size={16} /></div>
                 <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.totalOrders")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.totalOrders ?? 0}</div>
               </div>
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
+              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-emerald-600"><CheckCircle2 size={16} /></div>
                 <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.delivered")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.deliveredOrders ?? 0}</div>
               </div>
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
+              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-rose-600"><XCircle size={16} /></div>
                 <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.cancelled")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.cancelledOrders ?? 0}</div>
               </div>
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
+              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-amber-600"><Clock3 size={16} /></div>
                 <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.pending")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.pendingOrders ?? 0}</div>
               </div>
               {showFinancialMetrics ? (
-                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
+                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                   <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-fuchsia-600"><Wallet size={16} /></div>
                   <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.totalRevenue")}</div>
                   <div className="text-xl font-black text-main dark:text-primary">{(selectedRegion?.totalRevenue ?? 0).toLocaleString()} {t("currencySum")}</div>
                 </div>
               ) : null}
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3">
+              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
                 <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-red-500"><TrendingUp size={16} /></div>
                 <div className="text-xs text-[color:var(--color-text-muted)]">{t("map.metrics.success")}</div>
                 <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.successRate ?? 0}%</div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4">
+            <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
               <div className="mb-3 flex items-center gap-2 text-xl font-black text-main dark:text-primary">
                 <Users size={20} className="text-amber-500" />
                 {t("map.mainCouriers", { count: selectedRegion?.couriers?.length ?? 0 })}
@@ -814,7 +814,7 @@ const UzbekistanRegionMap = ({
               )}
             </div>
 
-            <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4">
+            <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
               <div className="mb-3 flex items-center gap-2 text-xl font-black text-main dark:text-primary">
                 <MapPin size={20} className="text-emerald-500" />
                 {t("map.districtsTitle", { count: selectedRegion?.districtsCount ?? selectedRegion?.districts?.length ?? 0 })}
@@ -827,7 +827,7 @@ const UzbekistanRegionMap = ({
                         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                         <span className="font-semibold text-main dark:text-primary">{district.name}</span>
                         {district.satoCode ? (
-                          <span className="rounded-md bg-primary px-2 py-0.5 text-xs text-[color:var(--color-text-muted)]">{district.satoCode}</span>
+                          <span className="rounded-md bg-primary px-2 py-0.5 text-xs text-[color:var(--color-text-muted)] dark:bg-white/10">{district.satoCode}</span>
                         ) : null}
                       </div>
                       <div className="flex items-center gap-4 text-sm">

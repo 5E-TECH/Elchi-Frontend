@@ -362,6 +362,11 @@ select:-webkit-autofill:focus {
   --color-surface-elevated-dark: #312c4a;
   --color-border-soft: rgba(169, 152, 255, 0.14);
   --color-border-strong: rgba(169, 152, 255, 0.28);
+  /* ⚠️ `--color-text-muted` ning O'ZI ham dark'da qayta aniqlanadi. Ilgari
+     faqat `-dark` jufti bor edi va `dark:` variant yozilmagan har bir joyda
+     (≈76 ta) dark fonda och-mavzu rangi qolib, kontrast 1.00:1 ga tushardi.
+     Endi token mavzuga o'zi moslashadi; `-dark` jufti moslik uchun qoladi. */
+  --color-text-muted: var(--color-text-muted-dark);
   --color-text-muted-dark: rgba(231, 227, 252, 0.62);
   --color-table-label-dark: rgba(231, 227, 252, 0.8);
   --color-table-header-start: #7c3aed;
