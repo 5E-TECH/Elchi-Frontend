@@ -26,6 +26,11 @@ import {
 } from "./lib/scanResource";
 import BackButton from "../../shared/ui/BackButton";
 
+const CAMERA_SCAN_COOLDOWN_MS = 700;
+const DUPLICATE_SCAN_COOLDOWN_MS = 1800;
+
+type ScanSource = "camera" | "keyboard";
+
 const ScanPage = () => {
   const { t } = useTranslation("common");
   const navigate = useNavigate();
@@ -33,28 +38,61 @@ const ScanPage = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const stopScannerRef = useRef<() => void>(() => undefined);
   const redirectTimeoutRef = useRef<number | null>(null);
-  const { canAcceptScan, blockScans, resetScannerGate } = useScannerGate({
-    cooldownMs: 1800,
-    duplicateCooldownMs: 1800,
+  /**
+   * ⚠️ Ilgari har skandan keyin 1800 ms davomida keyingi skan JIM tashlanardi
+   * (≈0.55 skan/sek) — tez skanerlaganda posilkalarning bir qismi "skanerlandi"
+   * deb o'ylanib, aslida hech qayerga tushmasdi. Endi:
+   *  • kamera pauzasi 700 ms (bir QR'ni har kadrda qayta o'qimaslik uchun);
+   *  • HID (klaviatura) skanerida pauza YO'Q — u har skanni Enter bilan o'zi
+   *    chegaralaydi; faqat bir xil tokenning takrori ushlanadi;
+   *  • rad etilgan har bir skan ovoz + ekrandagi xabar bilan bildiriladi.
+   */
+  const { evaluateScan, blockScans, resetScannerGate } = useScannerGate({
+    cooldownMs: CAMERA_SCAN_COOLDOWN_MS,
+    duplicateCooldownMs: DUPLICATE_SCAN_COOLDOWN_MS,
   });
+  // Posilka ochilayotgan (navigatsiya kutilayotgan) paytdagi token.
+  const openingTokenRef = useRef<string | null>(null);
 
   const [error, setError] = useState("");
   const [scanResult, setScanResult] = useState("");
   const [scannedId, setScannedId] = useState("");
   const [scanState, setScanState] = useState<"idle" | "success" | "invalid">("idle");
 
-  const handleDecodedValue = useCallback((rawValue: string) => {
-    if (!canAcceptScan(rawValue)) return true;
-
+  const handleDecodedValue = useCallback((rawValue: string, source: ScanSource) => {
     const nextToken = extractScannerToken(rawValue, window.location.origin);
 
+    // Oldingi posilka hali ochilmoqda — ikkinchi skanni ham "qabul qilindi"
+    // deb ko'rsatib yuborish yolg'on bo'lardi.
+    // Xabar ilova darajasidagi overlay'da chiqadi — u navigatsiyadan keyin
+    // ham ko'rinib turadi (sahifa 180 ms'da detalga o'tadi).
+    if (openingTokenRef.current) {
+      if (nextToken && nextToken !== openingTokenRef.current) {
+        void playScanFeedback("error", t("scannerPreviousOpening"));
+      }
+      return true;
+    }
+
+    const verdict = evaluateScan(rawValue, { ignoreCooldown: source === "keyboard" });
+    if (verdict === "duplicate") {
+      // Kamera bir QR'ni har kadrda qayta o'qiydi — bu signal emas. HID
+      // skanerda esa takror — operatorning ataylab qilgan harakati.
+      if (source === "keyboard") void playScanFeedback("duplicate");
+      return true;
+    }
+    if (verdict === "cooldown") {
+      setError(t("scannerTooFast"));
+      void playScanFeedback("error", t("scannerTooFast"));
+      return true;
+    }
+
     if (nextToken) {
+      openingTokenRef.current = nextToken;
       stopScannerRef.current();
       setError("");
       setScanState("success");
       setScanResult(nextToken);
       setScannedId(nextToken);
-      blockScans(1800);
       void playScanFeedback("success");
       void queryClient.prefetchQuery({
         queryKey: getScanDetailQueryKey(nextToken),
@@ -73,14 +111,23 @@ const ScanPage = () => {
     setScanResult(rawValue);
     setError(t("scannerInvalidQr"));
     void playScanFeedback("error");
-    blockScans(1800);
+    blockScans();
     return true;
-  }, [blockScans, canAcceptScan, navigate, queryClient, t]);
+  }, [blockScans, evaluateScan, navigate, queryClient, t]);
+
+  const handleKeyboardScan = useCallback(
+    (rawValue: string) => handleDecodedValue(rawValue, "keyboard"),
+    [handleDecodedValue],
+  );
+  const handleCameraScan = useCallback(
+    (rawValue: string) => handleDecodedValue(rawValue, "camera"),
+    [handleDecodedValue],
+  );
 
   useKeyboardScanner({
     enabled: true,
     captureEditableTargets: true,
-    onScan: handleDecodedValue,
+    onScan: handleKeyboardScan,
   });
 
   const {
@@ -95,7 +142,7 @@ const ScanPage = () => {
   } = useCameraQrScanner({
     isActive: true,
     videoRef,
-    onDecode: handleDecodedValue,
+    onDecode: handleCameraScan,
     startErrorMessage: t("scannerStartError"),
   });
 
@@ -122,6 +169,7 @@ const ScanPage = () => {
     setScanResult("");
     setScannedId("");
     setScanState("idle");
+    openingTokenRef.current = null;
     resetScannerGate();
     restartScanner();
   };

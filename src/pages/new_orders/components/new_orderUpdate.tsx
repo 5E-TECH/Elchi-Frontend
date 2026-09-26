@@ -105,6 +105,9 @@ interface OrderItem {
     file?: string | null;
     url?: string | null;
   } | null;
+  /** Hamkor posilkalarida `product` null keladi: id va nom shu maydonlarda. */
+  product_id?: string | null;
+  product_name?: string | null;
 }
 
 const getProductImageUrl = (item: OrderItem) =>
@@ -824,12 +827,18 @@ const NewOrderUpdate = () => {
         orderFlags.require_cancel_proof ??
         orderFlags.cancel_proof_required,
       ),
+      // Katalog id bo'lmasa (hamkor posilkasi) qator id'si O'RNIGA qo'yilmaydi:
+      // backend qisman sotishda qatorni product_id bo'yicha topadi va qator
+      // id'sini "Product not found" bilan rad etardi. SellModal bunday
+      // buyurtmada qisman sotishni sabab bilan bloklaydi.
       items: order.items.map((item) => ({
         id: item.id,
         quantity: item.quantity,
+        product_id: item.product?.id ?? item.product_id ?? null,
+        product_name: item.product?.name ?? item.product_name ?? null,
         product: {
-          id: item.product?.id ?? item.id,
-          name: item.product?.name ?? "",
+          id: item.product?.id ?? item.product_id ?? null,
+          name: item.product?.name ?? item.product_name ?? "",
           image_url: item.product?.image_url ?? null,
         },
       })),

@@ -18,8 +18,30 @@ import {
 type OrderItem = {
   id: string;
   quantity: number;
-  product: { name: string; image_url: string | null; id?: string };
+  /**
+   * Katalogdagi mahsulot. Ro'yxat javoblari har xil keladi: kuryer ro'yxatida
+   * `product` obyekti bor, admin ro'yxatida faqat `product_id`, hamkor
+   * (BeePost) posilkalarida esa ikkalasi ham `null` — nom `product_name` da.
+   */
+  product?: { name?: string | null; image_url?: string | null; id?: string | null } | null;
+  product_id?: string | null;
+  product_name?: string | null;
 };
+
+/**
+ * Qisman sotishda backend qatorni KATALOG `product_id` si bo'yicha topadi.
+ * Ilgari bu yerda `?? item.id` (buyurtma QATORI id'si) zaxirasi bor edi —
+ * katalogsiz qatorda backend uni topolmay "Product not found" bilan rad
+ * etardi, `product` obyekti kelmagan admin qatorlarida esa mavjud mahsulot
+ * ham noto'g'ri id bilan ketardi.
+ */
+const getCatalogProductId = (item: OrderItem): string | null => {
+  const id = item.product?.id ?? item.product_id;
+  return id ? String(id) : null;
+};
+
+const getItemName = (item: OrderItem, index: number): string =>
+  item.product?.name || item.product_name || `#${index + 1}`;
 
 type Order = {
   id: string;
@@ -116,20 +138,43 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
     itemQuantities[item.id] ?? item.quantity;
 
   const getSelectedItemsCount = () =>
-    order.items.reduce((sum, item) => sum + getItemQty(item), 0);
+    (order.items ?? []).reduce((sum, item) => sum + getItemQty(item), 0);
 
   const isAtMinimumSelection = isPartial && getSelectedItemsCount() === 1;
 
-  // Backend qisman sotishda kamida BITTA donani kamaytirishni va kamida
-  // bitta dona qoldirishni talab qiladi — ya'ni jami 1 donali buyurtmani
-  // (BeePost posilkalari doim shunday) qisman sotib bo'lmaydi. Ilgari rejim
-  // baribir ochilib, o'zgarmagan son bilan yuborilgan so'rov 400 qaytarardi.
-  const totalItemUnits = (order.items ?? []).reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
-  const canSellPartially = totalItemUnits >= 2;
-  const hasDecreasedItem = (order.items ?? []).some((item) => getItemQty(item) < item.quantity);
+  // Qisman sotish faqat backend haqiqatan qabul qila oladigan buyurtmada
+  // ochiladi. Ilgari rejim har doim ochilar va so'rov baribir rad etilardi:
+  //  • jami 1 dona — kamida bitta donani kamaytirish shart (backend), kamida
+  //    bitta dona qolishi shart (UI qoidasi) — ikkalasi birga bajarilmaydi;
+  //  • katalogsiz qator (hamkor posilkasi) — backend qatorni `product_id`
+  //    bo'yicha topadi, `null` ni topa olmaydi;
+  //  • mahsulot qatorlari umuman yo'q — yuboriladigan narsa yo'q;
+  //  • bir xil katalog mahsuloti ikki qatorda — backend har ikkala qatorni
+  //    so'rovdagi BIRINCHI yozuv bilan solishtiradi va rad etadi.
+  const orderItems = order.items ?? [];
+  const totalItemUnits = orderItems.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
+  const catalogIds = orderItems.map(getCatalogProductId);
+  const partialUnavailableReason =
+    orderItems.length === 0
+      ? t("partialSellUnavailableNoItems")
+      : orderItems.some((item) => !(Number(item.quantity) >= 0))
+        ? t("partialSellUnavailableInvalidQuantity")
+        : totalItemUnits < 2
+          ? t("partialSellUnavailableSingle")
+          : catalogIds.some((id) => !id)
+            ? t("partialSellUnavailableNoCatalog")
+            : new Set(catalogIds).size !== catalogIds.length
+              ? t("partialSellUnavailableDuplicate")
+              : null;
+  const canSellPartially = partialUnavailableReason === null;
+  const hasDecreasedItem = orderItems.some((item) => getItemQty(item) < item.quantity);
   const partialBlockReason = !isPartial
     ? null
-    : !hasDecreasedItem
+    : !canSellPartially
+      // Qisman rejim ochiq turganda ma'lumot yangilanib, qisman sotish
+      // mumkin bo'lmay qolsa — tugma jimgina hech narsa qilmasin emas.
+      ? partialUnavailableReason
+      : !hasDecreasedItem
       ? t("partialSellDecreaseRequired")
       : totalPrice === ""
         ? t("partialSellPriceRequired")
@@ -144,8 +189,9 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
   };
 
   const setItemQty = (item: OrderItem, val: number) => {
-    const minAllowed = order.product_quantity <= 1 ? 1 : 0;
-    const clamped = Math.max(minAllowed, Math.min(item.quantity, val));
+    // Alohida qator 0 gacha tushishi mumkin — jami kamida 1 dona qolishini
+    // canDecreaseItem ta'minlaydi.
+    const clamped = Math.max(0, Math.min(item.quantity, val));
 
     if (clamped < getItemQty(item) && !canDecreaseItem(item)) {
       return;
@@ -162,14 +208,15 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
     }
 
     if (isPartial) {
-      if (getSelectedItemsCount() < 1 || partialBlockReason) {
+      if (!canSellPartially || getSelectedItemsCount() < 1 || partialBlockReason) {
         return;
       }
 
       // POST /orders/partly-sell/{id}
       onPartlySell(order.id, {
-        order_item_info: order.items.map((item) => ({
-          product_id: item.product?.id ?? item.id,
+        order_item_info: orderItems.map((item) => ({
+          // canSellPartially har bir qatorda katalog id borligini kafolatlaydi.
+          product_id: getCatalogProductId(item) as string,
           quantity: getItemQty(item),
         })),
         totalPrice: Number(totalPrice) || 0,
@@ -275,7 +322,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                     {t("partialSell")}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {canSellPartially ? t("sellSeparately") : t("partialSellUnavailableSingle")}
+                    {partialUnavailableReason ?? t("sellSeparately")}
                   </p>
                 </div>
                 <div
@@ -290,20 +337,20 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
               </button>
 
               {/* Items — qisman rejimda */}
-              {isPartial && order.items?.length > 0 && (
+              {isPartial && orderItems.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
                     {t("products")}
                   </p>
                   <div className="space-y-2">
-                    {order.items.map((item) => (
+                    {orderItems.map((item, index) => (
                       <div
                         key={item.id}
                         className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/80 p-3 dark:border-white/10 dark:bg-primarydark/35"
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate text-gray-800 dark:text-gray-100">
-                            {item.product?.name}
+                            {getItemName(item, index)}
                           </p>
                           <p className="text-xs text-gray-400">{t("maxQuantity", { count: item.quantity })}</p>
                         </div>
@@ -311,7 +358,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                           <button
                             onClick={() => setItemQty(item, getItemQty(item) - 1)}
                             disabled={!canDecreaseItem(item)}
-                            aria-label={t("decreaseQuantity", { name: item.product?.name ?? "" })}
+                            aria-label={t("decreaseQuantity", { name: getItemName(item, index) })}
                             className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
                             <Minus size={12} />
@@ -321,7 +368,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                           </span>
                           <button
                             onClick={() => setItemQty(item, getItemQty(item) + 1)}
-                            aria-label={t("increaseQuantity", { name: item.product?.name ?? "" })}
+                            aria-label={t("increaseQuantity", { name: getItemName(item, index) })}
                             className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center hover:bg-emerald-200 dark:hover:bg-emerald-500/25 transition-colors"
                           >
                             <Plus size={12} className="text-emerald-600 dark:text-emerald-200" />

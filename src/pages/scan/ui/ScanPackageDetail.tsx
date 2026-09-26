@@ -11,7 +11,7 @@ import {
   Truck,
   UserRound,
 } from "lucide-react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Table } from "../../../shared/components/Table/Table";
@@ -223,6 +223,11 @@ const ScanPackageDetail = ({ data, token, type }: ScanPackageDetailProps) => {
     [t],
   );
 
+  const redirectTimerRef = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
+  }, []);
+
   const receiveMutation = useMutation({
     mutationFn: () => receiveScannedPackage(detail.id !== "—" ? detail.id : token),
     onSuccess: () => {
@@ -230,7 +235,9 @@ const ScanPackageDetail = ({ data, token, type }: ScanPackageDetailProps) => {
         tone: "success",
         text: t("scannerPackageReceiveSuccess"),
       });
-      window.setTimeout(() => {
+      // Ref'da saqlanadi: skaner bilan keyingi posilka ochilsa (detal sahifa
+      // HID skanni ushlaydi), eski taymer operatorni /scan'ga tortib ketmasin.
+      redirectTimerRef.current = window.setTimeout(() => {
         navigate("/scan");
       }, 2000);
     },

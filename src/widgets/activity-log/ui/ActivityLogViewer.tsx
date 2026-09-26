@@ -94,7 +94,9 @@ const ActivityLogViewer = () => {
         return (
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold">{name}</div>
-            {role ? <div className="text-xs text-[color:var(--color-text-muted)]">{role}</div> : null}
+            {/* Ochilgan (expanded) qator foni och — dark'da muted token u yerda
+                4.3:1 berardi, shu sabab biroz yorqinroq ton (AA >= 4.5:1). */}
+            {role ? <div className="text-xs text-[color:var(--color-text-muted)] dark:text-white/70">{role}</div> : null}
           </div>
         );
       },
@@ -116,7 +118,7 @@ const ActivityLogViewer = () => {
             <div className="truncate text-sm font-medium">
               {record.entity_type || "—"}
               {record.entity_id ? (
-                <span className="text-[color:var(--color-text-muted)]"> #{record.entity_id}</span>
+                <span className="text-[color:var(--color-text-muted)] dark:text-white/70"> #{record.entity_id}</span>
               ) : null}
             </div>
             {entityName ? <div className="truncate text-xs">{entityName}</div> : null}
