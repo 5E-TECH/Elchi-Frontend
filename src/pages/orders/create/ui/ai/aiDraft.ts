@@ -27,7 +27,7 @@ export type AiCreatedRow = {
 
 const idOrNull = (value: unknown) => (value === null || value === undefined || value === "" ? null : String(value));
 
-export const toDraft = (source: AiPreviewOrder, key: string): AiDraft => ({
+export const toDraft = (source: AiPreviewOrder, key: string, draftId?: string): AiDraft => ({
   key,
   source,
   order: {
@@ -49,6 +49,8 @@ export const toDraft = (source: AiPreviewOrder, key: string): AiDraft => ({
       candidates: item.candidates ?? [],
     })),
     price_confirmed: false,
+    // Xarajat jurnalini yaratilgan buyurtmaga bog'lash uchun tasdiqlashda qaytadi.
+    draft_id: draftId ?? null,
   },
 });
 

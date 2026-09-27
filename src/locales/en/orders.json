@@ -391,5 +391,14 @@
   "aiResultSummary": "{{created}} created · {{failed}} failed",
   "aiCreateFailed": "The order was not created.",
   "aiConfirmUnknown": "The result is unknown — check the \"New orders\" list below. Do not resend: it may create duplicates.",
-  "aiLeaveConfirm": "There are unconfirmed orders. They will be lost if you leave the page. Leave?"
+  "aiLeaveConfirm": "There are unconfirmed orders. They will be lost if you leave the page. Leave?",
+  "aiCapTitle": "The daily AI limit is used up",
+  "aiCapDescription": "Today's AI order-reading limit is used up. Enter the order manually — the limit resets tomorrow.",
+  "aiRefusedTitle": "AI declined to process this text",
+  "aiRefusedDescription": "Enter the order manually, or rephrase the text and try again.",
+  "aiEnterManually": "Enter manually",
+  "aiReasonTruncated": "The text is too long — send the orders in parts of 10.",
+  "aiReasonNetwork": "AI did not respond. Please try again in a moment.",
+  "aiReasonNoMarket": "The operator is not linked to a market — contact an administrator.",
+  "aiRetryAgain": "Try again"
 }

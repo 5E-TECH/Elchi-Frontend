@@ -10,7 +10,7 @@ vi.mock("../../auth/authService", () => ({
 }));
 
 import { api } from "../../shared/api/api";
-import { AI_REQUEST_TIMEOUT_MS, useAiConfirm, useAiParse } from "./api";
+import { AI_REQUEST_TIMEOUT_MS, useAiAvailability, useAiConfirm, useAiParse } from "./api";
 import type { AiConfirmRequest } from "./types";
 
 /**
@@ -176,5 +176,17 @@ describe("useAiConfirm", () => {
     });
 
     expect(invalidate).not.toHaveBeenCalled();
+  });
+});
+
+describe("useAiAvailability", () => {
+  it("GET orders/ai-availability javobini qobig'idan ochadi", async () => {
+    respond = () => Promise.resolve({ statusCode: 200, message: "ok", data: { enabled: false, state: "disabled" } });
+    const { result } = renderHook(() => useAiAvailability(), { wrapper: wrapperFor(newClient()) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({ enabled: false, state: "disabled" });
+    expect(requests[0].url).toBe("orders/ai-availability");
+    expect(requests[0].method).toBe("get");
   });
 });

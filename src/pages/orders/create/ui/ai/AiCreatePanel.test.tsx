@@ -310,4 +310,26 @@ describe("AiCreatePanel", () => {
 
     expect(await screen.findByText("Matnda buyurtma topilmadi.")).toBeInTheDocument();
   });
+
+  it("parse javobidagi `draft_id` har buyurtma bilan ai-confirm ga qaytadi (lYVuADRE #18)", async () => {
+    parseOrders = [order(1), order(2)];
+    mocks.post.mockImplementation((url: string, body: unknown) => {
+      if (url === "orders/ai-parse") {
+        return Promise.resolve({
+          data: { data: { ok: true, orders: parseOrders, draft_id: "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60" } },
+        });
+      }
+      return Promise.resolve({ data: { data: allResultsOk(body as AiConfirmRequest) } });
+    });
+    renderPanel();
+    await parse(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (2)" }));
+
+    await waitFor(() => expect(confirmCalls()).toHaveLength(1));
+    expect(confirmCalls()[0].orders.map((o) => o.draft_id)).toEqual([
+      "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60",
+      "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60",
+    ]);
+  });
 });

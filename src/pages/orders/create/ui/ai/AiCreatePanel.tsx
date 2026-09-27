@@ -102,7 +102,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCre
     };
   }, [hasUnconfirmedReady, t]);
 
-  const handleParsed = (orders: AiPreviewOrder[]) => {
+  const handleParsed = (orders: AiPreviewOrder[], draftId?: string) => {
     setResultSummary(null);
     setConfirmError("");
     const fresh = orders.filter((order) => !createdSigs.current.has(previewSig(order)));
@@ -110,7 +110,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCre
     setDrafts(
       fresh.map((order) => {
         nextKey.current += 1;
-        return toDraft(order, `draft-${nextKey.current}`);
+        return toDraft(order, `draft-${nextKey.current}`, draftId);
       }),
     );
     setParseNotice(

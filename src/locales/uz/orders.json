@@ -391,5 +391,14 @@
   "aiResultSummary": "{{created}} ta yaratildi · {{failed}} ta xato",
   "aiCreateFailed": "Buyurtma yaratilmadi.",
   "aiConfirmUnknown": "Natija noma'lum — pastdagi \"Yangi buyurtmalar\" ro'yxatini tekshiring. Qayta yubormang: dublikat bo'lishi mumkin.",
-  "aiLeaveConfirm": "Tasdiqlanmagan buyurtmalar bor. Sahifadan chiqsangiz ular yo'qoladi. Chiqasizmi?"
+  "aiLeaveConfirm": "Tasdiqlanmagan buyurtmalar bor. Sahifadan chiqsangiz ular yo'qoladi. Chiqasizmi?",
+  "aiCapTitle": "AI kunlik limiti tugadi",
+  "aiCapDescription": "Bugun AI orqali buyurtma o'qish limiti tugadi. Buyurtmani qo'lda kiriting — limit ertaga yangilanadi.",
+  "aiRefusedTitle": "AI bu matnni qayta ishlamadi",
+  "aiRefusedDescription": "Buyurtmani qo'lda kiriting yoki matnni boshqacha yozib qayta urinib ko'ring.",
+  "aiEnterManually": "Qo'lda kiritish",
+  "aiReasonTruncated": "Matn juda katta — buyurtmalarni 10 tadan qismlarga bo'lib yuboring.",
+  "aiReasonNetwork": "AI javob bermadi. Birozdan keyin qayta urinib ko'ring.",
+  "aiReasonNoMarket": "Operator marketga biriktirilmagan — administratorga murojaat qiling.",
+  "aiRetryAgain": "Qayta urinib ko'ring"
 }

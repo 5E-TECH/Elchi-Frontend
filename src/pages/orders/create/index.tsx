@@ -18,6 +18,7 @@ import Step1Market from "./ui/Step1Market";
 import Step2Combined from "./ui/Step2Combined";
 import CreateModeTabs, { type CreateMode } from "./ui/CreateModeTabs";
 import AiCreatePanel from "./ui/ai/AiCreatePanel";
+import { useAiAvailability } from "../../../entities/ai-order";
 import { FormFieldError, getActionButtonClassName } from "./ui/formFieldStyles";
 import { useOrders } from "../../../entities/order/api/orderApi";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
@@ -333,7 +334,12 @@ const OrderCreateFormContent = () => {
   );
   const [serverError, setServerError] = useState("");
   // "Qo'lda" (asosiy, hech qachon olib tashlanmaydi) yoki "AI bilan".
-  const [mode, setMode] = useState<CreateMode>("manual");
+  const [selectedMode, setMode] = useState<CreateMode>("manual");
+  // Konfiguratsiya kaliti o'chiq (`enabled:false`) bo'lsa AI tabi UMUMAN
+  // ko'rinmaydi. So'rov yiqilsa yoki hali kelmagan bo'lsa tab qoladi.
+  const aiAvailability = useAiAvailability();
+  const aiHidden = aiAvailability.data?.enabled === false;
+  const mode: CreateMode = aiHidden ? "manual" : selectedMode;
 
   const methods = useForm<OrderCreateFormValues>({
     resolver: yupResolver(
@@ -515,7 +521,7 @@ const OrderCreateFormContent = () => {
           </div>
         </div>
 
-        <CreateModeTabs mode={mode} onChange={setMode} />
+        {!aiHidden && <CreateModeTabs mode={mode} onChange={setMode} />}
 
         {mode === "manual" && <FormFieldError message={serverError} />}
 
@@ -533,15 +539,17 @@ const OrderCreateFormContent = () => {
           {step === 2 && <Step2Combined />}
         </div>
 
-        <div data-testid="ai-mode-panel" className={mode === "ai" ? "flex-1" : "hidden"}>
-          <AiCreatePanel
-            key={market ? String(market.id) : "no-market"}
-            active={mode === "ai"}
-            isMarketRole={isMarketRole}
-            market={isMarketRole ? null : market}
-            onSwitchToManual={() => setMode("manual")}
-          />
-        </div>
+        {!aiHidden && (
+          <div data-testid="ai-mode-panel" className={mode === "ai" ? "flex-1" : "hidden"}>
+            <AiCreatePanel
+              key={market ? String(market.id) : "no-market"}
+              active={mode === "ai"}
+              isMarketRole={isMarketRole}
+              market={isMarketRole ? null : market}
+              onSwitchToManual={() => setMode("manual")}
+            />
+          </div>
+        )}
 
         {mode === "manual" && (
           <StepActions

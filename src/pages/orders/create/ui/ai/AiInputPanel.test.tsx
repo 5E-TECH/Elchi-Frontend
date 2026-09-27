@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { AxiosError, CanceledError, type InternalAxiosRequestConfig } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../../../test/test-utils";
@@ -236,7 +236,7 @@ describe("AiInputPanel", () => {
     fireEvent.click(parseButton());
 
     expect(await screen.findByTestId("ai-input-collapsed")).toHaveTextContent("Aliyev Vali 90 123 45 67 Chilonzor");
-    expect(onParsed).toHaveBeenCalledWith([order]);
+    expect(onParsed).toHaveBeenCalledWith([order], undefined);
 
     fireEvent.click(screen.getByRole("button", { name: "Matnni tahrirlash" }));
     expect(textarea().value).toBe("Aliyev Vali 90 123 45 67 Chilonzor");
@@ -253,5 +253,68 @@ describe("AiInputPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Qo'lda yaratish" }));
     expect(onSwitchToManual).toHaveBeenCalledTimes(1);
     expect(onParsed).not.toHaveBeenCalled();
+  });
+
+  it("tahlil javobidagi `draft_id` onParsed ga uzatiladi (xarajatni buyurtmaga bog'lash)", async () => {
+    const order = aiPreview();
+    mocks.post.mockResolvedValue({
+      data: { statusCode: 200, data: { ok: true, orders: [order], draft_id: "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60" } },
+    });
+    const { onParsed } = renderPanel();
+    fireEvent.change(textarea(), { target: { value: "matn" } });
+
+    fireEvent.click(parseButton());
+
+    await waitFor(() => expect(onParsed).toHaveBeenCalledWith([order], "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60"));
+  });
+
+  describe("har sabab o'z matni va harakati bilan (bVeyEuIR #5/#7/#9, NsxoDSmm #11)", () => {
+    const failWith = async (reason: string) => {
+      mocks.post.mockResolvedValue({ data: { statusCode: 200, data: { ok: false, reason } } });
+      const handlers = renderPanel();
+      fireEvent.change(textarea(), { target: { value: "matn" } });
+      fireEvent.click(parseButton());
+      return handlers;
+    };
+
+    it("network → \"AI javob bermadi\" va \"Qayta urinib ko'ring\" tugmasi", async () => {
+      await failWith("network");
+      expect(await screen.findByText("AI javob bermadi. Birozdan keyin qayta urinib ko'ring.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Qayta urinib ko'ring" })).toBeEnabled();
+    });
+
+    it("refused → alohida matn va \"Qo'lda kiritish\" qo'lda rejimga o'tkazadi", async () => {
+      const { onSwitchToManual } = await failWith("refused");
+      expect(await screen.findByText("AI bu matnni qayta ishlamadi")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Qo'lda kiritish" }));
+      expect(onSwitchToManual).toHaveBeenCalledTimes(1);
+    });
+
+    it("cap_exceeded → \"AI limiti\" matni, \"o'chiq\" deb EMAS", async () => {
+      await failWith("cap_exceeded");
+      const block = await screen.findByTestId("ai-block");
+      expect(block).toHaveTextContent("AI kunlik limiti tugadi");
+      expect(block).not.toHaveTextContent(/o'chiq|o'chirilgan/);
+      expect(screen.getByRole("button", { name: "Qo'lda kiritish" })).toBeInTheDocument();
+    });
+
+    it("truncated, network, disabled — uchalasi TURLI xabar (hammasi \"AI o'qiy olmadi\" emas)", async () => {
+      const texts: string[] = [];
+      for (const reason of ["truncated", "network", "disabled"]) {
+        const view = await failWith(reason);
+        await waitFor(() => expect(screen.queryByText("AI o'qiyapti... (odatda 5-20 soniya)")).not.toBeInTheDocument());
+        const shown = await screen.findByText(/qismlarga|javob bermadi|AI hozir o'chiq/);
+        texts.push(shown.textContent ?? "");
+        view.onParsed.mockReset();
+        cleanup();
+      }
+      expect(new Set(texts).size).toBe(3);
+      expect(texts.some((t) => t.includes("AI matndan buyurtma o'qiy olmadi"))).toBe(false);
+    });
+
+    it("no_market → operator marketga biriktirilmagan", async () => {
+      await failWith("no_market");
+      expect(await screen.findByText(/Operator marketga biriktirilmagan/)).toBeInTheDocument();
+    });
   });
 });
