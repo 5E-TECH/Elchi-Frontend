@@ -1,8 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { ORDER_KEY } from "../order/api/orderApi";
 import type {
+  AiAvailability,
   AiConfirmRequest,
   AiConfirmResponse,
   AiParseImage,
@@ -77,3 +78,22 @@ export const useAiConfirm = () => {
     },
   });
 };
+
+export const AI_AVAILABILITY_KEY = "ai-order-availability";
+
+/**
+ * AI yoqilganmi (`AI_ORDER_ENABLED` konfiguratsiya kaliti). `enabled:false`
+ * bo'lsa "AI bilan" tabi umuman ko'rsatilmaydi.
+ *
+ * ⚠️ So'rov YIQILSA (masalan eski backend'da endpoint yo'q) tab YASHIRILMAYDI:
+ * AI o'chiq bo'lsa ham `ai-parse` baribir `disabled` qaytaradi va panel
+ * operatorga tushuntiradi — tabni jimgina yo'qotish chalg'itadi.
+ */
+export const useAiAvailability = () =>
+  useQuery({
+    queryKey: [AI_AVAILABILITY_KEY],
+    queryFn: () =>
+      api.get(API_ENDPOINTS.ORDERS.AI_AVAILABILITY).then((res) => unwrap<AiAvailability>(res.data)),
+    staleTime: 60_000,
+    retry: false,
+  });

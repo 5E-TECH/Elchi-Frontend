@@ -89,7 +89,9 @@ const toConfirmItem = (item: AiPreviewItem): AiConfirmItem[] => {
   const quantity = toQuantity(item.quantity);
   if (item.product_id) return [{ product_id: String(item.product_id), quantity }];
   const name = text(item.name);
-  if (item.allow_free_text === true && name) return [{ product_name: name, quantity }];
+  if (item.allow_free_text === true && name) {
+    return [{ product_name: name, quantity, allow_unlisted_product: true }];
+  }
   return [];
 };
 
@@ -117,6 +119,7 @@ const toConfirmOrder = (preview: AiPreviewOrder): AiConfirmOrder => {
     ...(address && { address }),
     ...(comment && { comment }),
     ...(operator && { operator }),
+    ...(preview.draft_id && { draft_id: preview.draft_id }),
   };
 };
 

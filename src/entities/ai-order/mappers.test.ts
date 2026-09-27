@@ -139,13 +139,24 @@ describe("buildAiConfirmPayload", () => {
     expect(allKeys(order)).not.toContain("product_name");
   });
 
-  it("operator \"katalogda yo'q\" deb belgilasa (`allow_free_text: true`) → `{ product_name, quantity }`", () => {
+  it("operator \"katalogda yo'q\" deb belgilasa (`allow_free_text: true`) → `{ product_name, quantity, allow_unlisted_product: true }`", () => {
     const [order] = buildAiConfirmPayload(
       [preview({ items: [{ name: " Avto changyutgich ", quantity: 1, candidates: [], allow_free_text: true }] })],
       { includeMarketId: false },
     ).orders;
 
-    expect(order.items).toEqual([{ product_name: "Avto changyutgich", quantity: 1 }]);
+    // ⚠️ Backend bayroqsiz `product_name` ni 400 bilan rad etadi (wgqxS0Cp #9).
+    expect(order.items).toEqual([{ product_name: "Avto changyutgich", quantity: 1, allow_unlisted_product: true }]);
+  });
+
+  it("tahlil javobidagi `draft_id` bo'lsa har buyurtmaga qo'shiladi, bo'lmasa kalit umuman yo'q", () => {
+    const withDraft = buildAiConfirmPayload([preview({ draft_id: "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60" })], {
+      includeMarketId: false,
+    }).orders[0];
+    const withoutDraft = buildAiConfirmPayload([preview()], { includeMarketId: false }).orders[0];
+
+    expect(withDraft.draft_id).toBe("3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60");
+    expect(withoutDraft).not.toHaveProperty("draft_id");
   });
 
   it("`status` va `region_id` payloadda umuman yo'q", () => {

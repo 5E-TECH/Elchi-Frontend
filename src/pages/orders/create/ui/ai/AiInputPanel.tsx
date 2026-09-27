@@ -2,7 +2,11 @@ import { memo, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { isCancel, type AxiosError } from "axios";
 import { ImagePlus, Loader2, PencilLine, Sparkles, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAiParse, type AiPreviewOrder } from "../../../../../entities/ai-order";
+import {
+  useAiParse,
+  type AiParseFailureReason,
+  type AiPreviewOrder,
+} from "../../../../../entities/ai-order";
 import {
   PrepareImageError,
   prepareImage,
@@ -37,10 +41,37 @@ const IMAGE_ERROR_KEYS: Record<PrepareImageErrorCode, string> = {
 
 type PanelImage = PreparedImage & { id: string };
 
+/**
+ * Operator qo'lda yaratishga o'tishi kerak bo'lgan holatlar — har biri
+ * O'Z matni bilan. ⚠️ `cap_exceeded` "AI o'chirilgan" deb ko'rsatilmaydi:
+ * AI ishlaydi, faqat bugungi xarajat limiti tugagan.
+ */
+type AiBlockKind = "disabled" | "cap_exceeded" | "refused";
+
+const BLOCK_TEXT: Record<AiBlockKind, { title: string; description: string; action: string }> = {
+  disabled: { title: "aiDisabledTitle", description: "aiDisabledDescription", action: "aiCreateManually" },
+  cap_exceeded: { title: "aiCapTitle", description: "aiCapDescription", action: "aiEnterManually" },
+  refused: { title: "aiRefusedTitle", description: "aiRefusedDescription", action: "aiEnterManually" },
+};
+
+/** Qolgan sabablar — xato matni (hammasi bir xil "AI o'qiy olmadi" emas). */
+const REASON_ERROR_KEYS: Partial<Record<AiParseFailureReason, string>> = {
+  truncated: "aiReasonTruncated",
+  network: "aiReasonNetwork",
+  ai_error: "aiReasonNetwork",
+  no_market: "aiReasonNoMarket",
+};
+
+const toBlockKind = (reason?: AiParseFailureReason): AiBlockKind | null => {
+  if (reason === "disabled" || reason === "ai_off") return "disabled";
+  if (reason === "cap_exceeded" || reason === "refused") return reason;
+  return null;
+};
+
 type AiInputPanelProps = {
   /** Faqat admin/registrator uchun; market roli uchun server o'zi aniqlaydi. */
   marketId?: string;
-  onParsed: (orders: AiPreviewOrder[]) => void;
+  onParsed: (orders: AiPreviewOrder[], draftId?: string) => void;
   onSwitchToManual: () => void;
 };
 
@@ -66,7 +97,8 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [tooManyImages, setTooManyImages] = useState(false);
   const [parseError, setParseError] = useState("");
-  const [aiDisabled, setAiDisabled] = useState(false);
+  const [block, setBlock] = useState<AiBlockKind | null>(null);
+  const [retryKey, setRetryKey] = useState("aiRetryParse");
   const [throttleUntil, setThrottleUntil] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [collapsed, setCollapsed] = useState(false);
@@ -141,7 +173,8 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
     const controller = new AbortController();
     controllerRef.current = controller;
     setParseError("");
-    setAiDisabled(false);
+    setBlock(null);
+    setRetryKey("aiRetryParse");
 
     parse.mutate(
       {
@@ -153,15 +186,19 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
       {
         onSuccess: (response) => {
           if (!response?.ok) {
-            if (response?.reason === "disabled" || response?.reason === "ai_off") {
-              setAiDisabled(true);
-            } else {
-              setParseError(t("aiParseFailed"));
+            const kind = toBlockKind(response?.reason);
+            if (kind) {
+              setBlock(kind);
+              return;
             }
+            const reasonKey = response?.reason ? REASON_ERROR_KEYS[response.reason] : undefined;
+            setParseError(t(reasonKey ?? "aiParseFailed"));
+            // Tarmoq/AI javob bermadi — faqat shu holatda "Qayta urinib ko'ring".
+            if (response?.reason === "network" || response?.reason === "ai_error") setRetryKey("aiRetryAgain");
             return;
           }
           const orders = response.orders ?? [];
-          onParsed(orders);
+          onParsed(orders, response.draft_id);
           if (orders.length > 0) setCollapsed(true);
         },
         onError: (error) => {
@@ -296,17 +333,20 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
         )}
       </div>
 
-      {aiDisabled && (
-        <div className="flex flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
-          <p className="font-semibold">{t("aiDisabledTitle")}</p>
-          <p className="text-xs">{t("aiDisabledDescription")}</p>
+      {block && (
+        <div
+          data-testid="ai-block"
+          className="flex flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+        >
+          <p className="font-semibold">{t(BLOCK_TEXT[block].title)}</p>
+          <p className="text-xs">{t(BLOCK_TEXT[block].description)}</p>
           <button
             type="button"
             onClick={onSwitchToManual}
             className={`${getActionButtonClassName({ variant: "primary" })} w-full sm:w-auto sm:self-start`}
           >
             <PencilLine size={16} />
-            {t("aiCreateManually")}
+            {t(BLOCK_TEXT[block].action)}
           </button>
         </div>
       )}
@@ -339,7 +379,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
           {throttleLeft > 0
             ? t("aiThrottleWait", { seconds: throttleLeft })
             : parseError
-              ? t("aiRetryParse")
+              ? t(retryKey)
               : t("aiParseButton")}
         </button>
       )}

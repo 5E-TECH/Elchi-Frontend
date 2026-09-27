@@ -16,7 +16,9 @@ export type AiParseFailureReason =
   | "network"
   | "insufficient"
   | "no_market"
-  | "ai_error";
+  | "ai_error"
+  /** Kunlik global AI xarajat shifti tugagan — "AI o'chirilgan" EMAS. */
+  | "cap_exceeded";
 
 export type AiDistrictCandidate = {
   id: string;
@@ -61,12 +63,28 @@ export type AiPreviewOrder = {
   comment?: string | null;
   operator?: string | null;
   where_deliver: DeliveryType;
+  /**
+   * Tahlil javobidagi `draft_id` — backend emas, FRONTEND har buyurtmaga
+   * yozib qo'yadi: tasdiqlashda qaytarib yuboriladi va AI xarajat jurnali
+   * qatorlari yaratilgan buyurtmaga bog'lanadi.
+   */
+  draft_id?: string | null;
 };
 
 export type AiParseResponse = {
   ok: boolean;
   reason?: AiParseFailureReason;
   orders?: AiPreviewOrder[];
+  /** Shu tahlilning xarajat jurnalidagi identifikatori (UUID). */
+  draft_id?: string;
+  /** Backend'ning odam o'qiydigan izohi (UI o'z matnini ishlatadi). */
+  message?: string;
+};
+
+/** `GET orders/ai-availability` — AI yoqilganmi (konfiguratsiya kaliti). */
+export type AiAvailability = {
+  enabled: boolean;
+  state?: "enabled" | "disabled" | "cap_exceeded" | "unknown";
 };
 
 /** Rasm `prepareImage` (shared/lib/downscaleImage) chiqishidan olinadi. */
@@ -96,7 +114,12 @@ export type AiConfirmCustomer = {
 
 export type AiConfirmItem =
   | { product_id: string; quantity: number }
-  | { product_name: string; quantity: number };
+  /**
+   * Katalogda yo'q mahsulot. ⚠️ Backend `allow_unlisted_product: true` siz
+   * `product_name` ni 400 bilan rad etadi — bayroq operator "katalogda yo'q"
+   * deb ANIQ belgilaganini bildiradi.
+   */
+  | { product_name: string; quantity: number; allow_unlisted_product: true };
 
 /**
  * ⚠️ `CreateOrderRequest` dan NUSXA OLINMAGAN, ATAYLAB alohida tip: unda
@@ -114,6 +137,8 @@ export type AiConfirmOrder = {
   address?: string;
   comment?: string;
   operator?: string;
+  /** Tahlil javobidagi `draft_id` (bo'lsa) — xarajatni buyurtmaga bog'lash uchun. */
+  draft_id?: string;
 };
 
 export type AiConfirmRequest = {

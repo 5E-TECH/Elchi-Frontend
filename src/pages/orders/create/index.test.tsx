@@ -149,4 +149,30 @@ describe("OrderCreate — rejim tablari", () => {
     fireEvent.click(within(mobile).getByRole("tab", { name: "AI bilan" }));
     expect(aiPanel()).not.toHaveClass("hidden");
   });
+
+  it("ai-availability `enabled:false` bo'lsa AI tabi UMUMAN ko'rinmaydi, faqat qo'lda oqim (HD5zOyBp #9)", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "orders/ai-availability"
+        ? Promise.resolve({ data: { statusCode: 200, data: { enabled: false, state: "disabled" } } })
+        : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(screen.queryByTestId("create-mode-tabs")).not.toBeInTheDocument());
+    expect(screen.queryByTestId("ai-mode-panel")).not.toBeInTheDocument();
+    expect(manualPanel()).not.toHaveClass("hidden");
+    expect(screen.getByRole("button", { name: "Buyurtma yaratish" })).toBeInTheDocument();
+  });
+
+  it("ai-availability so'rovi yiqilsa (eski backend) tab YASHIRILMAYDI", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "orders/ai-availability" ? Promise.reject(new Error("404")) : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("orders/ai-availability"));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByTestId("create-mode-tabs")).toBeInTheDocument();
+    expect(tab("AI bilan")).toBeInTheDocument();
+  });
 });
