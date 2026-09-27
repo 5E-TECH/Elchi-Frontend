@@ -29,17 +29,9 @@ import {
 import {
   FormFieldError,
   getFieldClassName,
+  orderInputClassName as inputCls,
 } from "./formFieldStyles";
 import { keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
-
-const inputCls = `
-  w-full min-h-12 px-3 py-2.5 rounded-xl text-sm
-  bg-primary dark:bg-primarydark
-  border border-gray-200 dark:border-primarydark/80
-  text-maindark dark:text-primary placeholder:text-gray-400
-  focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
-  transition-all duration-200
-`;
 
 interface FieldProps {
   label: string;

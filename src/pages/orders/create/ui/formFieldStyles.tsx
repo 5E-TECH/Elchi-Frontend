@@ -1,6 +1,16 @@
 import type { ReactNode } from "react";
 import { AlertCircle, CheckCircle2, ChevronDown, Info, Loader2 } from "lucide-react";
 
+/** Buyurtma yaratish formasidagi matn maydonlarining umumiy uslubi. */
+export const orderInputClassName = `
+  w-full min-h-12 px-3 py-2.5 rounded-xl text-sm
+  bg-primary dark:bg-primarydark
+  border border-gray-200 dark:border-primarydark/80
+  text-maindark dark:text-primary placeholder:text-gray-400
+  focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
+  transition-all duration-200
+`;
+
 export const getFieldClassName = (
   baseClassName: string,
   hasError?: boolean,

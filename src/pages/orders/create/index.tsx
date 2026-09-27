@@ -16,6 +16,8 @@ import { useTranslation } from "react-i18next";
 import HeaderName from "../../../shared/components/headerName";
 import Step1Market from "./ui/Step1Market";
 import Step2Combined from "./ui/Step2Combined";
+import CreateModeTabs, { type CreateMode } from "./ui/CreateModeTabs";
+import AiCreatePanel from "./ui/ai/AiCreatePanel";
 import { FormFieldError, getActionButtonClassName } from "./ui/formFieldStyles";
 import { useOrders } from "../../../entities/order/api/orderApi";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
@@ -330,6 +332,8 @@ const OrderCreateFormContent = () => {
     isMarketRole || selectedMarketFromState ? 2 : 1,
   );
   const [serverError, setServerError] = useState("");
+  // "Qo'lda" (asosiy, hech qachon olib tashlanmaydi) yoki "AI bilan".
+  const [mode, setMode] = useState<CreateMode>("manual");
 
   const methods = useForm<OrderCreateFormValues>({
     resolver: yupResolver(
@@ -360,6 +364,11 @@ const OrderCreateFormContent = () => {
     : isInactiveMarketStatus(market?.status ?? selectedMarketFromState?.status);
 
   const canNext = useMemo(() => {
+    // AI rejimida qo'lda forma bo'sh — "Maydonlarni to'ldiring" chalg'itmasin.
+    if (mode !== "manual") {
+      return false;
+    }
+
     if (step === 1) {
       return isMarketRole || !!market;
     }
@@ -374,7 +383,7 @@ const OrderCreateFormContent = () => {
       details?.items?.length &&
       details?.total_price?.trim(),
     );
-  }, [customer, details, isInactiveSelectedMarket, isMarketRole, market, step]);
+  }, [customer, details, isInactiveSelectedMarket, isMarketRole, market, mode, step]);
 
   const handleBack = () => {
     navigate("/orders");
@@ -482,6 +491,9 @@ const OrderCreateFormContent = () => {
       <form
         onSubmit={(event) => {
           event.preventDefault();
+          // ⚠️ AI paneli ham shu `<form>` ichida — AI rejimida qo'lda buyurtma
+          // hech qachon yaratilmasin.
+          if (mode !== "manual") return;
           void handleFinalSubmit();
         }}
         className="flex min-h-full flex-col gap-3 sm:gap-6"
@@ -503,23 +515,46 @@ const OrderCreateFormContent = () => {
           </div>
         </div>
 
-        <FormFieldError message={serverError} />
+        <CreateModeTabs mode={mode} onChange={setMode} />
 
-        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-6 flex-1">
-          {!isMarketRole && step === 1 && <Step1Market />}
+        {mode === "manual" && <FormFieldError message={serverError} />}
+
+        {/*
+          Ikkala rejim ham MOUNT bo'lib qoladi, faqat yashiriladi: tab
+          almashganda qo'lda forma qiymatlari ham, AI matni/rasmlari ham
+          yo'qolmaydi. (Step2Combined qayta mount bo'lsa effekti tumanni
+          tozalab yuborardi.)
+        */}
+        <div
+          data-testid="manual-mode-panel"
+          className={`bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-6 flex-1 ${mode === "manual" ? "" : "hidden"}`}
+        >
+          {mode === "manual" && !isMarketRole && step === 1 && <Step1Market />}
           {step === 2 && <Step2Combined />}
         </div>
 
-        <StepActions
-          step={step}
-          canNext={canNext}
-          isSubmitting={createOrder.isPending}
-          isMarketRole={isMarketRole}
-          onBack={handleBack}
-          onNext={() => {
-            void handleNext();
-          }}
-        />
+        <div data-testid="ai-mode-panel" className={mode === "ai" ? "flex-1" : "hidden"}>
+          <AiCreatePanel
+            key={market ? String(market.id) : "no-market"}
+            active={mode === "ai"}
+            isMarketRole={isMarketRole}
+            market={isMarketRole ? null : market}
+            onSwitchToManual={() => setMode("manual")}
+          />
+        </div>
+
+        {mode === "manual" && (
+          <StepActions
+            step={step}
+            canNext={canNext}
+            isSubmitting={createOrder.isPending}
+            isMarketRole={isMarketRole}
+            onBack={handleBack}
+            onNext={() => {
+              void handleNext();
+            }}
+          />
+        )}
 
         <MarketNewOrdersTable
           marketId={selectedMarketId}

@@ -82,6 +82,26 @@ describe("setupAuthInterceptors", () => {
     });
   });
 
+  describe("network error event", () => {
+    it("fires `elchi:network-error` for a real network failure but NOT for a user-cancelled request", async () => {
+      const listener = vi.fn();
+      window.addEventListener("elchi:network-error", listener);
+      const { runResponseError } = wireInterceptors();
+
+      await expect(
+        runResponseError({ code: "ERR_CANCELED", message: "canceled", config: { url: "orders/ai-parse" } }),
+      ).rejects.toBeDefined();
+      expect(listener).not.toHaveBeenCalled();
+
+      await expect(
+        runResponseError({ code: "ERR_NETWORK", message: "Network Error", config: { url: "/orders" } }),
+      ).rejects.toBeDefined();
+      expect(listener).toHaveBeenCalledTimes(1);
+
+      window.removeEventListener("elchi:network-error", listener);
+    });
+  });
+
   describe("401 refresh flow", () => {
     it("refreshes the token and retries the original request with the new token", async () => {
       mocks.getAccessToken.mockReturnValue("stale");
