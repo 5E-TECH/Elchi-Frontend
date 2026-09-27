@@ -118,6 +118,12 @@ export type AiConfirmOrder = {
 
 export type AiConfirmRequest = {
   market_id?: string;
+  /**
+   * Har yuborishda yangi `crypto.randomUUID()`. Ayni `request_id` bilan
+   * qayta yuborish serverda dublikat yaratmasligi kerak (backend bilan
+   * kelishiladigan maydon).
+   */
+  request_id?: string;
   orders: AiConfirmOrder[];
 };
 

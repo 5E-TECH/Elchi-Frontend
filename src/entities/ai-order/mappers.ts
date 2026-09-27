@@ -29,13 +29,13 @@ import type {
  * ko'rinadigan YOLG'ON raqam yasalmasligi uchun jami raqamlar soni ham
  * tekshiriladi (9 ta yoki `998` bilan 12 ta).
  */
-const toLocalPhone = (value?: string | null): string => {
+export const toLocalPhone = (value?: string | null): string => {
   const local = getUzbekistanPhoneDigits(value ?? "");
   const total = (value ?? "").replace(/\D/g, "").length;
   return local.length === 9 && (total === 9 || total === 12) ? local : "";
 };
 
-const toQuantity = (value: unknown): number => {
+export const toQuantity = (value: unknown): number => {
   const quantity = Math.round(Number(value));
   return Number.isFinite(quantity) && quantity >= 1 ? quantity : 1;
 };
