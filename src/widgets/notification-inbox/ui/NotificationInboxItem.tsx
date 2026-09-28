@@ -86,7 +86,10 @@ const NotificationInboxItem = ({ notification, preview = false }: NotificationIn
           type="button"
           onClick={preview ? undefined : handleOpen}
           disabled={preview}
-          className="mt-1.5 block w-full text-left disabled:cursor-default"
+          // ⚠️ Birinchi klass nuqtasiz bo'lsin: lockfile'dagi nwsapi 2.2.23 (jsdom)
+          // antd `:has(...)` qoidasida birinchi klassdan selektor yasaydi va
+          // `mt-1.5` da SyntaxError beradi (testda yiqiladi, brauzerga ta'sirsiz).
+          className="block mt-1.5 w-full text-left disabled:cursor-default"
         >
           <h4
             className={`m-0 truncate text-sm text-maindark dark:text-white ${
