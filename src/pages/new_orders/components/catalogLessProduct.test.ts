@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getOrderItemName } from "../../../shared/lib/orderItemName";
 
 /**
  * KATALOGSIZ MAHSULOT — hamkor (Partner API) buyurtmalari.
@@ -62,5 +63,29 @@ describe("ro'yxat bo'sh bo'lsa", () => {
     const items: Item[] | null | undefined = null;
     expect(() => (items ?? []).map((i) => displayName(i))).not.toThrow();
     expect((items ?? []).length).toBe(0);
+  });
+});
+
+describe("getOrderItemName (umumiy qoida — detal, tahrirlash oynasi, qisman sotish)", () => {
+  it("katalog mahsuloti — nom avvalgidek `product.name` dan (regressiya yo'q)", () => {
+    expect(getOrderItemName({ product: { name: "Televizor" }, product_id: "6", product_name: "eski" }, "Mahsulot")).toBe(
+      "Televizor",
+    );
+  });
+
+  it("tashqi buyurtma (`product: null`) — nom `product_name` dan", () => {
+    // Jonli #1251134: 4 ta qator ham shunday keladi.
+    expect(getOrderItemName({ product: null, product_id: null, product_name: "Avto changyutgich" }, "Mahsulot")).toBe(
+      "Avto changyutgich",
+    );
+  });
+
+  it("nom yo'q, lekin katalog id bor — `#<product_id>`", () => {
+    expect(getOrderItemName({ product: null, product_id: "8", product_name: null }, "Mahsulot")).toBe("#8");
+  });
+
+  it("hech narsa yo'q — berilgan zaxira matn", () => {
+    expect(getOrderItemName({ product: null, product_id: null, product_name: null }, "Mahsulot")).toBe("Mahsulot");
+    expect(getOrderItemName({}, "—")).toBe("—");
   });
 });

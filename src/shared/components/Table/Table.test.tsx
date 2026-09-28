@@ -127,4 +127,152 @@ describe("Table sorting", () => {
     render(<Table data={rows} columns={columns} keyExtractor={(row) => row.id} sortLabel="Saralash:" />);
     expect(screen.queryByText("Saralash:")).not.toBeInTheDocument();
   });
+
+  it("keeps the mobile sort label and chips readable in both themes (no background-coloured text)", () => {
+    setViewportWidth(390);
+    render(
+      <Table
+        data={rows}
+        columns={columns}
+        keyExtractor={(row) => row.id}
+        sortLabel="Saralash:"
+        sortConfig={{ key: "price", direction: "asc" }}
+        onSortChange={vi.fn()}
+        manualSort
+      />,
+    );
+
+    const bar = screen.getByTestId("mobile-sort-bar");
+    // Dark rejimda `sidebar` rangi fon bilan bir xil — yorliq/chip matni undan olinmasligi kerak.
+    expect(bar.innerHTML).not.toMatch(/text-sidebar/);
+    expect(screen.getByText("Saralash:").className).toContain("dark:text-[color:var(--color-text-muted-dark)]");
+    const inactiveChip = screen.getByRole("button", { name: "Ism" });
+    expect(inactiveChip.className).toContain("dark:text-white/85");
+    expect(inactiveChip.className).toContain("text-maindark/80");
+    expect(screen.getByRole("button", { name: /Narx/ }).className).toContain("text-white");
+  });
+
+  it("keeps card-mode tables at the container width so a long card cannot push every card's right edge out of view", () => {
+    setViewportWidth(390);
+    const { container, unmount } = render(<Table data={rows} columns={columns} keyExtractor={(row) => row.id} />);
+    // Avtomatik jadval eng keng kartaning min-content'iga cho'zilardi — `table-fixed` 100% da ushlaydi.
+    expect(container.querySelector("table")).toHaveClass("table-fixed");
+    unmount();
+
+    setViewportWidth(1440);
+    const desktop = render(<Table data={rows} columns={columns} keyExtractor={(row) => row.id} />);
+    expect(desktop.container.querySelector("table")).not.toHaveClass("table-fixed");
+  });
+});
+
+describe("Table row keyboard access", () => {
+  afterEach(() => setViewportWidth(1440));
+
+  const bodyRows = (container: HTMLElement) => Array.from(container.querySelectorAll("tbody > tr"));
+
+  it("makes every clickable row focusable as a button with the given accessible name", () => {
+    setViewportWidth(1440);
+    const { container } = render(
+      <Table
+        data={rows}
+        columns={columns}
+        keyExtractor={(row) => row.id}
+        onRowClick={vi.fn()}
+        getRowAriaLabel={(row) => `Mahsulot ${row.name}`}
+      />,
+    );
+
+    const trs = bodyRows(container);
+    expect(trs).toHaveLength(3);
+    for (const tr of trs) {
+      expect(tr).toHaveAttribute("tabindex", "0");
+      expect(tr).toHaveAttribute("role", "button");
+    }
+    expect(screen.getByRole("button", { name: "Mahsulot Apple" })).toBe(trs[1]);
+  });
+
+  it.each([
+    ["Enter", "{Enter}"],
+    ["Space", " "],
+  ])("opens the focused row with %s, passing the row and its index", async (_key, keys) => {
+    setViewportWidth(1440);
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    const { container } = render(<Table data={rows} columns={columns} keyExtractor={(row) => row.id} onRowClick={onRowClick} />);
+
+    await user.tab();
+    expect(bodyRows(container)[0]).toHaveFocus();
+    await user.tab();
+    expect(bodyRows(container)[1]).toHaveFocus();
+    await user.keyboard(keys);
+
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+    expect(onRowClick).toHaveBeenCalledWith(rows[1], 1);
+  });
+
+  it("opens rows from the keyboard in the phone card layout too", async () => {
+    setViewportWidth(390);
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    render(
+      <Table
+        data={rows}
+        columns={columns}
+        keyExtractor={(row) => row.id}
+        onRowClick={onRowClick}
+        mobileRowRender={(row) => <div>{row.name}</div>}
+      />,
+    );
+
+    // Birinchi Tab — saralash chiplari, keyin qatorlar.
+    const firstRow = screen.getAllByRole("button").find((node) => node.tagName === "TR")!;
+    firstRow.focus();
+    await user.keyboard("{Enter}");
+    expect(onRowClick).toHaveBeenCalledWith(rows[0], 0);
+  });
+
+  it("does not open the row when Enter is pressed on a control inside it", async () => {
+    setViewportWidth(1440);
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    const onCopy = vi.fn();
+    render(
+      <Table
+        data={rows}
+        columns={[
+          ...columns,
+          {
+            key: "id",
+            label: "Amal",
+            render: (_: unknown, row: Row) => (
+              <button type="button" onClick={(event) => { event.stopPropagation(); onCopy(row.id); }}>
+                nusxa {row.id}
+              </button>
+            ),
+          },
+        ]}
+        keyExtractor={(row) => row.id}
+        onRowClick={onRowClick}
+      />,
+    );
+
+    screen.getByRole("button", { name: "nusxa 2" }).focus();
+    await user.keyboard("{Enter}");
+
+    expect(onCopy).toHaveBeenCalledWith("2");
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
+
+  it("adds no focus stop, role or key handler when rows are not clickable", async () => {
+    setViewportWidth(1440);
+    const user = userEvent.setup();
+    const { container } = render(<Table data={rows} columns={columns} keyExtractor={(row) => row.id} />);
+
+    for (const tr of bodyRows(container)) {
+      expect(tr).not.toHaveAttribute("tabindex");
+      expect(tr).not.toHaveAttribute("role");
+    }
+    await user.tab();
+    expect(bodyRows(container).some((tr) => tr === document.activeElement)).toBe(false);
+  });
 });

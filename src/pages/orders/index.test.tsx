@@ -1,9 +1,10 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
-import { vi } from "vitest";
+import { vi, type MockInstance } from "vitest";
 import Orders from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { api } from "../../shared/api/api";
 import type { SortConfig } from "../../shared/components/Table/Table.types";
 
 /** `MemoryRouter` brauzer manzilini o'zgartirmaydi — URL `useLocation`dan o'qiladi. */
@@ -19,10 +20,14 @@ const orderRows = Array.from({ length: 10 }, (_, i) => ({
   created_at: "2026-09-20T10:00:00.000Z",
 }));
 
-const ordersResponse = { total: 25, search_truncated: false };
+const ordersResponse: { total: number; search_truncated: boolean; rows: { id: string }[] } = {
+  total: 25,
+  search_truncated: false,
+  rows: orderRows,
+};
 const getOrdersMock = vi.fn((params: { page: number; limit: number }) => ({
   data: {
-    data: orderRows,
+    data: ordersResponse.rows,
     total: ordersResponse.total,
     page: params.page,
     limit: params.limit,
@@ -62,13 +67,22 @@ vi.mock("./list/OrderFilters", async (importOriginal) => ({
 
 vi.mock("./list/OrdersTable", () => ({
   default: ({
+    data,
+    pinnedOrderId,
     sortConfig,
     onSortChange,
   }: {
+    data: { id: string }[];
+    pinnedOrderId?: string;
     sortConfig: SortConfig | null;
     onSortChange: (config: SortConfig | null) => void;
   }) => (
-    <div data-testid="orders-table" data-sort={sortConfig ? `${sortConfig.key}:${sortConfig.direction}` : ""}>
+    <div
+      data-testid="orders-table"
+      data-sort={sortConfig ? `${sortConfig.key}:${sortConfig.direction}` : ""}
+      data-ids={data.map((order) => order.id).join(",")}
+      data-pinned={pinnedOrderId ?? ""}
+    >
       <button type="button" onClick={() => onSortChange({ key: "total_price", direction: "desc" })}>
         sort-by-price
       </button>
@@ -182,5 +196,80 @@ describe("Orders list search", () => {
     open("/orders?orderSearch=ali");
 
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+});
+
+describe("Orders list search by exact order number", () => {
+  const exactOrder = { id: "1", status: "new", total_price: 55000, created_at: "2026-09-01T10:00:00.000Z" };
+  const pageIds = orderRows.map((order) => order.id).join(",");
+  let getSpy: MockInstance<typeof api.get>;
+
+  beforeEach(() => {
+    getOrdersMock.mockClear();
+    ordersResponse.total = 25;
+    ordersResponse.search_truncated = false;
+    ordersResponse.rows = orderRows;
+    // GET /orders/{id} — javob `{ statusCode, message, data: order }` qobig'ida keladi.
+    getSpy = vi.spyOn(api, "get").mockResolvedValue({ data: { statusCode: 200, message: "ok", data: exactOrder } });
+  });
+
+  afterEach(() => {
+    getSpy.mockRestore();
+  });
+
+  const settleLookup = async () => {
+    await waitFor(() => expect(getSpy).toHaveBeenCalled());
+    await act(async () => {
+      await Promise.allSettled(getSpy.mock.results.map((result) => result.value));
+    });
+  };
+
+  it("puts the order whose number equals the search first, even when the server ranked it pages away", async () => {
+    open("/orders?orderSearch=1");
+
+    await waitFor(() => expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "1"));
+    expect(getSpy).toHaveBeenCalledWith("orders/1");
+    expect(screen.getByTestId("orders-table")).toHaveAttribute("data-ids", `1,${pageIds}`);
+  });
+
+  it("does not show the exact order twice when the server already returned it on this page", async () => {
+    ordersResponse.rows = [orderRows[0], { ...exactOrder }, orderRows[1]];
+    open("/orders?orderSearch=1");
+
+    await waitFor(() => expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "1"));
+    expect(screen.getByTestId("orders-table")).toHaveAttribute("data-ids", "1,o-0,o-1");
+  });
+
+  it("pins only on the first page", async () => {
+    open("/orders?orderSearch=1&page=2");
+    await settleLookup();
+
+    expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "");
+    expect(screen.getByTestId("orders-table")).toHaveAttribute("data-ids", pageIds);
+  });
+
+  it("does not look up an order for a search that is not a plain number", async () => {
+    open("/orders?orderSearch=ali");
+    open("/orders?orderSearch=%2B998901234567");
+
+    await act(async () => {});
+    expect(getSpy).not.toHaveBeenCalledWith(expect.stringMatching(/^orders\//));
+  });
+
+  it("adds nothing when there is no such order or the user may not see it", async () => {
+    getSpy.mockRejectedValue(Object.assign(new Error("Not found"), { response: { status: 404 } }));
+    open("/orders?orderSearch=999999");
+    await settleLookup();
+
+    expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "");
+    expect(screen.getByTestId("orders-table")).toHaveAttribute("data-ids", pageIds);
+  });
+
+  it("ignores a lookup answer for a different order", async () => {
+    getSpy.mockResolvedValue({ data: { data: { ...exactOrder, id: "10" } } });
+    open("/orders?orderSearch=1");
+    await settleLookup();
+
+    expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "");
   });
 });

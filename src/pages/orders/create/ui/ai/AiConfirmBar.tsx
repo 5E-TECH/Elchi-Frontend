@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useId, useState } from "react";
 import { Loader2, SendHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../../shared/ui/Popup";
@@ -26,6 +26,7 @@ type AiConfirmBarProps = {
 const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm }: AiConfirmBarProps) => {
   const { t } = useTranslation(["orders", "common"]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const dialogTitleId = useId();
   const readyCount = readyOrders.length;
   const disabled = readyCount === 0 || pending;
 
@@ -58,13 +59,11 @@ const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm }: AiConf
         </button>
       </div>
 
-      <Popup isShow={dialogOpen} onClose={() => setDialogOpen(false)}>
+      <Popup isShow={dialogOpen} onClose={() => setDialogOpen(false)} labelledBy={dialogTitleId}>
         <div
-          role="dialog"
-          aria-modal="true"
           className="flex max-h-[85vh] w-[calc(100vw-32px)] max-w-lg flex-col gap-4 rounded-2xl bg-primary p-5 shadow-xl dark:bg-maindark"
         >
-          <h3 className="text-base font-bold text-maindark dark:text-primary">
+          <h3 id={dialogTitleId} className="text-base font-bold text-maindark dark:text-primary">
             {t("aiConfirmDialogTitle", { count: readyCount })}
           </h3>
           <ul className="flex flex-col gap-1.5 overflow-y-auto text-sm" data-testid="ai-confirm-list">

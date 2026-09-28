@@ -400,5 +400,8 @@
   "aiReasonTruncated": "Matn juda katta — buyurtmalarni 10 tadan qismlarga bo'lib yuboring.",
   "aiReasonNetwork": "AI javob bermadi. Birozdan keyin qayta urinib ko'ring.",
   "aiReasonNoMarket": "Operator marketga biriktirilmagan — administratorga murojaat qiling.",
-  "aiRetryAgain": "Qayta urinib ko'ring"
+  "aiRetryAgain": "Qayta urinib ko'ring",
+  "exactNumberMatch": "Aniq",
+  "exactNumberMatchTitle": "Qidiruvdagi raqamga aynan mos buyurtma",
+  "openOrderRow": "Buyurtma №{{id}}, {{name}}"
 }

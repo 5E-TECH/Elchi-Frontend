@@ -36,5 +36,6 @@
   "integrations": "Integrations",
   "group_system": "System",
   "settlement": "Settlement",
-  "ops": "Ops tools"
+  "ops": "Ops tools",
+  "telegramGroups": "Telegram groups"
 }

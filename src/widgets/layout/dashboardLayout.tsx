@@ -16,8 +16,9 @@ const DashboardLayout = () => {
       {/* Sidebar - Desktop only */}
       <Sidebar />
 
-      {/* Main Content Wrapper */}
-      <div className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden bg-sidebar dark:bg-maindark">
+      {/* Main Content Wrapper — mobil menyu ochiq bo'lsa orqa fon `inert`:
+          Tab va skrinrider menyudan tashqariga chiqmaydi. */}
+      <div inert={isMenuOpen} className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden bg-sidebar dark:bg-maindark">
 
         {/* Header - Sticky */}
         <Header onMenuClick={() => setIsMenuOpen(true)} />
@@ -36,7 +37,9 @@ const DashboardLayout = () => {
       </div>
 
       {/* Mobile Navigation */}
-      <BottomNav />
+      <div inert={isMenuOpen} className="contents">
+        <BottomNav />
+      </div>
 
       {/* Mobile Drawer Menu */}
       <MobileMenu

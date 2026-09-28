@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { X, LogOut, Bell, ScanQrCode, Settings } from "lucide-react";
+import { X, LogOut, Bell, ScanQrCode, Settings, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "../../../shared/lib/useLogout";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
@@ -8,6 +8,11 @@ import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { Controller, useForm } from "react-hook-form";
 import { GlobalSearchInput } from "../../../features/search";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../app/config/store";
+import { canViewNotifications } from "../../../app/lib/access";
+import { useUnreadCount } from "../../../entities/notification-inbox";
+import { useFocusTrap } from "../../../shared/lib/useFocusTrap";
 
 interface MobileMenuProps {
     isOpen: boolean;
@@ -26,6 +31,13 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
         defaultValues: { search: "" },
     });
     const navigate = useNavigate();
+    const hasRole = useSelector((state: RootState) => Boolean(state.role.role));
+    const canManageTelegramGroups = useSelector(canViewNotifications);
+    // Header bilan bir xil so'rov (kesh umumiy) — qo'shimcha so'rov ketmaydi.
+    const { data: unreadCount = 0 } = useUnreadCount(hasRole);
+    // Menyu butun ekranni yopadi — fokus ichida qamaladi, Escape yopadi,
+    // yopilganda fokus "Menyuni ochish" tugmasiga qaytadi.
+    const panelRef = useFocusTrap<HTMLDivElement>(isOpen, { onEscape: onClose });
 
     const currentLogo = theme === "dark" ? LogoTextdark : LogoText;
 
@@ -39,11 +51,19 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     };
 
     return (
-        <div className="fixed inset-0 z-60 overflow-hidden lg:hidden">
-            {/* Backdrop */}
+        <div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("menu")}
+            tabIndex={-1}
+            className="fixed inset-0 z-60 overflow-hidden outline-none lg:hidden"
+        >
+            {/* Backdrop — faqat sichqoncha/teginish uchun, Tab'da to'xtamaydi */}
             <button
                 type="button"
                 aria-label="Close menu"
+                tabIndex={-1}
                 className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-md animate-loader-in"
                 onClick={onClose}
             />
@@ -124,24 +144,50 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                         </div>
                     </button>
 
-                    {/* Notifications — profile sahifasiga yo'naltirish */}
+                    {/* Shaxsiy bildirishnomalar (inbox) — hamma rollar uchun */}
                     <button
                         type="button"
                         onClick={() => {
                             onClose();
-                            navigate("/notifications");
+                            navigate("/inbox");
                         }}
+                        aria-label={unreadCount > 0 ? `${t("notifications")} (${unreadCount})` : t("notifications")}
                         className="group flex w-full items-center justify-between rounded-2xl px-4 py-4 text-maindark/65 transition-all hover:bg-black/5 hover:text-maindark dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
                     >
                         <div className="flex items-center gap-4">
                             <span className="relative rounded-xl bg-black/5 p-2 transition-colors group-hover:bg-main/20 dark:bg-white/5">
                                 <Bell size={20} />
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-darkmain" />
+                                {unreadCount > 0 ? (
+                                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-darkmain" />
+                                ) : null}
                             </span>
                             <span className="font-bold text-sm tracking-wide uppercase">{t("notifications")}</span>
                         </div>
-                        <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
+                        {unreadCount > 0 ? (
+                            <span data-testid="menu-unread-badge" className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                        ) : null}
                     </button>
+
+                    {/* Telegram guruh sozlamalari (/notifications) — faqat superadmin */}
+                    {canManageTelegramGroups ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose();
+                                navigate("/notifications");
+                            }}
+                            className="group flex w-full items-center justify-between rounded-2xl px-4 py-4 text-maindark/65 transition-all hover:bg-black/5 hover:text-maindark dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
+                        >
+                            <div className="flex items-center gap-4">
+                                <span className="rounded-xl bg-black/5 p-2 transition-colors group-hover:bg-main/20 dark:bg-white/5">
+                                    <Send size={20} />
+                                </span>
+                                <span className="font-bold text-sm tracking-wide uppercase">{t("telegramGroups")}</span>
+                            </div>
+                        </button>
+                    ) : null}
                 </div>
 
                 {/* Footer Section - Logout */}

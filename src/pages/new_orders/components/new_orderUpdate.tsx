@@ -69,6 +69,7 @@ import {
 } from "./newOrderUpdateRules";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
+import { getOrderItemName } from "../../../shared/lib/orderItemName";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -950,12 +951,12 @@ const NewOrderUpdate = () => {
                       <div className="flex items-center gap-3">
                         <ProductThumbnail
                           item={item}
-                          alt={item.product?.name ?? t("productFallback")}
+                          alt={getOrderItemName(item, t("productFallback"))}
                           className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-white/8 dark:bg-white/5"
                         />
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {item.product?.name ?? t("productFallback")}
+                            {getOrderItemName(item, t("productFallback"))}
                           </p>
                         </div>
                       </div>
@@ -1295,11 +1296,11 @@ const OrderItemRow = memo(({
     <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
       <ProductThumbnail
         item={item}
-        alt={item.product?.name ?? "—"}
+        alt={getOrderItemName(item, "—")}
         className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/8"
       />
       <span className="flex-1 text-sm font-semibold text-gray-900 dark:text-white truncate">
-        {item.product?.name ?? "—"}
+        {getOrderItemName(item, "—")}
       </span>
       <div className="flex items-center gap-1.5">
         <button

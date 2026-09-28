@@ -44,6 +44,11 @@ interface Props {
     onSelectAll?: (checked: boolean) => void;
     sortConfig?: SortConfig | null;
     onSortChange?: (config: SortConfig | null) => void;
+    /**
+     * Qidiruv to'liq buyurtma raqamiga aynan mos kelgan buyurtma — ro'yxat
+     * boshiga qo'yilgan. `#` ustunida qator tartibi o'rniga belgi chiqadi.
+     */
+    pinnedOrderId?: string;
 }
 
 const formatPhoneNumber = (phone: string | null | undefined) => {
@@ -119,19 +124,38 @@ const formatDate = (iso: string) => {
     });
 };
 
+/** Raqam bo'yicha aniq moslik belgisi (jadval va telefon kartasi uchun bir xil). */
+const ExactMatchBadge = ({ label, title }: { label: string; title: string }) => (
+    <span
+        title={title}
+        data-testid="exact-match-badge"
+        className="inline-flex items-center rounded-md bg-main/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-main dark:bg-main/20 dark:text-violet-200"
+    >
+        {label}
+    </span>
+);
+
 const createColumns = (
     rowNumberOffset: number,
     formatPrice: (num: number) => string,
     onCopyId: (id: string) => void,
     copyLabel: string,
+    pinned: { id: string; label: string; title: string } | null,
 ) => [
     {
         key: "id" as const,
         label: "#",
         width: "50px",
-        render: (_: any, _row: OrderListItem, i: number) => (
-            <span className="text-xs font-semibold text-gray-400">{rowNumberOffset + i + 1}</span>
-        ),
+        render: (_: any, row: OrderListItem, i: number) =>
+            pinned && i === 0 && String(row.id) === pinned.id ? (
+                <ExactMatchBadge label={pinned.label} title={pinned.title} />
+            ) : (
+                // Boshiga qo'yilgan qator qator tartibiga kirmaydi — qolganlar
+                // sahifa bo'yicha avvalgidek raqamlanadi.
+                <span className="text-xs font-semibold text-gray-400">
+                    {rowNumberOffset + i + 1 - (pinned ? 1 : 0)}
+                </span>
+            ),
     },
     {
         key: "customer" as const,
@@ -245,6 +269,7 @@ const OrdersTable = ({
     onSelectAll,
     sortConfig,
     onSortChange,
+    pinnedOrderId,
 }: Props) => {
     const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
@@ -274,7 +299,11 @@ const OrdersTable = ({
         selectableOrders.length > 0 && selectableOrders.every((order) => selectedIds.has(order.id));
     const someSelected = selectableOrders.some((order) => selectedIds.has(order.id));
     const tableColumns = useMemo(() => {
-        const translatedColumns = createColumns(rowNumberOffset, formatPrice, handleCopyOrderId, t("copyOrderNumber")).map((column) => {
+        const pinned =
+            pinnedOrderId && data[0] && String(data[0].id) === pinnedOrderId
+                ? { id: pinnedOrderId, label: t("exactNumberMatch"), title: t("exactNumberMatchTitle") }
+                : null;
+        const translatedColumns = createColumns(rowNumberOffset, formatPrice, handleCopyOrderId, t("copyOrderNumber"), pinned).map((column) => {
             if (column.key === "customer") return { ...column, label: t("customer") };
             if (column.key === "district") return { ...column, label: t("filterRegion") + " / " + t("district") };
             if (column.key === "market") return { ...column, label: t("market") };
@@ -411,6 +440,8 @@ const OrdersTable = ({
         selectedIds,
         someSelected,
         t,
+        pinnedOrderId,
+        data,
     ]);
 
     if (isLoading) {
@@ -460,6 +491,9 @@ const OrdersTable = ({
                         />
                     ) : null}
                     <OrderStatusBadge orderId={order.id} status={order.status} />
+                    {pinnedOrderId && String(order.id) === pinnedOrderId ? (
+                        <ExactMatchBadge label={t("exactNumberMatch")} title={t("exactNumberMatchTitle")} />
+                    ) : null}
                 </div>
                 <OrderIdBadge id={order.id} label={t("copyOrderNumber")} onCopy={handleCopyOrderId} />
             </div>
@@ -576,6 +610,7 @@ const OrdersTable = ({
             keyExtractor={(row) => row.id}
             loading={false}
             onRowClick={onRowClick}
+            getRowAriaLabel={(order) => t("openOrderRow", { id: order.id, name: order.customer?.name ?? "—" })}
             mobileRowRender={renderMobileCard}
             sortConfig={sortConfig}
             onSortChange={onSortChange}

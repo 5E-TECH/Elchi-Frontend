@@ -34,6 +34,20 @@ interface HeaderSearchValues {
   search: string;
 }
 
+/**
+ * O'qilmaganlar belgisi: 0 bo'lsa umuman chiqmaydi, 99 dan ko'p — "99+".
+ * `red-600`: oq 10px matn uchun 4.8:1 (`red-500` da 3.8:1 — yetarli emas edi).
+ */
+const UnreadBadge = ({ count, className = "" }: { count: number; className?: string }) =>
+  count > 0 ? (
+    <span
+      data-testid="unread-badge"
+      className={`absolute flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-[var(--color-card-surface-strong)] bg-red-600 px-1 text-[10px] font-bold leading-none text-white ${className}`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  ) : null;
+
 const Header = ({ onMenuClick }: HeaderProps) => {
   const { logout } = useLogout();
   const { theme } = useTheme();
@@ -356,6 +370,18 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           <Search className="w-5.5 h-5.5" />
         </button>
 
+        {/* Bildirishnomalar — telefonda (lg dan tor) hamburger yonida. Desktopdagi
+            tugma o'z joyida qoladi (pastda), ikkalasidan faqat bittasi ko'rinadi. */}
+        <button
+          type="button"
+          onClick={() => navigate("/inbox")}
+          className="relative flex h-10 w-10 items-center justify-center rounded-xl text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
+          aria-label={unreadCount > 0 ? `${t("notifications")} (${unreadCount})` : t("notifications")}
+        >
+          <Bell className="w-5.5 h-5.5" />
+          <UnreadBadge count={unreadCount} className="right-1 top-1" />
+        </button>
+
         {/* Mobile Hamburger */}
         <button
           type="button"
@@ -384,11 +410,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             aria-label={unreadCount > 0 ? `${t("notifications")} (${unreadCount})` : t("notifications")}
           >
             <Bell className="w-5 h-5" />
-            {unreadCount > 0 ? (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-[var(--color-card-surface-strong)] bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            ) : null}
+            <UnreadBadge count={unreadCount} className="-right-0.5 -top-0.5" />
           </button>
 
           <button
@@ -424,12 +446,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           </div>
         </div>
       </div>
-      <Popup isShow={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)}>
+      <Popup isShow={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} labelledBy="keyboard-shortcuts-title">
         <div
           className="w-[92vw] max-w-md rounded-3xl border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-2xl dark:bg-primarydark"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="keyboard-shortcuts-title"
         >
           <div className="flex items-start justify-between gap-4">
             <div>

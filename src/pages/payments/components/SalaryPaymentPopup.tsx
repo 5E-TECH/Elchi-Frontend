@@ -138,11 +138,8 @@ const SalaryPaymentPopup = ({
   if (!isOpen || !employee) return null;
 
   return (
-    <Popup isShow={isOpen} onClose={onClose}>
+    <Popup isShow={isOpen} onClose={onClose} ariaLabel={t("paySalary")}>
       <section
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("paySalary")}
         className="w-[min(94vw,580px)] overflow-hidden rounded-2xl border border-main/25 bg-primary text-maindark shadow-2xl dark:border-white/10 dark:bg-primarydark dark:text-primary"
       >
         <header className="flex items-center gap-3 bg-main px-5 py-4 text-white">

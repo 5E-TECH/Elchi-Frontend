@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../../shared/ui/Popup";
+import { getOrderItemName } from "../../../../../shared/lib/orderItemName";
 import {
   getActivePendingApproval,
   usePendingExtraCostApprovals,
@@ -40,7 +41,7 @@ const getCatalogProductId = (item: OrderItem): string | null => {
 };
 
 const getItemName = (item: OrderItem, index: number): string =>
-  item.product?.name || item.product_name || `#${index + 1}`;
+  getOrderItemName(item, `#${index + 1}`);
 
 type Order = {
   id: string;

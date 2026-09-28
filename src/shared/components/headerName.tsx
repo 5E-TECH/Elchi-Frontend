@@ -9,6 +9,8 @@ interface HeaderNameProps {
   iconClassName?: string;
   titleClassName?: string;
   descriptionClassName?: string;
+  /** Sarlavha `id`si — oyna `aria-labelledby` bilan shu nomga bog'lanadi. */
+  titleId?: string;
 }
 
 const HeaderName = ({
@@ -20,6 +22,7 @@ const HeaderName = ({
   iconClassName = "",
   titleClassName = "",
   descriptionClassName = "",
+  titleId,
 }: HeaderNameProps) => {
   return (
     <div className={`flex w-full min-w-0 max-w-full items-center gap-3 py-2 text-maindark sm:w-fit sm:min-w-[230px] sm:gap-3.5 sm:py-2.5 ${className}`}>
@@ -30,7 +33,7 @@ const HeaderName = ({
         {icon}
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <h2 className={`m-0 truncate text-[16px] font-extrabold leading-tight text-main sm:text-[18px] dark:text-primary ${titleClassName}`}>
+        <h2 id={titleId} className={`m-0 truncate text-[16px] font-extrabold leading-tight text-main sm:text-[18px] dark:text-primary ${titleClassName}`}>
           {name}
         </h2>
         {description && (
