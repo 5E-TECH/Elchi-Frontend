@@ -400,5 +400,8 @@
   "aiReasonTruncated": "Текст слишком большой — отправляйте заказы частями по 10.",
   "aiReasonNetwork": "AI не ответил. Попробуйте ещё раз чуть позже.",
   "aiReasonNoMarket": "Оператор не привязан к маркету — обратитесь к администратору.",
-  "aiRetryAgain": "Попробовать снова"
+  "aiRetryAgain": "Попробовать снова",
+  "exactNumberMatch": "Точно",
+  "exactNumberMatchTitle": "Заказ, точно совпадающий с номером в поиске",
+  "openOrderRow": "Заказ №{{id}}, {{name}}"
 }

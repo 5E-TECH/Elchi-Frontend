@@ -400,5 +400,8 @@
   "aiReasonTruncated": "The text is too long — send the orders in parts of 10.",
   "aiReasonNetwork": "AI did not respond. Please try again in a moment.",
   "aiReasonNoMarket": "The operator is not linked to a market — contact an administrator.",
-  "aiRetryAgain": "Try again"
+  "aiRetryAgain": "Try again",
+  "exactNumberMatch": "Exact",
+  "exactNumberMatchTitle": "Order that exactly matches the searched number",
+  "openOrderRow": "Order №{{id}}, {{name}}"
 }

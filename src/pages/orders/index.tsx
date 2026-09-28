@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { message } from "antd";
+import { useQuery } from "@tanstack/react-query";
 import Button from "../../shared/components/button";
 import HeaderName from "../../shared/components/headerName";
 import { useOrders } from "../../entities/order/api/orderApi";
@@ -35,6 +36,7 @@ import CancelModal from "./list/courier/list/CancelModal";
 import PopupConfirm from "../../shared/components/popupConfirm";
 import OrderTabs from "./list/courier/list/tabs";
 import { setFilterValue } from "../../shared/model/filterSlice";
+import { getOrderItemName } from "../../shared/lib/orderItemName";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../scan/lib/scanShared";
@@ -604,6 +606,39 @@ const Orders = () => {
     ?? {};
   const items = useMemo<OrderListItem[]>(() => data?.data ?? [], [data?.data]);
   const currentPage = toPositiveNumber(data?.page ?? rawPagination.page) ?? page;
+
+  /**
+   * RAQAM BO'YICHA ANIQ MOSLIK (hOGoAoq4). Backend qidiruvi raqamni matn
+   * sifatida qidiradi va aynan mos buyurtmani tepaga chiqarmaydi: "1"
+   * qidirilganda №1 13-sahifada chiqardi. Qidiruv to'liq raqam bo'lsa o'sha
+   * buyurtma ALOHIDA olinadi va 1-sahifaning boshiga qo'yiladi (sahifada
+   * takrorlanmaydi). Ruxsatni backend tekshiradi: begona buyurtma 403/404 —
+   * hech narsa qo'shilmaydi.
+   */
+  const exactOrderId = /^\d{1,12}$/.test(urlSearch.trim()) ? urlSearch.trim() : "";
+  const { data: exactOrder } = useQuery({
+    queryKey: ["orders", "exact-number", exactOrderId],
+    queryFn: () =>
+      api
+        .get(API_ENDPOINTS.ORDERS.BY_ID(exactOrderId))
+        .then((res) => {
+          const body = res.data as { data?: OrderListItem } | OrderListItem | undefined;
+          const order = (body && "data" in body ? body.data : body) as OrderListItem | undefined;
+          return order && String(order.id) === exactOrderId ? order : null;
+        })
+        .catch(() => null),
+    enabled: Boolean(exactOrderId),
+    retry: false,
+    staleTime: 30_000,
+  });
+  const pinnedOrderId = exactOrderId && exactOrder && currentPage === 1 ? String(exactOrder.id) : "";
+  const tableItems = useMemo<OrderListItem[]>(
+    () =>
+      pinnedOrderId && exactOrder
+        ? [exactOrder, ...items.filter((order) => String(order.id) !== pinnedOrderId)]
+        : items,
+    [exactOrder, items, pinnedOrderId],
+  );
   const itemsPerPage = toPositiveNumber(data?.limit ?? rawPagination.limit) ?? limit;
   const total = toPositiveNumber(data?.total ?? rawPagination.total) ?? items.length;
   const canSendCancelledToHq = canUseManagerTabs && activeManagerTab === "cancelled";
@@ -716,10 +751,7 @@ const Orders = () => {
              * yasalardi.
              */
             ...(productId ? { id: productId } : {}),
-            name:
-              orderItem.product?.name ??
-              orderItem.product_name ??
-              (productId ? `#${productId}` : "—"),
+            name: getOrderItemName({ ...orderItem, product_id: productId }, "—"),
             image_url: orderItem.product?.image_url ?? null,
           },
         };
@@ -1058,7 +1090,8 @@ const Orders = () => {
 
         {/* Table */}
         <OrdersTable
-          data={items}
+          data={tableItems}
+          pinnedOrderId={pinnedOrderId || undefined}
           isLoading={isLoading}
           rowNumberOffset={(currentPage - 1) * itemsPerPage}
           onRowClick={(order) => navigate(`edit/${order.id}`)}

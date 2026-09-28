@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from "react";
+import { memo, useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { X, ImagePlus } from "lucide-react";
 import Button from "./button";
@@ -40,15 +40,16 @@ const UpdatePopup = ({
   const { t } = useTranslation("common");
   const resolvedSaveLabel = saveLabel ?? t("save");
   const resolvedCancelLabel = cancelLabel ?? t("cancel");
+  const titleId = useId();
 
   return (
-    <Popup isShow={isOpen} onClose={onClose}>
+    <Popup isShow={isOpen} onClose={onClose} labelledBy={titleId}>
       <div className={`w-[92vw] ${widthClassName} flex max-h-[90vh] flex-col overflow-hidden rounded-3xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(246,248,255,0.99)_100%)] shadow-[0_30px_70px_rgba(46,54,98,0.18)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:bg-none dark:shadow-[0_30px_70px_rgba(0,0,0,0.34)]`}>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(124,92,255,0.08)_0%,rgba(124,92,255,0.02)_100%)] p-6 dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:bg-none">
           <div className="flex items-center gap-3">
             {icon && <div className="text-main">{icon}</div>}
-            <h3 className="text-xl font-semibold tracking-wide text-maindark dark:text-primary">{title}</h3>
+            <h3 id={titleId} className="text-xl font-semibold tracking-wide text-maindark dark:text-primary">{title}</h3>
           </div>
           <X
             className="cursor-pointer text-[color:var(--color-text-muted)] transition-colors hover:text-maindark dark:text-[color:var(--color-text-muted-dark)] dark:hover:text-primary"

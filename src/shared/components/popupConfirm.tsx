@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from "react";
+import { memo, useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, CheckCircle2, Trash2 } from "lucide-react";
 import Popup from "../ui/Popup";
@@ -54,15 +54,16 @@ const PopupConfirm = ({
   const resolvedCancelLabel = cancelLabel ?? t("cancel");
   const HeaderIcon = variant === "success" ? CheckCircle2 : AlertTriangle;
   const ConfirmIcon = variant === "danger" ? Trash2 : CheckCircle2;
+  const titleId = useId();
 
   return (
-    <Popup isShow={isOpen} onClose={onClose}>
+    <Popup isShow={isOpen} onClose={onClose} labelledBy={titleId}>
       <div data-theme={theme} className={`${popupStyles.panel} w-[92vw] max-w-md rounded-[1.75rem] px-8 py-7 text-center shadow-2xl`}>
         <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${iconBg}`}>
           <HeaderIcon size={28} className={iconColor} />
         </div>
 
-        <h3 className="mb-2 text-xl font-bold text-maindark dark:text-white">
+        <h3 id={titleId} className="mb-2 text-xl font-bold text-maindark dark:text-white">
           {resolvedTitle}
         </h3>
 

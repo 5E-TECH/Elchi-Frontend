@@ -90,6 +90,9 @@ export const canViewFinancialBalance: Predicate = hasRole("superadmin", "admin")
 
 export const canViewNotifications: Predicate = hasRole("superadmin");
 
+/** Xabar yuborish (`/notifications/send`) — backend `POST /notifications/dispatch` `@Roles(SUPERADMIN, ADMIN)` bilan AYNAN bir xil. */
+export const canSendNotifications: Predicate = hasRole("superadmin", "admin");
+
 export const canViewBranches: Predicate = hasRole("superadmin");
 
 export const canViewLogs: Predicate = hasRole("superadmin");

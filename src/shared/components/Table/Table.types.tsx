@@ -25,6 +25,11 @@ export interface TableProps<T> {
   emptyState?: React.ReactNode;
   loadingRows?: number;
   onRowClick?: (row: T, index: number) => void;
+  /**
+   * Bosiladigan qatorning skrinriderdagi nomi (masalan "Buyurtma №123, Ali").
+   * Berilmasa qator matni o'qiladi.
+   */
+  getRowAriaLabel?: (row: T, index: number) => string;
   mobileRowRender?: (row: T, index: number) => React.ReactNode;
   className?: string;
   headerCellClassName?: string;

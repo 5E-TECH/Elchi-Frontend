@@ -9,6 +9,7 @@ import {
   canViewUsers,
   canViewFinancialBalance,
   canViewNotifications,
+  canSendNotifications,
   canViewBranches,
   canViewLogs,
   canViewDispatchPage,
@@ -134,6 +135,7 @@ const RegionDistrictsPage = lazy(() => import("../../pages/region/pages/district
 const RegionSatoManagementPage = lazy(() => import("../../pages/region/pages/sato-management"));
 const RegionLogistAssignmentPage = lazy(() => import("../../pages/region/pages/logist-assignment"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
+const NotificationSendPage = lazy(() => import("../../pages/notification-send"));
 const NotificationInboxPage = lazy(
   () => import("../../pages/notifications/ui/NotificationInboxPage"),
 );
@@ -944,6 +946,14 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewNotifications}>
                   <NotificationsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "notifications/send",
+              element: (
+                <ProtectedRoute canActivate={canSendNotifications}>
+                  <NotificationSendPage />
                 </ProtectedRoute>
               ),
             },

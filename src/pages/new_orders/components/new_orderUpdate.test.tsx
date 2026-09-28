@@ -17,7 +17,7 @@ const order = {
   items: [],
 };
 
-const orderState: { comment: string | null; items: unknown[] } = { comment: null, items: [] };
+const orderState: { comment: string | null; items: unknown[]; status?: string } = { comment: null, items: [] };
 
 // SellModal'ga uzatilgan `order` — qisman sotish payload'i shundan quriladi.
 const sellModalProps = vi.hoisted(() => ({ last: null as null | { order: { items: unknown[] } | null } }));
@@ -27,7 +27,7 @@ const idleMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
     useGetOrderById: () => ({
-      data: { data: { ...order, comment: orderState.comment, items: orderState.items } },
+      data: { data: { ...order, status: orderState.status ?? order.status, comment: orderState.comment, items: orderState.items } },
       isLoading: false,
     }),
     updateNewOrder: idleMutation,
@@ -127,5 +127,58 @@ describe("NewOrderUpdate partial-sell items", () => {
       expect.objectContaining({ id: "124", product_id: null, product: expect.objectContaining({ id: null, name: "tv" }) }),
       expect.objectContaining({ id: "1251136", product_id: "8", product: expect.objectContaining({ id: "8", name: "psarinorm" }) }),
     ]);
+  });
+});
+
+describe("NewOrderUpdate catalog-less product names", () => {
+  // Jonli #1251134: tashqi buyurtma — `product` ham, `product_id` ham null, nom `product_name` da.
+  const externalItems = [
+    { id: "i1", quantity: 1, product_id: null, product: null, product_name: "Telefon ushlagich magnitli" },
+    { id: "i2", quantity: 1, product_id: null, product: null, product_name: "Avtomobil qoplamasi" },
+    { id: "i3", quantity: 1, product_id: null, product: null, product_name: "Oyna tozalagich suyuqlik" },
+    { id: "i4", quantity: 1, product_id: null, product: null, product_name: "Avto changyutgich" },
+  ];
+  const names = externalItems.map((item) => item.product_name);
+
+  afterEach(() => {
+    orderState.items = [];
+    orderState.status = undefined;
+  });
+
+  it("shows each product_name on the detail page instead of a generic \"Mahsulot\"", () => {
+    orderState.items = externalItems;
+    renderPage();
+
+    for (const name of names) expect(screen.getByText(name)).toBeInTheDocument();
+    // Faqat ustun sarlavhasi qoladi — ilgari har qator uchun yana "Mahsulot" (jami 5 ta).
+    expect(screen.getAllByText("Mahsulot")).toHaveLength(1);
+  });
+
+  it("shows the same names in the edit popup instead of \"—\"", async () => {
+    const user = userEvent.setup();
+    orderState.items = externalItems;
+    // Mahsulotlarni faqat qabul qilinmagan buyurtmada tahrirlash mumkin.
+    orderState.status = "new";
+    renderPage();
+
+    const dashesBefore = screen.queryAllByText("—").length;
+    await user.click(screen.getAllByRole("button", { name: "Tahrirlash" })[0]);
+    await screen.findByText("Buyurtmani tahrirlash");
+
+    // Har nom endi ikki joyda: detal ro'yxati + tahrirlash oynasi (ilgari oynada "—").
+    for (const name of names) expect(screen.getAllByText(name)).toHaveLength(2);
+    expect(screen.queryAllByText("—")).toHaveLength(dashesBefore);
+  });
+
+  it("keeps the catalog name for catalog products and falls back to #product_id without any name", () => {
+    orderState.items = [
+      { id: "c1", quantity: 2, product_id: "6", product: { id: "6", name: "Televizor" }, product_name: "eski nom" },
+      { id: "c2", quantity: 1, product_id: "8", product: null, product_name: null },
+    ];
+    renderPage();
+
+    expect(screen.getByText("Televizor")).toBeInTheDocument();
+    expect(screen.queryByText("eski nom")).not.toBeInTheDocument();
+    expect(screen.getByText("#8")).toBeInTheDocument();
   });
 });

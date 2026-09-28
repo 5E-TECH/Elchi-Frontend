@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, memo, type ReactElement } from 'react';
+import { useState, useMemo, useEffect, useRef, memo, type KeyboardEvent, type ReactElement } from 'react';
 import type { TableProps, ColumnConfig, SortConfig } from './Table.types';
 import EmptyState from '../../ui/EmptyState';
 import TableSkeleton from '../../ui/TableSkeleton';
@@ -12,6 +12,7 @@ export const Table = memo(<T extends object>({
   emptyState,
   loadingRows = 6,
   onRowClick,
+  getRowAriaLabel,
   mobileRowRender,
   className = '',
   headerCellClassName,
@@ -187,8 +188,14 @@ export const Table = memo(<T extends object>({
       className={`min-w-0 overflow-hidden rounded-xl bg-primary shadow-sm sm:rounded-2xl dark:bg-white/[0.025] ${bordered ? 'border border-[color:var(--color-border-strong)] dark:border-white/10' : ''}`}
     >
       {isCardMode && sortableColumns.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto border-b border-[color:var(--color-border-strong)] px-2 py-2 custom-scrollbar dark:border-primarydark/40">
-          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-maindark/50 dark:text-sidebar/50">
+        // ⚠️ Dark rejimda `--color-sidebar` fon bilan BIR XIL (#252039) — ilgari
+        // `dark:text-sidebar/50` yorliq va chiplar ~1.05:1 kontrastda deyarli
+        // ko'rinmasdi. Matn ranglari ikkala temada ham ≥ 4.5:1.
+        <div
+          data-testid="mobile-sort-bar"
+          className="flex items-center gap-2 overflow-x-auto border-b border-[color:var(--color-border-strong)] px-2 py-2 custom-scrollbar dark:border-primarydark/40"
+        >
+          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-maindark/75 dark:text-[color:var(--color-text-muted-dark)]">
             {sortLabel}
           </span>
           {sortableColumns.map((column) => {
@@ -202,7 +209,7 @@ export const Table = memo(<T extends object>({
                 className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
                   isActive
                     ? 'border-main bg-main text-white'
-                    : 'border-[color:var(--color-border-strong)] text-maindark/70 dark:border-primarydark/40 dark:text-sidebar/70'
+                    : 'border-[color:var(--color-border-strong)] text-maindark/80 dark:border-white/20 dark:text-white/85'
                 }`}
               >
                 <span>{column.label}</span>
@@ -213,7 +220,11 @@ export const Table = memo(<T extends object>({
         </div>
       )}
       <div className={`${isCardMode ? "overflow-visible" : "overflow-x-auto"} custom-scrollbar`}>
-        <table className={`w-full min-w-full border-collapse ${isCompactMode ? 'table-fixed' : ''} ${className}`}>
+        {/* ⚠️ Kartalar rejimida ham `table-fixed` shart: avtomatik jadval eng keng
+            kartaning min-content'iga cho'ziladi (masalan uzun mijoz ismi — `truncate`
+            buni kamaytirmaydi) va BARCHA kartalarning o'ng cheti (№raqam) tashqi
+            `overflow-hidden` ostida kesilib qolardi (390px). */}
+        <table className={`w-full min-w-full border-collapse ${isCompactMode || isCardMode ? 'table-fixed' : ''} ${className}`}>
           <thead className={isCardMode ? 'hidden' : 'table-header-group'}>
             <tr style={{
               background:
@@ -256,6 +267,24 @@ export const Table = memo(<T extends object>({
                 <tr
                   key={keyExtractor(row, rowIndex)}
                   onClick={() => onRowClick?.(row, rowIndex)}
+                  // Bosiladigan qator klaviaturadan ham ochilsin: Tab bilan fokus,
+                  // Enter/Space — xuddi bosishdek. `onRowClick` yo'q jadvalda
+                  // keraksiz fokus nuqtasi qo'shilmaydi. Qator ICHIDAGI tugma
+                  // (nusxalash, checkbox) Enter'i qatorni ochib yubormasligi uchun
+                  // faqat qatorning o'zidagi bosish ushlanadi.
+                  {...(onRowClick
+                    ? {
+                        tabIndex: 0,
+                        role: 'button',
+                        'aria-label': getRowAriaLabel?.(row, rowIndex),
+                        onKeyDown: (event: KeyboardEvent<HTMLTableRowElement>) => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key !== 'Enter' && event.key !== ' ') return;
+                          event.preventDefault();
+                          onRowClick(row, rowIndex);
+                        },
+                      }
+                    : {})}
                   className={
                     isCardMode
                       ? mobileRowRender

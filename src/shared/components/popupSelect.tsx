@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type ReactNode, useMemo } from 'react';
+import { memo, useId, useState, type ReactNode, useMemo } from 'react';
 import { useTranslation } from "react-i18next";
 import HeaderName from './headerName';
 import { Check, X } from 'lucide-react';
@@ -51,6 +51,7 @@ const PopupSelect = <T extends object>({
   const resolvedSelectLabel = selectLabel ?? t("select");
   const resolvedCancelLabel = cancelLabel ?? t("cancel");
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
+  const titleId = useId();
   const { control, watch } = useForm({
     defaultValues: { search: "" },
   });
@@ -87,30 +88,15 @@ const PopupSelect = <T extends object>({
     }
   }
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown, true);
-    return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [isOpen, onClose]);
-
+  // Escape, fokus qamog'i va `role="dialog"` — umumiy `Popup` da.
   return (
-    <Popup isShow={isOpen} onClose={onClose}>
+    <Popup isShow={isOpen} onClose={onClose} labelledBy={titleId}>
       <div
-        role="dialog"
-        aria-modal="true"
         className={`relative flex max-h-[90vh] w-[92vw] max-w-140 flex-col rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(246,248,255,0.99)_100%)] px-5 py-7 text-maindark shadow-[0_30px_70px_rgba(46,54,98,0.18)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:bg-none dark:text-primary dark:shadow-[0_30px_70px_rgba(0,0,0,0.34)] md:px-8 md:py-10 ${className}`}
       >
         <div className="flex justify-between items-center mb-6">
           <HeaderName
+            titleId={titleId}
             name={title}
             description={description}
             icon={icon}

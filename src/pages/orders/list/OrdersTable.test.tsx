@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import OrdersTable from "./OrdersTable";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -192,5 +192,65 @@ describe("OrdersTable", () => {
     await user.click(screen.getByRole("columnheader", { name: "Mijoz" }));
 
     expect(onSortChange).not.toHaveBeenCalled();
+  });
+
+  it("marks the pinned exact-number match instead of a row number and keeps the others numbered from 1", () => {
+    const rows = [
+      { ...orders[0], id: "1", customer: { name: "Aniq Mijoz", phone_number: "+998901111111" } },
+      { ...orders[0], id: "o-2" },
+      { ...orders[0], id: "o-3" },
+    ];
+
+    renderWithProviders(<OrdersTable data={rows as never} isLoading={false} pinnedOrderId="1" />);
+
+    const bodyRows = screen.getAllByRole("row").slice(1);
+    const badge = within(bodyRows[0]).getByTestId("exact-match-badge");
+    expect(badge).toHaveTextContent("Aniq");
+    expect(badge).toHaveAttribute("title", "Qidiruvdagi raqamga aynan mos buyurtma");
+    expect(within(bodyRows[1]).getAllByRole("cell")[0]).toHaveTextContent(/^#?1$/);
+    expect(within(bodyRows[2]).getAllByRole("cell")[0]).toHaveTextContent(/^#?2$/);
+    expect(screen.getAllByTestId("exact-match-badge")).toHaveLength(1);
+  });
+
+  it("numbers rows as usual without a pinned match", () => {
+    const rows = [
+      { ...orders[0], id: "o-2" },
+      { ...orders[0], id: "o-3" },
+    ];
+
+    renderWithProviders(<OrdersTable data={rows as never} isLoading={false} rowNumberOffset={20} />);
+
+    const bodyRows = screen.getAllByRole("row").slice(1);
+    expect(within(bodyRows[0]).getAllByRole("cell")[0]).toHaveTextContent(/^#?21$/);
+    expect(within(bodyRows[1]).getAllByRole("cell")[0]).toHaveTextContent(/^#?22$/);
+    expect(screen.queryByTestId("exact-match-badge")).not.toBeInTheDocument();
+  });
+
+  it("shows the exact-match badge on the phone card too", () => {
+    Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 390 });
+    try {
+      renderWithProviders(
+        <OrdersTable data={[{ ...orders[0], id: "1" }, { ...orders[0], id: "o-2" }] as never} isLoading={false} pinnedOrderId="1" />,
+      );
+
+      const badges = screen.getAllByTestId("exact-match-badge");
+      expect(badges).toHaveLength(1);
+      expect(badges[0]).toHaveTextContent("Aniq");
+    } finally {
+      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+    }
+  });
+
+  it("names each clickable row by order number and customer for keyboard and screen-reader users", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    renderWithProviders(<OrdersTable data={orders as never} isLoading={false} onRowClick={onRowClick} />);
+
+    const row = screen.getByRole("button", { name: "Buyurtma №o-1, Ali" });
+    expect(row.tagName).toBe("TR");
+    row.focus();
+    await user.keyboard("{Enter}");
+
+    expect(onRowClick).toHaveBeenCalledWith(expect.objectContaining({ id: "o-1" }), 0);
   });
 });
