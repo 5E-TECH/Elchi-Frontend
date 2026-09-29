@@ -1,10 +1,17 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render as rtlRender, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import {
   NotificationProvider,
   useAppNotification,
 } from "./NotificationProvider";
+
+// Ilovada NotificationProvider doim QueryClientProvider ichida turadi
+// ("Qayta urinish" so'rovlarni qayta yuklaydi, sahifani emas).
+const render = (ui: ReactElement) =>
+  rtlRender(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
 
 const successMock = vi.fn();
 const errorMock = vi.fn();

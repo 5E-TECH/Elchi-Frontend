@@ -22,7 +22,8 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
   const { t } = useTranslation("payments");
   const chartData = useMemo<ChartItem[]>(() => {
     const cashAmount = toFinancialNumber(financialData?.main?.balance);
-    const courierAmount = toFinancialNumber(
+    const receivableAmount = toFinancialNumber(
+      financialData?.receivable ??
       financialData?.couriers?.couriersTotalBalanse ??
       financialData?.couriers?.couriersTotalBalance,
     );
@@ -33,7 +34,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
 
     return [
       { name: t("financialBalanceCashbox"), amount: cashAmount, color: "#7C3AED" },
-      { name: t("financialBalanceCouriers"), amount: courierAmount, color: "#10B981" },
+      { name: t("financialBalanceReceivable"), amount: receivableAmount, color: "#10B981" },
       { name: t("financialBalanceMarkets"), amount: marketAmount, color: "#E24B4A" },
     ];
   }, [financialData, t]);

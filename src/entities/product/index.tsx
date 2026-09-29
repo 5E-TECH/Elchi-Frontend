@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../shared/api/api";
+import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
 export const products = "products";
@@ -10,7 +10,8 @@ export const useProducts = () => {
   const client = useQueryClient();
 
   const createProduct = useMutation({
-    mutationFn: (data: FormData) => api.post(API_ENDPOINTS.PRODUCTS.BASE, data),
+    mutationFn: (data: FormData) =>
+      api.post(API_ENDPOINTS.PRODUCTS.BASE, data, { timeout: LONG_REQUEST_TIMEOUT_MS }),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [products] });
       client.invalidateQueries({ queryKey: ["market"] });
@@ -34,7 +35,7 @@ export const useProducts = () => {
 
   const updateProduct = useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      api.patch(API_ENDPOINTS.PRODUCTS.BY_ID(id), data),
+      api.patch(API_ENDPOINTS.PRODUCTS.BY_ID(id), data, { timeout: LONG_REQUEST_TIMEOUT_MS }),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [products] });
       client.invalidateQueries({ queryKey: ["market"] });
@@ -43,7 +44,7 @@ export const useProducts = () => {
 
   const updateMyProduct = useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      api.patch(API_ENDPOINTS.PRODUCTS.UPDATE_MY(id), data),
+      api.patch(API_ENDPOINTS.PRODUCTS.UPDATE_MY(id), data, { timeout: LONG_REQUEST_TIMEOUT_MS }),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: [products] });
       client.invalidateQueries({ queryKey: ["market"] });

@@ -483,7 +483,7 @@ const PartnersPage = () => {
                 setWebhookPartner(e.target.value);
                 setWebhookPage(1);
               }}
-              className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
+              className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-base md:text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
             >
               <option value="">{t("partnerAllPartners")}</option>
               {partners.map((p) => (
@@ -498,7 +498,7 @@ const PartnersPage = () => {
                 setWebhookStatus(e.target.value);
                 setWebhookPage(1);
               }}
-              className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
+              className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-base md:text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
             >
               <option value="all">{t("partnerAllStatuses")}</option>
               <option value="pending">{t("partnerStatusPending")}</option>
@@ -652,7 +652,7 @@ const PartnersPage = () => {
                     value={form[key]}
                     onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                    className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                   />
                 </label>
               ))}
@@ -705,7 +705,7 @@ const PartnersPage = () => {
                 <input
                   value={editForm.name}
                   onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
               </label>
 
@@ -717,7 +717,7 @@ const PartnersPage = () => {
                   value={editForm.webhook_url}
                   onChange={(e) => setEditForm((f) => ({ ...f, webhook_url: e.target.value }))}
                   placeholder="https://..."
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
                 <span className="text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {t("partnerWebhookUrlHint")}
@@ -738,7 +738,7 @@ const PartnersPage = () => {
                     }))
                   }
                   autoComplete="new-password"
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
+                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
                 />
                 <span className="text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                   {t("partnerSecretHint")}

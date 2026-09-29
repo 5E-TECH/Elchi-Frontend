@@ -51,25 +51,17 @@ export default defineConfig({
             return "vendor-react";
           }
 
-          if (
-            id.includes("antd") ||
-            id.includes("@ant-design") ||
-            id.includes("@rc-component/qrcode")
-          ) {
-            return "vendor-antd";
-          }
+          // ⚠️ antd uchun yagona `vendor-antd` chunk YO'Q (2UGfsfOl): u butun
+          // kutubxonani (326 KB gzip) har sahifada eager qilardi. Vite antd
+          // komponentlarini ularni ishlatadigan route chunklariga o'zi bo'ladi.
 
-          if (id.includes("recharts") || id.includes("d3-")) {
-            return "vendor-charts";
-          }
+          // ⚠️ recharts/d3 uchun ham qo'lda chunk yo'q: antd qoidasi olingach bu
+          // qoida `vendor-charts` (112 KB gzip) ni entry'ga eager tortardi.
+          // Grafiklar faqat ularni ko'rsatadigan (lazy) widget chunklarida.
 
-          if (id.includes("jspdf")) {
-            return "vendor-jspdf";
-          }
-
-          if (id.includes("html2canvas")) {
-            return "vendor-html2canvas";
-          }
+          // ⚠️ jsPDF / html2canvas uchun qo'lda chunk YO'Q (z4uyw52T): u Vite
+          // preload-helper'ni o'sha chunkka tortib, jsPDF'ni har sahifada (hatto
+          // /login da) yuklatardi. Ular faqat dinamik import orqali keladi.
 
           // ─── Qo'shimcha chunk ajratmalar ────────────────────────────────
           if (id.includes("lucide-react")) {
@@ -80,9 +72,6 @@ export default defineConfig({
             return "vendor-i18n";
           }
 
-          if (id.includes("qrcode") || id.includes("jsqr")) {
-            return "vendor-qrcode";
-          }
         },
       },
     },

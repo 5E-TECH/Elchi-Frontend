@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, memo, type KeyboardEvent, type Re
 import type { TableProps, ColumnConfig, SortConfig } from './Table.types';
 import EmptyState from '../../ui/EmptyState';
 import TableSkeleton from '../../ui/TableSkeleton';
+import QueryErrorState from '../../ui/QueryErrorState';
 
 export const Table = memo(<T extends object>({
   data,
@@ -11,6 +12,8 @@ export const Table = memo(<T extends object>({
   emptyMessage = "Ma'lumot topilmadi",
   emptyState,
   loadingRows = 6,
+  error = false,
+  onRetry,
   onRowClick,
   getRowAriaLabel,
   mobileRowRender,
@@ -259,7 +262,11 @@ export const Table = memo(<T extends object>({
                   colSpan={isCardMode ? cardColumns.length : columns.length}
                   className={`${dense ? 'px-3 py-8' : 'px-6 py-10'} ${isCardMode ? 'block' : 'table-cell'} text-center text-maindark/50 dark:text-sidebar/50`}
                 >
-                  {emptyState ?? <EmptyState title={emptyMessage} className="border-0 bg-transparent shadow-none" />}
+                  {error ? (
+                    <QueryErrorState onRetry={onRetry} className="border-0 bg-transparent shadow-none" />
+                  ) : (
+                    emptyState ?? <EmptyState title={emptyMessage} className="border-0 bg-transparent shadow-none" />
+                  )}
                 </td>
               </tr>
             ) : (

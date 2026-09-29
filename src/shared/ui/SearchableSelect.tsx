@@ -288,7 +288,7 @@ const SearchableSelect = ({
             aria-expanded={isOpen}
             aria-haspopup="listbox"
             placeholder={selectedOption?.label ?? displayPlaceholder}
-            className={`min-w-0 flex-1 bg-transparent text-sm font-semibold text-[color:var(--color-maindark)] outline-none placeholder:text-[color:var(--color-text-muted)] dark:text-white dark:placeholder:text-white/45 ${Icon ? "pl-7" : ""}`}
+            className={`min-w-0 flex-1 bg-transparent text-base md:text-sm font-semibold text-[color:var(--color-maindark)] outline-none placeholder:text-[color:var(--color-text-muted)] dark:text-white dark:placeholder:text-white/45 ${Icon ? "pl-7" : ""}`}
           />
         ) : (
           <button

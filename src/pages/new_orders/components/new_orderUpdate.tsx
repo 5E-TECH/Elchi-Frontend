@@ -1236,7 +1236,7 @@ const NewOrderUpdate = () => {
               onChange={handleOrderCommentChange}
               placeholder={t("enterNote")}
               rows={4}
-              className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all resize-none placeholder:text-gray-400 dark:placeholder:text-white/80"
+              className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white text-base md:text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all resize-none placeholder:text-gray-400 dark:placeholder:text-white/80"
             />
           </div>
         </div>

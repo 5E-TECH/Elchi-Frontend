@@ -1,13 +1,27 @@
-import { memo, useMemo, type ReactNode } from "react";
+import { lazy, memo, Suspense, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { CheckCircle2, Clock3, Map as MapIcon, Loader2, Package, TrendingUp, Wallet, XCircle } from "lucide-react";
-import UzbekistanRegionMap from "../../../pages/region/ui/UzbekistanRegionMap";
+import DeferredMount from "../../../shared/ui/DeferredMount";
 import { useRegionDetailStats, useRegionStats, toRegionMapItems, type DistrictStatsItem } from "../../../entities/region";
 import { TYPO, TEXT } from "../../../shared/config/designSystem";
 import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import { getTodayRange } from "../../../shared/lib/dateRange";
 import type { RootState } from "../../../app/config/store";
+
+/**
+ * Highcharts xaritasi (~142 KB gzip) dashboardda ekrandan ancha pastda — u
+ * faqat foydalanuvchi shu joyga yaqinlashganda yuklanadi (NIFAnCvf). Namuna:
+ * pages/region/index.tsx dagi lazy import.
+ */
+const UzbekistanRegionMap = lazy(() => import("../../../pages/region/ui/UzbekistanRegionMap"));
+const MAP_PLACEHOLDER_HEIGHT = 600;
+
+const MapPlaceholder = () => (
+  <div className="flex items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)]" style={{ height: MAP_PLACEHOLDER_HEIGHT }}>
+    <Loader2 className="h-7 w-7 animate-spin" style={{ color: "var(--color-main)" }} />
+  </div>
+);
 
 /**
  * RegionStatsCard — Dashboard uchun hududlar bo'yicha xarita widgeti.
@@ -268,13 +282,17 @@ const RegionStatsCard = memo(({
           <Loader2 className="h-7 w-7 animate-spin" style={{ color: "var(--color-main)" }} />
         </div>
       ) : (
-        <UzbekistanRegionMap
-          regions={toRegionMapItems(regions)}
-          summary={summary}
-          startDate={params.startDate}
-          endDate={params.endDate}
-          showFinancialMetrics={showFinancialMetrics}
-        />
+        <DeferredMount minHeight={MAP_PLACEHOLDER_HEIGHT}>
+          <Suspense fallback={<MapPlaceholder />}>
+            <UzbekistanRegionMap
+              regions={toRegionMapItems(regions)}
+              summary={summary}
+              startDate={params.startDate}
+              endDate={params.endDate}
+              showFinancialMetrics={showFinancialMetrics}
+            />
+          </Suspense>
+        </DeferredMount>
       )}
     </section>
   );

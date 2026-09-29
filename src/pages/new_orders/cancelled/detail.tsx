@@ -891,7 +891,7 @@ const CancelledMarketDetail = () => {
                 <select
                   value={manualReason}
                   onChange={(event) => setManualReason(event.target.value)}
-                  className="min-h-12 w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 text-sm font-bold text-maindark outline-none transition focus:border-main focus:ring-4 focus:ring-main/10 dark:border-white/10 dark:bg-maindark dark:text-white"
+                  className="min-h-12 w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 text-base md:text-sm font-bold text-maindark outline-none transition focus:border-main focus:ring-4 focus:ring-main/10 dark:border-white/10 dark:bg-maindark dark:text-white"
                 >
                   {manualReasonOptions.map((reason) => (
                     <option key={reason} value={reason}>

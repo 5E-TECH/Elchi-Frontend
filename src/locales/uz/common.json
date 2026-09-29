@@ -308,5 +308,10 @@
   "exampleChatId": "Masalan: 123456789",
   "editNotification": "Bildirishnomani tahrirlash",
   "notificationCreated": "Bildirishnoma yaratildi",
-  "notificationUpdated": "Bildirishnoma yangilandi"
+  "notificationUpdated": "Bildirishnoma yangilandi",
+  "slowLoading": "Kutish uzoq davom etmoqda…",
+  "queryErrorTitle": "Ma'lumotni yuklab bo'lmadi",
+  "queryErrorForbidden": "Bu ma'lumotni ko'rishga ruxsatingiz yo'q (403).",
+  "queryErrorServer": "Server xatosi ({{status}}). Birozdan keyin qayta urinib ko'ring.",
+  "queryErrorGeneric": "So'rov bajarilmadi ({{status}})."
 }

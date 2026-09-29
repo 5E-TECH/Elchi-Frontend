@@ -33,8 +33,26 @@
     "moveError": "Could not move district"
   },
   "districts": {
-    "title": "District management",
-    "description": "This section is connected to the region module route."
+    "title": "Districts management",
+    "description": "Drag a district onto another region; add a new district, rename or delete one.",
+    "newName": "New district name",
+    "newRegion": "Choose a region",
+    "add": "Add",
+    "editName": "District name",
+    "editAria": "Rename {{name}}",
+    "deleteAria": "Delete {{name}}",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleteConfirm": "Delete the district {{name}}?",
+    "createSuccess": "District added",
+    "createError": "Could not add the district",
+    "renameSuccess": "District renamed",
+    "renameError": "Could not rename",
+    "deleteSuccess": "District deleted",
+    "deleteError": "Could not delete the district",
+    "moveSuccess": "District moved to another region",
+    "moveError": "Could not move — the district was put back"
   },
   "logist": {
     "title": "Assign logist",

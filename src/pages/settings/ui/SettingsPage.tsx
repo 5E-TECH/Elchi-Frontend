@@ -299,7 +299,8 @@ const SettingsPage = () => {
                 <div className="min-w-0 flex-1">
                   <p
                     className="text-[13px] font-semibold leading-tight"
-                    style={{ color: active ? "#fff" : "var(--color-maindark)" }}
+                    // `--color-maindark` dark rejimda karta foniga teng (#252039 → 1.08:1).
+                    style={{ color: active ? "#fff" : "var(--color-dashboard-text-muted)" }}
                   >
                     {t(`tabs.${tab.id}`)}
                   </p>

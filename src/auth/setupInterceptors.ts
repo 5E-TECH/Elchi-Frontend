@@ -1,6 +1,7 @@
 import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import tokenStorage from "./tokenStorage";
 import { logoutAndRedirect, refreshAccessToken } from "./authService";
+import { emitNetworkError } from "./networkError";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -41,25 +42,6 @@ const shouldAttemptRefresh = (error: AxiosError) => {
 
 // ⚠️ Foydalanuvchi o'zi bekor qilgan so'rov (AbortController) ham `response`
 // siz keladi — u tarmoq xatosi EMAS, "tarmoq xatosi" toast'i chiqmasin.
-const isNetworkError = (error: AxiosError) =>
-  error.code !== "ERR_CANCELED" &&
-  (!error.response || error.code === "ERR_NETWORK" || error.code === "ECONNABORTED");
-
-const emitNetworkError = (error: AxiosError) => {
-  if (typeof window === "undefined" || !isNetworkError(error)) {
-    return;
-  }
-
-  window.dispatchEvent(
-    new CustomEvent("elchi:network-error", {
-      detail: {
-        message: error.message,
-        url: error.config?.url,
-      },
-    }),
-  );
-};
-
 export const setupAuthInterceptors = (api: AxiosInstance) => {
   api.interceptors.request.use(async (config) => {
     if (hasRefreshTokenExpired()) {

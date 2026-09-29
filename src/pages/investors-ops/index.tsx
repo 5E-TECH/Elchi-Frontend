@@ -10,10 +10,15 @@ const columns = [
   { title: "Telefon", dataIndex: "phone_number", key: "phone_number" },
 ];
 
+const PAGE_SIZE = 10;
+
 const InvestorsOpsPage = () => {
   const { useGetInvestors, createInvestor } = useInvestors();
 
-  const investorsQuery = useGetInvestors();
+  const [page, setPage] = useState(1);
+  const investorsQuery = useGetInvestors({ page, limit: PAGE_SIZE });
+  const investorRows = Array.isArray(investorsQuery.data?.items) ? investorsQuery.data.items : [];
+  const total = investorsQuery.data?.meta?.total ?? investorRows.length;
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -34,9 +39,14 @@ const InvestorsOpsPage = () => {
         rowKey="id"
         size="small"
         columns={columns}
-        dataSource={(investorsQuery.data as any[]) ?? []}
+        dataSource={investorRows}
         loading={investorsQuery.isLoading}
-        pagination={false}
+        locale={{ emptyText: "Investorlar yo'q" }}
+        pagination={
+          total > PAGE_SIZE
+            ? { current: page, pageSize: PAGE_SIZE, total, onChange: setPage, showSizeChanger: false }
+            : false
+        }
         scroll={{ x: "max-content" }}
       />
 

@@ -25,7 +25,7 @@ import { usePagination } from "../../shared/lib/usePagination";
 import Pagination from "../../shared/components/pagination";
 import PopupSelect from "../../shared/components/popupSelect";
 import type { MarketOption } from "./create/model/orderCreateForm";
-import { api } from "../../shared/api/api";
+import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
 import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
@@ -571,7 +571,7 @@ const Orders = () => {
     [setMultipleParams],
   );
 
-  const { data, isLoading } = useGetOrders(apiParams, true, (current) =>
+  const { data, isLoading, isError: isOrdersError, refetch: refetchOrders } = useGetOrders(apiParams, true, (current) =>
     pollWhileApprovalPending(current?.data ?? []),
   );
   const { data: marketsResponse, isLoading: isMarketsLoading } = useGetMarkets(
@@ -963,6 +963,7 @@ const Orders = () => {
             page: exportPage,
             limit: EXPORT_PAGE_SIZE,
           },
+          timeout: LONG_REQUEST_TIMEOUT_MS,
         });
         const pageItems = extractOrderItems(response.data);
         const responseTotal = extractOrderTotal(response.data);
@@ -1041,7 +1042,8 @@ const Orders = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <HeaderName
             name={t("list")}
-            description={t("totalOrdersSummary", { count: total })}
+            // Xatoda "Jami 0 ta" YOZILMAYDI — son noma'lum.
+            description={isOrdersError && !items.length ? "—" : t("totalOrdersSummary", { count: total })}
             icon={<ListOrdered />}
           />
           {canCreateOrder && (
@@ -1092,6 +1094,8 @@ const Orders = () => {
         <OrdersTable
           data={tableItems}
           pinnedOrderId={pinnedOrderId || undefined}
+          isError={isOrdersError}
+          onRetry={() => void refetchOrders()}
           isLoading={isLoading}
           rowNumberOffset={(currentPage - 1) * itemsPerPage}
           onRowClick={(order) => navigate(`edit/${order.id}`)}

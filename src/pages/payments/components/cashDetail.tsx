@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -19,7 +19,7 @@ import CashboxActionFormCard, {
 } from "./CashboxActionFormCard";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { RootState } from "../../../app/config/store";
-import { api } from "../../../shared/api/api";
+import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 
 const toNumber = (value: unknown) => {
@@ -214,13 +214,25 @@ const PAYMENT_HISTORY_SOURCE_TYPES =
 
 type CashDetailType = "market" | "courier" | "branch";
 
-const normalizeType = (
+const CASH_DETAIL_TYPES: readonly CashDetailType[] = ["market", "courier", "branch"];
+
+export const isCashDetailType = (value: unknown): value is CashDetailType =>
+  CASH_DETAIL_TYPES.includes(value as CashDetailType);
+
+/**
+ * Ekran turi zaxirasi (state ham, `?type=` ham yo'q bo'lsa). ⚠️ Aniqlanmasa
+ * `null` — ilgari default `"market"` edi va filial kassasi F5 dan keyin
+ * "Marketga to'lov" formasi bo'lib ochilib, `market_id` ga filial ID sini
+ * yuborardi. Pul ekranida noto'g'ri taxmindan ko'ra forma ko'rsatmaslik yaxshi.
+ */
+export const normalizeType = (
   cashboxType?: string | null,
   role?: string | null,
-): CashDetailType => {
-  if (cashboxType === "main" || role === "branch") return "branch";
+): CashDetailType | null => {
+  if (cashboxType === "main" || cashboxType === "branch" || role === "branch") return "branch";
   if (cashboxType === "couriers" || role === "courier") return "courier";
-  return "market";
+  if (cashboxType === "markets" || role === "market") return "market";
+  return null;
 };
 
 export interface DetailState {
@@ -292,6 +304,12 @@ const CashDetail = () => {
   const { t } = useTranslation("payments");
   const { id } = useParams<{ id: string }>();
   const { state } = useLocation() as { state: DetailState | null };
+  // Tur URL'da ham turadi (`?type=branch`) — F5, ulashilgan havola va yangi
+  // tabda `location.state` yo'qoladi, tur esa yo'qolmasin.
+  const [searchParams] = useSearchParams();
+  const urlType = searchParams.get("type");
+  const requestedType: CashDetailType | undefined =
+    state?.type ?? (isCashDetailType(urlType) ? urlType : undefined);
   const navigate = useNavigate();
   const {
     useGetCashBoxById,
@@ -303,7 +321,7 @@ const CashDetail = () => {
   const { useGetManagerPayableToHq } = useFinanceCoverage();
   const { useGetMarkets } = useMarkets();
   const { useGetUser } = useUser();
-  const { apiRequest } = useAppNotification();
+  const { apiRequest, api: notify } = useAppNotification();
 
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
@@ -314,10 +332,10 @@ const CashDetail = () => {
   const currentRole = useSelector((store: RootState) => store.role.role);
   const isCurrentManagerRole = String(currentRole).toLowerCase() === "manager";
 
-  const isBranchDetailRequest = state?.type === "branch";
-  const isMarketDetailRequest = state?.type === "market";
+  const isBranchDetailRequest = requestedType === "branch";
+  const isMarketDetailRequest = requestedType === "market";
   const isHqBranchReceiveRequest = isBranchDetailRequest && !isCurrentManagerRole;
-  const isCourierReceiveRequest = state?.type === "courier" && isCurrentManagerRole;
+  const isCourierReceiveRequest = requestedType === "courier" && isCurrentManagerRole;
   const dateParams = useMemo(
     () => ({
       ...(selectedDateFrom && { fromDate: selectedDateFrom }),
@@ -432,7 +450,11 @@ const CashDetail = () => {
   );
   const user = detailEntry?.user ?? cashbox?.user ?? state?.entity;
 
-  const type: CashDetailType = state?.type ?? normalizeType(cashbox?.cashbox_type, user?.role);
+  const resolvedType = requestedType ?? normalizeType(cashbox?.cashbox_type, user?.role);
+  // Tur aniqlanmasa to'lov formasi umuman ko'rsatilmaydi (fail-closed);
+  // `type` faqat sarlavha/ikonka konfiguratsiyasi uchun.
+  const isTypeUnknown = resolvedType === null;
+  const type: CashDetailType = resolvedType ?? "market";
   const cfg = CONFIG[type];
   const entityName = user?.name?.trim() || t("userFallback");
   const stateAmount = toNumber(state?.entity?.amount);
@@ -743,6 +765,7 @@ const CashDetail = () => {
           ...(historyTab === "payments" && { sourceTypes: PAYMENT_HISTORY_SOURCE_TYPES }),
         },
         responseType: "blob",
+        timeout: LONG_REQUEST_TIMEOUT_MS,
       });
       const blob = response.data instanceof Blob
         ? response.data
@@ -764,6 +787,7 @@ const CashDetail = () => {
 
 
   const onSubmit = async (values: CashboxActionFormValues) => {
+    if (isTypeUnknown) return;
     const amount = parseAmountInput(values.amount);
     const paymentDate = new Date().toISOString();
     const comment = values.comment?.trim() || "";
@@ -812,6 +836,12 @@ const CashDetail = () => {
       return;
     }
 
+    // Marketga to'lov FAQAT market kassasiga — filial/kuryer ID si market_id
+    // bo'lib ketmasin (ID lar bir xil raqamli fazoda).
+    if (cashbox?.cashbox_type !== "markets") {
+      notify.error({ message: t("marketPaymentError"), description: t("cashDetailNotMarketCashbox") });
+      return;
+    }
     const result = await apiRequest({
       request: () =>
         createPaymentMarket.mutateAsync({
@@ -935,6 +965,11 @@ const CashDetail = () => {
         ) : null
       }
       actionForm={
+        isTypeUnknown ? (
+          <div role="alert" className="rounded-2xl border border-amber-300/70 bg-amber-50 p-4 text-sm font-semibold text-amber-800 dark:border-amber-400/35 dark:bg-amber-400/10 dark:text-amber-100">
+            {t("cashDetailTypeUnknown")}
+          </div>
+        ) : (
         <CashboxActionFormCard
             type={type}
             actionGradient={cfg.actionGradient}
@@ -968,6 +1003,7 @@ const CashDetail = () => {
             handleSubmit={handleSubmit}
             onSubmit={onSubmit}
         />
+        )
       }
     />
   );

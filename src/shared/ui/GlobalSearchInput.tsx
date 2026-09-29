@@ -166,7 +166,7 @@ const GlobalSearchInputBase = forwardRef<HTMLInputElement, GlobalSearchInputProp
           onChange={handleChange}
           onBlur={onBlur}
           placeholder={placeholder ?? t("searchPlaceholder")}
-          className={`w-full bg-primary dark:bg-maindark border-2 rounded-xl ${showIcon ? "pl-12" : "pl-4"} pr-4 py-3 text-maindark dark:text-white text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-white/40 outline-none transition-all hover:shadow-sm focus:shadow-md shadow-sm ${error
+          className={`w-full bg-primary dark:bg-maindark border-2 rounded-xl ${showIcon ? "pl-12" : "pl-4"} pr-4 py-3 text-maindark dark:text-white text-base md:text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-white/40 outline-none transition-all hover:shadow-sm focus:shadow-md shadow-sm ${error
             ? "border-red-400 dark:border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-400/20"
             : "border-gray-200 dark:border-primarydark/30 focus:border-main dark:focus:border-main focus:ring-2 focus:ring-main/20 hover:border-main/50 dark:hover:border-main/50"
             } ${showClearButton ? "pr-11" : ""} ${inputClassName}`}

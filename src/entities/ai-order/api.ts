@@ -96,4 +96,6 @@ export const useAiAvailability = () =>
       api.get(API_ENDPOINTS.ORDERS.AI_AVAILABILITY).then((res) => unwrap<AiAvailability>(res.data)),
     staleTime: 60_000,
     retry: false,
+    // Tab ko'rinishini boshqaradi — xato bo'lsa AI tab shunchaki yashiriladi.
+    meta: { silentError: true },
   });

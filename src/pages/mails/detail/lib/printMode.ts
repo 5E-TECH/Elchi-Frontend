@@ -1,9 +1,5 @@
 import type { PostOrder } from "../../../../entities/mails";
 import i18n from "../../../../i18n";
-import {
-  openOrdersLabelBrowserPrint,
-  openOrdersLabelPdf,
-} from "../../../new_orders/components/lib/printLabelPdf";
 import type { ApiOrder } from "../../../new_orders/components/OrderCard";
 
 export type PrintMode = "browser" | "pdf_100x60" | "thermal_80mm";
@@ -157,10 +153,15 @@ const openThermalPrintWindow = (orders: PostOrder[]) => {
   win.document.close();
 };
 
-export const printOrders = (mode: PrintMode, orders: PostOrder[]) => {
+export const printOrders = async (mode: PrintMode, orders: PostOrder[]) => {
   if (orders.length === 0) return;
-  const printableOrders = orders.map(toApiOrder);
-  if (mode === "pdf_100x60") return void openOrdersLabelPdf(printableOrders);
   if (mode === "thermal_80mm") return openThermalPrintWindow(orders);
+  // jsPDF (~128 KB gzip) faqat chop etish bosilganda yuklanadi — ilgari bu
+  // statik import uni /mails orqali har sahifaga tortardi (z4uyw52T).
+  const { openOrdersLabelBrowserPrint, openOrdersLabelPdf } = await import(
+    "../../../new_orders/components/lib/printLabelPdf"
+  );
+  const printableOrders = orders.map(toApiOrder);
+  if (mode === "pdf_100x60") return openOrdersLabelPdf(printableOrders);
   return openOrdersLabelBrowserPrint(printableOrders);
 };

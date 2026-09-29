@@ -478,7 +478,7 @@ const MainCashbox = () => {
   const handleBranchManagerSelect = useCallback(
     (item: any) => {
       setIsBranchManagerPopupOpen(false);
-      navigate(`/payments/cash-detail/${item.id}`, {
+      navigate(`/payments/cash-detail/${item.id}?type=${isManagerRole ? "courier" : "branch"}`, {
         state: { type: isManagerRole ? "courier" : "branch", entity: item },
       });
     },
@@ -488,7 +488,7 @@ const MainCashbox = () => {
   const handleMarketSelect = useCallback(
     (market: any) => {
       setIsMarketPopupOpen(false);
-      navigate(`/payments/cash-detail/${market.id}`, { state: { type: "market", entity: market } });
+      navigate(`/payments/cash-detail/${market.id}?type=market`, { state: { type: "market", entity: market } });
     },
     [navigate],
   );

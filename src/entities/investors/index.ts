@@ -4,16 +4,32 @@ import { API_ENDPOINTS } from "../../shared/api";
 
 export const investors = "investors";
 
+export type InvestorListMeta = { page?: number; limit?: number; total?: number; totalPages?: number };
+export type InvestorList<T = Record<string, unknown>> = { items: T[]; meta: InvestorListMeta };
+
+/**
+ * GET /investors javobi konvertda keladi: `{ statusCode, message, data: { items, meta } }`.
+ * Ilgari butun konvert massiv deb antd Table'ga berilardi va sahifa
+ * `te.some is not a function` bilan qulardi. Har qanday shaklda massiv qaytadi.
+ */
+export const toInvestorList = <T = Record<string, unknown>>(payload: unknown): InvestorList<T> => {
+  const record = (payload ?? {}) as { data?: unknown };
+  const body = (record.data ?? payload) as { items?: unknown; meta?: InvestorListMeta } | unknown[] | null;
+  if (Array.isArray(body)) return { items: body as T[], meta: {} };
+  const items = body && Array.isArray((body as { items?: unknown }).items) ? ((body as { items: T[] }).items) : [];
+  return { items, meta: (body as { meta?: InvestorListMeta } | null)?.meta ?? {} };
+};
+
 export const useInvestors = () => {
   const client = useQueryClient();
 
   // ==================== INVESTORS ====================
 
-  const useGetInvestors = (params?: any) =>
+  const useGetInvestors = (params?: { page?: number; limit?: number }) =>
     useQuery({
       queryKey: [investors, "list", params],
       queryFn: () =>
-        api.get(API_ENDPOINTS.INVESTORS.BASE, { params }).then((res) => res.data),
+        api.get(API_ENDPOINTS.INVESTORS.BASE, { params }).then((res) => toInvestorList(res.data)),
     });
 
   const createInvestor = useMutation({

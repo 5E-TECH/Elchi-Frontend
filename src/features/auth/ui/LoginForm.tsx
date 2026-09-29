@@ -95,7 +95,8 @@ const LoginForm = () => {
 
   return (
     <div className="flex w-full items-center justify-center">
-      <div className="w-full max-w-[21rem] rounded-2xl bg-primary px-5 py-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] sm:max-w-md sm:px-10 sm:py-8">
+      {/* Login kartasi ikkala temada ham OQ (ichidagi matn ranglari faqat yorug' fon uchun). */}
+      <div className="w-full max-w-[21rem] rounded-2xl bg-primary dark:bg-white px-5 py-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] sm:max-w-md sm:px-10 sm:py-8">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
           <div className="mb-8 flex justify-center sm:mb-10">
             <img src={logo} alt="Elchi Logo" className="w-38 sm:w-50" />
@@ -127,7 +128,7 @@ const LoginForm = () => {
                     spellCheck={false}
                     aria-label={t("phoneLabel")}
                     disabled={isSubmitting}
-                    className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 text-sm text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark sm:text-base ${errors.phone_number ? "border-red-500" : "border-gray-200"
+                    className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 text-base text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark ${errors.phone_number ? "border-red-500" : "border-gray-200"
                       } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                     placeholder={t("phonePlaceholder")}
                   />
@@ -154,7 +155,7 @@ const LoginForm = () => {
                   disabled={isSubmitting}
                   placeholder={t("passwordPlaceholder")}
                   autoComplete="current-password"
-                  className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 pr-12 text-sm text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark sm:text-base ${errors.password ? "border-red-500" : "border-gray-200"
+                  className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 pr-12 text-base text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark ${errors.password ? "border-red-500" : "border-gray-200"
                     } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
                 <button

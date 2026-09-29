@@ -26,4 +26,6 @@ export const useUnreadCount = (enabled = true) =>
     staleTime: 30_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
+    // Har daqiqada fonda so'raladi — xato bo'lsa bildirishnoma bilan bezovta qilinmaydi.
+    meta: { silentError: true },
   });

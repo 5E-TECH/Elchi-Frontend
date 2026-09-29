@@ -1,12 +1,10 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
 import { LayoutDashboard, Package, TrendingUp, Wallet, XCircle, BarChart2, MapPin, BarChart3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import DashboardStatistics from "../../widgets/dashboard-statistics/ui/DashboardStatistics";
-import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
 import RegionStatsCard from "../../widgets/dashboard-region/ui/RegionStatsCard";
-import PerformanceChart from "../../widgets/dashboard-performance-chart/ui/PerformanceChart";
+import DeferredMount from "../../shared/ui/DeferredMount";
 import { useDashboard } from "../../entities/dashboard";
 import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
@@ -18,6 +16,28 @@ import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
 import MobileCollapsibleSection from "../../shared/ui/MobileCollapsibleSection";
 import { formatNumber } from "../../shared/config/designSystem";
 import type { RootState } from "../../app/config/store";
+
+/**
+ * GRAFIKLI WIDGETLAR LAZY (NIFAnCvf). Recharts faqat shu widgetlar ekranga
+ * yaqinlashganda yuklanadi — dashboard birinchi ochilishida emas.
+ */
+const DashboardStatistics = lazy(() => import("../../widgets/dashboard-statistics/ui/DashboardStatistics"));
+const FinancialAnalysis = lazy(() => import("../../widgets/financial-analysis/ui/FinancialAnalysis"));
+const PerformanceChart = lazy(() => import("../../widgets/dashboard-performance-chart/ui/PerformanceChart"));
+
+const WidgetPlaceholder = ({ height }: { height: number }) => (
+  <div
+    aria-hidden
+    className="animate-pulse rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] dark:border-white/10"
+    style={{ height }}
+  />
+);
+
+const Deferred = ({ height, children }: { height: number; children: ReactNode }) => (
+  <DeferredMount minHeight={height}>
+    <Suspense fallback={<WidgetPlaceholder height={height} />}>{children}</Suspense>
+  </DeferredMount>
+);
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
@@ -230,6 +250,7 @@ const DashboardPage = () => {
 
       {!isCourier && widgets.stats && !dashboardError && (isAllTime || !kpiError) && (
         <div className="mb-5">
+          <Deferred height={360}>
           <DashboardStatistics
             accepted={orders?.acceptedCount ?? 0}
             sold={orders?.soldAndPaid ?? 0}
@@ -242,6 +263,7 @@ const DashboardPage = () => {
             showFinancialMetrics={canShowFinancialMetrics}
             loading={isLoading || (!isAllTime && kpiLoading)}
           />
+          </Deferred>
         </div>
       )}
 
@@ -269,6 +291,7 @@ const DashboardPage = () => {
           icon={<BarChart3 size={16} />}
           className="mb-5"
         >
+          <Deferred height={420}>
           <PerformanceChart
             markets={chartMarkets}
             couriers={chartCouriers}
@@ -278,6 +301,7 @@ const DashboardPage = () => {
             // bor, lekin bu davr uchun kelmaydi.
             couriersEmptyText={isAllTime ? t("performance.couriers_all_time_unavailable") : undefined}
           />
+          </Deferred>
         </MobileCollapsibleSection>
       )}
 
@@ -289,12 +313,14 @@ const DashboardPage = () => {
           icon={<BarChart2 size={16} />}
           className="mb-5"
         >
+          <Deferred height={822}>
           <FinancialAnalysis
             startDate={hasDateFilter ? fromDate : ""}
             endDate={hasDateFilter ? toDate : ""}
             analyticsScope={analyticsScope}
             isAllTime={isAllTime}
           />
+          </Deferred>
         </MobileCollapsibleSection>
       )}
 

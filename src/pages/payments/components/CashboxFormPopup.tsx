@@ -151,7 +151,7 @@ const CashboxFormPopup = ({
                                             placeholder="0"
                                             value={formatAmountInput(field.value)}
                                             onChange={(event) => field.onChange(event.target.value)}
-                                            className="h-9 w-full rounded-[0.8rem] bg-transparent px-3 pr-16 text-sm font-semibold tracking-[0.02em] text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/20"
+                                            className="h-9 w-full rounded-[0.8rem] bg-transparent px-3 pr-16 text-base md:text-sm font-semibold tracking-[0.02em] text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/20"
                                         />
                                     )}
                                 />
@@ -206,7 +206,7 @@ const CashboxFormPopup = ({
                                 rows={2}
                                 placeholder={t("commentPlaceholder")}
                                 {...register("comment")}
-                                className="w-full resize-none rounded-[0.8rem] bg-transparent px-3 py-2.5 text-[13px] leading-4.5 text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/20"
+                                className="w-full resize-none rounded-[0.8rem] bg-transparent px-3 py-2.5 text-base md:text-[13px] leading-4.5 text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/20"
                             />
                         </div>
                         {errors.comment && (
