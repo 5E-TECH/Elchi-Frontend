@@ -308,5 +308,10 @@
   "exampleChatId": "Example: 123456789",
   "editNotification": "Edit notification",
   "notificationCreated": "Notification created",
-  "notificationUpdated": "Notification updated"
+  "notificationUpdated": "Notification updated",
+  "slowLoading": "This is taking longer than usual…",
+  "queryErrorTitle": "Could not load the data",
+  "queryErrorForbidden": "You do not have access to this data (403).",
+  "queryErrorServer": "Server error ({{status}}). Please try again shortly.",
+  "queryErrorGeneric": "The request failed ({{status}})."
 }

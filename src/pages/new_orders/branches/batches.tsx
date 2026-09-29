@@ -313,7 +313,7 @@ const BranchSentBatchesPage = () => {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Viloyat yoki batch ID qidirish..."
-            className="h-12 w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-primary pl-12 pr-4 text-sm font-semibold text-maindark outline-none transition focus:border-main/60 focus:ring-2 focus:ring-main/15 dark:bg-primarydark dark:text-white"
+            className="h-12 w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-primary pl-12 pr-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main/60 focus:ring-2 focus:ring-main/15 dark:bg-primarydark dark:text-white"
           />
         </div>
       </div>

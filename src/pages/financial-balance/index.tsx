@@ -197,6 +197,7 @@ const FinancialBalance = () => {
     main: { balance: 0 },
     markets: { marketsTotalBalans: 0, marketsTotalBalance: 0, items: [] },
     couriers: { couriersTotalBalanse: 0, couriersTotalBalance: 0, items: [] },
+    receivable: 0,
   };
   const total = balance.currentSituation;
   const isNegative = total < 0;
@@ -237,10 +238,12 @@ const FinancialBalance = () => {
       colorClass: "red",
     },
     {
-      label: t("financialBalanceCouriers"),
-      subLabel: t("financialBalanceCouriersMoney"),
+      // Formuladagi musbat qism: kuryer, filial va kargo qo'lidagi pul
+      // (ilgari bu kartaga filial qarzi "Kuryerlar" deb yozilardi).
+      label: t("financialBalanceReceivable"),
+      subLabel: t("financialBalanceReceivableHint"),
       subType: "positive",
-      amount: balance.couriers.couriersTotalBalanse,
+      amount: balance.receivable,
       icon: <Truck size={18} />,
       colorClass: "green",
     },

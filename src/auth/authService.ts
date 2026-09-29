@@ -7,6 +7,7 @@ import { loginSuccess, logout as logoutAction, setAppInitializing, setProfile, s
 import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
+import { emitNetworkError, isNetworkFailure } from "./networkError";
 
 type LoginCredentials = {
   phone_number: string;
@@ -39,9 +40,13 @@ type AuthenticatedUser = User & {
   };
 };
 
-const authClient = axios.create({
+/** Bootstrap (profil, token yangilash) tezroq taslim bo'lsin — 15 s. */
+export const AUTH_TIMEOUT_MS = 15_000;
+
+export const authClient = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
+  timeout: AUTH_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },
@@ -136,6 +141,43 @@ export const fetchMyProfile = async (accessToken?: string) => {
 
   syncUserContext(user);
   return user;
+};
+
+/** Bootstrap'da profil so'rovi tarmoq sababli yiqilsa — 1 s va 3 s dan keyin qayta urinish. */
+export const PROFILE_RETRY_DELAYS_MS = [1_000, 3_000];
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchMyProfileWithRetry = async (accessToken?: string) => {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await fetchMyProfile(accessToken);
+    } catch (error) {
+      if (!isNetworkFailure(error) || attempt >= PROFILE_RETRY_DELAYS_MS.length) throw error;
+      await wait(PROFILE_RETRY_DELAYS_MS[attempt]);
+    }
+  }
+};
+
+/**
+ * Sessiya faqat server "ruxsat yo'q" desa (401/403) yoki holat buzilgan bo'lsa
+ * tozalanadi. Tarmoq uzilishi, vaqt tugashi yoki 5xx — foydalanuvchining
+ * aybi emas: token saqlanadi, aks holda liftda F5 bosgan kuryer parolni
+ * qaytadan terardi (9w5Fq94s).
+ */
+const shouldKeepSessionOnError = (error: unknown) =>
+  isNetworkFailure(error) || (axios.isAxiosError(error) && (error.response?.status ?? 0) >= 500);
+
+const keepSessionWhileOffline = (error: unknown) => {
+  // Profil kelmadi — oxirgi ma'lum rol bilan ilova ochiladi, so'rovlar tarmoq
+  // qaytgach (refetchOnReconnect) o'zi tiklanadi, profil ham qayta olinadi.
+  const { id, role } = tokenStorage.getAuthIdentity();
+  if (role) store.dispatch(setRole(role));
+  if (id) store.dispatch(setId(id));
+  if (axios.isAxiosError(error)) emitNetworkError(error);
+  if (typeof window !== "undefined") {
+    window.addEventListener("online", () => void initAuth(), { once: true });
+  }
 };
 
 export const refreshAccessToken = async () => {
@@ -233,7 +275,7 @@ export const initAuth = async () => {
       }
 
       try {
-        await fetchMyProfile(accessToken);
+        await fetchMyProfileWithRetry(accessToken);
       } catch (error) {
         // Profile bootstrap uses the interceptor-free auth client. If an older
         // session has no expiry metadata, recover once from a server-side 401
@@ -245,7 +287,11 @@ export const initAuth = async () => {
         accessToken = await refreshAccessToken();
         await fetchMyProfile(accessToken);
       }
-    } catch {
+    } catch (error) {
+      if (shouldKeepSessionOnError(error)) {
+        keepSessionWhileOffline(error);
+        return;
+      }
       resetClientAuthState();
     } finally {
       store.dispatch(setAppInitializing(false));

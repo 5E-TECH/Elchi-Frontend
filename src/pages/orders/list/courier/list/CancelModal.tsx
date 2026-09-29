@@ -132,7 +132,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading, awaitingApprov
                   min={0}
                   value={extraCost}
                   onChange={(e) => setExtraCost(Number(e.target.value))}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:focus:border-rose-400"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-base md:text-sm text-gray-800 outline-none transition-colors focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:focus:border-rose-400"
                   placeholder="0"
                 />
                 {extraCost > 0 ? <ExtraCostApprovalNotice /> : null}
@@ -148,7 +148,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading, awaitingApprov
                   min={0}
                   value={paidAmount}
                   onChange={(e) => setPaidAmount(Number(e.target.value))}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:focus:border-rose-400"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-base md:text-sm text-gray-800 outline-none transition-colors focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:focus:border-rose-400"
                   placeholder="0"
                 />
               </div>
@@ -162,7 +162,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading, awaitingApprov
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:placeholder:text-white/35 dark:focus:border-rose-400"
+                  className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-base md:text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:placeholder:text-white/35 dark:focus:border-rose-400"
                   placeholder={t("cancelReason")}
                 />
               </div>

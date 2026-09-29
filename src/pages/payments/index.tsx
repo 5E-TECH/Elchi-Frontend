@@ -594,7 +594,7 @@ const Payments = () => {
     resetPagination(limit);
   }, [filtersFromUrlKey, limit, resetPagination]);
 
-  const { data: historyData, isLoading: historyLoading } =
+  const { data: historyData, isLoading: historyLoading, isError: historyError, refetch: refetchHistory } =
     useGetFinanceHistory(queryParams);
   const { data: creatorsData, isLoading: creatorsLoading } = useGetUser({
     limit: 100,
@@ -627,7 +627,7 @@ const Payments = () => {
   ) => {
     if (showPopup === "given") {
       if (isManagerRole && branchToMainOption) {
-        navigate(`/payments/cash-detail/${branchToMainOption.id}`, {
+        navigate(`/payments/cash-detail/${branchToMainOption.id}?type=branch`, {
           state: {
             type: "branch",
             entity: branchToMainOption,
@@ -751,6 +751,8 @@ const Payments = () => {
       <PaymentHistoryTable
         data={historyData?.data?.items ?? []}
         isLoading={historyLoading}
+        isError={historyError}
+        onRetry={() => void refetchHistory()}
         pagination={pagination}
         onPageChange={setPage}
         onItemsPerPageChange={setLimit}
@@ -773,7 +775,7 @@ const Payments = () => {
         cancelLabel={t("cancelShort")}
         onSelect={(item) => {
           setIsGivenPopupOpen(false);
-          navigate(`/payments/cash-detail/${item.id}`, {
+          navigate(`/payments/cash-detail/${item.id}?type=market`, {
             state: {
               type: "market",
               entity: item,
@@ -819,7 +821,7 @@ const Payments = () => {
         cancelLabel={t("cancelShort")}
         onSelect={(item) => {
           setIsReceivedPopupOpen(false);
-          navigate(`/payments/cash-detail/${item.id}`, {
+          navigate(`/payments/cash-detail/${item.id}?type=${isManagerRole ? "courier" : "branch"}`, {
             state: { type: isManagerRole ? "courier" : "branch", entity: item },
           });
         }}

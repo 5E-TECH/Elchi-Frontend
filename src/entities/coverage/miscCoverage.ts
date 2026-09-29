@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../shared/api/api";
+import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
 type QueryParams = Record<string, unknown>;
@@ -113,7 +113,8 @@ export const useMiscCoverage = () => {
   });
 
   const uploadFile = useMutation({
-    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.FILES.UPLOAD, data),
+    mutationFn: (data: unknown) =>
+      api.post(API_ENDPOINTS.FILES.UPLOAD, data, { timeout: LONG_REQUEST_TIMEOUT_MS }),
   });
 
   // ── HEALTH ─────────────────────────────────────────────────────────────────

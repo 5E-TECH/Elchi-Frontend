@@ -250,7 +250,7 @@ const ExternalIntegrationCreatePage = () => {
                   setValue("name", value, { shouldValidate: true });
                   setValue("slug", makeSlug(value), { shouldValidate: true });
                 }}
-                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
+                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
                 placeholder={t("integrationNamePlaceholder")}
               />
               {errors.name?.message && <span className="text-xs font-semibold text-error">{errors.name.message}</span>}
@@ -262,7 +262,7 @@ const ExternalIntegrationCreatePage = () => {
               </span>
               <input
                 {...register("slug", { required: t("requiredField") })}
-                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
+                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
                 placeholder={t("integrationSlugPlaceholder")}
               />
               {errors.slug?.message && <span className="text-xs font-semibold text-error">{errors.slug.message}</span>}
@@ -318,7 +318,7 @@ const ExternalIntegrationCreatePage = () => {
                     message: t("urlField"),
                   },
                 })}
-                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
+                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
                 placeholder={t("apiUrlPlaceholder")}
               />
               {errors.api_url?.message && <span className="text-xs font-semibold text-error">{errors.api_url.message}</span>}
@@ -339,7 +339,7 @@ const ExternalIntegrationCreatePage = () => {
               </span>
               <input
                 {...register("auth_url")}
-                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
+                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
                 placeholder={t("authUrlPlaceholder")}
               />
             </label>
@@ -352,7 +352,7 @@ const ExternalIntegrationCreatePage = () => {
                   </span>
                   <input
                     {...register("username")}
-                    className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
+                    className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
                     placeholder={t("usernamePlaceholder")}
                   />
                 </label>
@@ -364,7 +364,7 @@ const ExternalIntegrationCreatePage = () => {
                     <input
                       {...register("password")}
                       type={showPassword ? "text" : "password"}
-                      className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 pr-12 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
+                      className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 pr-12 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
                       placeholder={t("passwordPlaceholder")}
                     />
                     <button
@@ -388,7 +388,7 @@ const ExternalIntegrationCreatePage = () => {
                 </span>
                 <input
                   {...register("token")}
-                  className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
+                  className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
                   placeholder={t("tokenPlaceholder")}
                 />
               </label>

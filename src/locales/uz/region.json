@@ -34,7 +34,25 @@
   },
   "districts": {
     "title": "Tumanlar boshqaruvi",
-    "description": "Bu bo'lim region moduliga mos route bilan ulangan."
+    "description": "Tumanni ushlab boshqa viloyat ustiga tashlang; yangi tuman qo'shing, nomini tahrirlang yoki o'chiring.",
+    "newName": "Yangi tuman nomi",
+    "newRegion": "Viloyatni tanlang",
+    "add": "Qo'shish",
+    "editName": "Tuman nomi",
+    "editAria": "{{name}} nomini tahrirlash",
+    "deleteAria": "{{name}} ni o'chirish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "deleteConfirm": "{{name}} tumanini o'chirasizmi?",
+    "createSuccess": "Tuman qo'shildi",
+    "createError": "Tumanni qo'shib bo'lmadi",
+    "renameSuccess": "Tuman nomi o'zgartirildi",
+    "renameError": "Nomni o'zgartirib bo'lmadi",
+    "deleteSuccess": "Tuman o'chirildi",
+    "deleteError": "Tumanni o'chirib bo'lmadi",
+    "moveSuccess": "Tuman boshqa viloyatga o'tkazildi",
+    "moveError": "O'tkazib bo'lmadi — tuman joyiga qaytarildi"
   },
   "logist": {
     "title": "Logist biriktirish",

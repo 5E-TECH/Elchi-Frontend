@@ -51,6 +51,9 @@ jobs:
       # `npm run build` = `tsc -b && vite build`, ya'ni tip tekshiruvi shu yerda.
       - run: npm run build
 
+      # Bundle byudjeti: entry ≤ 600 KB gzip, index.html da jsPDF yo'q.
+      - run: npm run check:bundle
+
       # Wrangler package.json dagi versiyadan olinadi (npm ci o'rnatgan), ya'ni
       # versiya bitta joyda turadi va workflow repodan uzilib qolmaydi.
       # Konfiguratsiya `wrangler.jsonc` dan o'qiladi: Worker nomi elchi-frontend,

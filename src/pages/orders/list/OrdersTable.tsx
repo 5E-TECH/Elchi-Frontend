@@ -16,6 +16,7 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Table } from "../../../shared/components/Table/Table";
 import EmptyState from "../../../shared/ui/EmptyState";
+import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import OrderIdBadge from "../../../shared/ui/OrderIdBadge";
 import TableSkeleton from "../../../shared/ui/TableSkeleton";
 import OrderStatusBadge from "./OrderStatusBadge";
@@ -49,6 +50,9 @@ interface Props {
      * boshiga qo'yilgan. `#` ustunida qator tartibi o'rniga belgi chiqadi.
      */
     pinnedOrderId?: string;
+    /** Ro'yxat so'rovi yiqildi — "Buyurtmalar topilmadi" o'rniga xato + qayta urinish. */
+    isError?: boolean;
+    onRetry?: () => void;
 }
 
 const formatPhoneNumber = (phone: string | null | undefined) => {
@@ -270,6 +274,8 @@ const OrdersTable = ({
     sortConfig,
     onSortChange,
     pinnedOrderId,
+    isError = false,
+    onRetry,
 }: Props) => {
     const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
@@ -446,6 +452,10 @@ const OrdersTable = ({
 
     if (isLoading) {
         return <TableSkeleton rows={8} columns={7} />;
+    }
+
+    if (!data.length && isError) {
+        return <QueryErrorState onRetry={onRetry} />;
     }
 
     if (!data.length) {

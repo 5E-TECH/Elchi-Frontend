@@ -253,4 +253,14 @@ describe("OrdersTable", () => {
 
     expect(onRowClick).toHaveBeenCalledWith(expect.objectContaining({ id: "o-1" }), 0);
   });
+
+  it("shows an error with retry (not \"Buyurtmalar topilmadi\") when the list request failed", async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    renderWithProviders(<OrdersTable data={[]} isLoading={false} isError onRetry={onRetry} />);
+
+    expect(screen.queryByText("Buyurtmalar topilmadi")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Qayta urinish/ }));
+    expect(onRetry).toHaveBeenCalled();
+  });
 });

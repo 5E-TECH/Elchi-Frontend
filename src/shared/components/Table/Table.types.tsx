@@ -24,6 +24,13 @@ export interface TableProps<T> {
   emptyMessage?: string;
   emptyState?: React.ReactNode;
   loadingRows?: number;
+  /**
+   * So'rov yiqilgan (tarmoq/500/403) — bo'sh holat EMAS, xato holati chiqadi.
+   * Ilgari xato "ma'lumot topilmadi" bo'lib ko'rinardi va operator "bugun
+   * buyurtma yo'q" deb o'ylardi (sfNW22M7).
+   */
+  error?: boolean;
+  onRetry?: () => void;
   onRowClick?: (row: T, index: number) => void;
   /**
    * Bosiladigan qatorning skrinriderdagi nomi (masalan "Buyurtma №123, Ali").

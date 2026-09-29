@@ -1,4 +1,8 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+/** Shundan keyin skeleton tagida "kutish uzoq davom etmoqda" chiqadi (qJjLP109). */
+export const SLOW_LOADING_AFTER_MS = 15_000;
 
 interface TableSkeletonProps {
   rows?: number;
@@ -6,7 +10,16 @@ interface TableSkeletonProps {
   className?: string;
 }
 
-const TableSkeleton = ({ rows = 6, columns = 5, className = "" }: TableSkeletonProps) => (
+const TableSkeleton = ({ rows = 6, columns = 5, className = "" }: TableSkeletonProps) => {
+  const { t } = useTranslation("common");
+  const [isSlow, setIsSlow] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsSlow(true), SLOW_LOADING_AFTER_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return (
   <div
     className={`overflow-hidden rounded-2xl border border-[color:var(--color-border-strong)] bg-primary shadow-sm dark:border-white/10 dark:bg-white/[0.025] ${className}`}
   >
@@ -33,7 +46,13 @@ const TableSkeleton = ({ rows = 6, columns = 5, className = "" }: TableSkeletonP
         </div>
       ))}
     </div>
+    {isSlow ? (
+      <p role="status" className="border-t border-[color:var(--color-border-soft)] px-5 py-3 text-center text-sm font-semibold text-[color:var(--color-text-muted)] dark:border-white/10 dark:text-[color:var(--color-text-muted-dark)]">
+        {t("slowLoading")}
+      </p>
+    ) : null}
   </div>
-);
+  );
+};
 
 export default memo(TableSkeleton);

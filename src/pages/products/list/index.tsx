@@ -355,15 +355,17 @@ const ProductTable = () => {
   }, [isMarketRole, limit, marketIdFromUrl, page, searchFromUrl]);
 
   const { useGetProducts, useGetMyProducts, useGetProductById, deleteProduct, updateProduct } = useProducts();
-  const { data: productsData, isLoading: isProductsLoading } = useGetProducts(
+  const { data: productsData, isLoading: isProductsLoading, isError: isProductsError, refetch: refetchProducts } = useGetProducts(
     apiParams,
     isRoleResolved && !isMarketRole,
   );
-  const { data: myProductsData, isLoading: isMyProductsLoading } = useGetMyProducts(
+  const { data: myProductsData, isLoading: isMyProductsLoading, isError: isMyProductsError, refetch: refetchMyProducts } = useGetMyProducts(
     isRoleResolved && isMarketRole,
   );
   const products = isMarketRole ? myProductsData : productsData;
   const isLoading = isMarketRole ? isMyProductsLoading : isProductsLoading;
+  const isProductsListError = isMarketRole ? isMyProductsError : isProductsError;
+  const retryProducts = () => void (isMarketRole ? refetchMyProducts() : refetchProducts());
   const { data: editProductResponse } = useGetProductById(editTarget?.id, Boolean(editTarget));
   const editProductDetail = useMemo(
     () => getProductPayload(editProductResponse),
@@ -652,7 +654,7 @@ const ProductTable = () => {
               {t("productCountLabel")}
             </span>
             <span className="text-lg font-bold text-gray-800 dark:text-white leading-tight">
-              {t("totalCount", { count: productTotal })}
+              {isProductsListError && !productData.length ? "—" : t("totalCount", { count: productTotal })}
             </span>
           </div>
         </div>
@@ -664,6 +666,8 @@ const ProductTable = () => {
         keyExtractor={(item) => item.id}
         hoverable
         loading={isLoading}
+        error={isProductsListError}
+        onRetry={retryProducts}
       />
 
       <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-primarydark/60 sm:px-5">

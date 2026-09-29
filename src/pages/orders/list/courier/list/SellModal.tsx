@@ -405,7 +405,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                         setTotalPrice(sanitizeAmountInput(e.target.value))
                       }
                       placeholder="0"
-                      className="flex-1 bg-transparent text-sm text-gray-800 outline-none dark:text-gray-100"
+                      className="flex-1 bg-transparent text-base md:text-sm text-gray-800 outline-none dark:text-gray-100"
                     />
                     <span className="text-sm text-gray-400">{t("currency")}</span>
                   </div>
@@ -427,7 +427,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                       setExtraCost(sanitizeAmountInput(e.target.value))
                     }
                     placeholder="0"
-                    className="flex-1 bg-transparent text-sm text-gray-800 outline-none dark:text-gray-100"
+                    className="flex-1 bg-transparent text-base md:text-sm text-gray-800 outline-none dark:text-gray-100"
                   />
                   <span className="text-sm text-gray-400">{t("currency")}</span>
                 </div>
@@ -446,7 +446,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={t("writeNote")}
                   rows={3}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-100 dark:placeholder:text-white/35"
+                  className="w-full resize-none rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-base md:text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-100 dark:placeholder:text-white/35"
                 />
               </div>
 

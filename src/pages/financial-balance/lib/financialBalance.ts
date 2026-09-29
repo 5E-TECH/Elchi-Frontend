@@ -17,6 +17,12 @@ export interface FinancialBalanceData {
     couriersTotalBalance: number;
     items: FinancialBalanceParty[];
   };
+  /**
+   * Holat formulasidagi musbat qism — sotilgan, lekin hali kassaga yetmagan
+   * pul (kuryer, filial yoki kargo qo'lida). Backend `chain` bersa
+   * `chainReceivable + providerReceivable`, eski javobda `couriersTotalBalanse`.
+   */
+  receivable: number;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -249,12 +255,19 @@ export const normalizeFinancialBalance = (response: unknown): FinancialBalanceDa
     return null;
   }
 
+  const chain = toRecord(payload.chain);
+  const chainReceivable = pickNumber(chain, ["chainReceivable", "chain_receivable"]);
+  const providerReceivable = pickNumber(chain, ["providerReceivable", "provider_receivable"]) ?? 0;
+
   const cashBalance = cashBalanceValue ?? 0;
   const marketsBalance =
     marketsBalanceValue ?? marketItems.reduce((sum, item) => sum + item.balance, 0);
   const couriersBalance =
     couriersBalanceValue ?? courierItems.reduce((sum, item) => sum + item.balance, 0);
-  const computedTotal = cashBalance + marketsBalance + couriersBalance;
+  // Yangi backend (m2DAhYid): holat = kassa + zanjirdagi pul + kargo qarzi − market qarzi.
+  // Kuryer kassalari yig'indisi faqat ma'lumot — u zanjir ichida, ikkinchi marta qo'shilmaydi.
+  const receivable = chainReceivable !== undefined ? chainReceivable + providerReceivable : couriersBalance;
+  const computedTotal = cashBalance + marketsBalance + receivable;
   const total = totalValue ?? computedTotal;
 
   return {
@@ -273,6 +286,7 @@ export const normalizeFinancialBalance = (response: unknown): FinancialBalanceDa
       couriersTotalBalance: couriersBalance,
       items: courierItems,
     },
+    receivable,
   };
 };
 

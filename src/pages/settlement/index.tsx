@@ -1,7 +1,10 @@
-import { memo, useState } from "react";
-import { Alert, Button, Card, Empty, Input, Space, Table, Tag, Typography } from "antd";
+import { memo, useState, type ReactNode } from "react";
+import { Alert, Button, Card, Empty, Input, Popconfirm, Space, Table, Tag, Typography } from "antd";
+import type { UseMutationResult } from "@tanstack/react-query";
+import type { AxiosError } from "axios";
 import { ArrowRightLeft, Landmark, Search, Store, Truck } from "lucide-react";
-import { useOrdersCoverage } from "../../entities/orders/ordersCoverage";
+import { useOrdersCoverage, type SettlementLegRequest } from "../../entities/orders/ordersCoverage";
+import { getBackendErrorMessage } from "../../shared/lib/backendError";
 
 const { Title, Text } = Typography;
 
@@ -78,6 +81,109 @@ const AllocationResult = ({ result }: { result?: SettlementResult }) => {
   );
 };
 
+/** "1 250 000" / "1250000" → 1250000; bo'sh yoki son emas → NaN. */
+const parseAmount = (raw: string) => {
+  const cleaned = raw.replace(/[\s,]/g, "");
+  return cleaned === "" ? Number.NaN : Number(cleaned);
+};
+
+const newIdempotencyKey = () => crypto.randomUUID();
+
+type LegField = { key: string; ariaLabel: string; placeholder: string };
+
+interface SettlementLegProps {
+  title: ReactNode;
+  fields: LegField[];
+  amountAriaLabel: string;
+  /** Tasdiq matnidagi qabul qiluvchi, masalan "Filial #12". */
+  recipient: (values: Record<string, string>) => string;
+  mutation: UseMutationResult<unknown, Error, SettlementLegRequest>;
+}
+
+/**
+ * BITTA HISOB-KITOB OYOG'I (5hBeDuyn):
+ *  - ID lar bo'sh bo'lmasa va summa > 0 bo'lsagina tugma faol;
+ *  - yuborishdan oldin summa va qabul qiluvchi bilan tasdiq (Popconfirm);
+ *  - xato — server sababi bilan (ilgari 2 va 3-oyoqda umuman ko'rinmasdi);
+ *  - javobsiz/504 — "natija noma'lum, qayta yubormang";
+ *  - idempotentlik kaliti forma ochilganda bir marta, muvaffaqiyatdan keyin yangilanadi.
+ */
+const SettlementLeg = ({ title, fields, amountAriaLabel, recipient, mutation }: SettlementLegProps) => {
+  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(fields.map((f) => [f.key, ""])));
+  const [amountRaw, setAmountRaw] = useState("");
+  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const amount = parseAmount(amountRaw);
+  const idsFilled = fields.every((field) => values[field.key].trim() !== "");
+  const isValid = idsFilled && Number.isFinite(amount) && amount > 0;
+
+  const error = mutation.error as AxiosError | null;
+  const status = error?.response?.status;
+  const isUnknownOutcome = mutation.isError && (!status || status >= 502);
+
+  const submit = () => {
+    if (!isValid || mutation.isPending) return;
+    const data = { ...Object.fromEntries(fields.map((f) => [f.key, values[f.key].trim()])), amount };
+    mutation.mutate(
+      { data, idempotencyKey },
+      { onSuccess: () => setIdempotencyKey(newIdempotencyKey()) },
+    );
+  };
+
+  return (
+    <Card title={title}>
+      <Space direction="vertical" style={{ display: "flex" }}>
+        {fields.map((field) => (
+          <Input
+            key={field.key}
+            aria-label={field.ariaLabel}
+            placeholder={field.placeholder}
+            value={values[field.key]}
+            onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+          />
+        ))}
+        <Input
+          aria-label={amountAriaLabel}
+          placeholder="Summa (so'm)"
+          inputMode="numeric"
+          value={amountRaw}
+          status={amountRaw !== "" && !(Number.isFinite(amount) && amount > 0) ? "error" : undefined}
+          onChange={(e) => setAmountRaw(e.target.value)}
+        />
+        <Popconfirm
+          title="Hisob-kitobni tasdiqlang"
+          description={`${fmt(amount)} so'm → ${recipient(values)}. Tasdiqlaysizmi?`}
+          okText="Ha, yuborish"
+          cancelText="Bekor qilish"
+          onConfirm={submit}
+          disabled={!isValid || mutation.isPending}
+        >
+          <Button type="primary" loading={mutation.isPending} disabled={!isValid}>
+            Hisob-kitobni yuborish
+          </Button>
+        </Popconfirm>
+        {mutation.isError ? (
+          isUnknownOutcome ? (
+            <Alert
+              type="warning"
+              showIcon
+              title="Natija noma'lum — qayta yubormang"
+              description="Server javob bermadi yoki kechikdi. Pul allaqachon taqsimlangan bo'lishi mumkin: avval pastdagi buyurtma hisob-kitob holatini tekshiring."
+            />
+          ) : (
+            <Alert
+              type="error"
+              showIcon
+              title="Hisob-kitob yuborilmadi"
+              description={getBackendErrorMessage(mutation.error) ?? "Xatolik yuz berdi"}
+            />
+          )
+        ) : null}
+        <AllocationResult result={mutation.data as SettlementResult | undefined} />
+      </Space>
+    </Card>
+  );
+};
+
 const SettlementPage = () => {
   const {
     settlementCourierToBranch,
@@ -85,19 +191,6 @@ const SettlementPage = () => {
     settlementHqToMarket,
     useGetSettlementState,
   } = useOrdersCoverage();
-
-  // ── Leg 1: courier → branch ────────────────────────────────────────────────
-  const [courierId, setCourierId] = useState("");
-  const [c2bBranchId, setC2bBranchId] = useState("");
-  const [c2bAmount, setC2bAmount] = useState("");
-
-  // ── Leg 2: branch → HQ ──────────────────────────────────────────────────────
-  const [b2hBranchId, setB2hBranchId] = useState("");
-  const [b2hAmount, setB2hAmount] = useState("");
-
-  // ── Leg 3: HQ → market ──────────────────────────────────────────────────────
-  const [marketId, setMarketId] = useState("");
-  const [h2mAmount, setH2mAmount] = useState("");
 
   // ── Per-order settlement state lookup ────────────────────────────────────────
   const [lookupId, setLookupId] = useState("");
@@ -116,73 +209,32 @@ const SettlementPage = () => {
       </Text>
 
       <Space direction="vertical" size="large" style={{ display: "flex", marginTop: 20 }}>
-        {/* Leg 1 */}
-        <Card title={<><Truck size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Kuryer → Filial</>}>
-          <Space direction="vertical" style={{ display: "flex" }}>
-            <Input aria-label="c2b-courier" placeholder="Kuryer ID" value={courierId} onChange={(e) => setCourierId(e.target.value)} />
-            <Input aria-label="c2b-branch" placeholder="Filial ID" value={c2bBranchId} onChange={(e) => setC2bBranchId(e.target.value)} />
-            <Input aria-label="c2b-amount" placeholder="Summa (so'm)" value={c2bAmount} onChange={(e) => setC2bAmount(e.target.value)} />
-            <Button
-              type="primary"
-              loading={settlementCourierToBranch.isPending}
-              onClick={() =>
-                settlementCourierToBranch.mutate({
-                  courier_id: courierId,
-                  branch_id: c2bBranchId,
-                  amount: Number(c2bAmount),
-                })
-              }
-            >
-              Hisob-kitobni yuborish
-            </Button>
-            {settlementCourierToBranch.isError ? (
-              <Alert type="error" showIcon message="Xatolik yuz berdi" />
-            ) : null}
-            <AllocationResult result={settlementCourierToBranch.data as SettlementResult | undefined} />
-          </Space>
-        </Card>
+        <SettlementLeg
+          title={<><Truck size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Kuryer → Filial</>}
+          fields={[
+            { key: "courier_id", ariaLabel: "c2b-courier", placeholder: "Kuryer ID" },
+            { key: "branch_id", ariaLabel: "c2b-branch", placeholder: "Filial ID" },
+          ]}
+          amountAriaLabel="c2b-amount"
+          recipient={(v) => `Kuryer #${v.courier_id.trim()} → Filial #${v.branch_id.trim()}`}
+          mutation={settlementCourierToBranch}
+        />
 
-        {/* Leg 2 */}
-        <Card title={<><Landmark size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Filial → HQ</>}>
-          <Space direction="vertical" style={{ display: "flex" }}>
-            <Input aria-label="b2h-branch" placeholder="Filial ID" value={b2hBranchId} onChange={(e) => setB2hBranchId(e.target.value)} />
-            <Input aria-label="b2h-amount" placeholder="Summa (so'm)" value={b2hAmount} onChange={(e) => setB2hAmount(e.target.value)} />
-            <Button
-              type="primary"
-              loading={settlementBranchToHq.isPending}
-              onClick={() =>
-                settlementBranchToHq.mutate({
-                  branch_id: b2hBranchId,
-                  amount: Number(b2hAmount),
-                })
-              }
-            >
-              Hisob-kitobni yuborish
-            </Button>
-            <AllocationResult result={settlementBranchToHq.data as SettlementResult | undefined} />
-          </Space>
-        </Card>
+        <SettlementLeg
+          title={<><Landmark size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Filial → HQ</>}
+          fields={[{ key: "branch_id", ariaLabel: "b2h-branch", placeholder: "Filial ID" }]}
+          amountAriaLabel="b2h-amount"
+          recipient={(v) => `Filial #${v.branch_id.trim()} → HQ`}
+          mutation={settlementBranchToHq}
+        />
 
-        {/* Leg 3 */}
-        <Card title={<><Store size={16} style={{ verticalAlign: -3, marginRight: 6 }} />HQ → Market</>}>
-          <Space direction="vertical" style={{ display: "flex" }}>
-            <Input aria-label="h2m-market" placeholder="Market ID" value={marketId} onChange={(e) => setMarketId(e.target.value)} />
-            <Input aria-label="h2m-amount" placeholder="Summa (so'm)" value={h2mAmount} onChange={(e) => setH2mAmount(e.target.value)} />
-            <Button
-              type="primary"
-              loading={settlementHqToMarket.isPending}
-              onClick={() =>
-                settlementHqToMarket.mutate({
-                  market_id: marketId,
-                  amount: Number(h2mAmount),
-                })
-              }
-            >
-              Hisob-kitobni yuborish
-            </Button>
-            <AllocationResult result={settlementHqToMarket.data as SettlementResult | undefined} />
-          </Space>
-        </Card>
+        <SettlementLeg
+          title={<><Store size={16} style={{ verticalAlign: -3, marginRight: 6 }} />HQ → Market</>}
+          fields={[{ key: "market_id", ariaLabel: "h2m-market", placeholder: "Market ID" }]}
+          amountAriaLabel="h2m-amount"
+          recipient={(v) => `Market #${v.market_id.trim()}`}
+          mutation={settlementHqToMarket}
+        />
 
         {/* Per-order settlement state */}
         <Card title={<><Search size={16} style={{ verticalAlign: -3, marginRight: 6 }} />Buyurtma hisob-kitob holati</>}>

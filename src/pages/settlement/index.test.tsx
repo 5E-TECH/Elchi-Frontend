@@ -53,6 +53,7 @@ describe("Settlement page", () => {
       name: "Hisob-kitobni yuborish",
     });
     await user.click(submitButtons[0]); // leg 1 = courier → branch
+    await user.click(await screen.findByRole("button", { name: "Ha, yuborish" }));
 
     await waitFor(() =>
       expect(apiPostMock).toHaveBeenCalledWith(
@@ -62,6 +63,7 @@ describe("Settlement page", () => {
           branch_id: "branch-1",
           amount: 50000,
         }),
+        expect.objectContaining({ headers: { "Idempotency-Key": expect.any(String) } }),
       ),
     );
 
@@ -80,5 +82,81 @@ describe("Settlement page", () => {
       expect(apiGetMock).toHaveBeenCalledWith("orders/o1/settlement"),
     );
     expect(await screen.findByText(/AT_BRANCH/)).toBeInTheDocument();
+  });
+
+  const fillLeg2 = async (user: ReturnType<typeof userEvent.setup>, branch = "12", amount = "1250000") => {
+    if (branch) await user.type(screen.getByLabelText("b2h-branch"), branch);
+    if (amount) await user.type(screen.getByLabelText("b2h-amount"), amount);
+  };
+  const leg2Button = () => screen.getAllByRole("button", { name: "Hisob-kitobni yuborish" })[1];
+
+  it("shows the server's reason when the branch → HQ leg is rejected (it was silent before)", async () => {
+    const user = userEvent.setup();
+    apiPostMock.mockRejectedValue(
+      Object.assign(new Error("Bad Request"), { isAxiosError: true, response: { status: 400, data: { message: "branch_id should not be empty" } } }),
+    );
+    renderWithProviders(<SettlementPage />);
+    await fillLeg2(user);
+
+    await user.click(leg2Button());
+    await user.click(await screen.findByRole("button", { name: "Ha, yuborish" }));
+
+    expect(await screen.findByText("Hisob-kitob yuborilmadi")).toBeInTheDocument();
+    expect(screen.getByText("branch_id should not be empty")).toBeInTheDocument();
+  });
+
+  it("keeps the send button disabled and posts nothing without an ID or with amount <= 0", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettlementPage />);
+
+    expect(leg2Button()).toBeDisabled();
+    await fillLeg2(user, "12", "0");
+    expect(leg2Button()).toBeDisabled();
+    await user.clear(screen.getByLabelText("b2h-amount"));
+    await user.type(screen.getByLabelText("b2h-amount"), "-5");
+    expect(leg2Button()).toBeDisabled();
+    await user.clear(screen.getByLabelText("b2h-branch"));
+    await user.clear(screen.getByLabelText("b2h-amount"));
+    await user.type(screen.getByLabelText("b2h-amount"), "1000");
+    expect(leg2Button()).toBeDisabled();
+
+    expect(apiPostMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the amount and recipient in the confirmation and sends nothing on \"Bekor qilish\"", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettlementPage />);
+    await fillLeg2(user);
+
+    await user.click(leg2Button());
+    expect(await screen.findByText(/1\s?250\s?000 so'm → Filial #12 → HQ\. Tasdiqlaysizmi\?/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Bekor qilish" }));
+
+    expect(apiPostMock).not.toHaveBeenCalled();
+  });
+
+  it("reuses one idempotency key for retries and starts a new one after success", async () => {
+    const user = userEvent.setup();
+    apiPostMock.mockRejectedValueOnce(Object.assign(new Error("Timeout"), { isAxiosError: true, code: "ECONNABORTED" }));
+    renderWithProviders(<SettlementPage />);
+    await fillLeg2(user);
+
+    await user.click(leg2Button());
+    await user.click(await screen.findByRole("button", { name: "Ha, yuborish" }));
+    // Javobsiz — natija noma'lum.
+    expect(await screen.findByText("Natija noma'lum — qayta yubormang")).toBeInTheDocument();
+
+    await user.click(leg2Button());
+    await user.click((await screen.findAllByRole("button", { name: "Ha, yuborish" })).at(-1)!);
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(2));
+    await screen.findByText("Hisob-kitob qabul qilindi");
+
+    await user.click(leg2Button());
+    await user.click((await screen.findAllByRole("button", { name: "Ha, yuborish" })).at(-1)!);
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(3));
+
+    const keys = apiPostMock.mock.calls.map((call) => (call[2] as { headers: Record<string, string> }).headers["Idempotency-Key"]);
+    expect(keys[0]).toBe(keys[1]);
+    expect(keys[2]).not.toBe(keys[1]);
   });
 });

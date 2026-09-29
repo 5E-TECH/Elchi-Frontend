@@ -51,7 +51,7 @@ const PhoneInput = ({
         onBlur={onBlur}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-full rounded-xl border-2 bg-[color:var(--color-card-surface-strong)] py-3 pl-[5.25rem] pr-4 text-sm font-semibold text-maindark shadow-sm outline-none transition-all placeholder:text-[color:var(--color-text-muted)] hover:shadow-sm focus:shadow-md dark:bg-[color:var(--color-primarydark)] dark:text-white dark:placeholder:text-white/55 ${
+        className={`w-full rounded-xl border-2 bg-[color:var(--color-card-surface-strong)] py-3 pl-[5.25rem] pr-4 text-base md:text-sm font-semibold text-maindark shadow-sm outline-none transition-all placeholder:text-[color:var(--color-text-muted)] hover:shadow-sm focus:shadow-md dark:bg-[color:var(--color-primarydark)] dark:text-white dark:placeholder:text-white/55 ${
           error
             ? "border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-400/20 dark:border-red-500"
             : "border-[color:var(--color-border-strong)] hover:border-main/60 focus:border-main focus:ring-2 focus:ring-main/15 dark:border-white/15 dark:hover:border-main/60 dark:focus:border-main"

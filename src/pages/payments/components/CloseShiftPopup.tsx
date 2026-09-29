@@ -83,7 +83,7 @@ const CloseShiftPopup = ({
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               placeholder={t("closeShiftPlaceholder")}
-              className="min-h-28 w-full resize-none rounded-xl border border-glass-border bg-sidebar px-4 py-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-main focus:ring-2 focus:ring-main/20 dark:bg-primarydark dark:text-white dark:placeholder:text-white/30"
+              className="min-h-28 w-full resize-none rounded-xl border border-glass-border bg-sidebar px-4 py-3 text-base md:text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-main focus:ring-2 focus:ring-main/20 dark:bg-primarydark dark:text-white dark:placeholder:text-white/30"
             />
           </div>
         </div>

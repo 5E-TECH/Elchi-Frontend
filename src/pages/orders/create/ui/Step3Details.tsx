@@ -339,7 +339,7 @@ const Step3Details = () => {
                 value={formatPrice(field.value)}
                 onChange={(event) => field.onChange(stripPrice(event.target.value))}
                 className={getFieldClassName(`
-                  w-full px-3.5 py-2.5 rounded-xl text-sm font-mono
+                  w-full px-3.5 py-2.5 rounded-xl text-base md:text-sm font-mono
                   bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark
                   text-maindark dark:text-primary placeholder:text-gray-400
                   focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
@@ -364,7 +364,7 @@ const Step3Details = () => {
                 type="text"
                 placeholder={t("operatorPlaceholder")}
                 className={getFieldClassName(`
-                  w-full px-3.5 py-2.5 rounded-xl text-sm
+                  w-full px-3.5 py-2.5 rounded-xl text-base md:text-sm
                   bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark
                   text-maindark dark:text-primary placeholder:text-gray-400
                   focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
@@ -388,7 +388,7 @@ const Step3Details = () => {
                 rows={2}
                 placeholder={t("notePlaceholder")}
                 className={getFieldClassName(`
-                  w-full px-3.5 py-2.5 rounded-xl text-sm resize-none
+                  w-full px-3.5 py-2.5 rounded-xl text-base md:text-sm resize-none
                   bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark
                   text-maindark dark:text-primary placeholder:text-gray-400
                   focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main

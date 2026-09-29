@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../shared/api/api";
+import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
 const orders = "orders";
@@ -43,7 +43,8 @@ export const useOrders = () => {
     formData.append("file", proof);
     formData.append("folder", "proof");
 
-    const response = await api.post(API_ENDPOINTS.FILES.UPLOAD, formData);
+    // Rasm/video (10 MB gacha) sekin tarmoqda 20 s dan oshishi mumkin.
+    const response = await api.post(API_ENDPOINTS.FILES.UPLOAD, formData, { timeout: LONG_REQUEST_TIMEOUT_MS });
     const key = response.data?.data?.key ?? response.data?.key;
 
     if (!key) {

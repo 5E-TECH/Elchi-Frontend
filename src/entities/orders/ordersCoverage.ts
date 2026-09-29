@@ -2,6 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
+/**
+ * Hisob-kitob oyog'i so'rovi. `idempotencyKey` forma ochilganda bir marta
+ * yaratiladi va muvaffaqiyatgacha o'zgarmaydi — javob kechikib operator qayta
+ * bossa, backend o'sha kalit bo'yicha birinchi natijani qaytaradi, pul ikkinchi
+ * marta taqsimlanmaydi (5hBeDuyn).
+ */
+export type SettlementLegRequest = { data: Record<string, unknown>; idempotencyKey: string };
+
+const settlementHeaders = (idempotencyKey: string) => ({ headers: { "Idempotency-Key": idempotencyKey } });
+
 export const useOrdersCoverage = () => {
   const client = useQueryClient();
 
@@ -108,22 +118,22 @@ export const useOrdersCoverage = () => {
   });
 
   const settlementBranchToHq = useMutation({
-    mutationFn: (data?: any) =>
-      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_BRANCH_TO_HQ, data)
+    mutationFn: ({ data, idempotencyKey }: SettlementLegRequest) =>
+      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_BRANCH_TO_HQ, data, settlementHeaders(idempotencyKey))
         .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["orders-cov"] }),
   });
 
   const settlementCourierToBranch = useMutation({
-    mutationFn: (data?: any) =>
-      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_COURIER_TO_BRANCH, data)
+    mutationFn: ({ data, idempotencyKey }: SettlementLegRequest) =>
+      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_COURIER_TO_BRANCH, data, settlementHeaders(idempotencyKey))
         .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["orders-cov"] }),
   });
 
   const settlementHqToMarket = useMutation({
-    mutationFn: (data?: any) =>
-      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_HQ_TO_MARKET, data)
+    mutationFn: ({ data, idempotencyKey }: SettlementLegRequest) =>
+      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_HQ_TO_MARKET, data, settlementHeaders(idempotencyKey))
         .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["orders-cov"] }),
   });

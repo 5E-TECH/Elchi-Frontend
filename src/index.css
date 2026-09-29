@@ -1783,3 +1783,18 @@ select:-webkit-autofill:focus {
     background: var(--color-flag-en-blue);
   }
 }
+
+/*
+  iOS FOKUS ZOOM (gUSTfU2h). iOS Safari 16px dan kichik inputga fokus tushsa
+  sahifani ~1.14x kattalashtiradi va blur'da QAYTARMAYDI. Telefon kengligida
+  barcha matn kiritish maydonlari (antd'nikilar ham) 16px. `maximum-scale=1`
+  EMAS — u zoom'ni butunlay o'chirib, a11y'ni buzadi.
+  ⚠️ Qatlamsiz (unlayered) qoida — Tailwind `text-sm` utilitisidan ustun turadi.
+*/
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

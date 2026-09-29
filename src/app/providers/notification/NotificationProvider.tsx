@@ -3,7 +3,9 @@ import { createContext, useContext, useEffect, useRef, type ReactNode } from 're
 import { notification } from 'antd';
 import type { NotificationInstance } from 'antd/es/notification/interface';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { getBackendErrorMessage } from '../../../shared/lib/backendError';
+import { QUERY_ERROR_EVENT, type QueryErrorDetail } from '../../../shared/lib/queryErrorEvents';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +37,7 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const [api, contextHolder] = notification.useNotification();
+    const queryClient = useQueryClient();
     const { t } = useTranslation('common');
     const lastNetworkToastAtRef = useRef(0);
 
@@ -52,7 +55,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                 placement: "bottomRight",
                 duration: 8,
                 btn: (
-                    <Button size="small" danger onClick={() => window.location.reload()}>
+                    // ⚠️ `window.location.reload()` EMAS: internet hali qaytmagan bo'lsa
+                    // to'liq qayta yuklash sessiyani xavf ostiga qo'yardi (9w5Fq94s).
+                    <Button size="small" danger onClick={() => void queryClient.refetchQueries({ type: "active" })}>
                         {t('retry')}
                     </Button>
                 ),
@@ -61,6 +66,23 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
         window.addEventListener("elchi:network-error", handleNetworkError);
         return () => window.removeEventListener("elchi:network-error", handleNetworkError);
+    }, [api, queryClient, t]);
+
+    const lastQueryErrorRef = useRef<{ key: string; at: number }>({ key: "", at: 0 });
+    useEffect(() => {
+        const handleQueryError = (event: Event) => {
+            const { status, message } = (event as CustomEvent<QueryErrorDetail>).detail;
+            const description =
+                status === 403 ? t('queryErrorForbidden') : status >= 500 ? t('queryErrorServer', { status }) : message ?? t('queryErrorGeneric', { status });
+            // Bir sahifadagi bir nechta so'rov bir xil sabab bilan yiqilsa — bitta bildirishnoma.
+            const key = `${status}:${description}`;
+            const now = Date.now();
+            if (lastQueryErrorRef.current.key === key && now - lastQueryErrorRef.current.at < 4000) return;
+            lastQueryErrorRef.current = { key, at: now };
+            api.error({ message: t('queryErrorTitle'), description, placement: "bottomRight", duration: 8 });
+        };
+        window.addEventListener(QUERY_ERROR_EVENT, handleQueryError);
+        return () => window.removeEventListener(QUERY_ERROR_EVENT, handleQueryError);
     }, [api, t]);
 
     /**

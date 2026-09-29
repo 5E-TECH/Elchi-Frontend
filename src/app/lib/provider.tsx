@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { memo, Suspense, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Provider, useSelector } from "react-redux";
@@ -14,8 +14,13 @@ import AuthBootstrap from "../../auth/AuthBootstrap";
 import SessionExpiryCountdown from "../../auth/SessionExpiryCountdown";
 import SettingsSync from "../providers/SettingsSync";
 import ScanFeedbackOverlay from "../../shared/components/ScanFeedbackOverlay";
+import { emitQueryError } from "../../shared/lib/queryErrorEvents";
 
 const queryClient = new QueryClient({
+  // 4xx/5xx ham foydalanuvchiga ko'rinsin — sahifa `isError` o'qimasa ham.
+  queryCache: new QueryCache({
+    onError: (error, query) => emitQueryError(error, query.meta),
+  }),
   defaultOptions: {
     queries: {
       staleTime: 30_000,

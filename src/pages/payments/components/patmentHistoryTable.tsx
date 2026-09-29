@@ -90,6 +90,8 @@ export interface Pagination {
 interface PaymentHistoryTableProps {
   data?: PaymentRow[];
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   pagination?: Pagination;
   onPageChange?: (page: number) => void;
   onItemsPerPageChange?: (limit: number) => void;
@@ -101,6 +103,8 @@ interface PaymentHistoryTableProps {
 const PaymentHistoryTable = ({
   data = [],
   isLoading = false,
+  isError = false,
+  onRetry,
   pagination,
   onPageChange,
   onItemsPerPageChange,
@@ -239,6 +243,8 @@ const PaymentHistoryTable = ({
           data={data}
           columns={columns}
           loading={isLoading}
+          error={isError}
+          onRetry={onRetry}
           dense
           keyExtractor={(row) => row.id}
           emptyMessage={t("financeHistoryNotFound")}

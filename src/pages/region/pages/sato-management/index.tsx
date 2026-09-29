@@ -187,7 +187,7 @@ const RegionSatoManagementPage = () => {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t("sato.searchPlaceholder")}
-              className="w-full bg-transparent text-sm text-main outline-none placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-[color:var(--color-text-muted-dark)] dark:text-primary"
+              className="w-full bg-transparent text-base md:text-sm text-main outline-none placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-[color:var(--color-text-muted-dark)] dark:text-primary"
             />
           </div>
 

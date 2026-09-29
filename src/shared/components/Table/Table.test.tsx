@@ -276,3 +276,23 @@ describe("Table row keyboard access", () => {
     expect(bodyRows(container).some((tr) => tr === document.activeElement)).toBe(false);
   });
 });
+
+describe("Table error state (sfNW22M7)", () => {
+  it("shows an error with a retry button instead of the empty state when the query failed", async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    render(<Table data={[]} columns={columns} keyExtractor={(row) => row.id} emptyMessage="Topilmadi" error onRetry={onRetry} />);
+
+    expect(screen.queryByText("Topilmadi")).not.toBeInTheDocument();
+    // Bu faylda i18n provayderi yo'q — tugma matni kalit ("retry") bo'lib chiqadi.
+    await user.click(screen.getByRole("button", { name: /Qayta urinish|retry/ }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the normal empty state when there is no error", () => {
+    render(<Table data={[]} columns={columns} keyExtractor={(row) => row.id} emptyMessage="Topilmadi" />);
+
+    expect(screen.getByText("Topilmadi")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Qayta urinish|retry/ })).not.toBeInTheDocument();
+  });
+});
