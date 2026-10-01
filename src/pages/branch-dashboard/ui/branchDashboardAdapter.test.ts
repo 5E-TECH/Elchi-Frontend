@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { normalizeDashboardResponse } from "../../../entities/dashboard";
 import { adaptBranchDashboard } from "./branchDashboardAdapter";
 
 describe("branch dashboard adapter", () => {
@@ -152,4 +153,85 @@ describe("branch dashboard adapter", () => {
     });
   });
 
+  it("labels a market without a name as 'Market N'", () => {
+    const result = adaptBranchDashboard(
+      {
+        role: "manager",
+        today_orders_count: 0,
+        week_orders_count: 0,
+        active_batches_count: 0,
+        couriers_count: 0,
+        cards: {
+          orders: null,
+          markets: [{ id: "201", name: "", orders: 5, amount: 750000 }],
+          packages: null,
+          couriers: null,
+        },
+      },
+      "manager",
+    );
+
+    expect(result.markets[0]).toEqual({ id: "201", name: "Market 1", orders: 5, amount: 750000 });
+  });
+
+  it("keeps a market name as is", () => {
+    const result = adaptBranchDashboard(
+      {
+        role: "manager",
+        today_orders_count: 0,
+        week_orders_count: 0,
+        active_batches_count: 0,
+        couriers_count: 0,
+        cards: {
+          orders: null,
+          markets: [{ id: "201", name: "Yandex", orders: 5, amount: 750000 }],
+          packages: null,
+          couriers: null,
+        },
+      },
+      "manager",
+    );
+
+    expect(result.markets[0]).toEqual({ id: "201", name: "Yandex", orders: 5, amount: 750000 });
+  });
+
+  it("shows the real backend payload on the manager cards (cancelled, market name, branch couriers)", () => {
+    const normalized = normalizeDashboardResponse({
+      data: {
+        branchDashboard: {
+          role: "MANAGER",
+          today_orders_count: 3,
+          week_orders_count: 4,
+          active_batches_count: 1,
+          couriers_count: 3,
+          cards: {
+            orders: { total: 8, new: 1, on_the_road: 2, delivered: 6, returned: 0, cancelled: 2 },
+            markets: [
+              { market_id: "201", market_name: "Yandex", orders_count: 5, total_price: 750000 },
+              // identity javob bermagan — nom yo'q.
+              { market_id: "202", market_name: null, orders_count: 1, total_price: 90000 },
+            ],
+            packages: { on_the_way: 1, waiting_for_acceptance: 0 },
+            couriers: { branch_couriers: 3, active_today: 1 },
+          },
+          visibility: { orders: true, markets: true, packages: true, couriers: true },
+        },
+      },
+    });
+
+    const result = adaptBranchDashboard(normalized.data.branchDashboard, "manager");
+
+    expect(result.orderSummary).toEqual({
+      total: 8,
+      new: 1,
+      onTheRoad: 2,
+      delivered: 6,
+      returned: 2,
+    });
+    expect(result.markets).toEqual([
+      { id: "201", name: "Yandex", orders: 5, amount: 750000 },
+      { id: "202", name: "Market 2", orders: 1, amount: 90000 },
+    ]);
+    expect(result.couriers).toEqual({ total: 3, active: 1 });
+  });
 });

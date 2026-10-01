@@ -7,6 +7,7 @@
   "couriersEmptyTitle": "Courier topilmadi",
   "couriersEmptyDescription": "Bu filial uchun courier ro'yxati bo'sh keldi. Courier qo'shilsa yoki backend /couriers ro'yxat qaytarsa, shu yerdan tanlab orderlarni biriktirasiz.",
   "couriersLoadError": "Courier ro'yxatini yuklab bo'lmadi. Scan qilish mumkin, lekin biriktirish uchun qayta urinib ko'ring.",
+  "noCouriersInBranch": "Filialda faol kuryer yo'q",
   "retry": "Qayta urinish",
   "scannerTitle": "Skan paneli",
   "scannerSubtitle": "Faqat order QR kodi qabul qilinadi",

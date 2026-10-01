@@ -28,6 +28,15 @@ const courierState = {
   },
 };
 
+const managerState = {
+  role: {
+    id: "198",
+    role: "manager",
+    region: null,
+    name: "Manager",
+  },
+};
+
 describe("Mails page", () => {
   beforeEach(() => {
     Object.defineProperty(window, "innerWidth", {
@@ -74,7 +83,32 @@ describe("Mails page", () => {
       preloadedState: courierState,
     });
 
-    expect(screen.queryByRole("button", { name: /Qaytarilgan pochtalar/i })).not.toBeInTheDocument();
+    // Tab yorlig'i uz tilida aynan "Qaytarish" (mails.json returnTab). Ilgari
+    // mavjud bo'lmagan "Qaytarilgan pochtalar" qidirilardi — test hech narsani
+    // tekshirmasdi. Qolgan tablar chizilgani — musbat nazorat.
+    expect(screen.getByRole("button", { name: /^Rad etilgan pochtalar$/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Qaytarish$/ })).not.toBeInTheDocument();
+  });
+
+  it("shows the returns tab to a branch manager and opens it", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Mails />, {
+      route: "/mails/today",
+      preloadedState: managerState,
+    });
+
+    await user.click(screen.getByRole("button", { name: /^Qaytarish$/ }));
+
+    expect(screen.getByText("return-content")).toBeInTheDocument();
+  });
+
+  it("renders the returns route for a manager", () => {
+    renderWithProviders(<Mails />, {
+      route: "/mails/return",
+      preloadedState: managerState,
+    });
+
+    expect(screen.getByText("return-content")).toBeInTheDocument();
   });
 
   it("redirects courier away from returns route", async () => {

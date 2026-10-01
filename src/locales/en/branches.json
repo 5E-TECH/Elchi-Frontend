@@ -45,6 +45,27 @@
     "removeConfirm": "Remove this employee from the branch?",
     "removed": "Employee removed"
   },
+  "courierTransfer": {
+    "title": "Move courier to another branch",
+    "description": "A courier can be moved only when they hold no money and no orders",
+    "openButton": "Change branch",
+    "rowButton": "Move to another branch",
+    "currentBranch": "Current branch",
+    "noBranch": "Not assigned to a branch",
+    "targetBranch": "New branch",
+    "selectTarget": "Select the new branch",
+    "noManager": "no manager",
+    "balance": "Money held by the courier",
+    "ordersInHand": "Orders in hand",
+    "ok": "The courier holds no money or orders — the move is allowed",
+    "blocked": "The courier cannot be moved yet",
+    "payHint": "Receive the money",
+    "branchPayHint": "The manager of the “{{branch}}” branch must receive the money",
+    "action": "Move",
+    "success": "{{name}} was moved to the “{{branch}}” branch",
+    "checkFailed": "Could not check — please try again shortly",
+    "retry": "Check again"
+  },
   "settings": {
     "title": "Branch settings",
     "description": "Manage branch-specific key-value settings here.",

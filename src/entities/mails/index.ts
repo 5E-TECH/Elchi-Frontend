@@ -221,23 +221,6 @@ export interface MailItem {
   status: string;
 }
 
-interface TransferBatchListResponse {
-  data: {
-    data?: any[];
-    items?: any[];
-    total?: number;
-    page?: number;
-    totalPages?: number;
-    limit?: number;
-    meta?: {
-      total?: number;
-      page?: number;
-      totalPages?: number;
-      limit?: number;
-    };
-  };
-}
-
 const toText = (value: unknown, fallback = ""): string => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
@@ -249,132 +232,98 @@ const toNumber = (value: unknown, fallback = 0): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-const mapTransferBatchToMailItem = (batch: any): MailItem => {
-  const sourceBranch = batch?.source_branch ?? batch?.from_branch ?? batch?.sourceBranch ?? batch?.fromBranch;
-  const destinationBranch = batch?.destination_branch ?? batch?.to_branch ?? batch?.destinationBranch ?? batch?.toBranch;
-  const region = batch?.region;
-  const regionName = toText(
-    region?.name ??
-      destinationBranch?.name ??
-      destinationBranch?.title ??
-      sourceBranch?.name ??
-      sourceBranch?.title,
-    "Filial",
-  );
-  const regionId = toText(region?.id ?? batch?.target_region_id ?? destinationBranch?.id ?? sourceBranch?.id ?? "branch");
+// ─── Pochta → Qaytarish (kuryer qaytarish so'rovlari) ─────────────────────────
+// Backend: data = { total, scope: { type: "HQ" | "BRANCH", branch_id }, groups: [
+//   { courier, courier_id, orders: [OrderRow + customer/district/market] } ] }.
+// Har bir so'rov — bitta buyurtma; approve/reject aynan { order_ids } oladi
+// (gateway ValidationPipe boshqa kalitni 400 bilan qaytaradi).
+export interface ReturnRequestActionPayload {
+  order_ids: string[];
+}
+
+type UnknownRecord = Record<string, unknown>;
+
+const asRecord = (value: unknown): UnknownRecord | null =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as UnknownRecord) : null;
+
+const mapReturnOrderToMailItem = (
+  order: UnknownRecord,
+  group: UnknownRecord,
+  destination: "branch" | "center",
+): MailItem => {
+  const courier = asRecord(group.courier);
+  const customer = asRecord(order.customer);
+  const district = asRecord(order.district);
+  const region = asRecord(district?.region) ?? asRecord(order.region);
+  const orderId = toText(order.id);
+  const regionId = toText(region?.id ?? order.region_id);
+  const createdAt = toText(order.createdAt ?? order.created_at, new Date().toISOString());
 
   return {
-    id: toText(batch?.id ?? batch?._id),
-    createdAt: toText(batch?.createdAt ?? batch?.created_at, new Date().toISOString()),
-    updatedAt: toText(batch?.updatedAt ?? batch?.updated_at ?? batch?.createdAt, new Date().toISOString()),
-    courier_id: "",
-    post_total_price: toNumber(batch?.total_price ?? batch?.totalPrice ?? batch?.amount),
-    order_quantity: toNumber(
-      batch?.order_count ??
-        batch?.orders_count ??
-        batch?.ordersCount ??
-        batch?.items?.length ??
-        batch?.orders?.length,
-    ),
-    qr_code_token: toText(batch?.qr_code_token ?? batch?.qrCodeToken ?? batch?.token),
+    id: orderId,
+    request_id: orderId,
+    order_id: orderId,
+    post_id: toText(order.post_id),
+    createdAt,
+    updatedAt: toText(order.updatedAt ?? order.updated_at, createdAt),
+    courier_id: toText(group.courier_id ?? courier?.id ?? order.holder_courier_id),
+    post_total_price: toNumber(order.total_price),
+    order_quantity: 1,
+    qr_code_token: toText(order.qr_code_token),
     region_id: regionId,
     region: {
       id: regionId,
-      name: regionName,
+      name: toText(region?.name),
       sato_code: toText(region?.sato_code),
     },
-    status: toText(batch?.status),
+    courier: courier
+      ? {
+          id: toText(courier.id),
+          name: toText(courier.name ?? courier.full_name ?? courier.username),
+          phone_number: toText(courier.phone_number ?? courier.phone),
+        }
+      : null,
+    customer: customer
+      ? {
+          id: toText(customer.id),
+          name: toText(customer.name ?? customer.full_name ?? customer.username),
+          phone_number: toText(customer.phone_number ?? customer.phone),
+          extra_number: typeof customer.extra_number === "string" ? customer.extra_number : null,
+        }
+      : null,
+    district: district ? { id: toText(district.id), name: toText(district.name) } : null,
+    action: destination,
+    status: toText(order.status),
   };
 };
 
-const mapReturnRequestToMailItem = (request: any): MailItem => {
-  const post = request?.post ?? request?.mail ?? request?.batch ?? request;
-  const region = post?.region ?? request?.region;
-  const district = request?.district ?? request?.order?.district ?? request?.customer?.district ?? post?.district;
-  const courier = request?.courier ?? post?.courier ?? request?.user ?? request?.courier_user;
-  const order = request?.order ?? request;
-  const customer = order?.customer ?? request?.customer;
-  const orders = post?.orders ?? request?.orders ?? post?.allOrdersByPostId ?? request?.allOrdersByPostId;
-  const orderCount =
-    request?.order_quantity ??
-    request?.order_count ??
-    request?.orders_count ??
-    post?.order_quantity ??
-    post?.order_count ??
-    post?.orders_count ??
-    (Array.isArray(orders) ? orders.length : undefined);
-  const totalPrice =
-    request?.post_total_price ??
-    request?.total_price ??
-    request?.totalPrice ??
-    request?.amount ??
-    order?.total_price ??
-    order?.totalPrice ??
-    order?.to_be_paid ??
-    order?.price ??
-    post?.post_total_price ??
-    post?.total_price ??
-    post?.totalPrice;
-  const regionId = toText(region?.id ?? post?.region_id ?? request?.region_id, "return-region");
+export const toReturnRequestsMailResponse = (payload: unknown): PaginatedPostsResponse => {
+  const body = asRecord(payload);
+  const container = Array.isArray(body?.groups) ? body : asRecord(body?.data);
+  const groups = Array.isArray(container?.groups) ? container.groups : [];
+  // Eski backend `scope` bermaydi — o'shanda markaz (HQ) deb ko'rsatiladi.
+  const destination = toText(asRecord(container?.scope)?.type).toUpperCase() === "BRANCH" ? "branch" : "center";
 
-  return {
-    id: toText(post?.id ?? request?.post_id ?? request?.postId ?? request?.id ?? request?._id),
-    request_id: toText(request?.id ?? request?._id),
-    order_id: toText(request?.order_id ?? request?.orderId ?? order?.id),
-    post_id: toText(post?.id ?? request?.post_id ?? request?.postId),
-    createdAt: toText(post?.createdAt ?? post?.created_at ?? request?.createdAt ?? request?.created_at, new Date().toISOString()),
-    updatedAt: toText(post?.updatedAt ?? post?.updated_at ?? request?.updatedAt ?? request?.updated_at, new Date().toISOString()),
-    courier_id: toText(post?.courier_id ?? request?.courier_id ?? courier?.id),
-    post_total_price: toNumber(totalPrice),
-    order_quantity: toNumber(orderCount),
-    qr_code_token: toText(post?.qr_code_token ?? post?.qrCodeToken ?? request?.qr_code_token ?? request?.qrCodeToken),
-    region_id: regionId,
-    region: {
-      id: regionId,
-      name: toText(region?.name ?? region?.title),
-      sato_code: toText(region?.sato_code),
-    },
-    courier: courier ? {
-      id: toText(courier?.id),
-      name: toText(courier?.name ?? courier?.full_name ?? courier?.username),
-      phone_number: toText(courier?.phone_number ?? courier?.phone),
-    } : null,
-    customer: customer ? {
-      id: toText(customer?.id),
-      name: toText(customer?.name ?? customer?.full_name ?? customer?.username),
-      phone_number: toText(customer?.phone_number ?? customer?.phone),
-      extra_number: customer?.extra_number ?? null,
-    } : null,
-    district: district ? {
-      id: toText(district?.id),
-      name: toText(district?.name ?? district?.title),
-    } : null,
-    action: toText(request?.action ?? request?.return_action ?? request?.destination, "center"),
-    status: toText(request?.status ?? post?.status, "return"),
-  };
-};
-
-const toPaginatedMailResponse = (
-  payload: TransferBatchListResponse | any,
-  mapItem: (item: any) => MailItem = mapTransferBatchToMailItem,
-): PaginatedPostsResponse => {
-  const container = payload?.data ?? payload;
-  const rawItems = container?.data ?? container?.items ?? [];
-  const items = Array.isArray(rawItems) ? rawItems.map(mapItem).filter((item) => item.id) : [];
-  const total = toNumber(container?.meta?.total ?? container?.total, items.length);
-  const page = toNumber(container?.meta?.page ?? container?.page, 1);
-  const totalPages = toNumber(container?.meta?.totalPages ?? container?.totalPages, 1);
-  const limit = toNumber(container?.meta?.limit ?? container?.limit, 8);
+  const items = groups.flatMap((rawGroup) => {
+    const group = asRecord(rawGroup);
+    if (!group) return [];
+    const orders = Array.isArray(group.orders) ? group.orders : [];
+    return orders
+      .map(asRecord)
+      .filter((order): order is UnknownRecord => order !== null)
+      .map((order) => mapReturnOrderToMailItem(order, group, destination))
+      .filter((item) => item.id);
+  });
 
   return {
     statusCode: 200,
     message: "ok",
     data: {
       data: items,
-      total,
-      page,
-      totalPages,
-      limit,
+      total: items.length,
+      page: 1,
+      totalPages: 1,
+      limit: items.length,
     },
   };
 };
@@ -445,36 +394,42 @@ export const useMails = () => {
       enabled: options?.enabled ?? true,
     });
 
-  const useGetReturnMails = (params?: GetOldMailsParams) =>
+  // Backend sahifalamaydi: doiradagi (filial yoki HQ) barcha so'rovlar
+  // kuryer bo'yicha guruhlab qaytadi — page/limit yuborilmaydi.
+  const useGetReturnMails = () =>
     useQuery<PaginatedPostsResponse>({
-      queryKey: [MAILS_KEY, "return", role, branchId, params?.page ?? 1, params?.limit ?? 8],
+      queryKey: [MAILS_KEY, "return", role, branchId],
       queryFn: () =>
         api
-          .get(API_ENDPOINTS.POSTS.RETURN_REQUESTS_LIST, {
-            params: {
-              page: params?.page ?? 1,
-              limit: params?.limit ?? 8,
-            },
-          })
-          .then((res) => toPaginatedMailResponse(res.data, mapReturnRequestToMailItem)),
+          .get(API_ENDPOINTS.POSTS.RETURN_REQUESTS_LIST)
+          .then((res) => toReturnRequestsMailResponse(res.data)),
     });
 
+  // Tasdiqlash buyurtmalarni omborga qaytaradi va kuryer pochtasini yopishi
+  // mumkin. Backend buyurtmalarni ketma-ket yozadi (atomik emas) — xato
+  // bo'lsa ham bir qismi o'tgan bo'lishi mumkin, shuning uchun ro'yxatlar
+  // har holda (onSettled) yangilanadi.
+  const invalidateAfterReturnAction = () => {
+    queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
+    queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
+    queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "new"] });
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+  };
+
   const approveReturnRequests = useMutation({
-    mutationFn: (data: any) =>
-      api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_APPROVE, data).then((res) => res.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
-    },
+    mutationFn: (payload: ReturnRequestActionPayload) =>
+      api
+        .post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_APPROVE, { order_ids: payload.order_ids })
+        .then((res) => res.data),
+    onSettled: invalidateAfterReturnAction,
   });
 
   const rejectReturnRequests = useMutation({
-    mutationFn: (data: any) =>
-      api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_REJECT, data).then((res) => res.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "return"] });
-      queryClient.invalidateQueries({ queryKey: [MAILS_KEY, "old"] });
-    },
+    mutationFn: (payload: ReturnRequestActionPayload) =>
+      api
+        .post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_REJECT, { order_ids: payload.order_ids })
+        .then((res) => res.data),
+    onSettled: invalidateAfterReturnAction,
   });
 
   const useGetRefusedMailsCourier = (options?: { enabled?: boolean }) =>

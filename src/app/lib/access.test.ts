@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { RootState } from "../config/store";
 import {
   canCreateOrders,
+  canDispatchPostToBranch,
   canReceiveExternalOrders,
   canViewBatchesPage,
   canViewBranches,
@@ -24,7 +25,13 @@ import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
  *
  * Bu testning maqsadi: refaktor hech kimning huquqini kengaytirmagani va
  * toraytirmaganini isbotlash. Quyidagi matritsa refaktordan OLDINGI holatdan
- * o'lchab olingan; ataylab o'zgartirilgan ikki katak alohida belgilangan.
+ * o'lchab olingan; ataylab o'zgartirilgan kataklar alohida belgilangan.
+ *
+ * 2026-10-01: `canViewDispatchPage` · registrator (filial turi noma'lum) ✓ → —.
+ * Bu katak avval ham faqat qog'ozda ✓ edi: `routes.tsx` ning o'z guardi
+ * noma'lum turni rad etardi. Endi marshrut shu predikatni ishlatadi, shuning
+ * uchun matritsa haqiqiy guard bilan moslashtirildi. `canDispatchPostToBranch`
+ * qatori yangi (HQ registratori pastdagi alohida blokda).
  */
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -59,7 +66,9 @@ const MATRIX: Record<string, string> = {
   canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —",
   canViewBranches: "✓    —   —   —   —   —   —   —   —   —",
   canViewLogs: "    ✓   —   —   —   —   —   —   —   —   —",
-  canViewDispatchPage: "✓ ✓   —   ✓   —   —   —   ✓   ✓   —",
+  // rg = filial turi noma'lum registrator → rad (routes.tsx guardi bilan bir xil).
+  canViewDispatchPage: "✓ ✓   —   —   —   —   —   ✓   ✓   —",
+  canDispatchPostToBranch: "✓ ✓ —   —   —   —   —   —   —   —",
   canViewCourierBulkPage: "— — —   —   ✓   —   —   ✓   ✓   —",
   canViewBatchesPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —",
   canViewReturnsPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —",
@@ -78,6 +87,7 @@ const PREDICATES = {
   canViewBranches,
   canViewLogs,
   canViewDispatchPage,
+  canDispatchPostToBranch,
   canViewCourierBulkPage,
   canViewBatchesPage,
   canViewReturnsPage,
@@ -120,6 +130,52 @@ describe("ataylab qilingan ikki o'zgarish", () => {
    */
   it("HQ menejerining menyusi va kassa guardi endi mos", () => {
     expect(canViewPaymentsPage(state("manager", "HQ"))).toBe(true);
+  });
+});
+
+describe("registrator — /dispatch filial turi bo'yicha (2026-10-01)", () => {
+  /**
+   * HQ registratori HQ kuryerlariga buyurtma beradi (backend
+   * POST /orders/assign-to-courier buni qo'llaydi), shuning uchun HQ QO'SHILDI.
+   * PICKUP va boshqa aniq turlar hozirgidek; noma'lum tur — rad.
+   */
+  it.each(["HQ", "REGIONAL", "HYBRID", "PICKUP"] as BranchType[])(
+    "registrator/%s — ruxsat",
+    (branchType) => {
+      expect(canViewDispatchPage(state("registrator", branchType))).toBe(true);
+    },
+  );
+
+  it("filial turi noma'lum registrator — rad (marshrut guardi bilan bir xil)", () => {
+    expect(canViewDispatchPage(state("registrator"))).toBe(false);
+  });
+
+  it("menejer qoidasi o'zgarmadi: HQ menejeri /dispatch ko'rmaydi", () => {
+    expect(canViewDispatchPage(state("manager", "HQ"))).toBe(false);
+    expect(canViewDispatchPage(state("manager", "REGIONAL"))).toBe(true);
+  });
+});
+
+describe("canDispatchPostToBranch — pochtani filialga jo'natish (backend bilan bir xil)", () => {
+  it("superadmin, admin va HQ registratori — ruxsat", () => {
+    expect(canDispatchPostToBranch(state("superadmin"))).toBe(true);
+    expect(canDispatchPostToBranch(state("admin"))).toBe(true);
+    expect(canDispatchPostToBranch(state("registrator", "HQ"))).toBe(true);
+  });
+
+  it.each(["REGIONAL", "HYBRID", "PICKUP"] as BranchType[])(
+    "registrator/%s — rad (server doim 403 beradi)",
+    (branchType) => {
+      expect(canDispatchPostToBranch(state("registrator", branchType))).toBe(false);
+    },
+  );
+
+  it("menejer (HQ ham), kuryer, market va noma'lum registrator — rad", () => {
+    expect(canDispatchPostToBranch(state("manager", "HQ"))).toBe(false);
+    expect(canDispatchPostToBranch(state("manager", "REGIONAL"))).toBe(false);
+    expect(canDispatchPostToBranch(state("courier"))).toBe(false);
+    expect(canDispatchPostToBranch(state("market"))).toBe(false);
+    expect(canDispatchPostToBranch(state("registrator"))).toBe(false);
   });
 });
 

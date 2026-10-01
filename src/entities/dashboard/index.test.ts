@@ -254,6 +254,107 @@ describe("dashboard response normalization", () => {
     });
   });
 
+  // Haqiqiy backend javobi: GET /analytics/dashboard → data.branchDashboard
+  // (branch-service getBranchStats). Kalitlar: orders.cancelled,
+  // markets[].market_id/market_name/orders_count/total_price,
+  // couriers.branch_couriers.
+  const realBranchDashboard = {
+    role: "MANAGER",
+    today_orders_count: 3,
+    week_orders_count: 4,
+    active_batches_count: 1,
+    couriers_count: 3,
+    cards: {
+      orders: { total: 8, new: 1, on_the_road: 2, delivered: 6, returned: 0, cancelled: 2 },
+      markets: [
+        {
+          market_id: "201",
+          market_name: "Yandex",
+          orders_count: 5,
+          delivered_count: 3,
+          total_price: 750000,
+        },
+      ],
+      packages: { on_the_way: 1, waiting_for_acceptance: 0 },
+      couriers: { branch_couriers: 3, active_today: 1 },
+    },
+    visibility: { orders: true, markets: true, packages: true, couriers: true },
+  };
+
+  it("maps the real backend branch dashboard payload", () => {
+    const result = normalizeDashboardResponse({
+      data: { branchDashboard: realBranchDashboard },
+    });
+
+    const cards = result.data.branchDashboard?.cards;
+    expect(cards?.orders).toEqual({
+      total: 8,
+      new: 1,
+      on_the_road: 2,
+      delivered: 6,
+      returned: 2,
+    });
+    expect(cards?.markets).toEqual([{ id: "201", name: "Yandex", orders: 5, amount: 750000 }]);
+    expect(cards?.couriers).toEqual({ total: 3, active: 1 });
+  });
+
+  it("maps 'Bekor qilingan' from cancelled even when it is zero", () => {
+    const result = normalizeDashboardResponse({
+      data: {
+        branchDashboard: {
+          ...realBranchDashboard,
+          cards: {
+            ...realBranchDashboard.cards,
+            orders: { total: 5, delivered: 2, returned: 3, cancelled: 0 },
+          },
+        },
+      },
+    });
+
+    expect(result.data.branchDashboard?.cards?.orders?.returned).toBe(0);
+  });
+
+  it("falls back to returned for a legacy backend without cancelled", () => {
+    const result = normalizeDashboardResponse({
+      data: { branchDashboard: { cards: { orders: { total: 9, returned: 4 } } } },
+    });
+
+    expect(result.data.branchDashboard?.cards?.orders?.returned).toBe(4);
+  });
+
+  it("falls back to couriers_count when branch_couriers is missing", () => {
+    const result = normalizeDashboardResponse({
+      data: {
+        branchDashboard: {
+          couriers_count: 5,
+          cards: { couriers: { active_today: 1 } },
+        },
+      },
+    });
+
+    expect(result.data.branchDashboard?.cards?.couriers).toEqual({ total: 5, active: 1 });
+  });
+
+  it("leaves the market name empty when identity returned no name and keeps legacy market keys", () => {
+    const result = normalizeDashboardResponse({
+      data: {
+        branchDashboard: {
+          cards: {
+            markets: [
+              { market_id: "201", market_name: null, orders_count: "5", total_price: "750000" },
+              { id: 7, name: "Kimdur", orders: 2, amount: 120000 },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(result.data.branchDashboard?.cards?.markets).toEqual([
+      { id: "201", name: "", orders: 5, amount: 750000 },
+      { id: "7", name: "Kimdur", orders: 2, amount: 120000 },
+    ]);
+  });
+
   it("normalizes revenue chart and finance numeric strings", () => {
     const result = normalizeRevenueResponse({
       data: {

@@ -25,6 +25,11 @@ export const queryKeys = {
   regions: {
     all: ["regions"] as const,
   },
+  courierTransfer: {
+    all: ["courier-transfer"] as const,
+    check: (courierId: string) => ["courier-transfer", "check", courierId] as const,
+    destinations: ["courier-transfer", "destinations"] as const,
+  },
   activityLogs: {
     all: ["activity-logs"] as const,
     list: (params: object) => ["activity-logs", "list", params] as const,

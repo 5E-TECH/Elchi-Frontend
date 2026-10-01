@@ -267,6 +267,22 @@ export const getUserBranchType = (user: User | null | undefined): BranchType | n
 };
 
 /**
+ * Registrator `/dispatch` (buyurtmani o'z filiali kuryeriga berish) sahifasini
+ * ko'radimi — menyu ham, marshrut guardi ham (`access.ts` →
+ * `canViewDispatchPage`) shu funksiyadan foydalanadi.
+ *
+ * - Filial turi ANIQ bo'lsa — ha: REGIONAL, HYBRID, PICKUP (hozirgidek) va HQ.
+ *   HQ 2026-10-01 da QO'SHILDI: HQ registratori HQ kuryerlariga buyurtma
+ *   beradi (backend POST /orders/assign-to-courier buni allaqachon qo'llaydi).
+ * - Filial turi aniqlanmasa — yo'q (marshrut guardi avval ham rad etardi).
+ *
+ * ⚠️ `access.ts` da emas, shu yerda: `access.ts` bu faylni import qiladi —
+ * import halqasi bo'lmasligi uchun.
+ */
+export const registratorCanDispatch = (user: User | null | undefined): boolean =>
+  getUserBranchType(user) !== null;
+
+/**
  * ═══════════════ B1 — MENYU GURUHLARI ═══════════════
  *
  * Sidebar 14 bandgacha cho'zilgan TEKIS ro'yxat edi: operator kerakli bandni
@@ -396,13 +412,12 @@ export const getSidebarConfigForUser = (
   const normalizedRole = normalizeSidebarRole(role, user);
   if (!normalizedRole) return [];
 
-  const branchType = getUserBranchType(user);
-
   if (normalizedRole === "manager") {
     return buildManagerConfig(user);
   }
 
-  if (normalizedRole === "registrator" && branchType === "HQ") {
+  // Menyu va marshrut guardi bitta qoidadan: `registratorCanDispatch`.
+  if (normalizedRole === "registrator" && !registratorCanDispatch(user)) {
     return SIDEBAR_CONFIG.registrator.filter((item) => item.to !== "/dispatch");
   }
 

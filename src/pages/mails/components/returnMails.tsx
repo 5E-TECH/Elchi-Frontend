@@ -1,9 +1,8 @@
 import { memo, useMemo, useState } from "react";
 import { Check, MapPin, Phone, RotateCcw, Truck, User, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useMails, type MailItem } from "../../../entities/mails";
-import Pagination from "../../../shared/components/pagination";
-import { usePagination } from "../../../shared/lib/usePagination";
+import { useMails, type MailItem, type ReturnRequestActionPayload } from "../../../entities/mails";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 
 type ReturnGroup = {
   courierId: string;
@@ -16,38 +15,56 @@ type ReturnGroup = {
 const formatPrice = (price: number, currencyLabel: string): string =>
   `${price.toLocaleString("uz-UZ")} ${currencyLabel}`;
 
+// Tasdiqlangan buyurtma qayerga qaytadi: filial doirasida — o'sha filial
+// omboriga, HQ doirasida — markazga. (Ilgari "branch" ham "Markazga" deb
+// chiqardi.)
 const actionLabel = (value: string | undefined, t: (key: string) => string) => {
   const normalized = String(value ?? "").toLowerCase();
-
-  if (normalized.includes("main") || normalized.includes("branch") || normalized.includes("center")) {
-    return t("returnDestinationCenter");
-  }
 
   if (normalized.includes("market")) {
     return t("returnDestinationMarket");
   }
 
+  if (normalized.includes("main") || normalized.includes("center") || normalized.includes("hq")) {
+    return t("returnDestinationCenter");
+  }
+
+  if (normalized.includes("branch")) {
+    return t("returnDestinationBranch");
+  }
+
   return t("returnDestinationCenter");
+};
+
+// ON_THE_ROAD — kuryer pochtani qabul qilganda bu posilkani qabul qilmagan;
+// WAITING — eski oqimdagi so'rov, posilka kuryer qo'lida.
+const requestStateLabel = (status: string | undefined, t: (key: string) => string) => {
+  const normalized = String(status ?? "").toLowerCase();
+  if (normalized === "on the road") return t("returnStateNotReceived");
+  if (normalized === "waiting") return t("returnStateWithCourier");
+  return null;
 };
 
 const getRequestId = (item: MailItem) =>
   item.request_id || item.order_id || item.id;
 
-const buildReturnPayload = (items: MailItem[]) => {
-  const requestIds = items.map((item) => item.request_id).filter(Boolean);
-  const orderIds = items.map((item) => item.order_id).filter(Boolean);
-  const postIds = Array.from(new Set(items.map((item) => item.post_id || item.id).filter(Boolean)));
-  const ids = items.map(getRequestId).filter(Boolean);
+// Backend faqat { order_ids } qabul qiladi (ValidationPipe boshqa kalitni
+// 400 bilan qaytaradi).
+const buildReturnPayload = (items: MailItem[]): ReturnRequestActionPayload => ({
+  order_ids: Array.from(
+    new Set(items.map((item) => item.order_id || item.request_id || item.id).filter(Boolean)),
+  ),
+});
 
-  return {
-    ids,
-    request_ids: requestIds,
-    requestIds,
-    order_ids: orderIds,
-    orderIds,
-    post_ids: postIds,
-    postIds,
-  };
+// Approve/reject javobi: { statusCode, message, data: { approved | rejected,
+// order_ids, skipped_order_ids } }. Eskirgan tanlovni (kuryer shu orada qabul
+// qilgan, hamkasb rad etgan) backend o'tkazib yuboradi va skipped da qaytaradi.
+type ReturnActionResponse = {
+  data?: {
+    approved?: unknown;
+    rejected?: unknown;
+    skipped_order_ids?: unknown;
+  } | null;
 };
 
 const groupByCourier = (items: MailItem[], courierFallback: string): ReturnGroup[] => {
@@ -74,21 +91,18 @@ const groupByCourier = (items: MailItem[], courierFallback: string): ReturnGroup
 
 const ReturnMails = () => {
   const { t } = useTranslation("mails");
+  const { apiRequest } = useAppNotification();
   const {
     useGetReturnMails,
     approveReturnRequests,
     rejectReturnRequests,
   } = useMails();
   const currencyLabel = t("currencyLabel");
-  const { page, limit, setPage, setLimit } = usePagination({
-    key: "mails",
-    defaultLimit: 20,
-  });
-  const { data: response, isLoading, isError } = useGetReturnMails({ page, limit });
+  // Backend sahifalamaydi — doiradagi barcha so'rovlar bir yo'la keladi.
+  const { data: response, isLoading, isError } = useGetReturnMails();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const requests: MailItem[] = response?.data?.data ?? [];
-  const pagination = response?.data;
+  const requests: MailItem[] = useMemo(() => response?.data?.data ?? [], [response]);
   const groups = useMemo(() => groupByCourier(requests, t("courierFallback")), [requests, t]);
   const selectedItems = useMemo(
     () => requests.filter((item) => selectedIds.has(getRequestId(item))),
@@ -136,12 +150,23 @@ const ReturnMails = () => {
     if (!selectedItems.length || isMutating) return;
 
     const payload = buildReturnPayload(selectedItems);
-    if (type === "approve") {
-      await approveReturnRequests.mutateAsync(payload);
-    } else {
-      await rejectReturnRequests.mutateAsync(payload);
-    }
-    setSelectedIds(new Set());
+    const mutation = type === "approve" ? approveReturnRequests : rejectReturnRequests;
+    // Backend xabari (masalan "Siz faqat o'z filialingiz ...") ustun turadi.
+    await apiRequest({
+      request: () => mutation.mutateAsync(payload),
+      // Son — backend haqiqatda bajargani (tanlanganlar soni emas); javobda son
+      // bo'lmasa — tanlanganlar soni.
+      successMessage: (res: unknown) => {
+        const body = (res as ReturnActionResponse | null | undefined)?.data;
+        const done = Number(type === "approve" ? body?.approved : body?.rejected);
+        const count = Number.isFinite(done) ? done : payload.order_ids.length;
+        const skipped = Array.isArray(body?.skipped_order_ids) ? body.skipped_order_ids.length : 0;
+        const base = t(type === "approve" ? "returnApproveSuccess" : "returnRejectSuccess", { count });
+        return skipped > 0 ? `${base} · ${t("returnSkippedNote", { count: skipped })}` : base;
+      },
+      errorMessage: t("returnActionError"),
+      onSuccess: () => setSelectedIds(new Set()),
+    });
   };
 
   if (isLoading) {
@@ -213,6 +238,7 @@ const ReturnMails = () => {
                 const customerName = item.customer?.name || t("customerNumber", { id: item.customer?.id || item.order_id || item.id });
                 const phone = item.customer?.phone_number || item.customer?.extra_number || t("phoneUnavailable");
                 const location = [item.region?.name, item.district?.name].filter(Boolean).join(", ");
+                const stateLabel = requestStateLabel(item.status, t);
 
                 return (
                   <label
@@ -239,6 +265,11 @@ const ReturnMails = () => {
                           <span className="flex min-w-0 items-center gap-1">
                             <MapPin size={12} className="shrink-0" />
                             <span className="truncate">{location}</span>
+                          </span>
+                        ) : null}
+                        {stateLabel ? (
+                          <span className="rounded-md bg-warning-soft px-2 py-0.5 font-semibold text-warning-end">
+                            {stateLabel}
                           </span>
                         ) : null}
                         <span className="rounded-md bg-blue-500/15 px-2 py-0.5 font-semibold text-blue-400">
@@ -322,17 +353,6 @@ const ReturnMails = () => {
           </button>
         </div>
       </div>
-
-      {pagination ? (
-        <Pagination
-          totalItems={pagination.total}
-          itemsPerPage={pagination.limit}
-          currentPage={pagination.page}
-          onPageChange={setPage}
-          onItemsPerPageChange={setLimit}
-          pageSizeOptions={[10, 20, 50, 100]}
-        />
-      ) : null}
     </div>
   );
 };

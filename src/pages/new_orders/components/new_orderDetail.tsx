@@ -19,6 +19,8 @@ import {
 } from "../../scan/lib/scanShared";
 import BackButton from "../../../shared/ui/BackButton";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { branchTypeOf } from "../../../app/lib/access";
+import { resolveReceiveMode } from "./newOrderReceiveRules";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
@@ -30,12 +32,13 @@ const NewOrderDetail = () => {
   const isMarketRole = roleState.role === "market";
   // Market roli bo'lsa har doim order qo'sha oladi
   const canAddOrder = isMarketRole;
-  // Backend payloadlari farq qilgani uchun manager/registratorlarda
-  // qabul qilishni doim transfer-batches endpointiga yo'naltiramiz.
-  const shouldUseBranchTransferReceive =
-    !isMarketRole &&
-    !!currentUser &&
-    (roleState.role === "manager" || roleState.role === "registrator");
+  // Qabul usuli rol va filial turidan kelib chiqadi (newOrderReceiveRules.ts):
+  // HQ menejer/registratori — POST /orders/receive (HQ ning ota filiali yo'q,
+  // transfer-batches 400 qaytaradi); boshqa filiallarda — transfer-batches.
+  // Profil hali yuklanmagan bo'lsa — avvalgidek POST /orders/receive.
+  const branchType = useSelector(branchTypeOf);
+  const receiveMode = resolveReceiveMode(roleState.role, branchType);
+  const shouldUseBranchTransferReceive = !!currentUser && receiveMode === "transfer";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);

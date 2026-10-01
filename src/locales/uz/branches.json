@@ -45,6 +45,27 @@
     "removeConfirm": "Xodimni filialdan olib tashlamoqchimisiz?",
     "removed": "Xodim olib tashlandi"
   },
+  "courierTransfer": {
+    "title": "Kuryerni boshqa filialga o'tkazish",
+    "description": "Kuryerda pul va buyurtma qolmagan bo'lsagina o'tkazish mumkin",
+    "openButton": "Filialni o'zgartirish",
+    "rowButton": "Boshqa filialga o'tkazish",
+    "currentBranch": "Hozirgi filial",
+    "noBranch": "Filialga biriktirilmagan",
+    "targetBranch": "Yangi filial",
+    "selectTarget": "Yangi filialni tanlang",
+    "noManager": "menejer yo'q",
+    "balance": "Kuryer qo'lidagi pul",
+    "ordersInHand": "Qo'lidagi buyurtmalar",
+    "ok": "Kuryerda pul va buyurtma yo'q — o'tkazish mumkin",
+    "blocked": "Hozircha o'tkazib bo'lmaydi",
+    "payHint": "Pulni qabul qilish",
+    "branchPayHint": "Pulni '{{branch}}' filiali menejeri qabul qilishi kerak",
+    "action": "O'tkazish",
+    "success": "{{name}} '{{branch}}' filialiga o'tkazildi",
+    "checkFailed": "Tekshirib bo'lmadi — birozdan so'ng qayta urinib ko'ring",
+    "retry": "Qayta tekshirish"
+  },
   "settings": {
     "title": "Filial sozlamalari",
     "description": "Filialga tegishli kalit-qiymat sozlamalarini shu joydan boshqaring.",

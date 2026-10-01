@@ -42,9 +42,14 @@ export interface BranchDashboardOrdersCard {
   new: number;
   on_the_road: number;
   delivered: number;
+  // "Bekor qilingan" kartasi: backend `cancelled` (bekor qilingan kun
+  // bo'yicha), u bo'lmasa eski `returned` — normalizeBranchDashboard da.
   returned: number;
 }
 
+// Normallashtirilgan market kartasi. Backend (branch-service) `market_id`,
+// `market_name`, `orders_count`, `total_price` yuboradi — ular
+// normalizeBranchDashboard da id/name/orders/amount ga o'tkaziladi.
 export interface BranchDashboardMarketCard {
   id?: string | number;
   name?: string;
@@ -62,6 +67,8 @@ export interface BranchDashboardPackagesCard {
   waiting_for_acceptance: number;
 }
 
+// Backend `branch_couriers` (filial kuryerlari soni) normalizeBranchDashboard
+// da `total` ga o'tkaziladi.
 export interface BranchDashboardCouriersCard {
   total?: number;
   active?: number;
@@ -352,18 +359,34 @@ const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null
             new: toNumber(orders.new),
             on_the_road: toNumber(orders.on_the_road ?? orders.onTheRoad),
             delivered: toNumber(orders.delivered),
-            returned: toNumber(orders.returned),
+            // `cancelled` — bekor qilingan kun bo'yicha (yangi backend);
+            // eski backendda faqat `returned` keladi.
+            returned: toNumber(firstDefined(orders.cancelled, orders.returned)),
           }
         : null,
+      // Backend kalitlari (market_id/market_name/orders_count/total_price)
+      // birinchi, eski nomlar zaxira. market_name null bo'lsa (identity javob
+      // bermagan) name bo'sh qoladi va adapter "Market N" yorlig'ini qo'yadi.
       markets: Array.isArray(markets)
         ? markets.map((market) => {
             const entry = asRecord(market);
             return {
-              id: String(entry.id ?? ""),
-              name: String(entry.name ?? entry.title ?? ""),
-              orders: toNumber(entry.orders ?? entry.orders_count ?? entry.ordersCount ?? entry.total),
+              id: String(firstDefined(entry.market_id, entry.marketId, entry.id) ?? ""),
+              name: String(
+                firstDefined(entry.market_name, entry.marketName, entry.name, entry.title) ?? "",
+              ),
+              orders: toNumber(
+                firstDefined(entry.orders_count, entry.ordersCount, entry.orders, entry.total),
+              ),
               amount: toNumber(
-                entry.amount ?? entry.total_amount ?? entry.totalAmount ?? entry.price,
+                firstDefined(
+                  entry.total_price,
+                  entry.totalPrice,
+                  entry.amount,
+                  entry.total_amount,
+                  entry.totalAmount,
+                  entry.price,
+                ),
               ),
             };
           })
@@ -378,7 +401,16 @@ const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null
         : null,
       couriers: Object.keys(couriers).length
         ? {
-            total: toNumber(couriers.total),
+            // Backend `branch_couriers` yuboradi (`total` emas).
+            total: toNumber(
+              firstDefined(
+                couriers.total,
+                couriers.branch_couriers,
+                couriers.branchCouriers,
+                item.couriers_count,
+                item.couriersCount,
+              ),
+            ),
             active: toNumber(
               couriers.active ??
                 couriers.active_today ??

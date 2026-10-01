@@ -35,6 +35,7 @@ import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { useBranches, type Branch } from "../../../../entities/branch";
 import type { RootState } from "../../../../app/config/store";
 import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
+import { getBranchOptionsForRole, isManagerHqSelection } from "../lib/branchOptions";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -274,19 +275,12 @@ export const CreateUserForm = memo(() => {
     limit: 500,
   });
 
-  const branchOptions = (branchesResponse?.data ?? [])
-    .filter((branch) => branch.status !== "inactive")
-    .sort((left, right) => {
-      const leftLevel = left.level ?? 0;
-      const rightLevel = right.level ?? 0;
-
-      if (leftLevel !== rightLevel) return leftLevel - rightLevel;
-      return left.name.localeCompare(right.name);
-    })
-    .map((branch) => ({
-      value: branch.id,
-      label: getBranchOptionLabel(branch),
-    }));
+  // Menejer uchun HQ ko'rsatilmaydi (HQ da menejer bo'lmaydi), registrator
+  // uchun HQ qoladi — qoida `getBranchOptionsForRole` da.
+  const branchOptions = getBranchOptionsForRole(branchesResponse?.data, role).map((branch) => ({
+    value: branch.id,
+    label: getBranchOptionLabel(branch),
+  }));
 
   useEffect(() => {
     reset({ ...INITIAL_FORM, role });
@@ -368,6 +362,10 @@ export const CreateUserForm = memo(() => {
 
     if ((role === "manager" || role === "registrator") && !resolvedBranchId) {
       setError("branchId", { message: t("branchRequired") });
+      valid = false;
+    } else if (isManagerHqSelection(branchesResponse?.data, role, resolvedBranchId)) {
+      // Himoya: HQ ga menejer biriktirilmaydi (backend ham 400 qaytaradi).
+      setError("branchId", { message: t("managerHqNotAllowed") });
       valid = false;
     }
 

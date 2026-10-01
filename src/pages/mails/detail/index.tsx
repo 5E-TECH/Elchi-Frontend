@@ -30,8 +30,9 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import { useOrders } from "../../../entities/orders";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
-import { getActiveManagerBranchIds, getBranches, type Branch } from "../../../entities/branch";
+import { getDispatchDestinations, type Branch } from "../../../entities/branch";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
+import { canDispatchPostToBranch } from "../../../app/lib/access";
 import {
   playMissingOrderFeedback,
   playScanFeedback,
@@ -235,20 +236,25 @@ const MailDetailPage = () => {
   const postId = id;
   const { role } = useSelector((state: RootState) => state.role);
   const user = useSelector((state: RootState) => state.user.user);
-  const managerBranchType = getUserBranchType(user);
+  // Menejer ham, registrator ham ishlatadi — shuning uchun "user" filial turi.
+  const userBranchType = getUserBranchType(user);
   const isBranchReceiverManager =
     role === "manager" &&
-    (managerBranchType === "HQ" ||
-      managerBranchType === "PICKUP" ||
-      managerBranchType === "REGIONAL" ||
-      managerBranchType === "HYBRID");
+    (userBranchType === "HQ" ||
+      userBranchType === "PICKUP" ||
+      userBranchType === "REGIONAL" ||
+      userBranchType === "HYBRID");
   const isCourier = role === "courier";
   const isCourierLikeReceiver = isCourier || isBranchReceiverManager;
   const isSuperAdmin = role === "superadmin";
   const isHqRefusedReceiver =
     role === "admin" ||
     role === "superadmin" ||
-    ((role === "manager" || role === "registrator") && managerBranchType === "HQ");
+    ((role === "manager" || role === "registrator") && userBranchType === "HQ");
+  // Pochtani filialga jo'natish: superadmin/admin yoki HQ registratori
+  // (backend bilan bir xil). Boshqa registratorlar uchun server doim 403
+  // qaytaradi, shuning uchun ularga "jo'natish" tugmasi ko'rsatilmaydi.
+  const canDispatchToBranch = useSelector(canDispatchPostToBranch);
   const isBranchTransferRole = false;
   const navState = location.state as {
     fromTab?: string;
@@ -325,6 +331,10 @@ const MailDetailPage = () => {
     regularOrdersFromPost.every((order) => REFUSED_MAIL_ORDER_STATUSES.has(order.status));
   const isEffectiveRefusedDetail = isRefusedDetail || isRegularRefusedDetail;
   const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
+  // Qabul rejimi (kuryer/menejer, bekor qilingan pochta) — hozirgidek hammaga;
+  // "jo'natish" rejimi — faqat filialga jo'nata oladiganlarga.
+  const canShowActionButton =
+    shouldReceiveCurrentPost || isEffectiveRefusedDetail || isBranchTransferRole || canDispatchToBranch;
   const fallbackRegionId = toText(navState?.fallbackRegionId);
   const fallbackRegionName = toText(navState?.fallbackRegionName);
   const shouldLoadRegionFallback =
@@ -690,23 +700,22 @@ const MailDetailPage = () => {
 
     setIsCheckingCouriers(true);
 
-    Promise.all([
-      getBranches({ page: 1, limit: 500, status: "active" }),
-      getActiveManagerBranchIds(),
-    ])
-      .then(([response, managerBranchIds]) => {
+    // Manzil filiallar (faol REGIONAL/HYBRID, menejeri bilan) bitta so'rovda.
+    // Avvalgi GET /branches + GET /managers faqat superadmin/admin uchun edi —
+    // HQ registratori 403 olardi.
+    getDispatchDestinations({ region_id: String(regionId) })
+      .then((response) => {
+        // Himoya: backend filtrlaydi, lekin viloyat va faollik shu yerda ham tekshiriladi.
         const branches = (response?.data ?? []).filter(
-          (branch) => branch.region?.id === regionId && branch.status === "active",
-        ).map((branch) => ({
-          ...branch,
-          has_manager: Boolean(branch.has_manager || managerBranchIds.has(branch.id)),
-        }));
+          (branch) => String(branch.region?.id ?? "") === String(regionId) && branch.status === "active",
+        );
 
         if (branches.length === 0) {
-          apiRequest({
-            request: () => Promise.reject(new Error("no_branch")),
-            errorMessage: t("noActiveBranchInRegion"),
-            successMessage: "",
+          notifApi.error({
+            message: t("common:error"),
+            description: t("noActiveBranchInRegion"),
+            placement: "topRight",
+            duration: 5,
           });
           return;
         }
@@ -714,11 +723,13 @@ const MailDetailPage = () => {
         setBranchRecipients(branches);
         setIsModalOpen(true);
       })
-      .catch(() => {
-        apiRequest({
-          request: () => Promise.reject(new Error("branches_fetch_failed")),
-          errorMessage: t("branchesLoadError"),
-          successMessage: "",
+      .catch((error: unknown) => {
+        // 403 va boshqa rad javoblarda backend xabari ko'rinadi.
+        notifApi.error({
+          message: t("common:error"),
+          description: getBackendErrorMessage(error) ?? t("branchesLoadError"),
+          placement: "topRight",
+          duration: 5,
         });
       })
       .finally(() => {
@@ -730,6 +741,7 @@ const MailDetailPage = () => {
     postId,
     sendTransferBatch,
     apiRequest,
+    notifApi,
     clearSelection,
     refetchTransferBatchDetail,
     regionId,
@@ -888,8 +900,9 @@ const MailDetailPage = () => {
         readOnly={isOldDetail || isReadOnlyRefusedCourier}
       />
 
-      {/* Rol asosida tugma */}
-      {orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier && (
+      {/* Rol asosida tugma. "Jo'natish" rejimi faqat filialga jo'nata oladiganlarga
+          (superadmin/admin, HQ registratori); qabul rejimlari o'zgarmagan. */}
+      {orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier && canShowActionButton && (
         <div className="flex flex-col gap-3">
           <SendButton
             selectedCount={selectedIds.size}
@@ -910,7 +923,7 @@ const MailDetailPage = () => {
       )}
 
       {/* Pochta jo'natish modali — filial tanlash */}
-      {!isCourierLikeReceiver && !isEffectiveRefusedDetail && !isOldDetail && !isBranchTransferRole && (
+      {canDispatchToBranch && !isCourierLikeReceiver && !isEffectiveRefusedDetail && !isOldDetail && !isBranchTransferRole && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

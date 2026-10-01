@@ -8,6 +8,7 @@ import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { branchSchema } from "../model/schema";
 import type { CreateBranchDto } from "../model/types";
+import { buildCreateBranchPayload } from "../model/payload";
 import { useCreateBranch } from "../api/useCreateBranch";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
@@ -18,6 +19,7 @@ import { GlobalSearchInput } from "../../search";
 import { applyBranchBackendErrors } from "../../branch/lib/backendBranchErrors";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import {
+  filterParentCandidates,
   getParentBranchOptions,
   useParentBranchOptions,
 } from "../../branch/lib/branchFormOptions";
@@ -104,7 +106,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     [t],
   );
   const parentOptions = useMemo(
-    () => getParentBranchOptions(parentBranches?.data, t),
+    () => getParentBranchOptions(filterParentCandidates(parentBranches?.data), t),
     [parentBranches?.data, t],
   );
 
@@ -117,14 +119,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
   const onSubmit = handleSubmit(
     async (values) => {
       try {
-        const normalizedType = String(values.type).toUpperCase() as CreateBranchDto["type"];
-        const payload: Omit<CreateBranchDto, "manager_id"> = {
-          ...values,
-          type: normalizedType,
-          code: values.code.trim(),
-          parent_id: normalizedType === "PICKUP" ? "" : values.parent_id,
-        };
-        await createBranch.mutateAsync(payload);
+        await createBranch.mutateAsync(buildCreateBranchPayload(values));
         apiNotification.success({
           message: t("messages.created"),
           placement: "topRight",

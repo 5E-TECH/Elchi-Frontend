@@ -7,6 +7,7 @@ import { UserInfoCards } from "../../../entities/user/ui/UserInfoCards";
 import { UserStatsCard } from "../../../entities/user/ui/UserStatsCard";
 import { CustomerOrdersTable } from "../../../entities/user/ui/CustomerOrdersTable";
 import { UpdateUserModal } from "../../../features/user/update-user/ui/UpdateUserModal";
+import { TransferCourierButton } from "../../../features/courier-transfer-branch";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
@@ -45,6 +46,9 @@ export const UserDetailWidget = memo(
     const canManagePrivilegedToggles = currentRole === "admin" || currentRole === "superadmin";
     const isMarket = user?.role === "market" || user?.role === "marketing";
     const canReceiveExtraCostPermission = user?.role === "manager" || user?.role === "courier";
+    // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning
+    // uchun yagona kirish joyi shu sahifa.
+    const canTransferCourier = user?.role === "courier" && canManagePrivilegedToggles;
 
     // ── Loading ──
     if (isLoading) {
@@ -214,15 +218,24 @@ export const UserDetailWidget = memo(
               isExtraCostPermissionPending={updateUser.isPending}
               canManageProofSettings={isMarket && canManagePrivilegedToggles}
               headerAction={
-                <button
-                  type="button"
-                  onClick={() => setShowEdit(true)}
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-main px-4 text-sm font-bold text-white shadow-md shadow-main/20 transition-all duration-200 hover:bg-main/90 active:scale-95"
-                  aria-label={t("edit")}
-                >
-                  <Pencil size={15} strokeWidth={2.5} />
-                  <span>{t("edit")}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowEdit(true)}
+                    className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-main px-4 text-sm font-bold text-white shadow-md shadow-main/20 transition-all duration-200 hover:bg-main/90 active:scale-95"
+                    aria-label={t("edit")}
+                  >
+                    <Pencil size={15} strokeWidth={2.5} />
+                    <span>{t("edit")}</span>
+                  </button>
+                  {canTransferCourier ? (
+                    <TransferCourierButton
+                      variant="header"
+                      courierId={user.id}
+                      courierName={user.name}
+                    />
+                  ) : null}
+                </div>
               }
             />
             {user.role === "customer" ? (

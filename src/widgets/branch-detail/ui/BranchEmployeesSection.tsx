@@ -1,6 +1,7 @@
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { RemoveEmployeeButton } from "../../../features/branch-remove-employee";
+import { TransferCourierButton } from "../../../features/courier-transfer-branch";
 import type { Employee } from "../../../entities/branch";
 import { formatDate } from "../../../shared/lib/formatDate";
 import { useTranslation } from "react-i18next";
@@ -10,6 +11,9 @@ interface BranchEmployeesSectionProps {
   data: Employee[];
   loading?: boolean;
 }
+
+const isCourierRow = (employee: Employee) =>
+  String(employee.position ?? "").trim().toUpperCase() === "COURIER";
 
 const BranchEmployeesSection = ({
   branchId,
@@ -46,13 +50,26 @@ const BranchEmployeesSection = ({
     {
       key: "id",
       label: t("table.actions"),
-      render: (_, record) => (
-        <RemoveEmployeeButton
-          branchId={branchId}
-          userId={record.user.id}
-          className={deleteButtonClassName}
-        />
-      ),
+      render: (_, record) =>
+        // Kuryer qatorida "filialdan chiqarish" tugmasi DOIMIY yashirin:
+        // filialsiz kuryer ishlay olmaydi va uning pulini hech kim (menejer ham,
+        // superadmin ham) qabul qila olmaydi. Kuryer faqat "Boshqa filialga
+        // o'tkazish" orqali ko'chiriladi — server avval kuryerda pul, buyurtma
+        // va qaytarilmagan pochta yo'qligini tekshiradi (chiqarish ham serverda
+        // xuddi shu tekshiruv bilan himoyalangan).
+        isCourierRow(record) ? (
+          <TransferCourierButton
+            variant="row"
+            courierId={record.user.id}
+            courierName={record.user.fullName}
+          />
+        ) : (
+          <RemoveEmployeeButton
+            branchId={branchId}
+            userId={record.user.id}
+            className={deleteButtonClassName}
+          />
+        ),
     },
   ];
 

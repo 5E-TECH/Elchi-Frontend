@@ -85,3 +85,47 @@ describe("ScanDetailPage — next scan from the detail page", () => {
     expect(feedbackMock).toHaveBeenCalledWith("error", "Amal tugashini kuting, keyin keyingi posilkani skanerlang.");
   });
 });
+
+// Item 5: HQ kuryeri faqat HQ qabul qilgan buyurtmani oladi. Rad etish sababini
+// backend aytadi — sahifa uni SO'ZMA-SO'Z ko'rsatishi shart (umumiy xabar
+// kuryerni ko'r qoldirardi). Frontend kodi o'zgarmagan, bu regressiya qulfi.
+describe("ScanDetailPage — O'ZIMGA OLISH rad etilganda", () => {
+  beforeEach(() => {
+    navigateMock.mockReset();
+    feedbackMock.mockReset();
+    assignMock.mockReset();
+  });
+
+  it("shows the backend reason when scan-assign is rejected", async () => {
+    const user = userEvent.setup();
+    const backendMessage =
+      "Buyurtma hali HQ da qabul qilinmagan (holati: yangi) — uni kuryerga berib bo'lmaydi. Avval HQ registratori buyurtmani qabul qilishi kerak.";
+    assignMock.mockRejectedValue({
+      response: { status: 400, data: { statusCode: 400, message: backendMessage } },
+    });
+    renderDetail("courier");
+
+    const button = await screen.findByRole("button", { name: /O'ZIMGA OLISH/ });
+    await user.click(button);
+
+    expect(await screen.findByText(backendMessage)).toBeInTheDocument();
+    expect(feedbackMock).toHaveBeenCalledWith("error");
+    expect(navigateMock).not.toHaveBeenCalled();
+    // Muvaffaqiyatsizlikdan keyin kuryer qayta urina oladi.
+    expect(screen.getByRole("button", { name: /O'ZIMGA OLISH/ })).toBeEnabled();
+  });
+
+  it("falls back to the translated error when the backend sends no message", async () => {
+    const user = userEvent.setup();
+    assignMock.mockRejectedValue({ response: { status: 500, data: {} } });
+    renderDetail("courier");
+
+    await user.click(await screen.findByRole("button", { name: /O'ZIMGA OLISH/ }));
+
+    expect(
+      await screen.findByText("Buyurtmani o'zingizga olishda xatolik yuz berdi"),
+    ).toBeInTheDocument();
+    expect(feedbackMock).toHaveBeenCalledWith("error");
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+});

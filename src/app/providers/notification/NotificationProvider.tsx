@@ -12,8 +12,11 @@ import { QUERY_ERROR_EVENT, type QueryErrorDetail } from '../../../shared/lib/qu
 interface ApiRequestOptions<T = unknown> {
     /** Chaqiriladigan request funksiyasi */
     request: () => Promise<T>;
-    /** Muvaffaqiyatli bo'lganda ko'rsatiladigan xabar */
-    successMessage?: string;
+    /**
+     * Muvaffaqiyatli bo'lganda ko'rsatiladigan xabar. Funksiya bo'lsa — javobdan
+     * quriladi (masalan backend haqiqatda bajargan son, tanlanganlar soni emas).
+     */
+    successMessage?: string | ((data: T) => string);
     /** Xatolikda ko'rsatiladigan xabar */
     errorMessage?: string;
     /** Muvaffaqiyatdan keyin chaqiriladigan callback */
@@ -99,9 +102,18 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         try {
             const data = await request();
 
+            let description: string;
+            try {
+                description = typeof successMessage === 'function' ? successMessage(data) : successMessage;
+            } catch {
+                // So'rov bajarilgan — xabar quruvchining xatosi uni "xato" qilib
+                // ko'rsatmasin (foydalanuvchi bajarilgan amalni qaytarmasin).
+                description = t('operationCompleted');
+            }
+
             api.success({
                 message: t('success'),
-                description: successMessage,
+                description,
                 placement: 'topRight',
                 duration: 4,
             });

@@ -2,6 +2,7 @@ import type { RootState } from "../config/store";
 import {
   getUserBranchType,
   managerHasCapability,
+  registratorCanDispatch,
   type BranchType,
 } from "../../widgets/Sidebar/model/menuConfig";
 
@@ -99,9 +100,35 @@ export const canViewLogs: Predicate = hasRole("superadmin");
 
 // ═════════ Filial qobiliyatiga bog'liq guardlar ═════════
 
+/**
+ * `/dispatch` — buyurtmani kuryerga berish.
+ *
+ * Registrator: filial turi aniq bo'lsa (HQ · REGIONAL · HYBRID · PICKUP) —
+ * `registratorCanDispatch`. HQ registratori 2026-10-01 da qo'shildi.
+ *
+ * ⚠️ AVVALGI NOMUVOFIQLIK TUZATILDI. Bu yerda registrator SHARTSIZ ✓ edi,
+ * `routes.tsx` esa o'z guardida HQ va noma'lum turni rad etardi. Endi marshrut
+ * shu predikatni to'g'ridan-to'g'ri ishlatadi — ikkalasi ajralib keta olmaydi.
+ */
 export const canViewDispatchPage: Predicate = anyOf(
-  hasRole("superadmin", "admin", "registrator"),
+  hasRole("superadmin", "admin"),
+  (state) => roleOf(state) === "registrator" && registratorCanDispatch(userOf(state)),
   managerCan("dispatch"),
+);
+
+/**
+ * Pochtani filialga jo'natish (pochta sahifasidagi "Pochtani jo'natish"
+ * tugmasi va filial tanlash oynasi).
+ *
+ * Backend bilan AYNAN bir xil: GET /branches/dispatch-destinations va
+ * POST /branches/posts/:postId/dispatch faqat superadmin/admin yoki HQ
+ * filialidagi registratorga ruxsat beradi. REGIONAL/HYBRID/PICKUP
+ * registratorlari va menejerlar tugmani ko'rmaydi — ular uchun server doim
+ * 403 qaytaradi.
+ */
+export const canDispatchPostToBranch: Predicate = anyOf(
+  hasRole("superadmin", "admin"),
+  (state) => roleOf(state) === "registrator" && branchTypeOf(state) === "HQ",
 );
 
 export const canViewCourierBulkPage: Predicate = anyOf(

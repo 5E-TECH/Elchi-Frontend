@@ -47,6 +47,10 @@ export const API_ENDPOINTS = {
   COURIERS: {
     BASE: "couriers", // GET list / POST create
     BY_REGION: (regionId: string | number) => `couriers/region/${regionId}`,
+    // Kuryerni boshqa filialga o'tkazish (superadmin/admin): avval tekshiruv
+    // (pul, qo'ldagi buyurtma, qaytarilmagan pochta), keyin o'tkazish.
+    TRANSFER_CHECK: (id: string | number) => `couriers/${id}/transfer-check`, // GET
+    BRANCH: (id: string | number) => `couriers/${id}/branch`, // PATCH { branch_id }
   },
 
   // ── Logistics: Regions / Districts (admin/registrator; superadmin delete) ─
@@ -181,6 +185,8 @@ export const API_ENDPOINTS = {
     CASHBOX_USER_MAIN: (id: string | number) => `finance/cashbox/user/${id}/main`, // by user with date filters
     MANAGER_PAYABLE_TO_HQ: "finance/cashbox/manager/payable-to-hq",
     MANAGER_SETTLEMENT: "finance/cashbox/manager/settlement",
+    // HQ kuryerlari (superadmin/admin "Qabul qilinishi kerak" ro'yxati uchun)
+    HQ_COURIERS: "finance/cashbox/hq-couriers",
     HISTORY: "finance/history",
     HISTORY_BY_ID: (id: string | number) => `finance/history/${id}`,
     HEALTH: "finance/health",
@@ -317,6 +323,8 @@ export const API_ENDPOINTS = {
     WITH_SENT_BATCHES: "branches/with-sent-batches",
     TRANSFER_BATCHES: "branches/transfer-batches", // POST create batches from requester branch
     POST_DISPATCH: (postId: string | number) => `branches/posts/${postId}/dispatch`,
+    // Pochta jo'natish oynasi uchun manzil filiallar (superadmin/admin/HQ registratori)
+    DISPATCH_DESTINATIONS: "branches/dispatch-destinations",
     BY_ID: (id: string | number) => `branches/${id}`, // GET / PATCH / DELETE
     DESCENDANTS: (id: string | number) => `branches/${id}/descendants`,
     ANALYTICS_MARKETS: (id: string | number) => `branches/${id}/analytics/markets`,

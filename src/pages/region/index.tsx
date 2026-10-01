@@ -239,6 +239,9 @@ const RegionPage = () => {
   );
 
   useEffect(() => {
+    // Ichki sahifada (masalan, admin /regions/districts dan /regions ga
+    // yo'naltirilganda) eski manzilga ?period yozib, redirectni qaytarmasin.
+    if (isChildRoute) return;
     if (dateRange === "custom" && customRange?.start && customRange?.end) {
       setMultipleParams({
         period: "custom",
@@ -251,7 +254,7 @@ const RegionPage = () => {
     setMultipleParams({ period: dateRange });
     removeParam("startDate");
     removeParam("endDate");
-  }, [dateRange, customRange, setMultipleParams, removeParam]);
+  }, [dateRange, customRange, setMultipleParams, removeParam, isChildRoute]);
 
   if (isChildRoute) {
     return <Outlet />;

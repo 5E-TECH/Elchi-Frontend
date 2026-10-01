@@ -15,6 +15,8 @@ interface FormPopupProps {
   submitLabel?: string;
   cancelLabel?: string;
   isLoading?: boolean;
+  /** Yuborish tugmasini yuklanishsiz ham o'chirib qo'yadi (masalan tekshiruv o'tmaganda). */
+  submitDisabled?: boolean;
   children: ReactNode;
   widthClassName?: string;
   theme?: "default" | "branch" | "market";
@@ -33,6 +35,7 @@ const FormPopup = ({
   submitLabel,
   cancelLabel,
   isLoading = false,
+  submitDisabled = false,
   children,
   widthClassName = "max-w-2xl",
   theme = "default",
@@ -88,7 +91,7 @@ const FormPopup = ({
           <Button
             type="submit"
             label={isLoading ? t("submitting") : resolvedSubmitLabel}
-            disabled={isLoading}
+            disabled={isLoading || submitDisabled}
             className="flex-1 !bg-[linear-gradient(90deg,var(--color-main)_0%,var(--color-primarydark)_100%)] hover:opacity-95"
           />
         </div>

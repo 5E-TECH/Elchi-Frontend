@@ -239,6 +239,40 @@ export const getBranches = async (params: BranchParams): Promise<PaginatedRespon
   return normalizeBranchList(response.data, params);
 };
 
+export interface DispatchDestinationParams {
+  region_id?: string;
+}
+
+/**
+ * `region` obyekti kelmasa ham (`null`) `region_id` saqlanadi — pochta
+ * oynasidagi viloyat filtri `branch.region.id` ga tayanadi.
+ */
+const withRegionIdFallback = (value: Record<string, unknown>) =>
+  value && !value.region && value.region_id != null
+    ? { ...value, region: { id: value.region_id } }
+    : value;
+
+/**
+ * Pochtani filialga jo'natish uchun manzil filiallar —
+ * GET /branches/dispatch-destinations (superadmin/admin va HQ registratori).
+ *
+ * Faqat faol REGIONAL/HYBRID filiallar, har biri `has_manager` va `manager`
+ * bilan; pul maydonlari yo'q. GET /branches va GET /managers dan farqli
+ * o'laroq HQ registratoriga ham ochiq.
+ */
+export const getDispatchDestinations = async (
+  params: DispatchDestinationParams = {},
+): Promise<PaginatedResponse<Branch>> => {
+  const regionId = String(params.region_id ?? "").trim();
+  const response = await api.get(API_ENDPOINTS.BRANCHES.DISPATCH_DESTINATIONS, {
+    params: regionId ? { region_id: regionId } : undefined,
+  });
+  const payload = response.data as { data?: { total?: number } } | undefined;
+  const items = extractArray<Record<string, unknown>>(payload).map(withRegionIdFallback);
+
+  return normalizeBranchList({ data: { items, total: payload?.data?.total ?? items.length } });
+};
+
 const extractManagerBranchId = (value: unknown): string => {
   const item = value as Record<string, any>;
   const branch = item.branch ?? item.branch_data ?? item.assigned_branch ?? item.manager_branch;

@@ -21,9 +21,6 @@ import {
   canViewPaymentsPage,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
-import {
-  getUserBranchType,
-} from "../../widgets/Sidebar/model/menuConfig";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -164,14 +161,9 @@ const hasSelfCashboxAccess = (state: RootState) => {
 const canViewBranchDashboard = (state: RootState) =>
   state.role.role === "manager";
 
-const canViewDispatch = (state: RootState) => {
-  if (state.role.role === "registrator") {
-    // Registrator uchun qoida boshqacha: HQ dan tashqari har qanday filial.
-    const branchType = getUserBranchType(state.user.user);
-    return Boolean(branchType && branchType !== "HQ");
-  }
-  return canViewDispatchPage(state);
-};
+// Registrator qoidasi (filial turi aniq bo'lsa, HQ ham) `access.ts` da —
+// menyu bilan bitta manba (`registratorCanDispatch`).
+const canViewDispatch = canViewDispatchPage;
 
 const canViewBatches = canViewBatchesPage;
 const canViewReturns = canViewReturnsPage;

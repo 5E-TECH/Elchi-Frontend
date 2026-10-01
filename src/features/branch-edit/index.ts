@@ -1,4 +1,5 @@
 export { default as BranchEditModal } from "./ui/BranchEditModal";
 export { useUpdateBranch } from "./api/useUpdateBranch";
 export { branchEditSchema } from "./model/schema";
-export type { UpdateBranchDto } from "./model/types";
+export type { BranchEditSchemaContext } from "./model/schema";
+export type { UpdateBranchDto, UpdateBranchPayload } from "./model/types";

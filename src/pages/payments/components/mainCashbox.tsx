@@ -31,6 +31,12 @@ import { useCashBox } from "../../../entities/payments";
 import type { PaymentRow } from "./patmentHistoryTable";
 import PaymentHistoryList from "./PaymentHistoryList";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
+import {
+  RECEIVE_SEARCH_KEYS,
+  getReceiveDetailTarget,
+  useReceiveOptions,
+  type ReceiveOption,
+} from "./lib/receiveOptions";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
@@ -130,9 +136,11 @@ const ACTIONS: {
   bg: string;
 }[] = [
   {
+    // Superadmin/admin: filial menejeri yoki HQ kuryeridan; menejer: kuryerdan
+    // (yozuv va ikonka render'da rolga qarab almashtiriladi).
     icon: <Landmark size={20} />,
     label: "receiveFromBranchManager",
-    shortLabelKey: "branchManagerShort",
+    shortLabelKey: "receiveShort",
     color: "text-emerald-400",
     bg: "bg-emerald-500/15 hover:bg-emerald-500/25",
   },
@@ -195,7 +203,7 @@ const MainCashbox = () => {
   const branchType = getUserBranchType(user);
   const { apiRequest } = useAppNotification();
 
-  const { useGetUser, useGetManagers, useGetCouriers } = useUser();
+  const { useGetUser } = useUser();
   const { useGetMarkets } = useMarkets();
   const {
     cashboxSpand,
@@ -211,14 +219,13 @@ const MainCashbox = () => {
     { limit: FULL_LIST_LIMIT },
     isSalaryPopupOpen,
   );
-  const { data: managersData, isLoading: managersLoading } = useGetManagers(
-    { status: "active", limit: FULL_LIST_LIMIT },
-    isBranchManagerPopupOpen && !isManagerRole,
-  );
-  const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
-    { status: "active", limit: FULL_LIST_LIMIT },
-    isBranchManagerPopupOpen && isManagerRole,
-  );
+  // "Qabul qilinishi kerak": menejerga o'z kuryerlari; superadmin/admin'ga
+  // filial menejerlari + HQ kuryerlari (/payments bilan bitta manba).
+  const {
+    options: receiveOptions,
+    isLoading: isReceiveLoading,
+    description: receiveDescription,
+  } = useReceiveOptions({ isManagerRole, enabled: isBranchManagerPopupOpen });
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
     { status: "active", limit: FULL_LIST_LIMIT },
     isMarketPopupOpen,
@@ -254,88 +261,7 @@ const MainCashbox = () => {
       }),
     [usersData?.data?.items],
   );
-  const branchManagers = useMemo(
-    () =>
-      toDataItems(managersData).map((manager) => {
-        const item = asRecord(manager);
-        const branch = asRecord(item.branch);
-        const nestedBranch = asRecord(branch.branch);
-        const resolvedBranch = Object.keys(nestedBranch).length ? nestedBranch : branch;
-        const region = asRecord(resolvedBranch.region ?? branch.region ?? item.region);
-        const cashbox = asRecord(
-          resolvedBranch.cashbox ??
-            branch.cashbox ??
-            item.cashbox ??
-            item.cashBox ??
-            item.cash_box ??
-            item.kassa,
-        );
-        const branchId = String(
-          item.branch_id ??
-            item.branchId ??
-            resolvedBranch.id ??
-            branch.id ??
-            "",
-        );
-
-        return {
-          ...item,
-          id: branchId,
-          manager_id: String(item.id ?? ""),
-          name: getPersonName(item, t("userFallback")),
-          region: String(region.name ?? t("unknown")),
-          branch_name: String(resolvedBranch.name ?? ""),
-          amount: toNumber(
-            item.berilishi_kerak ??
-              item.payable_to_hq ??
-              item.payableToHq ??
-              cashbox.berilishi_kerak ??
-              cashbox.payable_to_hq ??
-              cashbox.payableToHq ??
-              item.amount,
-          ),
-        };
-      }).filter((manager) => manager.id),
-    [managersData, t],
-  );
-  const couriers = useMemo(
-    () =>
-      toDataItems(couriersData).map((courier) => {
-        const item = asRecord(courier);
-        const region = asRecord(item.region);
-        const cashbox = asRecord(item.cashbox ?? item.cashBox ?? item.cash_box ?? item.kassa);
-
-        return {
-          ...item,
-          id: String(item.id ?? ""),
-          name: getPersonName(item, t("userFallback")),
-          region: String(region.name ?? t("unknown")),
-          role: "courier",
-          amount: toNumber(
-            item.olinishi_kerak ??
-              item.to_be_received ??
-              item.toBeReceived ??
-              item.receivable ??
-              item.courier_receivable ??
-              cashbox.olinishi_kerak ??
-              cashbox.to_be_received ??
-              cashbox.toBeReceived ??
-              cashbox.receivable ??
-              cashbox.courier_receivable ??
-              cashbox.balance ??
-              item.amount,
-          ),
-        };
-      }).filter((courier) => courier.id),
-    [couriersData, t],
-  );
-  const receiveOptions = isManagerRole ? couriers : branchManagers;
-  const isReceiveLoading = isManagerRole ? couriersLoading : managersLoading;
-  const receiveDescription = isManagerRole
-    ? t("selectCourierDescription")
-    : t("selectBranchManagerDescription");
   const receiveIcon = isManagerRole ? <Truck size={20} /> : <Landmark size={20} />;
-  const receiveSearchKeys = isManagerRole ? ["name", "region"] : ["name", "region", "branch_name"];
   const markets = useMemo(
     () =>
       toDataItems(marketsData).map((market) => {
@@ -476,13 +402,13 @@ const MainCashbox = () => {
   }, [role, branchType]);
 
   const handleBranchManagerSelect = useCallback(
-    (item: any) => {
+    (item: ReceiveOption) => {
       setIsBranchManagerPopupOpen(false);
-      navigate(`/payments/cash-detail/${item.id}?type=${isManagerRole ? "courier" : "branch"}`, {
-        state: { type: isManagerRole ? "courier" : "branch", entity: item },
-      });
+      // Tur qatorning o'zidan (filial yoki kuryer) — roldan emas.
+      const target = getReceiveDetailTarget(item);
+      navigate(target.path, { state: target.state });
     },
-    [isManagerRole, navigate],
+    [navigate],
   );
 
   const handleMarketSelect = useCallback(
@@ -636,12 +562,14 @@ const MainCashbox = () => {
                 const isReceiveAction = label === "receiveFromBranchManager";
                 const actionIcon = isReceiveAction && isManagerRole ? <Truck size={20} /> : icon;
                 const actionShortLabelKey = isReceiveAction && isManagerRole ? "courierShort" : shortLabelKey;
+                const actionTitleKey =
+                  isReceiveAction && !isManagerRole ? "receiveFromBranchOrHqCourier" : label;
 
                 return (
                 <button
                   key={label}
                   onClick={() => handleActionClick(label)}
-                  title={t(label)}
+                  title={t(actionTitleKey)}
                   className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl ${bg} ${color} transition-all duration-150 active:scale-95`}
                 >
                   <span className="text-current">{actionIcon}</span>
@@ -846,21 +774,22 @@ const MainCashbox = () => {
         cardSources={salaryCardSources}
       />
 
-      {/* Receive from branch manager/courier */}
-      <PopupSelect
+      {/* Receive from branch manager / HQ courier (superadmin/admin) or courier (manager) */}
+      <PopupSelect<ReceiveOption>
         isOpen={isBranchManagerPopupOpen}
         onClose={() => setIsBranchManagerPopupOpen(false)}
         data={isReceiveLoading ? [] : receiveOptions}
         title={t("toBeReceived")}
         description={isReceiveLoading ? t("loadingLabel") : receiveDescription}
         icon={receiveIcon}
-        keyExtractor={(c: any) => c.id}
-        searchKeys={receiveSearchKeys}
+        // `${kind}:${id}` — filial 15 va kuryer 15 aralashib ketmasin.
+        keyExtractor={(c) => c.key}
+        searchKeys={RECEIVE_SEARCH_KEYS}
         onSelect={handleBranchManagerSelect}
         placeholder={t("searchPlaceholder")}
         selectLabel={t("selectLabel")}
         cancelLabel={t("cancelShort")}
-        renderItem={(c: any, isSelected: boolean) => (
+        renderItem={(c, isSelected) => (
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <div
@@ -868,7 +797,7 @@ const MainCashbox = () => {
                   isSelected ? "bg-white/20" : "bg-orange-500/10"
                 }`}
               >
-                {isManagerRole ? (
+                {c.kind === "courier" ? (
                   <Truck
                     size={16}
                     className={isSelected ? "text-white" : "text-orange-400"}
@@ -893,7 +822,7 @@ const MainCashbox = () => {
                     isSelected ? "text-white/70" : "text-gray-500 dark:text-white/75"
                   }`}
                 >
-                  {c.branch_name || c.region}
+                  {c.subtitle}
                 </p>
               </div>
             </div>
