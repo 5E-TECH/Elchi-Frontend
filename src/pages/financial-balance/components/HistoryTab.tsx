@@ -183,8 +183,11 @@ const HistoryTab = () => {
     const params: Record<string, string | number> = { page, limit };
 
     if (sourceType) params.source_type = sourceType;
-    if (fromDate) params.fromDate = `${fromDate}T00:00:00.000Z`;
-    if (toDate) params.toDate = `${toDate}T23:59:59.999Z`;
+    // C2 / CODE-22: oddiy `YYYY-MM-DD` — backend uni Toshkent kuni deb oladi
+    // (UTC `T00:00:00.000Z` chegarasi 00:00–05:00 dagi yozuvni oldingi kunga
+    // tushirardi).
+    if (fromDate) params.fromDate = fromDate;
+    if (toDate) params.toDate = toDate;
 
     return params;
   }, [fromDate, limit, page, sourceType, toDate]);

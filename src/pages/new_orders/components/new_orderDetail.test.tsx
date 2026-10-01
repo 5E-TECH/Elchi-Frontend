@@ -115,3 +115,19 @@ describe("NewOrderDetail — 'Qabul qilish' endpointi", () => {
     expect(mocks.transferMutate).not.toHaveBeenCalled();
   });
 });
+
+describe("NewOrderDetail — REGIONAL xodimi (fix3 CODE-17)", () => {
+  beforeEach(() => {
+    mocks.receiveMutate.mockReset();
+    mocks.transferMutate.mockReset();
+  });
+
+  it("REGIONAL registratorida 'Qabul qilish' tugmasi yo'q, /dispatch maslahati ko'rinadi", async () => {
+    renderWithProviders(<NewOrderDetail />, { preloadedState: stateFor("registrator", "REGIONAL") });
+
+    expect(await screen.findByRole("note")).toHaveTextContent("Biriktirish");
+    expect(screen.queryByRole("button", { name: /Qabul qilish/ })).not.toBeInTheDocument();
+    expect(mocks.receiveMutate).not.toHaveBeenCalled();
+    expect(mocks.transferMutate).not.toHaveBeenCalled();
+  });
+});

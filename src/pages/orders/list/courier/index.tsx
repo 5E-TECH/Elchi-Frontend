@@ -2,6 +2,8 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { ListOrdered, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../../app/config/store";
 import Tabs from "./list/tabs";
 import SellModal from "./list/SellModal";
 import CancelModal from "./list/CancelModal";
@@ -23,6 +25,9 @@ import { useOrderQrScanner } from "../../../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../../../scan/lib/scanResource";
 import { playScanFeedback } from "../../../scan/lib/scanShared";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
+import { getActionErrorMessage } from "../../../../shared/lib/actionError";
+import { canCourierRestoreCancelledOrder } from "../../../../entities/orders/custody";
+import { getRollbackWarning } from "../../../../entities/orders/rollbackResult";
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? value as Record<string, unknown> : {};
@@ -308,6 +313,19 @@ const CourierOrders = () => {
   const { api: notificationApi } = useAppNotification();
   const navigate = useNavigate();
   const { getParam, setParam, removeParam } = useQueryParams();
+  const currentUserId = useSelector(
+    (state: RootState) => state.user.user?.id ?? state.role.id,
+  );
+  // fix3b LC-05: bekor qilingan buyurtmani kuryer faqat posilka hali o'zida
+  // (holder = shu kuryer) turganda tiklaydi. Filial/HQ qabul qilib bo'lgan
+  // bo'lsa backend 400 qaytaradi — tugma ko'rsatilmaydi. Sotilgan qator
+  // avvalgidek.
+  const canRestoreOrder = useCallback(
+    (order: Order) =>
+      normalizeOrderStatus(order.status) !== "cancelled" ||
+      canCourierRestoreCancelledOrder(order, currentUserId),
+    [currentUserId],
+  );
 
   const initialStatus = normalizeOrderStatus(getParam("status"));
   const initialTab = initialStatus
@@ -476,6 +494,20 @@ const CourierOrders = () => {
   });
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
+  // fix3 FE-ORD-02: rad javobining sababi ko'rinadi (avval spinner to'xtab,
+  // oyna jimgina ochiq qolardi). Oyna ochiq qoladi — kuryer tuzatib qayta
+  // yuboradi. Tarmoq xatosini global bildirishnoma allaqachon ko'rsatgan.
+  const notifyActionError = (error: unknown) => {
+    const description = getActionErrorMessage(error, t("orderActionError"));
+    if (!description) return;
+    notificationApi.error({
+      message: t("common:error"),
+      description,
+      placement: "topRight",
+      duration: 6,
+    });
+  };
+
   const closeSellModal = () => {
     setSellOrder(null);
     setApprovalOrderId(null);
@@ -502,6 +534,7 @@ const CourierOrders = () => {
             onCompleted: closeSellModal,
             onApprovalRequested: () => setApprovalOrderId(orderId),
           }),
+        onError: notifyActionError,
       },
     );
   };
@@ -528,6 +561,7 @@ const CourierOrders = () => {
             onCompleted: closeSellModal,
             onApprovalRequested: () => setApprovalOrderId(orderId),
           }),
+        onError: notifyActionError,
       },
     );
   };
@@ -548,6 +582,7 @@ const CourierOrders = () => {
             onCompleted: closeCancelModal,
             onApprovalRequested: () => setApprovalOrderId(orderId),
           }),
+        onError: notifyActionError,
       },
     );
   };
@@ -555,7 +590,20 @@ const CourierOrders = () => {
   const handleRollbackConfirm = () => {
     if (!rollbackOrder) return;
     rollbackMutate(rollbackOrder.id, {
-      onSuccess: () => setRollbackOrder(null),
+      onSuccess: (response) => {
+        setRollbackOrder(null);
+        // fix3b L1 / CODE-14: rollback bajarildi, lekin bekor qilinganlar
+        // pochtasi yaratilmadi — oddiy muvaffaqiyat emas, ogohlantirish.
+        const warning = getRollbackWarning(response, t("rollbackCancelPostWarning"));
+        if (!warning) return;
+        notificationApi.warning({
+          message: t("common:warning"),
+          description: warning,
+          placement: "topRight",
+          duration: 8,
+        });
+      },
+      onError: notifyActionError,
     });
   };
 
@@ -598,6 +646,7 @@ const CourierOrders = () => {
         });
         setSelectedIds(new Set());
       },
+      onError: notifyActionError,
     });
   };
 
@@ -638,6 +687,7 @@ const CourierOrders = () => {
               onDeliver={(order) => setSellOrder(order)}
               onCancel={(order) => setCancelOrder(order)}
               onRestore={(order) => setRollbackOrder(order)}
+              canRestore={canRestoreOrder}
             />
           )}
 
@@ -699,6 +749,7 @@ const CourierOrders = () => {
         onPartlySell={handlePartlySell}
         isLoading={isSelling || isPartlySelling}
         awaitingApproval={!!sellOrder && approvalOrderId === sellOrder.id}
+        restrictExtraCostToCenter
       />
 
       {/* Cancel Modal */}

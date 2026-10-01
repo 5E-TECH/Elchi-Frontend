@@ -256,6 +256,18 @@ describe("TransferCourierModal — yangi filial tanlovi", () => {
     expect(mocks.get).toHaveBeenCalledWith(DESTINATIONS_URL, { params: undefined });
   });
 
+  it("opens the target list upwards so the modal body does not clip it", async () => {
+    mockApi([() => ok(checkData({ current_branch: SAMARQAND_BRANCH }))]);
+    renderModal();
+    await openTargets();
+
+    const option = await screen.findByRole("button", { name: "Bosh ofis · HQ" });
+    const panel = option.closest("[data-placement]");
+    expect(panel).toHaveAttribute("data-placement", "top");
+    expect(panel).toHaveClass("bottom-full");
+    expect(panel).not.toHaveClass("top-full");
+  });
+
   it("does not offer HQ to a courier who is already at HQ", async () => {
     mockApi([() => ok(checkData())]);
     renderModal();

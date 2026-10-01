@@ -15,7 +15,13 @@ const queries = vi.hoisted(() => ({
   managers: undefined as unknown,
   couriers: undefined as unknown,
   hqCouriers: undefined as unknown,
-  enabled: { managers: [] as boolean[], couriers: [] as boolean[], hqCouriers: [] as boolean[] },
+  branches: undefined as unknown,
+  enabled: {
+    managers: [] as boolean[],
+    couriers: [] as boolean[],
+    hqCouriers: [] as boolean[],
+    branches: [] as boolean[],
+  },
 }));
 
 // Disabled react-query so'rovi `data` bermaydi — mock ham shunday ishlaydi.
@@ -30,6 +36,14 @@ vi.mock("../../../../entities/user/api/userApi", () => ({
       return { data: enabled ? queries.couriers : undefined, isLoading: false };
     },
   }),
+}));
+
+// GET /branches (menejersiz, lekin qarzi bor filiallar) — sukut bo'yicha bo'sh.
+vi.mock("../../../../entities/branch/api/useBranches", () => ({
+  useBranches: (_params: unknown, enabled: boolean) => {
+    queries.enabled.branches.push(enabled);
+    return { data: enabled ? queries.branches : undefined, isLoading: false };
+  },
 }));
 
 vi.mock("../../../../entities/payments", () => ({
@@ -175,6 +189,7 @@ describe("toBranchManagerOptions", () => {
       region: "Sirdaryo",
       branch_name: "E2E Filial Sirdaryo",
       amount: 120000,
+      is_inactive: false,
     });
   });
 
@@ -232,6 +247,7 @@ describe("toBranchCourierOptions (manager)", () => {
         region: "Sirdaryo",
         branch_name: "",
         amount: 70000,
+        is_inactive: false,
       },
     ]);
   });
@@ -292,7 +308,8 @@ describe("useReceiveOptions", () => {
     queries.managers = managersResponse;
     queries.couriers = branchCouriersResponse;
     queries.hqCouriers = hqCouriersResponse;
-    queries.enabled = { managers: [], couriers: [], hqCouriers: [] };
+    queries.branches = undefined;
+    queries.enabled = { managers: [], couriers: [], hqCouriers: [], branches: [] };
   });
 
   it("superadmin/admin: branch managers followed by HQ couriers, never the /couriers list", () => {
@@ -323,7 +340,12 @@ describe("useReceiveOptions", () => {
 
     expect(result.current.options).toEqual([]);
     expect(
-      [...queries.enabled.managers, ...queries.enabled.couriers, ...queries.enabled.hqCouriers].some(Boolean),
+      [
+        ...queries.enabled.managers,
+        ...queries.enabled.couriers,
+        ...queries.enabled.hqCouriers,
+        ...queries.enabled.branches,
+      ].some(Boolean),
     ).toBe(false);
   });
 });

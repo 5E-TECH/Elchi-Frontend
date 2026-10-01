@@ -68,6 +68,11 @@ vi.mock("../../entities/user/api/userApi", () => ({
   }),
 }));
 
+// GET /branches (menejersiz filiallar / HQ filial sahifasidagi server summasi).
+vi.mock("../../entities/branch/api/useBranches", () => ({
+  useBranches: () => ({ data: undefined, isLoading: false, refetch: vi.fn(async () => ({ data: undefined })) }),
+}));
+
 vi.mock("../../entities/markets", () => ({
   useMarkets: () => ({
     useGetMarkets: () => ({ data: { data: [] }, isLoading: false }),

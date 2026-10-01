@@ -70,6 +70,7 @@ import {
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { getOrderItemName } from "../../../shared/lib/orderItemName";
+import { isCourierHeldOrder } from "../../../entities/orders/custody";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -361,6 +362,20 @@ const NewOrderUpdate = () => {
   );
   const productsLockReason = t("productsLockReason");
   const destinationLockReason = t("destinationLockReason");
+  // fix3 FE-ORD-12: mijozni PATCH /users/:id orqali tahrirlash faqat
+  // superadmin/admin uchun ishlaydi. Registrator/market/kuryer doim 403 olardi,
+  // menejer esa faqat o'z filial xodimlarini yangilay oladi (mijoz emas).
+  const canEditCustomer = role === "superadmin" || role === "admin";
+  const customerEditLockReason = !canEditCustomer
+    ? t("customerEditAdminOnly")
+    : null;
+  // fix3b FE-ORD-12: manzil va buyurtma/mahsulotlar oynasi PATCH
+  // /orders/:id/full orqali saqlanadi — u faqat SUPERADMIN/ADMIN/REGISTRATOR
+  // uchun ochiq. Market (o'z NEW buyurtmasi), menejer va kuryer doim 403
+  // olardi: ularga tugma o'chiq va sababi ko'rsatiladi.
+  const canEditOrderFull =
+    role === "superadmin" || role === "admin" || role === "registrator";
+  const orderEditRoleLockReason = t("orderEditRoleOnly");
 
   // ─── State ──────────────────────────────────────────────────────────────────
   const [addressPopupOpen, setAddressPopupOpen] = useState(false);
@@ -447,6 +462,9 @@ const NewOrderUpdate = () => {
     (branchType === "REGIONAL" || branchType === "HYBRID");
   const canUseCourierActions =
     isRegionalManager && isActionableOrderStatus(order?.status ?? "");
+  // fix3b LC-04: kuryer qo'lidagi buyurtmani menejer sotmaydi (backend 400
+  // "Bu buyurtma kuryer qo'lida..."). Bekor qilish ochiq qoladi.
+  const canManagerSellOrder = canUseCourierActions && !isCourierHeldOrder(order);
   const canRollbackSoldOrder = isRegionalManager && normalizedStatus === "sold";
 
   const regionName = order?.district?.region?.name ?? order?.region?.name ?? "—";
@@ -536,14 +554,14 @@ const NewOrderUpdate = () => {
 
   // ─── Handlers — Address popup ─────────────────────────────────────────────
   const handleOpenAddressPopup = useCallback(() => {
-    if (destinationLocked) return;
+    if (destinationLocked || !canEditOrderFull) return;
     setAddressForm({
       region_id: order?.district?.region_id ?? order?.region?.id ?? "",
       district_id: order?.district_id ?? order?.district?.id ?? "",
       address: order?.address ?? "",
     });
     setAddressPopupOpen(true);
-  }, [destinationLocked, order]);
+  }, [canEditOrderFull, destinationLocked, order]);
 
   const handleCloseAddressPopup = useCallback(() => setAddressPopupOpen(false), []);
 
@@ -557,7 +575,7 @@ const NewOrderUpdate = () => {
     setAddressForm((p) => ({ ...p, address: v })), []);
 
   const handleSaveAddress = useCallback(() => {
-    if (!orderId || !order || destinationLocked) return;
+    if (!orderId || !order || destinationLocked || !canEditOrderFull) return;
     const validationError = getAddressUpdateValidationError(addressForm);
     if (validationError) {
       notificationApi.error({
@@ -582,17 +600,17 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [addressForm, destinationLocked, notificationApi, order, orderId, showUpdateError, t, updateNewOrder]);
+  }, [addressForm, canEditOrderFull, destinationLocked, notificationApi, order, orderId, showUpdateError, t, updateNewOrder]);
 
   // ─── Handlers — Customer popup ────────────────────────────────────────────
   const handleOpenCustomerPopup = useCallback(() => {
-    if (destinationLocked) return;
+    if (destinationLocked || !canEditCustomer) return;
     setCustomerForm({
       name: order?.customer?.name ?? "",
       phone: order?.customer?.phone_number ?? "",
     });
     setCustomerPopupOpen(true);
-  }, [destinationLocked, order]);
+  }, [canEditCustomer, destinationLocked, order]);
 
   const handleCloseCustomerPopup = useCallback(() => setCustomerPopupOpen(false), []);
 
@@ -603,7 +621,7 @@ const NewOrderUpdate = () => {
     setCustomerForm((p) => ({ ...p, phone: v })), []);
 
   const handleSaveCustomer = useCallback(() => {
-    if (!userId || !order || destinationLocked) return;
+    if (!userId || !order || destinationLocked || !canEditCustomer) return;
     const validationError = getCustomerUpdateValidationError(customerForm);
     if (validationError) {
       const validationKey = {
@@ -635,11 +653,11 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [customerForm, destinationLocked, notificationApi, order, queryClient, showUpdateError, t, updateUser, userId]);
+  }, [canEditCustomer, customerForm, destinationLocked, notificationApi, order, queryClient, showUpdateError, t, updateUser, userId]);
 
   // ─── Handlers — Order popup ───────────────────────────────────────────────
   const handleOpenOrderPopup = useCallback(() => {
-    if (productsLocked) return;
+    if (productsLocked || !canEditOrderFull) return;
     setOrderForm({
       where_deliver: order?.where_deliver ?? "",
       total_price: String(order?.total_price ?? ""),
@@ -647,7 +665,7 @@ const NewOrderUpdate = () => {
       items: order?.items.map((i) => ({ ...i })) ?? [],
     });
     setOrderPopupOpen(true);
-  }, [order, productsLocked]);
+  }, [canEditOrderFull, order, productsLocked]);
 
   const handleCloseOrderPopup = useCallback(() => setOrderPopupOpen(false), []);
 
@@ -664,7 +682,7 @@ const NewOrderUpdate = () => {
   );
 
   const handleSaveOrder = useCallback(() => {
-    if (!orderId || !order) return;
+    if (!orderId || !order || !canEditOrderFull) return;
     if (!productsLocked && parseOrderTotalPrice(orderForm.total_price) === null) {
       notificationApi.error({
         message: t("error", { ns: "common" }),
@@ -689,7 +707,7 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [destinationLocked, notificationApi, order, orderForm, orderId, productsLocked, showUpdateError, t, updateNewOrder]);
+  }, [canEditOrderFull, destinationLocked, notificationApi, order, orderForm, orderId, productsLocked, showUpdateError, t, updateNewOrder]);
 
   const adjustQty = useCallback((itemId: string, delta: number) => {
     if (productsLocked) return;
@@ -875,13 +893,15 @@ const NewOrderUpdate = () => {
                 </span>
                 {canUseCourierActions && (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => setIsSellModalOpen(true)}
-                      className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
-                    >
-                      {t("sell", { ns: "orders" })}
-                    </button>
+                    {canManagerSellOrder && (
+                      <button
+                        type="button"
+                        onClick={() => setIsSellModalOpen(true)}
+                        className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                      >
+                        {t("sell", { ns: "orders" })}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setIsCancelModalOpen(true)}
@@ -932,8 +952,8 @@ const NewOrderUpdate = () => {
                   action={
                     <EditBtn
                       onClick={handleOpenOrderPopup}
-                      disabled={productsLocked}
-                      reason={productsLockReason}
+                      disabled={productsLocked || !canEditOrderFull}
+                      reason={productsLocked ? productsLockReason : orderEditRoleLockReason}
                     />
                   }
                 />
@@ -1022,8 +1042,12 @@ const NewOrderUpdate = () => {
                   action={
                     <button
                       onClick={handleOpenCustomerPopup}
-                      disabled={destinationLocked}
-                      title={destinationLocked ? destinationLockReason : undefined}
+                      disabled={destinationLocked || !canEditCustomer}
+                      title={
+                        destinationLocked
+                          ? destinationLockReason
+                          : customerEditLockReason ?? undefined
+                      }
                       className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       <Edit2 size={14} />
@@ -1072,8 +1096,8 @@ const NewOrderUpdate = () => {
                   action={
                     <EditBtn
                       onClick={handleOpenAddressPopup}
-                      disabled={destinationLocked}
-                      reason={destinationLockReason}
+                      disabled={destinationLocked || !canEditOrderFull}
+                      reason={destinationLocked ? destinationLockReason : orderEditRoleLockReason}
                     />
                   }
                 />

@@ -138,6 +138,7 @@
   "partialSellUnavailableInvalidQuantity": "Mahsulot sonlari noto'g'ri — qisman sotib bo'lmaydi. To'liq soting yoki bekor qiling.",
   "partialSellDecreaseRequired": "Kamida bitta mahsulot sonini kamaytiring",
   "partialSellPriceRequired": "To'lov summasini kiriting",
+  "partialSellPriceExceedsTotal": "Qisman sotuv summasi buyurtma summasidan oshmasligi kerak",
   "decreaseQuantity": "{{name}} sonini kamaytirish",
   "increaseQuantity": "{{name}} sonini oshirish",
   "currency": "so'm",
@@ -310,6 +311,11 @@
   "extraCostApprovalPendingDescription": "{{amount}} qo'shimcha xarajat marketga tasdiqqa yuborildi. Market tasdiqlasa, amal avtomatik bajariladi; rad etsa, buyurtma hozirgi holatida qoladi.",
   "extraCostApprovalBadge": "Tasdiqqa yuborilgan",
   "extraCostApprovalSentAt": "{{amount}} qo'shimcha xarajat {{time}} da market tasdig'iga yuborilgan",
+  "extraCostApprovalSentAtAction": "{{action}}: {{amount}} qo'shimcha xarajat {{time}} da market tasdig'iga yuborilgan",
+  "extraCostApprovalPendingAction": "So'ralgan amal: {{action}}",
+  "extraCostApprovalActionSell": "Sotish",
+  "extraCostApprovalActionPartlySell": "Qisman sotish",
+  "extraCostApprovalActionCancel": "Bekor qilish",
   "sortLabel": "Saralash:",
   "searchTruncatedWarning": "Natija to'liq emas, qidiruvni aniqlashtiring",
   "excel": {
@@ -403,5 +409,8 @@
   "aiRetryAgain": "Qayta urinib ko'ring",
   "exactNumberMatch": "Aniq",
   "exactNumberMatchTitle": "Qidiruvdagi raqamga aynan mos buyurtma",
-  "openOrderRow": "Buyurtma №{{id}}, {{name}}"
+  "openOrderRow": "Buyurtma №{{id}}, {{name}}",
+  "orderActionError": "Amalni bajarib bo'lmadi. Qayta urinib ko'ring.",
+  "rollbackCancelPostWarning": "Buyurtma bekor qilindi, lekin bekor qilinganlar pochtasiga qo'shilmadi. Uni pochtaga qo'lda qo'shing.",
+  "extraCostHomeNotAllowed": "Uyga yetkazishda qo'shimcha xarajat yozilmaydi — uy tarifi allaqachon yuqori."
 }

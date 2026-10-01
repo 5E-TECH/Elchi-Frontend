@@ -280,4 +280,10 @@
   ,"paymentAlreadyRecorded": "This payment has already been recorded — the cashbox was refreshed, please check the amount"
   ,"receiveCheckFailed": "The verification service did not respond — if you send the payment, the server will check it again"
   ,"hqCourierHasBranchSales": "The courier has branch sales that are not handed over yet — the branch manager receives them"
+  ,"paymentOutcomeUnknown": "The server did not respond — the payment may have gone through. The cashbox was refreshed, please check the amount: resending this same payment will not record it twice"
+  ,"excelExportError": "Could not download the Excel file"
+  ,"branchWithoutManager": "Branch without a manager"
+  ,"openShiftTitle": "Open shift"
+  ,"openShiftSuccess": "Shift opened"
+  ,"openShiftError": "An error occurred while opening the shift"
 }

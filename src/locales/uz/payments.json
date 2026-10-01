@@ -280,4 +280,10 @@
   ,"paymentAlreadyRecorded": "Bu to'lov allaqachon yozilgan — kassa yangilandi, summani tekshiring"
   ,"receiveCheckFailed": "Tekshiruv xizmati javob bermadi — to'lov yuborilsa server qayta tekshiradi"
   ,"hqCourierHasBranchSales": "Kuryerda filialga tegishli topshirilmagan savdo bor — ularni filial menejeri qabul qiladi"
+  ,"paymentOutcomeUnknown": "Server javob bermadi — to'lov o'tgan bo'lishi mumkin. Kassa yangilandi, summani tekshiring: aynan shu to'lovni qayta yuborsangiz, u ikki marta yozilmaydi"
+  ,"excelExportError": "Excel faylni yuklab bo'lmadi"
+  ,"branchWithoutManager": "Menejer biriktirilmagan filial"
+  ,"openShiftTitle": "Smenani ochish"
+  ,"openShiftSuccess": "Smena ochildi"
+  ,"openShiftError": "Smenani ochishda xatolik yuz berdi"
 }

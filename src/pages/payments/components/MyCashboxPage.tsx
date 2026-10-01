@@ -19,12 +19,6 @@ const toIsoDate = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const toRangeBoundary = (date: string, boundary: "start" | "end") => {
-  const suffix =
-    boundary === "start" ? "T00:00:00.000Z" : "T23:59:59.999Z";
-  return `${date}${suffix}`;
-};
-
 const parseIsoDate = (value: string) => {
   const [year, month, day] = value.split("-").map(Number);
   if (!year || !month || !day) return null;
@@ -80,10 +74,13 @@ const MyCashboxPage = () => {
   const [historyTab, setHistoryTab] = useState<"all" | "payments">("all");
   const [balanceVisible, setBalanceVisible] = useState(true);
 
+  // C2 / CODE-22: sana oddiy `YYYY-MM-DD` — backend uni Toshkent kuni
+  // (00:00–23:59:59.999, +05:00) deb oladi. Ilgari `T00:00:00.000Z` (UTC)
+  // qo'shilardi va Toshkent bo'yicha 00:00–05:00 dagi yozuv oldingi kunga tushardi.
   const params = useMemo(
     () => ({
-      ...(selectedDateFrom && { fromDate: toRangeBoundary(selectedDateFrom, "start") }),
-      ...(selectedDateTo && { toDate: toRangeBoundary(selectedDateTo, "end") }),
+      ...(selectedDateFrom && { fromDate: selectedDateFrom }),
+      ...(selectedDateTo && { toDate: selectedDateTo }),
       ...(historyTab === "payments" && { sourceTypes: PAYMENT_HISTORY_SOURCE_TYPES }),
     }),
     [historyTab, selectedDateFrom, selectedDateTo],

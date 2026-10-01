@@ -8,6 +8,23 @@ export const isNetworkError = (error: AxiosError) =>
 export const isNetworkFailure = (error: unknown): error is AxiosError =>
   axios.isAxiosError(error) && isNetworkError(error);
 
+/**
+ * Token yangilash (refresh) ning VAQTINCHALIK xatosi — foydalanuvchi tizimdan
+ * CHIQARILMAYDI (fix3 RBAC-11 / C10):
+ *   - 429 — so'rov cheklovi: ofisda (HQ Wi-Fi) yoki mobil operator NAT'ida
+ *     bitta IP dan smena boshida ko'p qurilma bir vaqtda yangilaydi;
+ *   - 5xx — server muammosi, foydalanuvchining aybi emas;
+ *   - javob umuman kelmadi (tarmoq uzildi / vaqt tugadi).
+ * 401/403 (refresh token yaroqsiz, qayta ishlatilgan, muddati o'tgan) va
+ * boshqa xatolar — sessiya haqiqatan tugagan, chiqish to'g'ri.
+ */
+export const isTransientAuthFailure = (error: unknown): boolean => {
+  if (!axios.isAxiosError(error)) return false;
+  if (isNetworkError(error)) return true;
+  const status = error.response?.status ?? 0;
+  return status === 429 || status >= 500;
+};
+
 /** NotificationProvider "Tarmoq xatosi" bildirishnomasini ko'rsatadi. */
 export const emitNetworkError = (error: AxiosError) => {
   if (typeof window === "undefined" || !isNetworkError(error)) {

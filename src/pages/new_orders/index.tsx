@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Building2, ClipboardList, QrCode, Store, XCircle } from "lucide-react";
 import type { RootState } from "../../app/config/store";
+import { canHandoverCancelledToMarket } from "../../app/lib/access";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
 
@@ -17,6 +18,8 @@ const NewOrders = () => {
   const roleId = useSelector((state: RootState) => state.role.id);
   const isMarketRole = role === "market";
   const isAdminRole = role === "admin" || role === "superadmin";
+  // fix3 CODE-16 / C4: HQ registratori ham bekor qilingan mollarni topshiradi.
+  const canSeeCancelledTab = useSelector(canHandoverCancelledToMarket);
 
   const activeTab = useMemo<Tab>(() => {
     if (location.pathname.startsWith("/new-orders/branches")) return "branches";
@@ -117,7 +120,7 @@ const NewOrders = () => {
             </div>
           )}
 
-          {isAdminRole && (
+          {canSeeCancelledTab && (
             <div
               onClick={() => navigate("/new-orders/cancelled")}
               className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4

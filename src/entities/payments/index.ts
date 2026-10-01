@@ -135,26 +135,56 @@ export interface HqCourierReceivablesResponse {
 }
 
 /**
- * Kuryerdan pul qabul qilish so'rovi. `idempotencyKey` bitta mantiqiy to'lov
- * uchun o'zgarmaydi (muvaffaqiyatgacha) — javob kechikib qayta yuborilsa,
- * backend o'sha kalit bo'yicha pulni faqat bir marta o'tkazadi.
+ * Pul o'tkazmasi so'rovi (kuryerdan qabul qilish, marketga to'lov, filial →
+ * HQ). `idempotencyKey` bitta mantiqiy to'lov uchun o'zgarmaydi
+ * (muvaffaqiyatgacha) — javob kechikib (masalan 504) qayta yuborilsa, backend
+ * o'sha kalit bo'yicha pulni faqat bir marta o'tkazadi.
  */
-export type CourierPaymentRequest = { data: Record<string, unknown>; idempotencyKey: string };
+export type CashboxPaymentRequest = { data: Record<string, unknown>; idempotencyKey: string };
+export type CourierPaymentRequest = CashboxPaymentRequest;
 
 /**
- * POST /finance/cashbox/payment/courier javobi (umumiy konvert). Shu
- * `Idempotency-Key` bilan pul avval o'tgan bo'lsa (javobi yo'qolgan urinish
- * qayta yuborilganda) finance-service pulni ikkinchi marta o'tkazmaydi va
- * `{ statusCode: 200, message: "To'lov allaqachon qabul qilingan (takroriy so'rov)",
+ * POST /finance/cashbox/payment/{courier,market,branch-to-main} javobi (umumiy
+ * konvert). Shu `Idempotency-Key` bilan pul avval o'tgan bo'lsa (javobi
+ * yo'qolgan urinish qayta yuborilganda) finance-service pulni ikkinchi marta
+ * o'tkazmaydi va `{ statusCode: 200, message: "... (takroriy so'rov)",
  * data: { idempotent: true } }` qaytaradi — ya'ni bu yangi to'lov EMAS.
  */
-export interface CourierPaymentResponse {
+export interface CashboxPaymentResponse {
   statusCode: number;
   message: string;
   data?: ({ idempotent?: boolean } & Record<string, unknown>) | null;
 }
+export type CourierPaymentResponse = CashboxPaymentResponse;
 
 const idempotencyHeaders = (idempotencyKey: string) => ({ headers: { "Idempotency-Key": idempotencyKey } });
+
+/** Kassa smenasi (finance-service `shifts` jadvali; ID lar bigint satr). */
+export interface CashboxShift {
+  id: string;
+  opened_by: string;
+  closed_by?: string | null;
+  opened_at?: string;
+  closed_at?: string | null;
+  status: "open" | "closed";
+  comment?: string | null;
+}
+
+/** GET /finance/shift javobi. */
+export interface ShiftListResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    items: CashboxShift[];
+    pagination?: { total: number; page: number; limit: number; totalPages: number };
+  };
+}
+
+/** POST /finance/shift/open — gateway OpenShiftRequestDto (sukut: MAIN kassa). */
+export type OpenShiftRequest = { opened_by: string };
+
+/** POST /finance/shift/close — gateway CloseShiftRequestDto. */
+export type CloseShiftRequest = { closed_by: string; shift_id: string; comment?: string };
 
 const normalizeFinanceHistoryParams = (params?: any) => {
   if (!params) return params;
@@ -178,6 +208,10 @@ export const useCashBox = () => {
       client.invalidateQueries({ queryKey: ["couriers"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["courier-cashbox-balances"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["branches"], refetchType: "active" }),
+      // GET /managers — "Qabul qilinishi kerak" oynasidagi filial summalari
+      // (berilishi_kerak). Busiz qabuldan keyin 30 s gacha eski summa
+      // ko'rinib, kassa sahifasiga ham o'tib ketardi (FE-PAY-15).
+      client.invalidateQueries({ queryKey: ["managers"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["dashboard"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["branch-dashboard"], refetchType: "active" }),
       client.invalidateQueries({ queryKey: ["revenue"], refetchType: "active" }),
@@ -196,13 +230,26 @@ export const useCashBox = () => {
     onSuccess: refreshCashboxQueries,
   });
 
+  // C1 / FE-PAY-03: market to'lovi va filial → HQ ham kuryer to'lovi kabi
+  // `Idempotency-Key` bilan — 504 dan keyin qayta bosish pulni ikki marta
+  // yozmaydi (gateway ikkala marshrutda ham sarlavhani o'qiydi).
   const createPaymentBranchToMain = useMutation({
-    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN, data),
+    mutationFn: ({ data, idempotencyKey }: CashboxPaymentRequest) =>
+      api.post<CashboxPaymentResponse>(
+        API_ENDPOINTS.CASHBOX.PAYMENT_BRANCH_TO_MAIN,
+        data,
+        idempotencyHeaders(idempotencyKey),
+      ),
     onSuccess: refreshCashboxQueries,
   });
 
   const createPaymentMarket = useMutation({
-    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_MARKET, data),
+    mutationFn: ({ data, idempotencyKey }: CashboxPaymentRequest) =>
+      api.post<CashboxPaymentResponse>(
+        API_ENDPOINTS.CASHBOX.PAYMENT_MARKET,
+        data,
+        idempotencyHeaders(idempotencyKey),
+      ),
     onSuccess: refreshCashboxQueries,
   });
 
@@ -293,26 +340,45 @@ export const useCashBox = () => {
     });
 
   // ==================== SHIFT (SMENA) HOOKS ====================
+  //
+  // FE-PAY-06: backend'da "joriy smena" marshruti yo'q — foydalanuvchining
+  // OCHIQ smenasi GET /finance/shift?status=open&opened_by=<o'zi> bilan
+  // olinadi. Yuboriladigan maydonlar gateway DTO'lari bilan aynan bir xil
+  // (forbidNonWhitelisted): OpenShiftRequestDto → { opened_by },
+  // CloseShiftRequestDto → { closed_by, shift_id, comment? }. Ilgari ochish
+  // tanasiz, yopish faqat { comment } bilan ketib, har doim 400 olardi.
 
-  const useGetCurrentShift = () =>
-    useQuery({
-      queryKey: [shift, "current"],
-      queryFn: () => api.get(API_ENDPOINTS.CASHBOX.SHIFT_CURRENT).then((res) => res.data),
+  const useGetCurrentShift = (openedBy?: string | null, enabled: boolean = true) =>
+    useQuery<ShiftListResponse>({
+      queryKey: [shift, "current", openedBy],
+      queryFn: () =>
+        api
+          .get(API_ENDPOINTS.CASHBOX.SHIFT_CURRENT, {
+            params: { status: "open", opened_by: openedBy, limit: 1 },
+          })
+          .then((res) => res.data),
+      enabled: enabled && Boolean(openedBy),
     });
 
+  // Smena holati qayta o'qilguncha kutiladi — tugma ("ochish" ↔ "yopish")
+  // muvaffaqiyat xabari bilan bir vaqtda almashadi.
   const openShift = useMutation({
-    mutationFn: () => api.post(API_ENDPOINTS.CASHBOX.SHIFT_OPEN),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [shift] });
-    },
+    mutationFn: ({ opened_by }: OpenShiftRequest) =>
+      api.post(API_ENDPOINTS.CASHBOX.SHIFT_OPEN, { opened_by }),
+    onSuccess: () => client.invalidateQueries({ queryKey: [shift] }),
   });
 
   const closeShift = useMutation({
-    mutationFn: (comment?: string) =>
-      api.post(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, { comment }),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: [shift] });
-      refreshCashboxQueries();
+    mutationFn: ({ closed_by, shift_id, comment }: CloseShiftRequest) =>
+      api.post(API_ENDPOINTS.CASHBOX.SHIFT_CLOSE, {
+        closed_by,
+        shift_id,
+        // Bo'sh izoh yuborilmaydi — smena ochilgandagi izohni o'chirib yubormasin.
+        ...(comment ? { comment } : {}),
+      }),
+    onSuccess: async () => {
+      void refreshCashboxQueries();
+      await client.invalidateQueries({ queryKey: [shift] });
     },
   });
 

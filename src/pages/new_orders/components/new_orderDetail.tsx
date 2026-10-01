@@ -39,6 +39,10 @@ const NewOrderDetail = () => {
   const branchType = useSelector(branchTypeOf);
   const receiveMode = resolveReceiveMode(roleState.role, branchType);
   const shouldUseBranchTransferReceive = !!currentUser && receiveMode === "transfer";
+  // fix3 CODE-17: REGIONAL xodimida qabul tugmasi va skaner-qabul yo'q
+  // (backend transfer batch'ni doim 403 qiladi) — o'rniga /dispatch maslahati.
+  const canReceive = !isMarketRole && receiveMode !== "none";
+  const showReceiveViaDispatchHint = !isMarketRole && receiveMode === "none";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
@@ -211,7 +215,7 @@ const NewOrderDetail = () => {
 
   useOrderQrScanner({
     orders: rawOrders,
-    enabled: rawOrders.length > 0,
+    enabled: canReceive && rawOrders.length > 0,
     onMatch: receiveScannedOrder,
     onMissing: handleMissingScannedOrder,
   });
@@ -427,8 +431,19 @@ const NewOrderDetail = () => {
         )}
       </div>
 
+      {showReceiveViaDispatchHint && (
+        <div className="shrink-0 border-t border-gray-100 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 sm:py-4">
+          <p
+            role="note"
+            className="m-0 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-sm font-semibold text-maindark dark:border-white/10 dark:bg-white/6 dark:text-white"
+          >
+            {t("receiveViaDispatchHint")}
+          </p>
+        </div>
+      )}
+
       {/* Sticky Footer — doim pastda qotib turadi */}
-      {!isMarketRole && (
+      {canReceive && (
         <div className="shrink-0 border-t border-gray-100 bg-transparent py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 sm:py-4">
           <button
             onClick={() => setIsReceiveConfirmOpen(true)}

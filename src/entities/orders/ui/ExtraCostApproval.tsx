@@ -4,12 +4,20 @@ import { Clock3 } from "lucide-react";
 import {
   clearPendingExtraCostApproval,
   getActivePendingApproval,
+  isExtraCostAction,
   usePendingExtraCostApprovals,
+  type ExtraCostAction,
   type PendingExtraCostApproval,
 } from "../extraCostApproval";
 
 const resolveLocale = (language: string) =>
   language === "ru" ? "ru-RU" : language === "en" ? "en-US" : "uz-UZ";
+
+const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {
+  sell: "extraCostApprovalActionSell",
+  partly_sell: "extraCostApprovalActionPartlySell",
+  cancel: "extraCostApprovalActionCancel",
+};
 
 const useApprovalFormatters = () => {
   const { t, i18n } = useTranslation("orders");
@@ -25,7 +33,23 @@ const useApprovalFormatters = () => {
       minute: "2-digit",
     });
   };
-  return { t, formatAmount, formatTime };
+  /**
+   * fix3b M3: kutilayotgan tasdiq QAYSI amal uchun (sotish / qisman sotish /
+   * bekor qilish) — market aynan shu amalni bajaradi. Ilgari faqat summa va
+   * vaqt ko'rinardi: bekor qilish so'ragan kuryer kutilayotgan SOTISHni
+   * bilmasdi. Eski yozuvda amal bo'lmasa — avvalgi matn.
+   */
+  const describeSentApproval = (approval: Pick<PendingExtraCostApproval, "action" | "amount" | "requestedAt">) => {
+    const params = {
+      amount: formatAmount(approval.amount),
+      time: formatTime(approval.requestedAt),
+    };
+    return isExtraCostAction(approval.action)
+      ? t("extraCostApprovalSentAtAction", { ...params, action: t(ACTION_LABEL_KEYS[approval.action]) })
+      : t("extraCostApprovalSentAt", params);
+  };
+  const formatAction = (action: ExtraCostAction) => t(ACTION_LABEL_KEYS[action]);
+  return { t, formatAmount, formatTime, describeSentApproval, formatAction };
 };
 
 export const ExtraCostApprovalNotice = memo(() => {
@@ -38,34 +62,38 @@ export const ExtraCostApprovalNotice = memo(() => {
 });
 ExtraCostApprovalNotice.displayName = "ExtraCostApprovalNotice";
 
-export const ExtraCostApprovalPendingBanner = memo(({ amount }: { amount: number }) => {
-  const { t, formatAmount } = useApprovalFormatters();
-  return (
-    <div
-      role="status"
-      className="rounded-xl border border-amber-300/70 bg-amber-50 px-4 py-3 dark:border-amber-400/30 dark:bg-amber-400/10"
-    >
-      <p className="flex items-center gap-2 text-sm font-bold text-amber-800 dark:text-amber-100">
-        <Clock3 size={16} className="shrink-0" />
-        {t("extraCostApprovalPendingTitle")}
-      </p>
-      <p className="mt-1 text-xs font-medium text-amber-800/90 dark:text-amber-100/85">
-        {t("extraCostApprovalPendingDescription", { amount: formatAmount(amount) })}
-      </p>
-    </div>
-  );
-});
+export const ExtraCostApprovalPendingBanner = memo(
+  ({ amount, action }: { amount: number; action?: ExtraCostAction | null }) => {
+    const { t, formatAmount, formatAction } = useApprovalFormatters();
+    return (
+      <div
+        role="status"
+        className="rounded-xl border border-amber-300/70 bg-amber-50 px-4 py-3 dark:border-amber-400/30 dark:bg-amber-400/10"
+      >
+        <p className="flex items-center gap-2 text-sm font-bold text-amber-800 dark:text-amber-100">
+          <Clock3 size={16} className="shrink-0" />
+          {t("extraCostApprovalPendingTitle")}
+        </p>
+        {action && isExtraCostAction(action) ? (
+          <p className="mt-1 text-xs font-bold text-amber-900 dark:text-amber-50">
+            {t("extraCostApprovalPendingAction", { action: formatAction(action) })}
+          </p>
+        ) : null}
+        <p className="mt-1 text-xs font-medium text-amber-800/90 dark:text-amber-100/85">
+          {t("extraCostApprovalPendingDescription", { amount: formatAmount(amount) })}
+        </p>
+      </div>
+    );
+  },
+);
 ExtraCostApprovalPendingBanner.displayName = "ExtraCostApprovalPendingBanner";
 
 export const ExtraCostApprovalSentNote = memo(({ approval }: { approval: PendingExtraCostApproval }) => {
-  const { t, formatAmount, formatTime } = useApprovalFormatters();
+  const { describeSentApproval } = useApprovalFormatters();
   return (
     <p className="flex items-start gap-2 rounded-xl border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100">
       <Clock3 size={14} className="mt-0.5 shrink-0" />
-      {t("extraCostApprovalSentAt", {
-        amount: formatAmount(approval.amount),
-        time: formatTime(approval.requestedAt),
-      })}
+      {describeSentApproval(approval)}
     </p>
   );
 });
@@ -79,7 +107,7 @@ export const ExtraCostApprovalBadge = memo(({ orderId, status }: { orderId: stri
   const approvals = usePendingExtraCostApprovals();
   const stored = approvals[orderId];
   const active = getActivePendingApproval(approvals, { id: orderId, status });
-  const { t, formatAmount, formatTime } = useApprovalFormatters();
+  const { t, describeSentApproval } = useApprovalFormatters();
 
   useEffect(() => {
     if (stored && !active) clearPendingExtraCostApproval(orderId);
@@ -87,10 +115,7 @@ export const ExtraCostApprovalBadge = memo(({ orderId, status }: { orderId: stri
 
   if (!active) return null;
 
-  const title = t("extraCostApprovalSentAt", {
-    amount: formatAmount(active.amount),
-    time: formatTime(active.requestedAt),
-  });
+  const title = describeSentApproval(active);
 
   return (
     <span

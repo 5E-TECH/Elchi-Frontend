@@ -112,12 +112,13 @@ describe("SellModal partial sell", () => {
     expect(partialToggle()).toBeEnabled();
     await user.click(partialToggle());
     await user.click(screen.getByRole("button", { name: "tv sonini kamaytirish" }));
-    await user.type(screen.getAllByPlaceholderText("0")[0], "500000");
+    // fix3b M10: qisman summa buyurtma summasidan (120 000) oshmaydi.
+    await user.type(screen.getAllByPlaceholderText("0")[0], "50000");
     await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
 
     expect(onPartlySell).toHaveBeenCalledWith("120", expect.objectContaining({
       order_item_info: [{ order_item_id: "124", quantity: 1 }],
-      totalPrice: 500000,
+      totalPrice: 50000,
     }));
   });
 
@@ -146,7 +147,7 @@ describe("SellModal partial sell", () => {
     expect(partialToggle()).toBeEnabled();
     await user.click(partialToggle());
     await user.click(screen.getByRole("button", { name: "tv sonini kamaytirish" }));
-    await user.type(screen.getAllByPlaceholderText("0")[0], "700000");
+    await user.type(screen.getAllByPlaceholderText("0")[0], "70000");
     await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
 
     expect(onPartlySell).toHaveBeenCalledWith("o-1", expect.objectContaining({

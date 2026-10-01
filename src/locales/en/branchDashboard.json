@@ -46,5 +46,6 @@
   "chartOrders": "Orders",
   "chartAmount": "Total: {{amount}}",
   "emptyMarkets": "No market statistics yet",
-  "emptyCouriers": "No courier statistics yet"
+  "emptyCouriers": "No courier statistics yet",
+  "statsUnavailable": "Statistics are temporarily unavailable — refresh the page"
 }

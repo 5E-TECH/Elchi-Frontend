@@ -138,6 +138,7 @@
   "partialSellUnavailableInvalidQuantity": "The product quantities are invalid — it cannot be sold partially. Sell it in full or cancel.",
   "partialSellDecreaseRequired": "Reduce the quantity of at least one product",
   "partialSellPriceRequired": "Enter the payment amount",
+  "partialSellPriceExceedsTotal": "The partial sale amount must not exceed the order total",
   "decreaseQuantity": "Decrease quantity of {{name}}",
   "increaseQuantity": "Increase quantity of {{name}}",
   "currency": "sum",
@@ -310,6 +311,11 @@
   "extraCostApprovalPendingDescription": "An extra cost of {{amount}} was sent to the market for approval. If the market approves, the action completes automatically; if it rejects, the order stays as it is.",
   "extraCostApprovalBadge": "Sent for approval",
   "extraCostApprovalSentAt": "Extra cost of {{amount}} sent for market approval at {{time}}",
+  "extraCostApprovalSentAtAction": "{{action}}: extra cost of {{amount}} sent for market approval at {{time}}",
+  "extraCostApprovalPendingAction": "Requested action: {{action}}",
+  "extraCostApprovalActionSell": "Sale",
+  "extraCostApprovalActionPartlySell": "Partial sale",
+  "extraCostApprovalActionCancel": "Cancellation",
   "sortLabel": "Sort:",
   "searchTruncatedWarning": "The results are incomplete — refine your search",
   "excel": {
@@ -403,5 +409,8 @@
   "aiRetryAgain": "Try again",
   "exactNumberMatch": "Exact",
   "exactNumberMatchTitle": "Order that exactly matches the searched number",
-  "openOrderRow": "Order №{{id}}, {{name}}"
+  "openOrderRow": "Order №{{id}}, {{name}}",
+  "orderActionError": "The action could not be completed. Please try again.",
+  "rollbackCancelPostWarning": "The order was cancelled but not added to the cancelled-orders post. Add it to a post manually.",
+  "extraCostHomeNotAllowed": "Extra cost can't be added for home delivery — the home tariff is already higher."
 }

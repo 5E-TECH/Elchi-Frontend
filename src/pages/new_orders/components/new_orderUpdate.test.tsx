@@ -61,12 +61,19 @@ vi.mock("../../orders/list/courier/list/SellModal", () => ({
 }));
 vi.mock("../../orders/list/courier/list/CancelModal", () => ({ default: () => null }));
 
-const renderPage = () =>
+// fix3b FE-ORD-12: buyurtma tahrirlash oynasi (PATCH /orders/:id/full) faqat
+// superadmin/admin/registratorga ochiq — oynani ochadigan test rol beradi.
+const renderPage = (role?: string) =>
   renderWithProviders(
     <Routes>
       <Route path="/orders/edit/:orderId" element={<NewOrderUpdate />} />
     </Routes>,
-    { route: "/orders/edit/1251175" },
+    {
+      route: "/orders/edit/1251175",
+      ...(role
+        ? { preloadedState: { role: { id: `${role}-1`, role, region: null, name: role } } as never }
+        : {}),
+    },
   );
 
 describe("NewOrderUpdate comment", () => {
@@ -159,7 +166,7 @@ describe("NewOrderUpdate catalog-less product names", () => {
     orderState.items = externalItems;
     // Mahsulotlarni faqat qabul qilinmagan buyurtmada tahrirlash mumkin.
     orderState.status = "new";
-    renderPage();
+    renderPage("registrator");
 
     const dashesBefore = screen.queryAllByText("—").length;
     await user.click(screen.getAllByRole("button", { name: "Tahrirlash" })[0]);

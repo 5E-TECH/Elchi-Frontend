@@ -74,6 +74,12 @@ export interface User {
   can_add_extra_cost?: boolean;
   cancelled_handover_qr_required?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
+  /**
+   * Marketning Telegram maxfiy tokeni (`group_token-<hex>`). Backend uni FAQAT
+   * SUPERADMIN/ADMIN so'rovida va faqat market qatorida (GET /users/:id)
+   * qaytaradi — admin uni marketga beradi.
+   */
+  market_tg_token?: string | null;
   default_tariff: "home" | "center";
   region_id?: string | null;
   region?: Region | null;

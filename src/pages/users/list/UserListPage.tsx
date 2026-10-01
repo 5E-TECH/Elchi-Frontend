@@ -22,6 +22,10 @@ const UserListPage = memo(() => {
 
   const filters = useSelector((state: RootState) => state.filter);
   const searchFilters = useSelector((state: RootState) => state.search);
+  // fix3 RBAC-16: holat almashtirish va o'chirish faqat superadmin/admin
+  // (backend boshqalarga doim 403) — menejer jadvalda ko'rmaydi.
+  const viewerRole = useSelector((state: RootState) => state.role.role);
+  const canManageUsers = viewerRole === "superadmin" || viewerRole === "admin";
 
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "users",
@@ -208,6 +212,7 @@ const UserListPage = memo(() => {
           currentLimit={limit}
           onPageChange={setPage}
           onItemsPerPageChange={setLimit}
+          canManage={canManageUsers}
         />
       </div>
     </div>

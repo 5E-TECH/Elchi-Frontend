@@ -29,6 +29,12 @@ interface SearchableSelectProps {
   size?: "sm" | "md";
   hideLabel?: boolean;
   surface?: "default" | "search";
+  /**
+   * Ro'yxat qayerga ochiladi. Standart — pastga. Modal oxiridagi tanlovda
+   * (pastda joy yo'q, modal tanasi esa aylanadi) "top" ro'yxatni qirqilishdan
+   * saqlaydi.
+   */
+  placement?: "bottom" | "top";
 }
 
 const getNextEnabledIndex = (
@@ -63,6 +69,7 @@ const SearchableSelect = ({
   size = "md",
   hideLabel = false,
   surface = "default",
+  placement = "bottom",
 }: SearchableSelectProps) => {
   const { t } = useTranslation("common");
   const [isOpen, setIsOpen] = useState(false);
@@ -320,7 +327,10 @@ const SearchableSelect = ({
       </div>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-primary)] shadow-[0_20px_45px_color-mix(in_srgb,var(--color-background-deep)_18%,transparent)] dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)]">
+        <div
+          data-placement={placement}
+          className={`absolute left-0 right-0 z-40 ${placement === "top" ? "bottom-full mb-2" : "top-full mt-2"} overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-primary)] shadow-[0_20px_45px_color-mix(in_srgb,var(--color-background-deep)_18%,transparent)] dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)]`}
+        >
           <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
             {loading ? (
               <div className="flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-[color:var(--color-text-muted)] dark:text-white/45">

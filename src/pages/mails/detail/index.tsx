@@ -21,6 +21,8 @@ import OrdersTable from "./ui/OrdersTable";
 import SendButton from "./ui/SendButton";
 import SendPostModal from "./ui/SendPostModal";
 import { printOrders, type PrintMode } from "./lib/printMode";
+import { resolveDispatchRegionId } from "./lib/dispatchRegion";
+import { extractNotReceivedOrderIds, hasOnTheRoadOrders } from "./lib/receiveResult";
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 import { useMailDetailState } from "./model/useMailDetailState";
@@ -246,7 +248,6 @@ const MailDetailPage = () => {
       userBranchType === "HYBRID");
   const isCourier = role === "courier";
   const isCourierLikeReceiver = isCourier || isBranchReceiverManager;
-  const isSuperAdmin = role === "superadmin";
   const isHqRefusedReceiver =
     role === "admin" ||
     role === "superadmin" ||
@@ -274,7 +275,7 @@ const MailDetailPage = () => {
 
   const isRefusedDetail = typeRaw === "refused";
   const isAllBatchesDetail = viewRaw === "old-all-batches";
-  const isOldDetail = viewRaw === "old" || isAllBatchesDetail;
+  const isOldMailView = viewRaw === "old";
   const isReadOnlyRefusedCourier = isCourier && isRefusedDetail;
   const canReceiveRefusedPost = isCourierLikeReceiver || isHqRefusedReceiver;
   const fromTab = fromTabRaw;
@@ -325,6 +326,21 @@ const MailDetailPage = () => {
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
   const regularOrdersFromPost = regularResponse?.data?.allOrdersByPostId ?? [];
   const refusedOrdersFromPost = refusedResponse?.data ?? [];
+  /**
+   * fix3b LC-11: eski yozuvlarda filial/kuryer qabulidan keyin pochta RECEIVED
+   * bo'lib qolgan, ichida esa hamon yo'lda (ON_THE_ROAD) buyurtma bor (bitta
+   * yangilash yiqilgan yoki qabul paytida HQ yangi buyurtma qo'shgan).
+   * RECEIVED pochta "eski" ko'rinishda faqat o'qish uchun ochilardi va bu
+   * posilkalarni hech kim qabul qila olmasdi. Qabul qiluvchiga (kuryer yoki
+   * filial menejeri) qabul qilish qayta ochiladi — backend ham bunday
+   * pochtani qabul qiladi.
+   */
+  const hasStuckOnTheRoadOrders =
+    isOldMailView &&
+    !isRefusedDetail &&
+    isCourierLikeReceiver &&
+    hasOnTheRoadOrders(regularOrdersFromPost);
+  const isOldDetail = (isOldMailView && !hasStuckOnTheRoadOrders) || isAllBatchesDetail;
   const isRegularRefusedDetail =
     !isOldDetail &&
     regularOrdersFromPost.length > 0 &&
@@ -428,7 +444,9 @@ const MailDetailPage = () => {
   const orders = useMemo(
     () =>
       rawOrders.filter((order) => {
-        if (sentOrderIds.has(order.id)) return false;
+        // Tarix (eski) ko'rinishida hamma buyurtma ko'rinadi — shu sahifada
+        // qabul qilingan qoldiqlar ham (LC-11), faqat ish rejimida yashiriladi.
+        if (!isOldDetail && sentOrderIds.has(order.id)) return false;
 
         if (
           shouldReceiveCurrentPost &&
@@ -524,10 +542,12 @@ const MailDetailPage = () => {
     ],
   );
 
-  // ─── Region ID (courier fetch uchun) ─────────────────────────────────────
+  // ─── Region ID (manzil filiallar uchun) ───────────────────────────────────
+  // fix3 LC-09: pochtaning o'z viloyati (tuman qayta biriktirilgan bo'lsa ham
+  // to'g'ri), birinchi buyurtmaning geografik viloyati EMAS.
   const regionId = useMemo(
-    () => orders[0]?.region_id ?? orders[0]?.district?.region_id ?? "",
-    [orders],
+    () => resolveDispatchRegionId(fallbackRegionId, orders),
+    [fallbackRegionId, orders],
   );
 
   const handleManualToggleOne = useCallback((id: string) => {
@@ -621,29 +641,78 @@ const MailDetailPage = () => {
   const handleReceive = useCallback(() => {
     if (selectedIds.size === 0 || !postId) return;
     const receivedIds = Array.from(selectedIds);
+    const hideReceived = (ids: string[]) => {
+      if (ids.length === 0) return;
+      setSentOrderIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.add(id));
+        return next;
+      });
+    };
 
-    apiRequest({
-      request: () =>
-        (isEffectiveRefusedDetail ? receiveCanceledPost : receivePost).mutateAsync({
-          postId,
-          payload: { order_ids: receivedIds },
-        }),
-      successMessage: isEffectiveRefusedDetail
-        ? t("receiveRefusedSuccess")
-        : t("receiveSuccess"),
-      errorMessage: isEffectiveRefusedDetail
-        ? t("receiveRefusedError")
-        : t("receiveError"),
-      onSuccess: () => {
-        setSentOrderIds((prev) => {
-          const next = new Set(prev);
-          receivedIds.forEach((id) => next.add(id));
-          return next;
-        });
+    if (isEffectiveRefusedDetail) {
+      apiRequest({
+        request: () =>
+          receiveCanceledPost.mutateAsync({
+            postId,
+            payload: { order_ids: receivedIds },
+          }),
+        successMessage: t("receiveRefusedSuccess"),
+        errorMessage: t("receiveRefusedError"),
+        onSuccess: () => {
+          hideReceived(receivedIds);
+          clearSelection();
+          void refetchRegularDetail();
+        },
+      });
+      return;
+    }
+
+    /**
+     * fix3b LC-11: backend tanlangan, lekin WAITING ga o'tmagan buyurtmalarni
+     * `not_received_order_ids` da qaytaradi. Ular "qabul qilindi" deb
+     * yashirilmaydi — ro'yxatda qoladi va ogohlantirishda sanab o'tiladi.
+     */
+    void receivePost
+      .mutateAsync({ postId, payload: { order_ids: receivedIds } })
+      .then((response) => {
+        const notReceivedIds = extractNotReceivedOrderIds(response);
+        const notReceivedSet = new Set(notReceivedIds);
+        const acceptedIds = receivedIds.filter((id) => !notReceivedSet.has(id));
+
+        if (acceptedIds.length > 0) {
+          notifApi.success({
+            message: t("common:success"),
+            description: notReceivedIds.length
+              ? t("receivePartialSuccess", { count: acceptedIds.length })
+              : t("receiveSuccess"),
+            placement: "topRight",
+            duration: 4,
+          });
+        }
+        if (notReceivedIds.length > 0) {
+          notifApi.warning({
+            message: t("receiveNotReceivedTitle", { count: notReceivedIds.length }),
+            description: t("receiveNotReceivedDescription", {
+              ids: notReceivedIds.map((id) => `#${id}`).join(", "),
+            }),
+            placement: "topRight",
+            duration: 10,
+          });
+        }
+
+        hideReceived(acceptedIds);
         clearSelection();
         void refetchRegularDetail();
-      },
-    });
+      })
+      .catch((error: unknown) => {
+        notifApi.error({
+          message: t("common:error"),
+          description: getBackendErrorMessage(error) ?? t("receiveError"),
+          placement: "topRight",
+          duration: 5,
+        });
+      });
   }, [
     selectedIds,
     postId,
@@ -651,6 +720,7 @@ const MailDetailPage = () => {
     receiveCanceledPost,
     receivePost,
     apiRequest,
+    notifApi,
     clearSelection,
     refetchRegularDetail,
     t,
@@ -885,6 +955,18 @@ const MailDetailPage = () => {
         </div>
       ) : null}
 
+      {hasStuckOnTheRoadOrders && orders.length > 0 ? (
+        <div
+          role="note"
+          className="flex items-center gap-3 rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-100"
+        >
+          <AlertTriangle size={20} className="shrink-0" />
+          <p className="m-0 text-sm font-semibold">
+            {t("receivedPostLeftoversHint", { count: orders.length })}
+          </p>
+        </div>
+      ) : null}
+
       {/* Jadval */}
       <OrdersTable
         orders={orders}
@@ -895,7 +977,12 @@ const MailDetailPage = () => {
         onToggleOne={handleManualToggleOne}
         onPrintOne={handlePrintOne}
         onDeleteOne={handleDeleteOne}
-        canDelete={isSuperAdmin && !isEffectiveRefusedDetail && !isOldDetail}
+        // fix3 LC-15 / FE-MAIL-10 (C5): "pochtadan olib tashlash" YASHIRILDI.
+        // U POST /post/cancel ga ketardi — bu kuryer/menejerning "bekor
+        // qilinganlarni pochtaga yuborish" amali (superadminga doim 403, ruxsat
+        // bo'lsa ham buyurtmani CANCELLED_SENT qilardi, olib tashlamasdi).
+        // Haqiqiy "pochtadan ajratish" endpointi qo'shilganda qayta yoqiladi.
+        canDelete={false}
         variant={isOldDetail ? "history" : "default"}
         readOnly={isOldDetail || isReadOnlyRefusedCourier}
       />
@@ -944,7 +1031,7 @@ const MailDetailPage = () => {
         isLoading={SendToPost.isPending}
         title={t("deleteSelectedOrdersTitle")}
         message={t("deleteSelectedOrdersMessage", { count: deleteTargetIds.length })}
-        confirmLabel={t("delete")}
+        confirmLabel={t("delete", { ns: "common" })}
         variant="danger"
       />
     </PageContainer>

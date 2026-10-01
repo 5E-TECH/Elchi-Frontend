@@ -1,5 +1,5 @@
 // Migrated to React Hook Form
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import logo from "../../../shared/assets/logo yozuvlik qora.png";
 import { Eye, EyeClosed, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ import {
   formatUzbekistanPhoneFull,
   keepPhoneCaretAfterChange,
 } from "../../../shared/lib/phone";
+import { clearLoginNotice, peekLoginNotice } from "../../../auth/loginNotice";
 
 interface LoginFormValues {
   phone_number: string;
@@ -40,6 +41,12 @@ const LoginForm = () => {
 
   const { signinUser } = useLogin();
   const isSubmitting = loading || signinUser.isPending;
+  // fix3b RBAC-09: o'z parolini o'zgartirgan foydalanuvchi darhol chiqarildi —
+  // sababi shu yerda bir marta ko'rsatiladi.
+  const [loginNotice] = useState(peekLoginNotice);
+  useEffect(() => {
+    if (loginNotice) clearLoginNotice();
+  }, [loginNotice]);
 
   const {
     register,
@@ -103,6 +110,14 @@ const LoginForm = () => {
           </div>
 
           <div>
+            {loginNotice === "passwordChanged" && (
+              <div
+                role="status"
+                className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50 p-2 text-center text-xs font-semibold text-emerald-700 sm:text-sm"
+              >
+                {t("passwordChangedRelogin")}
+              </div>
+            )}
             <div className="mb-3 sm:mb-4">
               <label className="mb-1 ml-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:text-xs">
                 {t("phoneLabel")}

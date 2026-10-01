@@ -296,5 +296,8 @@
   "batchDirection": {
     "forward": "Forward",
     "return": "Return"
-  }
+  },
+  "receiveViaDispatchHint": "Orders aren't received here at this branch — assign them to a courier on the “Dispatch” page and they are received automatically.",
+  "customerEditAdminOnly": "Only an admin or superadmin can change customer details.",
+  "orderEditRoleOnly": "Only a superadmin, admin or registrar can change the order."
 }

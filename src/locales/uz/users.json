@@ -118,6 +118,8 @@
   "regionRequired": "Viloyat tanlang",
   "homeTariffRequired": "Uy tarifi yo'q",
   "centerTariffRequired": "Markaz tarifi yo'q",
+  "homeTariffRequiredNoSalary": "Maoshsiz kuryerda uy tarifi majburiy",
+  "centerTariffRequiredNoSalary": "Maoshsiz kuryerda markaz tarifi majburiy",
   "usernameRequired": "Username kiritilmadi",
   "deliveryTypeRequired": "Tur tanlang",
   "paymentDayValidation": "1-30 oralig'ida bo'lishi kerak",
@@ -177,5 +179,13 @@
   "extraCostPermissionDisabled": "Qo'shimcha harajat ruxsati o'chirildi",
   "sellExtraCostProofRequired": "Sotishda qo'shimcha harajat isboti",
   "cancelExtraCostProofRequired": "Bekor qilishda qo'shimcha harajat isboti",
-  "permissions": "Ruxsatlar"
+  "permissions": "Ruxsatlar",
+  "telegramTokenTitle": "Telegram token",
+  "telegramTokenShow": "Ko'rsatish",
+  "telegramTokenHide": "Yashirish",
+  "telegramTokenCopy": "Nusxalash",
+  "telegramTokenCopied": "Token nusxalandi",
+  "telegramTokenCopyFailed": "Tokenni nusxalab bo'lmadi",
+  "telegramTokenMissing": "Bu marketda Telegram token hali yo'q",
+  "telegramTokenHint": "Market Telegram guruhiga botni qo'shib, shu tokenni yuborsin"
 }

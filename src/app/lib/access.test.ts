@@ -137,14 +137,23 @@ describe("registrator — /dispatch filial turi bo'yicha (2026-10-01)", () => {
   /**
    * HQ registratori HQ kuryerlariga buyurtma beradi (backend
    * POST /orders/assign-to-courier buni qo'llaydi), shuning uchun HQ QO'SHILDI.
-   * PICKUP va boshqa aniq turlar hozirgidek; noma'lum tur — rad.
+   * REGIONAL/HYBRID hozirgidek; noma'lum tur — rad.
    */
-  it.each(["HQ", "REGIONAL", "HYBRID", "PICKUP"] as BranchType[])(
+  it.each(["HQ", "REGIONAL", "HYBRID"] as BranchType[])(
     "registrator/%s — ruxsat",
     (branchType) => {
       expect(canViewDispatchPage(state("registrator", branchType))).toBe(true);
     },
   );
+
+  /**
+   * fix3 CODE-21: PICKUP filialda kuryer bo'lmaydi (backend kuryerni faqat
+   * HQ/REGIONAL/HYBRID ga biriktiradi) — sahifa bo'sh kuryer ro'yxati bilan
+   * ochilardi. PICKUP menejerida ham `dispatch` qobiliyati yo'q.
+   */
+  it("registrator/PICKUP — rad (kuryersiz filial)", () => {
+    expect(canViewDispatchPage(state("registrator", "PICKUP"))).toBe(false);
+  });
 
   it("filial turi noma'lum registrator — rad (marshrut guardi bilan bir xil)", () => {
     expect(canViewDispatchPage(state("registrator"))).toBe(false);

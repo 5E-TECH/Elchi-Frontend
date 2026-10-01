@@ -18,8 +18,10 @@ const TABLE: Row[] = [
   ["registrator", "HYBRID", "transfer"],
   ["manager", "PICKUP", "transfer"],
   ["manager", "HYBRID", "transfer"],
-  ["registrator", "REGIONAL", "transfer"],
-  ["manager", "REGIONAL", "transfer"],
+  // REGIONAL — tugma yo'q (fix3 CODE-17): backend transfer batch'ni rad etadi,
+  // qabul /dispatch dagi kuryerga berish bilan avtomatik bo'ladi.
+  ["registrator", "REGIONAL", "none"],
+  ["manager", "REGIONAL", "none"],
   // Noma'lum filial turi — hozirgidek transfer-batches
   ["registrator", null, "transfer"],
   ["manager", null, "transfer"],

@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useOrders } from "../../entities/orders";
-import { useOrdersCoverage } from "../../entities/orders/ordersCoverage";
 import type { OrderListItem } from "../../entities/order/types/order";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
@@ -28,8 +27,10 @@ import {
   extractCourierBulkOrders,
   extractCourierBulkTotal,
   findCourierBulkOrderByScanCandidates,
+  getCourierBulkActionsAfterFinalize,
   getCourierBulkCounts,
   getCourierBulkFinalizeLabelCounts,
+  getCourierBulkFinalizeTasks,
   getCourierBulkOrderAction,
   mergeCourierBulkOrders,
   runLimited,
@@ -118,7 +119,6 @@ const CourierBulkPage = () => {
   const currency = t("currency");
   const { api: notificationApi } = useAppNotification();
   const { SellOrder, CancelOrder } = useOrders();
-  const { couldNotDeliver } = useOrdersCoverage();
   const { data: orders = [], isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["orders", "courier", "bulk", "waiting"],
     queryFn: fetchAllCourierWaitingOrders,
@@ -138,8 +138,7 @@ const CourierBulkPage = () => {
   const isBusy =
     isFinalizing ||
     SellOrder.isPending ||
-    CancelOrder.isPending ||
-    couldNotDeliver.isPending;
+    CancelOrder.isPending;
 
   const selectedCount = counts.cancel + counts.tomorrow;
 
@@ -203,11 +202,22 @@ const CourierBulkPage = () => {
   const handleFinalize = async () => {
     if (orders.length === 0 || isBusy) return;
 
+    // "Ertaga" — so'rovsiz, buyurtma kutilmoqda holatida qoladi (FE-CB-09).
+    const tasks = getCourierBulkFinalizeTasks(orders, actions);
+    const tomorrowCount = orders.length - tasks.length;
+
+    if (tasks.length === 0) {
+      notificationApi.info({
+        message: t("finalizeSuccessTitle"),
+        description: t("finalizeNothing"),
+        placement: "topRight",
+        duration: 4,
+      });
+      return;
+    }
+
     setIsFinalizing(true);
-    const tasks = orders.map((order) => ({
-      order,
-      action: getCourierBulkOrderAction(order.id, actions),
-    }));
+    const succeededOrderIds = new Set<string>();
 
     const results = await runLimited(tasks, 6, async ({ order, action }) => {
       if (action === "cancel") {
@@ -219,31 +229,26 @@ const CourierBulkPage = () => {
             paidAmount: 0,
           },
         });
-        return;
-      }
-
-      if (action === "tomorrow") {
-        await couldNotDeliver.mutateAsync({
-          id: order.id,
+      } else {
+        await SellOrder.mutateAsync({
+          orderId: order.id,
           data: {
-            comment: t("bulkTomorrowComment"),
+            comment: t("bulkSoldComment"),
+            extraCost: 0,
           },
         });
-        return;
       }
-
-      await SellOrder.mutateAsync({
-        orderId: order.id,
-        data: {
-          comment: t("bulkSoldComment"),
-          extraCost: 0,
-        },
-      });
+      succeededOrderIds.add(String(order.id));
     });
 
     const failedCount = results.filter((result) => result.status === "rejected").length;
 
     setIsFinalizing(false);
+    // Bajarilganlarning belgisi xato bo'lsa ham tozalanadi; xato bergan va
+    // "ertaga" belgilari qoladi. Ro'yxat har holda yangilanadi.
+    setActions((previous) => getCourierBulkActionsAfterFinalize(previous, succeededOrderIds));
+    setScanError("");
+    void refetch();
 
     if (failedCount > 0) {
       const firstError = results.find((result) => result.status === "rejected");
@@ -261,12 +266,15 @@ const CourierBulkPage = () => {
 
     notificationApi.success({
       message: t("finalizeSuccessTitle"),
-      description: t("finalizeSuccessDescription", { count: orders.length }),
+      description: [
+        t("finalizeSuccessDescription", { count: succeededOrderIds.size }),
+        tomorrowCount > 0 ? t("finalizeTomorrowKept", { count: tomorrowCount }) : "",
+      ]
+        .filter(Boolean)
+        .join(" "),
       placement: "topRight",
       duration: 3,
     });
-    clearActions();
-    void refetch();
   };
 
   return (

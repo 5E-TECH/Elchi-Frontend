@@ -118,6 +118,8 @@
   "regionRequired": "Select a region",
   "homeTariffRequired": "Home tariff is required",
   "centerTariffRequired": "Center tariff is required",
+  "homeTariffRequiredNoSalary": "Home tariff is required without a salary",
+  "centerTariffRequiredNoSalary": "Center tariff is required without a salary",
   "usernameRequired": "Username is required",
   "deliveryTypeRequired": "Select a type",
   "paymentDayValidation": "Must be between 1 and 30",
@@ -177,5 +179,13 @@
   "extraCostPermissionDisabled": "Extra cost permission disabled",
   "sellExtraCostProofRequired": "Sale extra cost proof",
   "cancelExtraCostProofRequired": "Cancel extra cost proof",
-  "permissions": "Permissions"
+  "permissions": "Permissions",
+  "telegramTokenTitle": "Telegram token",
+  "telegramTokenShow": "Show",
+  "telegramTokenHide": "Hide",
+  "telegramTokenCopy": "Copy",
+  "telegramTokenCopied": "Token copied",
+  "telegramTokenCopyFailed": "Could not copy the token",
+  "telegramTokenMissing": "This market has no Telegram token yet",
+  "telegramTokenHint": "Ask the market to add the bot to its Telegram group and send this token there"
 }

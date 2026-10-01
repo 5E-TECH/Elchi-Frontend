@@ -43,7 +43,9 @@
     "selectUser": "Foydalanuvchini tanlang",
     "remove": "Olib tashlash",
     "removeConfirm": "Xodimni filialdan olib tashlamoqchimisiz?",
-    "removed": "Xodim olib tashlandi"
+    "removed": "Xodim olib tashlandi",
+    "removeError": "Xodimni olib tashlab bo'lmadi",
+    "addError": "Xodimni qo'shib bo'lmadi"
   },
   "courierTransfer": {
     "title": "Kuryerni boshqa filialga o'tkazish",

@@ -1,10 +1,9 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Alert, Button, Divider, Form, Input, Modal, Select, message } from "antd";
+import { Alert, Button, Form, Input, Modal, Select, message } from "antd";
 import { Controller, useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useMarkets } from "../../../entities/markets";
-import { useConnectNotificationByToken } from "../../notification-connect/api/useConnectNotificationByToken";
 import { notificationSchema } from "../model/schema";
 import type { CreateNotificationDto } from "../model/types";
 import { useCreateNotification } from "../api/useCreateNotification";
@@ -39,9 +38,16 @@ const getMarketItems = (value: unknown): MarketOption[] => {
   return [];
 };
 
+/**
+ * fix3b CODE-02: "Token orqali ulash" bo'limi olib tashlandi. U
+ * `POST /notifications/connect-by-token` ga `{ token }` yuborardi, backend esa
+ * `{ text, group_id }` talab qiladi — har doim 400. Guruh ikki yo'l bilan
+ * ulanadi: market guruhga botni qo'shib maxfiy tokenni yuboradi (token market
+ * sahifasida, faqat admin ko'radi) yoki admin shu forma orqali (market + Group
+ * ID) ulaydi.
+ */
 const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) => {
   const { t } = useTranslation("common");
-  const [connectToken, setConnectToken] = useState("");
   const notificationBotUsername = import.meta.env.VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME
     ?.replace(/^@/, "")
     .trim();
@@ -51,7 +57,6 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
   const { useGetMarkets } = useMarkets();
   const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, open);
   const createNotification = useCreateNotification();
-  const connectNotification = useConnectNotificationByToken();
   const {
     control,
     handleSubmit,
@@ -68,7 +73,6 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
 
   useEffect(() => {
     if (!open) {
-      setConnectToken("");
       reset({
         market_id: "",
         group_id: "",
@@ -87,24 +91,6 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
       message.error("Bildirishnomani yaratishda xatolik bo'ldi");
     }
   });
-
-  const handleConnectByToken = async () => {
-    const token = connectToken.trim();
-
-    if (!token) {
-      message.warning("Token kiriting");
-      return;
-    }
-
-    try {
-      await connectNotification.mutateAsync({ token });
-      message.success("Telegram group ulandi");
-      onClose();
-      setConnectToken("");
-    } catch {
-      message.error("Token orqali ulashda xatolik bo'ldi");
-    }
-  };
 
   return (
     <Modal
@@ -233,35 +219,6 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
           Bildirishnomani saqlash
         </Button>
       </Form>
-
-      <Divider plain>Qo'shimcha</Divider>
-
-      <details className="rounded-2xl border border-border-soft bg-main-soft p-3 dark:bg-background-soft">
-        <summary className="cursor-pointer text-sm font-semibold text-maindark dark:text-primary">
-          Token orqali ulash
-        </summary>
-        <div className="mt-3 space-y-3">
-          <Alert
-            type="warning"
-            showIcon
-            message="Faqat token bo'lsa ishlaydi"
-            description="Bot yoki backend ulash tokenini bergan bo'lsa kiriting. Token bo'lmasa yuqoridagi qo'lda qo'shishdan foydalaning."
-          />
-          <Input
-            value={connectToken}
-            onChange={(event) => setConnectToken(event.target.value)}
-            placeholder="Token"
-            onPressEnter={() => void handleConnectByToken()}
-          />
-          <Button
-            block
-            loading={connectNotification.isPending}
-            onClick={() => void handleConnectByToken()}
-          >
-            Token orqali ulash
-          </Button>
-        </div>
-      </details>
     </Modal>
   );
 };

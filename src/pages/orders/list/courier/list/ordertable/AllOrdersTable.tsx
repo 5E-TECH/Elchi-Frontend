@@ -19,6 +19,7 @@ const renderHarakat = (
   onCancel?: (o: Order) => void,
   onRestore?: (o: Order) => void,
   t?: (key: string) => string,
+  canRestore?: (o: Order) => boolean,
 ) => {
   // Sotish + Bekor
   if (ACTIVE_STATUSES.includes(row.status)) {
@@ -40,8 +41,10 @@ const renderHarakat = (
     );
   }
 
-  // Faqat sold va cancelled — Rollback tugmasi
-  if (ROLLBACK_STATUSES.includes(row.status)) {
+  // Faqat sold va cancelled — Rollback tugmasi. fix3b LC-05: bekor qilingan
+  // buyurtmani kuryer faqat posilka hali o'zida bo'lsa tiklaydi — `canRestore`
+  // (filial/HQ qabul qilgan bo'lsa backend 400 qaytaradi).
+  if (ROLLBACK_STATUSES.includes(row.status) && (canRestore ? canRestore(row) : true)) {
     return (
       <button
         onClick={(e) => { e.stopPropagation(); onRestore?.(row); }}
@@ -64,9 +67,11 @@ type Props = {
   onDeliver?: (order: Order) => void;
   onCancel?: (order: Order) => void;
   onRestore?: (order: Order) => void;
+  /** Qatorda "Qayta tiklash" ko'rsatiladimi (berilmasa — sold/cancelled hammasida). */
+  canRestore?: (order: Order) => boolean;
 };
 
-const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRestore }: Props) => {
+const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRestore, canRestore }: Props) => {
   const { t, i18n } = useTranslation("orders");
   const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const formatMoney = (value: number) => `${value.toLocaleString(locale)} ${t("currency")}`;
@@ -163,10 +168,10 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
       {
         key: "id",
         label: t("action"),
-        render: (_, row) => renderHarakat(row, onDeliver, onCancel, onRestore, t),
+        render: (_, row) => renderHarakat(row, onDeliver, onCancel, onRestore, t, canRestore),
       },
     ],
-    [formatDate, formatMoney, onDeliver, onCancel, onRestore, t]
+    [formatDate, formatMoney, onDeliver, onCancel, onRestore, t, canRestore]
   );
 
   return (
@@ -218,7 +223,7 @@ const AllOrdersTable = ({ orders, loading, onRowClick, onDeliver, onCancel, onRe
           </div>
 
           <div className="mt-2 flex items-center justify-end gap-1.5">
-            {renderHarakat(row, onDeliver, onCancel, onRestore, t)}
+            {renderHarakat(row, onDeliver, onCancel, onRestore, t, canRestore)}
           </div>
         </div>
       )}

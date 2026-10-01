@@ -69,7 +69,12 @@ export const scanAssignOrder = async (qrToken: string) =>
     .post(API_ENDPOINTS.ORDERS.SCAN_ASSIGN, { qr_token: qrToken })
     .then((res) => res.data);
 
+/**
+ * Paketni qabul qilish — gateway `@Post('transfer-batches/:id/receive')`
+ * (paketlar sahifasi ham POST yuboradi). fix3 CODE-15: avval PATCH edi va
+ * /scan dan qabul doim 404 berardi.
+ */
 export const receiveScannedPackage = async (packageIdOrToken: string) =>
   api
-    .patch(API_ENDPOINTS.BATCHES.RECEIVE(encodeURIComponent(packageIdOrToken)))
+    .post(API_ENDPOINTS.BATCHES.RECEIVE(encodeURIComponent(packageIdOrToken)))
     .then((res) => res.data);

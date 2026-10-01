@@ -1,7 +1,7 @@
 import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import tokenStorage from "./tokenStorage";
 import { logoutAndRedirect, refreshAccessToken } from "./authService";
-import { emitNetworkError } from "./networkError";
+import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./networkError";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -22,6 +22,23 @@ const getRefreshedAccessToken = () => {
 const hasRefreshTokenExpired = () => {
   const { refreshTokenExpiresAt } = tokenStorage.getSessionMetadata();
   return Boolean(refreshTokenExpiresAt && Date.now() >= refreshTokenExpiresAt);
+};
+
+/**
+ * Token yangilanmadi. fix3 RBAC-11 / C10: 429 (so'rov cheklovi), 5xx yoki
+ * tarmoq xatosida foydalanuvchi tizimdan CHIQARILMAYDI — faqat shu so'rov
+ * rad etiladi, keyingi so'rov yana yangilashga urinadi (refresh o'zi 3 marta
+ * qayta urinadi). Ilgari smena boshida ofisdagi bitta IP dan 10+ qurilma
+ * yangilaganda 429 olganlar /login ga tashlanardi.
+ */
+const handleRefreshFailure = async (refreshError: unknown) => {
+  if (!isTransientAuthFailure(refreshError)) {
+    await logoutAndRedirect();
+  } else if (isNetworkFailure(refreshError)) {
+    // `authClient` da interceptor yo'q — "Tarmoq xatosi" shu yerdan chiqadi.
+    emitNetworkError(refreshError);
+  }
+  return Promise.reject(refreshError);
 };
 
 const shouldAttemptRefresh = (error: AxiosError) => {
@@ -56,8 +73,7 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
       try {
         accessToken = await getRefreshedAccessToken();
       } catch (refreshError) {
-        await logoutAndRedirect();
-        return Promise.reject(refreshError);
+        return handleRefreshFailure(refreshError);
       }
     }
 
@@ -92,8 +108,7 @@ export const setupAuthInterceptors = (api: AxiosInstance) => {
 
         return api(originalRequest);
       } catch (refreshError) {
-        await logoutAndRedirect();
-        return Promise.reject(refreshError);
+        return handleRefreshFailure(refreshError);
       }
     },
   );

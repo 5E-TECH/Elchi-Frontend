@@ -39,6 +39,11 @@ vi.mock("../../../entities/payments", () => ({
 vi.mock("../../../entities/payments/financeCoverage", () => ({
   useFinanceCoverage: () => ({ useGetManagerPayableToHq: () => idleQuery }),
 }));
+// GET /branches (menejersiz filiallar / HQ filial sahifasidagi server summasi).
+vi.mock("../../../entities/branch/api/useBranches", () => ({
+  useBranches: () => ({ data: undefined, isLoading: false, refetch: vi.fn(async () => ({ data: undefined })) }),
+}));
+
 vi.mock("../../../entities/markets", () => ({
   useMarkets: () => ({ useGetMarkets: () => ({ data: marketsState.data, isLoading: false }) }),
 }));

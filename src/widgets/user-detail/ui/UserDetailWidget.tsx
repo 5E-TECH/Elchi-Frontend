@@ -13,6 +13,7 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { ExpenseProofCondition } from "../../../entities/user/types/user";
 import type { RootState } from "../../../app/config/store";
+import { MarketTelegramTokenCard } from "./MarketTelegramTokenCard";
 
 interface UserDetailWidgetProps {
   user?: User;
@@ -49,6 +50,10 @@ export const UserDetailWidget = memo(
     // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning
     // uchun yagona kirish joyi shu sahifa.
     const canTransferCourier = user?.role === "courier" && canManagePrivilegedToggles;
+    // fix3b CODE-02: marketning Telegram tokeni — faqat SUPERADMIN/ADMIN va
+    // faqat market sahifasida (o'z profilida emas). Boshqa rollar uchun karta
+    // umuman chizilmaydi (backend ham tokenni ularga bermaydi).
+    const canSeeMarketTelegramToken = isMarket && canManagePrivilegedToggles && !isOwnProfile;
 
     // ── Loading ──
     if (isLoading) {
@@ -238,6 +243,9 @@ export const UserDetailWidget = memo(
                 </div>
               }
             />
+            {canSeeMarketTelegramToken ? (
+              <MarketTelegramTokenCard token={user.market_tg_token} />
+            ) : null}
             {user.role === "customer" ? (
               <CustomerOrdersTable orders={user.orders || []} />
             ) : (

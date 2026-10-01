@@ -118,6 +118,8 @@
   "regionRequired": "Выберите область",
   "homeTariffRequired": "Не указан домашний тариф",
   "centerTariffRequired": "Не указан тариф до центра",
+  "homeTariffRequiredNoSalary": "Без зарплаты домашний тариф обязателен",
+  "centerTariffRequiredNoSalary": "Без зарплаты тариф до центра обязателен",
   "usernameRequired": "Username не указан",
   "deliveryTypeRequired": "Выберите тип",
   "paymentDayValidation": "Должно быть в диапазоне 1-30",
@@ -177,5 +179,13 @@
   "extraCostPermissionDisabled": "Разрешение на доп. расход выключено",
   "sellExtraCostProofRequired": "Доказательство доп. расхода при продаже",
   "cancelExtraCostProofRequired": "Доказательство доп. расхода при отмене",
-  "permissions": "Разрешения"
+  "permissions": "Разрешения",
+  "telegramTokenTitle": "Telegram-токен",
+  "telegramTokenShow": "Показать",
+  "telegramTokenHide": "Скрыть",
+  "telegramTokenCopy": "Копировать",
+  "telegramTokenCopied": "Токен скопирован",
+  "telegramTokenCopyFailed": "Не удалось скопировать токен",
+  "telegramTokenMissing": "У этого магазина ещё нет Telegram-токена",
+  "telegramTokenHint": "Пусть магазин добавит бота в свою Telegram-группу и отправит туда этот токен"
 }

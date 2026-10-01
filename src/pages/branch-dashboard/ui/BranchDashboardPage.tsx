@@ -62,15 +62,18 @@ const BranchDashboardPage = () => {
     true,
     analyticsScope,
   );
+  const rawBranchDashboard = data?.data?.branchDashboard;
+  /**
+   * fix3 C9 (CODE-23): filial raqamlari olinmadi — order-service javob bermadi
+   * (`stats_unavailable`) yoki filial paneli umuman kelmadi. Avval bunda
+   * jimgina nollar yoki BOSHQA doiradagi `data.orders` (filialniki emas)
+   * ko'rsatilardi va menejer "bugun 0 ta" deb o'ylardi.
+   */
+  const isStatsUnavailable =
+    Boolean(data) && (!rawBranchDashboard || rawBranchDashboard.stats_unavailable === true);
   const branchDashboard = useMemo(
-    () =>
-      adaptBranchDashboard(
-        data?.data?.branchDashboard,
-        userRole || "OPERATOR",
-        data?.data?.branchDashboard ? undefined : data?.data?.orders,
-        false,
-      ),
-    [data?.data?.branchDashboard, data?.data?.orders, userRole],
+    () => adaptBranchDashboard(rawBranchDashboard, userRole || "OPERATOR", undefined, false),
+    [rawBranchDashboard, userRole],
   );
   const displayDashboard = branchDashboard;
 
@@ -118,37 +121,39 @@ const BranchDashboardPage = () => {
               icon={<Building2 />}
             />
 
-            <div className="grid gap-2.5 sm:grid-cols-3">
-              <div className={statCardClassName}>
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  <CalendarRange size={14} />
-                  <span>{t("totalOrdersCount")}</span>
+            {isStatsUnavailable ? null : (
+              <div className="grid gap-2.5 sm:grid-cols-3">
+                <div className={statCardClassName}>
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                    <CalendarRange size={14} />
+                    <span>{t("totalOrdersCount")}</span>
+                  </div>
+                  <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
+                    {displayDashboard.orderSummary.total}
+                  </p>
                 </div>
-                <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                  {displayDashboard.orderSummary.total}
-                </p>
-              </div>
 
-              <div className={statCardClassName}>
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  <PackageCheck size={14} />
-                  <span>{t("deliveredOrdersCount")}</span>
+                <div className={statCardClassName}>
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                    <PackageCheck size={14} />
+                    <span>{t("deliveredOrdersCount")}</span>
+                  </div>
+                  <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
+                    {displayDashboard.orderSummary.delivered}
+                  </p>
                 </div>
-                <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                  {displayDashboard.orderSummary.delivered}
-                </p>
-              </div>
 
-              <div className={statCardClassName}>
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  <PackageCheck size={14} />
-                  <span>{t("cancelledOrdersCount")}</span>
+                <div className={statCardClassName}>
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+                    <PackageCheck size={14} />
+                    <span>{t("cancelledOrdersCount")}</span>
+                  </div>
+                  <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
+                    {displayDashboard.orderSummary.returned}
+                  </p>
                 </div>
-                <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                  {displayDashboard.orderSummary.returned}
-                </p>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex flex-col items-start gap-2.5 xl:items-end">
@@ -172,20 +177,29 @@ const BranchDashboardPage = () => {
         </div>
       </section>
 
-      <div className="grid content-start gap-3 xl:grid-cols-2">
-        {displayDashboard.visibility.orders ? (
-          <OrdersOverviewCard summary={displayDashboard.orderSummary} />
-        ) : null}
-        {displayDashboard.visibility.markets ? (
-          <MarketsPerformanceCard markets={displayDashboard.markets} />
-        ) : null}
-        {displayDashboard.visibility.packages ? (
-          <ActivePackagesCard packages={displayDashboard.packages} />
-        ) : null}
-        {displayDashboard.visibility.couriers ? (
-          <CourierActivityCard couriers={displayDashboard.couriers} />
-        ) : null}
-      </div>
+      {isStatsUnavailable ? (
+        <div role="alert">
+          <QueryErrorState
+            description={t("statsUnavailable")}
+            onRetry={() => void refetch()}
+          />
+        </div>
+      ) : (
+        <div className="grid content-start gap-3 xl:grid-cols-2">
+          {displayDashboard.visibility.orders ? (
+            <OrdersOverviewCard summary={displayDashboard.orderSummary} />
+          ) : null}
+          {displayDashboard.visibility.markets ? (
+            <MarketsPerformanceCard markets={displayDashboard.markets} />
+          ) : null}
+          {displayDashboard.visibility.packages ? (
+            <ActivePackagesCard packages={displayDashboard.packages} />
+          ) : null}
+          {displayDashboard.visibility.couriers ? (
+            <CourierActivityCard couriers={displayDashboard.couriers} />
+          ) : null}
+        </div>
+      )}
 
       {!isLoading ? (
         <section className="mt-3 xl:shrink-0">

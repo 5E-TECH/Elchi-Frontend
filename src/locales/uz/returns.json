@@ -23,5 +23,21 @@
   "messages": {
     "branchMissing": "Joriy foydalanuvchiga filial biriktirilmagan",
     "loadFailed": "Return batchlar ro'yxatini yuklab bo'lmadi"
+  },
+  "opsReturnRequests": {
+    "title": "Logistika — qaytarish so'rovlari",
+    "description": "Qaytarish so'rovlari ro'yxati va ularni tasdiqlash paneli.",
+    "columns": {
+      "id": "ID",
+      "order": "Buyurtma",
+      "status": "Holat",
+      "courier": "Kuryer"
+    },
+    "approve": "Tasdiqlash ({{count}})",
+    "selectHint": "Tasdiqlash uchun ro'yxatdan buyurtmalarni tanlang.",
+    "approveSuccess": "Tanlangan so'rovlar tasdiqlandi",
+    "approveError": "So'rovlarni tasdiqlab bo'lmadi",
+    "loadError": "Qaytarish so'rovlarini yuklab bo'lmadi",
+    "empty": "Qaytarish so'rovlari yo'q"
   }
 }

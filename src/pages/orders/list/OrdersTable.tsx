@@ -35,6 +35,12 @@ interface Props {
     rowNumberOffset?: number;
     onCreateOrder?: () => void;
     canUseOrderActions?: (order: OrderListItem) => boolean;
+    /**
+     * Qatorda "Sotish" (qisman sotish ham shu oynada) ko'rsatiladimi. Berilmasa —
+     * har bir amal qatorida. fix3b LC-04: menejer kuryer qo'lidagi buyurtmani
+     * sota olmaydi (backend 400), shuning uchun u yerda tugma yashiriladi.
+     */
+    canSellOrder?: (order: OrderListItem) => boolean;
     onSellOrder?: (order: OrderListItem) => void;
     onCancelOrder?: (order: OrderListItem) => void;
     onRollbackOrder?: (order: OrderListItem) => void;
@@ -263,6 +269,7 @@ const OrdersTable = ({
     rowNumberOffset = 0,
     onCreateOrder,
     canUseOrderActions,
+    canSellOrder,
     onSellOrder,
     onCancelOrder,
     onRollbackOrder,
@@ -387,6 +394,7 @@ const OrdersTable = ({
                     }
                     const canRollback = row.status === "sold" || row.status === "cancelled";
                     const canSellOrCancel = !canRollback;
+                    const canSellRow = canSellOrder ? canSellOrder(row) : true;
 
                     const stopAndRun =
                         (handler?: (order: OrderListItem) => void) =>
@@ -397,7 +405,7 @@ const OrdersTable = ({
 
                     return (
                         <div className="flex items-center gap-2">
-                            {canSellOrCancel && onSellOrder && (
+                            {canSellOrCancel && canSellRow && onSellOrder && (
                                 <ActionButton
                                     label={t("sell")}
                                     icon={<CheckCircle size={14} />}
@@ -431,6 +439,7 @@ const OrdersTable = ({
         ];
     }, [
         canUseOrderActions,
+        canSellOrder,
         allSelected,
         formatPrice,
         handleCopyOrderId,
@@ -569,7 +578,10 @@ const OrdersTable = ({
 
                 {canUseOrderActions?.(order) && (onSellOrder || onCancelOrder || onRollbackOrder) ? (
                     <div className="flex shrink-0 items-center gap-2">
-                        {order.status !== "sold" && order.status !== "cancelled" && onSellOrder && (
+                        {order.status !== "sold" &&
+                            order.status !== "cancelled" &&
+                            (canSellOrder ? canSellOrder(order) : true) &&
+                            onSellOrder && (
                             <ActionButton
                                 label={t("sell")}
                                 icon={<CheckCircle size={14} />}

@@ -293,6 +293,8 @@ const TransferCourierModal = ({
             disabled={!canTransfer || transfer.isPending}
             hideLabel
             surface="search"
+            // Tanlov modalning oxirida: pastga ochilsa ro'yxat modal tanasida qirqiladi.
+            placement="top"
           />
           {destinations.isError ? (
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-rose-600 dark:text-rose-300">

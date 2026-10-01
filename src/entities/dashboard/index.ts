@@ -77,6 +77,11 @@ export interface BranchDashboardCouriersCard {
 }
 
 export interface BranchDashboardPayload {
+  /**
+   * fix3 C9 (CODE-23): `true` — filial raqamlarini order-service bermadi.
+   * Javobdagi nollar HAQIQIY EMAS, panel ularni ko'rsatmaydi.
+   */
+  stats_unavailable?: boolean;
   today_orders_count: number;
   week_orders_count: number;
   active_batches_count: number;
