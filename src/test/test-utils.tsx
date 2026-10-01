@@ -36,7 +36,8 @@ export const renderWithProviders = (
     route = "/",
     preloadedState,
   }: {
-    route?: string;
+    /** Satr yoki router state'li yozuv (masalan `{ pathname, search, state }`). */
+    route?: string | { pathname: string; search?: string; state?: unknown };
     preloadedState?: Partial<RootState>;
   } = {},
 ) => {

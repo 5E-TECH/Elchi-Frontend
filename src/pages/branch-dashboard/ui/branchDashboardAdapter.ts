@@ -52,9 +52,12 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(number) ? number : 0;
 };
 
+// `||` (`??` emas): normalize bo'sh satr ("") qaytaradi — masalan market nomi
+// olinmagan bo'lsa (identity javob bermagan). O'shanda ham grafik yorlig'i
+// bo'sh emas, "Market N" bo'lsin.
 const mapMarket = (market: BranchDashboardMarketCard, index: number): BranchMarketSummary => ({
-  id: String(market.id ?? market.name ?? market.title ?? index),
-  name: market.name ?? market.title ?? `Market ${index + 1}`,
+  id: String(market.id || market.name || market.title || index),
+  name: market.name || market.title || `Market ${index + 1}`,
   orders: toNumber(market.orders ?? market.orders_count ?? market.total),
   amount: toNumber(market.amount ?? market.total_amount ?? market.price),
 });

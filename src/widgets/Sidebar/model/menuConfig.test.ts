@@ -7,6 +7,7 @@ import {
   getSidebarConfigForUser,
   getSidebarGroupsForUser,
   normalizeSidebarRole,
+  registratorCanDispatch,
   type BranchType,
 } from "./menuConfig";
 
@@ -118,12 +119,47 @@ describe("sidebar menu config", () => {
   });
 });
 
+describe("registrator menyusi — /dispatch (2026-10-01)", () => {
+  const registratorPaths = (type?: BranchType) =>
+    getSidebarConfigForUser("registrator", type ? userWithBranchType(type) : undefined).map(
+      (item) => item.to,
+    );
+
+  it("HQ registratori menyusida /dispatch bor (avval olib tashlanardi)", () => {
+    expect(registratorPaths("HQ")).toEqual(SIDEBAR_CONFIG.registrator.map((item) => item.to));
+    expect(registratorPaths("HQ")).toContain("/dispatch");
+  });
+
+  it.each(["REGIONAL", "HYBRID", "PICKUP"] as BranchType[])(
+    "%s registratori menyusida /dispatch hozirgidek bor",
+    (type) => {
+      expect(registratorPaths(type)).toContain("/dispatch");
+    },
+  );
+
+  it("filial turi noma'lum registratorda /dispatch yo'q — marshrut guardi ham rad etadi", () => {
+    expect(registratorPaths()).toEqual(
+      SIDEBAR_CONFIG.registrator.map((item) => item.to).filter((path) => path !== "/dispatch"),
+    );
+  });
+
+  it("registratorCanDispatch: faqat filial turi aniq bo'lsa", () => {
+    for (const type of ["HQ", "REGIONAL", "HYBRID", "PICKUP"] as BranchType[]) {
+      expect(registratorCanDispatch(userWithBranchType(type)), type).toBe(true);
+    }
+    expect(registratorCanDispatch(null)).toBe(false);
+    expect(registratorCanDispatch(undefined)).toBe(false);
+    expect(registratorCanDispatch({} as never)).toBe(false);
+  });
+});
+
 describe("B1 — menyu guruhlari", () => {
   const ROLE_CASES: Array<[string, BranchType | undefined]> = [
     ["superadmin", undefined],
     ["admin", undefined],
     ["market", undefined],
     ["registrator", undefined],
+    ["registrator", "HQ"],
     ["courier", undefined],
     ["manager", "HQ"],
     ["manager", "PICKUP"],
@@ -162,12 +198,17 @@ describe("B1 — menyu guruhlari", () => {
   });
 
   it("qisqa menyu guruhlanmaydi (shovqin qo'shmaslik uchun)", () => {
-    // courier/market/registrator — 6 band, chegaradan past.
+    // courier/market — 6 band, registrator — 5–6 band: chegaradan past.
     for (const role of ["courier", "market", "registrator"]) {
       const groups = grouped(role);
       expect(groups, role).toHaveLength(1);
       expect(groups[0].id, role).toBeNull();
     }
+
+    // HQ registratori /dispatch ni oldi — baribir 6 band, guruhlanmaydi.
+    const hqRegistrator = grouped("registrator", "HQ");
+    expect(hqRegistrator).toHaveLength(1);
+    expect(hqRegistrator[0].id).toBeNull();
   });
 
   it("uzun menyu guruhlanadi va boshqaruv paneli yakka turadi", () => {

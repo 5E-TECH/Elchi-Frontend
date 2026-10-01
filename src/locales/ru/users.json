@@ -122,6 +122,7 @@
   "deliveryTypeRequired": "Выберите тип",
   "paymentDayValidation": "Должно быть в диапазоне 1-30",
   "branchRequired": "Выберите филиал",
+  "managerHqNotAllowed": "Менеджера нельзя назначить в HQ (головной офис) — выберите другой филиал",
   "regionLabel": "Область",
   "branchLabel": "Филиал",
   "regionPlaceholder": "Выберите",

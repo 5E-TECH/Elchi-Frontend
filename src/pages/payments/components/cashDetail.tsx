@@ -6,7 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { ArrowDownLeft, ArrowUpRight, Download, Landmark, Loader2, Store, Truck, WalletCards } from "lucide-react";
 import type { PaymentRow } from "./patmentHistoryTable";
-import { useCashBox } from "../../../entities/payments";
+import { useCashBox, type CourierPaymentResponse } from "../../../entities/payments";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { useMarkets } from "../../../entities/markets";
 import { useUser } from "../../../entities/user/api/userApi";
@@ -21,6 +21,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -87,6 +88,101 @@ const getHistoryDate = (item: Record<string, unknown>) =>
 
 const reduceBalanceTowardsZero = (balance: number, amount: number) =>
   balance < 0 ? Math.min(0, balance + amount) : Math.max(0, balance - amount);
+
+/**
+ * Kuryerdan qabul qilish uchun idempotentlik kaliti. `payment_date` har
+ * submit'da yangi bo'lgani uchun gateway'ning 30 soniyalik dedup'i qayta
+ * yuborishni ushlamaydi — kalit bilan pul faqat bir marta o'tadi.
+ * `crypto.randomUUID` faqat xavfsiz kontekstda (https/localhost) bor —
+ * aks holda sahifa yiqilmasin.
+ */
+const newIdempotencyKey = () =>
+  typeof globalThis.crypto?.randomUUID === "function"
+    ? globalThis.crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+
+type CourierPaymentIdentity = {
+  courier_id: string;
+  amount: number;
+  payment_method: string;
+  market_id: string | null;
+};
+
+/**
+ * Kuryer to'lovining "barmoq izi" (kuryer + summa + usul + market) — kalit
+ * shunga bog'lanadi. Aynan shu to'lov qayta yuborilsa (javobi kelmay qolgan
+ * urinish) o'sha kalit ketadi va backend pulni faqat bir marta o'tkazadi.
+ * Biror maydon o'zgarsa — bu BOSHQA to'lov, yangi kalit: eski kalit bilan
+ * backend yangi summani o'tkazmay "allaqachon qabul qilingan" deb qaytarardi.
+ * `payment_date` va izoh kirmaydi (to'lovning o'zini o'zgartirmaydi).
+ */
+const courierPaymentFingerprint = (payment: CourierPaymentIdentity) =>
+  JSON.stringify([payment.courier_id, payment.amount, payment.payment_method, payment.market_id]);
+
+/**
+ * Javobi kelmagan kuryer to'lovlarining kalitlari: barmoq izi → kalit.
+ *
+ * ⚠️ Bitta "joy" yetmaydi. To'lov A ning javobi yo'qolsa (server esa pulni
+ * o'tkazgan), keyin B yuborilsa va u ham xato bersa, so'ng A qayta yuborilsa —
+ * A yangi kalit olib, pul IKKINCHI marta o'tardi. Shuning uchun har bir to'lov
+ * o'z kalitini alohida saqlaydi va kalit faqat AYNAN shu to'lovga javob
+ * kelganda o'chiriladi. `sessionStorage` — sahifa qayta ochilsa (F5, orqaga
+ * qaytish) ham kalit yo'qolmaydi. Saqlash imkoni bo'lmasa (xususiy rejim)
+ * xotirada ishlaydi.
+ */
+const PENDING_COURIER_PAYMENT_KEYS = "elchi:pending-courier-payment-keys";
+const MAX_PENDING_COURIER_PAYMENT_KEYS = 50;
+let pendingCourierPaymentKeysFallback: Record<string, string> = {};
+
+const readPendingCourierPaymentKeys = (): Record<string, string> => {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(PENDING_COURIER_PAYMENT_KEYS);
+    if (!raw) return { ...pendingCourierPaymentKeysFallback };
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? { ...(parsed as Record<string, string>) } : {};
+  } catch {
+    return { ...pendingCourierPaymentKeysFallback };
+  }
+};
+
+const writePendingCourierPaymentKeys = (keys: Record<string, string>) => {
+  // Eng eskilaridan boshlab kesiladi — cheksiz o'smasin.
+  const entries = Object.entries(keys).slice(-MAX_PENDING_COURIER_PAYMENT_KEYS);
+  const bounded = Object.fromEntries(entries);
+  pendingCourierPaymentKeysFallback = bounded;
+  try {
+    globalThis.sessionStorage?.setItem(PENDING_COURIER_PAYMENT_KEYS, JSON.stringify(bounded));
+  } catch {
+    // Saqlab bo'lmadi — xotiradagi nusxa ishlatiladi.
+  }
+};
+
+/** Shu to'lovning kaliti: avval yuborilgan (javobsiz) bo'lsa o'shani qaytaradi. */
+export const takeCourierPaymentKey = (fingerprint: string): string => {
+  const keys = readPendingCourierPaymentKeys();
+  const existing = keys[fingerprint];
+  if (existing) return existing;
+  const key = newIdempotencyKey();
+  keys[fingerprint] = key;
+  writePendingCourierPaymentKeys(keys);
+  return key;
+};
+
+/** Shu to'lovga javob keldi (muvaffaqiyat yoki takroriy) — faqat UNING kaliti o'chadi. */
+export const settleCourierPaymentKey = (fingerprint: string) => {
+  const keys = readPendingCourierPaymentKeys();
+  if (!(fingerprint in keys)) return;
+  delete keys[fingerprint];
+  writePendingCourierPaymentKeys(keys);
+};
+
+/**
+ * Takroriy `Idempotency-Key`: pul avvalgi (javobi yo'qolgan) urinishda
+ * allaqachon o'tgan — finance-service `data.idempotent: true` qaytaradi va
+ * pulni ikkinchi marta o'tkazmaydi (yangi to'lov emas).
+ */
+const isIdempotentReplay = (response: { data?: CourierPaymentResponse } | null | undefined) =>
+  response?.data?.data?.idempotent === true;
 
 const toIsoDate = (date: Date) => {
   const year = date.getFullYear();
@@ -335,7 +431,11 @@ const CashDetail = () => {
   const isBranchDetailRequest = requestedType === "branch";
   const isMarketDetailRequest = requestedType === "market";
   const isHqBranchReceiveRequest = isBranchDetailRequest && !isCurrentManagerRole;
-  const isCourierReceiveRequest = requestedType === "courier" && isCurrentManagerRole;
+  // Kuryer kassasi HAR QANDAY rol uchun `cashbox_type=couriers` bilan so'raladi.
+  // Busiz superadmin/admin so'rovida gateway kuryer ID si bilan filial
+  // qidirardi (ID lar bitta fazoda) va `{cashboxes:[...]}` qaytarardi — state'siz
+  // ochilganda (F5 / havola) "Umumiy balans 0" va "Foydalanuvchi" chiqardi.
+  const isCourierDetailRequest = requestedType === "courier";
   const dateParams = useMemo(
     () => ({
       ...(selectedDateFrom && { fromDate: selectedDateFrom }),
@@ -349,7 +449,7 @@ const CashDetail = () => {
       with_history: true,
       page: 1,
       limit: 100,
-      ...(isCourierReceiveRequest && {
+      ...(isCourierDetailRequest && {
         cashbox_type: "couriers",
       }),
       ...(isHqBranchReceiveRequest && {
@@ -360,7 +460,7 @@ const CashDetail = () => {
       }),
       ...dateParams,
     }),
-    [dateParams, isCourierReceiveRequest, isHqBranchReceiveRequest, isMarketDetailRequest],
+    [dateParams, isCourierDetailRequest, isHqBranchReceiveRequest, isMarketDetailRequest],
   );
   const branchHistoryParams = useMemo(
     () => ({
@@ -449,6 +549,9 @@ const CashDetail = () => {
     ],
   );
   const user = detailEntry?.user ?? cashbox?.user ?? state?.entity;
+  // Ism avval backend javobidagi `data.user` dan (kuryer kassasi uchun gateway
+  // qo'shadi), keyin state'dan; ism bo'lmasa telefon, oxiri "Foydalanuvchi".
+  const nameSources = [detailEntry?.user, cashbox?.user, state?.entity];
 
   const resolvedType = requestedType ?? normalizeType(cashbox?.cashbox_type, user?.role);
   // Tur aniqlanmasa to'lov formasi umuman ko'rsatilmaydi (fail-closed);
@@ -456,7 +559,29 @@ const CashDetail = () => {
   const isTypeUnknown = resolvedType === null;
   const type: CashDetailType = resolvedType ?? "market";
   const cfg = CONFIG[type];
-  const entityName = user?.name?.trim() || t("userFallback");
+  const entityName =
+    nameSources.map((source) => toOptionalString(source?.name)?.trim()).find(Boolean) ||
+    nameSources.map((source) => toOptionalString(source?.phone_number)?.trim()).find(Boolean) ||
+    t("userFallback");
+  // C3 — superadmin/admin (sahifaga faqat ular va menejer kiradi) uchun
+  // backend kuryer kassasiga `is_hq_courier`, `can_receive`,
+  // `receive_check_failed`, `olinishi_kerak` qo'shadi; menejerga yubormaydi.
+  const courierReceiveInfo =
+    type === "courier" && !isCurrentManagerRole ? detailEntry : undefined;
+  // `can_receive === false` — aniq "yo'q": forma yashiriladi (fail-closed).
+  //   • HQ kuryeri, lekin filialga tegishli topshirilmagan savdosi bor —
+  //     ularni filial menejeri qabul qiladi (backend 400 qaytaradi);
+  //   • filial kuryeri — puli kuryer → filial menejeri → HQ yo'li bilan
+  //     keladi (backend 403 qaytaradi).
+  const isCourierReceiveBlocked = courierReceiveInfo?.can_receive === false;
+  const courierReceiveBlockedMessage =
+    courierReceiveInfo?.is_hq_courier === true
+      ? t("hqCourierHasBranchSales")
+      : t("branchCourierNotReceivable");
+  // Tekshiruv xizmati javob bermadi (`is_hq_courier`/`can_receive` = null):
+  // forma qoladi, to'lovni backend qayta tekshiradi (hali ishlamasa 503).
+  const isCourierReceiveCheckFailed =
+    !isCourierReceiveBlocked && courierReceiveInfo?.receive_check_failed === true;
   const stateAmount = toNumber(state?.entity?.amount);
   const hasStateAmount =
     state?.entity?.amount !== undefined && state?.entity?.amount !== null;
@@ -474,6 +599,14 @@ const CashDetail = () => {
         ? settlementDetails.amountToReceive
         : contextBalance;
   const displayBalance = balanceOverride ?? settlementBalance;
+  // Summa chegarasi FAQAT server bergan "Qabul qilinishi kerak" bo'yicha
+  // (C3 `olinishi_kerak`, superadmin/admin). Menejerda ko'rsatilgan summa
+  // router state'idan kelishi va kuryer kassasidagi puldan kam bo'lishi
+  // mumkin — to'g'ri to'lov bloklanmasin, chegara backendda (kuryer kassasi).
+  const courierReceiveLimit =
+    courierReceiveInfo?.olinishi_kerak !== undefined && courierReceiveInfo?.olinishi_kerak !== null
+      ? displayBalance
+      : null;
   const displayAmountToGive =
     (type === "market" || type === "branch") &&
     detailEntry?.berilishi_kerak !== undefined
@@ -509,7 +642,7 @@ const CashDetail = () => {
       ? [{ value: "click_to_market", label: t("toMarketTransferOption") }]
       : []),
   ];
-  const { register, control, handleSubmit, watch, setValue, reset, formState: { errors } } =
+  const { register, control, handleSubmit, watch, setValue, setError, reset, formState: { errors } } =
     useForm<CashboxActionFormValues>({
       defaultValues: {
         amount: "",
@@ -818,21 +951,80 @@ const CashDetail = () => {
     }
 
     if (type === "courier") {
-      if (!id) return;
-      const result = await apiRequest({
-        request: () =>
-          createPaymentCourier.mutateAsync({
-            courier_id: id,
-            amount,
-            payment_method: normalizedPaymentMethod,
-            market_id: isStoreTransfer ? values.marketId : null,
-            payment_date: paymentDate,
-            comment,
+      if (!id || isCourierReceiveBlocked) return;
+      // Server bergan summadan ortig'i yuborilmaydi (backend ham kuryer
+      // kassasidan ortig'ini rad etadi) — xato summa maydoni ostida chiqadi.
+      if (courierReceiveLimit !== null && amount > courierReceiveLimit) {
+        setError("amount", {
+          type: "max",
+          message: t("amountExceedsBalance", {
+            amount: courierReceiveLimit.toLocaleString("uz-UZ"),
           }),
-        successMessage: t("receivePaymentSuccess"),
-        errorMessage: t("receivePaymentError"),
+        });
+        return;
+      }
+      const payment: CourierPaymentIdentity = {
+        courier_id: id,
+        amount,
+        payment_method: normalizedPaymentMethod,
+        market_id: isStoreTransfer ? values.marketId : null,
+      };
+      // Kalit to'lovning barmoq iziga bog'langan (kuryer ID si ham ichida) —
+      // javobi kelmagan har bir to'lov o'z kalitini saqlaydi.
+      const fingerprint = courierPaymentFingerprint(payment);
+      const idempotencyKey = takeCourierPaymentKey(fingerprint);
+      // `apiRequest` har qanday javobga "muvaffaqiyatli" deydi — takroriy
+      // (idempotent) javobni ajratish uchun bildirishnomalar shu yerda.
+      let response: Awaited<ReturnType<typeof createPaymentCourier.mutateAsync>>;
+      try {
+        response = await createPaymentCourier.mutateAsync({
+          data: { ...payment, payment_date: paymentDate, comment },
+          idempotencyKey,
+        });
+      } catch (error) {
+        // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
+        // faqat bir marta o'tkazadi.
+        notify.error({
+          message: t("common:error"),
+          description: getBackendErrorMessage(error) ?? t("receivePaymentError"),
+          placement: "topRight",
+          duration: 5,
+        });
+        return;
+      }
+
+      // Javob keldi — faqat SHU to'lov yakunlandi; boshqa javobsiz to'lovlarning
+      // kalitlari saqlanib qoladi.
+      settleCourierPaymentKey(fingerprint);
+      if (isIdempotentReplay(response)) {
+        // Pul avvalgi urinishda o'tgan: yangi summa bilan "muvaffaqiyatli"
+        // ko'rsatilmaydi va balansdan qayta ayirilmaydi — serverdagi haqiqiy
+        // holat qayta o'qiladi. Forma tozalanadi: bir bosishda ikkinchi
+        // (endi yangi kalitli) to'lov ketib qolmasin.
+        notify.warning({
+          message: t("common:warning"),
+          description: t("paymentAlreadyRecorded"),
+          placement: "topRight",
+          duration: 8,
+        });
+        // Menejer ro'yxatdan ochganda summa router state'dan keladi va qayta
+        // o'qilgan kassa uni yangilamaydi — avvalgi (javobi yo'qolgan) urinish
+        // shu summani allaqachon o'tkazgan, shuning uchun ekrandagi summa ham
+        // shunga kamaytiriladi (barmoq izida summa bor — aynan o'sha to'lov).
+        if ((isCourierReceiveDetail || isHqBranchReceiveDetail) && hasStateAmount) {
+          setBalanceOverride(reduceBalanceTowardsZero(settlementBalance, amount));
+        }
+        resetActionForm();
+        await refetchCashbox();
+        return;
+      }
+      notify.success({
+        message: t("common:success"),
+        description: t("receivePaymentSuccess"),
+        placement: "topRight",
+        duration: 4,
       });
-      if (result) await refreshAfterPayment(amount);
+      await refreshAfterPayment(amount);
       return;
     }
 
@@ -969,7 +1161,17 @@ const CashDetail = () => {
           <div role="alert" className="rounded-2xl border border-amber-300/70 bg-amber-50 p-4 text-sm font-semibold text-amber-800 dark:border-amber-400/35 dark:bg-amber-400/10 dark:text-amber-100">
             {t("cashDetailTypeUnknown")}
           </div>
+        ) : isCourierReceiveBlocked ? (
+          <div role="alert" className="rounded-2xl border border-amber-300/70 bg-amber-50 p-4 text-sm font-semibold text-amber-800 dark:border-amber-400/35 dark:bg-amber-400/10 dark:text-amber-100">
+            {courierReceiveBlockedMessage}
+          </div>
         ) : (
+        <>
+        {isCourierReceiveCheckFailed ? (
+          <div role="alert" className="rounded-2xl border border-amber-300/70 bg-amber-50 p-4 text-sm font-semibold text-amber-800 dark:border-amber-400/35 dark:bg-amber-400/10 dark:text-amber-100">
+            {t("receiveCheckFailed")}
+          </div>
+        ) : null}
         <CashboxActionFormCard
             type={type}
             actionGradient={cfg.actionGradient}
@@ -1003,6 +1205,7 @@ const CashDetail = () => {
             handleSubmit={handleSubmit}
             onSubmit={onSubmit}
         />
+        </>
         )
       }
     />

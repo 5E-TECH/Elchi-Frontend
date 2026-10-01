@@ -122,6 +122,7 @@
   "deliveryTypeRequired": "Tur tanlang",
   "paymentDayValidation": "1-30 oralig'ida bo'lishi kerak",
   "branchRequired": "Filial tanlang",
+  "managerHqNotAllowed": "HQ (bosh ofis) ga menejer biriktirilmaydi — boshqa filialni tanlang",
   "regionLabel": "Viloyat",
   "branchLabel": "Filial",
   "regionPlaceholder": "Tanlang",

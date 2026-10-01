@@ -271,4 +271,13 @@
   ,"region": "Регион"
   ,"no": "№"
   ,"currencyAmountSuffix": "сум"
+  ,"selectReceiveSourceDescription": "Выберите менеджера филиала или курьера HQ"
+  ,"hqCourierLabel": "Курьер HQ"
+  ,"branchCourierNotReceivable": "Этот курьер относится к филиалу — деньги принимает менеджер филиала"
+  ,"receiveShort": "Принять"
+  ,"receiveFromBranchOrHqCourier": "Принять от менеджера филиала или курьера HQ"
+  ,"amountExceedsBalance": "Сумма не должна превышать показанный баланс ({{amount}} сум)"
+  ,"paymentAlreadyRecorded": "Этот платёж уже записан — касса обновлена, проверьте сумму"
+  ,"receiveCheckFailed": "Служба проверки не ответила — при отправке платежа сервер проверит его повторно"
+  ,"hqCourierHasBranchSales": "У курьера есть несданные продажи филиала — их принимает менеджер филиала"
 }

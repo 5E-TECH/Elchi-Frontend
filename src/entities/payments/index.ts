@@ -104,6 +104,58 @@ export interface FinanceHistoryDetailResponse {
   data: FinanceHistoryDetail;
 }
 
+/**
+ * HQ kuryeri — superadmin/admin "Qabul qilinishi kerak" ro'yxati qatori
+ * (GET /finance/cashbox/hq-couriers). Faqat faol branch_users qatori HQ
+ * filialida bo'lgan va kassasida puli (balance > 0) bor kuryerlar keladi,
+ * bloklanganlari ham (pul yashirinib qolmasin). Summa bo'yicha kamayish tartibida.
+ */
+export interface HqCourierReceivable {
+  id: string;
+  name: string;
+  phone_number: string | null;
+  status: string;
+  balance: number;
+  cashbox: {
+    id: string;
+    balance: number;
+    balance_cash: number;
+    balance_card: number;
+  };
+}
+
+export interface HqCourierReceivablesResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    items: HqCourierReceivable[];
+    total: number;
+    hq_branch_id: string;
+  };
+}
+
+/**
+ * Kuryerdan pul qabul qilish so'rovi. `idempotencyKey` bitta mantiqiy to'lov
+ * uchun o'zgarmaydi (muvaffaqiyatgacha) — javob kechikib qayta yuborilsa,
+ * backend o'sha kalit bo'yicha pulni faqat bir marta o'tkazadi.
+ */
+export type CourierPaymentRequest = { data: Record<string, unknown>; idempotencyKey: string };
+
+/**
+ * POST /finance/cashbox/payment/courier javobi (umumiy konvert). Shu
+ * `Idempotency-Key` bilan pul avval o'tgan bo'lsa (javobi yo'qolgan urinish
+ * qayta yuborilganda) finance-service pulni ikkinchi marta o'tkazmaydi va
+ * `{ statusCode: 200, message: "To'lov allaqachon qabul qilingan (takroriy so'rov)",
+ * data: { idempotent: true } }` qaytaradi — ya'ni bu yangi to'lov EMAS.
+ */
+export interface CourierPaymentResponse {
+  statusCode: number;
+  message: string;
+  data?: ({ idempotent?: boolean } & Record<string, unknown>) | null;
+}
+
+const idempotencyHeaders = (idempotencyKey: string) => ({ headers: { "Idempotency-Key": idempotencyKey } });
+
 const normalizeFinanceHistoryParams = (params?: any) => {
   if (!params) return params;
 
@@ -135,7 +187,12 @@ export const useCashBox = () => {
   };
 
   const createPaymentCourier = useMutation({
-    mutationFn: (data: unknown) => api.post(API_ENDPOINTS.CASHBOX.PAYMENT_COURIER, data),
+    mutationFn: ({ data, idempotencyKey }: CourierPaymentRequest) =>
+      api.post<CourierPaymentResponse>(
+        API_ENDPOINTS.CASHBOX.PAYMENT_COURIER,
+        data,
+        idempotencyHeaders(idempotencyKey),
+      ),
     onSuccess: refreshCashboxQueries,
   });
 
@@ -192,6 +249,16 @@ export const useCashBox = () => {
       queryKey: [cashbox, "main", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.CASHBOX_MAIN, { params }).then((res) => res.data),
+    });
+
+  // Kalit `cashbox` prefiksi ostida — refreshCashboxQueries har to'lovdan
+  // keyin ro'yxatni ham yangilaydi (qabul qilingan kuryer summasi kamayadi).
+  const useGetHqCourierReceivables = (enabled: boolean = true) =>
+    useQuery<HqCourierReceivablesResponse>({
+      queryKey: [cashbox, "hq-couriers"],
+      queryFn: () =>
+        api.get(API_ENDPOINTS.FINANCE.HQ_COURIERS).then((res) => res.data),
+      enabled,
     });
 
   const cashboxSpand = useMutation({
@@ -268,6 +335,7 @@ export const useCashBox = () => {
     useGetCashboxMyCashbox,
     useGetCashBoxHistoryById,
     useGetCashBoxMain,
+    useGetHqCourierReceivables,
     createPaymentCourier,
     createPaymentBranchToMain,
     createPaymentMarket,

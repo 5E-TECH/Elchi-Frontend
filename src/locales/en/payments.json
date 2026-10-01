@@ -271,4 +271,13 @@
   ,"region": "Region"
   ,"no": "No"
   ,"currencyAmountSuffix": "so'm"
+  ,"selectReceiveSourceDescription": "Select a branch manager or an HQ courier"
+  ,"hqCourierLabel": "HQ courier"
+  ,"branchCourierNotReceivable": "This courier belongs to a branch — the branch manager receives the cash"
+  ,"receiveShort": "Receive"
+  ,"receiveFromBranchOrHqCourier": "Receive from a branch manager or an HQ courier"
+  ,"amountExceedsBalance": "Amount must not exceed the displayed balance ({{amount}} UZS)"
+  ,"paymentAlreadyRecorded": "This payment has already been recorded — the cashbox was refreshed, please check the amount"
+  ,"receiveCheckFailed": "The verification service did not respond — if you send the payment, the server will check it again"
+  ,"hqCourierHasBranchSales": "The courier has branch sales that are not handed over yet — the branch manager receives them"
 }

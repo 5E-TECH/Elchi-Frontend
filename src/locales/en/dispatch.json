@@ -7,6 +7,7 @@
   "couriersEmptyTitle": "No couriers found",
   "couriersEmptyDescription": "The courier list for this branch came back empty. Once /couriers returns couriers, select one here and assign scanned orders.",
   "couriersLoadError": "Could not load couriers. You can still scan orders, but retry before assigning.",
+  "noCouriersInBranch": "There are no active couriers in this branch",
   "retry": "Retry",
   "scannerTitle": "Scanner panel",
   "scannerSubtitle": "Only order QR codes are accepted",

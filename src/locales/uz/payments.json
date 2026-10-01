@@ -271,4 +271,13 @@
   ,"region": "Hudud"
   ,"no": "No"
   ,"currencyAmountSuffix": "so'm"
+  ,"selectReceiveSourceDescription": "Filial menejeri yoki HQ kuryerini tanlang"
+  ,"hqCourierLabel": "HQ kuryeri"
+  ,"branchCourierNotReceivable": "Bu kuryer filialga tegishli — pulni filial menejeri qabul qiladi"
+  ,"receiveShort": "Qabul qilish"
+  ,"receiveFromBranchOrHqCourier": "Filial menejeri yoki HQ kuryeridan qabul qilish"
+  ,"amountExceedsBalance": "Summa ko'rsatilgan balansdan ({{amount}} so'm) oshmasligi kerak"
+  ,"paymentAlreadyRecorded": "Bu to'lov allaqachon yozilgan — kassa yangilandi, summani tekshiring"
+  ,"receiveCheckFailed": "Tekshiruv xizmati javob bermadi — to'lov yuborilsa server qayta tekshiradi"
+  ,"hqCourierHasBranchSales": "Kuryerda filialga tegishli topshirilmagan savdo bor — ularni filial menejeri qabul qiladi"
 }

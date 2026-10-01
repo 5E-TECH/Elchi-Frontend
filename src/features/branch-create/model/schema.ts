@@ -4,11 +4,10 @@ import { isCompleteUzbekistanPhone } from "../../../shared/lib/phone";
 
 export const branchSchema = yup.object({
   name: yup.string().min(2, i18n.t("branches:validation.minName")).required(i18n.t("branches:validation.name")),
-  parent_id: yup.string().default("").defined().when("type", {
-    is: (type: string) => type !== "PICKUP",
-    then: (schema) => schema.required(i18n.t("branches:validation.parent")),
-    otherwise: (schema) => schema.optional(),
-  }),
+  // Yuqori filial HAR BIR tur uchun majburiy — PICKUP ham qopini yuqori
+  // filialiga jo'natadi, backend esa HQ'dan boshqa filialni yuqori filialsiz
+  // yaratmaydi.
+  parent_id: yup.string().default("").defined().required(i18n.t("branches:validation.parent")),
   type: yup
     .string<"PICKUP" | "REGIONAL" | "HYBRID">()
     .oneOf(["PICKUP", "REGIONAL", "HYBRID"])

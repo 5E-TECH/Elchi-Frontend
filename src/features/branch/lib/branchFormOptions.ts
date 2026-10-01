@@ -11,6 +11,16 @@ export const useParentBranchOptions = (enabled: boolean) =>
     enabled,
   });
 
+/**
+ * Yuqori filial bo'la oladigan filiallar (yaratish va tahrirlash oynalari uchun).
+ * PICKUP boshqa filialdan kelgan qopni qabul qila olmaydi (backend: "PICKUP
+ * filial boshqa filialdan kelgan batchni qabul qila olmaydi"), shuning uchun u
+ * hech kimning yuqori filiali bo'lmasligi kerak — aks holda bola filialning
+ * qoplari jo'natiladi, lekin hech qachon qabul qilinmaydi.
+ */
+export const filterParentCandidates = (branches: Branch[] | undefined): Branch[] =>
+  (branches ?? []).filter((branch) => String(branch.type ?? "").toUpperCase() !== "PICKUP");
+
 export const getBranchTypeOptions = (t: TFunction) => [
   { value: "HQ", label: "HQ", disabled: true },
   { value: "PICKUP", label: t("branchTypes.pickup") },

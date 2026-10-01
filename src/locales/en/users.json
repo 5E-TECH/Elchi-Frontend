@@ -122,6 +122,7 @@
   "deliveryTypeRequired": "Select a type",
   "paymentDayValidation": "Must be between 1 and 30",
   "branchRequired": "Select a branch",
+  "managerHqNotAllowed": "A manager cannot be assigned to HQ (head office) — choose another branch",
   "regionLabel": "Region",
   "branchLabel": "Branch",
   "regionPlaceholder": "Select",

@@ -61,26 +61,6 @@ type UnknownRecord = Record<string, unknown>;
 const asRecord = (value: unknown): UnknownRecord =>
   value && typeof value === "object" ? value as UnknownRecord : {};
 
-const getProfileRegionId = (profile: unknown): string => {
-  const user = asRecord(profile);
-  const branch = asRecord(user.branch);
-  const nestedBranch = asRecord(branch.branch);
-  const region = asRecord(user.region);
-  const branchRegion = asRecord(branch.region);
-  const nestedBranchRegion = asRecord(nestedBranch.region);
-  const id =
-    user.region_id ??
-    region.id ??
-    branch.region_id ??
-    branch.regionId ??
-    branchRegion.id ??
-    nestedBranch.region_id ??
-    nestedBranch.regionId ??
-    nestedBranchRegion.id;
-
-  return id == null ? "" : String(id);
-};
-
 const safe = (value: unknown, fallback = "—") => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
@@ -267,26 +247,25 @@ const DispatchPage = () => {
   const { assignCourier } = useOrders();
   const { useGetCouriers } = useUser();
   const role = useSelector((state: RootState) => state.role.role);
-  const profile = useSelector((state: RootState) => state.user.user);
-  const scopedRegionId = useMemo(
-    () => role === "manager" || role === "registrator" ? getProfileRegionId(profile) : "",
-    [profile, role],
-  );
+  const isBranchScopedRole = role === "manager" || role === "registrator";
+  // Menejer/registrator uchun region_id YUBORILMAYDI: GET /couriers so'rovchining
+  // filialiga o'zi cheklaydi (filial kuryerlari bo'yicha, sahifalashdan oldin).
+  // Avvalgi viloyat filtri HQ registratorida ro'yxatni butunlay bo'sh
+  // qoldirardi — HQ ning viloyati yo'q (region_id NULL).
   const courierParams = useMemo(
-    () => ({
-      page: 1,
-      limit: 100,
-      ...(scopedRegionId ? { region_id: scopedRegionId } : {}),
-    }),
-    [scopedRegionId],
+    () =>
+      isBranchScopedRole
+        ? { page: 1, limit: 100, status: "active" }
+        : { page: 1, limit: 100 },
+    [isBranchScopedRole],
   );
-  const canLoadCouriers = (role !== "manager" && role !== "registrator") || Boolean(scopedRegionId);
+  // Ro'yxat har doim yuklanadi — endi viloyat topilishini kutmaydi.
   const {
     data: couriersResponse,
     isLoading: isCouriersLoading,
     isError: isCouriersError,
     refetch: refetchCouriers,
-  } = useGetCouriers(courierParams, canLoadCouriers);
+  } = useGetCouriers(courierParams, true);
 
   const couriers = useMemo(
     () =>
@@ -772,6 +751,15 @@ const DispatchPage = () => {
             </table>
           </div>
         )}
+
+        {!isCouriersLoading && !isCouriersError && couriers.length === 0 ? (
+          <div
+            role="status"
+            className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-700 dark:text-amber-100"
+          >
+            {t("noCouriersInBranch")}
+          </div>
+        ) : null}
 
         <button
           type="button"
