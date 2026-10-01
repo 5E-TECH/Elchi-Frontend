@@ -36,6 +36,11 @@ import { useBranches, type Branch } from "../../../../entities/branch";
 import type { RootState } from "../../../../app/config/store";
 import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
 import { getBranchOptionsForRole, isManagerHqSelection } from "../lib/branchOptions";
+import {
+  areCourierTariffsRequired,
+  buildCourierTariffs,
+  getMissingCourierTariffs,
+} from "../lib/courierTariffs";
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -221,15 +226,18 @@ export const CreateUserForm = memo(() => {
     authUser?.branch?.regionId ??
     authUser?.branch?.region?.id ??
     "";
-  const isManagerRegionalCreator =
-    authRole === "manager" && currentBranchType === "REGIONAL";
   const isManagerHybridCreator =
     authRole === "manager" && currentBranchType === "HYBRID";
-  const managerAllowedRoles: UserRole[] | null = isManagerRegionalCreator
-    ? ["courier"]
-    : isManagerHybridCreator
-      ? ["courier", "registrator", "marketing"]
-      : null;
+  // REGIONAL menejer — faqat kuryer (avvalgidek). fix3 CODE-21: boshqa
+  // turdagi (PICKUP/HQ/noma'lum) menejer uchun avval `null` = HAMMA rollar
+  // ochilardi. Hozir bu sahifaga ular kira olmaydi (`staff` qobiliyati yo'q),
+  // lekin yo'l ochilsa — eng tor to'plam (backend baribir tekshiradi).
+  const managerAllowedRoles: UserRole[] | null =
+    authRole !== "manager"
+      ? null
+      : isManagerHybridCreator
+        ? ["courier", "registrator", "marketing"]
+        : ["courier"];
 
   const [showPassword, setShowPassword] = useState(false);
   const [isCompactRolePicker, setIsCompactRolePicker] = useState(
@@ -253,6 +261,9 @@ export const CreateUserForm = memo(() => {
   } = methods;
 
   const role = useWatch({ control, name: "role" });
+  // fix3b FE-USR-11: kuryer tariflari maosh kiritilmaguncha majburiy (yulduzcha).
+  const salaryValue = useWatch({ control, name: "salary" }) ?? "";
+  const courierTariffsRequired = areCourierTariffsRequired({ salary: salaryValue });
   const rolePickerOptions: Array<{ key: UserRole; icon: ReactNode }> = [
     { key: "admin", icon: <Shield size={16} /> },
     { key: "manager", icon: <Briefcase size={16} /> },
@@ -384,7 +395,21 @@ export const CreateUserForm = memo(() => {
 
       const hasHomeRate = Boolean(values.homeRate.trim());
       const hasCenterRate = Boolean(values.centerRate.trim());
-      if (hasHomeRate !== hasCenterRate) {
+      // fix3b FE-USR-11: maoshsiz kuryerda ikkala tarif ham majburiy (0 ga
+      // tushirish faqat maoshli kuryer uchun). Menejerda tariflar ixtiyoriy.
+      const missingCourierTariffs =
+        role === "courier"
+          ? getMissingCourierTariffs(values)
+          : { home: false, center: false };
+      if (missingCourierTariffs.home || missingCourierTariffs.center) {
+        if (missingCourierTariffs.home) {
+          setError("homeRate", { message: t("homeTariffRequiredNoSalary") });
+        }
+        if (missingCourierTariffs.center) {
+          setError("centerRate", { message: t("centerTariffRequiredNoSalary") });
+        }
+        valid = false;
+      } else if (hasHomeRate !== hasCenterRate) {
         if (!hasHomeRate) {
           setError("homeRate", { message: t("homeTariffRequired") });
         }
@@ -508,10 +533,13 @@ export const CreateUserForm = memo(() => {
           payload.payment_day = Number(values.paymentDay);
         }
       }
-      if (values.homeRate.trim() && values.centerRate.trim()) {
-        payload.tariff_home = parseAmount(values.homeRate);
-        payload.tariff_center = parseAmount(values.centerRate);
-      }
+      // Backend ikkala tarifni ham majburiy qiladi. Bo'sh tariflar 0 bo'ladi
+      // FAQAT maoshli kuryerda (fix3 FE-USR-11, fix3b) — boshqa holatni forma
+      // tekshiruvi to'xtatgan; bu himoya tekshiruvi.
+      const tariffs = buildCourierTariffs(values);
+      if (!tariffs) return;
+      payload.tariff_home = tariffs.tariff_home;
+      payload.tariff_center = tariffs.tariff_center;
 
       await apiRequest({
         request: () => createCourier.mutateAsync(payload),
@@ -896,14 +924,14 @@ export const CreateUserForm = memo(() => {
                       name: "homeRate",
                       placeholder: "Masalan: 10 000",
                       icon: <Building size={18} />,
-                      required: false,
+                      required: courierTariffsRequired,
                     })}
                     {renderInput({
                       label: t("centerTariffWithCurrency"),
                       name: "centerRate",
                       placeholder: "Masalan: 8 000",
                       icon: <Store size={18} />,
-                      required: false,
+                      required: courierTariffsRequired,
                     })}
                   </div>
                 )}

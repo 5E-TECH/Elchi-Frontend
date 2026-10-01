@@ -31,9 +31,12 @@ import PaymentSummaryCards from "./components/PaymentSummaryCards";
 import {
   RECEIVE_SEARCH_KEYS,
   getReceiveDetailTarget,
+  isInactiveStatus,
+  isListedSettlementRow,
   useReceiveOptions,
   type ReceiveOption,
 } from "./components/lib/receiveOptions";
+import InactiveBadge from "./components/InactiveBadge";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 const DEFAULT_PAYMENTS_LIMIT = 10;
@@ -48,6 +51,8 @@ type PaymentMarketOption = {
   role: string;
   cashbox?: unknown;
   amount: number;
+  /** Market bloklangan — faqat puli qolgan bo'lsa ro'yxatda, belgi bilan. */
+  is_inactive: boolean;
 };
 
 type PaymentBranchToMainOption = {
@@ -283,9 +288,10 @@ const Payments = () => {
   const { data: managerSettlementInfo } = useGetManagerSettlement(isManagerRole);
   const { data: managerPayableInfo } = useGetManagerPayableToHq(isManagerRole);
 
-  // Faqat popup ochiq bo'lganda yuklanadi.
+  // Faqat popup ochiq bo'lganda yuklanadi. `status: "active"` YO'Q
+  // (FE-PAY-13): bloklangan, lekin puli qolgan market ham to'lanishi kerak.
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
-    { status: "active", limit: FULL_LIST_LIMIT },
+    { limit: FULL_LIST_LIMIT },
     isGivenPopupOpen && !isManagerRole,
   );
   // "Qabul qilinishi kerak": menejerga o'z kuryerlari; superadmin/admin'ga
@@ -357,6 +363,9 @@ const Payments = () => {
       data.hq ?? data.main_branch ?? data.mainBranch ?? ownBranch.parent,
     );
     const region = asRecord(hqBranch.region ?? ownBranch.region ?? profile.region);
+    // FE-PAY-01 fix3 dan oldingi holatida qoldirilgan (foydalanuvchi qarori
+    // #7): filial puli HQ ga faqat superadmin/admin "Qabul qilinishi kerak"
+    // orqali qabul qilganda o'tadi — menejer o'zi topshirmaydi.
     const branchId =
       getRecordString(data, "branch_id") ||
       getRecordString(ownBranch, "id") ||
@@ -400,9 +409,10 @@ const Payments = () => {
                 cashbox.balance ??
               m.amount,
             ),
+            is_inactive: isInactiveStatus(m.status),
           };
         })
-        .filter((market: PaymentMarketOption) => market.id),
+        .filter((market: PaymentMarketOption) => market.id && isListedSettlementRow(market)),
     [marketsData],
   );
 
@@ -662,6 +672,7 @@ const Payments = () => {
                 className={`font-medium ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
               >
                 {item.name}
+                {item.is_inactive ? <InactiveBadge isSelected={isSelected} /> : null}
               </p>
             </div>
             <span
@@ -712,6 +723,7 @@ const Payments = () => {
                   className={`font-medium text-sm ${isSelected ? "text-white" : "text-gray-800 dark:text-white"}`}
                 >
                   {item.name}
+                  {item.is_inactive ? <InactiveBadge isSelected={isSelected} /> : null}
                 </p>
                 <p
                   className={`text-xs ${isSelected ? "text-white/70" : "text-gray-500 dark:text-white/75"}`}

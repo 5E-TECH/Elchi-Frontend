@@ -181,11 +181,15 @@
     "extra_cost_sell": "Sale extra cost",
     "extra_cost_partly_sell": "Partial sale extra cost",
     "extra_cost_cancel": "Cancel extra cost",
+    "extra_cost_on_approve_sell": "If approved, the order is sold",
+    "extra_cost_on_approve_partly_sell": "If approved, the order is partly sold",
+    "extra_cost_on_approve_cancel": "If approved, the order is cancelled",
     "extra_cost_requester": "Requester",
     "extra_cost_proofs": "Proofs",
     "extra_cost_approve": "Approve",
     "extra_cost_reject": "Reject",
     "extra_cost_approving": "Approving",
-    "extra_cost_rejecting": "Rejecting"
+    "extra_cost_rejecting": "Rejecting",
+    "extra_cost_action_error": "The request could not be completed. Please try again."
   }
 }

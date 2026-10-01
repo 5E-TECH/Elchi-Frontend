@@ -43,7 +43,9 @@
     "selectUser": "Select user",
     "remove": "Remove",
     "removeConfirm": "Remove this employee from the branch?",
-    "removed": "Employee removed"
+    "removed": "Employee removed",
+    "removeError": "Could not remove the employee",
+    "addError": "Could not add the employee"
   },
   "courierTransfer": {
     "title": "Move courier to another branch",

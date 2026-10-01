@@ -12,6 +12,10 @@ import {
   ExtraCostApprovalPendingBanner,
   ExtraCostApprovalSentNote,
 } from "../../../../../entities/orders/ui/ExtraCostApproval";
+import {
+  isProofRequiredByConditions,
+  toKnownAmount,
+} from "../../../../../entities/orders/proofRequirement";
 
 type Props = {
   order: Order | null;
@@ -55,13 +59,21 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading, awaitingApprov
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
     : [];
-  const cancelRequiresMedia = Boolean(
-    orderFlags.cancel_requires_media ??
-    orderFlags.cancelRequiresMedia ??
-    orderFlags.require_cancel_proof ??
-    orderFlags.cancel_proof_required ??
-    proofConditions.includes("cancel_any"),
-  );
+  // Bayroq yoki `cancel_any` — avvalgidek; ustiga backend tekshiradigan
+  // `cancel_extra_cost` (xarajat yozilganda) va `cancel_zero_total` shartlari.
+  const cancelRequiresMedia =
+    Boolean(
+      orderFlags.cancel_requires_media ??
+      orderFlags.cancelRequiresMedia ??
+      orderFlags.require_cancel_proof ??
+      orderFlags.cancel_proof_required ??
+      proofConditions.includes("cancel_any"),
+    ) ||
+    isProofRequiredByConditions(proofConditions, {
+      action: "cancel",
+      extraCost: Number(extraCost) || 0,
+      totalPrice: toKnownAmount(order.total_price),
+    });
   const isProofMissing = cancelRequiresMedia && !proof;
 
   const handleSubmit = () => {
@@ -109,7 +121,7 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading, awaitingApprov
         {/* Body */}
         <div className="p-5 flex flex-col gap-4">
           {awaitingApproval ? (
-            <ExtraCostApprovalPendingBanner amount={pendingApproval?.amount ?? extraCost} />
+            <ExtraCostApprovalPendingBanner amount={pendingApproval?.amount ?? extraCost} action={pendingApproval?.action} />
           ) : (
             <>
               {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}

@@ -38,5 +38,7 @@
   "finalizeSuccessTitle": "Kun yakunlandi",
   "finalizeSuccessDescription": "{{count}} ta buyurtma muvaffaqiyatli yakunlandi",
   "finalizeErrorTitle": "Yakunlashda xatolik",
-  "finalizeErrorDescription": "{{count}} ta buyurtmada xatolik yuz berdi"
+  "finalizeErrorDescription": "{{count}} ta buyurtmada xatolik yuz berdi",
+  "finalizeNothing": "Yakunlanadigan buyurtma yo'q — ertaga qoldirilganlar kutilmoqda holatida qoladi.",
+  "finalizeTomorrowKept": "{{count}} ta buyurtma ertaga qoldirildi."
 }

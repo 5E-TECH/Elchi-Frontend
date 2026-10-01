@@ -15,6 +15,10 @@ import {
   ExtraCostApprovalPendingBanner,
   ExtraCostApprovalSentNote,
 } from "../../../../../entities/orders/ui/ExtraCostApproval";
+import {
+  isProofRequiredByConditions,
+  toKnownAmount,
+} from "../../../../../entities/orders/proofRequirement";
 
 type OrderItem = {
   id: string;
@@ -82,6 +86,12 @@ type SellModalProps = {
   isLoading?: boolean;
   /** Yuborilgan amal market tasdig'iga tushdi — forma o'rniga holat ko'rsatiladi. */
   awaitingApproval?: boolean;
+  /**
+   * Kuryer sotuvi: qo'shimcha xarajat FAQAT markazga yetkazishda yoziladi —
+   * backend uyga yetkazishda 400 qaytaradi ("uy tarifi allaqachon yuqori").
+   * Menejerda bu cheklov yo'q, shuning uchun faqat kuryer sahifasi yoqadi.
+   */
+  restrictExtraCostToCenter?: boolean;
 };
 
 const formatAmountInput = (value: string, locale: string) => {
@@ -94,7 +104,16 @@ const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
 const MAX_PROOF_SIZE_MB = 10;
 const MAX_PROOF_SIZE_BYTES = MAX_PROOF_SIZE_MB * 1024 * 1024;
 
-const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awaitingApproval }: SellModalProps) => {
+const SellModal = ({
+  order,
+  open,
+  onClose,
+  onSell,
+  onPartlySell,
+  isLoading,
+  awaitingApproval,
+  restrictExtraCostToCenter = false,
+}: SellModalProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
   const approvals = usePendingExtraCostApprovals();
   const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
@@ -125,13 +144,30 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
     : [];
-  const sellRequiresMedia = Boolean(
-    orderFlags.sell_requires_media ??
-    orderFlags.sellRequiresMedia ??
-    orderFlags.require_sell_proof ??
-    orderFlags.sell_proof_required ??
-    proofConditions.includes("sell_any"),
-  );
+  // Faqat ANIQ "markaz emas" bo'lsa yashiriladi: maydon kelmagan bo'lsa
+  // kuryerni bekorga cheklamaymiz — backend baribir tekshiradi.
+  const deliveryType = typeof order.where_deliver === "string" ? order.where_deliver.trim() : "";
+  const isExtraCostBlocked =
+    restrictExtraCostToCenter && deliveryType !== "" && deliveryType !== "center";
+  const effectiveExtraCost = isExtraCostBlocked ? 0 : Number(extraCost) || 0;
+  const operationTotal = isPartial
+    ? totalPrice === "" ? null : Number(totalPrice)
+    : toKnownAmount(order.total_price);
+  // Bayroq (`*_requires_media`) yoki `sell_any` — avvalgidek; ustiga backend
+  // tekshiradigan qolgan shartlar (xarajat yozilganda, 0 summada) qo'shildi.
+  const sellRequiresMedia =
+    Boolean(
+      orderFlags.sell_requires_media ??
+      orderFlags.sellRequiresMedia ??
+      orderFlags.require_sell_proof ??
+      orderFlags.sell_proof_required ??
+      proofConditions.includes("sell_any"),
+    ) ||
+    isProofRequiredByConditions(proofConditions, {
+      action: "sell",
+      extraCost: effectiveExtraCost,
+      totalPrice: operationTotal,
+    });
   const isProofMissing = sellRequiresMedia && !proof;
 
   const getItemQty = (item: OrderItem) =>
@@ -168,6 +204,16 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
             : null;
   const canSellPartially = partialUnavailableReason === null;
   const hasDecreasedItem = orderItems.some((item) => getItemQty(item) < item.quantity);
+  // fix3b M10: qisman sotuv summasi buyurtma summasidan oshmaydi (teng bo'lishi
+  // mumkin). Backend ham 400 qaytaradi; xato (masalan ortiqcha nol) market va
+  // kuryer kassasini oshirib, rollbackda asl summani yo'qotardi. Buyurtma
+  // summasi noma'lum bo'lsa tekshirilmaydi — backend baribir tekshiradi.
+  const orderTotalAmount = toKnownAmount(order.total_price);
+  const isPartialPriceAboveTotal =
+    isPartial &&
+    totalPrice !== "" &&
+    orderTotalAmount !== null &&
+    Number(totalPrice) > orderTotalAmount;
   const partialBlockReason = !isPartial
     ? null
     : !canSellPartially
@@ -178,7 +224,9 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
       ? t("partialSellDecreaseRequired")
       : totalPrice === ""
         ? t("partialSellPriceRequired")
-        : null;
+        : isPartialPriceAboveTotal
+          ? t("partialSellPriceExceedsTotal")
+          : null;
 
   const canDecreaseItem = (item: OrderItem) => {
     const currentQty = getItemQty(item);
@@ -223,7 +271,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
           };
         }),
         totalPrice: Number(totalPrice) || 0,
-        extraCost: Number(extraCost) || 0,
+        extraCost: effectiveExtraCost,
         comment: note,
         ...(proof ? { proof } : {}),
       });
@@ -231,7 +279,7 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
       // POST /orders/sell/{id}
       onSell(order.id, {
         comment: note,
-        extraCost: Number(extraCost) || 0,
+        extraCost: effectiveExtraCost,
         ...(proof ? { proof } : {}),
       });
     }
@@ -298,7 +346,10 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
         {/* Body */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {awaitingApproval ? (
-            <ExtraCostApprovalPendingBanner amount={pendingApproval?.amount ?? (Number(extraCost) || 0)} />
+            <ExtraCostApprovalPendingBanner
+              amount={pendingApproval?.amount ?? (Number(extraCost) || 0)}
+              action={pendingApproval?.action}
+            />
           ) : (
             <>
               {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
@@ -396,7 +447,11 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
                     {t("paymentAmount")} <span className="text-red-400">*</span>
                   </p>
-                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
+                  <div className={`flex items-center gap-2 rounded-xl border bg-white/70 px-3 py-2 dark:bg-primarydark/35 ${
+                    isPartialPriceAboveTotal
+                      ? "border-error/60 dark:border-error/60"
+                      : "border-gray-200 dark:border-white/10"
+                  }`}>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -405,33 +460,47 @@ const SellModal = ({ order, open, onClose, onSell, onPartlySell, isLoading, awai
                         setTotalPrice(sanitizeAmountInput(e.target.value))
                       }
                       placeholder="0"
+                      aria-invalid={isPartialPriceAboveTotal || undefined}
                       className="flex-1 bg-transparent text-base md:text-sm text-gray-800 outline-none dark:text-gray-100"
                     />
                     <span className="text-sm text-gray-400">{t("currency")}</span>
                   </div>
+                  {isPartialPriceAboveTotal ? (
+                    <p role="alert" className="mt-1 text-xs font-semibold text-error">
+                      {t("partialSellPriceExceedsTotal")}
+                    </p>
+                  ) : null}
                 </div>
               )}
 
-              {/* extraCost — har doim ko'rsatiladi */}
+              {/* extraCost — kuryerning uyga yetkazish sotuvidan tashqari hammada */}
               <div>
                 <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
                   <Plus size={12} className="text-green-500" />
                   {t("extraPayment")}
                 </p>
-                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={formatAmountInput(extraCost, locale)}
-                    onChange={(e) =>
-                      setExtraCost(sanitizeAmountInput(e.target.value))
-                    }
-                    placeholder="0"
-                    className="flex-1 bg-transparent text-base md:text-sm text-gray-800 outline-none dark:text-gray-100"
-                  />
-                  <span className="text-sm text-gray-400">{t("currency")}</span>
-                </div>
-                {Number(extraCost) > 0 ? <ExtraCostApprovalNotice /> : null}
+                {isExtraCostBlocked ? (
+                  <p className="rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-xs font-medium text-gray-500 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-400">
+                    {t("extraCostHomeNotAllowed")}
+                  </p>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={formatAmountInput(extraCost, locale)}
+                        onChange={(e) =>
+                          setExtraCost(sanitizeAmountInput(e.target.value))
+                        }
+                        placeholder="0"
+                        className="flex-1 bg-transparent text-base md:text-sm text-gray-800 outline-none dark:text-gray-100"
+                      />
+                      <span className="text-sm text-gray-400">{t("currency")}</span>
+                    </div>
+                    {Number(extraCost) > 0 ? <ExtraCostApprovalNotice /> : null}
+                  </>
+                )}
               </div>
 
               {/* Izoh */}

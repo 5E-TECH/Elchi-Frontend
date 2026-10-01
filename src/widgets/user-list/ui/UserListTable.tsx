@@ -27,6 +27,13 @@ interface UserListTableProps {
     currentLimit?: number;
     onPageChange: (page: number) => void;
     onItemsPerPageChange?: (limit: number) => void;
+    /**
+     * Holat almashtirgich va o'chirish tugmasi (fix3 RBAC-16). Backend
+     * PATCH /users/:id/status va DELETE /users/:id faqat SUPERADMIN/ADMIN
+     * ga ruxsat beradi — menejer ko'rardi, lekin har bosishda 403 olardi.
+     * Sukut — yashirin (xavfsiz tomon); sahifa rolga qarab yoqadi.
+     */
+    canManage?: boolean;
 }
 
 const formatPhoneNumber = (phone: string) => {
@@ -50,6 +57,7 @@ export const UserListTable = memo(({
     currentLimit = pagination?.limit ?? users.length ?? 10,
     onPageChange,
     onItemsPerPageChange,
+    canManage = false,
 }: UserListTableProps) => {
     const { t } = useTranslation("users");
     const navigate = useNavigate();
@@ -276,14 +284,16 @@ export const UserListTable = memo(({
             width: '15%',
             render: (value) => <UserStatusBadge status={value as User["status"]} />,
         },
-        {
-            key: 'id',
-            label: t('action'),
-            width: '18%',
-            className: 'whitespace-nowrap',
-            render: (_, user) => renderUserActions(user),
-        },
-    ], [renderUserActions, t]);
+        ...(canManage
+            ? [{
+                key: 'id',
+                label: t('action'),
+                width: '18%',
+                className: 'whitespace-nowrap',
+                render: (_: unknown, user: User) => renderUserActions(user),
+            } satisfies ColumnConfig<User>]
+            : []),
+    ], [canManage, renderUserActions, t]);
 
     const renderMobileRow = useCallback((user: User) => (
         <div className="flex items-start justify-between gap-3">
@@ -308,10 +318,10 @@ export const UserListTable = memo(({
 
             <div className="flex shrink-0 flex-col items-end gap-2">
                 <UserStatusBadge status={user.status} />
-                {renderUserActions(user, true)}
+                {canManage ? renderUserActions(user, true) : null}
             </div>
         </div>
-    ), [renderUserActions]);
+    ), [canManage, renderUserActions]);
 
     const getUserKey = useCallback((user: User) => user.id, []);
     const handleRowClick = useCallback(

@@ -8,6 +8,14 @@ import { useUsers } from "../../../entities/user";
 import FormPopup, { popupLabelClassName } from "../../../shared/ui/FormPopup";
 import { addEmployeeSchema } from "../model/schema";
 import { useAddEmployee, type AddEmployeeDto } from "../api/useAddEmployee";
+import { getActionErrorMessage } from "../../../shared/lib/actionError";
+
+/**
+ * Filialga faqat shu rollar biriktiriladi — backend `resolveBranchRoleFromUserRole`
+ * boshqasini 400 bilan rad etadi (fix3 CODE-21). Ilgari ro'yxat admin/operator
+ * foydalanuvchilarni ko'rsatardi, ya'ni har qanday tanlov rad etilardi.
+ */
+const BRANCH_ASSIGNABLE_ROLES = ["manager", "registrator", "courier"] as const;
 
 const AddEmployeeModal = ({
   branchId,
@@ -21,7 +29,7 @@ const AddEmployeeModal = ({
   const { t } = useTranslation("branches");
   const { data: users = [] } = useUsers({
     status: "active",
-    role: ["admin", "operator"],
+    role: [...BRANCH_ASSIGNABLE_ROLES],
     page: 1,
     limit: 100,
     enabled: open,
@@ -37,7 +45,14 @@ const AddEmployeeModal = ({
   }, [open, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
-    await addEmployee.mutateAsync(values);
+    try {
+      await addEmployee.mutateAsync(values);
+    } catch (error) {
+      // Oyna ochiq qoladi — sabab ko'rinadi (masalan "boshqa filialga biriktirilgan").
+      const description = getActionErrorMessage(error, t("employee.addError"));
+      if (description) message.error(description);
+      return;
+    }
     message.success(t("employee.added"));
     onClose();
     reset();

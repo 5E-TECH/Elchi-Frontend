@@ -38,5 +38,7 @@
   "finalizeSuccessTitle": "Day finalized",
   "finalizeSuccessDescription": "{{count}} orders were finalized successfully",
   "finalizeErrorTitle": "Finalize failed",
-  "finalizeErrorDescription": "{{count}} orders failed"
+  "finalizeErrorDescription": "{{count}} orders failed",
+  "finalizeNothing": "Nothing to finalize — orders postponed to tomorrow stay waiting.",
+  "finalizeTomorrowKept": "{{count}} order(s) postponed to tomorrow."
 }

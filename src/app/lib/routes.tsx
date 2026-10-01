@@ -19,6 +19,8 @@ import {
   canCreateOrders,
   canReceiveExternalOrders,
   canViewPaymentsPage,
+  canHandoverCancelledToMarket,
+  canCreateProducts,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 
@@ -201,7 +203,13 @@ const canViewRegionStats = (state: RootState) => {
 };
 
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
-const canViewMarketOperators = (state: RootState) => state.role.role === "market";
+/**
+ * fix3 RBAC-18: market uchun "Operatorlar" sahifasi YOPILDI — u GET /users
+ * ni chaqiradi (`@Roles(SUPERADMIN, ADMIN, MANAGER)`), ya'ni marketga doim
+ * 403; yaratish tugmasi ham faqat "mavjud emas" deydi. Backendda market
+ * operatorlari yo'li paydo bo'lganda shu yerda va menyuda qayta yoqiladi.
+ */
+const canViewMarketOperators = () => false;
 const canViewCourierBulk = canViewCourierBulkPage;
 
 
@@ -245,14 +253,15 @@ const NewOrdersCancelledDetailEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const roleId = useSelector((state: RootState) => state.role.id);
   const profileId = useSelector((state: RootState) => state.user.user?.id);
+  // fix3 CODE-16 / C4: superadmin/admin va HQ registratori topshiradi.
+  const canHandover = useSelector(canHandoverCancelledToMarket);
   const ownMarketId = roleId ?? profileId;
-  const isAdminRole = role === "admin" || role === "superadmin";
   const isOwnMarket =
     role === "market" &&
     Boolean(ownMarketId) &&
     String(ownMarketId) === String(marketId);
 
-  if (!isAdminRole && !isOwnMarket) {
+  if (!canHandover && !isOwnMarket) {
     return <Navigate replace to="/403" />;
   }
 
@@ -658,7 +667,7 @@ const AppRouter = () => {
                 {
                   path: "create-product/:id",
                   element: (
-                    <ProtectedRoute canActivate={canManageProducts}>
+                    <ProtectedRoute canActivate={canCreateProducts}>
                       <ProductCreate />
                     </ProtectedRoute>
                   ),
@@ -764,7 +773,7 @@ const AppRouter = () => {
                 {
                   path: "cancelled",
                   element: (
-                    <ProtectedRoute canActivate={canViewAdminNewOrderTabs}>
+                    <ProtectedRoute canActivate={canHandoverCancelledToMarket}>
                       <NewOrdersCancelled />
                     </ProtectedRoute>
                   ),

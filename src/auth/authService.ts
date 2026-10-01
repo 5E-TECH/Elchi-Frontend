@@ -7,7 +7,7 @@ import { loginSuccess, logout as logoutAction, setAppInitializing, setProfile, s
 import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
-import { emitNetworkError, isNetworkFailure } from "./networkError";
+import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./networkError";
 
 type LoginCredentials = {
   phone_number: string;
@@ -163,10 +163,14 @@ const fetchMyProfileWithRetry = async (accessToken?: string) => {
  * Sessiya faqat server "ruxsat yo'q" desa (401/403) yoki holat buzilgan bo'lsa
  * tozalanadi. Tarmoq uzilishi, vaqt tugashi yoki 5xx — foydalanuvchining
  * aybi emas: token saqlanadi, aks holda liftda F5 bosgan kuryer parolni
- * qaytadan terardi (9w5Fq94s).
+ * qaytadan terardi (9w5Fq94s). 429 (so'rov cheklovi) ham shu qatorda —
+ * fix3 RBAC-11 / C10.
  */
-const shouldKeepSessionOnError = (error: unknown) =>
-  isNetworkFailure(error) || (axios.isAxiosError(error) && (error.response?.status ?? 0) >= 500);
+const shouldKeepSessionOnError = (error: unknown) => isTransientAuthFailure(error);
+
+/** Server javob bergan vaqtinchalik xatodan (429/5xx) keyin bootstrap qayta urinishi. */
+export const AUTH_REINIT_DELAY_MS = 30_000;
+let reinitTimer: ReturnType<typeof setTimeout> | null = null;
 
 const keepSessionWhileOffline = (error: unknown) => {
   // Profil kelmadi — oxirgi ma'lum rol bilan ilova ochiladi, so'rovlar tarmoq
@@ -175,13 +179,52 @@ const keepSessionWhileOffline = (error: unknown) => {
   if (role) store.dispatch(setRole(role));
   if (id) store.dispatch(setId(id));
   if (axios.isAxiosError(error)) emitNetworkError(error);
-  if (typeof window !== "undefined") {
+  if (typeof window === "undefined") return;
+
+  if (isNetworkFailure(error)) {
     window.addEventListener("online", () => void initAuth(), { once: true });
+    return;
+  }
+
+  // 429/5xx — "online" hodisasi kelmaydi (tarmoq bor). Bitta kechiktirilgan
+  // qayta urinish: cheklov oynasi o'tgach profil o'zi tiklanadi.
+  if (reinitTimer) clearTimeout(reinitTimer);
+  reinitTimer = setTimeout(() => {
+    reinitTimer = null;
+    void initAuth();
+  }, AUTH_REINIT_DELAY_MS);
+};
+
+/**
+ * POST /auth/refresh qayta urinishlari (fix3 RBAC-11 / C10): 429 yoki 5xx
+ * kelsa 1 s, 3 s, 7 s (+ tasodifiy 0–0.5 s) kutib, KO'PI BILAN 3 marta qayta
+ * so'raladi. Tasodifiy qo'shimcha — bitta NAT ortidagi qurilmalar bir xil
+ * soniyada qayta urinmasligi uchun. 429 so'rov cheklovchida, handlerdan OLDIN
+ * qaytadi, shuning uchun qayta yuborish xavfsiz. Tarmoq xatosida qayta
+ * urinilmaydi (har biri 15 s kutardi) — u baribir vaqtinchalik hisoblanadi.
+ */
+export const REFRESH_RETRY_DELAYS_MS = [1_000, 3_000, 7_000];
+const REFRESH_RETRY_JITTER_MS = 500;
+
+const isRetryableRefreshError = (error: unknown) => {
+  if (!axios.isAxiosError(error) || !error.response) return false;
+  const status = error.response.status;
+  return status === 429 || status >= 500;
+};
+
+const postRefreshWithRetry = async () => {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {});
+    } catch (error) {
+      if (!isRetryableRefreshError(error) || attempt >= REFRESH_RETRY_DELAYS_MS.length) throw error;
+      await wait(REFRESH_RETRY_DELAYS_MS[attempt] + Math.floor(Math.random() * REFRESH_RETRY_JITTER_MS));
+    }
   }
 };
 
 export const refreshAccessToken = async () => {
-  const response = await authClient.post<RefreshResponse>(API_ENDPOINTS.AUTH.REFRESH, {});
+  const response = await postRefreshWithRetry();
   const nextAccessToken = response.data?.accessToken;
 
   if (!nextAccessToken) {
@@ -225,6 +268,10 @@ export const login = async (credentials: LoginCredentials) => {
 
 export const logout = async () => {
   markLogoutSkipRefresh();
+  if (reinitTimer) {
+    clearTimeout(reinitTimer);
+    reinitTimer = null;
+  }
   const accessToken = tokenStorage.getAccessToken();
 
   try {

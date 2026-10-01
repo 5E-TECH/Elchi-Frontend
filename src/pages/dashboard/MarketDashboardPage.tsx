@@ -29,6 +29,8 @@ import {
   formatNumber,
   ratio,
 } from "../../shared/config/designSystem";
+import { useAppNotification } from "../../app/providers/notification/NotificationProvider";
+import { getActionErrorMessage } from "../../shared/lib/actionError";
 
 // ─── MarketDashboardPage ──────────────────────────────────────────────────────
 
@@ -76,6 +78,23 @@ const MarketDashboardPage = () => {
   // ─── API so'rovlari ───────────────────────────────────────────────────────────
   const { getDashboard } = useDashboard();
   const { useExtraCostApprovals, approveExtraCostApproval, rejectExtraCostApproval } = useOrders();
+  const { api: notificationApi } = useAppNotification();
+
+  // fix3 FE-ORD-02: tasdiqlash/rad etish rad javobi endi ko'rinadi (avval
+  // tugma jimgina "qaytib" qolardi va market nima bo'lganini bilmasdi).
+  const notifyApprovalError = useCallback(
+    (error: unknown) => {
+      const description = getActionErrorMessage(error, t("market.extra_cost_action_error"));
+      if (!description) return;
+      notificationApi.error({
+        message: t("common:error"),
+        description,
+        placement: "topRight",
+        duration: 6,
+      });
+    },
+    [notificationApi, t],
+  );
 
   const {
     data,
@@ -209,8 +228,8 @@ const MarketDashboardPage = () => {
             ? String(rejectExtraCostApproval.variables?.id ?? "")
             : ""
         }
-        onApprove={(id) => approveExtraCostApproval.mutate({ id })}
-        onReject={(id) => rejectExtraCostApproval.mutate({ id })}
+        onApprove={(id) => approveExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
+        onReject={(id) => rejectExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
         t={t}
       />
 
@@ -312,6 +331,13 @@ const ExtraCostApprovalPanel = memo(
       if (action === "partly_sell") return t("market.extra_cost_partly_sell");
       return t("market.extra_cost_sell");
     };
+    // fix3b M3: tasdiq AYNAN shu amalni bajaradi — market nimani tasdiqlayotganini
+    // aniq ko'rsin (bekor qilinayotgan buyurtma uchun eski SOTISH so'rovi va h.k.).
+    const approveConsequence = (action: ExtraCostApproval["action"]) => {
+      if (action === "cancel") return t("market.extra_cost_on_approve_cancel");
+      if (action === "partly_sell") return t("market.extra_cost_on_approve_partly_sell");
+      return t("market.extra_cost_on_approve_sell");
+    };
 
     return (
       <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-400/20 dark:bg-amber-400/10 sm:p-5">
@@ -350,6 +376,12 @@ const ExtraCostApprovalPanel = memo(
                     </div>
                     <p className="mt-1 text-sm font-bold text-maindark dark:text-primary">
                       #{approval.order_id}
+                    </p>
+                    <p
+                      data-testid={`approval-consequence-${approval.id}`}
+                      className="mt-0.5 text-xs font-semibold text-amber-800 dark:text-amber-200"
+                    >
+                      {approveConsequence(approval.action)}
                     </p>
                   </div>
                   <div className="text-right text-sm font-black text-maindark dark:text-primary">

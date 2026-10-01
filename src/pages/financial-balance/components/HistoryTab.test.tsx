@@ -52,12 +52,13 @@ describe("HistoryTab URL state", () => {
       "/financial-balance?tab=history&financialBalanceHistorySource=sell_profit&financialBalanceHistoryFrom=2026-09-01&financialBalanceHistoryTo=2026-09-20&financialBalanceHistoryPage=2",
     );
 
+    // C2: oddiy YYYY-MM-DD (Toshkent kuni backend'da), UTC qo'shimchasiz.
     expect(getHistoryMock).toHaveBeenLastCalledWith(true, {
       page: 2,
       limit: 10,
       source_type: "sell_profit",
-      fromDate: "2026-09-01T00:00:00.000Z",
-      toDate: "2026-09-20T23:59:59.999Z",
+      fromDate: "2026-09-01",
+      toDate: "2026-09-20",
     });
   });
 

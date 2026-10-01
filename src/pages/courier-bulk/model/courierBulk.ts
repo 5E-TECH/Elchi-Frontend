@@ -103,6 +103,41 @@ export const getCourierBulkOrderAction = (
   actions: Record<string, CourierBulkAction>,
 ): CourierBulkAction => actions[orderId] ?? "sold";
 
+/**
+ * "Kunni yakunlash" da API ga ketadigan buyurtmalar (fix3 FE-CB-09).
+ *
+ * "Ertaga" belgilangan buyurtma uchun so'rov YUBORILMAYDI — u shunchaki
+ * kutilmoqda (WAITING) holatida qoladi. Ilgari POST /orders/:id/could-not-deliver
+ * yuborilardi: u `reason` (min 10 belgi) talab qiladi va faqat ON_THE_ROAD
+ * buyurtmani qabul qiladi, bu ro'yxat esa faqat WAITING — ya'ni har bir
+ * "ertaga" doim 400 berardi va butun yakunlash "xatolik" bilan tugardi.
+ */
+export const getCourierBulkFinalizeTasks = <T extends { id: string }>(
+  orders: T[],
+  actions: Record<string, CourierBulkAction>,
+): Array<{ order: T; action: Exclude<CourierBulkAction, "tomorrow"> }> =>
+  orders.flatMap((order) => {
+    const action = getCourierBulkOrderAction(order.id, actions);
+    return action === "tomorrow" ? [] : [{ order, action }];
+  });
+
+/**
+ * Yakunlashdan keyingi belgilar: muvaffaqiyatli bajarilganlar olib
+ * tashlanadi, qolganlari (xato bergan buyurtmalar va "ertaga") SAQLANADI.
+ *
+ * ⚠️ "Ertaga" belgisi o'chirilmaydi: belgilanmagan buyurtma sukut bo'yicha
+ * "sotildi" hisoblanadi, ya'ni tugma qayta bosilsa ertaga qoldirilganlar
+ * sotilib ketardi. Xato bergan buyurtma ham o'z belgisini saqlaydi —
+ * qayta urinishda "bekor" buyurtma "sotildi" bo'lib ketmasin.
+ */
+export const getCourierBulkActionsAfterFinalize = (
+  actions: Record<string, CourierBulkAction>,
+  succeededOrderIds: ReadonlySet<string>,
+): Record<string, CourierBulkAction> =>
+  Object.fromEntries(
+    Object.entries(actions).filter(([orderId]) => !succeededOrderIds.has(orderId)),
+  ) as Record<string, CourierBulkAction>;
+
 export const getCourierBulkFinalizeLabelCounts = (counts: CourierBulkCounts) => ({
   changed: counts.cancel + counts.tomorrow,
   sold: counts.sold,

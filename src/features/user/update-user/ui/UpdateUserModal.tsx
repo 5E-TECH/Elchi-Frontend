@@ -23,6 +23,15 @@ import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
 import { useTranslation } from "react-i18next";
 import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
 import type { RootState } from "../../../../app/config/store";
+import { useLogout } from "../../../../shared/lib/useLogout";
+import { rememberLoginNotice } from "../../../../auth/loginNotice";
+
+/**
+ * Backend `Status` enumi — faqat `active | inactive` (UpdateAdminRequestDto
+ * `@IsEnum(['active','inactive'])`). fix3b RBAC-16: "blocked" varianti 400
+ * qaytarardi; xodimni bloklash = "Faol emas".
+ */
+const STATUS_OPTION_VALUES = ["active", "inactive"] as const;
 
 const formatAmount = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -58,18 +67,6 @@ const isoDateToPaymentDay = (value: string): string => {
   const day = Number(parts[2]);
   if (!Number.isFinite(day) || day < 1 || day > 30) return "";
   return String(day);
-};
-
-type RegionOption = {
-  id: string | number;
-  name: string;
-  sato_code?: string | null;
-};
-
-const getRegionOptionLabel = (region: RegionOption) => {
-  const satoCode = region.sato_code ? ` • ${region.sato_code}` : "";
-
-  return `${region.name}${satoCode}`;
 };
 
 interface UpdateUserModalProps {
@@ -132,8 +129,16 @@ export const UpdateUserModal = memo(({
 }: UpdateUserModalProps) => {
   const { t } = useTranslation("users");
   const authRole = useSelector((state: RootState) => state.role.role);
-  const { useGetUserById, updateUser, updateMyProfile, useGetRegions } = useUser();
+  const currentUserId = useSelector(
+    (state: RootState) => state.user.user?.id ?? state.role.id,
+  );
+  const { useGetUserById, updateUser, updateMyProfile } = useUser();
   const { apiRequest } = useAppNotification();
+  const { logout } = useLogout();
+  // O'z hisobi: profil sahifasi yoki ro'yxatdan o'zini tahrirlash.
+  const isSelf =
+    isOwnProfile ||
+    Boolean(userId && currentUserId && String(userId) === String(currentUserId));
 
   const shouldFetchUser = Boolean(userId && !initialUser);
   const { data: rawUser, isLoading: isUserLoading } = useGetUserById(shouldFetchUser ? userId ?? "" : "");
@@ -153,16 +158,6 @@ export const UpdateUserModal = memo(({
 
   const userData = initialUser ?? unwrapUserResponse(rawUser) ?? null;
   const isLoading = shouldFetchUser ? isUserLoading : false;
-
-  const { data: regionsData } = useGetRegions();
-  const regionList: RegionOption[] = (() => {
-    const data = regionsData as any;
-    if (Array.isArray(data)) return data;
-    if (data?.data?.items && Array.isArray(data.data.items)) return data.data.items;
-    if (data?.data && Array.isArray(data.data)) return data.data;
-    if (data?.items && Array.isArray(data.items)) return data.items;
-    return [];
-  })();
 
   const role = userData?.role ?? "";
   const isAdmin = !isOwnProfile && (role === "admin" || role === "manager" || role === "registrator");
@@ -305,7 +300,6 @@ export const UpdateUserModal = memo(({
         }
       }
 
-      if (values.region_id) payload.region_id = values.region_id;
     }
 
     if (isMarket) {
@@ -336,15 +330,28 @@ export const UpdateUserModal = memo(({
       return;
     }
 
+    // fix3b RBAC-09: parol o'zgarsa backend o'sha hisobning sessiyasini
+    // yopadi (saqlangan refresh o'chiriladi) — keyingi refreshda baribir 401
+    // bo'lardi. O'z parolini o'zgartirgan foydalanuvchi darhol chiqariladi va
+    // login sahifasida sababi ko'rsatiladi.
+    const ownPasswordChanged = isSelf && Boolean(payload.password);
+
     await apiRequest({
       request: () =>
         isOwnProfile
           ? updateMyProfile.mutateAsync(payload)
           : updateUser.mutateAsync({ id: userId, data: payload }),
-      successMessage: t("userUpdatedSuccess", { name: userData.name }),
+      successMessage: ownPasswordChanged
+        ? t("passwordChangedRelogin", { ns: "auth" })
+        : t("userUpdatedSuccess", { name: userData.name }),
       errorMessage: t("editUserError"),
       onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-      onSuccess: onClose,
+      onSuccess: () => {
+        onClose();
+        if (!ownPasswordChanged) return;
+        rememberLoginNotice("passwordChanged");
+        void logout();
+      },
     });
   };
 
@@ -522,11 +529,10 @@ export const UpdateUserModal = memo(({
                             name={field.name}
                             value={field.value}
                             onChange={field.onChange}
-                            options={[
-                              { value: "active", label: t("statusActive") },
-                              { value: "inactive", label: t("statusInactive") },
-                              { value: "blocked", label: t("statusBlocked") },
-                            ]}
+                            options={STATUS_OPTION_VALUES.map((value) => ({
+                              value,
+                              label: value === "active" ? t("statusActive") : t("statusInactive"),
+                            }))}
                             placeholder={t("statusPlaceholder")}
                             icon={User}
                             surface="search"
@@ -637,27 +643,11 @@ export const UpdateUserModal = memo(({
                       placeholder: "8 000",
                     })}
 
-                    <div className="relative col-span-full">
-                      <Controller
-                        control={control}
-                        name="region_id"
-                        render={({ field }) => (
-                          <SearchableSelect
-                            label={t("regionLabel")}
-                            name={field.name}
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={regionList.map((region) => ({
-                              value: String(region.id),
-                              label: getRegionOptionLabel(region),
-                            }))}
-                            placeholder={regionList.length ? t("regionPlaceholder") : t("loading")}
-                            icon={Building}
-                            surface="search"
-                          />
-                        )}
-                      />
-                    </div>
+                    {/*
+                      fix3 CODE-21: kuryerning "Hudud" maydoni olib tashlandi —
+                      identity `updateUser` `region_id` ni e'tiborsiz qoldiradi,
+                      kuryer hududi filial biriktiruvidan keladi (R3).
+                    */}
                   </>
                 )}
 

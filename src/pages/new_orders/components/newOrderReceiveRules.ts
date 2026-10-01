@@ -16,7 +16,13 @@ export type NewOrderReceiveMode = "receive" | "transfer" | "none";
  * ota filiali yo'q, backend 400 "Source branch ota branch'i topilmadi"
  * qaytaradi. HQ buyurtmani to'g'ridan-to'g'ri qabul qiladi — POST /orders/receive.
  *
- * PICKUP/HYBRID (shuningdek REGIONAL va noma'lum tur) — hozirgidek transfer-batches.
+ * ⚠️ REGIONAL xodimi — `none` (fix3 CODE-17): REGIONAL filial transfer batch
+ * yarata olmaydi (backend 403 "REGIONAL filial transfer batch yarata
+ * olmaydi"), ya'ni "Qabul qilish" doim rad etilardi. Bunday filialda buyurtma
+ * "Biriktirish" (/dispatch) sahifasida kuryerga berilganda avtomatik qabul
+ * qilinadi (NEW → RECEIVED → yo'lda), shuning uchun tugma yashiriladi.
+ *
+ * PICKUP/HYBRID (va noma'lum tur) — hozirgidek transfer-batches.
  * Superadmin/admin — hozirgidek POST /orders/receive.
  */
 export const resolveReceiveMode = (
@@ -26,7 +32,9 @@ export const resolveReceiveMode = (
   if (role === "market") return "none";
 
   if (role === "manager" || role === "registrator") {
-    return branchType === "HQ" ? "receive" : "transfer";
+    if (branchType === "HQ") return "receive";
+    if (branchType === "REGIONAL") return "none";
+    return "transfer";
   }
 
   return "receive";

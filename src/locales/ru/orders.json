@@ -138,6 +138,7 @@
   "partialSellUnavailableInvalidQuantity": "Некорректное количество товаров — частичная продажа невозможна. Продайте полностью или отмените.",
   "partialSellDecreaseRequired": "Уменьшите количество хотя бы одного товара",
   "partialSellPriceRequired": "Введите сумму оплаты",
+  "partialSellPriceExceedsTotal": "Сумма частичной продажи не должна превышать сумму заказа",
   "decreaseQuantity": "Уменьшить количество: {{name}}",
   "increaseQuantity": "Увеличить количество: {{name}}",
   "currency": "сум",
@@ -310,6 +311,11 @@
   "extraCostApprovalPendingDescription": "Дополнительный расход {{amount}} отправлен магазину на подтверждение. Если магазин подтвердит, действие выполнится автоматически; если отклонит — заказ останется в текущем статусе.",
   "extraCostApprovalBadge": "На подтверждении",
   "extraCostApprovalSentAt": "Дополнительный расход {{amount}} отправлен на подтверждение магазину в {{time}}",
+  "extraCostApprovalSentAtAction": "{{action}}: дополнительный расход {{amount}} отправлен на подтверждение магазину в {{time}}",
+  "extraCostApprovalPendingAction": "Запрошенное действие: {{action}}",
+  "extraCostApprovalActionSell": "Продажа",
+  "extraCostApprovalActionPartlySell": "Частичная продажа",
+  "extraCostApprovalActionCancel": "Отмена",
   "sortLabel": "Сортировка:",
   "searchTruncatedWarning": "Результаты неполные — уточните поиск",
   "excel": {
@@ -403,5 +409,8 @@
   "aiRetryAgain": "Попробовать снова",
   "exactNumberMatch": "Точно",
   "exactNumberMatchTitle": "Заказ, точно совпадающий с номером в поиске",
-  "openOrderRow": "Заказ №{{id}}, {{name}}"
+  "openOrderRow": "Заказ №{{id}}, {{name}}",
+  "orderActionError": "Не удалось выполнить действие. Попробуйте снова.",
+  "rollbackCancelPostWarning": "Заказ отменён, но не добавлен в почту отменённых заказов. Добавьте его в почту вручную.",
+  "extraCostHomeNotAllowed": "При доставке на дом дополнительный расход не указывается — домашний тариф уже выше."
 }

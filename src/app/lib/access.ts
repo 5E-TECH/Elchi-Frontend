@@ -131,6 +131,29 @@ export const canDispatchPostToBranch: Predicate = anyOf(
   (state) => roleOf(state) === "registrator" && branchTypeOf(state) === "HQ",
 );
 
+/**
+ * Bekor qilingan mollarni marketga QR orqali topshirish ("Yangi buyurtmalar"
+ * → "Bekor qilinganlar" tabi va market bo'yicha topshirish sahifasi).
+ *
+ * fix3 CODE-16 / C4: HQ registratori qo'shildi. Mollar HQ omborida turadi va
+ * ularni aynan HQ registratori marketga beradi; backend topshirish endpointi
+ * (POST /orders/markets/:id/cancelled/handover) REGISTRATOR ga ruxsat beradi,
+ * ro'yxat endpointlari esa HQ registratoriga HQ dagi bekorlarni qaytaradi.
+ * Boshqa filial registratorlari — yo'q (mollar ularda turmaydi).
+ */
+export const canHandoverCancelledToMarket: Predicate = anyOf(
+  hasRole("superadmin", "admin"),
+  (state) => roleOf(state) === "registrator" && branchTypeOf(state) === "HQ",
+);
+
+/**
+ * Mahsulot YARATISH — backend POST /product `@Roles(MARKET, ADMIN, SUPERADMIN)`
+ * bilan bir xil (fix3 RBAC-17). Registrator mahsulotlar ro'yxatini ko'radi va
+ * tahrirlaydi, lekin yarata olmaydi: ilgari yaratish sahifasi unga ochiq edi
+ * va saqlash doim 403 berardi (market qidiruvi GET /users/:id ham 403).
+ */
+export const canCreateProducts: Predicate = hasRole("superadmin", "admin", "market");
+
 export const canViewCourierBulkPage: Predicate = anyOf(
   hasRole("courier"),
   managerCan("dispatch"),

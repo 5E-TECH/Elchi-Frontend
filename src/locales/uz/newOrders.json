@@ -296,5 +296,8 @@
   "batchDirection": {
     "forward": "Oldinga",
     "return": "Qaytarish"
-  }
+  },
+  "receiveViaDispatchHint": "Bu filialda buyurtmalar shu yerda qabul qilinmaydi — ularni «Biriktirish» sahifasida kuryerga bering, qabul avtomatik bajariladi.",
+  "customerEditAdminOnly": "Mijoz ma'lumotlarini faqat admin yoki superadmin o'zgartira oladi.",
+  "orderEditRoleOnly": "Buyurtmani faqat superadmin, admin yoki registrator o'zgartira oladi."
 }

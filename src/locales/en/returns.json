@@ -23,5 +23,21 @@
   "messages": {
     "branchMissing": "No branch is assigned to the current user",
     "loadFailed": "Could not load return batches"
+  },
+  "opsReturnRequests": {
+    "title": "Logistics — return requests",
+    "description": "Return requests list and approval panel.",
+    "columns": {
+      "id": "ID",
+      "order": "Order",
+      "status": "Status",
+      "courier": "Courier"
+    },
+    "approve": "Approve ({{count}})",
+    "selectHint": "Select orders in the list to approve.",
+    "approveSuccess": "Selected requests approved",
+    "approveError": "Could not approve the requests",
+    "loadError": "Could not load return requests",
+    "empty": "No return requests"
   }
 }

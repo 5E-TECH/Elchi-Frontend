@@ -37,14 +37,43 @@ describe("LogisticsOps page", () => {
     );
   });
 
-  it("calls api.post with \"post/return-requests/approve\" when Tasdiqlash is clicked", async () => {
+  it("calls api.post with \"post/return-requests/approve\" and {order_ids} of the selected rows — fix3b CODE-09", async () => {
     const user = userEvent.setup();
+    apiGetMock.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: { total: 1, groups: [{ courier_id: "56", courier: { id: "56", name: "Kuryer Ali" }, orders: [{ id: "9001", status: "waiting" }] }] },
+      },
+    });
     renderWithProviders(<LogisticsOpsPage />);
 
-    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
+    await screen.findByText("Kuryer Ali");
+    // [0] — "hammasini tanlash", [1] — 9001 qatori.
+    await user.click(screen.getAllByRole("checkbox")[1]);
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash (1)" }));
 
     await waitFor(() => {
-      expect(apiPostMock.mock.calls[0][0]).toBe("post/return-requests/approve");
+      expect(apiPostMock).toHaveBeenCalledWith("post/return-requests/approve", { order_ids: ["9001"] });
     });
+  });
+
+  it("renders return requests grouped by courier (data.groups[].orders) — fix3 CODE-09", async () => {
+    apiGetMock.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: {
+          total: 2,
+          groups: [
+            { courier_id: "56", courier: { id: "56", name: "Kuryer Ali" }, orders: [{ id: "9001", status: "waiting" }] },
+            { courier_id: null, courier: null, orders: [{ id: "9002", status: "waiting" }] },
+          ],
+        },
+      },
+    });
+    renderWithProviders(<LogisticsOpsPage />);
+
+    expect(await screen.findAllByText("9001")).not.toHaveLength(0);
+    expect(screen.getAllByText("9002")).not.toHaveLength(0);
+    expect(screen.getByText("Kuryer Ali")).toBeInTheDocument();
   });
 });

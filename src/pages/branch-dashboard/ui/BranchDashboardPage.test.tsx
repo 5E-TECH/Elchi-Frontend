@@ -119,4 +119,54 @@ describe("BranchDashboardPage", () => {
     expect(screen.getAllByText("1").length).toBeGreaterThan(0);
     expect(screen.getByTestId("top-branches")).toHaveTextContent("branches:1");
   });
+
+  const managerState = {
+    role: { id: "manager-1", role: "manager", region: null, name: "Manager" },
+    user: {
+      user: { id: "manager-user-1", branch_id: "branch-1" } as never,
+      isAuthenticated: true,
+      accessToken: "token",
+      loading: false,
+      isAppInitializing: false,
+      error: null,
+    },
+  } as const;
+
+  const withBranchDashboard = (branchDashboard: unknown) => {
+    const base = getDashboardMock();
+    getDashboardMock.mockReturnValue({
+      ...base,
+      data: { data: { ...base.data.data, branchDashboard } },
+    });
+  };
+
+  it("stats_unavailable: nollar o'rniga 'Statistika vaqtincha mavjud emas' ko'rinadi (fix3 C9)", () => {
+    const base = getDashboardMock();
+    withBranchDashboard({ ...base.data.data.branchDashboard, stats_unavailable: true });
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState as never });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Statistika vaqtincha mavjud emas — sahifani yangilang",
+    );
+    expect(screen.queryByText("Jami buyurtmalar")).not.toBeInTheDocument();
+    expect(screen.queryByText("7")).not.toBeInTheDocument();
+  });
+
+  it("filial paneli kelmasa — data.orders (boshqa doira) ga qaytmaydi (fix3 C9)", () => {
+    withBranchDashboard(null);
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState as never });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Statistika vaqtincha mavjud emas");
+    // data.orders.acceptedCount = 7 — endi ko'rsatilmaydi.
+    expect(screen.queryByText("7")).not.toBeInTheDocument();
+  });
+
+  it("stats_unavailable: false — raqamlar avvalgidek", () => {
+    const base = getDashboardMock();
+    withBranchDashboard({ ...base.data.data.branchDashboard, stats_unavailable: false });
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState as never });
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getAllByText("7").length).toBeGreaterThan(0);
+  });
 });

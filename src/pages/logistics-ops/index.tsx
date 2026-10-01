@@ -1,75 +1,103 @@
-import { memo, useState } from "react";
-import { Alert, Button, Input, Space, Table, Typography } from "antd";
+import { memo, useMemo, useState } from "react";
+import { Alert, Button, Space, Table, Typography } from "antd";
+import { useTranslation } from "react-i18next";
 import { useLogisticsCoverage } from "../../entities/logistics/logisticsCoverage";
+import { getBackendErrorMessage } from "../../shared/lib/backendError";
+import QueryErrorState from "../../shared/ui/QueryErrorState";
+import { extractReturnRequestRows, type ReturnRequestRow } from "./lib/returnRequestRows";
 
 const { Title, Text } = Typography;
 
-const columns = [
-  { title: "ID", dataIndex: "id", key: "id" },
-  { title: "Buyurtma", dataIndex: "order_id", key: "order_id" },
-  { title: "Holat", dataIndex: "status", key: "status" },
-];
-
 const LogisticsOpsPage = () => {
+  const { t } = useTranslation("returns");
   const { useGetReturnRequestsList, approveReturnRequest } = useLogisticsCoverage();
 
   const returnRequests = useGetReturnRequestsList();
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
-  const [payload, setPayload] = useState("");
+  // fix3 CODE-09 / C13: javob `data.groups[].orders` — kuryer bo'yicha guruhlangan.
+  const dataSource = extractReturnRequestRows(returnRequests.data);
 
-  const dataSource: unknown[] = Array.isArray(returnRequests.data)
-    ? (returnRequests.data as unknown[])
-    : [];
+  const columns = useMemo(
+    () => [
+      { title: t("opsReturnRequests.columns.id"), dataIndex: "id", key: "id" },
+      { title: t("opsReturnRequests.columns.order"), dataIndex: "order_id", key: "order_id" },
+      { title: t("opsReturnRequests.columns.status"), dataIndex: "status", key: "status" },
+      { title: t("opsReturnRequests.columns.courier"), dataIndex: "courier", key: "courier" },
+    ],
+    [t],
+  );
 
+  // Tanlov faqat ro'yxatda hozir bor qatorlardan — yangilangan ro'yxatda
+  // yo'qolgan qator yuborilmaydi.
+  const selectedOrderIds = dataSource
+    .filter((row) => selectedKeys.includes(row.key))
+    .map((row) => row.order_id || row.id)
+    .filter(Boolean);
+
+  /**
+   * fix3b CODE-09: tasdiqlash ilgari erkin JSON (`{"order_id": "..."}`)
+   * yuborardi, `ReturnRequestsActionRequestDto` esa faqat
+   * `{ order_ids: string[] }` qabul qiladi — har doim 400. Endi tanlangan
+   * qatorlarning buyurtma id lari yuboriladi.
+   */
   const handleApprove = () => {
-    let parsed: unknown = {};
-    if (payload) {
-      try {
-        parsed = JSON.parse(payload);
-      } catch {
-        parsed = { raw: payload };
-      }
-    }
-    approveReturnRequest.mutate(parsed);
+    if (selectedOrderIds.length === 0) return;
+    approveReturnRequest.mutate(
+      { order_ids: selectedOrderIds },
+      { onSuccess: () => setSelectedKeys([]) },
+    );
   };
+
+  const approveErrorMessage = approveReturnRequest.isError
+    ? getBackendErrorMessage(approveReturnRequest.error) ?? t("opsReturnRequests.approveError")
+    : null;
 
   return (
     <div className="mx-auto w-full max-w-[900px] px-4 pt-4 pb-28 md:pb-4">
-      <Title level={3}>Logistika — qaytarish so'rovlari</Title>
-      <Text type="secondary">
-        Qaytarish so'rovlari ro'yxati va ularni tasdiqlash paneli.
-      </Text>
+      <Title level={3}>{t("opsReturnRequests.title")}</Title>
+      <Text type="secondary">{t("opsReturnRequests.description")}</Text>
 
       <Space direction="vertical" size="middle" style={{ display: "flex", marginTop: 20 }}>
-        <Table
-          size="small"
-          rowKey={(r: any) => r.id ?? r.order_id ?? JSON.stringify(r)}
-          columns={columns}
-          dataSource={dataSource as any[]}
-          loading={returnRequests.isLoading}
-          pagination={false}
-          scroll={{ x: "max-content" }}
-        />
+        {returnRequests.isError ? (
+          <QueryErrorState
+            description={t("opsReturnRequests.loadError")}
+            onRetry={() => void returnRequests.refetch()}
+          />
+        ) : (
+          <Table<ReturnRequestRow>
+            size="small"
+            rowKey="key"
+            columns={columns}
+            dataSource={dataSource}
+            loading={returnRequests.isLoading}
+            pagination={false}
+            scroll={{ x: "max-content" }}
+            locale={{ emptyText: t("opsReturnRequests.empty") }}
+            rowSelection={{
+              selectedRowKeys: selectedKeys,
+              onChange: (keys) => setSelectedKeys(keys.map(String)),
+            }}
+          />
+        )}
 
         <Space direction="vertical" style={{ display: "flex" }}>
-          <Input
-            aria-label="approve-payload"
-            placeholder='{"order_id": "..."} (ixtiyoriy)'
-            value={payload}
-            onChange={(e) => setPayload(e.target.value)}
-          />
           <Button
             type="primary"
             loading={approveReturnRequest.isPending}
+            disabled={selectedOrderIds.length === 0}
             onClick={handleApprove}
           >
-            Tasdiqlash
+            {t("opsReturnRequests.approve", { count: selectedOrderIds.length })}
           </Button>
-          {approveReturnRequest.isSuccess ? (
-            <Alert type="success" showIcon message="So'rov muvaffaqiyatli tasdiqlandi" />
+          {selectedOrderIds.length === 0 && dataSource.length > 0 ? (
+            <Text type="secondary">{t("opsReturnRequests.selectHint")}</Text>
           ) : null}
-          {approveReturnRequest.isError ? (
-            <Alert type="error" showIcon message="Xatolik yuz berdi" />
+          {approveReturnRequest.isSuccess ? (
+            <Alert type="success" showIcon message={t("opsReturnRequests.approveSuccess")} />
+          ) : null}
+          {approveErrorMessage ? (
+            <Alert type="error" showIcon message={approveErrorMessage} />
           ) : null}
         </Space>
       </Space>

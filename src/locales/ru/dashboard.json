@@ -181,11 +181,15 @@
     "extra_cost_sell": "Доп. расход при продаже",
     "extra_cost_partly_sell": "Доп. расход при частичной продаже",
     "extra_cost_cancel": "Доп. расход при отмене",
+    "extra_cost_on_approve_sell": "При подтверждении заказ будет продан",
+    "extra_cost_on_approve_partly_sell": "При подтверждении заказ будет продан частично",
+    "extra_cost_on_approve_cancel": "При подтверждении заказ будет отменён",
     "extra_cost_requester": "Запросил",
     "extra_cost_proofs": "Доказательства",
     "extra_cost_approve": "Подтвердить",
     "extra_cost_reject": "Отклонить",
     "extra_cost_approving": "Подтверждение",
-    "extra_cost_rejecting": "Отклонение"
+    "extra_cost_rejecting": "Отклонение",
+    "extra_cost_action_error": "Не удалось выполнить запрос. Попробуйте снова."
   }
 }

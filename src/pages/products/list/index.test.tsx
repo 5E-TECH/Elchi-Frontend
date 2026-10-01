@@ -340,3 +340,15 @@ describe("ProductTable", () => {
     );
   });
 });
+
+describe("ProductTable — registrator (fix3 RBAC-17)", () => {
+  it("ro'yxat ko'rinadi, lekin 'Mahsulot yaratish' tugmasi yo'q (POST /product registratorga 403)", () => {
+    renderWithProviders(<ProductTable />, {
+      route: "/products",
+      preloadedState: { role: { id: "reg-1", role: "registrator", region: null, name: "Reg" } },
+    });
+
+    expect(screen.getByText("Olma")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mahsulot yaratish" })).not.toBeInTheDocument();
+  });
+});

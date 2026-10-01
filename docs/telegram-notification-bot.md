@@ -1,79 +1,72 @@
 # Telegram notification bot setup
 
-Bu loyiha frontend-only deploy qilinadi, shuning uchun Telegram group ID ni avtomatik olish frontenddan xavfsiz va ishonchli qilinmaydi. Eng yaxshi yechim: backend ichida Telegram bot ishlaydi va group ID ni Telegram update orqali o'zi oladi.
+Market Telegram guruhini Elchi'ga ulash — **haqiqiy (ishga tushirilgan) oqim**, 2026-10-01
+(backend fix3/fix3b CODE-02, frontend fix3b). Bot backendning `notification-service` ichida
+**long polling** (`getUpdates`) bilan ishlaydi: webhook yo'q, `setWebhook` qilinmaydi.
 
-## Admin flow
+Ulashning yagona kaliti — marketning **maxfiy** `market_tg_token`i (`group_token-<32 hex>`).
+Uni faqat SUPERADMIN/ADMIN ko'radi va marketga o'zi beradi.
 
-1. Admin `Bildirishnomalar` sahifasida market va xabar turini tanlaydi.
-2. Frontend backenddan ulash tokeni so'raydi.
-3. Backend token, bot username va Telegram deep-link qaytaradi.
-4. Admin `Botni groupga qo'shish` tugmasini bosadi.
-5. Telegram group ichida bot `/connect <token>` komandasi orqali group ID ni oladi.
-6. Backend `market_id`, `group_type`, `group_id` ni saqlaydi.
-7. Keyingi orderlarda backend shu groupga xabar yuboradi.
+## 1. Admin: market tokenini beradi
 
-## Kerakli env
+1. Superadmin yoki admin `Foydalanuvchilar` ro'yxatidan **market**ning sahifasini ochadi
+   (`UserDetailWidget`).
+2. Sahifada **"Telegram token"** kartasi bor (`widgets/user-detail/ui/MarketTelegramTokenCard.tsx`):
+   - faqat SUPERADMIN/ADMIN ko'radi, faqat market sahifasida va o'z profilida emas; boshqa rollar
+     uchun karta umuman chizilmaydi;
+   - token sukut bo'yicha yashirin (doim 16 nuqta — uzunligi ham ko'rinmaydi);
+   - **"Ko'rsatish" / "Yashirish"** va **"Nusxalash"** tugmalari (yashirin holatda ham haqiqiy
+     tokenni nusxalaydi, natija toast bilan);
+   - token bo'lmasa: "Bu marketda Telegram token hali yo'q";
+   - izoh: "Market Telegram guruhiga botni qo'shib, shu tokenni yuborsin".
+3. Admin tokenni marketga beradi.
 
-Backendda:
+Backend: token faqat `GET /users/:id` javobida (`market_tg_token`), faqat SUPERADMIN/ADMIN
+so'rovida va faqat market qatorida qaytadi. Menejer uni hech qachon ko'rmaydi (biznes qarori #5).
+Token react-query keshida (shu `GET /users/:id` javobi) faqat SA/admin sessiyasida turadi.
 
-```env
-TELEGRAM_BOT_TOKEN=123456:ABCDEF
-TELEGRAM_WEBHOOK_SECRET=random-secret
-TELEGRAM_NOTIFICATION_BOT_USERNAME=your_bot_username
-FRONTEND_URL=https://dashboard.example.com
-```
+## 2. Market: guruhni ulaydi
 
-Frontendda:
+1. Market notification botni o'z Telegram guruhiga qo'shadi.
+2. Guruhga token matnini yuboradi:
+   - `group_token-<secret>` — **yangi buyurtmalar** guruhi (`create`, sukut; `-create` qo'shimchasi ham bo'ladi);
+   - `group_token-<secret>-cancel` — **bekor qilingan buyurtmalar** guruhi.
+3. Bot guruhga javob yozadi: "<Market> uchun Telegram guruhi ulandi" yoki xato sababi (o'zbekcha).
 
-```env
-VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME=your_bot_username
-```
+Qoidalar (backend `notification-service.service.ts` — `parseGroupTokenText` / `connectGroupByTokenText`):
 
-## Backend endpointlar
+- Faqat marketning **joriy** maxfiy tokeni qabul qilinadi (`identity.market.find_by_tg_token`).
+  Eski `group_token-<marketId>` ko'rinishi **rad etiladi** ("Token formati noto'g'ri…"); noma'lum
+  token — "Token topilmadi yoki yaroqsiz".
+- Ulashdan keyin token **almashtirilmaydi** — u marketning order-bot kaliti bo'lib qoladi.
+  (`identity.market.rotate_tg_token` RPC'ni endi hech kim chaqirmaydi.)
+- Mavjud (market, guruh turi) ulanishi bot/token orqali **hech qachon qayta yozilmaydi** — faol yoki
+  nofaol bo'lsin (o'chirilgan ulanish to'sqinlik qilmaydi). Bot javobi: "Bu market uchun bu turdagi
+  guruh allaqachon ulangan — admin orqali o'zgartiring". Qayta ulash faqat admin orqali:
+  `PATCH /notifications/:id` yoki `DELETE /notifications/:id` (keyin qaytadan ulash).
+  Shu sababli guruh chatida ko'ringan token allaqachon ulangan guruhni "o'g'irlay" olmaydi.
+- Shu guruh shu turga allaqachon ulangan bo'lsa: "Bu guruh shu xabar turi uchun allaqachon ulangan".
+- Token matni bazada saqlanmaydi (`telegram_market.token = null`); guruhga xabarni env bot
+  (`TELEGRAM_BOT_TOKEN`) yuboradi. Kutilmagan xato matni guruhga chiqarilmaydi (faqat logda).
+- Eslatma (tekshirish kerak): guruhdagi oddiy (komanda bo'lmagan) matn botga faqat BotFather'da
+  privacy mode o'chirilgan bo'lsa yoki bot guruh admini bo'lsa yetib boradi.
 
-### Create connect token
+## 3. Bot komandalar
 
-`POST /notifications/connect-token`
+| Guruhda yoziladi | Bot javobi |
+|---|---|
+| `/id` yoki `/id@<bot_username>` | `Group ID: <chat.id>` |
+| `/start` (aynan shu, qo'shimchasiz) | ulash bo'yicha qisqa ko'rsatma (maxfiy token, `-cancel`) |
+| `/help` | komandalar: `/start`, `/help`, `/id`; ulangan guruhni almashtirish faqat admin orqali |
+| `group_token-…` | guruhni ulash (yuqoridagi qoidalar) |
 
-Request:
+`/start <payload>` va `/start@bot` ga javob yo'q (faqat aynan `/start`).
 
-```json
-{
-  "market_id": "12",
-  "group_type": "create"
-}
-```
+## 4. Admin qo'lda ulash (fallback)
 
-Response:
-
-```json
-{
-  "token": "8f4c2a",
-  "bot_username": "your_bot_username",
-  "deep_link": "https://t.me/your_bot_username?startgroup=8f4c2a",
-  "command": "/connect 8f4c2a",
-  "expires_at": "2026-06-22T18:00:00.000Z"
-}
-```
-
-Token backendda 10-15 daqiqa yashashi yetadi.
-
-### Telegram webhook
-
-`POST /telegram/notification/webhook`
-
-Bot groupga qo'shilganda yoki groupda xabar yozilganda Telegram shu endpointga update yuboradi. Backend update ichidan `message.chat.id` ni oladi.
-
-Bot komandalar:
-
-- `/connect <token>`: tokenni tekshiradi va notification config yaratadi.
-- `/id`: group ID ni javob qilib yuboradi; bu fallback uchun qulay.
-
-### Existing notification create
-
-`POST /notifications`
-
-Manual fallback uchun hozirgi kontrakt saqlanadi:
+`Bildirishnomalar` sahifasi (`/notifications`; frontendda faqat **superadmin** ochadi — backend
+route'lari SUPERADMIN/ADMIN) → "Bildirishnoma qo'shish" modali (`NotificationFormModal`):
+market + Telegram group ID + xabar turi → `POST /notifications`:
 
 ```json
 {
@@ -83,80 +76,59 @@ Manual fallback uchun hozirgi kontrakt saqlanadi:
 }
 ```
 
-`group_type` faqat `create` yoki `cancel` bo'ladi.
+`group_type` faqat `create` yoki `cancel`. Group ID ni guruhda `/id` yozib olish mumkin; bot o'sha
+guruhga qo'shilgan bo'lishi kerak. (Modaldagi "Group ID ni qanday olish mumkin?" yordam matni hali
+"botga /id komandasi qo'shilsa…" deydi — `/id` endi ishlaydi.)
 
-## Minimal bot logic
+Modaldagi eski **"Token orqali ulash"** bo'limi olib tashlandi (fix3b): u
+`POST /notifications/connect-by-token` ga `{ token }` yuborardi va har doim 400 olardi.
 
-```ts
-async function handleTelegramUpdate(update) {
-  const message = update.message || update.channel_post;
-  if (!message?.chat?.id || !message?.text) return;
+## 5. Backend endpointlar
 
-  const chatId = String(message.chat.id);
-  const text = message.text.trim();
+| Endpoint | Rollar | Izoh |
+|---|---|---|
+| `GET /notifications`, `GET /notifications/:id` | SUPERADMIN, ADMIN | ulanishlar ro'yxati |
+| `POST /notifications` | SUPERADMIN, ADMIN | qo'lda ulash (yuqoridagi tana) |
+| `PATCH /notifications/:id`, `DELETE /notifications/:id` | SUPERADMIN, ADMIN | qayta ulashning yagona yo'li |
+| `POST /notifications/connect-by-token` | SUPERADMIN, ADMIN, REGISTRATOR | tana `{ "text": "group_token-<secret>[-cancel]", "group_id": "-100…" }` — ikkalasi majburiy; bot bilan bir xil qoidalar |
+| `POST /notifications/send` | SUPERADMIN, ADMIN, REGISTRATOR | guruh(lar)ga qo'lda xabar |
 
-  if (text === "/id" || text.startsWith("/id@")) {
-    await telegramSendMessage(chatId, `Group ID: ${chatId}`);
-    return;
-  }
+Frontendda `connect-by-token` ni chaqiradigan UI yo'q: `useConnectNotificationByToken` hooki
+`{ text, group_id }` ga moslangan, lekin ishlatilmaydi; `entities/coverage/miscCoverage.ts`
+dagi coverage hooki erkin tana yuboradi.
 
-  const match = text.match(/^\/connect(?:@\w+)?\s+([A-Za-z0-9_-]+)$/);
-  if (!match) return;
+**Avtomatik xabarlar:** hozircha hech bir servis buyurtma yaratilganda yoki bekor qilinganda ulangan
+guruhga **avtomatik** xabar yubormaydi — faqat `POST /notifications/send` va admin
+`POST /notifications/dispatch` (ixtiyoriy telegram relay). Bu alohida qaror.
 
-  const token = match[1];
-  const connectToken = await findValidConnectToken(token);
+## 6. Kerakli env
 
-  if (!connectToken) {
-    await telegramSendMessage(chatId, "Token noto'g'ri yoki muddati tugagan.");
-    return;
-  }
+Backend (`notification-service`, `.env.example`):
 
-  await createOrUpdateNotification({
-    market_id: connectToken.market_id,
-    group_type: connectToken.group_type,
-    group_id: chatId,
-  });
-
-  await markConnectTokenUsed(token);
-  await telegramSendMessage(chatId, "✅ Bildirishnomalar shu groupga ulandi.");
-}
+```env
+# Notification bot (guruh ulash, /id). Bo'sh bo'lsa listener o'chiq.
+TELEGRAM_BOT_TOKEN=
+# Order-create bot (alohida BotFather tokeni). Bo'sh bo'lsa o'chiq.
+ORDER_BOT_TOKEN=
+ORDER_BOT_WEBAPP_URL=
 ```
 
-## Telegram send helper
+Frontend:
 
-```ts
-async function telegramSendMessage(chatId, text) {
-  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: "HTML",
-      disable_web_page_preview: true,
-    }),
-  });
-}
+```env
+# "Botni Telegram groupga qo'shish" tugmasi uchun (https://t.me/<bot>?startgroup=notification)
+VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME=
 ```
 
-## Webhook sozlash
+**Prod holati (2026-10-01):** `VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME` hech bir frontend env
+faylida yo'q — modal "Bot username sozlanmagan" ogohlantirishini ko'rsatadi. Prod backendda
+`TELEGRAM_BOT_TOKEN` hali placeholder, `ORDER_BOT_TOKEN` qo'yilmagan — ops haqiqiy tokenlarni
+qo'ymaguncha ikkala bot ham ishlamaydi. Tokenlarni repoga yozmang.
 
-Backend deploy bo'lgandan keyin bir marta:
+## Mavjud EMAS
 
-```bash
-curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{"url":"https://api.example.com/telegram/notification/webhook","secret_token":"random-secret"}'
-```
-
-Webhook request kelganda `X-Telegram-Bot-Api-Secret-Token` headerini `TELEGRAM_WEBHOOK_SECRET` bilan solishtirish kerak.
-
-## Frontend UX talabi
-
-Ideal UI:
-
-- Asosiy flow: market + xabar turi tanlanadi, keyin backenddan token olinadi.
-- Group ID input asosiy ko'rinmasin; faqat `Qo'lda qo'shish` fallback ichida tursin.
-- Bot username bo'lsa `https://t.me/<bot_username>?startgroup=<token>` linki ochiladi.
-- Ulanishdan keyin frontend notifications listni refetch qiladi.
-
+Bu hujjatning avvalgi versiyasidagi reja amalga oshirilmagan va backendda yo'q:
+`POST /notifications/connect-token` (10–15 daqiqalik token), deep-link `?startgroup=<token>`,
+`/connect <token>` komandasi, `POST /telegram/notification/webhook`, `TELEGRAM_WEBHOOK_SECRET`,
+`TELEGRAM_NOTIFICATION_BOT_USERNAME` (backend env). Ulash faqat yuqoridagi maxfiy token +
+`/id` + admin `POST /notifications` orqali.

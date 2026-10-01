@@ -329,8 +329,9 @@ const AnalysisTab = () => {
   const queryParams = useMemo(() => {
     const params: Record<string, string | number> = {};
 
-    if (fromDate) params.fromDate = `${fromDate}T00:00:00.000Z`;
-    if (toDate) params.toDate = `${toDate}T23:59:59.999Z`;
+    // C2 / CODE-22: oddiy `YYYY-MM-DD` — backend uni Toshkent kuni deb oladi.
+    if (fromDate) params.fromDate = fromDate;
+    if (toDate) params.toDate = toDate;
 
     return params;
   }, [fromDate, toDate]);

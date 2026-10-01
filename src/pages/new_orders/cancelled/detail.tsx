@@ -17,7 +17,12 @@ import {
   AlertTriangle,
   XCircle,
 } from "lucide-react";
-import { extractCancelledOrders } from "./utils";
+import {
+  CANCELLED_MANUAL_REASONS,
+  DEFAULT_CANCELLED_MANUAL_REASON,
+  extractCancelledOrders,
+  toCancelledManualReason,
+} from "./utils";
 import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import ScannerActionButton from "../../../shared/components/ScannerActionButton";
 import ScannerCameraModal from "../../../shared/components/ScannerCameraModal";
@@ -284,14 +289,19 @@ const CancelledMarketDetail = () => {
     role === "admin" ||
     role === "manager" ||
     role === "registrator";
+  // Qiymat — backend enum kodi, yorliq — tarjima (fix3 FE-RET-05).
   const manualReasonOptions = useMemo(
-    () => [
-      t("cancelledManualReasonTorn"),
-      t("cancelledManualReasonUnreadable"),
-      t("cancelledManualReasonMissing"),
-      t("cancelledManualReasonWet"),
-    ],
+    () =>
+      CANCELLED_MANUAL_REASONS.map((reason) => ({
+        value: reason.value,
+        label: t(reason.labelKey),
+      })),
     [t],
+  );
+  const getManualReasonLabel = useCallback(
+    (value: string) =>
+      manualReasonOptions.find((option) => option.value === value)?.label ?? value,
+    [manualReasonOptions],
   );
   const handoverQrValue = handoverQr?.payload || handoverQr?.token || "";
   const handoverQrImage = handoverQr?.image || "";
@@ -471,25 +481,26 @@ const CancelledMarketDetail = () => {
       next.add(manualConfirmOrder.id);
       return next;
     });
+    const reasonCode = toCancelledManualReason(manualReason);
     setManualOverrideReasons((previous) => ({
       ...previous,
-      [manualConfirmOrder.id]: manualReason,
+      [manualConfirmOrder.id]: reasonCode,
     }));
     notificationApi.warning({
       message: t("cancelledManualSelectSuccess"),
-      description: `#${manualConfirmOrder.id}${manualReason ? ` · ${manualReason}` : ""}`,
+      description: `#${manualConfirmOrder.id} · ${getManualReasonLabel(reasonCode)}`,
       placement: "topRight",
       duration: 3,
     });
     setManualConfirmOrder(null);
     setManualReason("");
-  }, [canManualSelectDamagedQr, manualConfirmOrder, manualReason, notificationApi, selectedIds, t]);
+  }, [canManualSelectDamagedQr, getManualReasonLabel, manualConfirmOrder, manualReason, notificationApi, selectedIds, t]);
 
   const openManualSelectModal = useCallback((order: OrderListItem) => {
     if (!canManualSelectDamagedQr || selectedIds.has(order.id)) return;
     setManualConfirmOrder(order);
-    setManualReason(manualReasonOptions[0] ?? "");
-  }, [canManualSelectDamagedQr, manualReasonOptions, selectedIds]);
+    setManualReason(DEFAULT_CANCELLED_MANUAL_REASON);
+  }, [canManualSelectDamagedQr, selectedIds]);
 
   const toggleManualOrderSelection = useCallback((order: OrderListItem) => {
     if (!canManualSelectDamagedQr) return;
@@ -552,7 +563,8 @@ const CancelledMarketDetail = () => {
       .filter((orderId) => manualSelectedIds.has(orderId))
       .map((orderId) => ({
         order_id: orderId,
-        reason: manualOverrideReasons[orderId] || t("cancelledManualSelect"),
+        // Faqat enum kodi — tarjima yoki "QR buzilgan" fallback'i EMAS (FE-RET-05).
+        reason: toCancelledManualReason(manualOverrideReasons[orderId]),
       }));
 
     handoverCancelledOrders.mutate({
@@ -894,8 +906,8 @@ const CancelledMarketDetail = () => {
                   className="min-h-12 w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 text-base md:text-sm font-bold text-maindark outline-none transition focus:border-main focus:ring-4 focus:ring-main/10 dark:border-white/10 dark:bg-maindark dark:text-white"
                 >
                   {manualReasonOptions.map((reason) => (
-                    <option key={reason} value={reason}>
-                      {reason}
+                    <option key={reason.value} value={reason.value}>
+                      {reason.label}
                     </option>
                   ))}
                 </select>

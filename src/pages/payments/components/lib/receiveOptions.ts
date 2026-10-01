@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useCashBox } from "../../../../entities/payments";
 import { useUser } from "../../../../entities/user/api/userApi";
+import { useBranches } from "../../../../entities/branch/api/useBranches";
 
 /**
  * "QABUL QILINISHI KERAK" OYNASI QATORLARI — /payments kartasi va "Asosiy
@@ -10,11 +11,16 @@ import { useUser } from "../../../../entities/user/api/userApi";
  * takroriy mapper'lar bor edi).
  *
  * Kim nimani ko'radi:
- *  - superadmin/admin: filial menejerlari (filial kassasi → Asosiy kassa) va
- *    HQ kuryerlari (kuryer kassasi → Asosiy kassa). Filial kuryerlari bu
+ *  - superadmin/admin: filial menejerlari (filial kassasi → Asosiy kassa),
+ *    menejeri biriktirilmagan, lekin HQ'ga qarzi bor filiallar va HQ
+ *    kuryerlari (kuryer kassasi → Asosiy kassa). Filial kuryerlari bu
  *    ro'yxatda HECH QACHON chiqmaydi — ularning puli kuryer → filial
  *    menejeri → HQ yo'li bilan keladi;
  *  - menejer: o'z filiali kuryerlari (avvalgidek).
+ *
+ * Faol bo'lmagan (bloklangan) menejer/kuryer ham chiqadi, agar uning summasi
+ * noldan farq qilsa (FE-PAY-13, CODE-19): karta summasi ularni ham o'z ichiga
+ * oladi, ro'yxatdan yashirilsa pulni UI'dan qabul qilib bo'lmasdi.
  *
  * ⚠️ `key` = `${kind}:${id}`. Filial va foydalanuvchi ID lari bitta raqamli
  * fazoda (filial 15 va kuryer 15 bo'lishi mumkin), PopupSelect esa kalitni
@@ -36,7 +42,25 @@ export type ReceiveOption = {
   region: string;
   branch_name: string;
   amount: number;
+  /** Menejer/kuryer faol emas (bloklangan) — ro'yxatda belgi bilan ko'rsatiladi. */
+  is_inactive: boolean;
 };
+
+/**
+ * Foydalanuvchi holati (identity: `active` | `inactive`; HQ kuryerlari
+ * ro'yxatida `blocked` ham bo'lishi mumkin). Holat kelmasa — faol deb olinadi.
+ */
+export const isInactiveStatus = (status: unknown) => {
+  const value = typeof status === "string" ? status.trim().toLowerCase() : "";
+  return Boolean(value) && value !== "active";
+};
+
+/**
+ * Pul oynalarida qator ko'rsatiladimi: faol qator har doim; faol bo'lmagani —
+ * faqat summasi noldan farq qilsa (aks holda ro'yxat bo'sh qatorlarga to'lardi).
+ */
+export const isListedSettlementRow = (row: { is_inactive: boolean; amount: number }) =>
+  !row.is_inactive || row.amount !== 0;
 
 export const RECEIVE_SEARCH_KEYS: (keyof ReceiveOption)[] = [
   "name",
@@ -124,45 +148,99 @@ const uniqueByKey = (options: ReceiveOption[]) => {
 };
 
 /**
+ * Faol qatorlar oldinga (barqaror tartib) — bitta filialda eski (bloklangan)
+ * va yangi (faol) menejer bo'lsa, takror tashlanganda faoli qoladi.
+ */
+const activeFirst = (options: ReceiveOption[]) =>
+  [...options].sort((left, right) => Number(left.is_inactive) - Number(right.is_inactive));
+
+/**
  * GET /managers → filial qatorlari (`id` = filial ID). HQ (bosh ofis) filiali
  * tashlanadi: HQ'da menejer bo'lmaydi, HQ puli HQ kuryerlari qatorlarida
  * chiqadi, HQ qatorini tanlash esa branch-to-main'ni HQ'ning o'ziga yuborardi.
  */
 export const toBranchManagerOptions = (source: unknown, t: Translate): ReceiveOption[] =>
   uniqueByKey(
-    toDataItems(source).flatMap((manager): ReceiveOption[] => {
-      const m = asRecord(manager);
-      const branch = asRecord(m.branch);
-      const nestedBranch = asRecord(branch.branch);
-      const resolvedBranch = Object.keys(nestedBranch).length ? nestedBranch : branch;
-      const branchType = (getText(resolvedBranch, "type") || getText(branch, "type")).toUpperCase();
-      if (branchType === "HQ") return [];
+    activeFirst(
+      toDataItems(source).flatMap((manager): ReceiveOption[] => {
+        const m = asRecord(manager);
+        const branch = asRecord(m.branch);
+        const nestedBranch = asRecord(branch.branch);
+        const resolvedBranch = Object.keys(nestedBranch).length ? nestedBranch : branch;
+        const branchType = (getText(resolvedBranch, "type") || getText(branch, "type")).toUpperCase();
+        if (branchType === "HQ") return [];
 
-      const id =
-        getText(m, "branch_id", "branchId") ||
-        getText(resolvedBranch, "id") ||
-        getText(branch, "id");
-      if (!id) return [];
+        const id =
+          getText(m, "branch_id", "branchId") ||
+          getText(resolvedBranch, "id") ||
+          getText(branch, "id");
+        if (!id) return [];
 
-      const region = asRecord(resolvedBranch.region ?? branch.region ?? m.region);
-      const cashbox = asRecord(
-        resolvedBranch.cashbox ?? branch.cashbox ?? m.cashbox ?? m.cashBox ?? m.cash_box ?? m.kassa,
-      );
-      const phone = getText(m, "phone_number", "phone");
-      const branchName = getText(resolvedBranch, "name");
-      const regionName = getText(region, "name") || t("unknown");
+        const region = asRecord(resolvedBranch.region ?? branch.region ?? m.region);
+        const cashbox = asRecord(
+          resolvedBranch.cashbox ?? branch.cashbox ?? m.cashbox ?? m.cashBox ?? m.cash_box ?? m.kassa,
+        );
+        const phone = getText(m, "phone_number", "phone");
+        const branchName = getText(resolvedBranch, "name");
+        const regionName = getText(region, "name") || t("unknown");
+
+        return [
+          {
+            key: `branch:${id}`,
+            kind: "branch",
+            id,
+            name: resolveName(m, phone, t),
+            phone_number: phone,
+            subtitle: branchName || regionName,
+            region: regionName,
+            branch_name: branchName,
+            amount: getNumber(m, MANAGER_AMOUNT_KEYS, getNumber(cashbox, MANAGER_AMOUNT_KEYS)),
+            is_inactive: isInactiveStatus(m.status),
+          },
+        ];
+      }),
+    ),
+  ).filter(isListedSettlementRow);
+
+/**
+ * CODE-27: GET /branches (karta summasi bilan bir manba — faol filiallar,
+ * `berilishi_kerak` = filialning HQ'ga qarzi) → menejer qatorlarida YO'Q,
+ * lekin qarzi bor filiallar. Ilgari karta ularning pulini ham qo'shardi,
+ * oynada esa ular umuman chiqmasdi (pulni hech kim tanlay olmasdi).
+ */
+export const toUnmanagedBranchOptions = (
+  source: unknown,
+  listedKeys: ReadonlySet<string>,
+  t: Translate,
+): ReceiveOption[] =>
+  uniqueByKey(
+    toDataItems(source).flatMap((branch): ReceiveOption[] => {
+      const b = asRecord(branch);
+      if (getText(b, "type").toUpperCase() === "HQ") return [];
+      if (isInactiveStatus(b.status)) return [];
+
+      const id = getText(b, "id");
+      const key = `branch:${id}`;
+      if (!id || listedKeys.has(key)) return [];
+
+      const amount = getNumber(b, ["berilishi_kerak", "olinishi_kerak"]);
+      if (!(amount > 0)) return [];
+
+      const branchName = getText(b, "name");
+      const regionName = getText(asRecord(b.region), "name") || t("unknown");
 
       return [
         {
-          key: `branch:${id}`,
+          key,
           kind: "branch",
           id,
-          name: resolveName(m, phone, t),
-          phone_number: phone,
-          subtitle: branchName || regionName,
+          name: branchName || regionName,
+          phone_number: getText(b, "phone_number", "phone"),
+          subtitle: t("branchWithoutManager"),
           region: regionName,
           branch_name: branchName,
-          amount: getNumber(m, MANAGER_AMOUNT_KEYS, getNumber(cashbox, MANAGER_AMOUNT_KEYS)),
+          amount,
+          is_inactive: false,
         },
       ];
     }),
@@ -192,10 +270,11 @@ export const toBranchCourierOptions = (source: unknown, t: Translate): ReceiveOp
           region: regionName,
           branch_name: "",
           amount: getNumber(c, COURIER_AMOUNT_KEYS, getNumber(cashbox, COURIER_AMOUNT_KEYS)),
+          is_inactive: isInactiveStatus(c.status),
         },
       ];
     }),
-  );
+  ).filter(isListedSettlementRow);
 
 /**
  * GET /finance/cashbox/hq-couriers → HQ kuryeri qatorlari. Summa — kuryer
@@ -223,6 +302,7 @@ export const toHqCourierOptions = (source: unknown, t: Translate): ReceiveOption
           region: "",
           branch_name: "",
           amount: getNumber(c, ["balance"], getNumber(asRecord(c.cashbox), ["balance"])),
+          is_inactive: isInactiveStatus(c.status),
         },
       ];
     }),
@@ -253,34 +333,47 @@ type UseReceiveOptionsParams = {
   enabled: boolean;
 };
 
+/**
+ * Karta summasi (`cashbox/all-info` → `branch_managers_receivable`) bilan bir
+ * xil manba: faol filiallar ro'yxati. Kalit kassa sahifasidagi so'rov bilan bir
+ * xil — kesh ulashiladi va to'lovdan keyin ["branches"] bilan yangilanadi.
+ */
+export const RECEIVE_BRANCHES_PARAMS = { status: "active", page: 1, limit: 100 } as const;
+
 export const useReceiveOptions = ({ isManagerRole, enabled }: UseReceiveOptionsParams) => {
   const { t } = useTranslation("payments");
   const { useGetManagers, useGetCouriers } = useUser();
   const { useGetHqCourierReceivables } = useCashBox();
 
+  // `status: "active"` YO'Q: bloklangan menejer/kuryerda pul qolgan bo'lsa ham
+  // u qabul qilinishi kerak (karta summasi uni o'z ichiga oladi).
   const managersQuery = useGetManagers(
-    { status: "active", limit: FULL_LIST_LIMIT },
+    { limit: FULL_LIST_LIMIT },
     enabled && !isManagerRole,
   );
+  const branchesQuery = useBranches({ ...RECEIVE_BRANCHES_PARAMS }, enabled && !isManagerRole);
   const hqCouriersQuery = useGetHqCourierReceivables(enabled && !isManagerRole);
   const couriersQuery = useGetCouriers(
-    { status: "active", limit: FULL_LIST_LIMIT },
+    { limit: FULL_LIST_LIMIT },
     enabled && isManagerRole,
   );
 
-  const options = useMemo<ReceiveOption[]>(
-    () =>
-      isManagerRole
-        ? toBranchCourierOptions(couriersQuery.data, t)
-        : [
-            ...toBranchManagerOptions(managersQuery.data, t),
-            ...toHqCourierOptions(hqCouriersQuery.data, t),
-          ],
-    [couriersQuery.data, hqCouriersQuery.data, isManagerRole, managersQuery.data, t],
-  );
+  const options = useMemo<ReceiveOption[]>(() => {
+    if (isManagerRole) return toBranchCourierOptions(couriersQuery.data, t);
+
+    const managerRows = toBranchManagerOptions(managersQuery.data, t);
+    const listedKeys = new Set(managerRows.map((row) => row.key));
+    return [
+      ...managerRows,
+      ...toUnmanagedBranchOptions(branchesQuery.data, listedKeys, t),
+      ...toHqCourierOptions(hqCouriersQuery.data, t),
+    ];
+  }, [branchesQuery.data, couriersQuery.data, hqCouriersQuery.data, isManagerRole, managersQuery.data, t]);
 
   return {
     options,
+    // Menejersiz filiallar qo'shimcha qatorlar — ularni kutib asosiy ro'yxat
+    // ushlab turilmaydi.
     isLoading: isManagerRole
       ? couriersQuery.isLoading
       : managersQuery.isLoading || hqCouriersQuery.isLoading,

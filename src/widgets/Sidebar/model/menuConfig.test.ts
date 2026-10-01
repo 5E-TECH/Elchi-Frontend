@@ -130,12 +130,18 @@ describe("registrator menyusi — /dispatch (2026-10-01)", () => {
     expect(registratorPaths("HQ")).toContain("/dispatch");
   });
 
-  it.each(["REGIONAL", "HYBRID", "PICKUP"] as BranchType[])(
+  it.each(["REGIONAL", "HYBRID"] as BranchType[])(
     "%s registratori menyusida /dispatch hozirgidek bor",
     (type) => {
       expect(registratorPaths(type)).toContain("/dispatch");
     },
   );
+
+  it("PICKUP registratori menyusida /dispatch yo'q — kuryersiz filial (fix3 CODE-21)", () => {
+    expect(registratorPaths("PICKUP")).toEqual(
+      SIDEBAR_CONFIG.registrator.map((item) => item.to).filter((path) => path !== "/dispatch"),
+    );
+  });
 
   it("filial turi noma'lum registratorda /dispatch yo'q — marshrut guardi ham rad etadi", () => {
     expect(registratorPaths()).toEqual(
@@ -143,10 +149,11 @@ describe("registrator menyusi — /dispatch (2026-10-01)", () => {
     );
   });
 
-  it("registratorCanDispatch: faqat filial turi aniq bo'lsa", () => {
-    for (const type of ["HQ", "REGIONAL", "HYBRID", "PICKUP"] as BranchType[]) {
+  it("registratorCanDispatch: faqat kuryeri bor filial turida (HQ/REGIONAL/HYBRID)", () => {
+    for (const type of ["HQ", "REGIONAL", "HYBRID"] as BranchType[]) {
       expect(registratorCanDispatch(userWithBranchType(type)), type).toBe(true);
     }
+    expect(registratorCanDispatch(userWithBranchType("PICKUP"))).toBe(false);
     expect(registratorCanDispatch(null)).toBe(false);
     expect(registratorCanDispatch(undefined)).toBe(false);
     expect(registratorCanDispatch({} as never)).toBe(false);

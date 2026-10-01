@@ -36,6 +36,7 @@ import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
 import PageContainer from "../../../shared/ui/PageContainer";
+import { canCreateProducts } from "../../../app/lib/access";
 
 interface Product {
   id: number;
@@ -210,6 +211,8 @@ const ProductTable = () => {
   const profile = useSelector((state: RootState) => state.user.user);
   const isRoleResolved = Boolean(roleState.role);
   const isMarketRole = roleState.role === "market";
+  // fix3 RBAC-17: registrator yarata olmaydi (POST /product unga 403).
+  const canCreate = useSelector(canCreateProducts);
   const marketUserId = roleState.id ?? profile?.id;
   const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -589,26 +592,28 @@ const ProductTable = () => {
           titleClassName="text-[22px]"
           descriptionClassName="text-[13.5px]"
         />
-        <Button
-          label={t("create")}
-          icon={<Plus />}
-          onClick={() => {
-            if (isMarketRole) {
-              if (!marketUserId) {
-                notificationApi.warning({
-                  message: t("marketNotResolved"),
-                  description: t("marketNotResolvedDescription"),
-                  placement: "topRight",
-                });
+        {canCreate ? (
+          <Button
+            label={t("create")}
+            icon={<Plus />}
+            onClick={() => {
+              if (isMarketRole) {
+                if (!marketUserId) {
+                  notificationApi.warning({
+                    message: t("marketNotResolved"),
+                    description: t("marketNotResolvedDescription"),
+                    placement: "topRight",
+                  });
+                  return;
+                }
+                navigate(`/products/create-product/${marketUserId}`);
                 return;
               }
-              navigate(`/products/create-product/${marketUserId}`);
-              return;
-            }
 
-            setShowMarketSelect(true);
-          }}
-        />
+              setShowMarketSelect(true);
+            }}
+          />
+        ) : null}
       </div>
 
       {/* Filter Bar */}

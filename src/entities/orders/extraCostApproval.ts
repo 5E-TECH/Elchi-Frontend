@@ -2,6 +2,11 @@ import { useSyncExternalStore } from "react";
 
 export type ExtraCostAction = "sell" | "partly_sell" | "cancel";
 
+const EXTRA_COST_ACTIONS: readonly ExtraCostAction[] = ["sell", "partly_sell", "cancel"];
+
+export const isExtraCostAction = (value: unknown): value is ExtraCostAction =>
+  typeof value === "string" && EXTRA_COST_ACTIONS.includes(value as ExtraCostAction);
+
 export interface PendingExtraCostApproval {
   orderId: string;
   action: ExtraCostAction;
@@ -133,10 +138,16 @@ export const resolveOrderActionResponse = (
     return;
   }
 
-  const approval = (response as { data?: { approval?: { amount?: unknown; createdAt?: unknown } } }).data?.approval;
+  const approval = (
+    response as { data?: { approval?: { action?: unknown; amount?: unknown; createdAt?: unknown } } }
+  ).data?.approval;
+  const approvalAction = approval?.action;
   recordPendingExtraCostApproval({
     orderId: order.id,
-    action,
+    // fix3b M3: market AYNAN shu tasdiq amalini bajaradi — javobdagi amal
+    // yoziladi (eski backend eski tasdiqni qaytarardi: masalan bekor qilish
+    // so'ralganda kutilayotgan SOTISH). Javobda amal bo'lmasa — so'ralgani.
+    action: isExtraCostAction(approvalAction) ? approvalAction : action,
     amount: Number(approval?.amount ?? extraCost) || extraCost,
     requestedAt: typeof approval?.createdAt === "string" ? approval.createdAt : new Date().toISOString(),
     orderStatus: String(order.status ?? ""),

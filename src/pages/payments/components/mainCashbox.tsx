@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import {
   Wallet,
   Download,
+  LogIn,
   LogOut,
   Banknote,
   ArrowLeftRight,
@@ -34,12 +35,14 @@ import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import {
   RECEIVE_SEARCH_KEYS,
   getReceiveDetailTarget,
+  isInactiveStatus,
+  isListedSettlementRow,
   useReceiveOptions,
   type ReceiveOption,
 } from "./lib/receiveOptions";
+import InactiveBadge from "./InactiveBadge";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
-import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -174,6 +177,17 @@ const ACTIONS: {
   },
 ];
 
+/**
+ * Backend'da hali ishlaydigan yo'li yo'q amallar — ko'rsatilmaydi (har bosishda
+ * xato berardi):
+ *  - "Maosh to'lash" (FE-PAY-07): POST /finance/salary maosh SOZLAMASINI
+ *    yaratadi ({ user_id, salary_amount, have_to_pay?, payment_day? }), pul
+ *    to'lamaydi; popup esa { amount, type, comment, source_user_id } yuborib
+ *    har doim 400 olardi (menejer — 403). Maosh to'lovi endpoint'i paydo
+ *    bo'lguncha vaqtincha "Kassadan chiqim" ishlatiladi.
+ */
+const UNAVAILABLE_ACTIONS: ReadonlySet<ActionLabel> = new Set<ActionLabel>(["paySalary"]);
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const Skeleton = ({ className }: { className?: string }) => (
@@ -193,14 +207,25 @@ const MainCashbox = () => {
   const [isMarketPopupOpen, setIsMarketPopupOpen] = useState(false);
   const [isSpendPopupOpen, setIsSpendPopupOpen] = useState(false);
   const [isRefillPopupOpen, setIsRefillPopupOpen] = useState(false);
-  const [isCloseShiftPopupOpen, setIsCloseShiftPopupOpen] = useState(false);
+  // Yopilayotgan smena ID si — "Smenani yopish" bosilgan paytdagi ochiq smena
+  // (oyna ochiq turganda fon so'rovi uni almashtirib yubormasin).
+  const [closingShiftId, setClosingShiftId] = useState<string | null>(null);
   const [draftHistoryFrom, setDraftHistoryFrom] = useState("");
   const [draftHistoryTo, setDraftHistoryTo] = useState("");
   const navigate = useNavigate();
   const role = useSelector((state: RootState) => state.role.role);
-  const user = useSelector((state: RootState) => state.user.user);
-  const isManagerRole = String(role).toLowerCase() === "manager";
-  const branchType = getUserBranchType(user);
+  const profileUserId = useSelector((state: RootState) => state.user.user?.id);
+  const roleUserId = useSelector((state: RootState) => state.role.id);
+  const normalizedRole = String(role).toLowerCase();
+  const isManagerRole = normalizedRole === "manager";
+  // FE-PAY-06: smena ochish/yopish — faqat superadmin/admin (gateway menejerga
+  // 403 qaytaradi). Smena foydalanuvchining o'ziga yoziladi (`opened_by` /
+  // `closed_by` = o'z ID si); ID noma'lum bo'lsa tugma ko'rsatilmaydi.
+  const currentUserId = String(profileUserId ?? roleUserId ?? "").trim();
+  const shiftUserId =
+    (normalizedRole === "superadmin" || normalizedRole === "admin") && /^\d+$/.test(currentUserId)
+      ? currentUserId
+      : "";
   const { apiRequest } = useAppNotification();
 
   const { useGetUser } = useUser();
@@ -208,11 +233,25 @@ const MainCashbox = () => {
   const {
     cashboxSpand,
     cashboxFill,
+    openShift,
     closeShift,
+    useGetCurrentShift,
     useGetCashBoxInfo,
     useGetFinanceHistory,
     useGetCashBoxMain,
   } = useCashBox();
+  const currentShiftQuery = useGetCurrentShift(shiftUserId, Boolean(shiftUserId));
+  // Ochiq smena aniq ma'lum bo'lgandagina tugma chiqadi: so'rov kutilayotgan
+  // yoki xato bergan paytda noto'g'ri amal (ochiq smenani qayta ochish /
+  // yo'q smenani yopish) taklif qilinmaydi.
+  const isShiftStateKnown = Boolean(shiftUserId) && currentShiftQuery.isSuccess;
+  const openShiftId = useMemo(() => {
+    const openRow = toDataItems(currentShiftQuery.data)
+      .map(asRecord)
+      .find((item) => String(item.status ?? "").toLowerCase() === "open");
+    const id = openRow?.id;
+    return id === undefined || id === null || id === "" ? null : String(id);
+  }, [currentShiftQuery.data]);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   const { data: usersData, isLoading: usersLoading } = useGetUser(
@@ -226,8 +265,10 @@ const MainCashbox = () => {
     isLoading: isReceiveLoading,
     description: receiveDescription,
   } = useReceiveOptions({ isManagerRole, enabled: isBranchManagerPopupOpen });
+  // `status: "active"` YO'Q (FE-PAY-13): bloklangan, lekin puli qolgan
+  // market ham to'lanishi kerak — u belgi bilan ko'rsatiladi.
   const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
-    { status: "active", limit: FULL_LIST_LIMIT },
+    { limit: FULL_LIST_LIMIT },
     isMarketPopupOpen,
   );
   const mainCashboxParams = useMemo(
@@ -278,8 +319,9 @@ const MainCashbox = () => {
               cashbox.balance ??
               item.amount,
           ),
+          is_inactive: isInactiveStatus(item.status),
         };
-      }).filter((market) => market.id),
+      }).filter((market) => market.id && isListedSettlementRow(market)),
     [marketsData],
   );
 
@@ -392,14 +434,14 @@ const MainCashbox = () => {
   }, []);
 
   const visibleActions = useMemo(() => {
-    const shouldHideMarketAction =
-      role === "manager" &&
-      (branchType === "REGIONAL" || branchType === "HYBRID");
+    const availableActions = ACTIONS.filter((action) => !UNAVAILABLE_ACTIONS.has(action.label));
+    // "Marketga to'lov" (POST /finance/cashbox/payment/market) faqat
+    // SUPERADMIN/ADMIN uchun — menejerga (HQ menejeri ham) backend 403
+    // qaytaradi, shuning uchun filial turidan qat'i nazar ko'rsatilmaydi.
+    if (!isManagerRole) return availableActions;
 
-    if (!shouldHideMarketAction) return ACTIONS;
-
-    return ACTIONS.filter((action) => action.label !== "payToMarket");
-  }, [role, branchType]);
+    return availableActions.filter((action) => action.label !== "payToMarket");
+  }, [isManagerRole]);
 
   const handleBranchManagerSelect = useCallback(
     (item: ReceiveOption) => {
@@ -480,19 +522,34 @@ const MainCashbox = () => {
     [apiRequest, cashboxFill, t],
   );
 
+  const handleOpenShift = useCallback(async () => {
+    if (!shiftUserId || openShift.isPending) return;
+    await apiRequest({
+      request: () => openShift.mutateAsync({ opened_by: shiftUserId }),
+      successMessage: t("openShiftSuccess"),
+      errorMessage: t("openShiftError"),
+    });
+  }, [apiRequest, openShift, shiftUserId, t]);
+
   const handleCloseShift = useCallback(
     async (comment: string) => {
+      if (!shiftUserId || !closingShiftId) return;
       const result = await apiRequest({
-        request: () => closeShift.mutateAsync(comment || undefined),
+        request: () =>
+          closeShift.mutateAsync({
+            closed_by: shiftUserId,
+            shift_id: closingShiftId,
+            comment: comment || undefined,
+          }),
         successMessage: t("closeShiftSuccess"),
         errorMessage: t("closeShiftError"),
       });
       if (!result) return;
 
-      setIsCloseShiftPopupOpen(false);
+      setClosingShiftId(null);
       handleExportExcel();
     },
-    [apiRequest, closeShift, handleExportExcel, t],
+    [apiRequest, closeShift, closingShiftId, handleExportExcel, shiftUserId, t],
   );
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -557,7 +614,7 @@ const MainCashbox = () => {
             <p className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-3">
               {t("quickActions")}
             </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5 xl:gap-1.5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4 xl:gap-1.5">
               {visibleActions.map(({ icon, label, shortLabelKey, color, bg }) => {
                 const isReceiveAction = label === "receiveFromBranchManager";
                 const actionIcon = isReceiveAction && isManagerRole ? <Truck size={20} /> : icon;
@@ -581,7 +638,13 @@ const MainCashbox = () => {
             </div>
           </div>
 
-          {/* ── Export + Close Shift ── */}
+          {/* ── Export + Shift ── */}
+          {/*
+            FE-PAY-06: smena — faqat superadmin/admin. Ochiq smena yo'q bo'lsa
+            "Smenani ochish" (POST /finance/shift/open { opened_by }), bor
+            bo'lsa "Smenani yopish" (POST /finance/shift/close { closed_by,
+            shift_id, comment? }), yopilgach Excel hisobot yuklanadi.
+          */}
           <div className="flex gap-2.5">
             <button
               onClick={handleExportExcel}
@@ -590,13 +653,28 @@ const MainCashbox = () => {
               <Download size={15} />
               {t("excel")}
             </button>
-            <button
-              onClick={() => setIsCloseShiftPopupOpen(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-500/60 text-orange-400 text-sm font-semibold hover:bg-orange-500/10 transition-colors"
-            >
-              <LogOut size={15} />
-              {t("closeShiftTitle")}
-            </button>
+            {isShiftStateKnown ? (
+              openShiftId ? (
+                <button
+                  type="button"
+                  onClick={() => setClosingShiftId(openShiftId)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-500/60 text-orange-400 text-sm font-semibold hover:bg-orange-500/10 transition-colors"
+                >
+                  <LogOut size={15} />
+                  {t("closeShiftTitle")}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleOpenShift}
+                  disabled={openShift.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-500/60 text-emerald-500 text-sm font-semibold hover:bg-emerald-500/10 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <LogIn size={15} />
+                  {t("openShiftTitle")}
+                </button>
+              )
+            ) : null}
           </div>
         </div>
 
@@ -816,6 +894,7 @@ const MainCashbox = () => {
                   }`}
                 >
                   {c.name}
+                  {c.is_inactive ? <InactiveBadge isSelected={isSelected} /> : null}
                 </p>
                 <p
                   className={`text-xs ${
@@ -865,6 +944,7 @@ const MainCashbox = () => {
               <div className="flex-1 min-w-0">
                 <p className={`font-semibold text-sm truncate ${isSelected ? "text-white" : "text-gray-900 dark:text-white"}`}>
                   {m.name}
+                  {m.is_inactive ? <InactiveBadge isSelected={isSelected} /> : null}
                 </p>
                 {m.role && (
                   <p className={`text-xs mt-0.5 capitalize ${isSelected ? "text-white/60" : "text-blue-400"}`}>
@@ -934,8 +1014,8 @@ const MainCashbox = () => {
       />
 
       <CloseShiftPopup
-        isOpen={isCloseShiftPopupOpen}
-        onClose={() => setIsCloseShiftPopupOpen(false)}
+        isOpen={Boolean(closingShiftId)}
+        onClose={() => setClosingShiftId(null)}
         isLoading={closeShift.isPending}
         onConfirm={handleCloseShift}
       />

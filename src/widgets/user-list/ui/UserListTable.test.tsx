@@ -124,7 +124,7 @@ describe("UserListTable", () => {
     const user = userEvent.setup();
 
     renderWithProviders(
-      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} />,
+      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} canManage />,
     );
 
     await user.click(screen.getAllByRole("switch")[0]);
@@ -133,5 +133,16 @@ describe("UserListTable", () => {
       { id: "1", status: "inactive" },
       expect.any(Object),
     );
+  });
+
+  it("hides the status switch and delete button when the viewer cannot manage users (fix3 RBAC-16)", () => {
+    renderWithProviders(
+      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} />,
+    );
+
+    expect(screen.getByText("Ali")).toBeInTheDocument();
+    expect(screen.queryAllByRole("switch")).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: "O'chirish" })).toHaveLength(0);
+    expect(updateUserStatusMutateMock).not.toHaveBeenCalled();
   });
 });

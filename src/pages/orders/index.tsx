@@ -40,6 +40,8 @@ import { getOrderItemName } from "../../shared/lib/orderItemName";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../scan/lib/scanShared";
+import { getActionErrorMessage } from "../../shared/lib/actionError";
+import { isCourierHeldOrder } from "../../entities/orders/custody";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
@@ -683,6 +685,13 @@ const Orders = () => {
       (TABLE_ACTION_STATUSES.has(order.status) || TABLE_ROLLBACK_STATUSES.has(order.status)),
     [canUseManagerTableActions],
   );
+  // fix3b LC-04: kuryer qo'lidagi buyurtmani kuryerning o'zi sotadi — menejer
+  // "Sotish"ni (qisman sotish ham shu oynada) bossa backend 400 qaytaradi
+  // ("Bu buyurtma kuryer qo'lida..."). Bekor qilish menejerga ochiq qoladi.
+  const canManagerSellOrder = useCallback(
+    (order: OrderListItem) => !isCourierHeldOrder(order),
+    [],
+  );
 
   const selectedActionOrder = sellOrder ?? cancelOrder;
   const selectedActionModalOrder = useMemo(() => {
@@ -769,6 +778,16 @@ const Orders = () => {
     setApprovalOrderId(null);
   }, []);
 
+  // fix3 FE-ORD-02: menejer jadvalidagi sotish/bekor/qaytarish rad etilsa —
+  // sabab ko'rinadi (avval jimgina yutilardi). Oyna ochiq qoladi.
+  const notifyActionError = useCallback(
+    (error: unknown) => {
+      const description = getActionErrorMessage(error, t("orderActionError"));
+      if (description) message.error(description);
+    },
+    [t],
+  );
+
   const handleSellOrder = useCallback(
     (orderId: string, payload: { comment: string; extraCost: number; proof?: File }) => {
       const order = sellOrder ?? { id: orderId };
@@ -783,10 +802,11 @@ const Orders = () => {
               onCompleted: closeSellModal,
               onApprovalRequested: () => setApprovalOrderId(orderId),
             }),
+          onError: notifyActionError,
         },
       );
     },
-    [SellOrder, closeSellModal, sellOrder],
+    [SellOrder, closeSellModal, notifyActionError, sellOrder],
   );
 
   const handlePartlySellOrder = useCallback(
@@ -812,10 +832,11 @@ const Orders = () => {
               onCompleted: closeSellModal,
               onApprovalRequested: () => setApprovalOrderId(orderId),
             }),
+          onError: notifyActionError,
         },
       );
     },
-    [PartlySellOrder, closeSellModal, sellOrder],
+    [PartlySellOrder, closeSellModal, notifyActionError, sellOrder],
   );
 
   const handleCancelOrder = useCallback(
@@ -835,10 +856,11 @@ const Orders = () => {
               onCompleted: closeCancelModal,
               onApprovalRequested: () => setApprovalOrderId(orderId),
             }),
+          onError: notifyActionError,
         },
       );
     },
-    [CancelOrder, cancelOrder, closeCancelModal],
+    [CancelOrder, cancelOrder, closeCancelModal, notifyActionError],
   );
 
   const handleRollbackOrder = useCallback(() => {
@@ -846,8 +868,9 @@ const Orders = () => {
 
     RollbackOrder.mutate(rollbackOrder.id, {
       onSuccess: () => setRollbackOrder(null),
+      onError: notifyActionError,
     });
-  }, [RollbackOrder, rollbackOrder]);
+  }, [RollbackOrder, notifyActionError, rollbackOrder]);
 
   const handleSelectCancelled = useCallback((id: string, checked: boolean) => {
     setSelectedCancelledIds((previous) => {
@@ -1101,6 +1124,7 @@ const Orders = () => {
           onRowClick={(order) => navigate(`edit/${order.id}`)}
           onCreateOrder={canCreateOrder ? handleOpenNewOrder : undefined}
           canUseOrderActions={canUseOrderActions}
+          canSellOrder={canManagerSellOrder}
           onSellOrder={canUseManagerTableActions ? setSellOrder : undefined}
           onCancelOrder={canUseManagerTableActions ? setCancelOrder : undefined}
           onRollbackOrder={canUseManagerTableActions ? setRollbackOrder : undefined}

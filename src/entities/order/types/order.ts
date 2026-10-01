@@ -43,6 +43,11 @@ export interface OrderListItem {
     operator: string | null;
     comment: string | null;
     post_id: string | null;
+    /** Saqlash (custody) zanjiri — ro'yxat javobida to'liq yozuv bilan keladi. */
+    courier_id?: string | null;
+    holder_type?: "HQ" | "BRANCH" | "COURIER" | "MARKET" | null;
+    holder_branch_id?: string | null;
+    holder_courier_id?: string | null;
     qr_code_token?: string | null;
     sell_requires_media?: boolean;
     cancel_requires_media?: boolean;

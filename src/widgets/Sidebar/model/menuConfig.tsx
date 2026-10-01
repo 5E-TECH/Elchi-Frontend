@@ -7,7 +7,6 @@ import {
   MailOpen,
   Apple,
   UserRound,
-  UsersRound,
   MapPinned,
   Calendar1,
   PackageCheck,
@@ -66,6 +65,10 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/mails", icon: MailOpen, label: "mails" },
+    // fix3 CODE-21: marshrut guardi (`canViewBatchesPage`/`canViewReturnsPage`)
+    // superadminga ochiq edi, lekin menyuda yo'q edi — faqat URL orqali.
+    { to: "/batches", icon: PackageCheck, label: "batches" },
+    { to: "/returns", icon: RotateCcw, label: "returns" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/all-users", icon: UserRound, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
@@ -100,7 +103,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Calendar1, label: "newOrders" },
     { to: "/products", icon: Apple, label: "products" },
     { to: "/cash-box", icon: CreditCard, label: "payments" },
-    { to: "/market-operators", icon: UsersRound, label: "operators" },
+    // fix3 RBAC-18: "/market-operators" olib tashlandi — sahifa GET /users ga
+    // tayanadi, u esa marketga doim 403 (backendda market yo'li yo'q).
   ],
   registrator: [
     { to: "/", icon: House, label: "dashboard", end: true },
@@ -271,16 +275,27 @@ export const getUserBranchType = (user: User | null | undefined): BranchType | n
  * ko'radimi — menyu ham, marshrut guardi ham (`access.ts` →
  * `canViewDispatchPage`) shu funksiyadan foydalanadi.
  *
- * - Filial turi ANIQ bo'lsa — ha: REGIONAL, HYBRID, PICKUP (hozirgidek) va HQ.
- *   HQ 2026-10-01 da QO'SHILDI: HQ registratori HQ kuryerlariga buyurtma
- *   beradi (backend POST /orders/assign-to-courier buni allaqachon qo'llaydi).
+ * - Kuryeri bor filiallar — ha: HQ, REGIONAL, HYBRID. HQ 2026-10-01 da
+ *   QO'SHILDI: HQ registratori HQ kuryerlariga buyurtma beradi (backend
+ *   POST /orders/assign-to-courier buni allaqachon qo'llaydi).
+ * - PICKUP — yo'q (fix3 CODE-21): PICKUP filialda kuryer bo'lmaydi (backend
+ *   kuryerni faqat HQ/REGIONAL/HYBRID ga biriktiradi), sahifa bo'sh ro'yxat
+ *   bilan ochilardi. PICKUP menejerida ham `dispatch` qobiliyati yo'q.
  * - Filial turi aniqlanmasa — yo'q (marshrut guardi avval ham rad etardi).
  *
  * ⚠️ `access.ts` da emas, shu yerda: `access.ts` bu faylni import qiladi —
  * import halqasi bo'lmasligi uchun.
  */
-export const registratorCanDispatch = (user: User | null | undefined): boolean =>
-  getUserBranchType(user) !== null;
+const COURIER_HOST_BRANCH_TYPES: ReadonlySet<BranchType> = new Set<BranchType>([
+  "HQ",
+  "REGIONAL",
+  "HYBRID",
+]);
+
+export const registratorCanDispatch = (user: User | null | undefined): boolean => {
+  const branchType = getUserBranchType(user);
+  return branchType !== null && COURIER_HOST_BRANCH_TYPES.has(branchType);
+};
 
 /**
  * ═══════════════ B1 — MENYU GURUHLARI ═══════════════

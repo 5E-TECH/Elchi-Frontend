@@ -38,5 +38,7 @@
   "finalizeSuccessTitle": "День завершен",
   "finalizeSuccessDescription": "{{count}} заказов успешно завершены",
   "finalizeErrorTitle": "Ошибка завершения",
-  "finalizeErrorDescription": "Ошибка в {{count}} заказах"
+  "finalizeErrorDescription": "Ошибка в {{count}} заказах",
+  "finalizeNothing": "Нечего завершать — отложенные на завтра заказы остаются в ожидании.",
+  "finalizeTomorrowKept": "Заказов отложено на завтра: {{count}}."
 }

@@ -46,5 +46,6 @@
   "chartOrders": "Orderlar",
   "chartAmount": "Jami: {{amount}}",
   "emptyMarkets": "Market statistikasi hozircha yo'q",
-  "emptyCouriers": "Courier statistikasi hozircha yo'q"
+  "emptyCouriers": "Courier statistikasi hozircha yo'q",
+  "statsUnavailable": "Statistika vaqtincha mavjud emas — sahifani yangilang"
 }
