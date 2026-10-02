@@ -1,7 +1,6 @@
 import {
   House,
   Plug,
-  Landmark,
   Wrench,
   ShoppingBag,
   MailOpen,
@@ -77,8 +76,9 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/notifications", icon: Bell, label: "notifications" },
     { to: "/branches", icon: Building2, label: "branches" },
     { to: "/integrations", icon: Plug, label: "integrations" },
-    // Ikkalasi ham avval menyuda YO'Q edi — faqat URL orqali ochilardi (B2).
-    { to: "/settlement", icon: Landmark, label: "settlement" },
+    // Avval menyuda YO'Q edi — faqat URL orqali ochilardi (B2). Marketga to'lov
+    // endi FIFO (eng eski buyurtmadan) AVTOMATIK yopadi — qo'lda /settlement
+    // formasi ortiqcha edi, menyudan olindi (ish /payments'da).
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
     { to: "/ops", icon: Wrench, label: "ops" },
   ],
@@ -357,7 +357,6 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   // Eski `/partners` marshruti redirect bilan saqlanadi, lekin menyuda
   // ko'rinmaydi: bir tushuncha ikki joyda turmasligi kerak.
   "/integrations": 'integrations',
-  "/settlement": 'finance',
   // Tizim
   "/notifications": 'system',
   "/ops": 'system',

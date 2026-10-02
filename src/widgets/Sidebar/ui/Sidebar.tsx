@@ -131,11 +131,18 @@ const Sidebar = () => {
           </div>
         )}
         {translatedGroups.map((group, index) => {
-          const collapsed = group.id ? collapsedGroups.has(group.id) : false;
+          // Bitta bandli guruhda sarlavha KO'RSATILMAYDI (pastda) — demak uni
+          // yig'ib ham bo'lmaydi; band DOIM ko'rinsin (aks holda avval yig'ilgan
+          // guruh bandi sarlavhasiz yashirinib qolardi). Faqat >1 bandli guruh
+          // yig'iladi.
+          const groupable = Boolean(group.id) && group.items.length > 1;
+          const collapsed = groupable
+            ? collapsedGroups.has(group.id as SidebarGroupId)
+            : false;
 
           return (
             <div key={group.id ?? `ungrouped-${index}`} className="space-y-1">
-              {group.id &&
+              {groupable &&
                 (isOpen ? (
                   <button
                     type="button"
