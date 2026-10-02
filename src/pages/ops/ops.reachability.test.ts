@@ -81,16 +81,25 @@ describe("ops markazi — barcha ichki sahifalar qamralgan", () => {
 describe("menyudan ochilishi shart bo'lgan sahifalar", () => {
   const superadminPaths = SIDEBAR_CONFIG.superadmin.map((item) => item.to);
 
-  it.each([
-    ["/settlement", "COD hisob-kitobi — pul oqimi ekrani"],
-    ["/ops", "ichki xizmat ekranlari markazi"],
-  ])("%s menyuda bor (%s)", (path) => {
-    expect(superadminPaths).toContain(path);
+  it.each([["/ops", "ichki xizmat ekranlari markazi"]])(
+    "%s menyuda bor (%s)",
+    (path) => {
+      expect(superadminPaths).toContain(path);
+    },
+  );
+
+  it("/ops guruhga biriktirilgan", () => {
+    expect(SIDEBAR_GROUP_BY_PATH["/ops"]).toBe("system");
   });
 
-  it("ikkalasi ham guruhga biriktirilgan", () => {
-    expect(SIDEBAR_GROUP_BY_PATH["/settlement"]).toBe("finance");
-    expect(SIDEBAR_GROUP_BY_PATH["/ops"]).toBe("system");
+  /**
+   * ⭐ /settlement OLIB TASHLANDI. Marketga to'lov endi FIFO (eng eski
+   * buyurtmadan) avtomatik yopadi (backend 7AWmSQ1p), qo'lda COD hisob-kitob
+   * formasi ortiqcha edi. Menyuda ham, guruh xaritasida ham bo'lmasligi kerak.
+   */
+  it("/settlement menyudan va guruh xaritasidan olib tashlangan", () => {
+    expect(superadminPaths).not.toContain("/settlement");
+    expect(SIDEBAR_GROUP_BY_PATH["/settlement"]).toBeUndefined();
   });
 });
 
