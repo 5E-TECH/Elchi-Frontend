@@ -2,8 +2,26 @@ export const UZBEKISTAN_PHONE_PREFIX = "+998";
 const UZBEKISTAN_PHONE_COUNTRY_CODE = "998";
 
 export const getUzbekistanPhoneDigits = (value: string = "") => {
-  const digits = value.replace(/\D/g, "");
-  const localDigits = digits.startsWith("998") ? digits.slice(3) : digits;
+  const raw = value.trim();
+
+  // Canonical "+998…": the "+998" prefix the inputs render separately is
+  // definitively the country code, so everything after it is the local part.
+  if (raw.startsWith(UZBEKISTAN_PHONE_PREFIX)) {
+    return raw
+      .slice(UZBEKISTAN_PHONE_PREFIX.length)
+      .replace(/\D/g, "")
+      .slice(0, 9);
+  }
+
+  // Bare digits: only strip a leading "998" when there are MORE than 9 digits
+  // (i.e. it genuinely carries the country code). A ≤9-digit value is already
+  // the LOCAL part — e.g. operator 99 + subscriber starting with 8
+  // ("99 800 00 00" → "998000000") — and stripping it would eat the typed 8.
+  const digits = raw.replace(/\D/g, "");
+  const localDigits =
+    digits.length > 9 && digits.startsWith(UZBEKISTAN_PHONE_COUNTRY_CODE)
+      ? digits.slice(UZBEKISTAN_PHONE_COUNTRY_CODE.length)
+      : digits;
 
   return localDigits.slice(0, 9);
 };
@@ -31,10 +49,18 @@ export const toUzbekistanPhoneValue = (value: string = "") =>
 export const isCompleteUzbekistanPhone = (value: string = "") =>
   getUzbekistanPhoneDigits(value).length === 9;
 
-const getLocalDigitCountBeforeCaret = (value: string, caret: number) => {
+const getLocalDigitCountBeforeCaret = (
+  value: string,
+  caret: number,
+  withPrefix: boolean,
+) => {
   const digitsBeforeCaret = value.slice(0, caret).replace(/\D/g, "");
 
-  if (digitsBeforeCaret.startsWith(UZBEKISTAN_PHONE_COUNTRY_CODE)) {
+  // Only discount the leading "998" when the field value actually embeds the
+  // country code (withPrefix). For a local-only field the digits before the
+  // caret ARE the local part, so a "998…" there is operator 99 + 8, not a
+  // prefix — discounting it would throw the caret to the start.
+  if (withPrefix && digitsBeforeCaret.startsWith(UZBEKISTAN_PHONE_COUNTRY_CODE)) {
     return Math.max(digitsBeforeCaret.length - UZBEKISTAN_PHONE_COUNTRY_CODE.length, 0);
   }
 
@@ -78,6 +104,7 @@ export const keepPhoneCaretAfterChange = (
   const localDigitCount = getLocalDigitCountBeforeCaret(
     input.value,
     input.selectionStart ?? input.value.length,
+    withPrefix,
   );
   const nextCaret = getCaretFromLocalDigitCount(nextDisplayValue, localDigitCount, withPrefix);
 
