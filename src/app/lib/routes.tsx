@@ -30,7 +30,6 @@ const Orders = lazy(() => import("../../pages/orders"));
 const OrderCreate = lazy(() => import("../../pages/orders/create"));
 const Profile = lazy(() => import("../../pages/profile/ui/ProfilePage"));
 const SettingsPage = lazy(() => import("../../pages/settings/ui/SettingsPage"));
-const SettlementPage = lazy(() => import("../../pages/settlement"));
 const FinanceOperatorsPage = lazy(() => import("../../pages/finance-operators"));
 const MarketOperatorsPage = lazy(() => import("../../pages/market-operators"));
 const CourierBulkPage = lazy(() => import("../../pages/courier-bulk"));
@@ -515,14 +514,6 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
                   <OpsPage />
-                </ProtectedRoute>
-              ),
-            },
-            {
-              path: "settlement",
-              element: (
-                <ProtectedRoute canActivate={canViewOpsPages}>
-                  <SettlementPage />
                 </ProtectedRoute>
               ),
             },
