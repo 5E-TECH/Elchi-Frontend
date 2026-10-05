@@ -183,7 +183,13 @@ const canManageExternalIntegrations = canReceiveExternalOrders;
 
 const canManageProducts = (state: RootState) => {
   const role = state.role.role;
-  return role === "admin" || role === "superadmin" || role === "market" || role === "registrator";
+  return (
+    role === "admin" ||
+    role === "superadmin" ||
+    role === "market" ||
+    role === "registrator" ||
+    role === "manager"
+  );
 };
 
 const canViewAdminNewOrderTabs = (state: RootState) => {

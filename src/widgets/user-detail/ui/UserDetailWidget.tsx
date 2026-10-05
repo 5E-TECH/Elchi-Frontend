@@ -47,6 +47,8 @@ export const UserDetailWidget = memo(
     const canManagePrivilegedToggles = currentRole === "admin" || currentRole === "superadmin";
     const isMarket = user?.role === "market" || user?.role === "marketing";
     const canReceiveExtraCostPermission = user?.role === "manager" || user?.role === "courier";
+    // Per-menejer sotish/bekor qilish ruxsati — faqat menejer rolida ko'rsatiladi.
+    const canReceiveSellCancelPermission = user?.role === "manager";
     // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning
     // uchun yagona kirish joyi shu sahifa.
     const canTransferCourier = user?.role === "courier" && canManagePrivilegedToggles;
@@ -120,6 +122,24 @@ export const UserDetailWidget = memo(
         successMessage: nextValue
           ? t("extraCostPermissionEnabled")
           : t("extraCostPermissionDisabled"),
+        errorMessage: t("editUserError"),
+      });
+    };
+
+    const handleToggleSellCancelPermission = async () => {
+      if (!user || !canReceiveSellCancelPermission || !canManagePrivilegedToggles) return;
+
+      const nextValue = !user.can_sell_cancel;
+
+      await apiRequest({
+        request: () =>
+          updateUser.mutateAsync({
+            id: user.id,
+            data: { can_sell_cancel: nextValue },
+          }),
+        successMessage: nextValue
+          ? t("sellCancelPermissionEnabled")
+          : t("sellCancelPermissionDisabled"),
         errorMessage: t("editUserError"),
       });
     };
@@ -221,6 +241,12 @@ export const UserDetailWidget = memo(
                   : undefined
               }
               isExtraCostPermissionPending={updateUser.isPending}
+              onToggleSellCancelPermission={
+                canReceiveSellCancelPermission && canManagePrivilegedToggles
+                  ? handleToggleSellCancelPermission
+                  : undefined
+              }
+              isSellCancelPermissionPending={updateUser.isPending}
               canManageProofSettings={isMarket && canManagePrivilegedToggles}
               headerAction={
                 <div className="flex items-center gap-2">

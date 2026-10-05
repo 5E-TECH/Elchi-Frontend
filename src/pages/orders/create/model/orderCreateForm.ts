@@ -86,10 +86,19 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
         items: yup
           .array()
           .of(
-            yup.object({
-              product_id: yup.string().required(),
-              quantity: yup.number().required().min(1),
-            }),
+            yup
+              .object({
+                // #1 — katalog mahsuloti (product_id) YOKI erkin-matnli
+                // "maxsus" mahsulot (product_name). Kamida bittasi bo'lishi shart.
+                product_id: yup.string().nullable().defined(),
+                product_name: yup.string().optional(),
+                quantity: yup.number().required().min(1),
+              })
+              .test(
+                "product-id-or-name",
+                i18n.t("orders:validationSelectProduct"),
+                (item) => Boolean(item?.product_id || item?.product_name),
+              ),
           )
           .min(1, i18n.t("orders:validationSelectProduct"))
           .required(),

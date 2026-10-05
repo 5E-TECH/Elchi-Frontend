@@ -23,9 +23,13 @@ describe("sidebar menu config", () => {
   });
 
   it("keeps manager menu scoped by branch type", () => {
+    // /products har bir menejerda bor (bazaviy band — registrator menyusidagidek);
+    // /all-users endi HAR QANDAY filial turidagi menejerga ochiq (`staff`
+    // qobiliyati HQ/PICKUP ga ham berildi, 2026-10-06).
     expect(getSidebarConfigForUser("manager").map((item) => item.to)).toEqual([
       "/branch-dashboard",
       "/orders",
+      "/products",
       "/regions",
     ]);
 
@@ -37,6 +41,7 @@ describe("sidebar menu config", () => {
       "/orders",
       "/courier-bulk",
       "/mails",
+      "/products",
       "/all-users",
       "/payments",
       "/regions",
@@ -51,6 +56,7 @@ describe("sidebar menu config", () => {
       "/mails",
       "/batches",
       "/returns",
+      "/products",
       "/all-users",
       "/payments",
       "/regions",
@@ -62,12 +68,15 @@ describe("sidebar menu config", () => {
       "/new-orders",
       "/batches",
       "/returns",
+      "/products",
+      "/all-users",
       "/regions",
     ]);
 
     // HQ 2026-09-10 da `intake` qobiliyatini OLDI: hamkordan (BeePost) kelgan
     // posilkalar aynan HQ da qabul qilinadi, shuning uchun HQ menejeriga
-    // qabul/paket/qaytarish ekranlari ochildi.
+    // qabul/paket/qaytarish ekranlari ochildi. 2026-10-06 da `staff` ham
+    // qo'shildi — HQ menejeri "Xodimlar" bandini ko'radi.
     expect(getSidebarConfigForUser("manager", userWithBranchType("HQ")).map((item) => item.to)).toEqual([
       "/branch-dashboard",
       "/orders",
@@ -75,6 +84,8 @@ describe("sidebar menu config", () => {
       "/mails",
       "/batches",
       "/returns",
+      "/products",
+      "/all-users",
       "/payments",
       "/regions",
     ]);

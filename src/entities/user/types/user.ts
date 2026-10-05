@@ -72,6 +72,7 @@ export interface User {
   tariff_center: number | null;
   add_order?: boolean;
   can_add_extra_cost?: boolean;
+  can_sell_cancel?: boolean;
   cancelled_handover_qr_required?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
@@ -197,6 +198,7 @@ export interface UpdateUserRequest {
   tariff_center?: number;
   add_order?: boolean;
   can_add_extra_cost?: boolean;
+  can_sell_cancel?: boolean;
   default_tariff?: "address" | "center";
   region_id?: string;
 }

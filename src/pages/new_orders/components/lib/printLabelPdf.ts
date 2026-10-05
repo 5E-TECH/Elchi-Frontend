@@ -38,11 +38,11 @@ const BOTTOM_Y = M + TOP_SECTION_H;
 const BOTTOM_SECTION_H = FULL_H - TOP_SECTION_H;
 
 const zoneARows = [
-  { labelKey: "labelFullName", key: "fullName" as const, h: 16 },
-  { labelKey: "labelPhone", key: "phone" as const, h: 26 },
-  { labelKey: "labelAddress", key: "address" as const, h: 26 },
-  { labelKey: "labelTotal", key: "total" as const, h: 15 },
-  { labelKey: "labelSender", key: "sender" as const, h: 13 },
+  { labelKey: "labelFullName", key: "fullName" as const, h: 14 },
+  { labelKey: "labelPhone", key: "phone" as const, h: 20 },
+  { labelKey: "labelAddress", key: "address" as const, h: 24 },
+  { labelKey: "labelTotal", key: "total" as const, h: 22 },
+  { labelKey: "labelSender", key: "sender" as const, h: 16 },
 ];
 
 const BOTTOM_ROW_H = BOTTOM_SECTION_H / 4;
@@ -90,6 +90,15 @@ const formatPhoneNumber = (value?: string | null) => {
 const formatMoney = (value?: number | null) =>
   new Intl.NumberFormat("uz-UZ").format(Number(value ?? 0));
 
+// Inson o'qiydigan buyurtma raqami, masalan "EL-100081" -> "#EL-100081".
+// Noto'g'ri/bo'sh qiymatda bo'sh satr qaytaradi (chop etishда "#" ko'rinmasin).
+const formatOrderNumber = (value?: string | number | null) => {
+  const raw = typeof value === "number" ? String(value) : safe(value, "");
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -111,9 +120,9 @@ const getAddress = (order: LabelOrder) => {
 };
 
 const getLandmark = (order: LabelOrder) => {
-  const landmark = safe(order.landmark, "");
-  const address = safe(order.address, "");
-  return landmark || address || "-";
+  // Ko'cha/uy manzili endi yuqori "Manzil" zonasida ko'rsatiladi — bu yerда
+  // takrorlamaslik uchun faqat mo'ljal (orientir) matnini qaytaramiz.
+  return safe(order.landmark, "-");
 };
 
 const getProducts = (order: LabelOrder) => {
@@ -149,6 +158,25 @@ const getLogist = (order: LabelOrder) => {
 
   if (!name && !phone) return "-";
   return [name, phone].filter(Boolean).join(" | ");
+};
+
+// Mijozning qo'shimcha (ikkinchi) telefon raqami — bo'lsa formatlab qaytaramiz.
+const getExtraPhone = (order: LabelOrder) => {
+  const extra = safe(order.customer?.extra_number, "");
+  return extra ? formatPhoneNumber(extra) : "";
+};
+
+// Ko'cha/uy manzili (viloyat+tumandan alohida) — getAddress viloyat+tuman beradi.
+const getStreet = (order: LabelOrder) => safe(order.address, "");
+
+// "Muammo bo'lsa" aloqa raqami: avval market telefoni, keyin logist/kuryer.
+// Menejer buyurtmalarida kuryer obyekti yo'q, shuning uchun market asosiy fallback.
+const getContactPhone = (order: LabelOrder) => {
+  const phone =
+    safe(order.market?.phone_number, "") ||
+    safe(order.logist?.phone_number, "") ||
+    safe(order.courier?.phone_number, "");
+  return phone ? formatPhoneNumber(phone) : "-";
 };
 
 const ellipsize = (pdf: jsPDF, text: string, maxWidth: number) => {
@@ -274,23 +302,44 @@ const drawLogoBlock = (pdf: jsPDF, logoUrl: string, qrUrl: string, order: LabelO
   const qrY = logoY + iconSize + qrGap;
   pdf.addImage(qrUrl, "PNG", qrX, qrY, qrSize, qrSize, "", "FAST");
 
-  pdf.setFont("helvetica", "bold");
-  pdf.setCharSpace(0.24);
-  pdf.setFontSize(11.4);
-  const dateY = qrY + qrSize + 12.8;
-  pdf.text(formatDate(order.createdAt), panelX + panelW / 2, dateY, {
-    align: "center",
-  });
-  pdf.setCharSpace(0);
+  const centerX = panelX + panelW / 2;
+  const belowQrY = qrY + qrSize;
+  const orderNo = formatOrderNumber(order.order_number);
+
+  if (orderNo) {
+    // Buyurtma raqami — ko'zga tashlanadigan sarlavha (QR faqat tokenni kodlaydi,
+    // odam o'qiydigan raqam shu yerda); sana pastda kichikroq.
+    pdf.setFont("helvetica", "bold");
+    fitFontSize(pdf, orderNo, panelW - 3, 10.6, 7.6);
+    pdf.text(orderNo, centerX, belowQrY + 7.4, { align: "center" });
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setCharSpace(0.2);
+    pdf.setFontSize(9);
+    pdf.text(formatDate(order.createdAt), centerX, belowQrY + 16.2, { align: "center" });
+    pdf.setCharSpace(0);
+  } else {
+    // Raqam yo'q — avvalgidek faqat sana, yirik va markazda.
+    pdf.setFont("helvetica", "bold");
+    pdf.setCharSpace(0.24);
+    pdf.setFontSize(11.4);
+    pdf.text(formatDate(order.createdAt), centerX, belowQrY + 12.8, { align: "center" });
+    pdf.setCharSpace(0);
+  }
 };
 
 const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
+  const currency = i18n.t("orders:currency");
   const values = {
     fullName: safe(order.customer?.name),
     phone: formatPhoneNumber(order.customer?.phone_number),
-    address: getAddress(order),
-    total: `${formatMoney(order.total_price)} ${i18n.t("orders:currency")}`,
+    extraPhone: getExtraPhone(order),
+    region: getAddress(order),
+    street: getStreet(order),
+    total: `${formatMoney(order.total_price)} ${currency}`,
+    cod: `${formatMoney(order.to_be_paid)} ${currency}`,
     sender: getSender(order),
+    contact: getContactPhone(order),
   };
 
   pdf.setDrawColor(20, 20, 20);
@@ -326,49 +375,88 @@ const drawTopSection = (pdf: jsPDF, order: LabelOrder) => {
     const valueW = RIGHT_W - LABEL_COL - PAD * 2;
 
     if (row.key === "total") {
-      const totalText = `${values.total} | ${getDeliveryLabel(order)}`;
-      const amountSize = fitFontSize(pdf, totalText, valueW, 9.9, 9.1);
-      drawCellText(pdf, totalText, valueX, currentY, valueW, rowHeight, amountSize, {
-        bold: true,
-        maxLines: 1,
-        valign: "top",
-        topPadding: 2.2,
-      });
-    } else if (row.key === "sender") {
-      const senderText = values.sender;
-      drawCellText(pdf, senderText, valueX, currentY, valueW, rowHeight, 8.9, {
+      // Yuqori qatorda umumiy summa + yetkazish turi (ikkinchi darajali),
+      // pastda esa KURYER OLADIGAN summa ("Olinadi:") — ko'proq ko'zga tashlanadi.
+      const totalLine = `${values.total} | ${getDeliveryLabel(order)}`;
+      const totalSize = fitFontSize(pdf, totalLine, valueW, 8.4, 7.2);
+      drawCellText(pdf, totalLine, valueX, currentY, valueW, rowHeight, totalSize, {
         bold: true,
         maxLines: 1,
         ellipsis: true,
         valign: "top",
-        topPadding: 2.2,
+        topPadding: 1.8,
+      });
+
+      const codLine = `Olinadi: ${values.cod}`;
+      const codSize = fitFontSize(pdf, codLine, valueW, 10.8, 8.4);
+      drawCellText(pdf, codLine, valueX, currentY + 10.5, valueW, rowHeight - 10.5, codSize, {
+        bold: true,
+        maxLines: 1,
+        ellipsis: true,
+        valign: "top",
+        topPadding: 0.6,
+      });
+    } else if (row.key === "sender") {
+      // Yuqorida jo'natuvchi (market | operator), pastda muammo bo'lsa
+      // bog'lanadigan telefon (market raqami — menejerda kuryer bo'lmaydi).
+      const senderSize = fitFontSize(pdf, values.sender, valueW, 7.8, 6.4);
+      drawCellText(pdf, values.sender, valueX, currentY, valueW, rowHeight, senderSize, {
+        bold: true,
+        maxLines: 1,
+        ellipsis: true,
+        valign: "top",
+        topPadding: 1.4,
+      });
+
+      const contactLine = `Muammo bo'lsa: ${values.contact}`;
+      const contactSize = fitFontSize(pdf, contactLine, valueW, 7.6, 6.2);
+      drawCellText(pdf, contactLine, valueX, currentY + 8.0, valueW, rowHeight - 8.0, contactSize, {
+        bold: true,
+        maxLines: 1,
+        ellipsis: true,
+        valign: "top",
+        topPadding: 0.5,
       });
     } else if (row.key === "address") {
-      const addressSize = fitFontSize(pdf, values.address, valueW, 9.8, 9);
-      drawCellText(pdf, values.address, valueX, currentY, valueW, rowHeight, addressSize, {
+      // 1-qator: viloyat + tuman; 2-qator: ko'cha/uy manzili (alohida).
+      const addressText = values.street ? `${values.region}\n${values.street}` : values.region;
+      const longer = values.street.length > values.region.length ? values.street : values.region;
+      const addressSize = fitFontSize(pdf, longer, valueW, 9.2, 7.6);
+      drawCellText(pdf, addressText, valueX, currentY, valueW, rowHeight, addressSize, {
         maxLines: 2,
         ellipsis: true,
         bold: true,
         valign: "top",
-        topPadding: 2.2,
+        topPadding: 1.8,
       });
     } else if (row.key === "phone") {
-      const phoneSize = fitFontSize(pdf, values.phone, valueW, 9.8, 9.1);
-      drawCellText(pdf, values.phone, valueX, currentY, valueW, rowHeight, phoneSize, {
-        bold: true,
-        maxLines: 1,
-        ellipsis: true,
-        valign: "top",
-        topPadding: 2.2,
-      });
+      if (values.extraPhone) {
+        // Asosiy + qo'shimcha raqam — ikki qatorda.
+        const phoneText = `${values.phone}\n${values.extraPhone}`;
+        const phoneSize = fitFontSize(pdf, values.phone, valueW, 8.8, 7.4);
+        drawCellText(pdf, phoneText, valueX, currentY, valueW, rowHeight, phoneSize, {
+          bold: true,
+          maxLines: 2,
+          ellipsis: true,
+          valign: "top",
+          topPadding: 1.6,
+        });
+      } else {
+        const phoneSize = fitFontSize(pdf, values.phone, valueW, 9.8, 8.6);
+        drawCellText(pdf, values.phone, valueX, currentY, valueW, rowHeight, phoneSize, {
+          bold: true,
+          maxLines: 1,
+          ellipsis: true,
+          valign: "middle",
+        });
+      }
     } else {
-      const nameSize = fitFontSize(pdf, values.fullName, valueW, 9.8, 9.1);
+      const nameSize = fitFontSize(pdf, values.fullName, valueW, 9.8, 8.8);
       drawCellText(pdf, values.fullName, valueX, currentY, valueW, rowHeight, nameSize, {
         bold: true,
         maxLines: 1,
         ellipsis: true,
-        valign: "top",
-        topPadding: 2.2,
+        valign: "middle",
       });
     }
 
@@ -490,14 +578,19 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
     .map((order) => {
       const fullName = escapeHtml(safe(order.customer?.name));
       const phone = escapeHtml(formatPhoneNumber(order.customer?.phone_number));
-      const address = escapeHtml(getAddress(order));
+      const extraPhone = escapeHtml(getExtraPhone(order));
+      const region = escapeHtml(getAddress(order));
+      const street = escapeHtml(getStreet(order));
       const total = escapeHtml(`${formatMoney(order.total_price)} ${i18n.t("orders:currency")} | ${getDeliveryLabel(order)}`);
+      const cod = escapeHtml(`Olinadi: ${formatMoney(order.to_be_paid)} ${i18n.t("orders:currency")}`);
       const sender = escapeHtml(getSender(order));
+      const contact = escapeHtml(`Muammo bo'lsa: ${getContactPhone(order)}`);
       const product = escapeHtml(getProducts(order));
       const landmark = escapeHtml(getLandmark(order));
       const comment = escapeHtml(safe(order.comment));
       const logist = escapeHtml(getLogist(order));
       const date = escapeHtml(formatDate(order.createdAt));
+      const orderNo = escapeHtml(formatOrderNumber(order.order_number));
       const qrText = encodeURIComponent(getQrPayload(order));
       const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${qrText}`;
 
@@ -513,16 +606,17 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
                 </div>
               </div>
               <img class="qr" src="${qrSrc}" alt="QR" />
+              ${orderNo ? `<div class="order-no">${orderNo}</div>` : ""}
               <div class="date">${date}</div>
             </div>
 
             <div class="right">
               <table class="top-table">
                 <tr><td class="k">${escapeHtml(tLabel("labelFullName"))}</td><td class="v">${fullName}</td></tr>
-                <tr><td class="k">${escapeHtml(tLabel("labelPhone"))}</td><td class="v">${phone}</td></tr>
-                <tr><td class="k">${escapeHtml(tLabel("labelAddress"))}</td><td class="v">${address}</td></tr>
-                <tr><td class="k">${escapeHtml(tLabel("labelTotal"))}</td><td class="v">${total}</td></tr>
-                <tr><td class="k">${escapeHtml(tLabel("labelSender"))}</td><td class="v">${sender}</td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelPhone"))}</td><td class="v">${phone}${extraPhone ? `<div class="v-sub">${extraPhone}</div>` : ""}</td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelAddress"))}</td><td class="v">${region}${street ? `<div class="v-sub">${street}</div>` : ""}</td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelTotal"))}</td><td class="v">${total}<div class="v-strong">${cod}</div></td></tr>
+                <tr><td class="k">${escapeHtml(tLabel("labelSender"))}</td><td class="v">${sender}<div class="v-sub">${contact}</div></td></tr>
               </table>
             </div>
           </div>
@@ -614,11 +708,19 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
           display: block;
           image-rendering: pixelated;
         }
+        .order-no {
+          margin-top: 1.4mm;
+          font-size: 10.4pt;
+          font-weight: 900;
+          letter-spacing: .1pt;
+          line-height: 1;
+          text-align: center;
+        }
         .date {
-          margin-top: 2.2mm;
-          font-size: 11.2pt;
+          margin-top: 1.4mm;
+          font-size: 9pt;
           font-weight: 800;
-          letter-spacing: .24pt;
+          letter-spacing: .2pt;
           line-height: 1;
         }
         .right { min-width: 0; }
@@ -651,6 +753,18 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
           font-size: 9.3pt;
           font-weight: 900;
           line-height: 1.14;
+          word-break: break-word;
+        }
+        .top-table .v-sub {
+          font-size: 7.6pt;
+          font-weight: 800;
+          line-height: 1.12;
+          word-break: break-word;
+        }
+        .top-table .v-strong {
+          font-size: 10.2pt;
+          font-weight: 900;
+          line-height: 1.1;
           word-break: break-word;
         }
         .bottom-table {

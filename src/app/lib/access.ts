@@ -147,12 +147,19 @@ export const canHandoverCancelledToMarket: Predicate = anyOf(
 );
 
 /**
- * Mahsulot YARATISH — backend POST /product `@Roles(MARKET, ADMIN, SUPERADMIN)`
- * bilan bir xil (fix3 RBAC-17). Registrator mahsulotlar ro'yxatini ko'radi va
- * tahrirlaydi, lekin yarata olmaydi: ilgari yaratish sahifasi unga ochiq edi
- * va saqlash doim 403 berardi (market qidiruvi GET /users/:id ham 403).
+ * Mahsulot YARATISH — backend POST /product endi filial xodimlariga ham ruxsat
+ * beradi: MARKET, ADMIN, SUPERADMIN ustiga REGISTRATOR va MANAGER qo'shildi
+ * (market_id majburiy — xodim mahsulotni qaysi market uchun yaratishini
+ * tanlaydi). Avval faqat MARKET/ADMIN/SUPERADMIN edi va registrator saqlashda
+ * doim 403 olardi.
  */
-export const canCreateProducts: Predicate = hasRole("superadmin", "admin", "market");
+export const canCreateProducts: Predicate = hasRole(
+  "superadmin",
+  "admin",
+  "market",
+  "registrator",
+  "manager",
+);
 
 export const canViewCourierBulkPage: Predicate = anyOf(
   hasRole("courier"),

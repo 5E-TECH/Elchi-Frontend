@@ -60,7 +60,7 @@ const MATRIX: Record<string, string> = {
   //                sa  ad  mk  rg  cr  HQ  PU  RG  HY  ???
   canViewOrders: "  ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓",
   canViewMails: "   ✓   ✓   —   ✓   ✓   ✓   —   ✓   ✓   —",
-  canViewUsers: "   ✓   ✓   —   —   —   —   —   ✓   ✓   —",
+  canViewUsers: "   ✓   ✓   —   —   —   ✓   ✓   ✓   ✓   —",
   canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —",
   canViewNotifications: "✓   —   —   —   —   —   —   —   —   —",
   canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —",

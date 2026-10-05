@@ -92,7 +92,8 @@ vi.mock("./list/courier/list/CancelModal", () => ({ default: () => null }));
 const regionalManagerState = {
   role: { id: "300", role: "manager", region: null, name: "Menejer" },
   user: {
-    user: { id: "300", role: "manager", branch: { id: "15", type: "REGIONAL" } },
+    // #4 — menejerda sotish/bekor ruxsati bor (tugmalar ko'rinishi uchun).
+    user: { id: "300", role: "manager", branch: { id: "15", type: "REGIONAL" }, can_sell_cancel: true },
     isAuthenticated: true,
     accessToken: null,
     loading: false,

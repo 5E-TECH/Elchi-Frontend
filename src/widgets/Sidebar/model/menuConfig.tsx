@@ -132,6 +132,7 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   manager: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/products", icon: Apple, label: "products" },
     { to: "/regions", icon: MapPinned, label: "regions" },
   ],
 };
@@ -166,15 +167,21 @@ export type ManagerCapability =
 
 export const MANAGER_CAPABILITIES: Record<BranchType, ManagerCapability[]> = {
   REGIONAL: ['dispatch', 'mails', 'finance', 'staff'],
-  PICKUP: ['intake'],
+  // `staff` 2026-10-06 da QO'SHILDI (pastdagi HQ izohiga qarang).
+  PICKUP: ['intake', 'staff'],
   // HYBRID = REGIONAL ∪ PICKUP — qo'lda emas, hisoblab chiqariladi.
   HYBRID: ['dispatch', 'intake', 'mails', 'finance', 'staff'],
   /**
    * HQ markaziy filial: pochta va kassa avvaldan bor edi; `intake` 2026-09-10
    * da QO'SHILDI — hamkordan (BeePost) kelgan posilkalarni aynan HQ qabul
    * qiladi, shuning uchun HQ menejeri qabul ekranini ko'rishi kerak.
+   *
+   * `staff` 2026-10-06 da QO'SHILDI (HQ va PICKUP ga) — backend endi HAR QANDAY
+   * menejerga xodimlar ro'yxatini qaytaradi (tahrir faqat o'zi yaratgan xodim
+   * bilan cheklanadi), shuning uchun har bir menejer "Xodimlar" bandini
+   * ko'rishi kerak. REGIONAL/HYBRID da allaqachon bor edi.
    */
-  HQ: ['intake', 'mails', 'finance'],
+  HQ: ['intake', 'mails', 'finance', 'staff'],
 };
 
 /**
@@ -195,6 +202,9 @@ const MANAGER_MENU_ORDER: { item: NavItem; capability: ManagerCapability | null 
   { item: { to: "/mails", icon: MailOpen, label: "mails" }, capability: 'mails' },
   { item: { to: "/batches", icon: PackageCheck, label: "batches" }, capability: 'intake' },
   { item: { to: "/returns", icon: RotateCcw, label: "returns" }, capability: 'intake' },
+  // Mahsulotlar — menejer filiali uchun mahsulot qo'sha oladi (registrator
+  // menyusidagidek shartsiz; backend POST /product MANAGER ga ruxsat beradi).
+  { item: { to: "/products", icon: Apple, label: "products" }, capability: null },
   { item: { to: "/all-users", icon: UserRound, label: "users" }, capability: 'staff' },
   { item: { to: "/payments", icon: CreditCard, label: "payments" }, capability: 'finance' },
   { item: { to: "/regions", icon: MapPinned, label: "regions" }, capability: null },

@@ -353,8 +353,18 @@ const Orders = () => {
     role === "manager"
       ? Boolean(branchType && MANAGER_ORDER_CREATE_BRANCH_TYPES.has(branchType))
       : Boolean(role && ORDER_CREATE_ROLES.has(role));
+  // Menejerning sotish/bekor qilish (va shu oynadagi qisman sotish) hamda
+  // qaytarish amallari endi per-menejer `can_sell_cancel` bayrog'iga ham bog'liq
+  // (superadmin/admin yoqadi). Backend amalni baribir tekshiradi — bu faqat
+  // tugmalarni izchil yashirish uchun. Redux `User` tipida bu maydon yo'q, shuning
+  // uchun cast bilan o'qiladi (branch_type kabi).
+  const canSellCancelEnabled = Boolean(
+    (currentUser as { can_sell_cancel?: boolean } | null | undefined)?.can_sell_cancel,
+  );
   const canUseManagerTableActions =
-    role === "manager" && Boolean(branchType && MANAGER_TABLE_ACTION_BRANCH_TYPES.has(branchType));
+    role === "manager" &&
+    Boolean(branchType && MANAGER_TABLE_ACTION_BRANCH_TYPES.has(branchType)) &&
+    canSellCancelEnabled;
   const canUseManagerTabs =
     role === "manager" && Boolean(branchType && MANAGER_TABS_BRANCH_TYPES.has(branchType));
   const canFilterByBranch = role === "admin" || role === "superadmin";

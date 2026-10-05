@@ -6,6 +6,9 @@ export type PrintMode = "browser" | "pdf_100x60" | "thermal_80mm";
 
 const toApiOrder = (order: PostOrder): ApiOrder => ({
   id: order.id,
+  // `order_number` PostOrder tipida e'lon qilinmagan, ammo enrich qilingan
+  // payloadда kelishi mumkin — chop etish uchun himoyalangan holda o'tkazamiz.
+  order_number: (order as PostOrder & { order_number?: string | null }).order_number ?? null,
   qr_code_token: order.qr_code_token,
   status: order.status,
   where_deliver: order.where_deliver,
@@ -32,6 +35,7 @@ const toApiOrder = (order: PostOrder): ApiOrder => ({
     id: order.customer?.id ?? order.customer_id,
     name: order.customer?.name ?? "",
     phone_number: order.customer?.phone_number ?? "",
+    extra_number: order.customer?.extra_number ?? null,
     district: (order.customer as PostOrder["customer"] & { district?: { name: string } } | undefined)?.district,
     region: (order.customer as PostOrder["customer"] & { region?: { name: string } } | undefined)?.region,
   },

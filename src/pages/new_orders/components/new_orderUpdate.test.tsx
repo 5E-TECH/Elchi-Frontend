@@ -189,3 +189,24 @@ describe("NewOrderUpdate catalog-less product names", () => {
     expect(screen.getByText("#8")).toBeInTheDocument();
   });
 });
+
+// fix #2: backend endi menejerga o'z filialidagi NEW buyurtmani (PATCH /orders/:id
+// va /:id/full) tahrirlashga ruxsat beradi — oldin tugma o'chiq edi.
+describe("NewOrderUpdate manager edit (fix #2)", () => {
+  afterEach(() => {
+    orderState.status = undefined;
+  });
+
+  it("lets a manager open the order edit popup for a NEW order", async () => {
+    const user = userEvent.setup();
+    orderState.status = "new";
+    renderPage("manager");
+
+    const [productsEdit, addressEdit] = screen.getAllByRole("button", { name: "Tahrirlash" });
+    expect(productsEdit).toBeEnabled();
+    expect(addressEdit).toBeEnabled();
+
+    await user.click(productsEdit);
+    expect(await screen.findByText("Buyurtmani tahrirlash")).toBeInTheDocument();
+  });
+});
