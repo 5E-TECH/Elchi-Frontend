@@ -1,4 +1,4 @@
-import { memo, useEffect, type ReactNode } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
 import {
   Building2,
   Home,
@@ -188,11 +188,31 @@ const Step2Combined = () => {
     });
   };
 
-  const changeQty = (productId: string, delta: number) => {
+  // #1 — katalog item (product_id) YOKI erkin-matnli "maxsus" item
+  // (product_name, product_id=null) uchun yagona kalit. Bo'sh katalogli marketga
+  // ham buyurtma yaratishni ochadi (order-service product_name'li itemni qabul qiladi).
+  const itemKey = (
+    item: OrderCreateFormValues["details"]["items"][number],
+  ): string => item.product_id ?? `name:${item.product_name ?? ""}`;
+
+  const [customName, setCustomName] = useState("");
+  const [customQty, setCustomQty] = useState(1);
+  const addCustomProduct = () => {
+    const name = customName.trim();
+    if (!name) return;
+    updateItems((items) => [
+      ...items,
+      { product_id: null, product_name: name, quantity: Math.max(1, customQty) },
+    ]);
+    setCustomName("");
+    setCustomQty(1);
+  };
+
+  const changeQty = (key: string, delta: number) => {
     updateItems((items) =>
       items
         .map((item) =>
-          item.product_id === productId
+          itemKey(item) === key
             ? { ...item, quantity: Math.max(1, item.quantity + delta) }
             : item,
         )
@@ -200,12 +220,14 @@ const Step2Combined = () => {
     );
   };
 
-  const removeItem = (productId: string) => {
-    updateItems((items) => items.filter((item) => item.product_id !== productId));
+  const removeItem = (key: string) => {
+    updateItems((items) => items.filter((item) => itemKey(item) !== key));
   };
 
-  const getProduct = (id: string) =>
-    allProducts.find((product: any) => String(product.id) === id);
+  const getProduct = (id: string | null) =>
+    id == null
+      ? undefined
+      : allProducts.find((product: any) => String(product.id) === id);
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-6">
@@ -476,6 +498,47 @@ const Step2Combined = () => {
             <FormFieldError message={errors.details?.items?.message} />
           </div>
 
+          {/* #1 — erkin-matnli "maxsus mahsulot": katalog bo'sh bo'lsa ham buyurtma yaratiladi */}
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-gray-200 dark:border-primarydark p-3">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              {t("customProductLabel", { defaultValue: "Maxsus mahsulot (katalogsiz)" })}
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={customName}
+                onChange={(event) => setCustomName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addCustomProduct();
+                  }
+                }}
+                placeholder={t("customProductPlaceholder", { defaultValue: "Mahsulot nomi" })}
+                className="flex-1 min-w-0 px-3 py-2 rounded-xl text-base md:text-sm bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark text-maindark dark:text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all"
+              />
+              <input
+                type="number"
+                min={1}
+                value={customQty}
+                onChange={(event) =>
+                  setCustomQty(Math.max(1, Math.floor(Number(event.target.value)) || 1))
+                }
+                aria-label={t("quantity", { defaultValue: "Soni" })}
+                className="w-16 px-2 py-2 rounded-xl text-base md:text-sm text-center bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark text-maindark dark:text-primary focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all"
+              />
+              <button
+                type="button"
+                onClick={addCustomProduct}
+                disabled={!customName.trim()}
+                className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-semibold bg-main text-primary transition-all hover:bg-main/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              >
+                <Plus size={14} />
+                {t("addCustom", { defaultValue: "Qo'shish" })}
+              </button>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t("selectedCount")}</p>
             {details.items.length === 0 ? (
@@ -489,7 +552,7 @@ const Step2Combined = () => {
                   const product = getProduct(item.product_id);
                   return (
                     <div
-                      key={item.product_id}
+                      key={itemKey(item)}
                       className="flex flex-col items-stretch gap-2 p-2.5 rounded-xl bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark/60 sm:flex-row sm:items-center"
                     >
                       <div className="w-8 h-8 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0">
@@ -497,7 +560,7 @@ const Step2Combined = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs sm:text-sm font-semibold text-maindark dark:text-primary truncate">
-                          {product?.name ?? `#${item.product_id}`}
+                          {product?.name ?? item.product_name ?? `#${item.product_id ?? "?"}`}
                         </p>
                         <p className="text-xs text-main font-mono">
                           {product?.price?.toLocaleString(locale)} {t("currency")}
@@ -506,7 +569,7 @@ const Step2Combined = () => {
                       <div className="flex items-center justify-end gap-1 sm:ml-auto">
                         <button
                           type="button"
-                          onClick={() => changeQty(item.product_id, -1)}
+                          onClick={() => changeQty(itemKey(item), -1)}
                           className="w-6 h-6 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors cursor-pointer"
                         >
                           <Minus size={10} />
@@ -516,7 +579,7 @@ const Step2Combined = () => {
                         </span>
                         <button
                           type="button"
-                          onClick={() => changeQty(item.product_id, 1)}
+                          onClick={() => changeQty(itemKey(item), 1)}
                           className="w-6 h-6 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors cursor-pointer"
                         >
                           <Plus size={10} />
@@ -525,7 +588,7 @@ const Step2Combined = () => {
                       <div className="flex justify-end sm:block">
                         <button
                           type="button"
-                          onClick={() => removeItem(item.product_id)}
+                          onClick={() => removeItem(itemKey(item))}
                           className="text-gray-300 hover:text-error transition-colors ml-0.5 cursor-pointer"
                         >
                           <Trash2 size={13} />
