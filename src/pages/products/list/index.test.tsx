@@ -341,14 +341,14 @@ describe("ProductTable", () => {
   });
 });
 
-describe("ProductTable — registrator (fix3 RBAC-17)", () => {
-  it("ro'yxat ko'rinadi, lekin 'Mahsulot yaratish' tugmasi yo'q (POST /product registratorga 403)", () => {
+describe("ProductTable — registrator (#1: endi yarata oladi)", () => {
+  it("ro'yxat ko'rinadi va 'Mahsulot yaratish' tugmasi bor (POST /product registrator+manager uchun ochildi)", () => {
     renderWithProviders(<ProductTable />, {
       route: "/products",
       preloadedState: { role: { id: "reg-1", role: "registrator", region: null, name: "Reg" } },
     });
 
     expect(screen.getByText("Olma")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Mahsulot yaratish" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mahsulot yaratish" })).toBeInTheDocument();
   });
 });

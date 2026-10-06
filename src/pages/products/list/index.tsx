@@ -211,7 +211,10 @@ const ProductTable = () => {
   const profile = useSelector((state: RootState) => state.user.user);
   const isRoleResolved = Boolean(roleState.role);
   const isMarketRole = roleState.role === "market";
-  // fix3 RBAC-17: registrator yarata olmaydi (POST /product unga 403).
+  // Yaratish tugmasi `canCreateProducts` bilan boshqariladi. Backend POST
+  // /product endi REGISTRATOR va MANAGER ga ham ruxsat beradi (market_id
+  // majburiy) — filial xodimi "Mahsulot yaratish" tugmasini bosib, market
+  // tanlash oynasidan o'zi yaratadigan marketni tanlaydi (handleSelectMarket).
   const canCreate = useSelector(canCreateProducts);
   const marketUserId = roleState.id ?? profile?.id;
   const [showMarketSelect, setShowMarketSelect] = useState(false);

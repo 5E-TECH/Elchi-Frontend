@@ -1,5 +1,8 @@
 export interface OrderItem {
-    product_id: string;
+    // Katalogdan tanlangan mahsulot id'si, YOKI erkin-matnli ("maxsus")
+    // mahsulot uchun null — bunda nomi `product_name` da keladi (#1).
+    product_id: string | null;
+    product_name?: string;
     quantity: number;
 }
 

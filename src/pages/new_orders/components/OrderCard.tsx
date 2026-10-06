@@ -29,6 +29,8 @@ export const Checkbox = memo(({ checked, onChange, disabled = false }: { checked
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface ApiOrder {
     id: string;
+    /** Inson o'qiydigan buyurtma raqami, masalan "EL-100081". Backend `enrichOrders` beradi. */
+    order_number?: string | null;
     qr_code_token?: string | null;
     status: string;
     where_deliver: "center" | "home" | "address";
@@ -51,7 +53,7 @@ export interface ApiOrder {
               product_name?: string | null;
           }[]
         | null;
-    customer: { id: string; name: string; phone_number: string; district?: { name: string }; region?: { name: string } };
+    customer: { id: string; name: string; phone_number: string; extra_number?: string | null; district?: { name: string }; region?: { name: string } };
     district?: { name: string };
     region?: { name: string };
 }

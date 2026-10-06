@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Building2, Home, Minus, Plus, ShoppingBag, Trash2, User } from "lucide-react";
 import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,27 @@ import {
 } from "../model/orderCreateForm";
 import { FormFieldError, getFieldClassName } from "./formFieldStyles";
 
+/**
+ * Buyurtma qatori: katalog mahsuloti (`product_id` to'la) yoki MAXSUS / katalogsiz
+ * mahsulot (`product_id = null`, nomi `product_name` matnida — hamkor
+ * posilkalaridagidek). Backend order-service ikkala shaklni ham qabul qiladi.
+ *
+ * ⚠️ Umumiy `OrderItem` turi hali `product_id`ni majburiy string deb biladi va
+ * yaratish sxemasi (`orderCreateForm.ts`) uni `.required()` qiladi. Maxsus qator
+ * UI'da qo'shiladi, lekin SUBMIT'da o'tishi uchun o'sha tur va sxema `product_id:
+ * null` + `product_name` ni qabul qiladigan qilib yumshatilishi kerak (ikkalasi
+ * ham bu fayldan tashqarida). Shu paytgacha bu yerda local tur + cast ishlatiladi.
+ */
+type DraftItem = {
+  product_id: string | null;
+  product_name?: string;
+  quantity: number;
+};
+
+/** Katalog qatori `product_id` bilan, maxsus qator esa nomi bilan farqlanadi. */
+const draftItemKey = (item: DraftItem): string =>
+  item.product_id != null ? `catalog:${item.product_id}` : `custom:${item.product_name ?? ""}`;
+
 const Step3Details = () => {
   const { t, i18n } = useTranslation("orders");
   const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
@@ -19,6 +40,9 @@ const Step3Details = () => {
     defaultValues: { productSearch: "" },
   });
   const productSearch = watchSearch("productSearch");
+  // Katalogda yo'q mahsulotni qo'lda qo'shish uchun local kiritish holati.
+  const [customName, setCustomName] = useState("");
+  const [customQty, setCustomQty] = useState(1);
   const {
     control,
     formState: { errors },
@@ -65,14 +89,16 @@ const Step3Details = () => {
     product.name?.toLowerCase().includes(productSearch.toLowerCase()),
   );
 
-  const updateItems = (
-    updater: (items: OrderCreateFormValues["details"]["items"]) => OrderCreateFormValues["details"]["items"],
-  ) => {
-    const currentItems = getValues("details.items");
-    setValue("details.items", updater(currentItems), {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
+  const updateItems = (updater: (items: DraftItem[]) => DraftItem[]) => {
+    const currentItems = getValues("details.items") as unknown as DraftItem[];
+    setValue(
+      "details.items",
+      updater(currentItems) as unknown as OrderCreateFormValues["details"]["items"],
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
   };
 
   const addProduct = (product: any) => {
@@ -91,11 +117,39 @@ const Step3Details = () => {
     });
   };
 
-  const changeQty = (productId: string, delta: number) => {
+  // Maxsus (katalogsiz) mahsulot: operator nomini yozadi, qator `product_id: null`
+  // + `product_name` bilan qo'shiladi (hamkor posilkalaridagi shakl — backend
+  // order-service qabul qiladi). Bir xil nom qayta kiritilsa soni ortadi.
+  const addCustomProduct = () => {
+    const name = customName.trim();
+    const quantity = Math.max(1, Math.floor(customQty) || 1);
+    if (!name) return;
+
+    updateItems((items) => {
+      const existing = items.find(
+        (item) => item.product_id == null && item.product_name === name,
+      );
+
+      if (existing) {
+        return items.map((item) =>
+          item.product_id == null && item.product_name === name
+            ? { ...item, quantity: item.quantity + quantity }
+            : item,
+        );
+      }
+
+      return [...items, { product_id: null, product_name: name, quantity }];
+    });
+
+    setCustomName("");
+    setCustomQty(1);
+  };
+
+  const changeQty = (key: string, delta: number) => {
     updateItems((items) =>
       items
         .map((item) =>
-          item.product_id === productId
+          draftItemKey(item) === key
             ? { ...item, quantity: Math.max(1, item.quantity + delta) }
             : item,
         )
@@ -103,8 +157,8 @@ const Step3Details = () => {
     );
   };
 
-  const removeItem = (productId: string) => {
-    updateItems((items) => items.filter((item) => item.product_id !== productId));
+  const removeItem = (key: string) => {
+    updateItems((items) => items.filter((item) => draftItemKey(item) !== key));
   };
 
   const getProduct = (productId: string) =>
@@ -221,6 +275,48 @@ const Step3Details = () => {
               })
             )}
           </div>
+
+          {/* Maxsus (katalogsiz) mahsulot — operator nomini yozib qo'shadi. */}
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-gray-200 dark:border-primarydark p-3">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              {t("customProductLabel", { defaultValue: "Maxsus mahsulot" })}
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={customName}
+                onChange={(event) => setCustomName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addCustomProduct();
+                  }
+                }}
+                placeholder={t("customProductPlaceholder", { defaultValue: "Mahsulot nomi" })}
+                className="flex-1 min-w-0 px-3 py-2 rounded-xl text-base md:text-sm bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark text-maindark dark:text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all"
+              />
+              <input
+                type="number"
+                min={1}
+                value={customQty}
+                onChange={(event) =>
+                  setCustomQty(Math.max(1, Math.floor(Number(event.target.value)) || 1))
+                }
+                aria-label={t("quantity", { defaultValue: "Soni" })}
+                className="w-16 px-2 py-2 rounded-xl text-base md:text-sm text-center bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark text-maindark dark:text-primary focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all"
+              />
+              <button
+                type="button"
+                onClick={addCustomProduct}
+                disabled={!customName.trim()}
+                className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-semibold bg-main text-primary transition-all hover:bg-main/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              >
+                <Plus size={14} />
+                {t("addCustom", { defaultValue: "Qo'shish" })}
+              </button>
+            </div>
+          </div>
+
           <FormFieldError message={errors.details?.items?.message} />
         </div>
 
@@ -236,12 +332,17 @@ const Step3Details = () => {
             </div>
           ) : (
             <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
-              {details.items.map((item) => {
-                const product = getProduct(item.product_id);
+              {(details.items as unknown as DraftItem[]).map((item) => {
+                const key = draftItemKey(item);
+                const product = item.product_id != null ? getProduct(item.product_id) : undefined;
+                const displayName =
+                  item.product_name ??
+                  product?.name ??
+                  t("productIdFallback", { id: item.product_id ?? "" });
 
                 return (
                   <div
-                    key={item.product_id}
+                    key={key}
                     className="flex items-center gap-3 p-3 rounded-xl bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark/60"
                   >
                     <div className="w-9 h-9 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0">
@@ -249,16 +350,22 @@ const Step3Details = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-maindark dark:text-primary truncate">
-                        {product?.name ?? t("productIdFallback", { id: item.product_id })}
+                        {displayName}
                       </p>
-                      <p className="text-xs text-main font-mono">
-                        {product?.price?.toLocaleString(locale)} {t("currency")}
-                      </p>
+                      {product?.price != null ? (
+                        <p className="text-xs text-main font-mono">
+                          {product.price.toLocaleString(locale)} {t("currency")}
+                        </p>
+                      ) : item.product_id == null ? (
+                        <p className="text-xs text-gray-400">
+                          {t("customProductTag", { defaultValue: "Maxsus mahsulot" })}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={() => changeQty(item.product_id, -1)}
+                        onClick={() => changeQty(key, -1)}
                         className="w-7 h-7 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors cursor-pointer"
                       >
                         <Minus size={12} />
@@ -268,7 +375,7 @@ const Step3Details = () => {
                       </span>
                       <button
                         type="button"
-                        onClick={() => changeQty(item.product_id, 1)}
+                        onClick={() => changeQty(key, 1)}
                         className="w-7 h-7 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors cursor-pointer"
                       >
                         <Plus size={12} />
@@ -276,7 +383,7 @@ const Step3Details = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeItem(item.product_id)}
+                      onClick={() => removeItem(key)}
                       className="ml-1 text-gray-300 hover:text-error transition-colors cursor-pointer"
                     >
                       <Trash2 size={14} />
