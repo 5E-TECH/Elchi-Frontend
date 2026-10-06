@@ -44,9 +44,9 @@ describe("canCreateProducts (fix3 RBAC-17)", () => {
     expect(canCreateProducts(state("market"))).toBe(true);
   });
 
-  it("registrator (va boshqalar) yarata olmaydi", () => {
-    expect(canCreateProducts(state("registrator", "HQ"))).toBe(false);
-    expect(canCreateProducts(state("manager", "HYBRID"))).toBe(false);
+  it("registrator va manager ham yarata oladi (#1); courier yo'q", () => {
+    expect(canCreateProducts(state("registrator", "HQ"))).toBe(true);
+    expect(canCreateProducts(state("manager", "HYBRID"))).toBe(true);
     expect(canCreateProducts(state("courier"))).toBe(false);
   });
 });

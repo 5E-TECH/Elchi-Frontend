@@ -12,6 +12,7 @@ import {
   Camera,
   QrCode,
   CircleDollarSign,
+  ShoppingCart,
 } from "lucide-react";
 import type { ExpenseProofCondition, User } from "../types/user";
 import { useTranslation } from "react-i18next";
@@ -27,6 +28,8 @@ interface UserInfoCardsProps {
   isMarketCancelledHandoverQrPending?: boolean;
   onToggleExtraCostPermission?: () => void;
   isExtraCostPermissionPending?: boolean;
+  onToggleSellCancelPermission?: () => void;
+  isSellCancelPermissionPending?: boolean;
   canManageProofSettings?: boolean;
   headerAction?: React.ReactNode;
 }
@@ -118,6 +121,8 @@ export const UserInfoCards = memo(
     isMarketCancelledHandoverQrPending = false,
     onToggleExtraCostPermission,
     isExtraCostPermissionPending = false,
+    onToggleSellCancelPermission,
+    isSellCancelPermissionPending = false,
     canManageProofSettings = false,
     headerAction,
   }: UserInfoCardsProps) => {
@@ -126,6 +131,8 @@ export const UserInfoCards = memo(
       user.role === "admin" || user.role === "manager" || user.role === "registrator";
     const isCourier = user.role === "courier";
     const canReceiveExtraCostPermission = user.role === "courier" || user.role === "manager";
+    // Sotish/bekor qilish ruxsati faqat menejerga tegishli (kuryerga emas).
+    const canReceiveSellCancelPermission = user.role === "manager";
     const isMarket = user.role === "market" || user.role === "marketing";
     const isCustomer = user.role === "customer";
     const proofConditions = Array.isArray(user.expense_proof_conditions)
@@ -249,24 +256,44 @@ export const UserInfoCards = memo(
             </>
           )}
 
-          {canReceiveExtraCostPermission && onToggleExtraCostPermission && (
+          {((canReceiveExtraCostPermission && onToggleExtraCostPermission) ||
+            (canReceiveSellCancelPermission && onToggleSellCancelPermission)) && (
             <>
               <Divider title={t("permissions", { defaultValue: "Ruxsatlar" })} />
 
-              <InfoChip
-                icon={CircleDollarSign}
-                iconBg="bg-emerald-50 dark:bg-emerald-500/10"
-                iconColor="text-emerald-500"
-                label={t("extraCostPermission")}
-                value={
-                  <ToggleButton
-                    checked={Boolean(user.can_add_extra_cost)}
-                    disabled={isExtraCostPermissionPending}
-                    label={t("extraCostPermission")}
-                    onClick={onToggleExtraCostPermission}
-                  />
-                }
-              />
+              {canReceiveExtraCostPermission && onToggleExtraCostPermission && (
+                <InfoChip
+                  icon={CircleDollarSign}
+                  iconBg="bg-emerald-50 dark:bg-emerald-500/10"
+                  iconColor="text-emerald-500"
+                  label={t("extraCostPermission")}
+                  value={
+                    <ToggleButton
+                      checked={Boolean(user.can_add_extra_cost)}
+                      disabled={isExtraCostPermissionPending}
+                      label={t("extraCostPermission")}
+                      onClick={onToggleExtraCostPermission}
+                    />
+                  }
+                />
+              )}
+
+              {canReceiveSellCancelPermission && onToggleSellCancelPermission && (
+                <InfoChip
+                  icon={ShoppingCart}
+                  iconBg="bg-sky-50 dark:bg-sky-500/10"
+                  iconColor="text-sky-500"
+                  label={t("sellCancelPermission")}
+                  value={
+                    <ToggleButton
+                      checked={Boolean(user.can_sell_cancel)}
+                      disabled={isSellCancelPermissionPending}
+                      label={t("sellCancelPermission")}
+                      onClick={onToggleSellCancelPermission}
+                    />
+                  }
+                />
+              )}
             </>
           )}
 

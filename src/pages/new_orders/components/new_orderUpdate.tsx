@@ -370,11 +370,16 @@ const NewOrderUpdate = () => {
     ? t("customerEditAdminOnly")
     : null;
   // fix3b FE-ORD-12: manzil va buyurtma/mahsulotlar oynasi PATCH
-  // /orders/:id/full orqali saqlanadi — u faqat SUPERADMIN/ADMIN/REGISTRATOR
-  // uchun ochiq. Market (o'z NEW buyurtmasi), menejer va kuryer doim 403
-  // olardi: ularga tugma o'chiq va sababi ko'rsatiladi.
+  // /orders/:id/full orqali saqlanadi. SUPERADMIN/ADMIN/REGISTRATOR uchun ochiq;
+  // backend endi MENEJERGA ham o'z filialidagi NEW buyurtmani tahrirlashga ruxsat
+  // beradi. Market va kuryer doim 403 oladi: ularga tugma o'chiq, sababi title'da.
+  // Qabul qilingan/filialga yuborilgan buyurtmada status qulflari (productsLocked /
+  // destinationLocked) baribir tugmani o'chiradi — bu rolga bog'liq emas.
   const canEditOrderFull =
-    role === "superadmin" || role === "admin" || role === "registrator";
+    role === "superadmin" ||
+    role === "admin" ||
+    role === "registrator" ||
+    role === "manager";
   const orderEditRoleLockReason = t("orderEditRoleOnly");
 
   // ─── State ──────────────────────────────────────────────────────────────────

@@ -12,7 +12,7 @@ import { renderWithProviders } from "../../../test/test-utils";
  * fix3b LC-04 — REGIONAL menejer kuryer qo'lidagi buyurtmani sotmaydi.
  */
 
-const ROLE_LOCK = "Buyurtmani faqat superadmin, admin yoki registrator o'zgartira oladi.";
+const ROLE_LOCK = "Buyurtmani faqat superadmin, admin, menejer yoki registrator o'zgartira oladi.";
 
 const orderState: Record<string, unknown> = {};
 
@@ -86,7 +86,8 @@ describe("NewOrderUpdate — buyurtmani tahrirlash huquqi (fix3b FE-ORD-12)", ()
     Object.keys(orderState).forEach((key) => delete orderState[key]);
   });
 
-  it.each(["market", "manager", "courier"])("%s — ikkala tahrirlash tugmasi o'chiq, sababi title'da", (role) => {
+  // fix #2: market va kuryer hanuz tahrirlay olmaydi — tugma o'chiq, sababi title'da.
+  it.each(["market", "courier"])("%s — ikkala tahrirlash tugmasi o'chiq, sababi title'da", (role) => {
     renderAs(role);
 
     const [productsEdit, addressEdit] = editButtons();
@@ -96,7 +97,9 @@ describe("NewOrderUpdate — buyurtmani tahrirlash huquqi (fix3b FE-ORD-12)", ()
     expect(addressEdit).toHaveAttribute("title", ROLE_LOCK);
   });
 
-  it.each(["superadmin", "admin", "registrator"])("%s — buyurtma va manzil oynasi ochiladi", async (role) => {
+  // fix #2: menejer endi (superadmin/admin/registrator qatorida) yangi buyurtmani
+  // tahrirlay oladi — backend o'z filialidagi NEW buyurtma uchun ruxsat beradi.
+  it.each(["superadmin", "admin", "registrator", "manager"])("%s — buyurtma va manzil oynasi ochiladi", async (role) => {
     const user = userEvent.setup();
     renderAs(role);
 
