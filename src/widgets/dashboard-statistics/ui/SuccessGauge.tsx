@@ -1,10 +1,4 @@
 import { memo } from "react";
-import {
-  RadialBarChart,
-  RadialBar,
-  PolarAngleAxis,
-  ResponsiveContainer,
-} from "recharts";
 import { Gauge, CheckCircle2, XCircle } from "lucide-react";
 import {
   toneAccent,
@@ -18,6 +12,9 @@ import {
  * SuccessGauge — muvaffaqiyat darajasi (success rate) yarim doira "gauge".
  * Speedometer ko'rinishi — boshqa kartalardan keskin ajralib turadi.
  * Pastda sotilgan/bekor sonlari ixcham ko'rsatiladi.
+ *
+ * Recharts EMAS, oddiy SVG (NIFAnCvf) — OrderStatusDonut bilan bir sabab:
+ * birinchi ekrandagi karta recharts'ni birinchi yuklashga tortmasin.
  */
 export interface SuccessGaugeProps {
   successRate: number; // 0..100
@@ -27,6 +24,16 @@ export interface SuccessGaugeProps {
   soldLabel: string;
   cancelledLabel: string;
 }
+
+// Avvalgi RadialBarChart (cy 80%, barSize 18, cornerRadius 10) bilan bir xil ko'rinish.
+const WIDTH = 280;
+const HEIGHT = 180;
+const CENTER_X = WIDTH / 2;
+const CENTER_Y = HEIGHT * 0.8;
+const RADIUS = 123;
+const BAR_SIZE = 18;
+/** Chapdan o'ngga yarim doira; `pathLength=100` tufayli dash uzunligi to'g'ridan-to'g'ri foiz. */
+const ARC_PATH = `M ${CENTER_X - RADIUS} ${CENTER_Y} A ${RADIUS} ${RADIUS} 0 0 1 ${CENTER_X + RADIUS} ${CENTER_Y}`;
 
 const gaugeTone = (rate: number) =>
   rate >= 70 ? "success" : rate >= 40 ? "warning" : "danger";
@@ -42,7 +49,7 @@ const SuccessGauge = memo(
   }: SuccessGaugeProps) => {
     const tone = gaugeTone(successRate);
     const accent = toneAccent(tone);
-    const data = [{ name: "success", value: Math.min(100, Math.max(0, successRate)) }];
+    const value = Math.min(100, Math.max(0, successRate));
 
     return (
       <div className="el-card relative flex min-h-[300px] flex-col overflow-hidden rounded-2xl p-5">
@@ -56,26 +63,33 @@ const SuccessGauge = memo(
         </div>
 
         <div className="relative flex flex-1 items-end justify-center">
-          <ResponsiveContainer width="100%" height={180}>
-            <RadialBarChart
-              cx="50%"
-              cy="80%"
-              innerRadius="120%"
-              outerRadius="170%"
-              barSize={18}
-              data={data}
-              startAngle={180}
-              endAngle={0}
-            >
-              <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-              <RadialBar
-                background={{ fill: "var(--color-border-soft)" }}
-                dataKey="value"
-                cornerRadius={10}
-                fill={accent}
+          <svg
+            width="100%"
+            height={HEIGHT}
+            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+            role="img"
+            aria-label={`${title}: ${formatPercent(successRate, 1)}`}
+          >
+            <path
+              d={ARC_PATH}
+              fill="none"
+              stroke="var(--color-border-soft)"
+              strokeWidth={BAR_SIZE}
+              strokeLinecap="round"
+            />
+            {value > 0 && (
+              <path
+                data-testid="success-gauge-value"
+                d={ARC_PATH}
+                fill="none"
+                stroke={accent}
+                strokeWidth={BAR_SIZE}
+                strokeLinecap="round"
+                pathLength={100}
+                strokeDasharray={`${value} 100`}
               />
-            </RadialBarChart>
-          </ResponsiveContainer>
+            )}
+          </svg>
 
           {/* Markaz: katta foiz */}
           <div className="pointer-events-none absolute inset-x-0 bottom-6 flex flex-col items-center">

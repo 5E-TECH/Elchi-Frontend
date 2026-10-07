@@ -3,6 +3,16 @@
     "all": "All",
     "unread": "Unread"
   },
+  "filters": {
+    "toggle": "Filters",
+    "toggleActive": "Filters ({{count}})",
+    "category": "Category",
+    "allCategories": "All",
+    "importantOnly": "Important only",
+    "emptyTitle": "Nothing matches this filter",
+    "emptyHint": "Choose another category or clear the filter",
+    "clear": "Clear filter"
+  },
   "markAllRead": "Mark all as read",
   "markAllReadSuccess": "All notifications marked as read",
   "markAllReadError": "Failed to mark notifications",
@@ -108,6 +118,20 @@
       "title": "Enter a title",
       "groupKey": "Enter a group key",
       "tooLong": "At most {{max}} characters"
-    }
+    },
+    "smsHint": "SMS costs money and goes only to recipients with a phone. If there are more recipients than the SMS limit, the server refuses to send."
+  },
+  "push": {
+    "turnOn": "Turn on notifications",
+    "turnOff": "Turn off notifications",
+    "enabled": "Notifications are on — new messages will arrive on this device.",
+    "disabled": "Notifications will no longer arrive on this device.",
+    "enableFailed": "Could not turn on notifications. Please try again later.",
+    "disableFailed": "Could not turn off notifications. Please try again.",
+    "blocked": "Notifications are blocked in your browser. To turn them on, allow them for this site in the browser settings.",
+    "explainTitle": "Turn on notifications?",
+    "explainBody": "When a new order or an important event happens, your phone (or computer) gets a notification — even when the app is closed. Next, the browser will ask for permission: tap “Allow”.",
+    "explainConfirm": "Turn on",
+    "explainCancel": "Not now"
   }
 }

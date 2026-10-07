@@ -43,7 +43,9 @@ interface FieldProps {
 }
 
 const Field = ({ label, required, icon, children, error, wide }: FieldProps) => (
-  <div className={`flex flex-col gap-1.5${wide ? " col-span-2" : ""}`}>
+  // `sm:` prefiksi shart: telefonda grid bitta ustunli. Prefiksiz `col-span-2` yashirin
+  // ikkinchi ustun yaratib, ISM/TELEFON inputlarini 37–70px ga siqib qo'yardi.
+  <div className={`flex flex-col gap-1.5${wide ? " sm:col-span-2" : ""}`}>
     <label className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide leading-4">
       <span className="shrink-0">{icon}</span>
       <span className="wrap-break-word">{label}</span>
@@ -250,7 +252,7 @@ const Step2Combined = () => {
                 error={errors.customer?.phone?.message}
               >
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
+                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
                     +998
                   </span>
                   <input
@@ -285,7 +287,7 @@ const Step2Combined = () => {
                 error={errors.customer?.extra_phone?.message}
               >
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
+                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
                     +998
                   </span>
                   <input

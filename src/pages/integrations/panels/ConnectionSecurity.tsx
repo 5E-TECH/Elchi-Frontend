@@ -35,7 +35,13 @@ const initialValues = (c: Connection, fields: ConnectionField[]): FieldValues =>
      * Xarita (obyekt) — asl yozuvdan o'qiladi. Busiz maydon bo'sh boshlanib,
      * saqlashda mavjud xaritani O'CHIRIB yuborardi.
      */
-    if (f.type === "mapping") {
+    /**
+     * ⚠️ `status-map` ham OBYEKT (JnHK6bgV). Ilgari faqat `mapping` shu yerga
+     * tushardi va status xaritasi `String(obj)` → "[object Object]" bo'lib
+     * qolardi: jadval bo'sh ko'rinardi, bitta katak tahrirlanib saqlansa esa
+     * mavjud xaritaning QOLGAN qismi o'chib ketardi (lokal E2E ushladi).
+     */
+    if (f.type === "mapping" || f.type === "status-map") {
       const val = getPath(raw, f.key);
       out[f.key] =
         val && typeof val === "object" && !Array.isArray(val)

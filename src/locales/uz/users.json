@@ -107,7 +107,7 @@
   "courierTariff": "Kuryer tarifi",
   "marketInfo": "Market ma'lumotlari",
   "newPasswordOptional": "Yangi parol (ixtiyoriy)",
-  "roleMarketCardHint": "Yangi foydalanuvchi tizimga kiritilgach, unga SMS orqali login va parol yuboriladi.",
+  "roleMarketCardHint": "Yangi foydalanuvchi tizimga kiritilgach, login va parolni unga o'zingiz yetkazing — tizim ularni SMS orqali yubormaydi.",
   "nameRequired": "Ism Familya talab qilinadi",
   "firstNameRequired": "Ism talab qilinadi",
   "phoneValidation": "9 ta raqam kiriting",

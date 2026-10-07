@@ -7,15 +7,22 @@ import {
   Bolt,
   ChevronLeft,
   ChevronRight,
+  FileSpreadsheet,
+  Loader2,
   Sigma,
+  Wallet,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
+import { API_ENDPOINTS } from "../../../shared/api/endpoints";
+import { downloadXlsx, getExportErrorMessage } from "../../../shared/lib/exportFile";
 import FilterDateInput from "../../../shared/ui/FilterDateInput";
 import {
   extractFinancialLedgerItems,
   formatFinancialAmount,
+  readCurrentBalance,
   toFinancialNumber,
 } from "../lib/financialBalance";
 
@@ -266,7 +273,7 @@ const StatCard = ({
       <p className="text-sm font-medium text-maindark/60 dark:text-slate-400">{label}</p>
       <p className={`mt-2 text-2xl font-black tabular-nums ${valueClass}`}>
         {value > 0 && tone === "positive" ? "+" : value < 0 ? "-" : ""}
-        {formatFinancialAmount(Math.abs(value), "comma")} {currencyLabel}
+        {formatFinancialAmount(Math.abs(value))} {currencyLabel}
       </p>
       {description ? <p className="mt-2 text-xs font-semibold text-maindark/50 dark:text-slate-400">{description}</p> : null}
     </div>
@@ -300,7 +307,7 @@ const SourcePanel = ({
               <div className="flex shrink-0 items-center gap-4 text-right">
                 <p className={`text-sm font-black tabular-nums ${color.split(" ")[1]}`}>
                   {tone === "positive" ? "+" : "-"}
-                  {formatFinancialAmount(row.amount, "comma")} {currencyLabel}
+                  {formatFinancialAmount(row.amount)} {currencyLabel}
                 </p>
                 <p className="w-12 text-xs font-semibold text-maindark/45 dark:text-slate-400">{row.percent.toFixed(2)}%</p>
               </div>
@@ -367,6 +374,31 @@ const AnalysisTab = () => {
   const totalPages = Math.max(1, Math.ceil(topRows.length / PAGE_SIZE));
   const paginatedRows = topRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const isLoading = isAnalyticsLoading || isTopImpactsLoading;
+  const currentBalance = readCurrentBalance(analyticsData);
+  const { api: notify } = useAppNotification();
+  const [exporting, setExporting] = useState(false);
+
+  // Tahlildagi davr bilan bir xil sana oralig'idagi daftar yozuvlari.
+  const exportExcel = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await downloadXlsx(
+        API_ENDPOINTS.EXPORT.FINANCIAL_BALANCE_XLSX,
+        { ...(fromDate && { from_date: fromDate }), ...(toDate && { to_date: toDate }) },
+        "financial-balance.xlsx",
+      );
+    } catch (error) {
+      notify.error({
+        message: t("excelExportError"),
+        description: await getExportErrorMessage(error),
+        placement: "topRight",
+        duration: 5,
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const setPeriod = (period: "today" | "week" | "month" | "year") => {
     const end = new Date();
@@ -420,10 +452,29 @@ const AnalysisTab = () => {
               {label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => void exportExcel()}
+            disabled={exporting}
+            className="col-span-2 flex h-10 items-center justify-center gap-2 rounded-xl border border-main/40 px-4 text-sm font-semibold text-main shadow-sm transition hover:bg-main/10 disabled:opacity-60 sm:col-span-1"
+          >
+            {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
+            {t("excel")}
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className={`grid grid-cols-1 gap-4 ${currentBalance === null ? "lg:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-4"}`}>
+        {currentBalance !== null && (
+          <StatCard
+            icon={<Wallet size={20} />}
+            label={t("financialBalanceCurrent")}
+            value={currentBalance}
+            currencyLabel={currencyLabel}
+            tone="neutral"
+            description={t("financialBalanceCurrentHint")}
+          />
+        )}
         <StatCard icon={<TrendingUp size={20} />} label={t("financialBalancePositiveImpact")} value={summary.positiveTotal} currencyLabel={currencyLabel} tone="positive" />
         <StatCard icon={<TrendingDown size={20} />} label={t("financialBalanceNegativeImpact")} value={-summary.negativeTotal} currencyLabel={currencyLabel} tone="negative" />
         <StatCard
@@ -481,7 +532,7 @@ const AnalysisTab = () => {
                     </div>
                     <p className={`text-right text-sm font-black tabular-nums ${isExpense ? "text-red-400" : "text-emerald-400"}`}>
                       {isExpense ? "-" : "+"}
-                      {formatFinancialAmount(row.amount, "comma")} {currencyLabel}
+                      {formatFinancialAmount(row.amount)} {currencyLabel}
                     </p>
                   </div>
                 );

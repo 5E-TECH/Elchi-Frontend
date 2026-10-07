@@ -9,7 +9,6 @@ import {
 } from "../../../../../entities/ai-order";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
 import { useProducts } from "../../../../../entities/product";
-import { getBackendErrorMessage } from "../../../../../shared/lib/backendError";
 import type { MarketOption } from "../../model/orderCreateForm";
 import Step1Market from "../Step1Market";
 import { FormFieldError, FormStateNote } from "../formFieldStyles";
@@ -17,6 +16,7 @@ import AiConfirmBar from "./AiConfirmBar";
 import AiCreatedList from "./AiCreatedList";
 import AiInputPanel from "./AiInputPanel";
 import AiPreviewCard, { type AiAreaItem, type AiProductOption } from "./AiPreviewCard";
+import { confirmFailureText, confirmHttpErrorText } from "./aiErrorText";
 import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "./aiDraft";
 import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
@@ -27,6 +27,8 @@ type AiCreatePanelProps = {
   isMarketRole: boolean;
   market: MarketOption | null;
   onSwitchToManual: () => void;
+  /** Admin/registrator: marketni qayta tanlash (`no_market`). Market rolida berilmaydi. */
+  onChangeMarket?: () => void;
 };
 
 /**
@@ -36,7 +38,7 @@ type AiCreatePanelProps = {
  * (localStorage emas). Admin/registrator uchun market tanlanmagan bo'lsa
  * avval o'sha Step1Market ko'rsatiladi.
  */
-const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCreatePanelProps) => {
+const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChangeMarket }: AiCreatePanelProps) => {
   const { t } = useTranslation("orders");
   const queryClient = useQueryClient();
   const confirm = useAiConfirm();
@@ -50,6 +52,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCre
   const createdSigs = useRef(new Set<string>());
   const submittingRef = useRef(false);
   const nextKey = useRef(0);
+  const cardsRef = useRef<HTMLDivElement | null>(null);
 
   const hasMarket = isMarketRole || Boolean(market);
   const marketId = !isMarketRole && market ? String(market.id) : undefined;
@@ -156,7 +159,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCre
           const draft = readyTargets[result.index];
           if (!draft) continue;
           if (result.ok) createdIds.set(draft.key, result.order_id);
-          else failed.set(draft.key, result.reason || t("aiCreateFailed"));
+          else failed.set(draft.key, confirmFailureText(result, t));
         }
 
         const createdDrafts = readyTargets.filter((draft) => createdIds.has(draft.key));
@@ -171,17 +174,31 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCre
       },
       onError: (error) => {
         const status = (error as AxiosError).response?.status;
-        if (!status || status >= 500) {
-          setConfirmError(t("aiConfirmUnknown"));
-          void queryClient.invalidateQueries({ queryKey: ["orders"] });
-          return;
-        }
-        setConfirmError(getBackendErrorMessage(error) ?? t("aiCreateFailed"));
+        // Natija noma'lum — ro'yxat yangilanadi, operator o'sha yerdan tekshiradi.
+        if (!status || status >= 500) void queryClient.invalidateQueries({ queryKey: ["orders"] });
+        setConfirmError(confirmHttpErrorText(error, t));
       },
       onSettled: () => {
         submittingRef.current = false;
       },
     });
+  };
+
+  /**
+   * "To'ldirilmagan (N)": ekran markazidan PASTDAGI birinchi tayyor bo'lmagan
+   * kartaga o'tadi; pastda qolmagan bo'lsa birinchisiga qaytadi (aylana).
+   * Skroll `<main>` da — `scrollIntoView` shunga ham ishlaydi.
+   * ⚠️ `block: "start"`, "center" EMAS: ochiq karta telefonda ekrandan baland,
+   * markazlashda uning boshi (holat va kamchiliklar ro'yxati) ekrandan chiqib ketadi.
+   */
+  const jumpToUnready = () => {
+    const cards = Array.from(
+      cardsRef.current?.querySelectorAll<HTMLElement>('[data-testid="ai-preview-card"][data-ready="false"]') ?? [],
+    );
+    if (cards.length === 0) return;
+    const middle = window.innerHeight / 2;
+    const next = cards.find((card) => card.getBoundingClientRect().top > middle) ?? cards[0];
+    next.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (!hasMarket) {
@@ -195,7 +212,12 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCre
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <AiInputPanel marketId={marketId} onParsed={handleParsed} onSwitchToManual={onSwitchToManual} />
+      <AiInputPanel
+        marketId={marketId}
+        onParsed={handleParsed}
+        onSwitchToManual={onSwitchToManual}
+        onSelectMarket={isMarketRole ? undefined : onChangeMarket}
+      />
 
       {parseNotice && <FormStateNote state="info" message={parseNotice} />}
       {resultSummary && <FormStateNote state="success" message={t("aiResultSummary", resultSummary)} />}
@@ -203,21 +225,25 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCre
 
       <AiCreatedList rows={created} />
 
-      {drafts.map((draft, index) => (
-        <AiPreviewCard
-          key={draft.key}
-          draft={draft}
-          index={index}
-          products={products}
-          productsLoading={productsQuery.isLoading}
-          regions={regions}
-          regionsLoading={regionsQuery.isLoading}
-          creating={confirm.isPending}
-          onChange={(order) => updateDraft(draft.key, order)}
-          onRemove={() => removeDraft(draft.key)}
-          onCreate={() => submit([draft])}
-        />
-      ))}
+      {drafts.length > 0 && (
+        <div ref={cardsRef} className="flex flex-col gap-3 sm:gap-4">
+          {drafts.map((draft, index) => (
+            <AiPreviewCard
+              key={draft.key}
+              draft={draft}
+              index={index}
+              products={products}
+              productsLoading={productsQuery.isLoading}
+              regions={regions}
+              regionsLoading={regionsQuery.isLoading}
+              creating={confirm.isPending}
+              onChange={(order) => updateDraft(draft.key, order)}
+              onRemove={() => removeDraft(draft.key)}
+              onCreate={() => submit([draft])}
+            />
+          ))}
+        </div>
+      )}
 
       {drafts.length > 0 && (
         <AiConfirmBar
@@ -225,6 +251,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual }: AiCre
           notReadyCount={drafts.length - readyDrafts.length}
           pending={confirm.isPending}
           onConfirm={() => submit(readyDrafts)}
+          onJumpToUnready={jumpToUnready}
         />
       )}
     </div>

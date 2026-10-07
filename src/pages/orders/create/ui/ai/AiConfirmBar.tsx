@@ -1,5 +1,5 @@
 import { memo, useId, useState } from "react";
-import { Loader2, SendHorizontal } from "lucide-react";
+import { AlertTriangle, Loader2, SendHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../../shared/ui/Popup";
 import { formatPrice } from "../../model/orderCreateForm";
@@ -17,13 +17,15 @@ type AiConfirmBarProps = {
   notReadyCount: number;
   pending: boolean;
   onConfirm: () => void;
+  /** Keyingi to'ldirilmagan kartaga o'tish (10-30 karta orasida yo'qolmaslik uchun). */
+  onJumpToUnready: () => void;
 };
 
 /**
  * ⚠️ "Hammasini yaratish" tugmasi ATAYLAB YO'Q: faqat `ready` kartalar
  * yaratiladi, to'ldirilmaganlari so'rovga umuman qo'shilmaydi.
  */
-const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm }: AiConfirmBarProps) => {
+const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm, onJumpToUnready }: AiConfirmBarProps) => {
   const { t } = useTranslation(["orders", "common"]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const dialogTitleId = useId();
@@ -48,15 +50,31 @@ const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm }: AiConf
         <p className="text-sm font-semibold text-maindark dark:text-primary">
           {t("aiReadySummary", { ready: readyCount, notReady: notReadyCount })}
         </p>
-        <button
-          type="button"
-          onClick={handleClick}
-          disabled={disabled}
-          className={`${getActionButtonClassName({ variant: "primary", disabled })} min-h-12 w-full sm:w-auto`}
-        >
-          {pending ? <Loader2 size={16} className="animate-spin" /> : <SendHorizontal size={16} />}
-          {pending ? t("aiCreating") : t("aiCreateReady", { count: readyCount })}
-        </button>
+        <div className="flex gap-2">
+          {/* Telefonda ixcham (⚠ N) — asosiy "Tayyorlarini yaratish" matni kesilmasin. */}
+          {notReadyCount > 0 && (
+            <button
+              type="button"
+              onClick={onJumpToUnready}
+              aria-label={t("aiJumpToUnready", { count: notReadyCount })}
+              title={t("aiJumpToUnready", { count: notReadyCount })}
+              className={`${getActionButtonClassName({ variant: "secondary" })} min-h-12 shrink-0 px-3 text-amber-700 dark:text-amber-300`}
+            >
+              <AlertTriangle size={16} className="shrink-0" />
+              <span className="sm:hidden">{notReadyCount}</span>
+              <span className="hidden sm:inline">{t("aiJumpToUnready", { count: notReadyCount })}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleClick}
+            disabled={disabled}
+            className={`${getActionButtonClassName({ variant: "primary", disabled })} min-h-12 min-w-0 flex-1 sm:flex-none`}
+          >
+            {pending ? <Loader2 size={16} className="shrink-0 animate-spin" /> : <SendHorizontal size={16} className="shrink-0" />}
+            <span className="truncate">{pending ? t("aiCreating") : t("aiCreateReady", { count: readyCount })}</span>
+          </button>
+        </div>
       </div>
 
       <Popup isShow={dialogOpen} onClose={() => setDialogOpen(false)} labelledBy={dialogTitleId}>

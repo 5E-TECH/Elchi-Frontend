@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
@@ -7,6 +7,8 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/test/setup.ts",
+    // Playwright e2e (tests/e2e) — `npm run test:e2e` bilan, vitest emas.
+    exclude: [...configDefaults.exclude, "tests/e2e/**"],
     css: true,
     // jsdom + Ant Design/Highcharts suites are memory-heavy. The default
     // thread pool heavily contended on this project and looked hung with no

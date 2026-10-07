@@ -1,0 +1,8 @@
+# Cloudflare Workers assets sarlavhalari (QgqO0CdZ).
+# Asosiy shart — sw.js ning public/ da bo'lishi: dist/sw.js paydo bo'lishi bilan
+# Cloudflare JS turini o'zi beradi. Bu qatorlar zaxira chora.
+# _headers o'zi serverga chiqmaydi — deploydan keyin /_headers 404/SPA qaytarishi NORMAL.
+/sw.js
+  Content-Type: application/javascript; charset=utf-8
+  Service-Worker-Allowed: /
+  Cache-Control: no-cache

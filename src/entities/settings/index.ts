@@ -43,6 +43,10 @@ export interface AppSettings {
       error: ScannerSoundId;
     };
   };
+  notifications: {
+    /** Web push (telefon/brauzer) yoqilganmi — davC9QOX. */
+    push: boolean;
+  };
 }
 
 export interface AppSettingsPatch {
@@ -54,6 +58,7 @@ export interface AppSettingsPatch {
   scanner?: {
     sounds?: Partial<AppSettings["scanner"]["sounds"]>;
   };
+  notifications?: Partial<AppSettings["notifications"]>;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -74,6 +79,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
       error: "classic",
     },
   },
+  notifications: { push: false },
 };
 
 /** Backend'dan kelgan qisman/eski sozlamani default bilan chuqur birlashtirish. */
@@ -101,6 +107,10 @@ export const mergeSettings = (raw: unknown): AppSettings => {
         error: s.scanner?.sounds?.error ?? DEFAULT_SETTINGS.scanner.sounds.error,
       },
     },
+    // ⚠️ mergeSettings OQ RO'YXAT: shu yerda sanalmagan kalit jimgina tashlanadi.
+    notifications: {
+      push: s.notifications?.push ?? DEFAULT_SETTINGS.notifications.push,
+    },
   };
 };
 
@@ -116,6 +126,7 @@ const applySettingsPatch = (
   scanner: {
     sounds: { ...current.scanner.sounds, ...patch.scanner?.sounds },
   },
+  notifications: { ...current.notifications, ...patch.notifications },
 });
 
 const SETTINGS_KEY = ["app-settings"];

@@ -36,14 +36,31 @@ const selectFiles = (files: File[]) => {
 };
 
 const textarea = () => screen.getByLabelText("Buyurtma matni") as HTMLTextAreaElement;
-const parseButton = () => screen.getByRole("button", { name: /Tahlil qilish|Qayta tahlil qil|soniyadan keyin/ });
+const parseButton = () =>
+  screen.getByRole("button", { name: /Tahlil qilish|Qayta urinib ko'ring|soniyadan keyin/ });
 
-const renderPanel = () => {
+const renderPanel = ({ onSelectMarket }: { onSelectMarket?: () => void } = {}) => {
   const onParsed = vi.fn();
   const onSwitchToManual = vi.fn();
-  renderWithProviders(<AiInputPanel marketId="7" onParsed={onParsed} onSwitchToManual={onSwitchToManual} />);
+  renderWithProviders(
+    <AiInputPanel
+      marketId="7"
+      onParsed={onParsed}
+      onSwitchToManual={onSwitchToManual}
+      onSelectMarket={onSelectMarket}
+    />,
+  );
   return { onParsed, onSwitchToManual };
 };
+
+const httpError = (status: number, data: unknown = {}) =>
+  new AxiosError("fail", "ERR_BAD_RESPONSE", undefined, null, {
+    status,
+    statusText: "",
+    headers: {},
+    config: {} as InternalAxiosRequestConfig,
+    data,
+  });
 
 beforeEach(() => {
   mocks.post.mockReset();
@@ -186,25 +203,20 @@ describe("AiInputPanel", () => {
     window.removeEventListener("elchi:network-error", networkToast);
   });
 
-  it("xato bo'lsa AVTOMATIK qayta so'rov yo'q — bitta POST va \"Qayta tahlil qil\" tugmasi", async () => {
-    mocks.post.mockRejectedValue(
-      new AxiosError("fail", "ERR_BAD_RESPONSE", undefined, null, {
-        status: 500,
-        statusText: "",
-        headers: {},
-        config: {} as InternalAxiosRequestConfig,
-        data: { message: "AI xizmati javob bermadi" },
-      }),
-    );
+  it("5xx bo'lsa \"Server javob bermadi\", AVTOMATIK qayta so'rov yo'q — bitta POST va qo'lda \"Qayta urinib ko'ring\"", async () => {
+    mocks.post.mockRejectedValue(httpError(504, { message: "Gateway Timeout" }));
     renderPanel();
     fireEvent.change(textarea(), { target: { value: "matn" } });
 
     fireEvent.click(parseButton());
 
-    expect(await screen.findByText("AI xizmati javob bermadi")).toBeInTheDocument();
+    expect(await screen.findByText("Server javob bermadi")).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(mocks.post).toHaveBeenCalledTimes(1);
-    expect(parseButton()).toHaveTextContent("Qayta tahlil qil");
+    expect(parseButton()).toHaveTextContent("Qayta urinib ko'ring");
+
+    fireEvent.click(parseButton());
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(2));
   });
 
   it("429 kelsa aniq matn chiqadi va tugma 60 soniyaga bloklanadi (sanoq bilan)", async () => {
@@ -315,6 +327,106 @@ describe("AiInputPanel", () => {
     it("no_market → operator marketga biriktirilmagan", async () => {
       await failWith("no_market");
       expect(await screen.findByText(/Operator marketga biriktirilmagan/)).toBeInTheDocument();
+    });
+
+    it("no_market (admin) → \"Marketni tanlash\" market tanlashga qaytaradi", async () => {
+      const onSelectMarket = vi.fn();
+      mocks.post.mockResolvedValue({ data: { statusCode: 200, data: { ok: false, reason: "no_market" } } });
+      renderPanel({ onSelectMarket });
+      fireEvent.change(textarea(), { target: { value: "matn" } });
+      fireEvent.click(parseButton());
+
+      expect(await screen.findByText("Market aniqlanmadi")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Marketni tanlash" }));
+      expect(onSelectMarket).toHaveBeenCalledTimes(1);
+    });
+
+    it("ai_error → yozish bo'yicha maslahat + \"Matnni tahrirlash\"; qayta urinish TAKLIF QILINMAYDI", async () => {
+      await failWith("ai_error");
+      expect(await screen.findByText("AI matndan buyurtma topa olmadi")).toBeInTheDocument();
+      expect(screen.getByText("Har buyurtmani yangi qatordan, telefon raqami bilan yozing.")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Qayta urinib ko'ring" })).not.toBeInTheDocument();
+      expect(parseButton()).toHaveTextContent("Tahlil qilish");
+
+      fireEvent.click(screen.getByRole("button", { name: "Matnni tahrirlash" }));
+      expect(textarea()).toHaveFocus();
+    });
+
+    it("truncated → \"Matn juda uzun\" + \"Matnni tahrirlash\"", async () => {
+      await failWith("truncated");
+      expect(await screen.findByText("Matn juda uzun")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Matnni tahrirlash" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Qayta urinib ko'ring" })).not.toBeInTheDocument();
+    });
+
+    it("insufficient → \"AI limiti tugadi\" + \"Qo'lda yaratish\"", async () => {
+      const { onSwitchToManual } = await failWith("insufficient");
+      expect(await screen.findByText("AI limiti tugadi")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Qo'lda yaratish" }));
+      expect(onSwitchToManual).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("HTTP xatolari (6LSlbHoi #5)", () => {
+    const failWithHttp = async (error: unknown) => {
+      mocks.post.mockRejectedValue(error);
+      renderPanel();
+      fireEvent.change(textarea(), { target: { value: "matn" } });
+      fireEvent.click(parseButton());
+    };
+
+    it("400 → \"Ma'lumot noto'g'ri\" + server izohi (massiv bo'lsa ham)", async () => {
+      await failWithHttp(httpError(400, { message: ["text must be shorter", "images too many"] }));
+      expect(await screen.findByText("Ma'lumot noto'g'ri")).toBeInTheDocument();
+      expect(screen.getByText("text must be shorter, images too many")).toBeInTheDocument();
+      expect(screen.queryByText(/Request failed/)).not.toBeInTheDocument();
+    });
+
+    it("413 → \"Rasm juda katta\"", async () => {
+      await failWithHttp(httpError(413));
+      expect(await screen.findByText("Rasm juda katta")).toBeInTheDocument();
+      expect(screen.getByText("Rasmlar sonini kamaytiring yoki boshqa surat tanlang.")).toBeInTheDocument();
+    });
+
+    it("javob umuman kelmasa → \"Aloqa uzildi\" va qo'lda qayta urinish", async () => {
+      await failWithHttp(new AxiosError("Network Error", "ERR_NETWORK"));
+      expect(await screen.findByText("Aloqa uzildi")).toBeInTheDocument();
+      expect(parseButton()).toHaveTextContent("Qayta urinib ko'ring");
+    });
+  });
+  describe("telefon 390px (JzQIec06)", () => {
+    it("\"Surat olish\" — orqa kamera (capture), \"Galereyadan\" — bir nechta surat (capture yo'q)", () => {
+      renderPanel();
+      const camera = screen.getByTestId("ai-camera-input") as HTMLInputElement;
+      const gallery = screen.getByTestId("ai-image-input") as HTMLInputElement;
+      expect(camera).toHaveAttribute("capture", "environment");
+      expect(gallery).not.toHaveAttribute("capture");
+      expect(gallery.multiple).toBe(true);
+
+      const cameraClick = vi.spyOn(camera, "click");
+      const galleryClick = vi.spyOn(gallery, "click");
+      fireEvent.click(screen.getByRole("button", { name: "Surat olish" }));
+      fireEvent.click(screen.getByRole("button", { name: "Galereyadan" }));
+      expect(cameraClick).toHaveBeenCalledTimes(1);
+      expect(galleryClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("kameradan olingan surat ham tayyorlanadi va eskizda chiqadi", async () => {
+      renderPanel();
+      const camera = screen.getByTestId("ai-camera-input") as HTMLInputElement;
+      Object.defineProperty(camera, "files", { value: [file("kamera.jpg")], configurable: true });
+      fireEvent.change(camera);
+
+      expect(await screen.findByAltText("kamera.jpg")).toBeInTheDocument();
+      expect(screen.getByText("1/3 surat")).toBeInTheDocument();
+    });
+
+    it("3 ta surat bo'lsa ikkala telefon tugmasi ham o'chadi", async () => {
+      renderPanel();
+      selectFiles([file("a.jpg"), file("b.jpg"), file("c.jpg")]);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(3));
+      expect(screen.getByRole("button", { name: "Surat olish" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Galereyadan" })).toBeDisabled();
     });
   });
 });

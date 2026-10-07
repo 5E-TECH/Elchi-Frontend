@@ -306,7 +306,9 @@ const SearchableSelect = ({
             disabled={disabled}
             aria-expanded={isOpen}
             aria-haspopup="listbox"
-            className={`min-w-0 flex-1 truncate bg-transparent text-left text-sm font-semibold outline-none ${
+            // `self-stretch my-[-2px]` — butun maydon balandligi (44/48px) bosiladi,
+            // faqat 20px matn qatori emas (telefonda barmoq uchun).
+            className={`my-[-2px] min-w-0 flex-1 self-stretch truncate bg-transparent text-left text-sm font-semibold outline-none ${
               selectedOption
                 ? "text-[color:var(--color-maindark)] dark:text-white"
                 : "text-[color:var(--color-text-muted)] dark:text-white/50"

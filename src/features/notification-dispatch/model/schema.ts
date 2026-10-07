@@ -37,6 +37,10 @@ export type DispatchFormValues = {
   roles: string[];
   realtime: boolean;
   telegram: boolean;
+  /** SMS — pullik; faqat telefoni bor qabul qiluvchilarga (chegara serverda). */
+  sms: boolean;
+  /** Web push — bildirishnomani yoqqan qurilmalarga. */
+  push: boolean;
   /** Telegram kanali faqat market guruhiga yetkaziladi — market shart. */
   telegram_market_id: string;
   title: string;
@@ -60,6 +64,8 @@ export const createDefaultValues = (): DispatchFormValues => ({
   roles: [],
   realtime: true,
   telegram: false,
+  sms: false,
+  push: false,
   telegram_market_id: "",
   title: "",
   body: "",
@@ -94,6 +100,8 @@ export const createDispatchSchema = (t: Translate) =>
       }),
     realtime: yup.boolean().required(),
     telegram: yup.boolean().required(),
+    sms: yup.boolean().required(),
+    push: yup.boolean().required(),
     telegram_market_id: yup.string().default("").when("telegram", {
       is: true,
       then: (schema) => schema.required(t("dispatch.errors.telegramMarket")),
@@ -129,8 +137,8 @@ export type DispatchPayload = {
   priority: NotificationPriority;
   link?: string;
   group_key: string;
-  /** `in_app` doim bor. `sms`/`push` HECH QACHON yuborilmaydi (provayder yo'q; `push` enumda ham yo'q). */
-  channels: Array<"in_app" | "realtime" | "telegram">;
+  /** `in_app` doim bor. */
+  channels: Array<"in_app" | "realtime" | "telegram" | "sms" | "push">;
   recipient_id?: string;
   recipient_ids?: string[];
   roles?: string[];
@@ -142,6 +150,8 @@ export const buildDispatchPayload = (values: DispatchFormValues): DispatchPayloa
   const channels: DispatchPayload["channels"] = ["in_app"];
   if (values.realtime) channels.push("realtime");
   if (values.telegram) channels.push("telegram");
+  if (values.sms) channels.push("sms");
+  if (values.push) channels.push("push");
 
   const body = values.body.trim();
   const link = values.link.trim();

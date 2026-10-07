@@ -134,6 +134,7 @@ const RegionSatoManagementPage = lazy(() => import("../../pages/region/pages/sat
 const RegionLogistAssignmentPage = lazy(() => import("../../pages/region/pages/logist-assignment"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
 const NotificationSendPage = lazy(() => import("../../pages/notification-send"));
+const SmsPage = lazy(() => import("../../pages/notifications/ui/SmsPage"));
 const NotificationInboxPage = lazy(
   () => import("../../pages/notifications/ui/NotificationInboxPage"),
 );
@@ -952,6 +953,15 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canSendNotifications}>
                   <NotificationSendPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              // SMS: kampaniya, shablonlar, xarajat, provayder (superadmin/admin).
+              path: "notifications/sms",
+              element: (
+                <ProtectedRoute canActivate={canSendNotifications}>
+                  <SmsPage />
                 </ProtectedRoute>
               ),
             },

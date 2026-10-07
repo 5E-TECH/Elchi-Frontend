@@ -3,6 +3,16 @@
     "all": "Barchasi",
     "unread": "O'qilmagan"
   },
+  "filters": {
+    "toggle": "Filtrlar",
+    "toggleActive": "Filtrlar ({{count}})",
+    "category": "Kategoriya",
+    "allCategories": "Hammasi",
+    "importantOnly": "Faqat muhim",
+    "emptyTitle": "Bu filtr bo'yicha hech narsa yo'q",
+    "emptyHint": "Boshqa kategoriyani tanlang yoki filtrni tozalang",
+    "clear": "Filtrni tozalash"
+  },
   "markAllRead": "Barchasini o'qilgan deb belgilash",
   "markAllReadSuccess": "Barcha bildirishnomalar o'qilgan deb belgilandi",
   "markAllReadError": "Bildirishnomalarni belgilashda xatolik yuz berdi",
@@ -108,6 +118,20 @@
       "title": "Sarlavhani kiriting",
       "groupKey": "Guruh kalitini kiriting",
       "tooLong": "{{max}} belgidan oshmasin"
-    }
+    },
+    "smsHint": "SMS pullik va faqat telefoni bor qabul qiluvchilarga ketadi. Qabul qiluvchilar SMS chegarasidan ko'p bo'lsa, server yuborishni rad etadi."
+  },
+  "push": {
+    "turnOn": "Bildirishnomalarni yoqish",
+    "turnOff": "Bildirishnomalarni o'chirish",
+    "enabled": "Bildirishnomalar yoqildi — yangi xabarlar shu qurilmaga keladi.",
+    "disabled": "Bu qurilmaga bildirishnomalar endi kelmaydi.",
+    "enableFailed": "Bildirishnomalarni yoqib bo'lmadi. Keyinroq qayta urinib ko'ring.",
+    "disableFailed": "Bildirishnomalarni o'chirib bo'lmadi. Qayta urinib ko'ring.",
+    "blocked": "Bildirishnomalar brauzerda bloklangan. Yoqish uchun brauzer sozlamalaridan shu saytga ruxsat bering.",
+    "explainTitle": "Bildirishnomalarni yoqasizmi?",
+    "explainBody": "Yangi buyurtma yoki muhim hodisa bo'lganda telefoningizga (yoki kompyuteringizga) xabar keladi — ilova yopiq bo'lsa ham. Keyingi qadamda brauzer ruxsat so'raydi: «Ruxsat berish»ni bosing.",
+    "explainConfirm": "Yoqish",
+    "explainCancel": "Hozir emas"
   }
 }
