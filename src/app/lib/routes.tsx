@@ -115,9 +115,6 @@ const IntegrationsPage = lazy(() => import("../../pages/integrations"));
 const ConnectionsPage = lazy(
   () => import("../../pages/integrations/ConnectionsPage"),
 );
-const IntegrationsOverviewPage = lazy(
-  () => import("../../pages/integrations/OverviewPage"),
-);
 const IntegrationsCatalogPage = lazy(
   () => import("../../pages/integrations/CatalogPage"),
 );
@@ -359,9 +356,7 @@ const AppRouter = () => {
                    */
                   index: true,
                   element: (
-                    <ProtectedRoute canActivate={canManageExternalIntegrations}>
-                      <IntegrationsOverviewPage />
-                    </ProtectedRoute>
+                    <Navigate replace to="/integrations/connections?scope=partner" />
                   ),
                 },
                 {

@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  Cable,
   FileClock,
   LayoutDashboard,
   Loader2,
+  Plug,
   Plus,
   Search,
   Settings as SettingsIcon,
@@ -31,66 +31,75 @@ import ConnectionLog from "./panels/ConnectionLog";
 import ConnectionSettlement from "./panels/ConnectionSettlement";
 import ConnectionShipments from "./panels/ConnectionShipments";
 import ConnectionControl from "./panels/ConnectionControl";
-import {
-  BORDER,
-  CTA_BTN,
-  ROLE_ICON_BG,
-  FAINT,
-  HEADER_ICON,
-  HEALTH_DOT,
-  MUTED,
-  PAGE_SUBTITLE,
-  PAGE_TITLE,
-  SEARCH_INPUT,
-  TITLE,
-  chip,
-  chipIcon,
-  chipLabel,
-} from "./ui";
+import NewPartnerModal from "./NewPartnerModal";
+import { BORDER, FAINT, HEALTH_DOT, MUTED, SEARCH_INPUT, TITLE } from "./ui";
 
 /**
- * ULANISHLAR KONSOLI — PCS (BeePost) sahifasining shakli.
+ * SCOPE KONSOLI — PCS (BeePost) `ProvidersTab` shakli.
  *
- *   CHIP QATORI (rol bo'yicha guruhlangan, INDIGO urg'u)
+ * Bitta komponent, uch yuza: `?scope=` bilan filtrlanadi va yuqoridagi 3 tab
+ * (Hamkorlar / Tashqi tizimlar / Marketplace) har biri shu komponentni
+ * o'zining scope'i bilan chizadi — xuddi BeePost'da LDG/Elchi provayderlari
+ * bitta kabinada ko'rsatilganidek.
+ *
+ *   PROVAYDER KARTALARI (scope ichidagi ulanishlar) + "Yangi"
  *        ↓
- *   METRIKA QATORI (tanlangan ulanishning 24 soati)
- *        ↓
- *   SUB-NAV: Umumiy holat · Sozlamalar · Hodisalar · Xavfsizlik (VIOLET)
+ *   SUB-NAV: Umumiy holat · Sozlamalar · Posilkalar · Hodisalar · ... (VIOLET)
  *        ↓
  *   panel
  *
- * NEGA CHAP USTUNDAN QAYTDIK. Avvalgi variantda ro'yxat chapda vertikal
- * ustun edi. Foydalanuvchi ikki variantni ham ko'rib, PCS shaklini tanladi:
- * u yerda ranglar aniqroq va yozuvlar o'qiladi. Shu bois shakl ham,
- * palitra ham o'sha yerdan olindi (`ui.ts`).
- *
- * ⚠️ Tanlangan ulanish URL'da (`?c=partner:7`) — Manzara jadvalidan
- * "Ochish" aynan shu manzilga o'tadi va sahifa yangilanishi tanlovni
- * yo'qotmaydi.
+ * ⚠️ Tanlangan ulanish + tab URL'da (`?c=partner:7&t=settings`) — havola
+ * yuborish va sahifani yangilash tanlovni yo'qotmaydi.
  */
+
+type Scope = "partner" | "external" | "marketplace";
+
+const SCOPES: Scope[] = ["partner", "external", "marketplace"];
+
+const matchScope = (c: Connection, scope: Scope): boolean => {
+  if (scope === "partner") return c.kind === "partner";
+  if (scope === "marketplace") return c.kind === "integration" && c.category === "marketplace";
+  return c.kind === "integration" && c.category !== "marketplace";
+};
+
+/** Har scope uchun i18n kalit ildizi — matn + bo'sh holat + "Yangi" yorlig'i. */
+const SCOPE_KEY: Record<Scope, { subtitle: string; empty: string; emptyHint: string; neu: string }> = {
+  partner: {
+    subtitle: "scPartnerSubtitle",
+    empty: "scPartnerEmpty",
+    emptyHint: "scPartnerEmptyHint",
+    neu: "scPartnerNew",
+  },
+  external: {
+    subtitle: "scExternalSubtitle",
+    empty: "scExternalEmpty",
+    emptyHint: "scExternalEmptyHint",
+    neu: "scExternalNew",
+  },
+  marketplace: {
+    subtitle: "scMarketplaceSubtitle",
+    empty: "scMarketplaceEmpty",
+    emptyHint: "scMarketplaceEmptyHint",
+    neu: "scMarketplaceNew",
+  },
+};
+
 const ConnectionsPage = () => {
   const { t } = useTranslation("integrations");
   const { connections, isLoading, isError, partialError, refetch } = useConnections();
   const metricsQuery = useIntegrationMetrics();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
+  const [newPartnerOpen, setNewPartnerOpen] = useState(false);
+  const navigate = useNavigate();
 
-  /**
-   * OCHIQ TAB — URL'DA, lokal holatda EMAS.
-   *
-   * ⚠️ NIMA BUZILGAN EDI. Tanlangan ulanish (`?c=`) URL'da edi, tab esa
-   * `useState` da. Uch oqibati bor edi:
-   *
-   *  1. Sahifani yangilash tabni yo'qotardi — operator "Hodisalar" da
-   *     xatoni ko'rib turib F5 bossa, "Umumiy holat" ga qaytardi.
-   *  2. Havola yuborib bo'lmasdi: "Xavfsizlik tabiga qara" deb aytish
-   *     uchun URL yetarli emasdi, og'zaki tushuntirish kerak bo'lardi.
-   *  3. Brauzer "orqaga" tugmasi tab almashinuvini bilmasdi.
-   *
-   * `replace` ishlatiladi (`push` emas): har tab bosilishi tarixga yozilsa,
-   * "orqaga" tugmasi sahifadan chiqish uchun o'nta bosishni talab qilardi.
-   * Ulanish tanlash ham AYNI shu naqshda ishlaydi.
-   */
+  const scopeParam = searchParams.get("scope");
+  const scope: Scope = SCOPES.includes(scopeParam as Scope) ? (scopeParam as Scope) : "partner";
+  const meta = SCOPE_KEY[scope];
+
+  /** Shu scope'ga tegishli ulanishlar — kartalar va tanlov SHU ro'yxatdan. */
+  const scoped = useMemo(() => connections.filter((c) => matchScope(c, scope)), [connections, scope]);
+
   const tab = searchParams.get("t") ?? "overview";
 
   const setTab = useCallback(
@@ -106,23 +115,18 @@ const ConnectionsPage = () => {
     },
     [setSearchParams],
   );
-  const navigate = useNavigate();
 
   const byUid = useMemo(() => metricsByUid(metricsQuery.data), [metricsQuery.data]);
 
   const activeUid = searchParams.get("c") ?? "";
   const active = useMemo(
-    () => connections.find((c) => c.uid === activeUid) ?? connections[0],
-    [connections, activeUid],
+    () => scoped.find((c) => c.uid === activeUid) ?? scoped[0],
+    [scoped, activeUid],
   );
 
-  /**
-   * Ro'yxat yuklangach URL'ni birinchi ulanish bilan to'ldiramiz — aks holda
-   * panel ko'rinib turadi-yu, URL bo'sh qoladi va sahifani yangilaganda
-   * boshqa ulanishga o'tib ketishi mumkin.
-   */
+  /** Ro'yxat yuklangach URL'ni scope'dagi birinchi ulanish bilan to'ldiramiz. */
   useEffect(() => {
-    if (!activeUid && active) {
+    if (active && activeUid !== active.uid) {
       setSearchParams(
         (prev) => {
           const params = new URLSearchParams(prev);
@@ -135,16 +139,6 @@ const ConnectionsPage = () => {
   }, [activeUid, active, setSearchParams]);
 
   const select = (uid: string) => {
-    /**
-     * ⚠️ IKKI PARAMETR BITTA YANGILANISHDA. Ilgari `setSearchParams` va
-     * `setTab` alohida chaqirilardi; tab URL'ga ko'chgandan keyin bu ikki
-     * ketma-ket yangilanish bo'lib, ikkinchisi birinchisini bosib o'tishi
-     * mumkin edi (`searchParams` snapshot eskiradi). Funksional shakl bu
-     * poygani butunlay yo'q qiladi.
-     *
-     * Yangi ulanishga o'tganda birinchi tabga qaytamiz: "Hodisalar" tabida
-     * turib boshqa ulanishga o'tish chalkash bo'lardi.
-     */
     setSearchParams(
       (prev) => {
         const params = new URLSearchParams(prev);
@@ -156,18 +150,21 @@ const ConnectionsPage = () => {
     );
   };
 
-  /**
-   * Qidiruv FAQAT chiplarni filtrlaydi, tanlovni o'zgartirmaydi. Tanlangan
-   * ulanish filtrga tushmasa ham panel ochiq qoladi — aks holda yozishni
-   * boshlash bilan panel yo'qolib ketardi.
-   */
+  const onNew = () => {
+    if (scope === "partner") {
+      setNewPartnerOpen(true);
+    } else {
+      navigate("/integrations/new");
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return connections;
-    return connections.filter(
+    if (!q) return scoped;
+    return scoped.filter(
       (c) => c.name.toLowerCase().includes(q) || c.subtitle.toLowerCase().includes(q),
     );
-  }, [connections, query]);
+  }, [scoped, query]);
 
   const fields = useMemo(() => (active ? fieldsFor(active) : []), [active]);
 
@@ -178,14 +175,7 @@ const ConnectionsPage = () => {
           label: t("tabOverview"),
           icon: <LayoutDashboard className="h-4 w-4" />,
           desc: t("tabOverviewDesc"),
-          content: (
-            <ConnectionOverview
-              connection={active}
-              metrics={byUid.get(active.uid)}
-              /* Checklistdan to'g'ridan-to'g'ri tuzatiladigan tabga o'tish. */
-              onFix={setTab}
-            />
-          ),
+          content: <ConnectionOverview connection={active} metrics={byUid.get(active.uid)} onFix={setTab} />,
         },
         {
           key: "settings",
@@ -196,16 +186,6 @@ const ConnectionsPage = () => {
         },
         {
           key: "shipments",
-          /**
-           * ⚠️ YORLIQ VA TAVSIF BITTA SO'ZNI ISHLATADI. Ilgari yorlig'i
-           * "Jo'natmalar", tavsifi esa "Posilkalar va xatolar" edi — bitta
-           * elementda ikki xil atama.
-           *
-           * "Posilkalar" tanlandi, chunki tab IKKI YO'NALISHNI ham
-           * qamraydi: panel ichida "Jo'natmalar" (biz tashuvchiga berdik)
-           * va "Kelgan posilkalar" (hamkor bizga yubordi) bo'limlari bor.
-           * "Jo'natmalar" faqat birinchisini nomlardi.
-           */
           label: t("tabShipments"),
           icon: <Truck className="h-4 w-4" />,
           desc: t("tabShipmentsDesc"),
@@ -219,11 +199,6 @@ const ConnectionsPage = () => {
           content: <ConnectionLog connection={active} />,
         },
         {
-          /*
-            HISOB-KITOB — foydalanuvchi talabi: "ikkala kassani solishtirish
-            uchun". Chiquvchi ulanishda tashuvchi qarzi va to'lovlari, hamkorda
-            esa daftar ularning tomonida (panel buni aytadi).
-          */
           key: "settlement",
           label: t("tabSettlement"),
           icon: <Wallet className="h-4 w-4" />,
@@ -232,16 +207,6 @@ const ConnectionsPage = () => {
         },
         {
           key: "control",
-          /**
-           * ⚠️ ILGARI "Boshqaruv" EDI va navigatsiya yuzasi ham, sahifa
-           * sarlavhasi ham ayni shu nom bilan atalardi — "Boshqaruv →
-           * Boshqaruv" degan yo'l chiqardi.
-           *
-           * "Kalitlar" ham ishlatilmadi: bu sahifada "kalit" so'zi API
-           * KALITINI ham bildiradi (`api_key`), ya'ni yana bir to'qnashuv
-           * bo'lardi. "Ish rejimi" esa aynan shu tabning mazmunini aytadi:
-           * ulanish ishlayaptimi va navbat qanday yuboriladi.
-           */
           label: t("tabControl"),
           icon: <SlidersHorizontal className="h-4 w-4" />,
           desc: t("tabControlDesc"),
@@ -257,27 +222,13 @@ const ConnectionsPage = () => {
       ]
     : [];
 
-  /**
-   * TABLAR ROLGA QARAB FILTRLANADI (audit FE-08 / P11 / M4).
-   *
-   * Ilgari 7 tab HAR ulanishga bir xil ko'rsatilardi: to'lov tizimida ham
-   * "Jo'natmalar" va "Hisob-kitob" turardi — ikkisi ham u yerda ma'nosiz
-   * (to'lov tizimi posilka olmaydi va COD qarzi yo'q). Operator ochib
-   * bo'sh ekran ko'rardi va "buzuqmi?" deb o'ylardi.
-   *
-   * ⚠️ Sukut RUXSAT: yangi tab qo'shilganda uni unutib qoldirsak KO'RINADI.
-   * Teskari sukut xavfli — tab jimgina yo'qolib ketardi.
-   */
   const hiddenTabs = useMemo(() => {
     if (!active) return new Set<string>();
     const hide = new Set<string>();
-    // Posilka faqat manba va yetkazuvchida bo'ladi.
     if (active.role === "payment" || active.role === "mirror") {
       hide.add("shipments");
       hide.add("settlement");
     }
-    // COD qarz daftari FAQAT yetkazuvchida yuritiladi
-    // (`provider_receivable` carrier uchun qurilgan).
     if (active.role === "source" && active.kind === "integration") {
       hide.add("settlement");
     }
@@ -298,9 +249,9 @@ const ConnectionsPage = () => {
   if (isError) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-900/20 dark:text-red-300">
-        Ulanishlar ro'yxatini olib bo'lmadi.
+        {t("lstLoadError")}
         <button type="button" onClick={refetch} className="ml-2 underline underline-offset-2">
-          Qayta urinish
+          {t("retry")}
         </button>
       </div>
     );
@@ -308,77 +259,49 @@ const ConnectionsPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* Qismiy xato — ro'yxat to'liq emasligini AYTISH kerak, aks holda
-          operator "ulanish yo'q" deb o'ylardi. */}
       {partialError && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:border-amber-900 dark:bg-amber-900/20 dark:text-amber-300">
-          Ro'yxatning bir qismini olib bo'lmadi — hamma ulanish ko'rinmayotgan bo'lishi mumkin.
+          {t("lstPartialError")}
         </div>
       )}
 
-      {/* ═══════ SARLAVHA — PCS shakli ═══════ */}
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-3">
-          <div className={HEADER_ICON}>
-            <Cable className="h-6 w-6 text-white" />
+      {/* ═══════ SCOPE QATORI — qisqa tavsif + qidiruv ═══════ */}
+      <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+        <p className={`m-0 text-sm ${MUTED}`}>{t(meta.subtitle)}</p>
+        {scoped.length > 4 && (
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("searchPlaceholder")}
+              className={SEARCH_INPUT}
+            />
           </div>
-          <div>
-            <h1 className={`m-0 ${PAGE_TITLE}`}>{t("navConsole")}</h1>
-            <p className={`m-0 ${PAGE_SUBTITLE}`}>{t("lstSubtitle")}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {connections.length > 4 && (
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Qidirish..."
-                className={SEARCH_INPUT}
-              />
-            </div>
-          )}
-          <button type="button" onClick={() => navigate("/integrations/new")} className={CTA_BTN}>
-            <Plus className="h-5 w-5" />
-            Yangi ulanish
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* ═══════ ULANISH CHIPLARI ═══════ */}
-      {connections.length === 0 ? (
+      {/* ═══════ PROVAYDER KARTALARI (BeePost ProvidersTab shakli) ═══════ */}
+      {scoped.length === 0 ? (
         <div className={`rounded-xl border-2 border-dashed ${BORDER} p-8 text-center`}>
-          <Cable className={`mx-auto h-8 w-8 ${FAINT}`} />
-          <p className={`m-0 mt-3 text-sm font-bold ${TITLE}`}>{t("lstEmpty")}</p>
-          <p className={`m-0 mt-1 text-xs ${MUTED}`}>{t("lstEmptyHint")}</p>
+          <Plug className={`mx-auto h-8 w-8 ${FAINT}`} />
+          <p className={`m-0 mt-3 text-sm font-bold ${TITLE}`}>{t(meta.empty)}</p>
+          <p className={`m-0 mt-1 text-xs ${MUTED}`}>{t(meta.emptyHint)}</p>
           <button
             type="button"
-            onClick={() => navigate("/integrations/new")}
+            onClick={onNew}
             className="mx-auto mt-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/25"
           >
             <Plus className="h-4 w-4" />
-            Yangi ulanish
+            {t(meta.neu)}
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <p className={`m-0 text-sm ${MUTED}`}>"{query}" bo'yicha topilmadi.</p>
+        <p className={`m-0 text-sm ${MUTED}`}>{t("searchEmpty", { q: query })}</p>
       ) : (
-        /*
-          ⚠️ ROL BO'YICHA GURUHLASH OLIB TASHLANDI. Ilgari chiplar
-          "Buyurtma manbalari" / "Yetkazuvchilar" degan sarlavhalar ostida
-          alohida qatorlarda turardi. Foydalanuvchi buni so'radi: "alohida
-          bo'lib turishi kerak emas, faqat icon yoki rang bilan ajralib
-          tursa yetarli".
-          
-          Rol YO'QOLMADI — u chip ikonkasining rangiga ko'chdi va sarlavhada
-          (tooltip) tushuntiriladi. Ro'yxat esa endi bitta qatorda, ya'ni
-          ulanish almashtirish uchun pastga qarash kerak emas.
-        */
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex items-stretch gap-2 overflow-x-auto pb-1">
           {filtered.map((c) => (
-            <ConnectionChip
+            <ProviderCard
               key={c.uid}
               connection={c}
               active={c.uid === active?.uid}
@@ -392,38 +315,40 @@ const ConnectionsPage = () => {
             />
           ))}
 
-          {/* "+" oxirida — PCS'dagi naqsh. */}
+          {/* "+Yangi" karta — oxirida (BeePost naqshi). */}
           <button
             type="button"
-            onClick={() => navigate("/integrations/new")}
+            onClick={onNew}
             className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed ${BORDER} px-4 py-2.5 text-sm font-medium ${MUTED} transition-colors hover:border-indigo-300 hover:text-indigo-600`}
           >
             <Plus className="h-4 w-4" />
-            Yangi
+            {t(meta.neu)}
           </button>
         </div>
       )}
 
-      {/*
-        ═══════ TANLANGAN ULANISH ═══════
-
-        ⚠️ DOIMIY METRIKA QATORI OLIB TASHLANDI. Raqamlar endi "Umumiy holat"
-        paneli ichida `Statistic` bo'lib turadi — PCS `ElchiDashboardTab` shu
-        naqshni ishlatadi. Ikki joyda ko'rsatish takror bo'lardi va sub-nav
-        pastga surilardi.
-      */}
+      {/* ═══════ TANLANGAN ULANISH KONSOLI ═══════ */}
       {active && activeItem && (
         <div className="space-y-4">
           <ConnectionSubNav items={shownItems} active={activeItem.key} onChange={setTab} />
           <div>{activeItem.content}</div>
         </div>
       )}
+
+      <NewPartnerModal
+        open={newPartnerOpen}
+        onClose={() => setNewPartnerOpen(false)}
+        onCreated={refetch}
+      />
     </div>
   );
 };
 
-/** Ro'yxatdagi bitta ulanish chipi — PCS `ProvidersTab` shakli. */
-const ConnectionChip = ({
+/**
+ * Bitta ulanish KARTASI — PCS `ProvidersTab` provayder tugmasi shakli:
+ * rang-ikon qutisi + nom + holat nuqtasi + toifa/ko'rsatkich.
+ */
+const ProviderCard = ({
   connection,
   active,
   rate,
@@ -442,38 +367,39 @@ const ConnectionChip = ({
       type="button"
       onClick={onClick}
       aria-current={active ? "true" : undefined}
-      className={chip(active)}
+      className={`flex shrink-0 items-center gap-2.5 rounded-xl border-2 px-4 py-2.5 text-left transition-all ${
+        active
+          ? "border-indigo-500 bg-indigo-50 shadow-sm dark:bg-indigo-900/25"
+          : "border-gray-200 bg-white hover:border-indigo-300 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-indigo-700"
+      }`}
     >
-      {/*
-      Ikonka foni ROL rangida — guruh sarlavhasi o'rniga shu ajratadi.
-      Tanlangan chipda esa to'liq urg'u rangi (indigo) qoladi, aks holda
-      "qaysi biri tanlangan" savoli paydo bo'lardi.
-    */}
       <span
-        className={
-          active ? chipIcon(true) : `${chipIcon(false)} ${ROLE_ICON_BG[connection.role] ?? ""}`
-        }
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+          active
+            ? "bg-indigo-600 text-white"
+            : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
+        }`}
         title={t(ROLE_META[connection.role].hintKey)}
       >
-        <Cable className="h-4 w-4" />
+        <Plug className="h-4 w-4" />
       </span>
-
       <span className="min-w-0">
         <span className="flex items-center gap-1.5">
-          {/* Holat nuqtasi — `connectionHealth` yagona qoidasidan. */}
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${HEALTH_DOT[health]}`}
             title={
-              health === "ok"
-                ? t("healthOk")
-                : health === "off"
-                  ? t("healthOff")
-                  : t("healthAttention")
+              health === "ok" ? t("healthOk") : health === "off" ? t("healthOff") : t("healthAttention")
             }
           />
-          <span className={`truncate ${chipLabel(active)}`}>{connection.name}</span>
+          <span
+            className={`block max-w-[160px] truncate text-sm font-bold leading-tight ${
+              active ? "text-indigo-700 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200"
+            }`}
+          >
+            {connection.name}
+          </span>
         </span>
-        <span className={`block truncate text-[11px] leading-tight ${FAINT}`}>
+        <span className={`block max-w-[160px] truncate text-[11px] leading-tight ${FAINT}`}>
           {t(CATEGORY_LABEL[connection.category])} · {rate}
         </span>
       </span>
