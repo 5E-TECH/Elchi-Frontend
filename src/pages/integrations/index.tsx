@@ -1,93 +1,67 @@
 import { useMemo } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs } from "antd";
 import { useTranslation } from "react-i18next";
-import { Cable, LayoutGrid } from "lucide-react";
+import { Globe, Handshake, Store } from "lucide-react";
 
 /**
- * INTEGRATSIYALAR UYI — PCS (BeePost) `IntegrationsRoot` shakli.
+ * INTEGRATSIYALAR UYI — PCS (BeePost) `IntegrationsRoot` shakli, 1-ga-1.
  *
- * PCS'da ildiz shunchaki antd `Tabs size="large"`: alohida sahifa sarlavhasi
- * YO'Q, har bir tabning mazmuni o'z sarlavhasini olib yuradi. Biz ham
- * shunday qildik — aks holda ikki sarlavha ustma-ust tushardi (uyning
- * sarlavhasi + kartalar sahifasining sarlavhasi).
+ * BeePost'da ildiz uchta antd Tab: "Tashqi saytlar" (manbalar), "Yetkazuvchilar"
+ * (cargo), "Marketplace". Elchi domeni teskari — Elchi O'ZI yetkazuvchi, unda
+ * BeePost = HAMKOR — shuning uchun yorliqlar moslashtirildi, tuzilma esa aynan:
  *
- * IKKI YUZA:
- *   Ulanishlar — "hammasi qalay?" → kartalar to'ri
- *   Konsol     — "bu ulanish qalay?" → panellar
+ *   Hamkorlar       — bizga ulanadiganlar (BeePost, marketplace). Kalit BIZDAN.
+ *   Tashqi tizimlar — biz ulanadiganlar (CRM, to'lov, yetkazuvchi).
+ *   Marketplace     — ko'p-sotuvchi manbalar (Uzum va h.k.).
  *
- * ⚠️ NEGA "KONSOL", "BOSHQARUV" EMAS. "Boshqaruv" UCH xil narsani
- * nomlardi: (1) shu navigatsiya yuzasi, (2) sahifa sarlavhasi,
- * (3) panel ichidagi TAB (master kalit va navbat). Ya'ni operator
- * "Boshqaruv → Boshqaruv" degan yo'lni ko'rardi.
- *
- * "Konsol" tanlandi, chunki u matnlarda ALLAQACHON ishlatilgan:
- * usta "Konsolda ochish", "Konsol → Xavfsizlik", "Konsol → Hodisalar"
- * deydi. Ya'ni nom o'ylab topilmadi — mavjud atama navigatsiyaga
- * qaytarildi. Ilgari usta UI'da MAVJUD BO'LMAGAN joyga yo'naltirardi.
- *
- * ⚠️ ESKI SAHIFALAR NAVIGATSIYADAN OLINDI, MARSHRUTLAR QOLDI.
- * Ular ko'chirish davrida zaxira bo'lib turgan edi; yangi yuza to'liq
- * ishlaydi (katalog + usta + 4 panel), shu bois menyuda turishi shovqin.
- * `/integrations/partners` va `/integrations/sources` marshrutlari ishlashda
- * davom etadi — xatcho'p va tashqi havolalar buzilmaydi.
- *
- * ⚠️ Tab HOLATI URL'dan keladi, ichki state'dan emas: sahifani yangilash
- * yoki havola yuborish tanlangan yuzani yo'qotmasligi kerak.
+ * Har tab bir xil konsolni (`ConnectionsPage`) o'z `scope`'i bilan ko'rsatadi —
+ * xuddi BeePost `ProvidersTab` provayderni almashtirgani kabi. Tab tanlovi
+ * URL'ga yoziladi (`?scope=`), shuning uchun sahifa yangilansa yo'qolmaydi.
  */
 
-const SURFACES = [
-  {
-    key: "overview",
-    path: "/integrations",
-    labelKey: "navConnections",
-    icon: <LayoutGrid className="h-4 w-4" />,
-  },
-  {
-    key: "console",
-    path: "/integrations/connections",
-    labelKey: "navConsole",
-    icon: <Cable className="h-4 w-4" />,
-  },
+const TABS = [
+  { key: "partner", labelKey: "navPartners", icon: <Handshake className="h-4 w-4" /> },
+  { key: "external", labelKey: "navExternal", icon: <Globe className="h-4 w-4" /> },
+  { key: "marketplace", labelKey: "navMarketplace", icon: <Store className="h-4 w-4" /> },
 ] as const;
 
 const IntegrationsPage = () => {
   const { t } = useTranslation("integrations");
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   /**
-   * Faol yuza. `connections` dan boshqa hamma yo'l (eski sahifalar ham)
-   * "Ulanishlar" deb hisoblanadi — tab hech qachon bo'sh qolmasligi kerak.
+   * Faol tab — URL'dagi `scope`'dan. Katalog/usta (`/new`) ochiq bo'lsa ham
+   * oxirgi scope yoqilib turadi (tab shunchaki navigatsiya).
    */
-  const active = useMemo(
-    () => (location.pathname.startsWith("/integrations/connections") ? "console" : "overview"),
-    [location.pathname],
-  );
+  const active = useMemo(() => {
+    const s = searchParams.get("scope");
+    return TABS.some((tab) => tab.key === s) ? (s as string) : "partner";
+  }, [searchParams]);
+
+  const onChange = (key: string) => {
+    navigate(`/integrations/connections?scope=${key}`);
+  };
+
+  /** Katalog/usta ochiq bo'lsa tab paneli tagida chiziladi (Outlet). */
+  const onCreateSurface =
+    location.pathname.includes("/integrations/new") ||
+    location.pathname.includes("/integrations/sources");
 
   return (
     <div>
-      {/*
-        ⚠️ `Tabs` faqat NAVIGATSIYA — panel mazmuni unga berilmaydi.
-        Har tabga `<Outlet/>` bersak, antd nofaol panelni birinchi
-        ko'rsatishdan keyin MOUNT QILIB QOLDIRADI
-        (`destroyInactiveTabPane` sukut bo'yicha `false`) — natijada ayni
-        marshrut ikki marta chizilib, so'rovlar ham ikki marta ketardi.
-        Shu bois `Outlet` tablardan TASHQARIDA, bir marta.
-      */}
       <Tabs
         size="large"
-        activeKey={active}
-        onChange={(key) => {
-          const surface = SURFACES.find((s) => s.key === key);
-          if (surface) navigate(surface.path);
-        }}
-        items={SURFACES.map((s) => ({
-          key: s.key,
+        activeKey={onCreateSurface ? "" : active}
+        onChange={onChange}
+        items={TABS.map((tab) => ({
+          key: tab.key,
           label: (
             <span className="flex items-center gap-2">
-              {s.icon}
-              {t(s.labelKey)}
+              {tab.icon}
+              {t(tab.labelKey)}
             </span>
           ),
         }))}
