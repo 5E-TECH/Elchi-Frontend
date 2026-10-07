@@ -107,7 +107,7 @@
   "courierTariff": "Courier tariff",
   "marketInfo": "Market information",
   "newPasswordOptional": "New password (optional)",
-  "roleMarketCardHint": "Once the new user is added to the system, login and password will be sent via SMS.",
+  "roleMarketCardHint": "Once the new user is added, hand over the login and password yourself — the system does not send them by SMS.",
   "nameRequired": "First and last name are required",
   "firstNameRequired": "Name is required",
   "phoneValidation": "Enter 9 digits",

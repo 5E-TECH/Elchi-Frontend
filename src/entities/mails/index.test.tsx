@@ -164,6 +164,27 @@ describe("toReturnRequestsMailResponse", () => {
     expect(toReturnRequestsMailResponse(hqShape).data.data[0].action).toBe("center");
   });
 
+  it("flattens a courier group into one row per order and copies the courier onto each (YEI06cPN)", () => {
+    const rows = toReturnRequestsMailResponse({
+      data: {
+        total: 2,
+        groups: [
+          { courier: { id: "9", name: "Baxodir" }, courier_id: "9", orders: [{ id: "1" }, { id: "2" }] },
+        ],
+      },
+    }).data.data;
+
+    expect(rows).toHaveLength(2);
+    rows.forEach((row) => expect(row.courier?.name).toBe("Baxodir"));
+  });
+
+  it("maps an empty backend answer { total: 0, groups: [] } to an empty list, not an error", () => {
+    expect(toReturnRequestsMailResponse({ data: { total: 0, groups: [] } }).data).toMatchObject({
+      data: [],
+      total: 0,
+    });
+  });
+
   it("returns an empty list for an unexpected payload", () => {
     expect(toReturnRequestsMailResponse(null).data).toEqual({
       data: [],

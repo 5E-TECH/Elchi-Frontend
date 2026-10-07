@@ -47,10 +47,18 @@ export type FieldType =
    * Kalit→qiymat xaritasi (JSON). Tashqi saytning maydon nomlarini bizning
    * maydonlarimizga bog'laydi.
    */
-  | "mapping";
+  | "mapping"
+  /**
+   * STATUS XARITASI (JnHK6bgV) — kanonik katalogdan jadval: har qatorda
+   * kod + ma'nosi + hamkor qiymati. Saqlash formati `statusMapKind` ga
+   * qarab (`statusMap.ts`), backend o'qiydigan shaklda.
+   */
+  | "status-map";
 
 export interface ConnectionField {
   key: string;
+  /** Faqat `status-map` uchun: qaysi xarita va qaysi saqlash formati. */
+  statusMapKind?: "outbound" | "inbound" | "payment";
   /**
    * ⚠️ MATN EMAS, i18n KALITI (`integrations` nomlar fazosi).
    *
@@ -580,7 +588,8 @@ const PAYMENT_FIELDS: ConnectionField[] = [
   {
     key: "payment_config.status_map",
     labelKey: "fPaymentConfigStatusMapLabel",
-    type: "mapping",
+    type: "status-map",
+    statusMapKind: "payment",
     hintKey: "fPaymentConfigStatusMapHint",
     showWhen: { key: "payment_config.enabled", equals: true },
   },
@@ -589,7 +598,8 @@ const PAYMENT_FIELDS: ConnectionField[] = [
 const INBOUND_STATUS_MAP: ConnectionField = {
   key: "inbound_status_mapping",
   labelKey: "fInboundStatusMappingLabel",
-  type: "mapping",
+  type: "status-map",
+  statusMapKind: "inbound",
   hintKey: "fInboundStatusMappingHint",
 };
 
@@ -648,7 +658,8 @@ const OUTBOUND_STATUS_FIELDS: ConnectionField[] = [
   {
     key: "status_mapping",
     labelKey: "fStatusMappingLabel",
-    type: "mapping",
+    type: "status-map",
+    statusMapKind: "outbound",
     hintKey: "fStatusMappingHint",
   },
 ];

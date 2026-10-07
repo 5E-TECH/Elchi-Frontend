@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { Alert, Input, Space, Switch, Table, Typography } from "antd";
 import { useIdentityCoverage } from "../../entities/identity";
+import { toRows } from "../../shared/lib/toRows";
 
 const { Title, Text } = Typography;
 
@@ -47,7 +48,7 @@ const IdentityOpsPage = () => {
           size="small"
           pagination={false}
           loading={admins.isLoading}
-          dataSource={(admins.data as unknown[]) ?? []}
+          dataSource={toRows(admins.data)}
           columns={userColumns}
           scroll={{ x: "max-content" }}
         />
@@ -58,7 +59,7 @@ const IdentityOpsPage = () => {
           size="small"
           pagination={false}
           loading={managers.isLoading}
-          dataSource={(managers.data as unknown[]) ?? []}
+          dataSource={toRows(managers.data)}
           columns={userColumns}
           scroll={{ x: "max-content" }}
         />
@@ -69,7 +70,7 @@ const IdentityOpsPage = () => {
           size="small"
           pagination={false}
           loading={registrators.isLoading}
-          dataSource={(registrators.data as unknown[]) ?? []}
+          dataSource={toRows(registrators.data)}
           columns={userColumns}
           scroll={{ x: "max-content" }}
         />

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
-import { getInbox, getInboxById, getInboxUnreadCount } from "./inboxApi";
+import { getInbox, getInboxById, getInboxCounts, getInboxUnreadCount } from "./inboxApi";
 import type { InboxListParams } from "../model/types";
 
 export const useInboxList = (params: InboxListParams) =>
@@ -15,6 +15,15 @@ export const useInboxDetail = (id?: string) =>
     queryKey: id ? queryKeys.notificationsInbox.detail(id) : queryKeys.notificationsInbox.all,
     queryFn: () => getInboxById(id as string),
     enabled: Boolean(id),
+  });
+
+/** Kategoriya chiplari sanog'i — xato bo'lsa chiplar sanoqsiz qoladi. */
+export const useInboxCounts = () =>
+  useQuery({
+    queryKey: queryKeys.notificationsInbox.counts,
+    queryFn: getInboxCounts,
+    staleTime: 15_000,
+    meta: { silentError: true },
   });
 
 // Polled so the header bell badge stays roughly live without websockets.

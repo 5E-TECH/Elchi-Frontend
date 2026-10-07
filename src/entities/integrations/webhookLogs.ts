@@ -33,10 +33,27 @@ export interface WebhookLogRow {
   trace_id: string | null;
 }
 
+/** Pill sanoqlari — backenddan BITTA agregat so'rovda (tokhPLMP). */
+export interface WebhookLogCounts {
+  all: number;
+  processed: number;
+  verified: number;
+  rejected: number;
+  invalid_signature: number;
+}
+
 export interface WebhookLogPage {
   items: WebhookLogRow[];
   meta: { page: number; limit: number; total: number; totalPages: number };
+  /** Eski backendda yo'q — u holda pillar sanoqsiz ko'rsatiladi. */
+  counts?: WebhookLogCounts;
 }
+
+/**
+ * "Imzo xato" pili `status` emas: u `signature_valid = false` bo'yicha
+ * alohida filtr (`invalid_signature=true`).
+ */
+export const INVALID_SIGNATURE_FILTER = "invalid_signature";
 
 const EMPTY: WebhookLogPage = {
   items: [],
@@ -55,6 +72,7 @@ const unwrap = (raw: unknown): WebhookLogPage => {
   return {
     items: Array.isArray(page?.items) ? page!.items : [],
     meta: page?.meta ?? EMPTY.meta,
+    ...(page?.counts ? { counts: page.counts } : {}),
   };
 };
 
@@ -74,7 +92,11 @@ export const useWebhookLogs = (params: {
         .get(API_ENDPOINTS.INTEGRATIONS.WEBHOOK_LOGS, {
           params: {
             integration_id: params.integrationId,
-            ...(params.status && params.status !== "all" ? { status: params.status } : {}),
+            ...(params.status === INVALID_SIGNATURE_FILTER
+              ? { invalid_signature: "true" }
+              : params.status && params.status !== "all"
+                ? { status: params.status }
+                : {}),
             page: params.page ?? 1,
             limit: params.limit ?? 20,
           },

@@ -266,6 +266,36 @@ export const login = async (credentials: LoginCredentials) => {
   }
 };
 
+type BeforeLogoutHook = (accessToken: string | null) => Promise<unknown>;
+
+const beforeLogoutHooks = new Set<BeforeLogoutHook>();
+/** Hooklar logout'ni shundan ortiq ushlab turmaydi. */
+export const BEFORE_LOGOUT_TIMEOUT_MS = 4_000;
+
+/**
+ * Token BEKOR QILINISHIDAN OLDIN bajariladigan ish (masalan push obunasini
+ * serverdan o'chirish — keyin so'rov 401 olardi va umumiy qurilmada keyingi
+ * odam avvalgisining xabarlarini olardi). Xatolar yutiladi, kutish cheklangan.
+ */
+export const registerBeforeLogout = (hook: BeforeLogoutHook) => {
+  beforeLogoutHooks.add(hook);
+  return () => {
+    beforeLogoutHooks.delete(hook);
+  };
+};
+
+const runBeforeLogoutHooks = async (accessToken: string | null) => {
+  if (!beforeLogoutHooks.size) return;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    Promise.allSettled([...beforeLogoutHooks].map((hook) => hook(accessToken))),
+    new Promise((resolve) => {
+      timer = setTimeout(resolve, BEFORE_LOGOUT_TIMEOUT_MS);
+    }),
+  ]);
+  if (timer) clearTimeout(timer);
+};
+
 export const logout = async () => {
   markLogoutSkipRefresh();
   if (reinitTimer) {
@@ -273,6 +303,7 @@ export const logout = async () => {
     reinitTimer = null;
   }
   const accessToken = tokenStorage.getAccessToken();
+  await runBeforeLogoutHooks(accessToken);
 
   try {
     await authClient.post(API_ENDPOINTS.AUTH.LOGOUT, {}, {

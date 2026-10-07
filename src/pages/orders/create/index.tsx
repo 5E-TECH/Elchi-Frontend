@@ -547,6 +547,14 @@ const OrderCreateFormContent = () => {
               isMarketRole={isMarketRole}
               market={isMarketRole ? null : market}
               onSwitchToManual={() => setMode("manual")}
+              onChangeMarket={
+                isMarketRole
+                  ? undefined
+                  : () => {
+                      methods.setValue("market", null);
+                      setStep(1);
+                    }
+              }
             />
           </div>
         )}

@@ -10,6 +10,7 @@ import {
   Wallet,
   RotateCw,
   Send,
+  ShieldAlert,
   ShieldOff,
   XCircle,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import {
   type SyncHistoryRow,
 } from "../../../entities/integrations/syncHistory";
 import {
+  INVALID_SIGNATURE_FILTER,
   useWebhookLogs,
   webhookOutcome,
   type WebhookLogRow,
@@ -327,6 +329,7 @@ const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
 
   const rows = logs.data?.items ?? [];
   const meta = logs.data?.meta;
+  const counts = logs.data?.counts;
 
   return (
     <Card
@@ -352,19 +355,29 @@ const IncomingWebhookLog = ({ connection }: { connection: Connection }) => {
           setStatus(v);
           setPage(1);
         }}
+        // Sanoqlar bitta agregat so'rovdan; kelmasa pill sanoqsiz (0 emas).
         options={[
-          { value: "all", label: t("filterAll"), count: meta?.total },
+          { value: "all", label: t("filterAll"), count: counts?.all ?? (status === "all" ? meta?.total : undefined) },
           {
             value: "processed",
             label: t("filterApplied"),
+            count: counts?.processed,
             icon: <CheckCircle2 className="h-3.5 w-3.5" />,
             activeClass: "bg-green-600 text-white border-green-600",
           },
           {
             value: "rejected",
             label: t("filterRejected"),
+            count: counts?.rejected,
             icon: <XCircle className="h-3.5 w-3.5" />,
             activeClass: "bg-red-600 text-white border-red-600",
+          },
+          {
+            value: INVALID_SIGNATURE_FILTER,
+            label: t("filterInvalidSignature"),
+            count: counts?.invalid_signature,
+            icon: <ShieldAlert className="h-3.5 w-3.5" />,
+            activeClass: "bg-orange-600 text-white border-orange-600",
           },
         ]}
       />

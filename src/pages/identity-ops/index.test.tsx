@@ -46,4 +46,22 @@ describe("IdentityOps page", () => {
       expect(apiPatchMock.mock.calls[0][0]).toBe("markets/m1/add-order");
     });
   });
+
+  it("fills all three tables from the backend envelope { data: { items } } without crashing", async () => {
+    const envelope = (name: string) => ({
+      data: { statusCode: 200, message: "success", data: { items: [{ id: `id-${name}`, name }] } },
+    });
+    apiGetMock.mockImplementation((url: string) => {
+      if (url === "admins") return Promise.resolve(envelope("Admin A"));
+      if (url === "managers") return Promise.resolve(envelope("Menejer M"));
+      if (url === "registrators") return Promise.resolve(envelope("Registrator R"));
+      return Promise.resolve({ data: [] });
+    });
+
+    renderWithProviders(<IdentityOpsPage />);
+
+    expect(await screen.findByText("Admin A")).toBeInTheDocument();
+    expect(await screen.findByText("Menejer M")).toBeInTheDocument();
+    expect(await screen.findByText("Registrator R")).toBeInTheDocument();
+  });
 });

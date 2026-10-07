@@ -4,6 +4,8 @@ import { useMarkets } from "../../entities/markets";
 import { isFieldDisabled, visibleFields } from "./connections";
 import { nestPayload } from "./fieldPath";
 import type { ConnectionField } from "./connections";
+import StatusMapField from "./StatusMapField";
+import type { StatusMapValue } from "./statusMap";
 
 /**
  * UMUMIY ULANISH FORMASI — maydon ro'yxatidan o'zini yasaydi.
@@ -26,7 +28,7 @@ import type { ConnectionField } from "./connections";
  * `Record<string, string>` — `mapping` turi uchun (kalit→qiymat xaritasi).
  * Boshqa turlar satr/mantiq/massiv ishlatadi.
  */
-export type FieldValue = string | boolean | string[] | Record<string, string>;
+export type FieldValue = string | boolean | string[] | Record<string, string> | StatusMapValue;
 
 export type FieldValues = Record<string, FieldValue>;
 
@@ -142,6 +144,20 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => {
               key={field.key}
               field={field}
               value={String(raw ?? "")}
+              disabled={fieldDisabled}
+              onChange={(v) => onChange(field.key, v)}
+            />
+          );
+        }
+
+        /* ── Status xaritasi (kanonik katalogdan jadval) ── */
+        if (field.type === "status-map") {
+          return (
+            <StatusMapField
+              key={field.key}
+              field={field}
+              kind={field.statusMapKind ?? "outbound"}
+              value={raw}
               disabled={fieldDisabled}
               onChange={(v) => onChange(field.key, v)}
             />
@@ -361,7 +377,7 @@ const MappingField = ({
 
 export default ConnectionFields;
 
-const isPlainObject = (v: unknown): v is Record<string, string> =>
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
 export const buildChangedPayload = (
@@ -456,7 +472,15 @@ export const buildChangedPayload = (
       if (field.key in out) continue;
       const value = values[field.key];
       // `undefined` ni yuborish kalitni yo'qotardi — bo'sh qiymat beriladi.
-      out[field.key] = value ?? (field.type === "tags" ? [] : field.type === "switch" ? false : "");
+      out[field.key] =
+        value ??
+        (field.type === "tags"
+          ? []
+          : field.type === "switch"
+            ? false
+            : field.type === "mapping" || field.type === "status-map"
+              ? {}
+              : "");
     }
   }
 

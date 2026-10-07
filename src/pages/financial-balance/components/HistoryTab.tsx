@@ -1,7 +1,10 @@
-import { memo, useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { memo, useCallback, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Funnel } from "lucide-react";
+import { CalendarDays, FileSpreadsheet, Funnel, Loader2, Plus } from "lucide-react";
+import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import { API_ENDPOINTS } from "../../../shared/api/endpoints";
+import { downloadXlsx, getExportErrorMessage } from "../../../shared/lib/exportFile";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import FilterSelect from "../../../shared/ui/FilterSelect";
@@ -15,6 +18,15 @@ import {
   extractFinancialLedgerItems,
   extractFinancialLedgerPagination,
 } from "../lib/financialBalance";
+import {
+  orderLink,
+  toActorName,
+  toHistoryText,
+  toSourceTypeLabel,
+  type HistoryRow,
+} from "../lib/historyRow";
+import FinancialEntryModal from "./FinancialEntryModal";
+import FinancialHistoryDetail from "./FinancialHistoryDetail";
 
 const PAGE_PARAM = `${HISTORY_PARAM_PREFIX}Page`;
 const LIMIT_PARAM = `${HISTORY_PARAM_PREFIX}Limit`;
@@ -41,14 +53,7 @@ const SOURCE_TYPE_LABEL_KEYS = {
 const readSourceParam = (value: string | null) =>
   value && Object.hasOwn(SOURCE_TYPE_LABEL_KEYS, value) ? value : "";
 
-interface HistoryRow {
-  id: string;
-  date: unknown;
-  sourceType: string;
-  changeAmount: number;
-  previousBalance: number;
-  nextBalance: number;
-}
+
 
 const toPositiveNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -131,21 +136,14 @@ const getSignedChange = (item: Record<string, unknown>) => {
 const toDisplayAmount = (value: number) =>
   value.toLocaleString("ru-RU").replace(/\s/g, " ");
 
-const toSourceTypeLabel = (value: string, t: (key: string) => string) => {
-  if (value === "sell" || value === "sell_profit") return t("financialBalanceSourceProfit");
-  if (value === "sell_extra_cost") return t("financialBalanceSourceExtraCost");
-  if (value === "cancel_extra_cost") return t("financialBalanceSourceExtraCost");
-  if (value === "manual_income") return t("financialBalanceSourceManualIncome");
-  if (value === "manual_expense") return t("financialBalanceSourceManualExpense");
-  if (value === "salary") return t("financialBalanceSourceSalary");
-  if (value === "correction") return t("financialBalanceSourceCorrection");
-  if (value === "bills") return t("financialBalanceSourceBills");
-  return value || "-";
-};
 
 const HistoryTab = () => {
   const { t } = useTranslation("payments");
+  const { api: notify } = useAppNotification();
   const currencyLabel = t("currency");
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [selected, setSelected] = useState<HistoryRow | null>(null);
+  const [exporting, setExporting] = useState(false);
   const { useGetFinancialBalanceHistory } = useFinanceCoverage();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "payments",
@@ -208,6 +206,10 @@ const HistoryTab = () => {
           changeAmount: signedChange,
           previousBalance,
           nextBalance,
+          comment: toHistoryText(item.comment),
+          automatic: !toHistoryText(item.created_by),
+          actorName: toActorName(item),
+          orderId: toHistoryText(item.order_id),
         };
       }),
     [data],
@@ -249,9 +251,18 @@ const HistoryTab = () => {
         key: "sourceType",
         label: t("financialBalanceSource"),
         width: "190px",
-        render: (value) => (
-          <span className="block truncate text-sm font-medium text-main">
-            {toSourceTypeLabel(value, t)}
+        render: (value, row) => (
+          <span className="flex flex-col">
+            <span className="block truncate text-sm font-medium text-main">{toSourceTypeLabel(value, t)}</span>
+            {row.orderId && (
+              <Link
+                to={orderLink(row.orderId)}
+                onClick={(event) => event.stopPropagation()}
+                className="text-xs font-semibold text-gray-500 underline-offset-2 hover:text-main hover:underline dark:text-white/50"
+              >
+                {t("financialBalanceOrderLink", { id: row.orderId })}
+              </Link>
+            )}
           </span>
         ),
       },
@@ -290,9 +301,58 @@ const HistoryTab = () => {
           </span>
         ),
       },
+      {
+        key: "comment",
+        label: t("financialBalanceComment"),
+        width: "240px",
+        render: (value) =>
+          value ? (
+            <span title={value} className="block max-w-[240px] truncate text-sm text-gray-700 dark:text-white/80">
+              {value}
+            </span>
+          ) : (
+            <span className="text-sm text-gray-400">—</span>
+          ),
+      },
+      {
+        key: "actorName",
+        label: t("financialBalanceCreatedBy"),
+        width: "160px",
+        render: (value, row) => (
+          <span className="block truncate text-sm text-gray-600 dark:text-white/70">
+            {row.automatic ? t("financialBalanceAutomatic") : value || "—"}
+          </span>
+        ),
+      },
     ],
     [currencyLabel, pagination.limit, pagination.page, t],
   );
+
+  const exportExcel = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      // Jadval bilan AYNAN bir xil filtrlar — qator soni `total` ga teng.
+      await downloadXlsx(
+        API_ENDPOINTS.EXPORT.FINANCIAL_BALANCE_XLSX,
+        {
+          ...(sourceType && { source_type: sourceType }),
+          ...(fromDate && { from_date: fromDate }),
+          ...(toDate && { to_date: toDate }),
+        },
+        "financial-balance.xlsx",
+      );
+    } catch (error) {
+      notify.error({
+        message: t("excelExportError"),
+        description: await getExportErrorMessage(error),
+        placement: "topRight",
+        duration: 5,
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const sourceTypeOptions = useMemo(
     () =>
@@ -306,11 +366,32 @@ const HistoryTab = () => {
   return (
     <div className="flex flex-col gap-3">
       <div className="rounded-2xl border border-gray-200 bg-primary p-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark">
-        <div className="mb-4 flex items-center gap-2">
-          <Funnel size={16} className="text-main" />
-          <p className="text-sm font-semibold text-gray-800 dark:text-white">
-            {t("filters")}
-          </p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Funnel size={16} className="text-main" />
+            <p className="text-sm font-semibold text-gray-800 dark:text-white">
+              {t("filters")}
+            </p>
+          </div>
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+            <button
+              type="button"
+              onClick={() => void exportExcel()}
+              disabled={exporting}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:border-main/40 hover:text-main disabled:opacity-60 dark:border-white/10 dark:text-white/80 sm:min-h-10"
+            >
+              {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
+              {t("excel")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEntryOpen(true)}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-main px-4 text-sm font-bold text-primary transition hover:bg-main/90 sm:min-h-10"
+            >
+              <Plus size={16} />
+              {t("financialEntryAdd")}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(280px,0.95fr)]">
@@ -349,6 +430,7 @@ const HistoryTab = () => {
             loading={isLoading}
             keyExtractor={(row) => row.id}
             emptyMessage={t("financialBalanceHistoryEmpty")}
+            onRowClick={(row) => setSelected(row)}
           />
 
           <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -368,6 +450,9 @@ const HistoryTab = () => {
           </div>
         </div>
       )}
+
+      <FinancialEntryModal open={entryOpen} onClose={() => setEntryOpen(false)} />
+      <FinancialHistoryDetail row={selected} onClose={() => setSelected(null)} />
     </div>
   );
 };

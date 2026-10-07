@@ -1,8 +1,12 @@
 import { memo, useState } from "react";
-import { Alert, Button, Input, Space, Table, Typography } from "antd";
+import { Alert, Button, Input, Popconfirm, Space, Table, Typography } from "antd";
 import { useBranchCoverage } from "../../entities/branch/branchCoverage";
+import { getBackendErrorMessage } from "../../shared/lib/backendError";
 
 const { Title, Text } = Typography;
+
+// Backend (branch-service) rejects a cancel without a reason of at least 10 chars.
+const MIN_REASON_LENGTH = 10;
 
 const columns = [
   { title: "ID", dataIndex: "id", key: "id" },
@@ -16,6 +20,12 @@ const BranchOpsPage = () => {
   const newOrders = useGetNewOrders();
 
   const [batchId, setBatchId] = useState("");
+  const [reason, setReason] = useState("");
+
+  const trimmedBatchId = batchId.trim();
+  const trimmedReason = reason.trim();
+  const reasonTooShort = trimmedReason.length > 0 && trimmedReason.length < MIN_REASON_LENGTH;
+  const canCancel = trimmedBatchId.length > 0 && trimmedReason.length >= MIN_REASON_LENGTH;
 
   const dataSource: object[] = Array.isArray(newOrders.data) ? newOrders.data : [];
 
@@ -36,20 +46,40 @@ const BranchOpsPage = () => {
           pagination={false}
         />
 
-        <Space direction="horizontal">
+        <Space direction="vertical" style={{ display: "flex" }}>
           <Input
             aria-label="batch-id"
             placeholder="Partiya ID"
             value={batchId}
             onChange={(e) => setBatchId(e.target.value)}
           />
-          <Button
-            type="primary"
-            loading={cancelBatch.isPending}
-            onClick={() => cancelBatch.mutate({ id: batchId, data: {} })}
+          <Input.TextArea
+            aria-label="Bekor qilish sababi"
+            placeholder={`Bekor qilish sababi (kamida ${MIN_REASON_LENGTH} ta belgi)`}
+            rows={3}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          {reasonTooShort ? (
+            <Text type="warning">
+              Sabab kamida {MIN_REASON_LENGTH} ta belgidan iborat bo'lishi kerak (hozir{" "}
+              {trimmedReason.length} ta)
+            </Text>
+          ) : null}
+          <Popconfirm
+            title="Partiyani bekor qilasizmi?"
+            description="Partiya va undagi barcha buyurtmalar bog'lanishdan chiqariladi"
+            okText="Ha, bekor qilish"
+            cancelText="Yo'q"
+            disabled={!canCancel}
+            onConfirm={() =>
+              cancelBatch.mutate({ id: trimmedBatchId, data: { reason: trimmedReason } })
+            }
           >
-            Batchni bekor qilish
-          </Button>
+            <Button type="primary" danger disabled={!canCancel} loading={cancelBatch.isPending}>
+              Batchni bekor qilish
+            </Button>
+          </Popconfirm>
         </Space>
 
         {cancelBatch.isSuccess ? (
@@ -57,6 +87,17 @@ const BranchOpsPage = () => {
             type="success"
             showIcon
             message="Partiya muvaffaqiyatli bekor qilindi"
+          />
+        ) : null}
+
+        {cancelBatch.isError ? (
+          <Alert
+            type="error"
+            showIcon
+            message="Partiyani bekor qilib bo'lmadi"
+            description={
+              getBackendErrorMessage(cancelBatch.error) ?? "Noma'lum xatolik yuz berdi"
+            }
           />
         ) : null}
       </Space>

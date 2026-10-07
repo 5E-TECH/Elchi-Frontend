@@ -14,21 +14,27 @@ type TrackingTimelineProps = {
   };
 };
 
+/**
+ * Buyurtma tarixi — VERTIKAL vaqt chizig'i, ENG YANGISI TEPADA (Ho5qcDn4).
+ * `useOrderTracking` hodisalarni yangidan eskiga saralab beradi; ilgari bu
+ * yerda teskari qilinib gorizontal (chapdan o'ngga) ko'rsatilardi — telefonda
+ * yon tomonga cho'zilardi. Tartib raqami xronologik qoladi (eng yangisi #N/N).
+ */
 export const TrackingTimeline = ({ events, currentUser, context }: TrackingTimelineProps) => (
-  <div className="-mx-2 overflow-x-auto px-2 pb-4">
-    <div className="flex min-w-max gap-4 pr-2">
-      {[...events].reverse().map((event, index) => (
+  <ol className="m-0 flex list-none flex-col gap-3 p-0">
+    {events.map((event, position) => (
+      <li key={event.id}>
         <TrackingTimelineItem
-          key={event.id}
           event={event}
-          index={index}
+          index={events.length - 1 - position}
           total={events.length}
+          isLast={position === events.length - 1}
           currentUser={currentUser}
           context={context}
         />
-      ))}
-    </div>
-  </div>
+      </li>
+    ))}
+  </ol>
 );
 
 export default TrackingTimeline;

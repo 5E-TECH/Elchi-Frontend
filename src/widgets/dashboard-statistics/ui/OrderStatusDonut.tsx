@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { PackageCheck } from "lucide-react";
 import {
   toneAccent,
@@ -14,6 +13,10 @@ import {
  * OrderStatusDonut — buyurtmalar holatining taqsimoti (donut/halqa grafik).
  * Markazda jami qabul qilingan soni. Atrofida: sotilgan / jarayonda / bekor.
  * Dashboard'da boshqa kartalardan ajralib turadigan asosiy vizual.
+ *
+ * Recharts EMAS, oddiy SVG (NIFAnCvf): bu karta dashboardning birinchi ekranida
+ * turadi va recharts (~100 KB gzip) ni birinchi yuklashga tortib, 450 KB
+ * byudjetni buzardi. Geometriya avvalgi PieChart bilan bir xil.
  */
 export interface OrderStatusDonutProps {
   accepted: number;
@@ -24,6 +27,34 @@ export interface OrderStatusDonutProps {
   centerLabel: string;
   legend: { sold: string; inProgress: string; cancelled: string };
 }
+
+// Avvalgi recharts PieChart o'lchamlari: 190px balandlik, innerRadius 62, outerRadius 88, paddingAngle 3.
+const SIZE = 190;
+const CENTER = SIZE / 2;
+const INNER_RADIUS = 62;
+const OUTER_RADIUS = 88;
+const RING_WIDTH = OUTER_RADIUS - INNER_RADIUS;
+const RING_RADIUS = INNER_RADIUS + RING_WIDTH / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+const PADDING_ANGLE = 3;
+
+type Segment = { key: string; name: string; value: number; color: string };
+
+/** Halqani segmentlarga bo'ladi: soat 12 dan boshlab soat strelkasi bo'yicha, orada 3° bo'shliq. */
+const toArcs = (segments: Segment[]) => {
+  const visible = segments.filter((segment) => segment.value > 0);
+  const sum = visible.reduce((acc, segment) => acc + segment.value, 0);
+  const gap = visible.length > 1 ? (PADDING_ANGLE / 360) * CIRCUMFERENCE : 0;
+  const available = CIRCUMFERENCE - gap * visible.length;
+
+  let offset = 0;
+  return visible.map((segment) => {
+    const length = (segment.value / sum) * available;
+    const arc = { ...segment, length, offset };
+    offset += length + gap;
+    return arc;
+  });
+};
 
 const OrderStatusDonut = memo(
   ({
@@ -54,9 +85,7 @@ const OrderStatusDonut = memo(
       },
     ];
 
-    const chartData = allZero
-      ? [{ key: "empty", name: "—", value: 1, color: "var(--color-border-soft)" }]
-      : segments;
+    const arcs = allZero ? [] : toArcs(segments);
 
     return (
       <div className="el-card relative flex min-h-[300px] flex-col overflow-hidden rounded-2xl p-5">
@@ -68,38 +97,43 @@ const OrderStatusDonut = memo(
         </div>
 
         <div className="relative flex flex-1 items-center justify-center">
-          <ResponsiveContainer width="100%" height={190}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                innerRadius={62}
-                outerRadius={88}
-                paddingAngle={allZero ? 0 : 3}
-                stroke="none"
-                startAngle={90}
-                endAngle={-270}
-              >
-                {chartData.map((d) => (
-                  <Cell key={d.key} fill={d.color} />
+          <svg
+            width="100%"
+            height={SIZE}
+            viewBox={`0 0 ${SIZE} ${SIZE}`}
+            role="img"
+            aria-label={`${centerLabel}: ${formatNumber(total)}`}
+          >
+            {allZero ? (
+              <circle
+                cx={CENTER}
+                cy={CENTER}
+                r={RING_RADIUS}
+                fill="none"
+                stroke="var(--color-border-soft)"
+                strokeWidth={RING_WIDTH}
+              />
+            ) : (
+              <g transform={`rotate(-90 ${CENTER} ${CENTER})`}>
+                {arcs.map((arc) => (
+                  <circle
+                    key={arc.key}
+                    data-segment={arc.key}
+                    cx={CENTER}
+                    cy={CENTER}
+                    r={RING_RADIUS}
+                    fill="none"
+                    stroke={arc.color}
+                    strokeWidth={RING_WIDTH}
+                    strokeDasharray={`${arc.length} ${CIRCUMFERENCE}`}
+                    strokeDashoffset={-arc.offset}
+                  >
+                    <title>{`${arc.name}: ${formatNumber(arc.value)}`}</title>
+                  </circle>
                 ))}
-              </Pie>
-              {!allZero && (
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "1px solid var(--color-border-soft)",
-                    background: "var(--color-card-surface-strong)",
-                    fontSize: 12,
-                  }}
-                  formatter={(value: any, name: any) => [formatNumber(Number(value)), name]}
-                />
-              )}
-            </PieChart>
-          </ResponsiveContainer>
+              </g>
+            )}
+          </svg>
 
           {/* Markaz: jami qabul qilingan */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">

@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { Alert, Button, Card, Table, Tag, Tooltip, message } from "antd";
-import { AlertTriangle, Link2, RefreshCw, Send, Truck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, GitCompareArrows, Link2, RefreshCw, Send, Truck } from "lucide-react";
+import type { RootState } from "../../../app/config/store";
 import {
   usePartnerShipments,
   useProviderShipments,
   useRedispatch,
   type PartnerShipmentRow,
   type ProviderShipmentRow,
+  type ShipmentFilter,
 } from "../../../entities/integrations/shipments";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import FilterPills from "../FilterPills";
@@ -28,6 +32,24 @@ import { useStatusLabel } from "../statusLabel";
 
 const when = (v?: string | null) => (v ? new Date(v).toLocaleString("uz-UZ") : "—");
 
+/** Buyurtma tafsiloti sahifasi (`/orders/edit/:orderId`; `/orders/:id` marshruti yo'q). */
+const orderHref = (orderId: string | number) => `/orders/edit/${orderId}`;
+
+const money = (value?: number | null) =>
+  value === null || value === undefined || !Number.isFinite(Number(value))
+    ? "—"
+    : Math.round(Number(value)).toLocaleString("ru-RU").replace(/[\u00a0\u202f]/g, " ");
+
+/**
+ * Mijoz telefoni jurnal ekraniga chiqadi — faqat superadmin/admin to'liq
+ * ko'radi (endpoint ham shu rollarga ochiq); boshqa rolda oxirgi 4 raqam.
+ */
+const PHONE_ROLES = new Set(["superadmin", "admin"]);
+const maskPhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 4 ? `*** ${digits.slice(-4)}` : "***";
+};
+
 const ConnectionShipments = ({ connection }: { connection: Connection }) =>
   connection.kind === "partner" ? (
     <PartnerShipments connection={connection} />
@@ -38,22 +60,25 @@ const ConnectionShipments = ({ connection }: { connection: Connection }) =>
 /** Chiquvchi: tashuvchiga berilgan posilkalar. */
 const ProviderShipments = ({ connection }: { connection: Connection }) => {
   const { t } = useTranslation("integrations");
-  const [failedOnly, setFailedOnly] = useState("all");
+  const [filter, setFilter] = useState<ShipmentFilter>("all");
   const [page, setPage] = useState(1);
   const statusLabel = useStatusLabel();
+  const role = useSelector((state: RootState) => state.role.role);
+  const canSeePhone = PHONE_ROLES.has(String(role ?? ""));
 
   const raw = connection.raw as { slug?: string };
   const slug = String(raw.slug ?? "");
 
   const list = useProviderShipments({
     integrationId: connection.id,
-    failedOnly: failedOnly === "failed",
+    filter,
     page,
     limit: 20,
   });
   const redispatch = useRedispatch();
 
   const rows = list.data?.items ?? [];
+  const counts = list.data?.counts;
 
   const retry = async (orderId: string) => {
     if (!slug) {
@@ -73,7 +98,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
     <Card
       title={
         <span className="flex items-center gap-2">
-          <Truck className="h-4 w-4" /> Jo'natmalar
+          <Truck className="h-4 w-4" /> {t("tabShipments")}
         </span>
       }
       extra={
@@ -82,24 +107,55 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
           loading={list.isFetching}
           onClick={() => void list.refetch()}
         >
-          Yangilash
+          {t("refresh")}
         </Button>
       }
     >
+      {/*
+        Sanoqlar backenddan BITTA agregat so'rovda keladi. Kelmasa (eski
+        backend) — pill sanoqsiz, "0" deb yolg'on ko'rsatilmaydi.
+        "Nomuvofiqlik" — faqat status xaritasi bor ulanishda (aks holda
+        hamma qator nomuvofiq bo'lib ko'rinardi).
+      */}
       <FilterPills
-        value={failedOnly}
+        value={filter}
         onChange={(v) => {
-          setFailedOnly(v);
+          setFilter(v as ShipmentFilter);
           setPage(1);
         }}
         options={[
-          { value: "all", label: t("filterAll"), count: list.data?.pagination.total },
+          { value: "all", label: t("filterAll"), count: counts?.all ?? list.data?.pagination.total },
+          {
+            value: "not_sent",
+            label: t("filterNotSent"),
+            count: counts?.not_sent,
+            icon: <Clock className="h-3.5 w-3.5" />,
+          },
           {
             value: "failed",
             label: t("filterFailed"),
+            count: counts?.failed,
             icon: <AlertTriangle className="h-3.5 w-3.5" />,
             activeClass: "bg-red-600 text-white border-red-600",
           },
+          {
+            value: "delivered",
+            label: t("filterDelivered"),
+            count: counts?.delivered,
+            icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+            activeClass: "bg-emerald-600 text-white border-emerald-600",
+          },
+          ...(counts && counts.mismatch !== null
+            ? [
+                {
+                  value: "mismatch",
+                  label: t("filterMismatch"),
+                  count: counts.mismatch,
+                  icon: <GitCompareArrows className="h-3.5 w-3.5" />,
+                  activeClass: "bg-amber-500 text-white border-amber-500",
+                },
+              ]
+            : []),
         ]}
       />
 
@@ -107,7 +163,8 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
         className="mt-3"
         rowKey={(r) => String(r.id)}
         size="small"
-        scroll={{ x: 900 }}
+        // Yangi ustunlar bilan; "Amal" o'ngda qotirilgan — telefonda kesilmaydi.
+        scroll={{ x: 1380 }}
         loading={list.isLoading}
         dataSource={rows}
         pagination={{
@@ -121,7 +178,57 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
           {
             title: t("colOrder"),
             width: 110,
-            render: (_: unknown, r) => <span className="font-mono text-xs">{r.order_id}</span>,
+            fixed: "left" as const,
+            // Odam o'qiydigan raqam (uuid emas) va buyurtma kartasiga havola.
+            render: (_: unknown, r) => (
+              <Link
+                to={orderHref(r.order_id)}
+                className="font-mono text-sm font-bold text-violet-600 hover:underline dark:text-violet-400"
+              >
+                #{r.order?.order_number ?? r.order_id}
+              </Link>
+            ),
+          },
+          {
+            title: t("colCustomer"),
+            width: 190,
+            render: (_: unknown, r) =>
+              r.order ? (
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-medium">{r.order.customer_name ?? "—"}</span>
+                  <span className="font-mono text-xs text-gray-500">
+                    {r.order.customer_phone
+                      ? canSeePhone
+                        ? r.order.customer_phone
+                        : maskPhone(r.order.customer_phone)
+                      : "—"}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-gray-400">—</span>
+              ),
+          },
+          {
+            title: t("mapAddress"),
+            width: 170,
+            render: (_: unknown, r) =>
+              r.order ? (
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm">{r.order.region_name ?? "—"}</span>
+                  <span className="truncate text-xs text-gray-500">{r.order.district_name ?? "—"}</span>
+                </div>
+              ) : (
+                <span className="text-gray-400">—</span>
+              ),
+          },
+          {
+            // Jo'natilgan COD (buyurtma summasi) — yig'ilgani Hisob-kitob tabida.
+            title: t("colAmountSent"),
+            width: 130,
+            align: "right" as const,
+            render: (_: unknown, r) => (
+              <span className="whitespace-nowrap font-mono text-sm tabular-nums">{money(r.order?.total_price)}</span>
+            ),
           },
           {
             title: t("colTrackingCode"),
@@ -184,6 +291,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
           {
             title: t("colAction"),
             width: 120,
+            fixed: "right" as const,
             /*
               Qayta jo'natish FAQAT xato bor qatorda. Muvaffaqiyatli
               posilkani qayta jo'natish tashuvchida ikkinchi yozuv
@@ -197,7 +305,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
                   loading={redispatch.isPending}
                   onClick={() => void retry(String(r.order_id))}
                 >
-                  Qayta
+                  {t("shpRetry")}
                 </Button>
               ) : null,
           },
@@ -234,7 +342,7 @@ const PartnerShipments = ({ connection }: { connection: Connection }) => {
             loading={list.isFetching}
             onClick={() => void list.refetch()}
           >
-            Yangilash
+            {t("refresh")}
           </Button>
         }
       >
@@ -261,12 +369,12 @@ const PartnerShipments = ({ connection }: { connection: Connection }) => {
             {
               title: t("colOurOrder"),
               render: (_: unknown, r) => (
-                <a
-                  href={`/orders/${r.order_id}`}
+                <Link
+                  to={orderHref(r.order_id)}
                   className="font-mono text-xs text-blue-600 hover:underline dark:text-blue-400"
                 >
                   #{r.order_id}
-                </a>
+                </Link>
               ),
             },
             {

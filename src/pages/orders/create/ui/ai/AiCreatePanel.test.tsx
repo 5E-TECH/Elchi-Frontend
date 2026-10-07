@@ -332,4 +332,72 @@ describe("AiCreatePanel", () => {
       "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60",
     ]);
   });
+  it("ai-confirm kodi tarjima qilinadi: `duplicate_recent` → mavjud buyurtma raqami bilan (6LSlbHoi)", async () => {
+    parseOrders = [order(1), order(2)];
+    confirmResponse = () => ({
+      results: [
+        { index: 0, ok: false, code: "duplicate_recent", order_id: "512", reason: "server matni" },
+        { index: 1, ok: false, code: "district_mismatch", reason: "server matni" },
+      ],
+    });
+    renderPanel();
+    await parse(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (2)" }));
+
+    const [first, second] = await waitFor(() => {
+      const cards = screen.getAllByTestId("ai-preview-card");
+      expect(within(cards[0]).getByText(/allaqachon yaratilgan \(#512\)/)).toBeInTheDocument();
+      return cards;
+    });
+    expect(within(first).queryByText("server matni")).not.toBeInTheDocument();
+    expect(within(second).getByText(/Mijoz tumani buyurtma tumani bilan bir xil emas/)).toBeInTheDocument();
+  });
+
+  describe("telefon 390px (JzQIec06)", () => {
+    it("\"To'ldirilmagan (N)\" keyingi TAYYOR BO'LMAGAN kartaga scroll qiladi, oxiridan keyin boshiga qaytadi", async () => {
+      parseOrders = [
+        order(1),
+        order(2, { district_id: null, district_name: null }),
+        order(3),
+        order(4, { total_price: null }),
+      ];
+      renderPanel();
+      await parse(4);
+
+      const cards = screen.getAllByTestId("ai-preview-card");
+      const unready = [cards[1], cards[3]];
+      // Ekran balandligi 800: 2-karta markazdan pastda (500), 4-karta yanada pastda (1400).
+      const tops = new Map<HTMLElement, number>([
+        [unready[0], 500],
+        [unready[1], 1400],
+      ]);
+      const scrolled: HTMLElement[] = [];
+      vi.spyOn(window, "innerHeight", "get").mockReturnValue(800);
+      for (const card of unready) {
+        card.getBoundingClientRect = () => ({ top: tops.get(card) ?? 0 }) as DOMRect;
+        card.scrollIntoView = vi.fn(() => {
+          scrolled.push(card);
+          // Ekran tepasiga keldi: undan keyingilar yuqoriga suriladi.
+          const shift = tops.get(card) ?? 0;
+          for (const other of unready) tops.set(other, (tops.get(other) ?? 0) - shift);
+        });
+      }
+
+      const jump = within(screen.getByTestId("ai-confirm-bar")).getByRole("button", { name: "To'ldirilmagan (2)" });
+      fireEvent.click(jump);
+      fireEvent.click(jump);
+      fireEvent.click(jump);
+
+      expect(scrolled).toEqual([unready[0], unready[1], unready[0]]);
+      expect(unready[0].scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+    });
+
+    it("hamma karta tayyor bo'lsa \"To'ldirilmagan\" tugmasi yo'q", async () => {
+      parseOrders = [order(1), order(2)];
+      renderPanel();
+      await parse(2);
+      expect(screen.queryByRole("button", { name: /To'ldirilmagan/ })).not.toBeInTheDocument();
+    });
+  });
 });

@@ -381,15 +381,23 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               )}
             />
             {(["sms", "push"] as const).map((channel) => (
-              <Tooltip key={channel} title={t("dispatch.providerMissing")}>
-                <span>
-                  <Checkbox disabled checked={false}>
+              <Controller
+                key={channel}
+                control={control}
+                name={channel}
+                render={({ field }) => (
+                  <Checkbox checked={field.value} disabled={locked} onChange={(event) => field.onChange(event.target.checked)}>
                     {t(`dispatch.channel.${channel}`)}
                   </Checkbox>
-                </span>
-              </Tooltip>
+                )}
+              />
             ))}
           </div>
+          {values.sms ? (
+            <p className="m-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+              {t("dispatch.smsHint")}
+            </p>
+          ) : null}
           {values.telegram && (
             <div className="flex min-w-0 flex-col gap-1.5">
               <FieldLabel>{t("dispatch.telegramMarket")}</FieldLabel>

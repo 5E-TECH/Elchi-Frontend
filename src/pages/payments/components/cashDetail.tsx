@@ -33,6 +33,7 @@ import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { getExportErrorMessage } from "../../../shared/lib/exportFile";
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -90,33 +91,6 @@ const getHistoryDate = (item: Record<string, unknown>) =>
 
 const reduceBalanceTowardsZero = (balance: number, amount: number) =>
   balance < 0 ? Math.min(0, balance + amount) : Math.max(0, balance - amount);
-
-/**
- * Excel yuklash xatosining matni. `responseType: "blob"` bo'lgani uchun
- * backend xabari JSON emas, Blob ichida keladi — o'qib olinadi.
- */
-const readBlobText = (blob: Blob): Promise<string> =>
-  typeof blob.text === "function"
-    ? blob.text()
-    : new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result ?? ""));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsText(blob);
-      });
-
-const getExportErrorMessage = async (error: unknown): Promise<string | undefined> => {
-  const data = (error as { response?: { data?: unknown } } | null)?.response?.data;
-  if (typeof Blob !== "undefined" && data instanceof Blob) {
-    try {
-      const text = await readBlobText(data);
-      return text ? getBackendErrorMessage({ response: { data: JSON.parse(text) } }) : undefined;
-    } catch {
-      return undefined;
-    }
-  }
-  return getBackendErrorMessage(error);
-};
 
 /** GET /branches qatoridan shu filialning HQ'ga qarzi (topilmasa — undefined). */
 const findBranchPayable = (branches: unknown, branchId: string | undefined): number | undefined => {

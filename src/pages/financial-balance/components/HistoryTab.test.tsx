@@ -21,6 +21,7 @@ const getHistoryMock = vi.fn((enabled: boolean, params: unknown) => {
 vi.mock("../../../entities/payments/financeCoverage", () => ({
   useFinanceCoverage: () => ({
     useGetFinancialBalanceHistory: (enabled: boolean, params: unknown) => getHistoryMock(enabled, params),
+    createFinancialBalanceEntry: { mutate: vi.fn(), isPending: false },
   }),
 }));
 

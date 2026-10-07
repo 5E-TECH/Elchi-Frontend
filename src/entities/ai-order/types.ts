@@ -152,11 +152,30 @@ export type AiConfirmRequest = {
   orders: AiConfirmOrder[];
 };
 
+/**
+ * ai-confirm'da yiqilgan buyurtma kodi (backend `AiConfirmFailureCode` bilan
+ * bir xil). Frontend matnni KOD bo'yicha tarjima qiladi; `reason` — serverning
+ * o'zbekcha izohi (kodsiz eski javob uchun zaxira).
+ */
+export type AiConfirmFailureCode =
+  | "district_not_found"
+  | "district_mismatch"
+  | "product_not_found"
+  | "product_foreign"
+  | "duplicate_in_batch"
+  | "duplicate_recent"
+  | "duplicate_in_progress"
+  | "validation_unavailable"
+  | "create_failed"
+  | "timeout_unknown"
+  | "not_started";
+
 /** Har buyurtma alohida natija beradi; `index` — `orders[]` dagi o'rni. */
 export type AiConfirmResult = {
   index: number;
   ok: boolean;
   order_id?: string;
+  code?: AiConfirmFailureCode;
   reason?: string;
 };
 

@@ -33,7 +33,35 @@ export interface ProviderShipmentRow {
   send_attempts: number;
   last_error: string | null;
   createdAt?: string;
+  /**
+   * Buyurtma xulosasi (gateway `order.summary_by_ids`, tokhPLMP). `null` —
+   * order-service javob bermadi; jadval baribir ko'rinadi.
+   */
+  order?: ShipmentOrderSummary | null;
 }
+
+export interface ShipmentOrderSummary {
+  id: string;
+  order_number?: string | null;
+  status?: string | null;
+  /** Jo'natilgan COD — buyurtmaning `total_price` i. */
+  total_price?: number | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  region_name?: string | null;
+  district_name?: string | null;
+}
+
+/** Pill filtrlari — backend `SHIPMENT_FILTERS` bilan bir xil. */
+export type ShipmentFilter = "all" | "not_sent" | "failed" | "delivered" | "mismatch";
+
+/**
+ * Pill sanoqlari BITTA agregat so'rovdan. `mismatch: null` — ulanishda status
+ * xaritasi yo'q, "Nomuvofiqlik" pili ko'rsatilmaydi.
+ */
+export type ShipmentCounts = Record<Exclude<ShipmentFilter, "mismatch">, number> & {
+  mismatch: number | null;
+};
 
 export interface PartnerShipmentRow {
   id: string | number;
@@ -46,6 +74,8 @@ export interface PartnerShipmentRow {
 export interface ShipmentsPage<T> {
   items: T[];
   pagination: { total: number; page: number; limit: number };
+  /** Faqat chiquvchi posilkalarda; eski backendda yo'q — pillar sanoqsiz. */
+  counts?: ShipmentCounts;
 }
 
 const EMPTY = { items: [], pagination: { total: 0, page: 1, limit: 20 } };
@@ -58,6 +88,7 @@ const unwrap = <T>(raw: unknown): ShipmentsPage<T> => {
   return {
     items: Array.isArray(page?.items) ? page!.items : [],
     pagination: page?.pagination ?? EMPTY.pagination,
+    ...(page?.counts ? { counts: page.counts } : {}),
   };
 };
 
@@ -67,11 +98,12 @@ export const shipmentsKey = "integration-shipments";
 export const useProviderShipments = (params: {
   integrationId?: string;
   failedOnly?: boolean;
+  filter?: ShipmentFilter;
   page?: number;
   limit?: number;
 }) =>
   useQuery({
-    queryKey: [shipmentsKey, "provider", params.integrationId, params.failedOnly, params.page],
+    queryKey: [shipmentsKey, "provider", params.integrationId, params.failedOnly, params.filter, params.page],
     enabled: Boolean(params.integrationId),
     queryFn: () =>
       api
@@ -80,6 +112,7 @@ export const useProviderShipments = (params: {
             // ⚠️ Backend satrni `'true'`/`'1'` bo'yicha o'qiydi; `false`ni
             // umuman yubormaslik aniqroq.
             ...(params.failedOnly ? { failed_only: "true" } : {}),
+            ...(params.filter && params.filter !== "all" ? { filter: params.filter } : {}),
             page: params.page ?? 1,
             limit: params.limit ?? 20,
           },
