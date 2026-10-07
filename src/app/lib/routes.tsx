@@ -1,5 +1,5 @@
 import { lazy, memo, type ReactNode } from "react";
-import { Navigate, Outlet, useParams, useRoutes } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useParams, useRoutes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "../../features/auth/ui/ProtectedRoute";
 import type { RootState } from "../config/store";
@@ -228,6 +228,17 @@ const DashboardEntry = () => {
   }
 
   return <DashboardPage />;
+};
+
+/**
+ * Buyurtma yaratish "Qabul va yaratish" sahifasiga ko'chdi. Eski `/orders/add`
+ * havolasi (xatcho'p, eski tugma) yangi joyga o'tadi — tanlangan market
+ * (`location.state.selectedMarket`) yo'qolmaydi.
+ */
+export const LegacyOrderCreateRedirect = () => {
+  const location = useLocation();
+
+  return <Navigate replace to="/new-orders/create" state={location.state} />;
 };
 
 const LegacyBranchBatchRedirect = () => {
@@ -636,14 +647,7 @@ const AppRouter = () => {
                     </ProtectedRoute>
                   ),
                 },
-                {
-                  path: "add",
-                  element: (
-                    <ProtectedRoute canActivate={canCreateOrdersByRoleAndBranchType}>
-                      <OrderCreate />
-                    </ProtectedRoute>
-                  ),
-                },
+                { path: "add", element: <LegacyOrderCreateRedirect /> },
               ],
             },
             {
@@ -676,6 +680,8 @@ const AppRouter = () => {
               ),
               children: [
                 { index: true, element: <NewOrdersMarkets /> },
+                // Buyurtma YARATISH shu sahifada (ilgari `/orders/add` edi).
+                { path: "create", element: <OrderCreate /> },
                 /**
                  * ESKI YO'LLAR — barchasi Integratsiyalar uyiga yo'naltiriladi.
                  *

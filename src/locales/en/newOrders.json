@@ -1,7 +1,8 @@
 {
   "pageTitle": "Intake & create",
-  "pageDescription": "Receive orders from markets, branches and partners",
+  "pageDescription": "Create orders and receive orders from markets, branches and partners",
   "addOrderBtn": "Add Order",
+  "createOrderBtn": "Create order",
   "newOrdersTab": "New orders",
   "marketsTab": "Markets",
   "cancelledTab": "Cancelled",

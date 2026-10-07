@@ -33,7 +33,6 @@ interface Props {
     isLoading: boolean;
     onRowClick?: (order: OrderListItem) => void;
     rowNumberOffset?: number;
-    onCreateOrder?: () => void;
     canUseOrderActions?: (order: OrderListItem) => boolean;
     /**
      * Qatorda "Sotish" (qisman sotish ham shu oynada) ko'rsatiladimi. Berilmasa —
@@ -267,7 +266,6 @@ const OrdersTable = ({
     isLoading,
     onRowClick,
     rowNumberOffset = 0,
-    onCreateOrder,
     canUseOrderActions,
     canSellOrder,
     onSellOrder,
@@ -478,15 +476,6 @@ const OrdersTable = ({
                         {t("ordersEmptyCreateHintLine2")}
                     </>
                 }
-                action={onCreateOrder ? (
-                    <button
-                        type="button"
-                        onClick={onCreateOrder}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition hover:bg-main/90"
-                    >
-                        + {t("newOrders")}
-                    </button>
-                ) : null}
             />
         );
     }

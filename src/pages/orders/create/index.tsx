@@ -392,7 +392,7 @@ const OrderCreateFormContent = () => {
   }, [customer, details, isInactiveSelectedMarket, isMarketRole, market, mode, step]);
 
   const handleBack = () => {
-    navigate("/orders");
+    navigate("/new-orders");
   };
 
   const handleNext = async () => {
@@ -507,7 +507,7 @@ const OrderCreateFormContent = () => {
         <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 py-3 sm:px-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <HeaderName
-              name={t("newOrders")}
+              name={t("createTitle")}
               description={selectedMarketName ? t("selectedMarket") : t("createPageDescription")}
               icon={<ListPlus />}
             />

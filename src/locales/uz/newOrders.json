@@ -1,7 +1,8 @@
 {
   "pageTitle": "Qabul va yaratish",
-  "pageDescription": "Marketlardan, filiallardan va hamkorlardan kelgan buyurtmalarni qabul qilish",
+  "pageDescription": "Buyurtma yaratish va marketlar, filiallar hamda hamkorlardan kelgan buyurtmalarni qabul qilish",
   "addOrderBtn": "Buyurtma qo'shish",
+  "createOrderBtn": "Buyurtma yaratish",
   "newOrdersTab": "Yangi buyurtmalar",
   "marketsTab": "Marketlar",
   "cancelledTab": "Bekor qilinganlar",

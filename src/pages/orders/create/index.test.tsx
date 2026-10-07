@@ -12,7 +12,7 @@ vi.mock("../../../shared/api/api", () => ({
 import OrderCreate from "./index";
 
 /**
- * /orders/add — "QO'LDA" VA "AI BILAN" REJIMLARI (DUFZDG5r).
+ * /new-orders/create — "QO'LDA" VA "AI BILAN" REJIMLARI (DUFZDG5r).
  */
 
 const marketState = {
