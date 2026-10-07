@@ -1,4 +1,5 @@
-import { History } from "lucide-react";
+import { useId, useState } from "react";
+import { ChevronDown, History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
@@ -27,6 +28,12 @@ type OrderTrackingProps = {
 
 const normalize = (value?: string | number | null) => String(value ?? "").trim();
 
+/** Telefonda (≤639px) blok YIG'ILGAN ochiladi — sahifani cho'zib yubormasin (Ho5qcDn4). */
+const isMobileViewport = () =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(max-width: 639px)").matches;
+
 const canRoleViewTracking = (role: string | null | undefined) => {
   const normalizedRole = normalize(role).toLowerCase();
   return ["admin", "superadmin", "branch", "manager", "registrator", "courier"].includes(normalizedRole);
@@ -39,6 +46,8 @@ export const OrderTracking = ({ orderId, currentStatus, access, context }: Order
   const currentBranchId = useSelector(getCurrentBranchId);
   const canViewTracking = canRoleViewTracking(currentRole);
   const { events, isLoading, isError, errorMessage, hasMore, loadMore } = useOrderTracking(orderId, canViewTracking);
+  const [open, setOpen] = useState(() => !isMobileViewport());
+  const bodyId = useId();
   void access;
   void currentBranchId;
   void currentUser;
@@ -61,15 +70,29 @@ export const OrderTracking = ({ orderId, currentStatus, access, context }: Order
             </h2>
             {events.length > 0 ? (
               <p className="mt-1 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("tracking.oldToNew", { count: events.length })}
+                {t("tracking.newestFirst", { count: events.length })}
               </p>
             ) : null}
           </div>
         </div>
-        <div className="rounded-full border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-main)_10%,var(--color-primary))] px-3 py-1 text-xs font-semibold text-main dark:border-white/10 dark:bg-white/10 dark:text-primary">
-          {events.length}
+        <div className="flex items-center gap-2">
+          <div className="rounded-full border border-[color:var(--color-border-soft)] bg-[color:color-mix(in_srgb,var(--color-main)_10%,var(--color-primary))] px-3 py-1 text-xs font-semibold text-main dark:border-white/10 dark:bg-white/10 dark:text-primary">
+            {events.length}
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
+            aria-controls={bodyId}
+            aria-label={open ? t("tracking.collapse") : t("tracking.expand")}
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-main sm:hidden"
+          >
+            <ChevronDown size={18} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+          </button>
         </div>
       </div>
+
+      <div id={bodyId} data-testid="tracking-body" className={open ? "" : "hidden sm:block"}>
 
       {isLoading && events.length === 0 ? (
         <div className="relative flex min-h-56 items-center justify-center">
@@ -103,6 +126,7 @@ export const OrderTracking = ({ orderId, currentStatus, access, context }: Order
           ) : null}
         </div>
       ) : null}
+      </div>
     </section>
   );
 };

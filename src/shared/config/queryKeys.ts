@@ -9,6 +9,8 @@ export const queryKeys = {
     list: (params: object) => ["notifications-inbox", "list", params] as const,
     detail: (id: string) => ["notifications-inbox", "detail", id] as const,
     unreadCount: ["notifications-inbox", "unread-count"] as const,
+    // `all` prefiksi ostida — "Barchasini o'qilgan" va har o'qish sanoqlarni ham yangilaydi.
+    counts: ["notifications-inbox", "counts"] as const,
   },
   branches: {
     all: ["branches"] as const,

@@ -7,8 +7,11 @@ import { actionLabelMap } from "../model/actionLabelMap";
 
 type TrackingTimelineItemProps = {
   event: TrackingEvent;
+  /** Xronologik tartib raqami (0 — eng eski). */
   index: number;
   total: number;
+  /** Ro'yxatdagi oxirgi (eng eski) element — pastga chiziq chizilmaydi. */
+  isLast?: boolean;
   currentUser?: User | null;
   context?: {
     branchName?: string | null;
@@ -704,7 +707,7 @@ const isCancelledPostReceivedEvent = (event: TrackingEvent) => {
     note.includes("cancelled_order_received");
 };
 
-export const TrackingTimelineItem = ({ event, index, total, currentUser, context }: TrackingTimelineItemProps) => {
+export const TrackingTimelineItem = ({ event, index, total, isLast = false, currentUser, context }: TrackingTimelineItemProps) => {
   const { t } = useTranslation("orders");
   const actionKey = normalizeKey(event.action);
   const actionLabelKey = event.action ? actionLabelMap[event.action] ?? actionLabelMap[actionKey] : undefined;
@@ -731,18 +734,19 @@ export const TrackingTimelineItem = ({ event, index, total, currentUser, context
   const NodeIcon = tone.icon;
 
   return (
-    <article className="relative flex w-[300px] shrink-0 flex-col pt-12 sm:w-[350px]">
-      <div className="absolute left-0 right-0 top-5 h-px bg-main/20 dark:bg-white/12" />
-      <div className="absolute left-1/2 top-0 z-10 flex -translate-x-1/2 flex-col items-center gap-1">
-        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-          #{index + 1}/{total}
-        </span>
+    <article data-testid="tracking-event" className="relative flex w-full gap-3">
+      {/* Vertikal vaqt chizig'i: tugun + pastga chiziq (eng yangisi tepada). */}
+      <div className="flex w-10 shrink-0 flex-col items-center gap-1">
         <span className={`flex h-10 w-10 items-center justify-center rounded-2xl shadow-lg ${tone.node}`}>
           <NodeIcon size={17} />
         </span>
+        <span className="text-[11px] font-black text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
+          #{index + 1}/{total}
+        </span>
+        {!isLast ? <span aria-hidden className="w-px flex-1 bg-main/20 dark:bg-white/12" /> : null}
       </div>
 
-      <div className={`min-h-[330px] rounded-2xl border p-3.5 shadow-sm transition-colors hover:border-main/45 dark:bg-maindark/45 ${tone.card}`}>
+      <div className={`mb-1 min-w-0 flex-1 rounded-2xl border p-3.5 shadow-sm transition-colors hover:border-main/45 dark:bg-maindark/45 ${tone.card}`}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-black ${tone.badge}`}>
             {actionName}

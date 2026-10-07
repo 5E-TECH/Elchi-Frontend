@@ -123,7 +123,7 @@ const SettlementListCard = ({
               ) : null}
             </div>
             <p className={`shrink-0 text-right text-sm font-black tabular-nums ${amountClassName}`}>
-              {formatFinancialAmount(row.balance, "comma")}
+              {formatFinancialAmount(row.balance)}
             </p>
           </div>
         ))
@@ -137,7 +137,7 @@ const SettlementListCard = ({
     <div className="flex items-center justify-between gap-4 border-t border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] px-5 py-4 dark:border-white/10 dark:bg-white/5">
       <p className="text-base font-bold text-maindark dark:text-white">{totalLabel}</p>
       <p className={`text-right text-base font-black tabular-nums sm:text-lg ${amountClassName}`}>
-        {formatFinancialAmount(total, "comma")} {currencyLabel}
+        {formatFinancialAmount(total)} {currencyLabel}
       </p>
     </div>
   </div>

@@ -32,15 +32,65 @@ describe("BranchOps page", () => {
     );
   });
 
-  it("calls api.post with \"transfer-batches/b1/cancel\" when batch-id is b1 and button clicked", async () => {
+  it("keeps the cancel button disabled and sends nothing while the reason is empty", async () => {
     const user = userEvent.setup();
     renderWithProviders(<BranchOpsPage />);
 
     await user.type(screen.getByLabelText("batch-id"), "b1");
+    const button = screen.getByRole("button", { name: "Batchni bekor qilish" });
+    expect(button).toBeDisabled();
+
+    await user.click(button);
+    expect(apiPostMock).not.toHaveBeenCalled();
+  });
+
+  it("warns on the client when the reason is shorter than 10 characters", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<BranchOpsPage />);
+
+    await user.type(screen.getByLabelText("batch-id"), "b1");
+    await user.type(screen.getByLabelText("Bekor qilish sababi"), "qisqa");
+
+    expect(screen.getByText(/kamida 10 ta belgidan iborat/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Batchni bekor qilish" })).toBeDisabled();
+    expect(apiPostMock).not.toHaveBeenCalled();
+  });
+
+  it("posts {reason} to \"transfer-batches/b1/cancel\" after the confirmation", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<BranchOpsPage />);
+
+    await user.type(screen.getByLabelText("batch-id"), "b1");
+    await user.type(screen.getByLabelText("Bekor qilish sababi"), "Noto'g'ri viloyatga yuborilgan");
     await user.click(screen.getByRole("button", { name: "Batchni bekor qilish" }));
 
+    expect(
+      await screen.findByText("Partiya va undagi barcha buyurtmalar bog'lanishdan chiqariladi"),
+    ).toBeInTheDocument();
+    expect(apiPostMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Ha, bekor qilish" }));
+
     await waitFor(() =>
-      expect(apiPostMock.mock.calls[0][0]).toBe("transfer-batches/b1/cancel"),
+      expect(apiPostMock).toHaveBeenCalledWith("transfer-batches/b1/cancel", {
+        reason: "Noto'g'ri viloyatga yuborilgan",
+      }),
     );
+    expect(await screen.findByText("Partiya muvaffaqiyatli bekor qilindi")).toBeInTheDocument();
+  });
+
+  it("shows the backend message when the cancel request fails with 400", async () => {
+    apiPostMock.mockRejectedValue({
+      response: { status: 400, data: { message: "Partiya allaqachon bekor qilingan" } },
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<BranchOpsPage />);
+
+    await user.type(screen.getByLabelText("batch-id"), "b1");
+    await user.type(screen.getByLabelText("Bekor qilish sababi"), "Noto'g'ri viloyatga yuborilgan");
+    await user.click(screen.getByRole("button", { name: "Batchni bekor qilish" }));
+    await user.click(await screen.findByRole("button", { name: "Ha, bekor qilish" }));
+
+    expect(await screen.findByText("Partiya allaqachon bekor qilingan")).toBeInTheDocument();
   });
 });

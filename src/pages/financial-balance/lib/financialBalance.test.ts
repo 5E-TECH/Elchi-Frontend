@@ -39,3 +39,17 @@ describe("normalizeFinancialBalance", () => {
     expect(data?.currentSituation).toBe(-4876264.43);
   });
 });
+
+describe("readCurrentBalance (GtAoqHlk)", () => {
+  it("analytics javobidagi currentBalance (qobiq bilan ham, qobiqsiz ham)", async () => {
+    const { readCurrentBalance } = await import("./financialBalance");
+    expect(readCurrentBalance({ statusCode: 200, data: { currentBalance: 1545000 } })).toBe(1545000);
+    expect(readCurrentBalance({ current_balance: "-200" })).toBe(-200);
+  });
+
+  it("javobda yo'q bo'lsa null — karta 0 deb yolg'on ko'rsatilmaydi", async () => {
+    const { readCurrentBalance } = await import("./financialBalance");
+    expect(readCurrentBalance(undefined)).toBeNull();
+    expect(readCurrentBalance({ data: { summary: {} } })).toBeNull();
+  });
+});

@@ -1,19 +1,14 @@
 import { memo, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { isCancel, type AxiosError } from "axios";
-import { ImagePlus, Loader2, PencilLine, Sparkles, X } from "lucide-react";
+import type { AxiosError } from "axios";
+import { Camera, ImagePlus, Loader2, PencilLine, Sparkles, Store, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  useAiParse,
-  type AiParseFailureReason,
-  type AiPreviewOrder,
-} from "../../../../../entities/ai-order";
+import { useAiParse, type AiPreviewOrder } from "../../../../../entities/ai-order";
 import {
   PrepareImageError,
   prepareImage,
   type PrepareImageErrorCode,
   type PreparedImage,
 } from "../../../../../shared/lib/downscaleImage";
-import { getBackendErrorMessage } from "../../../../../shared/lib/backendError";
 import {
   FormFieldError,
   FormStateNote,
@@ -21,6 +16,7 @@ import {
   getFieldClassName,
   orderInputClassName,
 } from "../formFieldStyles";
+import { parseFailureView, parseHttpErrorView, type AiErrorView } from "./aiErrorText";
 
 /** Backend DTO bilan bir xil: matn ko'pi bilan 4000 belgi. */
 const AI_MAX_TEXT = 4000;
@@ -41,38 +37,13 @@ const IMAGE_ERROR_KEYS: Record<PrepareImageErrorCode, string> = {
 
 type PanelImage = PreparedImage & { id: string };
 
-/**
- * Operator qo'lda yaratishga o'tishi kerak bo'lgan holatlar — har biri
- * O'Z matni bilan. ⚠️ `cap_exceeded` "AI o'chirilgan" deb ko'rsatilmaydi:
- * AI ishlaydi, faqat bugungi xarajat limiti tugagan.
- */
-type AiBlockKind = "disabled" | "cap_exceeded" | "refused";
-
-const BLOCK_TEXT: Record<AiBlockKind, { title: string; description: string; action: string }> = {
-  disabled: { title: "aiDisabledTitle", description: "aiDisabledDescription", action: "aiCreateManually" },
-  cap_exceeded: { title: "aiCapTitle", description: "aiCapDescription", action: "aiEnterManually" },
-  refused: { title: "aiRefusedTitle", description: "aiRefusedDescription", action: "aiEnterManually" },
-};
-
-/** Qolgan sabablar — xato matni (hammasi bir xil "AI o'qiy olmadi" emas). */
-const REASON_ERROR_KEYS: Partial<Record<AiParseFailureReason, string>> = {
-  truncated: "aiReasonTruncated",
-  network: "aiReasonNetwork",
-  ai_error: "aiReasonNetwork",
-  no_market: "aiReasonNoMarket",
-};
-
-const toBlockKind = (reason?: AiParseFailureReason): AiBlockKind | null => {
-  if (reason === "disabled" || reason === "ai_off") return "disabled";
-  if (reason === "cap_exceeded" || reason === "refused") return reason;
-  return null;
-};
-
 type AiInputPanelProps = {
   /** Faqat admin/registrator uchun; market roli uchun server o'zi aniqlaydi. */
   marketId?: string;
   onParsed: (orders: AiPreviewOrder[], draftId?: string) => void;
   onSwitchToManual: () => void;
+  /** Admin/registrator: `no_market` bo'lsa market tanlashga qaytaradi. Market rolida yo'q. */
+  onSelectMarket?: () => void;
 };
 
 /**
@@ -83,10 +54,12 @@ type AiInputPanelProps = {
  * faqat operator o'zi bosadi. Barcha tugmalar `type="button"` — panel
  * qo'lda yaratish `<form>` i ichida turadi.
  */
-const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProps) => {
+const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: AiInputPanelProps) => {
   const { t } = useTranslation("orders");
   const parse = useAiParse();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const nextImageId = useRef(0);
 
@@ -96,9 +69,8 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [tooManyImages, setTooManyImages] = useState(false);
-  const [parseError, setParseError] = useState("");
-  const [block, setBlock] = useState<AiBlockKind | null>(null);
-  const [retryKey, setRetryKey] = useState("aiRetryParse");
+  const [failure, setFailure] = useState<AiErrorView | null>(null);
+  const [throttled, setThrottled] = useState(false);
   const [throttleUntil, setThrottleUntil] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [collapsed, setCollapsed] = useState(false);
@@ -107,6 +79,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
   const throttleLeft = Math.max(0, Math.ceil((throttleUntil - now) / 1000));
   const isEmpty = !text.trim() && images.length === 0;
   const canParse = !isEmpty && !isParsing && !progress && throttleLeft === 0;
+  const imagesLocked = isParsing || Boolean(progress) || images.length >= AI_MAX_IMAGES;
 
   useEffect(() => {
     if (throttleUntil <= Date.now()) return;
@@ -135,6 +108,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
   const handleFiles = async (fileList: FileList | null) => {
     const files = Array.from(fileList ?? []);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (files.length === 0) return;
 
     const free = Math.max(0, AI_MAX_IMAGES - images.length);
@@ -172,9 +146,8 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
 
     const controller = new AbortController();
     controllerRef.current = controller;
-    setParseError("");
-    setBlock(null);
-    setRetryKey("aiRetryParse");
+    setFailure(null);
+    setThrottled(false);
 
     parse.mutate(
       {
@@ -186,15 +159,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
       {
         onSuccess: (response) => {
           if (!response?.ok) {
-            const kind = toBlockKind(response?.reason);
-            if (kind) {
-              setBlock(kind);
-              return;
-            }
-            const reasonKey = response?.reason ? REASON_ERROR_KEYS[response.reason] : undefined;
-            setParseError(t(reasonKey ?? "aiParseFailed"));
-            // Tarmoq/AI javob bermadi — faqat shu holatda "Qayta urinib ko'ring".
-            if (response?.reason === "network" || response?.reason === "ai_error") setRetryKey("aiRetryAgain");
+            setFailure(parseFailureView(response?.reason, { canSelectMarket: Boolean(onSelectMarket) }));
             return;
           }
           const orders = response.orders ?? [];
@@ -202,16 +167,15 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
           if (orders.length > 0) setCollapsed(true);
         },
         onError: (error) => {
-          // Operator o'zi bekor qildi — xato emas, hech narsa ko'rsatilmaydi.
-          if (isCancel(error)) return;
           if ((error as AxiosError).response?.status === 429) {
             const until = Date.now() + AI_THROTTLE_SECONDS * 1000;
             setNow(Date.now());
             setThrottleUntil(until);
-            setParseError(t("aiThrottled"));
+            setThrottled(true);
             return;
           }
-          setParseError(getBackendErrorMessage(error) ?? t("aiParseRequestFailed"));
+          // `null` — operator o'zi bekor qildi: xato emas, hech narsa ko'rsatilmaydi.
+          setFailure(parseHttpErrorView(error));
         },
         onSettled: () => {
           if (controllerRef.current === controller) controllerRef.current = null;
@@ -221,6 +185,13 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
   };
 
   const cancelParse = () => controllerRef.current?.abort();
+
+  /** `retry` bu yerga kelmaydi — u asosiy "Tahlil" tugmasining o'zi. */
+  const runFailureAction = (view: AiErrorView) => {
+    if (view.action === "editText") textareaRef.current?.focus();
+    else if (view.action === "selectMarket" && onSelectMarket) onSelectMarket();
+    else onSwitchToManual();
+  };
 
   if (collapsed) {
     return (
@@ -237,7 +208,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          className={`${getActionButtonClassName({ variant: "secondary" })} w-full sm:w-auto`}
+          className={`${getActionButtonClassName({ variant: "secondary" })} min-h-11 w-full sm:min-h-10 sm:w-auto`}
         >
           <PencilLine size={16} />
           {t("aiEditInput")}
@@ -251,11 +222,12 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="ai-order-text"
-          className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 sm:text-xs"
+          className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
         >
           {t("aiTextLabel")}
         </label>
         <textarea
+          ref={textareaRef}
           id="ai-order-text"
           rows={8}
           value={text}
@@ -264,7 +236,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
           placeholder={t("aiTextPlaceholder")}
           className={getFieldClassName(`${orderInputClassName} resize-y`, overLimit)}
         />
-        <div className="flex items-center justify-between gap-2 text-[11px]">
+        <div className="flex items-center justify-between gap-2 text-xs">
           <span className={overLimit ? "text-error" : "text-gray-400"}>{overLimit ? t("aiTextTooLong") : ""}</span>
           <span
             data-testid="ai-text-counter"
@@ -276,24 +248,57 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
       </div>
 
       <div className="flex flex-col gap-2">
+        {/* Galereya: bir nechta surat. Kamera: telefonda to'g'ridan orqa kamera. */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
           multiple
-          capture="environment"
           className="hidden"
           data-testid="ai-image-input"
           onChange={(event) => void handleFiles(event.target.files)}
         />
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          data-testid="ai-camera-input"
+          onChange={(event) => void handleFiles(event.target.files)}
+        />
+        {/* Telefonda ikki alohida tugma ("Surat olish" / "Galereyadan"), ish stolida bitta. */}
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={imagesLocked}
+            className={`${getActionButtonClassName({ variant: "secondary", disabled: imagesLocked })} min-h-11 px-3`}
+          >
+            <Camera size={16} />
+            {t("aiTakePhoto")}
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={imagesLocked}
+            className={`${getActionButtonClassName({ variant: "secondary", disabled: imagesLocked })} min-h-11 px-3`}
+          >
+            <ImagePlus size={16} />
+            {t("aiFromGallery")}
+          </button>
+        </div>
+        {images.length > 0 && (
+          <p className="text-xs text-gray-400 sm:hidden">{t("aiImageCount", { count: images.length, max: AI_MAX_IMAGES })}</p>
+        )}
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={isParsing || Boolean(progress) || images.length >= AI_MAX_IMAGES}
+          disabled={imagesLocked}
           className={`${getActionButtonClassName({
             variant: "secondary",
-            disabled: isParsing || Boolean(progress) || images.length >= AI_MAX_IMAGES,
-          })} w-full sm:w-auto sm:self-start`}
+            disabled: imagesLocked,
+          })} hidden sm:flex sm:w-auto sm:self-start`}
         >
           <ImagePlus size={16} />
           {t("aiAddImage", { count: images.length, max: AI_MAX_IMAGES })}
@@ -315,17 +320,20 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
                 className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-primarydark"
               >
                 <img src={image.preview} alt={image.name} className="aspect-square w-full object-cover" />
-                <span className="absolute bottom-1 left-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                <span className="absolute bottom-1 left-1 rounded-md bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-white">
                   {Math.round(image.bytes / 1024)} KB
                 </span>
+                {/* Bosish maydoni 44px, ko'rinadigan doira kichik — eskizni to'smaydi. */}
                 <button
                   type="button"
                   aria-label={t("aiRemoveImage")}
                   onClick={() => removeImage(image.id)}
                   disabled={isParsing}
-                  className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                  className="group absolute right-0 top-0 flex h-11 w-11 items-start justify-end p-1"
                 >
-                  <X size={14} />
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white group-hover:bg-black/80">
+                    <X size={14} />
+                  </span>
                 </button>
               </div>
             ))}
@@ -333,25 +341,36 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
         )}
       </div>
 
-      {block && (
+      {failure && (
         <div
-          data-testid="ai-block"
-          className="flex flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+          role="alert"
+          data-testid={failure.tone === "block" ? "ai-block" : "ai-error"}
+          className={`flex flex-col gap-2 rounded-xl border p-3 text-sm ${
+            failure.tone === "block"
+              ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+              : "border-red-200 bg-red-50 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+          }`}
         >
-          <p className="font-semibold">{t(BLOCK_TEXT[block].title)}</p>
-          <p className="text-xs">{t(BLOCK_TEXT[block].description)}</p>
-          <button
-            type="button"
-            onClick={onSwitchToManual}
-            className={`${getActionButtonClassName({ variant: "primary" })} w-full sm:w-auto sm:self-start`}
-          >
-            <PencilLine size={16} />
-            {t(BLOCK_TEXT[block].action)}
-          </button>
+          <p className="font-semibold">{t(failure.title)}</p>
+          <p className="text-xs">{t(failure.description)}</p>
+          {failure.detail && <p className="break-words text-xs opacity-80">{failure.detail}</p>}
+          {/* "Qayta urinish" asosiy tugmada — bu yerda takrorlanmaydi. */}
+          {failure.action !== "retry" && (
+            <button
+              type="button"
+              onClick={() => runFailureAction(failure)}
+              className={`${getActionButtonClassName({
+                variant: failure.tone === "block" ? "primary" : "secondary",
+              })} min-h-11 w-full sm:min-h-10 sm:w-auto sm:self-start`}
+            >
+              {failure.action === "selectMarket" ? <Store size={16} /> : <PencilLine size={16} />}
+              {t(failure.actionLabel)}
+            </button>
+          )}
         </div>
       )}
 
-      <FormFieldError message={parseError} />
+      {throttled && throttleLeft > 0 && <FormFieldError message={t("aiThrottled")} />}
 
       {isParsing ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -362,7 +381,7 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
           <button
             type="button"
             onClick={cancelParse}
-            className={`${getActionButtonClassName({ variant: "secondary" })} w-full sm:w-auto`}
+            className={`${getActionButtonClassName({ variant: "secondary" })} min-h-11 w-full sm:min-h-10 sm:w-auto`}
           >
             <X size={16} />
             {t("aiCancel")}
@@ -373,13 +392,13 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual }: AiInputPanelProp
           type="button"
           onClick={runParse}
           disabled={!canParse}
-          className={`${getActionButtonClassName({ variant: "primary", disabled: !canParse })} w-full sm:w-auto sm:self-end`}
+          className={`${getActionButtonClassName({ variant: "primary", disabled: !canParse })} min-h-11 w-full sm:min-h-10 sm:w-auto sm:self-end`}
         >
           <Sparkles size={16} />
           {throttleLeft > 0
             ? t("aiThrottleWait", { seconds: throttleLeft })
-            : parseError
-              ? t(retryKey)
+            : failure?.action === "retry"
+              ? t(failure.actionLabel)
               : t("aiParseButton")}
         </button>
       )}

@@ -66,9 +66,15 @@ export const useFinanceCoverage = () => {
 
   // ── Financial balance ledger ──────────────────────────────────────────────
 
+  /**
+   * Qo'lda daftar yozuvi. `idempotencyKey` — oyna sessiyasi kaliti: gateway
+   * uni yozuv bilan birga xeshlab takroriy bosishni bir marta yozadi.
+   */
   const createFinancialBalanceEntry = useMutation({
-    mutationFn: (data: unknown) =>
-      api.post(API_ENDPOINTS.FINANCE.FINANCIAL_BALANCE_ENTRIES, data)
+    mutationFn: ({ data, idempotencyKey }: { data: unknown; idempotencyKey?: string }) =>
+      api.post(API_ENDPOINTS.FINANCE.FINANCIAL_BALANCE_ENTRIES, data, {
+        headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
+      })
         .then((res) => res.data),
     onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
   });

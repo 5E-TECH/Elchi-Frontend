@@ -1,6 +1,7 @@
 import { Suspense, lazy, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { OPS_TABS } from "./tabs";
+import InlineErrorBoundary from "../../shared/ui/InlineErrorBoundary";
 import {
   Banknote,
   Building2,
@@ -139,7 +140,8 @@ const OpsPage = () => {
             </div>
           }
         >
-          {CONTENT[active.key]}
+          {/* Bitta tab yiqilsa faqat o'sha tab o'rnida xato chiqadi — ilova /runtime-error ga otilmaydi. */}
+          <InlineErrorBoundary key={active.key}>{CONTENT[active.key]}</InlineErrorBoundary>
         </Suspense>
       </div>
     </div>

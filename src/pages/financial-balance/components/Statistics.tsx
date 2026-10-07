@@ -148,7 +148,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
                     <span className="text-xs text-(--color-text-muted) dark:text-slate-300">{item.name}</span>
                   </div>
                   <span className="text-right text-xs font-semibold tabular-nums text-maindark dark:text-white">
-                    {formatFinancialAmount(item.amount, "comma")} {t("currency")}
+                    {formatFinancialAmount(item.amount)} {t("currency")}
                   </span>
                 </div>
               ))}
@@ -184,7 +184,7 @@ const Statistics = ({ data: financialData }: StatisticsProps) => {
             isNegative ? "text-red-100" : "text-emerald-100"
           }`}
         >
-          {formatFinancialAmount(netTotal, "comma")} {t("currency")}
+          {formatFinancialAmount(netTotal)} {t("currency")}
         </p>
       </div>
     </div>

@@ -176,3 +176,24 @@ describe("OrderCreate — rejim tablari", () => {
     expect(tab("AI bilan")).toBeInTheDocument();
   });
 });
+
+describe("OrderCreate — telefonda mijoz bloki (duIKLi7n)", () => {
+  it("keng maydonlar faqat sm: dan boshlab 2 ustunni egallaydi — telefonda yashirin ikkinchi ustun yo'q", () => {
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    const panel = manualPanel();
+    const unprefixed = Array.from(panel.querySelectorAll("*")).filter((el) =>
+      el.classList.contains("col-span-2"),
+    );
+    expect(unprefixed).toHaveLength(0);
+    expect(panel.querySelectorAll(".sm\\:col-span-2").length).toBeGreaterThan(0);
+  });
+
+  it("+998 prefiksi bosishni inputga o'tkazadi (pointer-events-none)", () => {
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    const prefixes = within(manualPanel()).getAllByText("+998");
+    expect(prefixes.length).toBeGreaterThan(0);
+    prefixes.forEach((prefix) => expect(prefix).toHaveClass("pointer-events-none"));
+  });
+});

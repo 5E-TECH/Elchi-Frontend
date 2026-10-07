@@ -1,8 +1,9 @@
-import { memo, type ReactNode } from "react";
+import { memo, useId, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Building2,
   CheckCircle2,
+  ChevronDown,
   Home,
   MapPin,
   Minus,
@@ -44,13 +45,20 @@ const ISSUE_KEYS: Record<AiIssue, string> = {
   item_unresolved: "aiIssueItemUnresolved",
 };
 
+/** Bo'lim sarlavhasi (Mahsulotlar, Yetkazish turi) — 12px dan kichik emas. */
+const sectionLabelClassName =
+  "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
+
+/** Telefonda (390px) barmoq uchun 44px; `sm:` dan ilovaning zich 40px naqshi. */
+const touchButtonClassName = "min-h-11 sm:min-h-10";
+
 /** Mavjud naqsh (Step2Combined): `nom • sato_code` — operator viloyatni tekshira oladi. */
 const areaLabel = (item: AiAreaItem) => `${item.name ?? "—"}${item.sato_code ? ` • ${item.sato_code}` : ""}`;
 
 /** Maydon ostidagi kichik ogohlantirish (BeePost `FieldHint` uslubi). */
 const FieldHint = ({ children }: { children: ReactNode }) => (
-  <p className="flex items-start gap-1 text-[10px] font-semibold leading-4 text-amber-600 dark:text-amber-300">
-    <AlertTriangle size={11} className="mt-0.5 shrink-0" />
+  <p className="flex items-start gap-1 text-xs font-semibold leading-4 text-amber-600 dark:text-amber-300">
+    <AlertTriangle size={12} className="mt-0.5 shrink-0" />
     <span>{children}</span>
   </p>
 );
@@ -60,18 +68,18 @@ const CardField = ({
   icon,
   htmlFor,
   children,
-  wide,
+  className = "",
 }: {
   label: string;
   icon?: ReactNode;
   htmlFor?: string;
   children: ReactNode;
-  wide?: boolean;
+  className?: string;
 }) => (
-  <div className={`flex min-w-0 flex-col gap-1.5${wide ? " sm:col-span-2" : ""}`}>
+  <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
     <label
       htmlFor={htmlFor}
-      className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+      className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
     >
       {icon}
       {label}
@@ -109,6 +117,20 @@ const AiPreviewCard = ({
   const { order, source } = draft;
   const { ready, issues } = evalPreview(order);
   const idPrefix = `ai-${draft.key}`;
+  const bodyId = useId();
+
+  /**
+   * TELEFONDA karta sukut bo'yicha YIG'ILGAN (bitta qator xulosa) — 30 ta
+   * ochiq karta telefonda foydalanib bo'lmaydigan uzunlik beradi. ⚠️ `ready`
+   * bo'lmagan yoki yaratishda yiqilgan karta MAJBURAN ochiq: operator uni
+   * ko'rishi shart. Ish stolida (`sm:`) har doim ochiq — faqat CSS.
+   */
+  const mustStayOpen = !ready || Boolean(draft.createError);
+  const [expanded, setExpanded] = useState(mustStayOpen);
+  // Karta "tayyor emas"ga o'tsa ochiladi va tahrir paytida o'zi yopilmaydi.
+  if (mustStayOpen && !expanded) setExpanded(true);
+  const summaryPrice =
+    order.total_price === null ? "—" : `${formatPrice(String(order.total_price))} ${t("currency")}`;
 
   // react-query kaliti `[districts, regionId]` — bir xil viloyatli kartalar
   // keshni baham ko'radi, har karta uchun alohida so'rov ketmaydi.
@@ -216,7 +238,9 @@ const AiPreviewCard = ({
     <article
       data-testid="ai-preview-card"
       data-ready={ready}
-      className={`flex flex-col gap-4 rounded-2xl border border-l-4 border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-primarydark/30 sm:p-5 ${accent}`}
+      // `scroll-mb-48` — klaviatura ochilganda / scrollIntoView da maydon pastdagi
+      // yopishgan "Tayyorlarini yaratish" paneli ostida qolib ketmaydi.
+      className={`flex scroll-mb-48 scroll-mt-4 flex-col gap-3 rounded-2xl border border-l-4 border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-primarydark/30 sm:gap-4 sm:p-5 [&_input]:scroll-mb-48 [&_textarea]:scroll-mb-48 ${accent}`}
     >
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-center gap-2">
@@ -238,7 +262,7 @@ const AiPreviewCard = ({
             type="button"
             onClick={onCreate}
             disabled={!ready || creating}
-            className={`${getActionButtonClassName({ variant: "primary", disabled: !ready || creating })} flex-1 sm:flex-none`}
+            className={`${getActionButtonClassName({ variant: "primary", disabled: !ready || creating })} ${touchButtonClassName} flex-1 sm:flex-none`}
           >
             <SendHorizontal size={15} />
             {t("aiCreateThis")}
@@ -249,299 +273,327 @@ const AiPreviewCard = ({
             disabled={creating}
             aria-label={t("aiDiscardOrder")}
             title={t("aiDiscardOrder")}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-gray-200 text-gray-400 transition-colors hover:border-error/40 hover:text-error dark:border-primarydark"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-gray-200 text-gray-400 transition-colors hover:border-error/40 hover:text-error dark:border-primarydark sm:h-10 sm:w-10"
           >
             <X size={16} />
           </button>
         </div>
       </header>
 
-      <FormFieldError message={draft.createError} />
+      <button
+        type="button"
+        data-testid="ai-card-toggle"
+        aria-expanded={expanded}
+        aria-controls={bodyId}
+        disabled={mustStayOpen}
+        onClick={() => setExpanded((value) => !value)}
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-gray-50 px-3 text-left text-sm text-maindark disabled:cursor-default dark:bg-primarydark/40 dark:text-primary sm:hidden"
+      >
+        {/* Uzun ism birinchi qisqaradi — tuman va narx har doim ko'rinadi. */}
+        <span className="flex min-w-0 flex-1 items-baseline gap-1 font-semibold">
+          <span className="min-w-0 truncate">{order.customer_name?.trim() || "—"}</span>
+          <span className="shrink-0 text-gray-400">·</span>
+          <span className="min-w-0 max-w-[40%] shrink-0 truncate">{order.district_name || "—"}</span>
+          <span className="shrink-0 text-gray-400">·</span>
+          <span className="shrink-0 whitespace-nowrap">{summaryPrice}</span>
+        </span>
+        {!mustStayOpen && (
+          <ChevronDown size={18} className={`shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        )}
+      </button>
 
-      {!ready && (
-        <ul className="flex flex-wrap gap-1.5" data-testid="ai-issues">
-          {issues.map((issue) => (
-            <li
-              key={issue}
-              className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200"
-            >
-              {t(ISSUE_KEYS[issue])}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div
+        id={bodyId}
+        data-testid="ai-card-body"
+        className={`flex-col gap-3 sm:flex sm:gap-4 ${expanded ? "flex" : "hidden"}`}
+      >
+        <FormFieldError message={draft.createError} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-        <CardField label={t("customerName")} icon={<User size={12} />} htmlFor={`${idPrefix}-name`}>
-          <input
-            id={`${idPrefix}-name`}
-            type="text"
-            value={order.customer_name}
-            onChange={(event) => update({ customer_name: event.target.value })}
-            className={getFieldClassName(orderInputClassName, issues.includes("name_missing"))}
-          />
-        </CardField>
+        {!ready && (
+          <ul className="flex flex-wrap gap-1.5" data-testid="ai-issues">
+            {issues.map((issue) => (
+              <li
+                key={issue}
+                className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200"
+              >
+                {t(ISSUE_KEYS[issue])}
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <CardField label={t("phone")} icon={<Phone size={12} />} htmlFor={`${idPrefix}-phone`}>
-          <div className="relative">
-            <span className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2 font-mono text-xs text-gray-400">+998</span>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+          <CardField label={t("customerName")} icon={<User size={12} />} htmlFor={`${idPrefix}-name`}>
             <input
-              id={`${idPrefix}-phone`}
-              type="tel"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="XX XXX XX XX"
-              value={formatPhone(order.phone_number)}
-              onChange={(event) => {
-                const next = stripPhone(event.target.value);
-                update({ phone_number: next });
-                keepPhoneCaretAfterChange(event.target, formatPhone(next));
-              }}
-              className={getFieldClassName(
-                `${orderInputClassName} pl-14 font-mono tracking-wider`,
-                issues.includes("phone_invalid"),
-              )}
+              id={`${idPrefix}-name`}
+              type="text"
+              value={order.customer_name}
+              onChange={(event) => update({ customer_name: event.target.value })}
+              className={getFieldClassName(orderInputClassName, issues.includes("name_missing"))}
             />
-          </div>
-          {phoneUnreadable && <FieldHint>{t("aiPhoneRead", { value: source.phone_number })}</FieldHint>}
-        </CardField>
+          </CardField>
 
-        <CardField label={t("additionalPhone")} icon={<Phone size={12} />} htmlFor={`${idPrefix}-extra`}>
-          <div className="relative">
-            <span className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2 font-mono text-xs text-gray-400">+998</span>
-            <input
-              id={`${idPrefix}-extra`}
-              type="tel"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="XX XXX XX XX"
-              value={formatPhone(order.extra_number ?? "")}
-              onChange={(event) => {
-                const next = stripPhone(event.target.value);
-                update({ extra_number: next });
-                keepPhoneCaretAfterChange(event.target, formatPhone(next));
-              }}
-              className={`${orderInputClassName} pl-14 font-mono tracking-wider`}
-            />
-          </div>
-        </CardField>
-
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <SearchableSelect
-            label={`${t("filterRegion")} *`}
-            name={`${idPrefix}-region`}
-            value={order.region_id ?? ""}
-            onChange={handleRegionChange}
-            options={regionOptions}
-            placeholder={regionsLoading ? t("loading", { ns: "common" }) : t("selectRegion")}
-            icon={MapPin}
-            loading={regionsLoading}
-            disabled={regionsLoading}
-          />
-          {order.region_id && !order.region_given && <FieldHint>{t("aiRegionGuessed")}</FieldHint>}
-          {!order.region_id && <FieldHint>{t("aiIssueRegionMissing")}</FieldHint>}
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <SearchableSelect
-            label={`${t("district")} *`}
-            name={`${idPrefix}-district`}
-            value={order.district_id ?? ""}
-            onChange={handleDistrictChange}
-            options={districtOptions}
-            placeholder={
-              !order.region_id && !candidateOptions.length
-                ? t("selectRegionFirst")
-                : districtsLoading
-                  ? t("loading", { ns: "common" })
-                  : t("selectDistrict")
-            }
-            icon={Building2}
-            loading={districtsLoading}
-            disabled={(!order.region_id && !candidateOptions.length) || districtsLoading}
-          />
-          {!order.district_id && <FieldHint>{t("aiIssueDistrictMissing")}</FieldHint>}
-        </div>
-
-        <CardField label={t("address")} icon={<Home size={12} />} htmlFor={`${idPrefix}-address`}>
-          <textarea
-            id={`${idPrefix}-address`}
-            rows={2}
-            value={order.address ?? ""}
-            onChange={(event) => update({ address: event.target.value })}
-            className={`${orderInputClassName} resize-none`}
-          />
-        </CardField>
-      </div>
-
-      <section className="flex flex-col gap-2 border-t border-gray-200 pt-4 dark:border-primarydark">
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          <Package size={12} />
-          {t("aiItems")}
-        </p>
-        {order.items.length === 0 && <FieldHint>{t("aiIssueItemsMissing")}</FieldHint>}
-        {order.items.map((item, itemIndex) => {
-          const resolved = isItemResolved(item);
-          return (
-            <div
-              key={`${item.name}-${itemIndex}`}
-              data-testid="ai-item-row"
-              className={`flex flex-col gap-2 rounded-xl border p-2.5 ${
-                resolved ? "border-gray-200 dark:border-primarydark/60" : "border-amber-300 dark:border-amber-500/40"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400">
-                  {t("aiReadAs")}: <span className="font-semibold text-maindark dark:text-primary">{item.name || "—"}</span>
-                </p>
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
-                    aria-label="-"
-                    onClick={() => updateItem(itemIndex, { quantity: Math.max(1, item.quantity - 1) })}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 hover:border-main/40 dark:border-primarydark"
-                  >
-                    <Minus size={11} />
-                  </button>
-                  <span className="w-6 text-center text-xs font-bold text-maindark dark:text-primary">{item.quantity}</span>
-                  <button
-                    type="button"
-                    aria-label="+"
-                    onClick={() => updateItem(itemIndex, { quantity: item.quantity + 1 })}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 hover:border-main/40 dark:border-primarydark"
-                  >
-                    <Plus size={11} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={t("aiRemoveItem")}
-                    onClick={() => update({ items: order.items.filter((_, i) => i !== itemIndex) })}
-                    className="ml-1 text-gray-300 transition-colors hover:text-error"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-
-              <SearchableSelect
-                label={t("aiCatalogProduct")}
-                name={`${idPrefix}-item-${itemIndex}`}
-                value={item.product_id ?? ""}
-                onChange={(value) => {
-                  const product = products.find((p) => p.id === value);
-                  const candidate = item.candidates.find((c) => String(c.id) === value);
-                  updateItem(itemIndex, {
-                    product_id: value || null,
-                    resolved_name: product?.name ?? candidate?.name ?? null,
-                    allow_free_text: false,
-                  });
+          <CardField label={t("phone")} icon={<Phone size={12} />} htmlFor={`${idPrefix}-phone`}>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2 font-mono text-xs text-gray-400">+998</span>
+              <input
+                id={`${idPrefix}-phone`}
+                type="tel"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="XX XXX XX XX"
+                value={formatPhone(order.phone_number)}
+                onChange={(event) => {
+                  const next = stripPhone(event.target.value);
+                  update({ phone_number: next });
+                  keepPhoneCaretAfterChange(event.target, formatPhone(next));
                 }}
-                options={productOptionsFor(item)}
-                placeholder={productsLoading ? t("loading", { ns: "common" }) : t("aiPickFromCatalog")}
-                loading={productsLoading}
-                disabled={productsLoading || item.allow_free_text === true}
-                size="sm"
+                className={getFieldClassName(
+                  `${orderInputClassName} pl-14 font-mono tracking-wider`,
+                  issues.includes("phone_invalid"),
+                )}
               />
-
-              {!item.product_id && (
-                <div className="flex flex-col gap-1.5 rounded-lg bg-amber-50 p-2 dark:bg-amber-500/10">
-                  <FieldHint>{t("aiProductNotInCatalog")}</FieldHint>
-                  <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-maindark dark:text-primary">
-                    <input
-                      type="checkbox"
-                      checked={item.allow_free_text === true}
-                      onChange={(event) => updateItem(itemIndex, { allow_free_text: event.target.checked })}
-                      className="h-4 w-4 accent-[var(--color-main)]"
-                    />
-                    {t("aiSendAsFreeText")}
-                  </label>
-                </div>
-              )}
             </div>
-          );
-        })}
-      </section>
+            {phoneUnreadable && <FieldHint>{t("aiPhoneRead", { value: source.phone_number })}</FieldHint>}
+          </CardField>
 
-      <div className="grid grid-cols-1 gap-3 border-t border-gray-200 pt-4 dark:border-primarydark sm:grid-cols-2 sm:gap-4">
-        <div className="flex flex-col gap-2 sm:col-span-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            {t("deliveryType")}
+          <CardField label={t("additionalPhone")} icon={<Phone size={12} />} htmlFor={`${idPrefix}-extra`}>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2 font-mono text-xs text-gray-400">+998</span>
+              <input
+                id={`${idPrefix}-extra`}
+                type="tel"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="XX XXX XX XX"
+                value={formatPhone(order.extra_number ?? "")}
+                onChange={(event) => {
+                  const next = stripPhone(event.target.value);
+                  update({ extra_number: next });
+                  keepPhoneCaretAfterChange(event.target, formatPhone(next));
+                }}
+                className={`${orderInputClassName} pl-14 font-mono tracking-wider`}
+              />
+            </div>
+          </CardField>
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <SearchableSelect
+              label={`${t("filterRegion")} *`}
+              name={`${idPrefix}-region`}
+              value={order.region_id ?? ""}
+              onChange={handleRegionChange}
+              options={regionOptions}
+              placeholder={regionsLoading ? t("loading", { ns: "common" }) : t("selectRegion")}
+              icon={MapPin}
+              loading={regionsLoading}
+              disabled={regionsLoading}
+            />
+            {order.region_id && !order.region_given && <FieldHint>{t("aiRegionGuessed")}</FieldHint>}
+            {!order.region_id && <FieldHint>{t("aiIssueRegionMissing")}</FieldHint>}
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <SearchableSelect
+              label={`${t("district")} *`}
+              name={`${idPrefix}-district`}
+              value={order.district_id ?? ""}
+              onChange={handleDistrictChange}
+              options={districtOptions}
+              placeholder={
+                !order.region_id && !candidateOptions.length
+                  ? t("selectRegionFirst")
+                  : districtsLoading
+                    ? t("loading", { ns: "common" })
+                    : t("selectDistrict")
+              }
+              icon={Building2}
+              loading={districtsLoading}
+              disabled={(!order.region_id && !candidateOptions.length) || districtsLoading}
+            />
+            {!order.district_id && <FieldHint>{t("aiIssueDistrictMissing")}</FieldHint>}
+          </div>
+
+          <CardField label={t("address")} icon={<Home size={12} />} htmlFor={`${idPrefix}-address`}>
+            <textarea
+              id={`${idPrefix}-address`}
+              rows={2}
+              value={order.address ?? ""}
+              onChange={(event) => update({ address: event.target.value })}
+              className={`${orderInputClassName} resize-none`}
+            />
+          </CardField>
+        </div>
+
+        <section className="flex flex-col gap-2 border-t border-gray-200 pt-4 dark:border-primarydark">
+          <p className={sectionLabelClassName}>
+            <Package size={12} />
+            {t("aiItems")}
           </p>
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                { value: "center" as DeliveryType, label: t("deliveryCenter"), icon: Building2 },
-                { value: "address" as DeliveryType, label: t("deliveryHome"), icon: Home },
-              ] as const
-            ).map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={order.where_deliver === value}
-                onClick={() => update({ where_deliver: value })}
-                className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-semibold transition-all ${
-                  order.where_deliver === value
-                    ? "border-main bg-main text-primary"
-                    : "border-gray-200 text-gray-500 hover:border-main/40 dark:border-primarydark dark:text-gray-400"
+          {order.items.length === 0 && <FieldHint>{t("aiIssueItemsMissing")}</FieldHint>}
+          {order.items.map((item, itemIndex) => {
+            const resolved = isItemResolved(item);
+            return (
+              <div
+                key={`${item.name}-${itemIndex}`}
+                data-testid="ai-item-row"
+                className={`flex flex-col gap-2 rounded-xl border p-2.5 ${
+                  resolved ? "border-gray-200 dark:border-primarydark/60" : "border-amber-300 dark:border-amber-500/40"
                 }`}
               >
-                <Icon size={15} />
-                {label}
-              </button>
-            ))}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="min-w-0 flex-1 truncate text-xs text-gray-500 dark:text-gray-400">
+                    {t("aiReadAs")}: <span className="font-semibold text-maindark dark:text-primary">{item.name || "—"}</span>
+                  </p>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label="-"
+                      onClick={() => updateItem(itemIndex, { quantity: Math.max(1, item.quantity - 1) })}
+                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 hover:border-main/40 dark:border-primarydark sm:h-8 sm:w-8"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="w-7 text-center text-sm font-bold text-maindark dark:text-primary">{item.quantity}</span>
+                    <button
+                      type="button"
+                      aria-label="+"
+                      onClick={() => updateItem(itemIndex, { quantity: item.quantity + 1 })}
+                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 hover:border-main/40 dark:border-primarydark sm:h-8 sm:w-8"
+                    >
+                      <Plus size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t("aiRemoveItem")}
+                      onClick={() => update({ items: order.items.filter((_, i) => i !== itemIndex) })}
+                      className="flex h-11 w-11 items-center justify-center text-gray-300 transition-colors hover:text-error sm:h-8 sm:w-8"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <SearchableSelect
+                  label={t("aiCatalogProduct")}
+                  name={`${idPrefix}-item-${itemIndex}`}
+                  value={item.product_id ?? ""}
+                  onChange={(value) => {
+                    const product = products.find((p) => p.id === value);
+                    const candidate = item.candidates.find((c) => String(c.id) === value);
+                    updateItem(itemIndex, {
+                      product_id: value || null,
+                      resolved_name: product?.name ?? candidate?.name ?? null,
+                      allow_free_text: false,
+                    });
+                  }}
+                  options={productOptionsFor(item)}
+                  placeholder={productsLoading ? t("loading", { ns: "common" }) : t("aiPickFromCatalog")}
+                  loading={productsLoading}
+                  disabled={productsLoading || item.allow_free_text === true}
+                  size="sm"
+                />
+
+                {!item.product_id && (
+                  <div className="flex flex-col gap-1.5 rounded-lg bg-amber-50 p-2 dark:bg-amber-500/10">
+                    <FieldHint>{t("aiProductNotInCatalog")}</FieldHint>
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs font-semibold text-maindark dark:text-primary sm:min-h-0">
+                      <input
+                        type="checkbox"
+                        checked={item.allow_free_text === true}
+                        onChange={(event) => updateItem(itemIndex, { allow_free_text: event.target.checked })}
+                        className="h-4 w-4 accent-[var(--color-main)]"
+                      />
+                      {t("aiSendAsFreeText")}
+                    </label>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </section>
+
+        <div className="grid grid-cols-1 gap-3 border-t border-gray-200 pt-4 dark:border-primarydark sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+          <div className="flex flex-col gap-2 sm:col-span-2 xl:col-span-3">
+            <p className={sectionLabelClassName}>
+              {t("deliveryType")}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  { value: "center" as DeliveryType, label: t("deliveryCenter"), icon: Building2 },
+                  { value: "address" as DeliveryType, label: t("deliveryHome"), icon: Home },
+                ] as const
+              ).map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={order.where_deliver === value}
+                  onClick={() => update({ where_deliver: value })}
+                  className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                    order.where_deliver === value
+                      ? "border-main bg-main text-primary"
+                      : "border-gray-200 text-gray-500 hover:border-main/40 dark:border-primarydark dark:text-gray-400"
+                  }`}
+                >
+                  <Icon size={15} />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <CardField label={t("totalPrice")} htmlFor={`${idPrefix}-price`}>
-          <input
-            id={`${idPrefix}-price`}
-            type="text"
-            inputMode="numeric"
-            placeholder="0"
-            value={order.total_price === null ? "" : formatPrice(String(order.total_price))}
-            onChange={(event) => {
-              const digits = stripPrice(event.target.value);
-              // Narx o'zgarsa oldingi tasdiq kuchini yo'qotadi.
-              update({ total_price: digits ? Number(digits) : null, price_confirmed: false });
-            }}
-            className={getFieldClassName(
-              `${orderInputClassName} font-mono`,
-              issues.includes("price_missing") || issues.includes("price_confirm"),
+          <CardField label={t("totalPrice")} htmlFor={`${idPrefix}-price`}>
+            <input
+              id={`${idPrefix}-price`}
+              type="text"
+              inputMode="numeric"
+              placeholder="0"
+              value={order.total_price === null ? "" : formatPrice(String(order.total_price))}
+              onChange={(event) => {
+                const digits = stripPrice(event.target.value);
+                // Narx o'zgarsa oldingi tasdiq kuchini yo'qotadi.
+                update({ total_price: digits ? Number(digits) : null, price_confirmed: false });
+              }}
+              className={getFieldClassName(
+                `${orderInputClassName} font-mono`,
+                issues.includes("price_missing") || issues.includes("price_confirm"),
+              )}
+            />
+            {issues.includes("price_missing") && <FieldHint>{t("aiIssuePriceMissing")}</FieldHint>}
+            {needsPriceConfirm(order) && (
+              <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-amber-50 p-2 text-xs font-semibold text-maindark dark:bg-amber-500/10 dark:text-primary sm:min-h-0">
+                <input
+                  type="checkbox"
+                  checked={order.price_confirmed === true}
+                  onChange={(event) => update({ price_confirmed: event.target.checked })}
+                  className="h-4 w-4 accent-[var(--color-main)]"
+                />
+                {t("aiConfirmPrice")}
+              </label>
             )}
-          />
-          {issues.includes("price_missing") && <FieldHint>{t("aiIssuePriceMissing")}</FieldHint>}
-          {needsPriceConfirm(order) && (
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg bg-amber-50 p-2 text-xs font-semibold text-maindark dark:bg-amber-500/10 dark:text-primary">
-              <input
-                type="checkbox"
-                checked={order.price_confirmed === true}
-                onChange={(event) => update({ price_confirmed: event.target.checked })}
-                className="h-4 w-4 accent-[var(--color-main)]"
-              />
-              {t("aiConfirmPrice")}
-            </label>
-          )}
-        </CardField>
+          </CardField>
 
-        <CardField label={t("operator")} icon={<User size={12} />} htmlFor={`${idPrefix}-operator`}>
-          <input
-            id={`${idPrefix}-operator`}
-            type="text"
-            value={order.operator ?? ""}
-            onChange={(event) => update({ operator: event.target.value })}
-            className={orderInputClassName}
-          />
-        </CardField>
+          <CardField label={t("operator")} icon={<User size={12} />} htmlFor={`${idPrefix}-operator`}>
+            <input
+              id={`${idPrefix}-operator`}
+              type="text"
+              value={order.operator ?? ""}
+              onChange={(event) => update({ operator: event.target.value })}
+              className={orderInputClassName}
+            />
+          </CardField>
 
-        <CardField label={t("note")} htmlFor={`${idPrefix}-comment`} wide>
-          <textarea
-            id={`${idPrefix}-comment`}
-            rows={2}
-            value={order.comment ?? ""}
-            onChange={(event) => update({ comment: event.target.value })}
-            className={`${orderInputClassName} resize-none`}
-          />
-        </CardField>
+          <CardField label={t("note")} htmlFor={`${idPrefix}-comment`} className="sm:col-span-2 xl:col-span-1">
+            <textarea
+              id={`${idPrefix}-comment`}
+              rows={2}
+              value={order.comment ?? ""}
+              onChange={(event) => update({ comment: event.target.value })}
+              className={`${orderInputClassName} resize-none`}
+            />
+          </CardField>
+        </div>
       </div>
     </article>
   );

@@ -236,4 +236,60 @@ describe("AiPreviewCard", () => {
     expect(changes.at(-1)?.phone_number).toBe("901234567");
     expect(mocks.keepCaret).toHaveBeenCalledWith(input, "90 123 45 67");
   });
+  describe("telefon 390px (JzQIec06)", () => {
+    it("TAYYOR karta telefonda YIG'ILGAN: bitta qator \"Ism · tuman · narx\", bosilganda ochiladi", () => {
+      renderCard(aiPreview({ customer_name: "Aliyev Vali", district_name: "Chilonzor", total_price: 150000 }));
+
+      const toggle = screen.getByTestId("ai-card-toggle");
+      expect(toggle).toHaveTextContent(/^Aliyev Vali\s*·\s*Chilonzor\s*·\s*150 000 so'm$/);
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
+      // `hidden` faqat telefonda: `sm:flex` ish stolida har doim ko'rsatadi.
+      expect(screen.getByTestId("ai-card-body")).toHaveClass("hidden", "sm:flex");
+      expect(toggle).toHaveClass("sm:hidden");
+
+      fireEvent.click(toggle);
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
+    });
+
+    it("TAYYOR BO'LMAGAN karta avtomatik ochiq va yig'ib bo'lmaydi", () => {
+      renderCard(aiPreview({ district_id: null, district_name: null }));
+
+      const toggle = screen.getByTestId("ai-card-toggle");
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+      expect(toggle).toBeDisabled();
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
+    });
+
+    it("tahrirda karta tayyor bo'lsa O'ZI YOPILMAYDI; tayyor karta tayyor emasga o'tsa o'zi ochiladi", () => {
+      const { card } = renderCard(aiPreview({ total_price: null }));
+      const price = within(card()).getByLabelText("Umumiy summa") as HTMLInputElement;
+
+      fireEvent.change(price, { target: { value: "150000" } });
+      expect(card()).toHaveAttribute("data-ready", "true");
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
+
+      fireEvent.click(screen.getByTestId("ai-card-toggle"));
+      expect(screen.getByTestId("ai-card-body")).toHaveClass("hidden");
+
+      fireEvent.change(price, { target: { value: "" } });
+      expect(card()).toHaveAttribute("data-ready", "false");
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
+    });
+
+    it("telefonda bosiladigan elementlar 44px (h-11/min-h-11), ish stolida zich", () => {
+      const { card } = renderCard(aiPreview());
+      for (const name of ["+", "-", "Mahsulotni olib tashlash", "Bu buyurtmani tashlab yuborish"]) {
+        const button = within(card()).getAllByRole("button", { name })[0];
+        expect(button.className, name).toMatch(/(^|\s)(h-11|min-h-11)(\s|$)/);
+      }
+      expect(within(card()).getByRole("button", { name: "Bu kartani yaratish" }).className).toMatch(/min-h-11/);
+    });
+
+    it("maydonlar 1 / 2 / 3 ustun (telefon / sm / xl)", () => {
+      const { card } = renderCard(aiPreview());
+      const grid = within(card()).getByLabelText("Ism").closest(".grid") as HTMLElement;
+      expect(grid).toHaveClass("grid-cols-1", "sm:grid-cols-2", "xl:grid-cols-3");
+    });
+  });
 });

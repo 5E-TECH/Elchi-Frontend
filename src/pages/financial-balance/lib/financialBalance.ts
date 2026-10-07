@@ -358,7 +358,36 @@ export const extractFinancialLedgerPagination = (response: unknown): Record<stri
   return undefined;
 };
 
-export const formatFinancialAmount = (value: number, separator: "space" | "comma" = "space") => {
-  const formatted = value.toLocaleString("ru-RU");
-  return separator === "comma" ? formatted.replace(/\s/g, ",") : formatted.replace(/\s/g, " ");
+/**
+ * Pul summasi (4AZ2xRRX): butun so'mga yaxlitlanadi, mingliklar BO'SHLIQ bilan.
+ * Ilgari ru-RU natijasidagi bo'shliqlar vergulga almashtirilardi va kasr ham
+ * vergul edi — "95,348,635,57" (mingliklar va tiyin bir xil belgi) chiqardi.
+ *
+ * ⚠️ `Intl.NumberFormat("uz-UZ")` ISHLATILMAYDI: Chrome'ning qisqartirilgan
+ * ICU ma'lumotida "uz" yo'q va u inglizchaga qaytib "1,545,000" (vergul)
+ * beradi — Node testlarida esa bo'shliq chiqadi, ya'ni test yashil bo'lib
+ * brauzerda xato ko'rinardi. Ajratkich shu yerda qo'lda qo'yiladi.
+ */
+export const formatFinancialAmount = (value: unknown): string => {
+  const num = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(num)) return "0";
+  const rounded = Math.round(num);
+  if (rounded === 0) return "0";
+  const digits = String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return rounded < 0 ? `-${digits}` : digits;
+};
+
+/**
+ * Moliyaviy daftarning JORIY qoldig'i (GtAoqHlk) — davr filtridan qat'i
+ * nazar. Javobda bo'lmasa `null`: karta ko'rsatilmaydi (0 deb yolg'on
+ * ko'rsatilmaydi).
+ */
+export const readCurrentBalance = (response: unknown): number | null => {
+  const root = response && typeof response === "object" ? (response as Record<string, unknown>) : {};
+  const data = root.data;
+  const payload = (data && typeof data === "object" ? data : root) as Record<string, unknown>;
+  const raw = payload.currentBalance ?? payload.current_balance;
+  if (raw === undefined || raw === null || raw === "") return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
 };

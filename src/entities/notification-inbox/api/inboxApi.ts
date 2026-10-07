@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "../../../shared/api";
 import {
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_PRIORITIES,
+  type InboxCounts,
   type InboxListParams,
   type InboxListResult,
   type InboxNotification,
@@ -71,6 +72,31 @@ export const getInbox = async (params: InboxListParams): Promise<InboxListResult
 export const getInboxById = async (id: string): Promise<InboxNotification> => {
   const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.INBOX_BY_ID(id));
   return normalizeNotification(unwrap(response.data));
+};
+
+/**
+ * Sanoqlar. ⚠️ Javob shakli kutilganidek bo'lmasa `null` — chiplarda raqam
+ * UMUMAN ko'rsatilmaydi (hisoblanmagan qiymatni 0 deb ko'rsatish yolg'on).
+ */
+export const normalizeInboxCounts = (payload: unknown): InboxCounts | null => {
+  const data = asRecord(unwrap(payload));
+  const raw = data.categories;
+  if (!raw || typeof raw !== "object") return null;
+  const categories = {} as InboxCounts["categories"];
+  for (const category of NOTIFICATION_CATEGORIES) {
+    const row = asRecord((raw as Record<string, unknown>)[category]);
+    categories[category] = { total: Number(row.total ?? 0), unread: Number(row.unread ?? 0) };
+  }
+  return {
+    categories,
+    unread: Number(data.unread ?? 0),
+    important_unread: Number(data.important_unread ?? 0),
+  };
+};
+
+export const getInboxCounts = async (): Promise<InboxCounts | null> => {
+  const response = await api.get(API_ENDPOINTS.NOTIFICATIONS.INBOX_COUNTS);
+  return normalizeInboxCounts(response.data);
 };
 
 export const getInboxUnreadCount = async (): Promise<number> => {

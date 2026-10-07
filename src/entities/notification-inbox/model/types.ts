@@ -39,6 +39,18 @@ export interface InboxListParams {
   type?: string;
   category?: NotificationCategory;
   priority?: NotificationPriority;
+  /** "Faqat muhim" — critical + high (backend `priority` dan ustun qo'yadi). */
+  important?: boolean;
+}
+
+/**
+ * Kategoriya chiplari sanog'i (`GET inbox/counts`) — butun inbox bo'yicha,
+ * joriy sahifadagi 20 qatordan EMAS.
+ */
+export interface InboxCounts {
+  categories: Record<NotificationCategory, { total: number; unread: number }>;
+  unread: number;
+  important_unread: number;
 }
 
 export interface InboxListResult {

@@ -140,14 +140,19 @@ describe("NotificationDispatchForm — recipients", () => {
 });
 
 describe("NotificationDispatchForm — channels, preview, confirm", () => {
-  it("keeps in_app on and locked, and offers sms/push only as disabled", () => {
+  it("keeps in_app on and locked; SMS and push are now real (off by default, can be ticked)", async () => {
+    const user = userEvent.setup();
     renderForm();
 
     const inApp = screen.getByRole("checkbox", { name: "Ilova ichida" });
     expect(inApp).toBeChecked();
     expect(inApp).toBeDisabled();
-    expect(screen.getByRole("checkbox", { name: "SMS" })).toBeDisabled();
-    expect(screen.getByRole("checkbox", { name: "Push" })).toBeDisabled();
+    const sms = screen.getByRole("checkbox", { name: "SMS" });
+    expect(sms).not.toBeDisabled();
+    expect(sms).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Push" })).not.toBeDisabled();
+    await user.click(sms);
+    expect(screen.getByText(/SMS pullik/)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Darhol (ochiq ekranga)" })).not.toBeDisabled();
     expect(screen.getByRole("checkbox", { name: "Telegram" })).not.toBeDisabled();
   });

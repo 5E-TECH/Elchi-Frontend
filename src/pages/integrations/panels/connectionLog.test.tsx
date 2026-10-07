@@ -121,3 +121,35 @@ describe("Hodisalar tabi — ko'rinish almashtirgichi", () => {
     expect(screen.queryByText(/Kiruvchi webhooklar/)).toBeNull();
   });
 });
+
+describe("Kiruvchi webhooklar — \"Imzo xato\" pili (tokhPLMP)", () => {
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiGetMock.mockResolvedValue({
+      data: {
+        data: {
+          items: [],
+          meta: { page: 1, limit: 20, total: 9, totalPages: 1 },
+          counts: { all: 9, processed: 5, verified: 1, rejected: 3, invalid_signature: 2 },
+        },
+      },
+    });
+  });
+
+  it("har pillda backend sanog'i; \"Imzo xato\" `invalid_signature=true` yuboradi (status emas)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ConnectionLog connection={conn({ kind: "integration", role: "carrier", category: "cargo" } as Partial<Connection>)} />);
+    await clickView(/Kiruvchi webhooklar/);
+
+    const pill = await screen.findByRole("button", { name: /Imzo xato\s*2/ });
+    expect(screen.getByRole("button", { name: /Qo'llanildi\s*5/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Rad etildi\s*3/ })).toBeInTheDocument();
+
+    await user.click(pill);
+    await waitFor(() => {
+      const params = (apiGetMock.mock.calls.at(-1)?.[1] as { params: Record<string, unknown> }).params;
+      expect(params).toMatchObject({ invalid_signature: "true" });
+      expect(params).not.toHaveProperty("status");
+    });
+  });
+});

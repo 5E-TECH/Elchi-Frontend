@@ -252,6 +252,7 @@ export const API_ENDPOINTS = {
      * bo'ladi, ro'yxatda esa savol "nima bo'ldi".
      */
     WEBHOOK_LOGS: "integrations/webhook-logs",
+    STATUS_CATALOG: "integrations/status-catalog", // GET kanonik posilka/to'lov statuslari (status xaritasi)
     /**
      * ONLAYN TO'LOV tranzaksiyalari.
      *
@@ -309,10 +310,26 @@ export const API_ENDPOINTS = {
     // In-app inbox (current user, per-recipient rows) ──────────────────────
     INBOX: "notifications/inbox", // GET my inbox (is_read/type/category/priority/page/limit)
     INBOX_UNREAD_COUNT: "notifications/inbox/unread-count", // GET my unread count
+    INBOX_COUNTS: "notifications/inbox/counts", // GET kategoriya bo'yicha jami/o'qilmagan + muhim o'qilmagan
     INBOX_READ_ALL: "notifications/inbox/read-all", // PATCH mark all read
     INBOX_BY_ID: (id: string | number) => `notifications/inbox/${id}`, // GET / DELETE one
     INBOX_READ: (id: string | number) => `notifications/inbox/${id}/read`, // PATCH read/unread
     DISPATCH: "notifications/dispatch", // POST manual dispatch (admin/testing)
+    // Web Push (current user's device) ─────────────────────────────────────
+    PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
+    PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device
+    // SMS (superadmin/admin) ───────────────────────────────────────────────
+    SMS_STATUS: "notifications/sms/status",
+    SMS_TARIFFS: "notifications/sms/tariffs",
+    SMS_REPORT: "notifications/sms/report",
+    SMS_ACCOUNTS: "notifications/sms/accounts", // GET list / PUT upsert (superadmin)
+    SMS_TEMPLATES: "notifications/sms/templates", // GET list / POST upsert
+    SMS_TEMPLATE_BY_ID: (id: string | number) => `notifications/sms/templates/${id}`,
+    SMS_TEMPLATE_APPROVE: (id: string | number) => `notifications/sms/templates/${id}/approve`,
+    SMS_CAMPAIGNS: "notifications/sms/campaigns", // GET history / POST send (Idempotency-Key)
+    SMS_CAMPAIGN_PREVIEW: "notifications/sms/campaigns/preview",
+    SMS_CONSENTS: "notifications/sms/consents",
+    SMS_CONSENTS_REVOKE: "notifications/sms/consents/revoke",
   },
 
   // ── Branches (admin full; manager/branch scoped) — guide §8 ──────────────
@@ -357,6 +374,7 @@ export const API_ENDPOINTS = {
     ORDERS_XLSX: "export/orders.xlsx",
     CASHBOX_HISTORY_XLSX: "export/cashbox-history.xlsx",
     SHIFTS_XLSX: "export/shifts.xlsx",
+    FINANCIAL_BALANCE_XLSX: "export/financial-balance.xlsx", // Balans → Tarix filtrlari bilan
   },
 
   // ── Printer (binary/print) — guide §10 ───────────────────────────────────
