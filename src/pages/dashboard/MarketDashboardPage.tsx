@@ -198,7 +198,7 @@ const MarketDashboardPage = () => {
       {canAddOrder && (
         <div className="mb-5">
           <button
-            onClick={() => navigate("/orders/add")}
+            onClick={() => navigate("/new-orders/create")}
             className="flex items-center gap-2.5 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-main/90 hover:shadow-main/40 active:translate-y-0"
           >
             <Plus size={18} />
@@ -271,7 +271,7 @@ const MarketDashboardPage = () => {
       {!dashboardError && !isDataLoading && (
         <MarketQuickActions
           onViewOrders={() => navigate("/new-orders")}
-          onAddOrder={canAddOrder ? () => navigate("/orders/add") : undefined}
+          onAddOrder={canAddOrder ? () => navigate("/new-orders/create") : undefined}
           t={t}
         />
       )}

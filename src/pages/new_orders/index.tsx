@@ -2,9 +2,10 @@ import { memo, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Building2, ClipboardList, QrCode, Store, XCircle } from "lucide-react";
+import { Building2, ClipboardList, Plus, QrCode, Store, XCircle } from "lucide-react";
 import type { RootState } from "../../app/config/store";
 import { canHandoverCancelledToMarket } from "../../app/lib/access";
+import Button from "../../shared/components/button";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
 
@@ -27,18 +28,29 @@ const NewOrders = () => {
     if (location.pathname.startsWith("/new-orders/incoming")) return "incoming";
     return "markets";
   }, [location.pathname]);
+  // Buyurtma YARATISH shu sahifada (ilgari buyurtmalar ro'yxatida edi).
+  // Forma ochiq bo'lsa tugma ham, tablar ham yashirin — formaning "Orqaga"si qaytaradi.
+  const isCreatePage = location.pathname.startsWith("/new-orders/create");
 
   return (
     <PageContainer>
-      <div className="mb-4">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderName
           name={t("pageTitle")}
           description={t("pageDescription")}
           icon={<ClipboardList />}
         />
+        {!isCreatePage && (
+          <Button
+            label={t("createOrderBtn")}
+            icon={<Plus size={16} />}
+            onClick={() => navigate("/new-orders/create")}
+            className="w-full rounded-2xl py-3 text-sm shadow-lg shadow-main/20 sm:w-auto sm:rounded-xl sm:py-2.5"
+          />
+        )}
       </div>
 
-      {isMarketRole ? (
+      {isCreatePage ? null : isMarketRole ? (
         <div className="mb-5 mt-4 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4">
           <div
             onClick={() => navigate("/new-orders")}
