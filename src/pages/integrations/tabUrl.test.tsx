@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
+import { QueryClient } from "@tanstack/react-query";
 import ConnectionsPage from "./ConnectionsPage";
 import { renderWithProviders } from "../../test/test-utils";
 
@@ -149,5 +150,78 @@ describe("Ulanish paneli — tab URL'da", () => {
     await waitFor(() => {
       expect(currentSearch()).toContain("t=overview");
     });
+  });
+
+  /**
+   * UMUMIY HOLAT — RAQAM VA BANNER HAVOLALARI ham URL orqali ishlaydi.
+   *
+   * ⚠️ Plitkalar `fireEvent` bilan bosiladi: `userEvent` pointer-events
+   * uchun uslublarni o'qiydi va `@container` sinfi ostida jsdom selektor
+   * xatosiga uriladi (yuqoridagi `getByRole` izohiga qarang).
+   */
+  const overviewTile = (label: string) =>
+    document.querySelector<HTMLButtonElement>(`button[aria-label^="${label}:"]`);
+
+  it("⭐ Umumiy holatdagi RAQAM bosilganda tegishli tab ochiladi va URL o'zgaradi", async () => {
+    open("/integrations/connections?c=partner:7");
+
+    await waitFor(() => expect(overviewTile("Jami")).toBeTruthy());
+    fireEvent.click(overviewTile("Jami")!);
+
+    await waitFor(() => expect(currentSearch()).toContain("t=shipments"));
+    await waitFor(() => expect(tabButton(/Posilkalar/i)).toHaveAttribute("aria-current", "true"));
+  });
+
+  it("⭐ mavjud fixTab havolalari ishlaydi: banner \"Tuzatish\" va checklist qatori", async () => {
+    apiGetMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        String(url).includes("partners")
+          ? { data: { data: [{ ...PARTNER, webhook_url: null }] } }
+          : { data: { data: [] } },
+      ),
+    );
+    open("/integrations/connections?c=partner:7");
+
+    const actions = await screen.findByTestId("ovw-actions");
+    fireEvent.click(within(actions).getByText("Tuzatish").closest("button")!);
+    await waitFor(() => expect(currentSearch()).toContain("t=settings"));
+
+    // Checklist qatori (yetishmagan webhook manzili) — u ham Sozlamalarga olib boradi.
+    fireEvent.click(tabButton(/Umumiy holat/i));
+    await waitFor(() => expect(currentSearch()).toContain("t=overview"));
+    fireEvent.click(tabButton(/Webhook manzili/i));
+    await waitFor(() => expect(currentSearch()).toContain("t=settings"));
+  });
+
+  it("⭐ \"Yangilash\" TanStack Query keshini invalidatsiya qiladi, sahifa qayta yuklanmaydi", async () => {
+    const invalidate = vi.spyOn(QueryClient.prototype, "invalidateQueries");
+    open("/integrations/connections?c=partner:7");
+
+    const actions = await screen.findByTestId("ovw-actions");
+    const searchBefore = currentSearch();
+    const metricsCallsBefore = apiGetMock.mock.calls.filter(([url]) => String(url).includes("metrics")).length;
+
+    fireEvent.click(within(actions).getByText("Yangilash").closest("button")!);
+
+    await waitFor(() => {
+      const keys = invalidate.mock.calls.map(([filters]) => JSON.stringify(filters?.queryKey));
+      expect(keys).toEqual(
+        expect.arrayContaining([
+          JSON.stringify(["integration-metrics"]),
+          JSON.stringify(["admin-partners"]),
+          JSON.stringify(["integrations"]),
+          JSON.stringify(["integration-settlement", "balance"]),
+        ]),
+      );
+    });
+    // Invalidatsiya ochiq so'rovni fonda qayta yuboradi — sahifa esa o'sha joyida.
+    await waitFor(() =>
+      expect(apiGetMock.mock.calls.filter(([url]) => String(url).includes("metrics")).length).toBeGreaterThan(
+        metricsCallsBefore,
+      ),
+    );
+    expect(currentSearch()).toBe(searchBefore);
+    expect(screen.getByTestId("ovw-actions")).toBeInTheDocument();
+    invalidate.mockRestore();
   });
 });

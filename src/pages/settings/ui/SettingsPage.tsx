@@ -1,6 +1,8 @@
 import { memo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { TimePicker } from "antd";
+import dayjs from "dayjs";
 import {
   Settings as SettingsIcon,
   Palette,
@@ -12,6 +14,12 @@ import {
   ChevronRight,
   Volume2,
   Play,
+  Bell,
+  Info,
+  Megaphone,
+  MoonStar,
+  Radio,
+  ShieldAlert,
 } from "lucide-react";
 import HeaderName from "../../../shared/components/headerName";
 import PageContainer from "../../../shared/ui/PageContainer";
@@ -30,21 +38,36 @@ import {
   type Language,
   type DashboardWidgetId,
   type ScannerSoundId,
+  type NotificationChannelId,
+  NOTIFICATION_CHANNEL_IDS,
 } from "../../../entities/settings";
+import {
+  NOTIFICATION_CATEGORIES,
+  type NotificationCategory,
+} from "../../../entities/notification-inbox";
+import { PushPermissionButton, usePushSubscription } from "../../../features/push-notifications";
 import { playScanFeedback, SCANNER_SOUND_IDS } from "../../scan/lib/scanShared";
 import {
   writeStoredScannerErrorSound,
   writeStoredScannerSuccessSound,
 } from "../../../shared/lib/preferencesStorage";
-import { TYPO, TEXT, toneSoftBg } from "../../../shared/config/designSystem";
+import { TYPO, TEXT, toneAccent, toneSoftBg } from "../../../shared/config/designSystem";
 
-type TabId = "appearance" | "dashboard" | "interface";
+type TabId = "appearance" | "dashboard" | "interface" | "notifications";
 
 const TABS: { id: TabId; icon: ReactNode }[] = [
   { id: "appearance", icon: <Palette size={18} /> },
   { id: "dashboard", icon: <LayoutDashboard size={18} /> },
   { id: "interface", icon: <PanelLeft size={18} /> },
+  { id: "notifications", icon: <Bell size={18} /> },
 ];
+
+/** Marketing alohida blokda ("Reklama va aksiyalar") — opt-out ko'zga tashlansin. */
+const SERVICE_CATEGORIES = NOTIFICATION_CATEGORIES.filter(
+  (category): category is Exclude<NotificationCategory, "marketing"> => category !== "marketing",
+);
+
+const TIME_FORMAT = "HH:mm";
 
 const LANGUAGES: { key: Language; label: string; native: string }[] = [
   { key: "uz", label: "O'zbekcha", native: "UZ" },
@@ -213,6 +236,228 @@ const SoundChoiceButton = ({
   </button>
 );
 
+// ─── Sozlama qatori (sarlavha + izoh + boshqaruv) ──────────────────────────────
+const SettingRow = ({
+  title,
+  hint,
+  control,
+  muted,
+}: {
+  title: string;
+  hint?: string;
+  control: ReactNode;
+  muted?: boolean;
+}) => (
+  <div
+    className="flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5"
+    style={{
+      borderColor: "var(--color-border-soft)",
+      background: muted ? "transparent" : toneSoftBg("brand", 4),
+    }}
+  >
+    <div className="min-w-0">
+      <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>{title}</p>
+      {hint && (
+        <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
+          {hint}
+        </p>
+      )}
+    </div>
+    <div className="shrink-0">{control}</div>
+  </div>
+);
+
+/** Push qatori — haqiqiy qurilma obunasi (`notifications.push` + `PushSync`). */
+const PushChannelControl = () => {
+  const { t } = useTranslation("settings");
+  const { status } = usePushSubscription();
+  if (status === "unsupported" || status === "unavailable") {
+    return (
+      <span className="text-[12px]" style={{ color: TEXT.soft }}>
+        {t("notifications.push_unsupported")}
+      </span>
+    );
+  }
+  return <PushPermissionButton />;
+};
+
+// ─── Bildirishnomalar tabi ─────────────────────────────────────────────────────
+const NotificationsTab = ({
+  settings,
+  persist,
+}: {
+  settings: AppSettings["notifications"];
+  persist: (patch: AppSettingsPatch) => void;
+}) => {
+  const { t } = useTranslation("settings");
+  const { t: tn } = useTranslation("notifications");
+  const muted = new Set(settings.muted_categories);
+  const quiet = settings.quiet_hours;
+
+  const onChannel = (id: NotificationChannelId, on: boolean) =>
+    persist({ notifications: { channels: { [id]: on } } });
+  // Kalit "olaman" ma'nosida: o'chirilsa — kategoriya ovozi o'chiriladi.
+  const onCategory = (category: NotificationCategory, receive: boolean) =>
+    persist({ notifications: { mute: { [category]: !receive } } });
+  const onQuietTime = (key: "from" | "to", value: dayjs.Dayjs | null) => {
+    if (value) persist({ notifications: { quiet_hours: { [key]: value.format(TIME_FORMAT) } } });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/*
+        ⚠️ OCHIQ OGOHLANTIRISH — MAJBURIY. Backend xabar yuborishda bu
+        sozlamani hali O'QIMAYDI (Elchi-Backend'da qabul qiluvchi filtri yo'q).
+        Busiz ekran "o'chirdim" degan foydalanuvchiga yolg'on va'da berardi.
+        Filtr chiqqach bu blok olib tashlanadi.
+      */}
+      <div
+        role="note"
+        data-testid="notifications-scope-notice"
+        className="flex items-start gap-3 rounded-2xl border px-4 py-3.5"
+        style={{ borderColor: toneAccent("warning"), background: toneSoftBg("warning", 10) }}
+      >
+        <Info size={18} className="mt-0.5 shrink-0" style={{ color: toneAccent("warning") }} />
+        <div>
+          <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>
+            {t("notifications.scope_title")}
+          </p>
+          <p className="mt-1 text-[12px]" style={{ color: TEXT.soft }}>
+            {t("notifications.scope_body")}
+          </p>
+        </div>
+      </div>
+
+      <div className="el-card rounded-2xl p-5">
+        <SectionTitle
+          icon={<Radio size={18} />}
+          title={t("notifications.channels_title")}
+          hint={t("notifications.channels_hint")}
+        />
+        <div className="space-y-2.5">
+          {NOTIFICATION_CHANNEL_IDS.map((id) => (
+            <SettingRow
+              key={id}
+              title={t(`notifications.channel_${id}`)}
+              hint={t(`notifications.channel_${id}_hint`)}
+              muted={!settings.channels[id]}
+              control={
+                <Toggle
+                  checked={settings.channels[id]}
+                  onChange={(on) => onChannel(id, on)}
+                  aria-label={t(`notifications.channel_${id}`)}
+                />
+              }
+            />
+          ))}
+          <SettingRow
+            title={t("notifications.channel_push")}
+            hint={t("notifications.channel_push_hint")}
+            control={<PushChannelControl />}
+          />
+        </div>
+      </div>
+
+      <div className="el-card rounded-2xl p-5">
+        <SectionTitle
+          icon={<Bell size={18} />}
+          title={t("notifications.categories_title")}
+          hint={t("notifications.categories_hint")}
+        />
+        <div className="space-y-2.5">
+          <SettingRow
+            title={t("notifications.critical")}
+            hint={t("notifications.critical_hint")}
+            control={
+              <span className="flex items-center gap-2">
+                <ShieldAlert size={16} style={{ color: toneAccent("danger") }} />
+                <Toggle checked disabled onChange={() => undefined} aria-label={t("notifications.critical")} />
+              </span>
+            }
+          />
+          {SERVICE_CATEGORIES.map((category) => (
+            <SettingRow
+              key={category}
+              title={tn(`category.${category}`)}
+              muted={muted.has(category)}
+              control={
+                <Toggle
+                  checked={!muted.has(category)}
+                  onChange={(receive) => onCategory(category, receive)}
+                  aria-label={tn(`category.${category}`)}
+                />
+              }
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="el-card rounded-2xl p-5" data-testid="notifications-marketing">
+        <SectionTitle
+          icon={<Megaphone size={18} />}
+          title={t("notifications.marketing_title")}
+          hint={t("notifications.marketing_hint")}
+        />
+        <SettingRow
+          title={t("notifications.marketing_toggle")}
+          hint={t("notifications.marketing_toggle_hint")}
+          muted={muted.has("marketing")}
+          control={
+            <Toggle
+              checked={!muted.has("marketing")}
+              onChange={(receive) => onCategory("marketing", receive)}
+              aria-label={t("notifications.marketing_toggle")}
+            />
+          }
+        />
+      </div>
+
+      <div className="el-card rounded-2xl p-5">
+        <SectionTitle
+          icon={<MoonStar size={18} />}
+          title={t("notifications.quiet_title")}
+          hint={t("notifications.quiet_hint")}
+        />
+        <div className="space-y-3">
+          <SettingRow
+            title={t("notifications.quiet_enabled")}
+            muted={!quiet.enabled}
+            control={
+              <Toggle
+                checked={quiet.enabled}
+                onChange={(enabled) => persist({ notifications: { quiet_hours: { enabled } } })}
+                aria-label={t("notifications.quiet_enabled")}
+              />
+            }
+          />
+          <div className="flex flex-wrap items-end gap-4">
+            {(["from", "to"] as const).map((key) => (
+              <label key={key} className="flex flex-col gap-1.5">
+                <span className="text-[12px] font-semibold" style={{ color: TEXT.soft }}>
+                  {t(`notifications.quiet_${key}`)}
+                </span>
+                <TimePicker
+                  format={TIME_FORMAT}
+                  minuteStep={5}
+                  allowClear={false}
+                  needConfirm={false}
+                  disabled={!quiet.enabled}
+                  value={dayjs(quiet[key], TIME_FORMAT)}
+                  onChange={(value) => onQuietTime(key, value)}
+                  aria-label={t(`notifications.quiet_${key}`)}
+                />
+              </label>
+            ))}
+            <span className="pb-1.5 text-[12px] font-semibold" style={{ color: TEXT.soft }}>
+              {t("notifications.quiet_timezone")}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SettingsPage = () => {
   const { t, i18n } = useTranslation("settings");
   const dispatch = useDispatch();
@@ -268,14 +513,15 @@ const SettingsPage = () => {
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
         {/* ── Tab navigatsiyasi ── */}
-        <nav className="el-card flex shrink-0 gap-2 overflow-x-auto rounded-2xl p-2.5 lg:w-64 lg:flex-col lg:overflow-visible">
+        {/* Telefonda ham ustun: 4 ta tab qatorga sig'maydi va gorizontal scroll ostida yashirinardi. */}
+        <nav className="el-card flex shrink-0 flex-col gap-2 rounded-2xl p-2.5 lg:w-64">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="group flex min-w-[140px] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 lg:min-w-0"
+                className="group flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200"
                 style={
                   active
                     ? {
@@ -499,6 +745,9 @@ const SettingsPage = () => {
             </div>
           )}
 
+          {activeTab === "notifications" && (
+            <NotificationsTab settings={settings.notifications} persist={persist} />
+          )}
         </div>
       </div>
     </PageContainer>

@@ -1,0 +1,81 @@
+import { expect, type Page, type Route } from "@playwright/test";
+
+/**
+ * Buyurtma detal sahifasi (`/orders/edit/:id`) e2e testlari uchun soxta backend.
+ * Hech qanday so'rov serverga ketmaydi; yozuvchi so'rov `leaked` ga tushadi.
+ */
+
+const ORIGIN = "http://127.0.0.1:4173";
+const cors = {
+  "access-control-allow-origin": ORIGIN,
+  "access-control-allow-credentials": "true",
+  "access-control-allow-headers": "*",
+  "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
+};
+const reply = (route: Route, body: unknown, status = 200) =>
+  route.fulfill({ status, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
+const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
+
+/** Karta dalilidagi #95 (kerakli maydonlar), qisman sotuvdan qolgan qism sifatida. */
+export const ORDER_96 = {
+  id: "96",
+  status: "waiting",
+  where_deliver: "address",
+  total_price: 150000,
+  to_be_paid: 150000,
+  paid_amount: 0,
+  comment: null,
+  address: "Chilonzor 19-kvartal, 45-uy",
+  customer: { id: "c1", name: "Aliyev Vali", phone_number: "+998901234567" },
+  market: { id: "m7", name: "Kimdur Kimdur", phone_number: "+998992222222" },
+  market_tariff: 70000,
+  courier_tariff: 25000,
+  courier_share: 25000,
+  branch_share: 0,
+  courier_id: "93",
+  post_id: "78",
+  holder_type: "COURIER",
+  holder_courier_id: "93",
+  sold_at: null,
+  branch: { id: "1", name: "HQ Toshkent" },
+  parent_order_id: "95",
+  items: [],
+};
+
+export const mockOrderDetailApi = async (page: Page, order: Record<string, unknown> = ORDER_96) => {
+  const leaked: string[] = [];
+  await page.context().route("**/*", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.origin === ORIGIN) return route.continue();
+    if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
+    if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    const path = url.pathname.replace(/^\//, "");
+    if (path === "auth/my-profile") {
+      return reply(route, wrap({ id: "1", role: "admin", name: "E2E admin", status: "active" }));
+    }
+    if (path === `orders/${order.id}`) return reply(route, wrap(order));
+    if (path === "users/93") {
+      return reply(route, wrap({ id: "93", name: "Xorazm Courier", phone_number: "+998970000090" }));
+    }
+    if (request.method() !== "GET") {
+      leaked.push(`${request.method()} ${path}`);
+      return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
+    }
+    return reply(route, wrap([]));
+  });
+  await page.addInitScript(() => {
+    const far = Date.now() + 86_400_000;
+    window.sessionStorage.setItem("accessToken", "e2e.local.token");
+    window.sessionStorage.setItem(
+      "authSessionMetadata",
+      JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
+    );
+  });
+  return { leaked };
+};
+
+export const openOrderDetail = async (page: Page, id = "96") => {
+  await page.goto(`/orders/edit/${id}`);
+  await expect(page.getByTestId("order-meta")).toBeVisible({ timeout: 60_000 });
+};

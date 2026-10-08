@@ -14,14 +14,18 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
-import { CATEGORY_LABEL, ROLE_META } from "../../entities/integrations";
+import { useQueryClient } from "@tanstack/react-query";
+import { CATEGORY_LABEL, ROLE_META, integrationKeys } from "../../entities/integrations";
 import {
   connectionHealth,
   fmtMetric,
   metricsByUid,
+  metricsKey,
   useIntegrationMetrics,
   type ConnectionHealth,
 } from "../../entities/integrations/metrics";
+import { settlementKey } from "../../entities/integrations/settlement";
+import { partnersKey } from "../../entities/partners";
 import ConnectionSubNav, { type SubNavItem } from "./ConnectionSubNav";
 import { fieldsFor, isConfigured, useConnections, type Connection } from "./useConnections";
 import ConnectionOverview from "./panels/ConnectionOverview";
@@ -168,6 +172,34 @@ const ConnectionsPage = () => {
 
   const fields = useMemo(() => (active ? fieldsFor(active) : []), [active]);
 
+  const hiddenTabs = useMemo(() => {
+    if (!active) return new Set<string>();
+    const hide = new Set<string>();
+    if (active.role === "payment" || active.role === "mirror") {
+      hide.add("shipments");
+      hide.add("settlement");
+    }
+    if (active.role === "source" && active.kind === "integration") {
+      hide.add("settlement");
+    }
+    return hide;
+  }, [active]);
+
+  /**
+   * "Yangilash" (Umumiy holat banneri) — TanStack Query keshini
+   * INVALIDATSIYA qiladi: ulanishlar, metrika va qarz qoldig'i. Sahifa qayta
+   * yuklanmaydi; ochiq so'rovlar fonda yangilanadi.
+   */
+  const queryClient = useQueryClient();
+  const refreshOverview = useCallback(() => {
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: metricsKey }),
+      queryClient.invalidateQueries({ queryKey: [partnersKey] }),
+      queryClient.invalidateQueries({ queryKey: integrationKeys.all }),
+      queryClient.invalidateQueries({ queryKey: [settlementKey, "balance"] }),
+    ]);
+  }, [queryClient]);
+
   const items: SubNavItem[] = active
     ? [
         {
@@ -175,7 +207,20 @@ const ConnectionsPage = () => {
           label: t("tabOverview"),
           icon: <LayoutDashboard className="h-4 w-4" />,
           desc: t("tabOverviewDesc"),
-          content: <ConnectionOverview connection={active} metrics={byUid.get(active.uid)} onFix={setTab} />,
+          content: (
+            <ConnectionOverview
+              /* Ulanish almashganda panel YANGIDAN — oldingi ulanishning
+                 "Aloqani sinash" natijasi boshqasida chiqmaydi. */
+              key={active.uid}
+              connection={active}
+              metrics={byUid.get(active.uid)}
+              metricsState={metricsQuery.isPending ? "loading" : metricsQuery.isError ? "error" : "ready"}
+              onFix={setTab}
+              hiddenTabs={hiddenTabs}
+              onRefresh={refreshOverview}
+              refreshing={metricsQuery.isFetching}
+            />
+          ),
         },
         {
           key: "settings",
@@ -222,18 +267,6 @@ const ConnectionsPage = () => {
       ]
     : [];
 
-  const hiddenTabs = useMemo(() => {
-    if (!active) return new Set<string>();
-    const hide = new Set<string>();
-    if (active.role === "payment" || active.role === "mirror") {
-      hide.add("shipments");
-      hide.add("settlement");
-    }
-    if (active.role === "source" && active.kind === "integration") {
-      hide.add("settlement");
-    }
-    return hide;
-  }, [active]);
 
   const shownItems = items.filter((i) => !hiddenTabs.has(i.key));
   const activeItem = shownItems.find((i) => i.key === tab) ?? shownItems[0];

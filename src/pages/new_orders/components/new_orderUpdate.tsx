@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Truck,
   RotateCcw,
+  Paperclip,
 } from "lucide-react";
 import {
   Card,
@@ -48,6 +49,9 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
+import { ProofGallery, readProofFiles } from "../../../entities/order";
+import { OrderMeta, OrderParentBanner, readOrderMeta } from "../../../widgets/order-meta";
+import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 import type { RootState } from "../../../app/config/store";
 import SellModal from "../../orders/list/courier/list/SellModal";
@@ -338,6 +342,11 @@ const NewOrderUpdate = () => {
   const { api: notificationApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
+  /** Pochta raqami havola bo'ladimi — `/mails` marshruti bilan AYNI qoida. */
+  const canOpenMails = useMemo(
+    () => getSidebarConfigForUser(role, user).some((item) => item.to === "/mails"),
+    [role, user],
+  );
   const branchType = getOrderPageBranchType(user);
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(resolveLocale(i18n.resolvedLanguage ?? i18n.language)),
@@ -825,6 +834,32 @@ const NewOrderUpdate = () => {
     });
   }, [RollbackOrder, order, showActionError]);
 
+  /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy buyurtma id'si. */
+  const parentOrderId = useMemo(() => readOrderMeta(order)?.parentOrderId ?? null, [order]);
+
+  /** Kuryer biriktirgan dalillar — bo'sh bo'lsa karta umuman chiqmaydi. */
+  const proofKeys = useMemo(() => readProofFiles(order?.proof_files), [order]);
+
+  /**
+   * Buyurtmaning HAQIQIY marketi (`GET orders/:id` enriched javobida keladi).
+   *
+   * ⚠️ Ilgari bu yerda `{ name: "-" }` qattiq yozilgan edi — Sell/Cancel
+   * modali `expense_proof_conditions` ni hech qachon ko'rmasdi va dalil
+   * majburiyati (*) oldindan ko'rsatilmasdi: foydalanuvchi faqat backend
+   * 400 qaytarganda bilardi.
+   */
+  const orderMarket = useMemo(() => {
+    const raw = order?.market;
+    if (!raw || typeof raw !== "object") return null;
+    const market = raw as { name?: unknown; expense_proof_conditions?: unknown };
+    return {
+      name: typeof market.name === "string" && market.name.trim() ? market.name : "-",
+      expense_proof_conditions: Array.isArray(market.expense_proof_conditions)
+        ? market.expense_proof_conditions.filter((item): item is string => typeof item === "string")
+        : null,
+    };
+  }, [order]);
+
   const sellModalOrder = useMemo(() => {
     if (!order) return null;
     const orderFlags = order as OrderDetail & Record<string, unknown>;
@@ -835,7 +870,7 @@ const NewOrderUpdate = () => {
       total_price: order.total_price,
       where_deliver: order.where_deliver,
       product_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      market: { name: "-" },
+      market: orderMarket ?? { name: "-", expense_proof_conditions: null },
       customer: { name: order.customer.name, phone_number: order.customer.phone_number },
       district: { name: districtName },
       region: { name: regionName },
@@ -866,7 +901,7 @@ const NewOrderUpdate = () => {
         },
       })),
     };
-  }, [order, districtName, regionName]);
+  }, [order, orderMarket, districtName, regionName]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -933,6 +968,13 @@ const NewOrderUpdate = () => {
       </div>
 
       {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
+
+      {/* Qisman sotuvdan qolgan qism — asosiy buyurtmaga havola. */}
+      {!isLoading && parentOrderId ? (
+        <div className="mb-4">
+          <OrderParentBanner parentOrderId={parentOrderId} />
+        </div>
+      ) : null}
 
       {/* Content */}
       {isLoading ? (
@@ -1036,6 +1078,9 @@ const NewOrderUpdate = () => {
 
           {/* ── RIGHT ── */}
           <div className="space-y-4">
+            {/* Buyurtma ma'lumotlari — Mijozdan YUQORIDA (tartib: Meta → Mijoz → Manzil). */}
+            <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} />
+
             {/* Customer */}
             <Card>
               <div className="space-y-4 p-3.5 sm:p-4 md:p-5">
@@ -1132,6 +1177,24 @@ const NewOrderUpdate = () => {
           </div>
         </div>
       )}
+
+      {/*
+        DALILLAR — kuryer sotish / bekor qilishda biriktirgan rasm va videolar.
+        Nizoda ("mahsulot yetkazilmagan") admin dalilni shu yerda ko'radi;
+        ilgari faqat bazadan topilardi. Dalil yo'q bo'lsa karta chiqmaydi.
+      */}
+      {!isLoading && proofKeys.length > 0 ? (
+        <Card className="mb-4 lg:mb-5">
+          <div className="space-y-4 p-3.5 sm:p-4 md:p-5" data-testid="order-proof-card">
+            <SectionHead
+              icon={<Paperclip size={16} />}
+              title={t("proofTitle", { ns: "orders" })}
+              sub={t("proofSubtitle", { ns: "orders" })}
+            />
+            <ProofGallery keys={proofKeys} />
+          </div>
+        </Card>
+      ) : null}
 
       {orderId ? (
         <OrderTracking

@@ -317,3 +317,29 @@ describe("CancelModal extra cost approval", () => {
     expect(screen.getByText("Yopish", { selector: "button" })).toBeInTheDocument();
   });
 });
+
+/**
+ * DALIL MAJBURIYATI — market `expense_proof_conditions` dan OLDINDAN ko'rinadi.
+ *
+ * Detal sahifasi ilgari modalga `market: { name: "-" }` uzatardi va bu shart
+ * hech qachon yetib kelmasdi — foydalanuvchi faqat backend 400 bergandagina
+ * bilardi. Endi haqiqiy market uzatiladi; modal uni o'qishi shu yerda qulflangan.
+ */
+describe("SellModal — market dalil sharti", () => {
+  it("⭐ `sell_any` — majburiylik belgisi va izohi chiqadi, dalilsiz yuborib bo'lmaydi", () => {
+    renderSell({
+      order: { ...order, market: { name: "Zamon Market", expense_proof_conditions: ["sell_any"] } },
+    });
+
+    expect(screen.getAllByText("Sotishda rasm yoki video majburiy").length).toBeGreaterThan(0);
+    const label = screen.getByText("Rasm yoki video");
+    expect(label.parentElement?.textContent).toContain("*");
+    const submit = screen.getAllByText("Sotishda rasm yoki video majburiy").map((el) => el.closest("button")).find(Boolean)!;
+    expect(submit).toBeDisabled();
+  });
+
+  it("shart yo'q (`market: { name: \"-\" }` — eski holat) — majburiylik ko'rinmaydi", () => {
+    renderSell();
+    expect(screen.queryByText("Sotishda rasm yoki video majburiy")).not.toBeInTheDocument();
+  });
+});

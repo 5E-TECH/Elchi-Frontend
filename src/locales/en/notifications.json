@@ -125,13 +125,14 @@
     "turnOn": "Turn on notifications",
     "turnOff": "Turn off notifications",
     "enabled": "Notifications are on — new messages will arrive on this device.",
-    "disabled": "Notifications will no longer arrive on this device.",
+    "disabled": "Notifications are off — they will no longer arrive on any device of your account.",
     "enableFailed": "Could not turn on notifications. Please try again later.",
     "disableFailed": "Could not turn off notifications. Please try again.",
     "blocked": "Notifications are blocked in your browser. To turn them on, allow them for this site in the browser settings.",
     "explainTitle": "Turn on notifications?",
     "explainBody": "When a new order or an important event happens, your phone (or computer) gets a notification — even when the app is closed. Next, the browser will ask for permission: tap “Allow”.",
     "explainConfirm": "Turn on",
-    "explainCancel": "Not now"
+    "explainCancel": "Not now",
+    "toastOpen": "Open"
   }
 }

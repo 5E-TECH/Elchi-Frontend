@@ -12,6 +12,9 @@ import { authClient } from "../../../auth/authService";
 
 export type PushPlatform = "android" | "ios" | "desktop";
 
+/** Logout'dagi DELETE — `BEFORE_LOGOUT_TIMEOUT_MS` (4 s) ichida tugashi uchun. */
+export const LOGOUT_DELETE_TIMEOUT_MS = 3_500;
+
 export const isPushSupported = (): boolean =>
   typeof window !== "undefined" &&
   window.isSecureContext !== false &&
@@ -108,13 +111,26 @@ export const unsubscribeDevice = async () => {
 export const unsubscribePushOnLogout = async (accessToken: string | null) => {
   const subscription = await getCurrentSubscription().catch(() => null);
   if (!subscription) return;
-  if (accessToken) {
-    await authClient
-      .delete(API_ENDPOINTS.NOTIFICATIONS.PUSH_SUBSCRIBE, {
-        data: { endpoint: subscription.endpoint },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      .catch(() => undefined);
-  }
-  await subscription.unsubscribe().catch(() => false);
+  const { endpoint } = subscription;
+  /**
+   * ⚠️ PARALLEL, ketma-ket EMAS. Ilgari qurilmadagi obuna faqat server
+   * DELETE tugagach o'chirilardi: tarmoq sekin bo'lsa logout'ning umumiy
+   * chegarasi (`BEFORE_LOGOUT_TIMEOUT_MS`) undan oldin tugab, obuna
+   * qurilmada QOLARDI — umumiy telefonda keyingi odam avvalgisining
+   * xabarlarini olardi. DELETE'ga faqat endpoint satri kerak, shuning uchun
+   * mahalliy bekor qilish kutib turmaydi; DELETE'ning o'z timeouti esa
+   * logout chegarasidan qisqa.
+   */
+  await Promise.all([
+    subscription.unsubscribe().catch(() => false),
+    accessToken
+      ? authClient
+          .delete(API_ENDPOINTS.NOTIFICATIONS.PUSH_SUBSCRIBE, {
+            data: { endpoint },
+            headers: { Authorization: `Bearer ${accessToken}` },
+            timeout: LOGOUT_DELETE_TIMEOUT_MS,
+          })
+          .catch(() => undefined)
+      : Promise.resolve(),
+  ]);
 };
