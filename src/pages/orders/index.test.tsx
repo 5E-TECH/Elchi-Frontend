@@ -109,6 +109,14 @@ const open = (route: string) =>
 
 const currentSearch = () => new URLSearchParams(screen.getByTestId("search").textContent ?? "");
 
+describe("Orders list — buyurtma yaratish", () => {
+  it("ro'yxatda yaratish tugmasi yo'q (yaratish 'Qabul va yaratish' sahifasida)", () => {
+    open("/orders");
+
+    expect(screen.queryByRole("button", { name: /Yangi buyurtma/i })).not.toBeInTheDocument();
+  });
+});
+
 describe("Orders list sorting", () => {
   beforeEach(() => {
     getOrdersMock.mockClear();

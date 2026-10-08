@@ -370,7 +370,7 @@ const NewOrderDetail = () => {
             {/* Market roli uchun buyurtma qo'shish tugmasi */}
             {canAddOrder && (
               <button
-                onClick={() => navigate("/orders/add")}
+                onClick={() => navigate("/new-orders/create")}
                 className="flex items-center justify-center gap-2 rounded-2xl bg-main px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-main/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-main/90 active:translate-y-0 sm:w-auto"
               >
                 <Plus size={16} />

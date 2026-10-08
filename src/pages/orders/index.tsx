@@ -1,11 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookMarked, Info, ListOrdered, Plus, Send } from "lucide-react";
+import { Info, ListOrdered, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { message } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import Button from "../../shared/components/button";
 import HeaderName from "../../shared/components/headerName";
 import { useOrders } from "../../entities/order/api/orderApi";
 import { useOrders as useOrderActions } from "../../entities/orders";
@@ -13,7 +12,6 @@ import {
   pollWhileApprovalPending,
   resolveOrderActionResponse,
 } from "../../entities/orders/extraCostApproval";
-import { useMarkets } from "../../entities/markets";
 import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
 import OrderFilters, { ORDER_FILTER_KEYS, ORDER_STATUS_URL_KEY } from "./list/OrderFilters";
 import OrdersTable from "./list/OrdersTable";
@@ -23,13 +21,10 @@ import type { RootState } from "../../app/config/store";
 import CourierOrders from "./list/courier/index";
 import { usePagination } from "../../shared/lib/usePagination";
 import Pagination from "../../shared/components/pagination";
-import PopupSelect from "../../shared/components/popupSelect";
-import type { MarketOption } from "./create/model/orderCreateForm";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
 import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
-import { isInactiveMarketStatus } from "../../shared/lib/marketStatus";
 import PageContainer from "../../shared/ui/PageContainer";
 import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
@@ -55,10 +50,8 @@ const ORDER_SORT_BY_FIELD: Record<string, NonNullable<OrderListParams["sort_by"]
   total_price: "total_price",
   status: "status",
 };
-const MANAGER_ORDER_CREATE_BRANCH_TYPES = new Set(["PICKUP", "HYBRID"]);
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
 const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
-const ORDER_CREATE_ROLES = new Set(["admin", "superadmin", "market", "registrator"]);
 const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
 const TABLE_ROLLBACK_STATUSES = new Set<OrderStatus>(["sold", "cancelled"]);
 const isUnsentCancelledOrder = (order: OrderListItem) => order.status === "cancelled";
@@ -334,9 +327,7 @@ const Orders = () => {
   const navigate = useNavigate();
   const { useGetOrders } = useOrders();
   const { SellOrder, PartlySellOrder, CancelOrder, RollbackOrder, SendToPost } = useOrderActions();
-  const { useGetMarkets } = useMarkets();
   const { getAllParams, setMultipleParams } = useQueryParams();
-  const [showMarketSelect, setShowMarketSelect] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [sellOrder, setSellOrder] = useState<OrderListItem | null>(null);
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
@@ -349,10 +340,6 @@ const Orders = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const branchType = getUserBranchType(currentUser);
-  const canCreateOrder =
-    role === "manager"
-      ? Boolean(branchType && MANAGER_ORDER_CREATE_BRANCH_TYPES.has(branchType))
-      : Boolean(role && ORDER_CREATE_ROLES.has(role));
   // Menejerning sotish/bekor qilish (va shu oynadagi qisman sotish) hamda
   // qaytarish amallari endi per-menejer `can_sell_cancel` bayrog'iga ham bog'liq
   // (superadmin/admin yoqadi). Backend amalni baribir tekshiradi — bu faqat
@@ -586,32 +573,6 @@ const Orders = () => {
   const { data, isLoading, isError: isOrdersError, refetch: refetchOrders } = useGetOrders(apiParams, true, (current) =>
     pollWhileApprovalPending(current?.data ?? []),
   );
-  const { data: marketsResponse, isLoading: isMarketsLoading } = useGetMarkets(
-    { status: "active", limit: 100 },
-    showMarketSelect,
-  );
-
-  const markets = useMemo<MarketOption[]>(() => {
-    const payload = marketsResponse as
-      | { data?: { items?: MarketOption[] } }
-      | { data?: MarketOption[] }
-      | MarketOption[]
-      | undefined;
-
-    if (Array.isArray(payload)) {
-      return payload.filter((market) => !isInactiveMarketStatus(market.status));
-    }
-
-    if (Array.isArray(payload?.data)) {
-      return payload.data.filter((market) => !isInactiveMarketStatus(market.status));
-    }
-
-    if (Array.isArray(payload?.data?.items)) {
-      return payload.data.items.filter((market) => !isInactiveMarketStatus(market.status));
-    }
-
-    return [];
-  }, [marketsResponse]);
 
   const rawPagination = (data as { meta?: Record<string, unknown>; pagination?: Record<string, unknown> } | undefined)?.meta
     ?? (data as { pagination?: Record<string, unknown> } | undefined)?.pagination
@@ -669,25 +630,6 @@ const Orders = () => {
       return next.size === previous.size ? previous : next;
     });
   }, [canSendCancelledToHq, items]);
-
-  const handleOpenNewOrder = () => {
-    if (!canCreateOrder) return;
-
-    if (role === "market") {
-      navigate("add");
-      return;
-    }
-
-    setShowMarketSelect(true);
-  };
-
-  const handleSelectMarket = (market: MarketOption) => {
-    navigate("add", {
-      state: {
-        selectedMarket: market,
-      },
-    });
-  };
 
   const canUseOrderActions = useCallback(
     (order: OrderListItem) =>
@@ -1079,14 +1021,6 @@ const Orders = () => {
             description={isOrdersError && !items.length ? "—" : t("totalOrdersSummary", { count: total })}
             icon={<ListOrdered />}
           />
-          {canCreateOrder && (
-            <Button
-              label={t("newOrders")}
-              icon={<Plus size={16} />}
-              onClick={handleOpenNewOrder}
-              className="w-full rounded-2xl py-3 text-sm shadow-lg shadow-main/20 sm:w-auto sm:rounded-xl sm:py-2.5"
-            />
-          )}
         </div>
         {canUseManagerTabs ? (
           <OrderTabs activeTab={activeManagerTab} onChange={handleManagerTabChange} />
@@ -1132,7 +1066,6 @@ const Orders = () => {
           isLoading={isLoading}
           rowNumberOffset={(currentPage - 1) * itemsPerPage}
           onRowClick={(order) => navigate(`edit/${order.id}`)}
-          onCreateOrder={canCreateOrder ? handleOpenNewOrder : undefined}
           canUseOrderActions={canUseOrderActions}
           canSellOrder={canManagerSellOrder}
           onSellOrder={canUseManagerTableActions ? setSellOrder : undefined}
@@ -1185,23 +1118,6 @@ const Orders = () => {
         </div>
       ) : null}
 
-      <PopupSelect<MarketOption>
-        isOpen={showMarketSelect}
-        onClose={() => setShowMarketSelect(false)}
-        title={t("selectMarket")}
-        description={t("marketModalSubtitle")}
-        data={markets}
-        onSelect={handleSelectMarket}
-        keyExtractor={(item) => item.id}
-        searchKeys={["name", "phone_number", "phone"]}
-        icon={<BookMarked />}
-        selectLabel={t("selectLabel")}
-        cancelLabel={t("cancel", { ns: "common" })}
-        labelKey="name"
-        secondaryLabelKey="phone_number"
-        placeholder={t("searchMarket")}
-        className={isMarketsLoading ? "pointer-events-none opacity-90" : ""}
-      />
       <SellModal
         order={sellOrder ? selectedActionModalOrder : null}
         open={!!sellOrder}

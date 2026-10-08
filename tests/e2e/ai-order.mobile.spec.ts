@@ -84,7 +84,7 @@ const openAiMode = async (page: Page) => {
   await page.getByRole("button", { name: "Tizimga kirish" }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
 
-  await page.goto("/orders/add");
+  await page.goto("/new-orders/create");
   const tabs = page.getByTestId("create-mode-tabs");
   await tabs.getByRole("button", { name: "Qo'lda" }).click();
   await tabs.getByRole("tab", { name: "AI bilan" }).click();
