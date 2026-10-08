@@ -581,5 +581,8 @@
   "npSecretLabel": "Webhook secret",
   "npSecretHint": "Set this same secret on the partner side — otherwise the webhook signature won't match.",
   "npKeyCopiedConfirm": "I've copied / saved the key",
-  "npDone": "Done"
+  "npDone": "Done",
+  "catChooseType": "Which system are you connecting?",
+  "catNoTypes": "No connection types for this section.",
+  "catPrereqTitle": "You'll need"
 }

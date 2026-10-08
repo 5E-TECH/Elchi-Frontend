@@ -154,7 +154,7 @@ const ConnectionsPage = () => {
     if (scope === "partner") {
       setNewPartnerOpen(true);
     } else {
-      navigate("/integrations/new");
+      navigate(`/integrations/new?scope=${scope}`);
     }
   };
 

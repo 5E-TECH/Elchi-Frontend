@@ -581,5 +581,8 @@
   "npSecretLabel": "Webhook-секрет",
   "npSecretHint": "Установите этот секрет и у партнёра — иначе подпись webhook не совпадёт.",
   "npKeyCopiedConfirm": "Я скопировал / сохранил ключ",
-  "npDone": "Готово"
+  "npDone": "Готово",
+  "catChooseType": "Какую систему подключаете?",
+  "catNoTypes": "Для этого раздела нет типов подключения.",
+  "catPrereqTitle": "Вам понадобится"
 }
