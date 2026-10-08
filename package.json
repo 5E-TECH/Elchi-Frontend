@@ -11,6 +11,7 @@
     "lint:report": "eslint .",
     "preview": "npm run build && wrangler dev",
     "test": "vitest run",
+    "test:ci": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "deploy": "npm run build && wrangler deploy"

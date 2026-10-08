@@ -1,4 +1,5 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
+import { useLocation } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -99,7 +100,7 @@ describe("PushSync — device subscription follows the user setting", () => {
 
     await waitFor(() =>
       expect(api.patch).toHaveBeenCalledWith("auth/my-settings", {
-        settings: expect.objectContaining({ notifications: { push: false } }),
+        settings: expect.objectContaining({ notifications: expect.objectContaining({ push: false }) }),
       }),
     );
     expect(api.delete).toHaveBeenCalledWith("notifications/push/subscribe", {
@@ -114,5 +115,66 @@ describe("PushSync — device subscription follows the user setting", () => {
     );
     expect(mergeSettings({ notifications: { push: true } }).notifications.push).toBe(true);
     expect(mergeSettings({}).notifications).toEqual(DEFAULT_SETTINGS.notifications);
+  });
+
+  /**
+   * IKKI-XABAR TO'SIG'I: ko'rinib turgan tab bo'lsa SW tizim bildirishnomasini
+   * KO'RSATMAYDI — hodisa ilova ichida toast bo'lib chiqishi shart, aks holda
+   * foydalanuvchi uni umuman ko'rmaydi.
+   */
+  const LocationProbe = () => <span data-testid="path">{useLocation().pathname}</span>;
+
+  it("⭐ ko'rinib turgan tabda push ilova ichida TOAST bo'lib chiqadi, \"Ochish\" havolaga olib boradi", async () => {
+    const env = installPushEnv();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <PushSync />
+        <LocationProbe />
+      </>,
+      { preloadedState: loggedIn, route: "/" },
+    );
+
+    act(() =>
+      env.emitMessage({
+        type: "elchi:push",
+        payload: { id: "n1", title: "Yangi buyurtma #1001", body: "Chilonzor, 150 000 so'm", link: "/orders/1001" },
+      }),
+    );
+
+    expect(await screen.findByText("Yangi buyurtma #1001")).toBeInTheDocument();
+    expect(screen.getByText("Chilonzor, 150 000 so'm")).toBeInTheDocument();
+    await user.click(screen.getByText("Ochish").closest("button")!);
+    await waitFor(() => expect(screen.getByTestId("path")).toHaveTextContent("/orders/1001"));
+  });
+
+  it("yashirin tab toast KO'RSATMAYDI (u holda SW tizim bildirishnomasini o'zi chiqargan)", async () => {
+    const env = installPushEnv();
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    renderWithProviders(<PushSync />, { preloadedState: loggedIn });
+
+    act(() => env.emitMessage({ type: "elchi:push", payload: { id: "n2", title: "Yashirin xabar" } }));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByText("Yashirin xabar")).not.toBeInTheDocument();
+    visibility.mockRestore();
+  });
+
+  it("tashqi havola toastdan ochilmaydi — o'rniga /inbox", async () => {
+    const env = installPushEnv();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <PushSync />
+        <LocationProbe />
+      </>,
+      { preloadedState: loggedIn, route: "/" },
+    );
+
+    act(() =>
+      env.emitMessage({ type: "elchi:push", payload: { id: "n3", title: "Havola", link: "https://evil.example/x" } }),
+    );
+    await user.click((await screen.findByText("Ochish")).closest("button")!);
+    await waitFor(() => expect(screen.getByTestId("path")).toHaveTextContent("/inbox"));
   });
 });

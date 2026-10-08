@@ -31,6 +31,52 @@ export interface ConnectionMetrics {
   /** Millisekund yoki `null` — o'lchanmagan bo'lsa. */
   avg_ms: number | null;
   last_event_at: string | null;
+  /**
+   * POSILKALAR — metrika OYNASI ichida (`window_hours`, odatda 24 soat).
+   * `null` / yo'q — backend hali bermaydi yoki bu ulanishda posilka yo'q.
+   */
+  shipments?: ShipmentMetrics | null;
+  /** KIRUVCHI WEBHOOKLAR — metrika OYNASI ichida. */
+  webhooks?: WebhookMetrics | null;
+  /**
+   * COD — BUTUN VAQT (oyna bilan kesilmaydi). Manba faqat
+   * `provider_receivable` / `provider_remittance` — moliya bilan bir xil
+   * raqam chiqishi uchun alohida hisob qilinmaydi.
+   */
+  cod?: CodMetrics | null;
+}
+
+export interface ShipmentMetrics {
+  total: number | null;
+  delivered: number | null;
+  failed: number | null;
+  /**
+   * ⚠️ `null` — ulanishda status xaritasi YO'Q. Xaritasiz har qator
+   * "nomuvofiq" bo'lib chiqardi, shuning uchun bu raqam umuman
+   * ko'rsatilmaydi (Posilkalar tabidagi "Nomuvofiqlik" pili bilan bir xil).
+   */
+  mismatch: number | null;
+}
+
+export interface WebhookMetrics {
+  success: number | null;
+  failed: number | null;
+  /** `null` — bu ulanishda imzo tekshirilmaydi (masalan hamkor: webhookni biz yuboramiz). */
+  invalid_signature: number | null;
+}
+
+/**
+ * So'mda, butun vaqt bo'yicha.
+ *
+ * ⚠️ `debt` UI'da KO'RSATILMAYDI: "Yopilmagan qarz" plitkasi Hisob-kitob
+ * tabi bilan AYNI manbadan (`receivable-balance`) o'qiladi — bir yorliq
+ * ostida ikki manba bo'lmasligi uchun. Maydon kontraktda qoladi.
+ */
+export interface CodMetrics {
+  dispatched: number | null;
+  collected: number | null;
+  remitted: number | null;
+  debt: number | null;
 }
 
 export interface IntegrationMetrics {
@@ -46,6 +92,58 @@ const EMPTY: IntegrationMetrics = {
 };
 
 const unwrap = <T>(raw: unknown, fallback: T): T => ((raw as { data?: T })?.data ?? fallback) as T;
+
+/**
+ * Raqamni o'qiydi. ⚠️ Yaroqsiz yoki yo'q qiymat `null` — HECH QACHON `0`:
+ * `0` "hammasi joyida / qarz yo'q" degan yolg'on xabar bo'lardi. Postgres
+ * `numeric` / `bigint` ni satr qilib qaytaradi — u ham son sifatida o'qiladi.
+ */
+const num = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const record = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+
+const readShipments = (value: unknown): ShipmentMetrics | null => {
+  const r = record(value);
+  return r
+    ? { total: num(r.total), delivered: num(r.delivered), failed: num(r.failed), mismatch: num(r.mismatch) }
+    : null;
+};
+
+const readWebhooks = (value: unknown): WebhookMetrics | null => {
+  const r = record(value);
+  return r ? { success: num(r.success), failed: num(r.failed), invalid_signature: num(r.invalid_signature) } : null;
+};
+
+const readCod = (value: unknown): CodMetrics | null => {
+  const r = record(value);
+  return r
+    ? { dispatched: num(r.dispatched), collected: num(r.collected), remitted: num(r.remitted), debt: num(r.debt) }
+    : null;
+};
+
+/**
+ * Javobni normallashtiradi. Yangi bloklar (`shipments` / `webhooks` / `cod`)
+ * ESKI backendda yo'q — u holda `null` bo'lib qoladi va UI "—" ko'rsatadi.
+ */
+export const normalizeIntegrationMetrics = (raw: unknown): IntegrationMetrics => {
+  const data = unwrap<IntegrationMetrics>(raw, EMPTY);
+  const connections = Array.isArray(data?.connections) ? data.connections : [];
+  return {
+    ...EMPTY,
+    ...data,
+    connections: connections.map((c) => ({
+      ...c,
+      shipments: readShipments(c.shipments),
+      webhooks: readWebhooks(c.webhooks),
+      cod: readCod(c.cod),
+    })),
+  };
+};
 
 export const metricsKey = ["integration-metrics"] as const;
 
@@ -65,7 +163,7 @@ export const useIntegrationMetrics = (hours?: number) =>
         .get(API_ENDPOINTS.INTEGRATIONS.METRICS, {
           params: hours ? { hours } : undefined,
         })
-        .then((res) => unwrap<IntegrationMetrics>(res.data, EMPTY)),
+        .then((res) => normalizeIntegrationMetrics(res.data)),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });

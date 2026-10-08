@@ -63,7 +63,9 @@ describe("PushPermissionButton", () => {
     expect(options.applicationServerKey).toBeInstanceOf(Uint8Array);
     expect(api.patch).toHaveBeenCalledWith(
       "auth/my-settings",
-      expect.objectContaining({ settings: expect.objectContaining({ notifications: { push: true } }) }),
+      expect.objectContaining({
+        settings: expect.objectContaining({ notifications: expect.objectContaining({ push: true }) }),
+      }),
     );
   });
 
@@ -121,5 +123,28 @@ describe("PushPermissionButton", () => {
     const { container } = renderWithProviders(<PushPermissionButton />);
     await waitFor(() => expect(api.get).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("⭐ brauzer sozlamasidan ruxsat QAYTARILSA (granted) eski belgi tozalanadi va push yoqiladi", async () => {
+    window.localStorage.setItem(PUSH_DENIED_STORAGE_KEY, "1");
+    installPushEnv({ permission: "granted" });
+    renderWithProviders(<PushPermissionButton />);
+
+    expect(await screen.findByRole("button", { name: "Bildirishnomalarni yoqish" })).toBeInTheDocument();
+    expect(screen.queryByText(/brauzerda bloklangan/)).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(PUSH_DENIED_STORAGE_KEY)).toBeNull();
+  });
+
+  it("⭐ sozlamadan qaytib tab KO'RINGANDA ruxsat qayta o'qiladi (sahifani yangilash shart emas)", async () => {
+    const env = installPushEnv({ permission: "denied" });
+    renderWithProviders(<PushPermissionButton />);
+    expect(await screen.findByRole("status")).toHaveTextContent("brauzerda bloklangan");
+
+    // Foydalanuvchi brauzer sozlamasida "Ruxsat berish" ni tanlab qaytdi.
+    env.notification.permission = "granted";
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    expect(await screen.findByRole("button", { name: "Bildirishnomalarni yoqish" })).toBeInTheDocument();
+    expect(window.localStorage.getItem(PUSH_DENIED_STORAGE_KEY)).toBeNull();
   });
 });

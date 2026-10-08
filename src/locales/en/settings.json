@@ -5,13 +5,15 @@
     "appearance": "Appearance",
     "dashboard": "Dashboard",
     "interface": "Interface",
-    "profile": "Profile"
+    "profile": "Profile",
+    "notifications": "Notifications"
   },
   "tabs_desc": {
     "appearance": "Theme and language",
     "dashboard": "Manage widgets",
     "interface": "Panel and layout",
-    "profile": "Personal info"
+    "profile": "Personal info",
+    "notifications": "Channels and categories"
   },
   "appearance": {
     "theme": "Theme",
@@ -54,6 +56,37 @@
     "sound_bell": "Bell",
     "sound_pulse": "Pulse",
     "sound_bright": "Bright"
+  },
+  "notifications": {
+    "scope_title": "For now these settings are only saved",
+    "scope_body": "Your channel, category and quiet-hours choices are saved but not yet applied when notifications are sent — you will keep receiving everything as before. Once the server side is ready, your saved choices will apply automatically. The push (browser) switch already works.",
+    "channels_title": "Channels",
+    "channels_hint": "Choose how you receive notifications",
+    "channel_in_app": "In the app",
+    "channel_in_app_hint": "Notifications page and the bell icon",
+    "channel_realtime": "Real-time",
+    "channel_realtime_hint": "Show instantly while the app is open",
+    "channel_telegram": "Telegram",
+    "channel_telegram_hint": "Via the Telegram bot",
+    "channel_sms": "SMS",
+    "channel_sms_hint": "SMS to your phone number",
+    "channel_push": "Push (browser and phone)",
+    "channel_push_hint": "Applies to your whole account: turning it off stops it on every device. Each new device asks for browser permission separately. Already works.",
+    "push_unsupported": "Not available in this browser",
+    "categories_title": "Categories",
+    "categories_hint": "Choose which notifications to receive",
+    "critical": "Critical notifications",
+    "critical_hint": "Critical notifications can't be turned off — they are always delivered",
+    "marketing_title": "Ads and promotions",
+    "marketing_hint": "News, promotions and advertising messages. You can opt out at any time.",
+    "marketing_toggle": "Receive promotional messages",
+    "marketing_toggle_hint": "Service notifications (orders, finance, etc.) still arrive even if this is off",
+    "quiet_title": "Quiet hours",
+    "quiet_hint": "Don't disturb during the selected time range",
+    "quiet_enabled": "Enable quiet hours",
+    "quiet_from": "Start",
+    "quiet_to": "End",
+    "quiet_timezone": "Tashkent time (UTC+5)"
   },
   "saved": "Saved",
   "save_error": "Failed to save"

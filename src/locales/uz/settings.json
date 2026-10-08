@@ -5,13 +5,15 @@
     "appearance": "Ko'rinish",
     "dashboard": "Dashboard",
     "interface": "Interfeys",
-    "profile": "Profil"
+    "profile": "Profil",
+    "notifications": "Bildirishnomalar"
   },
   "tabs_desc": {
     "appearance": "Mavzu va til",
     "dashboard": "Widgetlarni boshqarish",
     "interface": "Panel va ko'rinish",
-    "profile": "Shaxsiy ma'lumotlar"
+    "profile": "Shaxsiy ma'lumotlar",
+    "notifications": "Kanal va kategoriyalar"
   },
   "appearance": {
     "theme": "Mavzu",
@@ -54,6 +56,37 @@
     "sound_bell": "Qo'ng'iroq",
     "sound_pulse": "Pulse",
     "sound_bright": "Yorqin"
+  },
+  "notifications": {
+    "scope_title": "Hozircha bu sozlamalar faqat saqlanadi",
+    "scope_body": "Kanal, kategoriya va sokin soatlar tanlovingiz saqlanadi, lekin xabar yuborishda hali hisobga olinmaydi — barcha xabarlar avvalgidek keladi. Server tomoni tayyor bo'lgach, saqlangan tanlovingiz avtomatik qo'llaniladi. Push (brauzer) kaliti esa hozirning o'zida ishlaydi.",
+    "channels_title": "Kanallar",
+    "channels_hint": "Xabarlarni qaysi yo'l bilan olishni tanlang",
+    "channel_in_app": "Ilova ichida",
+    "channel_in_app_hint": "Bildirishnomalar sahifasi va qo'ng'iroqcha belgisi",
+    "channel_realtime": "Jonli (real vaqtda)",
+    "channel_realtime_hint": "Ilova ochiq turganda darhol ko'rsatish",
+    "channel_telegram": "Telegram",
+    "channel_telegram_hint": "Telegram bot orqali",
+    "channel_sms": "SMS",
+    "channel_sms_hint": "Telefon raqamingizga SMS",
+    "channel_push": "Push (brauzer va telefon)",
+    "channel_push_hint": "Butun hisobingiz uchun: o'chirsangiz barcha qurilmalarda o'chadi. Har yangi qurilmada brauzer ruxsati alohida so'raladi. Hozirning o'zida ishlaydi.",
+    "push_unsupported": "Bu brauzerda mavjud emas",
+    "categories_title": "Kategoriyalar",
+    "categories_hint": "Qaysi turdagi xabarlarni olishni tanlang",
+    "critical": "Muhim (critical) xabarlar",
+    "critical_hint": "Muhim xabarlarni o'chirib bo'lmaydi — ular har doim yetkaziladi",
+    "marketing_title": "Reklama va aksiyalar",
+    "marketing_hint": "Yangiliklar, aksiyalar va reklama xabarlari. Istalgan vaqtda voz kechishingiz mumkin.",
+    "marketing_toggle": "Reklama xabarlarini olish",
+    "marketing_toggle_hint": "O'chirsangiz ham xizmat xabarlari (buyurtma, moliya va boshqalar) keladi",
+    "quiet_title": "Sokin soatlar",
+    "quiet_hint": "Belgilangan vaqt oralig'ida bezovta qilinmaslik",
+    "quiet_enabled": "Sokin soatlarni yoqish",
+    "quiet_from": "Boshlanishi",
+    "quiet_to": "Tugashi",
+    "quiet_timezone": "Toshkent vaqti (UTC+5)"
   },
   "saved": "Saqlandi",
   "save_error": "Saqlashda xatolik"
