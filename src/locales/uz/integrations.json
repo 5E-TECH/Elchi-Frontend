@@ -581,5 +581,8 @@
   "npSecretLabel": "Webhook sekreti",
   "npSecretHint": "Shu sekretni hamkorda ham o'rnating — aks holda webhook imzosi mos kelmaydi.",
   "npKeyCopiedConfirm": "Kalitni ko'chirib oldim / saqladim",
-  "npDone": "Yakunlash"
+  "npDone": "Yakunlash",
+  "catChooseType": "Qaysi tizimni ulaysiz?",
+  "catNoTypes": "Bu bo'lim uchun ulanish turi yo'q.",
+  "catPrereqTitle": "Sizga kerak bo'ladi"
 }
