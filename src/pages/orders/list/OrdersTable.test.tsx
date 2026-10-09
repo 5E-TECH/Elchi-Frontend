@@ -264,3 +264,33 @@ describe("OrdersTable", () => {
     expect(onRetry).toHaveBeenCalled();
   });
 });
+
+describe("OrdersTable — qaytarish so'ralgan belgisi", () => {
+  const requested = {
+    ...orders[0],
+    id: "o-2",
+    status: "waiting",
+    return_requested: true,
+    return_reason: "Mijoz rad etdi",
+  };
+
+  it("⭐ return_requested qatorida amber \"Qaytarish so'ralgan\", sabab tooltip/aria'da", () => {
+    renderWithProviders(<OrdersTable data={[requested] as never} isLoading={false} />);
+    const badges = screen.getAllByTestId("return-requested-badge");
+    expect(badges.length).toBeGreaterThan(0);
+    for (const badge of badges) {
+      expect(badge).toHaveTextContent("Qaytarish so'ralgan");
+      expect(badge).toHaveAttribute("aria-label", "Qaytarish so'ralgan. Sabab: Mijoz rad etdi");
+    }
+  });
+
+  it("oddiy buyurtma (return_requested false/yo'q) — belgi yo'q", () => {
+    renderWithProviders(
+      <OrdersTable
+        data={[{ ...orders[0], return_requested: false, return_reason: null }, orders[0]] as never}
+        isLoading={false}
+      />,
+    );
+    expect(screen.queryByTestId("return-requested-badge")).not.toBeInTheDocument();
+  });
+});

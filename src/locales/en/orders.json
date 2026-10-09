@@ -51,6 +51,7 @@
   "statusCancelled": "Cancelled",
   "statusCancelledSent": "Cancelled — sent",
   "statusClosed": "Closed",
+  "statusReturnedToMarket": "Returned to market",
   "filterMarket": "Market",
   "filterCourier": "Courier",
   "filterRegion": "Region",
@@ -276,7 +277,9 @@
       "cancelledPostCreated": "{{actor}} added the cancelled order to the return post and sent it",
       "cancelledPostReceivedAtBranch": "{{actor}} received the cancelled order from the courier",
       "cancelledPostReceivedAtHq": "{{actor}} received the cancelled order at HQ for market handover",
-      "cancelledOrderHandedToMarket": "{{actor}} handed the cancelled order over to {{market}} with QR confirmation"
+      "cancelledOrderHandedToMarket": "{{actor}} handed the cancelled order over to {{market}} with QR confirmation",
+      "returnInitiated": "{{actor}} started returning the order to the market. Reason: {{reason}}",
+      "returnedToMarketByActor": "{{actor}} handed the order to {{market}} with QR confirmation"
     },
     "roleValue": {
       "superadmin": "Super Admin",
@@ -299,7 +302,9 @@
       "cancelled_sent": "Cancelled, sent",
       "paid": "Paid",
       "partly_paid": "Partly paid",
-      "closed": "Closed"
+      "closed": "Closed",
+      "waiting_customer": "Waiting for customer",
+      "returned_to_market": "Returned to market"
     },
     "notes": {
       "order_created": "Order created",
@@ -324,7 +329,9 @@
       "waiting": "Waiting",
       "courierAssigned": "Assigned to courier",
       "cancelledPostCreated": "Cancelled order sent",
-      "cancelledPostReceived": "Cancelled order received"
+      "cancelledPostReceived": "Cancelled order received",
+      "returnRequested": "Return requested",
+      "returnedToMarket": "Returned to market"
     },
     "newestFirst": "{{count}} entries — newest first",
     "expand": "Show history",
@@ -482,5 +489,25 @@
   "openOrderRow": "Order №{{id}}, {{name}}",
   "orderActionError": "The action could not be completed. Please try again.",
   "rollbackCancelPostWarning": "The order was cancelled but not added to the cancelled-orders post. Add it to a post manually.",
-  "extraCostHomeNotAllowed": "Extra cost can't be added for home delivery — the home tariff is already higher."
+  "extraCostHomeNotAllowed": "Extra cost can't be added for home delivery — the home tariff is already higher.",
+  "returnRequested": "Return requested",
+  "returnRequestedReason": "Reason: {{reason}}",
+  "returnInitiate": "Return to market",
+  "returnInitiateTitle": "#{{id}} — return to market",
+  "returnInitiateHint": "The order will be marked as return requested. The branch will hand it back to the market.",
+  "returnReasonLabel": "Return reason",
+  "returnReasonPlaceholder": "E.g. the customer refused",
+  "returnReasonRequired": "Enter the return reason",
+  "returnInitiateSubmit": "Start return",
+  "returnInitiateSuccess": "Return request sent",
+  "returnHandover": "Handed to market",
+  "returnHandoverTitle": "#{{id}} — hand over to market",
+  "returnHandoverHint": "Scan the QR code the market owner shows in their app (Cancelled → Receive). The permission is valid for 5 minutes.",
+  "returnHandoverScan": "Scan with camera",
+  "returnHandoverManualLabel": "Or enter the QR code with a scanner",
+  "returnHandoverInvalidQr": "This is not a market QR code (must start with MCR-)",
+  "returnHandoverSubmit": "Confirm handover",
+  "returnHandoverAuthorized": "Market QR accepted. Confirm the handover again.",
+  "returnHandoverRetry": "Try again",
+  "returnHandoverSuccess": "The order was handed to the market"
 }

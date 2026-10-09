@@ -5,7 +5,7 @@ import {
   buildOrderUpdatePayload,
   getAddressUpdateValidationError,
   getCustomerUpdateValidationError,
-  isActionableOrderStatus,
+  canRunCourierAction,
   isOrderReceivedOrLater,
   isOrderSentToBranch,
   normalizeOrderStatus,
@@ -42,9 +42,22 @@ describe("new order update rules", () => {
     expect(normalizeOrderStatus(" ON_THE_ROAD ")).toBe("on the road");
     expect(normalizeOrderStatus("on   the road")).toBe("on the road");
     expect(normalizeOrderStatus("CANCELLED_SENT")).toBe("cancelled (sent)");
-    expect(isActionableOrderStatus("on_the_road")).toBe(true);
-    expect(isActionableOrderStatus("ON THE ROAD")).toBe(true);
-    expect(isActionableOrderStatus("sold")).toBe(false);
+  });
+
+  it("sotish/bekor qilish faqat WAITING + post_id bo'lsa (backend bilan bir xil)", () => {
+    expect(canRunCourierAction({ status: "waiting", post_id: "90" })).toBe(true);
+    expect(canRunCourierAction({ status: " WAITING ", post_id: "90" })).toBe(true);
+    // Backend 400: "Order has no post".
+    expect(canRunCourierAction({ status: "waiting", post_id: null })).toBe(false);
+    expect(canRunCourierAction({ status: "waiting" })).toBe(false);
+    // Backend 400: "not in waiting status" — order 109 (on the road, post_id 90).
+    expect(canRunCourierAction({ status: "on_the_road", post_id: "90" })).toBe(false);
+    expect(canRunCourierAction({ status: "ON THE ROAD", post_id: "90" })).toBe(false);
+    expect(canRunCourierAction({ status: "new", post_id: "90" })).toBe(false);
+    expect(canRunCourierAction({ status: "received", post_id: "90" })).toBe(false);
+    expect(canRunCourierAction({ status: "sold", post_id: "90" })).toBe(false);
+    expect(canRunCourierAction(null)).toBe(false);
+    expect(canRunCourierAction(undefined)).toBe(false);
   });
 
   it("sends only changed unlocked order fields", () => {

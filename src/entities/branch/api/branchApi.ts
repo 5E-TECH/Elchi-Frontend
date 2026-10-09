@@ -168,7 +168,8 @@ const normalizeSentBatchBranchRow = (value: unknown): SentBatchBranchRow => {
   };
 };
 
-const extractArray = <T,>(value: unknown): T[] => {
+/** `{ statusCode, message, data: [...] }` / `{ data: { items } }` / `{ items }` → massiv. */
+export const extractArray = <T,>(value: unknown): T[] => {
   const response = value as { data?: T[] | { items?: T[] }; items?: T[] };
   if (Array.isArray(response?.data)) return response.data;
   if (Array.isArray((response?.data as { items?: T[] } | undefined)?.items)) {

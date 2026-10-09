@@ -54,15 +54,19 @@ const SENT_TO_BRANCH_STATUSES = new Set([
   "completed",
 ]);
 
-const ACTIONABLE_ORDER_STATUSES = new Set(["waiting", "on the road", "new", "received"]);
+// Backend sell / cancel / partly-sell faqat WAITING va post_id bor buyurtmani qabul qiladi.
+const ACTIONABLE_ORDER_STATUSES = new Set(["waiting"]);
 
 export const normalizeOrderStatus = (status: string) => {
   const normalized = status.trim().toLowerCase().replaceAll("_", " ").replace(/\s+/g, " ");
   return normalized === "cancelled sent" ? "cancelled (sent)" : normalized;
 };
 
-export const isActionableOrderStatus = (status: string) =>
-  ACTIONABLE_ORDER_STATUSES.has(normalizeOrderStatus(status));
+export const canRunCourierAction = (
+  order: { status?: string | null; post_id?: string | number | null } | null | undefined,
+) =>
+  Boolean(order?.post_id) &&
+  ACTIONABLE_ORDER_STATUSES.has(normalizeOrderStatus(order?.status ?? ""));
 
 export const isOrderReceivedOrLater = (status: string) =>
   RECEIVED_OR_LATER.has(normalizeOrderStatus(status));

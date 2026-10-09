@@ -524,6 +524,15 @@ const getProfessionalNote = (
     return t("tracking.dynamic.assignedToCourier", { actor });
   }
 
+  const returnReason = getReturnInitiatedReason(event);
+  if (returnReason !== null) {
+    return t("tracking.dynamic.returnInitiated", { actor, reason: returnReason || "—" });
+  }
+
+  if (newStatus === "returned_to_market") {
+    return t("tracking.dynamic.returnedToMarketByActor", { actor, market: marketName });
+  }
+
   if (isCancelledPostCreatedEvent(event)) {
     return t("tracking.dynamic.cancelledPostCreated", { actor });
   }
@@ -683,6 +692,14 @@ const getActorPhone = (event: TrackingEvent, currentUser?: User | null) => {
   return "";
 };
 
+// Backend `initiate-return`: holat o'zgarmaydi (`note`), izoh "Return initiated: <sabab>".
+const RETURN_INITIATED_NOTE = /^\s*return initiated:\s*/i;
+
+const getReturnInitiatedReason = (event: TrackingEvent) => {
+  const note = String(event.note ?? event.description ?? "");
+  return RETURN_INITIATED_NOTE.test(note) ? note.replace(RETURN_INITIATED_NOTE, "").trim() : null;
+};
+
 const isBulkCourierAssignEvent = (event: TrackingEvent) => {
   const note = normalizeKey(event.note ?? event.description);
   const action = normalizeKey(event.action);
@@ -713,7 +730,9 @@ export const TrackingTimelineItem = ({ event, index, total, isLast = false, curr
   const actionLabelKey = event.action ? actionLabelMap[event.action] ?? actionLabelMap[actionKey] : undefined;
   const oldStatus = event.old_value?.status;
   const newStatus = event.new_value?.status;
-  const actionName = isBulkCourierAssignEvent(event)
+  const actionName = getReturnInitiatedReason(event) !== null
+    ? t("tracking.action.returnRequested")
+    : isBulkCourierAssignEvent(event)
     ? t("tracking.action.courierAssigned")
     : isCancelledPostCreatedEvent(event)
       ? t("tracking.action.cancelledPostCreated")

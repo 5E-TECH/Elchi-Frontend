@@ -51,6 +51,7 @@
   "statusCancelled": "Отменен",
   "statusCancelledSent": "Отменен — отправлен",
   "statusClosed": "Закрыт",
+  "statusReturnedToMarket": "Возвращён в маркет",
   "filterMarket": "Маркет",
   "filterCourier": "Курьер",
   "filterRegion": "Область",
@@ -276,7 +277,9 @@
       "cancelledPostCreated": "{{actor}} добавил отмененный заказ в возвратную почту и отправил",
       "cancelledPostReceivedAtBranch": "{{actor}} принял отмененный заказ от курьера",
       "cancelledPostReceivedAtHq": "{{actor}} принял отмененный заказ в HQ для передачи маркету",
-      "cancelledOrderHandedToMarket": "{{actor}} передал отмененный заказ маркету {{market}} с QR-подтверждением"
+      "cancelledOrderHandedToMarket": "{{actor}} передал отмененный заказ маркету {{market}} с QR-подтверждением",
+      "returnInitiated": "{{actor}} начал(а) возврат заказа в маркет. Причина: {{reason}}",
+      "returnedToMarketByActor": "{{actor}} передал(а) заказ в {{market}} с подтверждением по QR"
     },
     "roleValue": {
       "superadmin": "Super Admin",
@@ -299,7 +302,9 @@
       "cancelled_sent": "Отменен, отправлен",
       "paid": "Оплачен",
       "partly_paid": "Частично оплачен",
-      "closed": "Закрыт"
+      "closed": "Закрыт",
+      "waiting_customer": "Ожидает клиента",
+      "returned_to_market": "Возвращён в маркет"
     },
     "notes": {
       "order_created": "Заказ создан",
@@ -324,7 +329,9 @@
       "waiting": "Ожидает",
       "courierAssigned": "Назначен курьеру",
       "cancelledPostCreated": "Отмененный заказ отправлен",
-      "cancelledPostReceived": "Отмененный заказ принят"
+      "cancelledPostReceived": "Отмененный заказ принят",
+      "returnRequested": "Запрошен возврат",
+      "returnedToMarket": "Возвращено в маркет"
     },
     "newestFirst": "{{count}} записей — новые сверху",
     "expand": "Показать историю",
@@ -482,5 +489,25 @@
   "openOrderRow": "Заказ №{{id}}, {{name}}",
   "orderActionError": "Не удалось выполнить действие. Попробуйте снова.",
   "rollbackCancelPostWarning": "Заказ отменён, но не добавлен в почту отменённых заказов. Добавьте его в почту вручную.",
-  "extraCostHomeNotAllowed": "При доставке на дом дополнительный расход не указывается — домашний тариф уже выше."
+  "extraCostHomeNotAllowed": "При доставке на дом дополнительный расход не указывается — домашний тариф уже выше.",
+  "returnRequested": "Запрошен возврат",
+  "returnRequestedReason": "Причина: {{reason}}",
+  "returnInitiate": "Вернуть в маркет",
+  "returnInitiateTitle": "#{{id}} — возврат в маркет",
+  "returnInitiateHint": "Заказ будет помечен как запрошенный к возврату. Филиал передаст его маркету.",
+  "returnReasonLabel": "Причина возврата",
+  "returnReasonPlaceholder": "Например: клиент не принял",
+  "returnReasonRequired": "Укажите причину возврата",
+  "returnInitiateSubmit": "Начать возврат",
+  "returnInitiateSuccess": "Запрос на возврат отправлен",
+  "returnHandover": "Передано маркету",
+  "returnHandoverTitle": "#{{id}} — передача маркету",
+  "returnHandoverHint": "Отсканируйте QR-код, который владелец маркета показал в приложении (Отменённые → Принять). Разрешение действует 5 минут.",
+  "returnHandoverScan": "Сканировать камерой",
+  "returnHandoverManualLabel": "Или введите QR-код сканером",
+  "returnHandoverInvalidQr": "Это не QR-код маркета (должен начинаться с MCR-)",
+  "returnHandoverSubmit": "Подтвердить передачу",
+  "returnHandoverAuthorized": "QR маркета принят. Повторите подтверждение передачи.",
+  "returnHandoverRetry": "Повторить",
+  "returnHandoverSuccess": "Заказ передан маркету"
 }

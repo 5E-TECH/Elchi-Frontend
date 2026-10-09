@@ -16,7 +16,8 @@ vi.mock("../../shared/api/api", () => ({
 
 describe("BranchOps page", () => {
   beforeEach(() => {
-    apiGetMock.mockResolvedValue({ data: [] });
+    // Haqiqiy javob konverti: axios `res.data` = { statusCode, message, data: [...] }.
+    apiGetMock.mockResolvedValue({ data: { statusCode: 200, message: "Branches with NEW orders", data: [] } });
     apiPostMock.mockResolvedValue({ data: {} });
   });
 
@@ -30,6 +31,32 @@ describe("BranchOps page", () => {
     await waitFor(() =>
       expect(apiGetMock).toHaveBeenCalledWith("branches/new-orders", expect.anything()),
     );
+  });
+
+  it("⭐ jadval konvert ichidagi `data` massivini ko'rsatadi (\"Ma'lumot topilmadi\" emas)", async () => {
+    apiGetMock.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        message: "Branches with NEW orders",
+        data: [
+          { id: "12", name: "Urganch filiali", type: "REGIONAL", new_orders_count: 7 },
+          { id: "15", name: "Xiva filiali", type: "PICKUP", new_orders_count: 2 },
+        ],
+      },
+    });
+    renderWithProviders(<BranchOpsPage />);
+
+    expect(await screen.findByText("Urganch filiali")).toBeInTheDocument();
+    expect(screen.getByText("Xiva filiali")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(document.querySelectorAll(".ant-table-tbody tr.ant-table-row")).toHaveLength(2);
+    expect(screen.queryByText(/Ma'lumot topilmadi|No data/)).not.toBeInTheDocument();
+  });
+
+  it("bo'sh konvert — bo'sh jadval, xato emas", async () => {
+    renderWithProviders(<BranchOpsPage />);
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalled());
+    expect(document.querySelectorAll(".ant-table-tbody tr.ant-table-row")).toHaveLength(0);
   });
 
   it("keeps the cancel button disabled and sends nothing while the reason is empty", async () => {
@@ -92,5 +119,66 @@ describe("BranchOps page", () => {
     await user.click(await screen.findByRole("button", { name: "Ha, bekor qilish" }));
 
     expect(await screen.findByText("Partiya allaqachon bekor qilingan")).toBeInTheDocument();
+  });
+
+  describe("qabul mezonlari", () => {
+    const cancelButton = () => screen.getByRole("button", { name: "Batchni bekor qilish" });
+    const fillCancelForm = async (user: ReturnType<typeof userEvent.setup>, reason: string) => {
+      await user.type(screen.getByLabelText("batch-id"), "18");
+      await user.type(screen.getByLabelText("Bekor qilish sababi"), reason);
+    };
+
+    it("⭐ render: sabab 10 belgidan qisqa bo'lsa \"Bekor qilish\" tugmasi disabled (chegara 9/10, bo'sh joy sanalmaydi)", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<BranchOpsPage />);
+      await fillCancelForm(user, "123456789");
+      expect(cancelButton()).toBeDisabled();
+
+      await user.type(screen.getByLabelText("Bekor qilish sababi"), "0");
+      expect(cancelButton()).toBeEnabled();
+
+      await user.clear(screen.getByLabelText("Bekor qilish sababi"));
+      await user.type(screen.getByLabelText("Bekor qilish sababi"), "   qisqa      ");
+      expect(cancelButton()).toBeDisabled();
+      expect(apiPostMock).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["satr", "reason must be longer than or equal to 10 characters", "reason must be longer than or equal to 10 characters"],
+      ["massiv (class-validator)", ["reason must be a string", "reason must be longer than or equal to 10 characters"], "reason must be a string, reason must be longer than or equal to 10 characters"],
+    ])("⭐ integratsiya: 400 javobda xato Alert'i, matni serverdan kelgan message (%s)", async (_kind, message, expected) => {
+      apiPostMock.mockRejectedValue({ isAxiosError: true, response: { status: 400, data: { statusCode: 400, message } } });
+      const user = userEvent.setup();
+      renderWithProviders(<BranchOpsPage />);
+      await fillCancelForm(user, "Noto'g'ri viloyatga yuborilgan");
+      await user.click(cancelButton());
+      await user.click(await screen.findByRole("button", { name: "Ha, bekor qilish" }));
+
+      await waitFor(() => expect(document.querySelector(".ant-alert-error")).not.toBeNull());
+      const alert = document.querySelector<HTMLElement>(".ant-alert-error")!;
+      expect(alert).toHaveTextContent("Partiyani bekor qilib bo'lmadi");
+      expect(alert).toHaveTextContent(expected);
+      expect(document.querySelector(".ant-alert-success")).toBeNull();
+    });
+
+    it("⭐ integratsiya: {statusCode,message,data:[{id,name,new_orders_count}]} — jadvalda 1 qator", async () => {
+      apiGetMock.mockResolvedValue({
+        data: {
+          statusCode: 200,
+          message: "Branches with NEW orders",
+          data: [{ id: "12", name: "Urganch filiali", new_orders_count: 7 }],
+        },
+      });
+      renderWithProviders(<BranchOpsPage />);
+
+      await waitFor(() =>
+        expect(document.querySelectorAll(".ant-table-tbody tr.ant-table-row")).toHaveLength(1),
+      );
+      const cells = Array.from(
+        document.querySelectorAll(".ant-table-tbody tr.ant-table-row td"),
+        (cell) => cell.textContent,
+      );
+      expect(cells).toEqual(["12", "Urganch filiali", "7"]);
+    });
   });
 });

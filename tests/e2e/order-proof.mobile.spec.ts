@@ -1,4 +1,4 @@
-import { expect, test, type Route } from "@playwright/test";
+import { expect, test, type Locator, type Route } from "@playwright/test";
 
 /**
  * BUYURTMA DALILLARI — detal sahifasi, 390px.
@@ -91,6 +91,25 @@ const mockApi = async (page: import("@playwright/test").Page, keys: string[]) =>
     return { leaked, fileCalls };
 };
 
+/**
+ * Lightbox antd Modal'da — ochilishda "zoom" animatsiyasi bor. O'lcham animatsiya
+ * tugagach (ketma-ket ikki o'lchov bir xil) olinadi, aks holda yuklangan mashinada
+ * rasm hali kichrayib turgan paytda o'lchanadi (flaky).
+ */
+const settledBox = async (locator: Locator) => {
+  let previous = "";
+  await expect
+    .poll(async () => {
+      const box = await locator.boundingBox();
+      const current = box ? [box.x, box.y, box.width, box.height].map(Math.round).join(",") : "";
+      const settled = current !== "" && current === previous;
+      previous = current;
+      return settled;
+    }, { intervals: [100] })
+    .toBe(true);
+  return (await locator.boundingBox())!;
+};
+
 test.describe("Buyurtma dalillari — 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 
@@ -108,7 +127,7 @@ test.describe("Buyurtma dalillari — 390px", () => {
     await card.locator("button[aria-label^='Dalilni ochish']").click();
     const big = page.getByTestId("proof-lightbox").locator("img");
     await expect(big).toBeVisible();
-    const large = (await big.boundingBox())!;
+    const large = await settledBox(big);
     expect(large.width).toBeGreaterThan(small.width);
     expect(large.x + large.width).toBeLessThanOrEqual(390);
     expect(fileCalls).toEqual([`files/${ORDER_95_KEY}`]);
@@ -135,7 +154,7 @@ test.describe("Buyurtma dalillari — 390px", () => {
     await card.locator("button[aria-label^='Dalilni ochish']").first().click();
     const lightbox = page.getByTestId("proof-lightbox");
     await expect(lightbox.locator("img")).toBeVisible();
-    const box = (await lightbox.locator("img").boundingBox())!;
+    const box = await settledBox(lightbox.locator("img"));
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(390);
     await expect(page.getByText("1 / 2")).toBeVisible();

@@ -42,8 +42,24 @@ export const ORDER_96 = {
   items: [],
 };
 
-export const mockOrderDetailApi = async (page: Page, order: Record<string, unknown> = ORDER_96) => {
+export interface OrderDetailMockOptions {
+  /** `auth/my-profile` javobi (sukut — admin). */
+  profile?: Record<string, unknown>;
+  /** Ruxsat berilgan yozuvchi so'rov: qiymat qaytarsa — javob shu, so'rov `writes` ga yoziladi. */
+  onWrite?: (method: string, path: string) => unknown;
+  /** `GET orders/:id/tracking` hodisalari (har so'rovda chaqiriladi — o'zgarishi mumkin). */
+  tracking?: () => unknown[];
+}
+
+export const mockOrderDetailApi = async (
+  page: Page,
+  order: Record<string, unknown> = ORDER_96,
+  options: OrderDetailMockOptions = {},
+) => {
   const leaked: string[] = [];
+  const writes: string[] = [];
+  /** Backendga ketgan barcha so'rovlar tartibi bilan (`GET orders/96`, `POST ...`). */
+  const requests: string[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -51,14 +67,24 @@ export const mockOrderDetailApi = async (page: Page, order: Record<string, unkno
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
+    requests.push(`${request.method()} ${path}`);
     if (path === "auth/my-profile") {
-      return reply(route, wrap({ id: "1", role: "admin", name: "E2E admin", status: "active" }));
+      return reply(route, wrap(options.profile ?? { id: "1", role: "admin", name: "E2E admin", status: "active" }));
     }
     if (path === `orders/${order.id}`) return reply(route, wrap(order));
+    if (path === `orders/${order.id}/tracking` && options.tracking) {
+      const events = options.tracking();
+      return reply(route, { data: events, total: events.length, page: 1, limit: 20 });
+    }
     if (path === "users/93") {
       return reply(route, wrap({ id: "93", name: "Xorazm Courier", phone_number: "+998970000090" }));
     }
     if (request.method() !== "GET") {
+      const allowed = options.onWrite?.(request.method(), path);
+      if (allowed !== undefined) {
+        writes.push(`${request.method()} ${path}`);
+        return reply(route, allowed);
+      }
       leaked.push(`${request.method()} ${path}`);
       return reply(route, { message: "e2e: yozish taqiqlangan" }, 403);
     }
@@ -72,7 +98,7 @@ export const mockOrderDetailApi = async (page: Page, order: Record<string, unkno
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
-  return { leaked };
+  return { leaked, writes, requests };
 };
 
 export const openOrderDetail = async (page: Page, id = "96") => {

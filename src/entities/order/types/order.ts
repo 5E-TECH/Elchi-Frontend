@@ -60,6 +60,10 @@ export interface OrderListItem {
      * ularni bermaydi — imzolangan URL `GET files/:key` (JWT) orqali olinadi.
      */
     proof_files?: string[] | null;
+    /** HQ marketga qaytarishni boshlagan (`POST orders/:id/initiate-return`). */
+    return_requested?: boolean;
+    /** Qaytarish sababi (initiate-return `reason`). */
+    return_reason?: string | null;
     createdAt: string;
     updatedAt: string;
     deleted: boolean;

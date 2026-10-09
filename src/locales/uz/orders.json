@@ -51,6 +51,7 @@
   "statusCancelled": "Bekor qilingan",
   "statusCancelledSent": "Bekor qilingan — jo'natilgan",
   "statusClosed": "Yopildi",
+  "statusReturnedToMarket": "Marketga qaytarilgan",
   "filterMarket": "Market",
   "filterCourier": "Kuryer",
   "filterRegion": "Viloyat",
@@ -276,7 +277,9 @@
       "cancelledPostCreated": "{{actor}} bekor qilingan buyurtmani qaytarish pochtasiga qo‘shib jo‘natdi",
       "cancelledPostReceivedAtBranch": "{{actor}} bekor qilingan buyurtmani courierdan qabul qildi",
       "cancelledPostReceivedAtHq": "{{actor}} bekor qilingan buyurtmani marketga topshirish uchun HQ’da qabul qildi",
-      "cancelledOrderHandedToMarket": "{{actor}} bekor qilingan buyurtmani {{market}}ga QR tasdiq bilan topshirdi"
+      "cancelledOrderHandedToMarket": "{{actor}} bekor qilingan buyurtmani {{market}}ga QR tasdiq bilan topshirdi",
+      "returnInitiated": "{{actor}} buyurtmani marketga qaytarishni boshladi. Sabab: {{reason}}",
+      "returnedToMarketByActor": "{{actor}} buyurtmani {{market}}ga QR tasdiq bilan topshirdi"
     },
     "roleValue": {
       "superadmin": "Super Admin",
@@ -299,7 +302,9 @@
       "cancelled_sent": "Bekor qilingan, jo'natilgan",
       "paid": "To'langan",
       "partly_paid": "Qisman to'langan",
-      "closed": "Yopilgan"
+      "closed": "Yopilgan",
+      "waiting_customer": "Mijoz kutilmoqda",
+      "returned_to_market": "Marketga qaytarilgan"
     },
     "notes": {
       "order_created": "Buyurtma yaratildi",
@@ -324,7 +329,9 @@
       "waiting": "Kutilmoqda",
       "courierAssigned": "Courierga biriktirildi",
       "cancelledPostCreated": "Bekor buyurtma jo‘natildi",
-      "cancelledPostReceived": "Bekor buyurtma qabul qilindi"
+      "cancelledPostReceived": "Bekor buyurtma qabul qilindi",
+      "returnRequested": "Qaytarish so'raldi",
+      "returnedToMarket": "Marketga qaytarildi"
     },
     "newestFirst": "{{count}} ta yozuv — eng yangisi tepada",
     "expand": "Tarixni ko'rsatish",
@@ -482,5 +489,25 @@
   "openOrderRow": "Buyurtma №{{id}}, {{name}}",
   "orderActionError": "Amalni bajarib bo'lmadi. Qayta urinib ko'ring.",
   "rollbackCancelPostWarning": "Buyurtma bekor qilindi, lekin bekor qilinganlar pochtasiga qo'shilmadi. Uni pochtaga qo'lda qo'shing.",
-  "extraCostHomeNotAllowed": "Uyga yetkazishda qo'shimcha xarajat yozilmaydi — uy tarifi allaqachon yuqori."
+  "extraCostHomeNotAllowed": "Uyga yetkazishda qo'shimcha xarajat yozilmaydi — uy tarifi allaqachon yuqori.",
+  "returnRequested": "Qaytarish so'ralgan",
+  "returnRequestedReason": "Sabab: {{reason}}",
+  "returnInitiate": "Marketga qaytarish",
+  "returnInitiateTitle": "#{{id}} — marketga qaytarish",
+  "returnInitiateHint": "Buyurtma qaytarish so'ralgan deb belgilanadi. Filial uni marketga topshiradi.",
+  "returnReasonLabel": "Qaytarish sababi",
+  "returnReasonPlaceholder": "Masalan: mijoz qabul qilmadi",
+  "returnReasonRequired": "Qaytarish sababini yozing",
+  "returnInitiateSubmit": "Qaytarishni boshlash",
+  "returnInitiateSuccess": "Qaytarish so'rovi yuborildi",
+  "returnHandover": "Marketga topshirildi",
+  "returnHandoverTitle": "#{{id}} — marketga topshirish",
+  "returnHandoverHint": "Market egasi ilovasida ko'rsatgan QR kodni skanerlang (Bekor qilinganlar → Qabul qilish). Ruxsat 5 daqiqa amal qiladi.",
+  "returnHandoverScan": "Kamera bilan skanerlash",
+  "returnHandoverManualLabel": "Yoki QR kodni skaner bilan kiriting",
+  "returnHandoverInvalidQr": "Bu market QR kodi emas (MCR- bilan boshlanishi kerak)",
+  "returnHandoverSubmit": "Topshirishni tasdiqlash",
+  "returnHandoverAuthorized": "Market QR qabul qilindi. Topshirishni qayta tasdiqlang.",
+  "returnHandoverRetry": "Qayta urinish",
+  "returnHandoverSuccess": "Buyurtma marketga topshirildi"
 }
