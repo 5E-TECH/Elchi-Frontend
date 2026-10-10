@@ -12,23 +12,37 @@ import ProofGallery from "./ProofGallery";
  */
 
 const apiGet = vi.hoisted(() => vi.fn());
-vi.mock("../../../shared/api/api", () => ({ api: { get: apiGet } }));
+vi.mock("../../../shared/api/api", () => ({ api: { get: apiGet }, LONG_REQUEST_TIMEOUT_MS: 120_000 }));
 
 const IMG = "proof-1784557173685-10818f3a-6482-4bb3-b092-f85b18057d9b-Screenshot from 2025.png";
 const VIDEO = "proof-1784557173686-20818f3a-6482-4bb3-b092-f85b18057d9b-yetkazish.mp4";
 const BROKEN = "proof-1784557173687-30818f3a-6482-4bb3-b092-f85b18057d9b-ochirilgan.jpg";
 
 const signed = (key: string) => `https://cdn.elchipochta.uz/files/${encodeURIComponent(key)}?X-Amz-Signature=abc`;
+const blobUrl = (key: string) => `blob:http://localhost/${encodeURIComponent(key)}`;
+const contentPath = (key: string) => `files/${encodeURIComponent(key)}/content`;
+const httpError = (status: number) => Object.assign(new Error(String(status)), { response: { status } });
+
+// jsdom'da `URL.createObjectURL` yo'q — blob qaysi kalitdan kelganini URL'da saqlaymiz.
+const createObjectURL = vi.fn((blob: Blob & { key?: string }) => blobUrl(blob.key ?? "?"));
+const revokeObjectURL = vi.fn();
+Object.assign(URL, { createObjectURL, revokeObjectURL });
+
+const keyedBlob = (key: string) => Object.assign(new Blob(["x"]), { key });
 
 const tile = (name: string) => document.querySelector<HTMLButtonElement>(`button[aria-label="Dalilni ochish: ${name}"]`);
 
 describe("ProofGallery", () => {
   beforeEach(() => {
     apiGet.mockReset();
+    createObjectURL.mockClear();
+    // Yangi backend: `files/:key/content` — JWT + egalik tekshiruvi, baytlarni qaytaradi.
     apiGet.mockImplementation((url: string) => {
-      const key = decodeURIComponent(String(url).replace(/^files\//, ""));
-      if (key === BROKEN) return Promise.reject(Object.assign(new Error("Forbidden"), { response: { status: 403 } }));
-      return Promise.resolve({ data: { statusCode: 200, data: { url: signed(key), expires_in: 3600 } } });
+      const match = /^files\/(.+)\/content$/.exec(String(url));
+      const key = decodeURIComponent(match?.[1] ?? "");
+      if (key === BROKEN) return Promise.reject(httpError(403));
+      if (match) return Promise.resolve({ data: keyedBlob(key) });
+      return Promise.reject(new Error(`unexpected ${url}`));
     });
   });
 
@@ -38,16 +52,39 @@ describe("ProofGallery", () => {
     expect(apiGet).not.toHaveBeenCalled();
   });
 
-  it("⭐ har kalit uchun IMZOLANGAN URL `GET files/:key` dan olinadi — ochiq files/view EMAS", async () => {
+  it("⭐ fayl baytlari JWT bilan `GET files/:key/content` dan (blob:) — MinIO ichki URL va ochiq files/view EMAS", async () => {
     renderWithProviders(<ProofGallery keys={[IMG, VIDEO]} />);
 
     await waitFor(() => expect(tile("Screenshot from 2025.png")?.querySelector("img")).toBeTruthy());
-    expect(tile("Screenshot from 2025.png")!.querySelector("img")!.getAttribute("src")).toBe(signed(IMG));
+    expect(tile("Screenshot from 2025.png")!.querySelector("img")!.getAttribute("src")).toBe(blobUrl(IMG));
 
     const urls = apiGet.mock.calls.map(([url]) => String(url));
-    expect(urls).toEqual([`files/${encodeURIComponent(IMG)}`, `files/${encodeURIComponent(VIDEO)}`]);
+    expect(urls).toEqual([contentPath(IMG), contentPath(VIDEO)]);
     expect(urls.some((url) => url.includes("files/view"))).toBe(false);
-    expect(apiGet.mock.calls[0][1]).toEqual({ params: { expires_in: 3600 } });
+    expect(apiGet.mock.calls[0][1]).toMatchObject({ responseType: "blob" });
+  });
+
+  it("⭐ content endpoint hali yo'q (404) — imzolangan URL `GET files/:key` ga o'tadi", async () => {
+    apiGet.mockImplementation((url: string) => {
+      if (String(url).endsWith("/content")) return Promise.reject(httpError(404));
+      const key = decodeURIComponent(String(url).replace(/^files\//, ""));
+      return Promise.resolve({ data: { statusCode: 200, data: { url: signed(key), expires_in: 3600 } } });
+    });
+    renderWithProviders(<ProofGallery keys={[IMG]} />);
+
+    await waitFor(() => expect(tile("Screenshot from 2025.png")?.querySelector("img")).toBeTruthy());
+    expect(tile("Screenshot from 2025.png")!.querySelector("img")!.getAttribute("src")).toBe(signed(IMG));
+    expect(apiGet.mock.calls.map(([url]) => String(url))).toEqual([contentPath(IMG), `files/${encodeURIComponent(IMG)}`]);
+    expect(apiGet.mock.calls[1][1]).toEqual({ params: { expires_in: 3600 } });
+  });
+
+  it("⭐ URL olindi, lekin brauzer ocha olmadi (prod: minio:9000) — buzilgan rasm emas, \"ochib bo'lmadi\"", async () => {
+    renderWithProviders(<ProofGallery keys={[IMG]} />);
+    await waitFor(() => expect(tile("Screenshot from 2025.png")?.querySelector("img")).toBeTruthy());
+
+    fireEvent.error(tile("Screenshot from 2025.png")!.querySelector("img")!);
+    expect(tile("Screenshot from 2025.png")!.querySelector("img")).toBeNull();
+    expect(within(tile("Screenshot from 2025.png")!).getByText("Faylni ochib bo'lmadi")).toBeInTheDocument();
   });
 
   it("rasm — <img>, video — <video> + play belgisi (kengaytma bo'yicha)", async () => {
@@ -57,7 +94,7 @@ describe("ProofGallery", () => {
     expect(tile("Screenshot from 2025.png")!.dataset.proofKind).toBe("image");
     const video = tile("yetkazish.mp4")!;
     expect(video.dataset.proofKind).toBe("video");
-    expect(video.querySelector("video")!.getAttribute("src")).toBe(signed(VIDEO));
+    expect(video.querySelector("video")!.getAttribute("src")).toBe(blobUrl(VIDEO));
     expect(video.querySelector("video")!.hasAttribute("controls")).toBe(false);
     // .mp4 uchun <img> UMUMAN yo'q — faqat <video>.
     expect(video.querySelector("img")).toBeNull();
@@ -80,18 +117,18 @@ describe("ProofGallery", () => {
 
     fireEvent.click(tile("Screenshot from 2025.png")!);
     const lightbox = await screen.findByTestId("proof-lightbox");
-    expect(lightbox.querySelector("img")!.getAttribute("src")).toBe(signed(IMG));
+    expect(lightbox.querySelector("img")!.getAttribute("src")).toBe(blobUrl(IMG));
     expect(screen.getByText("1 / 2")).toBeInTheDocument();
     // Asl faylni yangi oynada ochish havolasi — imzolangan URL, xavfsiz `rel`.
     const original = within(lightbox).getByText("Yangi oynada ochish").closest("a")!;
-    expect(original.getAttribute("href")).toBe(signed(IMG));
+    expect(original.getAttribute("href")).toBe(blobUrl(IMG));
     expect(original.getAttribute("rel")).toBe("noopener noreferrer");
 
     fireEvent.click(lightbox.querySelector('button[aria-label="Keyingi"]')!);
     await waitFor(() => expect(screen.getByTestId("proof-lightbox").querySelector("video")).toBeTruthy());
     const playing = screen.getByTestId("proof-lightbox").querySelector("video")!;
     expect(screen.getByTestId("proof-lightbox").querySelector("img")).toBeNull();
-    expect(playing.getAttribute("src")).toBe(signed(VIDEO));
+    expect(playing.getAttribute("src")).toBe(blobUrl(VIDEO));
     expect(playing.hasAttribute("controls")).toBe(true);
     expect(screen.getByText("2 / 2")).toBeInTheDocument();
 

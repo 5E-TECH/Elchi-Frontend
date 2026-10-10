@@ -26,6 +26,13 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
   const { t } = useTranslation("orders");
   const urls = useProofFileUrls(keys);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // URL olindi, lekin brauzer uni ocha olmadi (masalan MinIO tashqariga yopiq) —
+  // buzilgan rasm belgisi o'rniga "ochib bo'lmadi".
+  const [brokenUrls, setBrokenUrls] = useState<ReadonlySet<string>>(() => new Set());
+  const markBroken = useCallback(
+    (url: string) => setBrokenUrls((current) => (current.has(url) ? current : new Set(current).add(url))),
+    [],
+  );
 
   const close = useCallback(() => setOpenIndex(null), []);
   const step = useCallback(
@@ -49,6 +56,7 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
   const openKey = openIndex === null ? null : keys[openIndex];
   const openQuery = openIndex === null ? null : urls[openIndex];
   const openUrl = openQuery?.data ?? null;
+  const openFailed = Boolean(openQuery?.isError || (openUrl && brokenUrls.has(openUrl)));
   const openKind = openKey ? proofKind(openKey) : "file";
 
   return (
@@ -57,6 +65,7 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
         {keys.map((key, index) => {
           const query = urls[index];
           const url = query?.data ?? null;
+          const failed = Boolean(query?.isError || (url && brokenUrls.has(url)));
           const kind = proofKind(key);
           const name = proofFileName(key);
           return (
@@ -69,7 +78,7 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
               data-proof-kind={kind}
               className={`${TILE} cursor-pointer hover:border-main/50`}
             >
-              {query?.isError ? (
+              {failed ? (
                 <span className="flex flex-col items-center gap-1 p-2 text-center text-[11px] text-red-600 dark:text-red-400">
                   <AlertTriangle size={18} />
                   {t("proofLoadError")}
@@ -77,7 +86,13 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
               ) : !url ? (
                 <Loader2 size={18} className="animate-spin text-gray-400" />
               ) : kind === "image" ? (
-                <img src={url} alt={name} loading="lazy" className="h-full w-full object-cover" />
+                <img
+                  src={url}
+                  alt={name}
+                  loading="lazy"
+                  onError={() => markBroken(url)}
+                  className="h-full w-full object-cover"
+                />
               ) : kind === "video" ? (
                 <>
                   <video
@@ -85,6 +100,7 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
                     muted
                     playsInline
                     preload="metadata"
+                    onError={() => markBroken(url)}
                     className="pointer-events-none h-full w-full object-cover"
                   />
                   <span className="absolute inset-0 flex items-center justify-center bg-black/25">
@@ -126,7 +142,7 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
       >
         <div className="flex flex-col gap-3" data-testid="proof-lightbox">
           <div className="relative flex min-h-[200px] items-center justify-center rounded-xl bg-black/90">
-            {openQuery?.isError ? (
+            {openFailed ? (
               <span className="flex flex-col items-center gap-2 p-6 text-sm text-red-300">
                 <AlertTriangle size={22} />
                 {t("proofLoadError")}
@@ -134,9 +150,21 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
             ) : !openUrl ? (
               <Loader2 size={22} className="animate-spin text-white/70" />
             ) : openKind === "image" ? (
-              <img src={openUrl} alt={openKey ? proofFileName(openKey) : ""} className="max-h-[75vh] w-full object-contain" />
+              <img
+                src={openUrl}
+                alt={openKey ? proofFileName(openKey) : ""}
+                onError={() => markBroken(openUrl)}
+                className="max-h-[75vh] w-full object-contain"
+              />
             ) : openKind === "video" ? (
-              <video src={openUrl} controls autoPlay playsInline className="max-h-[75vh] w-full" />
+              <video
+                src={openUrl}
+                controls
+                autoPlay
+                playsInline
+                onError={() => markBroken(openUrl)}
+                className="max-h-[75vh] w-full"
+              />
             ) : (
               <span className="flex flex-col items-center gap-2 p-6 text-sm text-white/80">
                 <FileText size={28} />
@@ -166,7 +194,7 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
             ) : null}
           </div>
 
-          {openUrl ? (
+          {openUrl && !openFailed ? (
             <a
               href={openUrl}
               target="_blank"

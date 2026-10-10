@@ -367,6 +367,8 @@ export const API_ENDPOINTS = {
     PDF: "files/pdf", // POST generate PDF
     QR: "files/qr", // POST generate QR
     BY_KEY: (key: string) => `files/${key}`, // GET signed URL / DELETE
+    // GET faylning o'zi (JWT + egalik tekshiruvi) — maxfiy dalillar uchun; MinIO brauzerga ochiq emas.
+    CONTENT: (key: string) => `files/${key}/content`,
   },
 
   // ── Excel export (binary .xlsx — don't JSON-parse) — guide §10 ───────────

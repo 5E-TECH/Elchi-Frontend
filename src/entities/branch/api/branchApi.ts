@@ -11,6 +11,7 @@ import type {
   SentBatchBranchParams,
   SentBatchBranchRow,
 } from "../model/types";
+import { extractPaginationMeta } from "../../../shared/lib/paginationMeta";
 
 const normalizeBranchType = (value: unknown): BranchType | undefined => {
   const normalized = String(value ?? "").toUpperCase();
@@ -216,22 +217,17 @@ const flattenBranchItems = (
     ];
   });
 
-const normalizeBranchList = (value: unknown, params?: BranchParams): PaginatedResponse<Branch> => {
-  const response = value as
-    | PaginatedResponse<Branch>
-    | { data?: Branch[] | { items?: Branch[]; total?: number; page?: number; limit?: number }; total?: number; page?: number; limit?: number };
-
-  const list = flattenBranchItems(extractArray<Record<string, any>>(response));
+export const normalizeBranchList = (value: unknown, params?: BranchParams): PaginatedResponse<Branch> => {
+  const list = flattenBranchItems(extractArray<Record<string, any>>(value));
+  // Backend: `data: { items, meta: { page, limit, total, totalPages } }` — jami `meta` da.
+  // Ilgari `meta` o'qilmasdi va jami JORIY sahifa uzunligiga tushib qolardi (12 > 13-filial yo'qolardi).
+  const meta = extractPaginationMeta(value);
 
   return {
     data: list.map(normalizeBranch),
-    total: Number(
-      response?.total ??
-        (response?.data as { total?: number } | undefined)?.total ??
-        list.length,
-    ),
-    page: Number(response?.page ?? (response?.data as { page?: number } | undefined)?.page ?? params?.page ?? 1),
-    limit: Number(response?.limit ?? (response?.data as { limit?: number } | undefined)?.limit ?? params?.limit ?? 10),
+    total: meta.total ?? list.length,
+    page: meta.page ?? params?.page ?? 1,
+    limit: meta.limit ?? params?.limit ?? 10,
   };
 };
 

@@ -49,7 +49,36 @@ export interface OrderDetailMockOptions {
   onWrite?: (method: string, path: string) => unknown;
   /** `GET orders/:id/tracking` hodisalari (har so'rovda chaqiriladi — o'zgarishi mumkin). */
   tracking?: () => unknown[];
+  /** Qo'shimcha buyurtmalar (masalan ota buyurtma) — `GET orders/:id` ularni ham qaytaradi. */
+  extraOrders?: Record<string, unknown>[];
 }
+
+/** Karta dalilidagi `GET /orders/95` javobi (sotilgan, kuryer qo'lida). */
+export const ORDER_95 = {
+  id: "95",
+  status: "sold",
+  where_deliver: "address",
+  total_price: 150000,
+  to_be_paid: 0,
+  paid_amount: 150000,
+  comment: null,
+  address: "Chilonzor 19-kvartal, 45-uy",
+  customer: { id: "c1", name: "Aliyev Vali", phone_number: "+998901234567" },
+  market: { id: "m7", name: "Kimdur Kimdur", phone_number: "+998992222222" },
+  market_tariff: 70000,
+  courier_tariff: 25000,
+  courier_share: 25000,
+  branch_share: 0,
+  courier_id: "93",
+  post_id: "78",
+  holder_type: "COURIER",
+  holder_courier_id: "93",
+  sold_at: "1784557174975",
+  createdAt: "2026-07-20T08:38:49.865Z",
+  branch: { id: "1", name: "HQ Toshkent" },
+  parent_order_id: null,
+  items: [],
+};
 
 export const mockOrderDetailApi = async (
   page: Page,
@@ -72,6 +101,8 @@ export const mockOrderDetailApi = async (
       return reply(route, wrap(options.profile ?? { id: "1", role: "admin", name: "E2E admin", status: "active" }));
     }
     if (path === `orders/${order.id}`) return reply(route, wrap(order));
+    const extra = options.extraOrders?.find((item) => path === `orders/${item.id}`);
+    if (extra) return reply(route, wrap(extra));
     if (path === `orders/${order.id}/tracking` && options.tracking) {
       const events = options.tracking();
       return reply(route, { data: events, total: events.length, page: 1, limit: 20 });

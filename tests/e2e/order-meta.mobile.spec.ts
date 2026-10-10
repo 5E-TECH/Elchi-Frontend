@@ -37,6 +37,24 @@ test.describe("Buyurtma ma'lumotlari — 390px", () => {
     expect(leaked).toEqual([]);
   });
 
+  test("⭐ ota buyurtma banneri: matn so'zma-so'z o'ralmaydi, havola ekranda va bosiladi", async ({ page }) => {
+    const { leaked } = await mockOrderDetailApi(page);
+    await openOrderDetail(page);
+
+    const banner = page.getByTestId("order-parent-banner");
+    const text = page.getByTestId("order-parent-banner-text");
+    const link = banner.locator("a");
+    await expect(text).toHaveText("Bu buyurtma #95 ning qisman sotuvidan qolgan qismi");
+    const [bannerBox, textBox, linkBox] = await Promise.all([banner.boundingBox(), text.boundingBox(), link.boundingBox()]);
+    // Matn bannerning deyarli butun kengligini oladi (ilgari ~50px ustun bo'lib qolardi).
+    expect(textBox!.width).toBeGreaterThan(bannerBox!.width * 0.6);
+    const lineHeight = await text.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));
+    expect(Math.round(textBox!.height / lineHeight)).toBeLessThanOrEqual(2);
+    expect(linkBox!.x + linkBox!.width).toBeLessThanOrEqual(390);
+    await expect(link).toHaveAttribute("href", "/orders/edit/95");
+    expect(leaked).toEqual([]);
+  });
+
   test.describe("brauzer UTC zonasida", () => {
     test.use({ timezoneId: "UTC" });
 
