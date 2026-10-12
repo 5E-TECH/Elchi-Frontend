@@ -22,6 +22,8 @@ import {
   Truck,
   RotateCcw,
   Paperclip,
+  Undo2,
+  PackageCheck,
 } from "lucide-react";
 import {
   Card,
@@ -49,7 +51,13 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
-import { ProofGallery, readProofFiles } from "../../../entities/order";
+import { ProofGallery, readProofFiles, ReturnRequestedBadge } from "../../../entities/order";
+import {
+  canInitiateReturn,
+  canMarkReturnedToMarket,
+  InitiateReturnModal,
+  MarkReturnedModal,
+} from "../../../features/order-return";
 import { OrderMeta, OrderParentBanner, readOrderMeta } from "../../../widgets/order-meta";
 import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
@@ -64,7 +72,7 @@ import {
   buildOrderUpdatePayload,
   getAddressUpdateValidationError,
   getCustomerUpdateValidationError,
-  isActionableOrderStatus,
+  canRunCourierAction,
   isOrderReceivedOrLater,
   isOrderSentToBranch,
   normalizeOrderStatus,
@@ -310,6 +318,11 @@ const STATUS_CONFIG: Record<string, { labelKey: string; cls: string; ns?: "newOr
     ns: "orders",
     cls: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
   },
+  "returned to market": {
+    labelKey: "statusReturnedToMarket",
+    ns: "orders",
+    cls: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
+  },
   closed: {
     labelKey: "statusClosed",
     ns: "orders",
@@ -409,6 +422,11 @@ const NewOrderUpdate = () => {
   // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
   const [isApprovalRequested, setIsApprovalRequested] = useState(false);
   const [isRollbackConfirmOpen, setIsRollbackConfirmOpen] = useState(false);
+  const [isInitiateReturnOpen, setIsInitiateReturnOpen] = useState(false);
+  const [isMarkReturnedOpen, setIsMarkReturnedOpen] = useState(false);
+  // Tarix (tracking) o'zi qayta so'ralmaydi — qaytarish amalidan keyin qayta mount.
+  const [trackingVersion, setTrackingVersion] = useState(0);
+  const refreshTracking = useCallback(() => setTrackingVersion((version) => version + 1), []);
 
   // ─── Data fetching ───────────────────────────────────────────────────────────
   const {
@@ -475,11 +493,14 @@ const NewOrderUpdate = () => {
     role === "manager" &&
     (branchType === "REGIONAL" || branchType === "HYBRID");
   const canUseCourierActions =
-    isRegionalManager && isActionableOrderStatus(order?.status ?? "");
+    isRegionalManager && canRunCourierAction(order);
   // fix3b LC-04: kuryer qo'lidagi buyurtmani menejer sotmaydi (backend 400
   // "Bu buyurtma kuryer qo'lida..."). Bekor qilish ochiq qoladi.
   const canManagerSellOrder = canUseCourierActions && !isCourierHeldOrder(order);
   const canRollbackSoldOrder = isRegionalManager && normalizedStatus === "sold";
+  // Marketga qaytarish: HQ boshlaydi, filial market QR bilan topshiradi.
+  const canStartReturn = canInitiateReturn(role, order);
+  const canHandOverReturn = canMarkReturnedToMarket(role, order);
 
   const regionName = order?.district?.region?.name ?? order?.region?.name ?? "—";
   const districtName = order?.district?.name ?? "—";
@@ -931,6 +952,7 @@ const NewOrderUpdate = () => {
                     ? t(statusCfg.labelKey, { ns: statusCfg.ns ?? "orders", defaultValue: order.status })
                     : order.status}
                 </span>
+                <ReturnRequestedBadge order={order} />
                 {canUseCourierActions && (
                   <>
                     {canManagerSellOrder && (
@@ -959,6 +981,28 @@ const NewOrderUpdate = () => {
                   >
                     <RotateCcw size={13} />
                     {t("restoreOrder", { ns: "orders" })}
+                  </button>
+                )}
+                {canStartReturn && (
+                  <button
+                    type="button"
+                    data-testid="initiate-return-button"
+                    onClick={() => setIsInitiateReturnOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                  >
+                    <Undo2 size={13} aria-hidden="true" />
+                    {t("returnInitiate", { ns: "orders" })}
+                  </button>
+                )}
+                {canHandOverReturn && (
+                  <button
+                    type="button"
+                    data-testid="mark-returned-button"
+                    onClick={() => setIsMarkReturnedOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                  >
+                    <PackageCheck size={13} aria-hidden="true" />
+                    {t("returnHandover", { ns: "orders" })}
                   </button>
                 )}
               </>
@@ -1198,6 +1242,7 @@ const NewOrderUpdate = () => {
 
       {orderId ? (
         <OrderTracking
+          key={trackingVersion}
           orderId={orderId}
           currentStatus={order?.status}
           access={trackingAccess}
@@ -1353,6 +1398,23 @@ const NewOrderUpdate = () => {
         awaitingApproval={isApprovalRequested}
       />
 
+      {/* Faqat ochilganda mount — yopiq oyna so'rov hook'larini yaratmaydi. */}
+      {isInitiateReturnOpen && order?.id ? (
+        <InitiateReturnModal
+          open
+          orderId={String(order.id)}
+          onClose={() => setIsInitiateReturnOpen(false)}
+          onDone={refreshTracking}
+        />
+      ) : null}
+      {isMarkReturnedOpen && order?.id ? (
+        <MarkReturnedModal
+          open
+          orderId={String(order.id)}
+          onClose={() => setIsMarkReturnedOpen(false)}
+          onDone={refreshTracking}
+        />
+      ) : null}
       <PopupConfirm
         isOpen={isRollbackConfirmOpen}
         onClose={() => setIsRollbackConfirmOpen(false)}

@@ -7,7 +7,7 @@ vi.mock("../../../shared/api/instance", () => ({
 }));
 
 import { API_ENDPOINTS } from "../../../shared/api";
-import { getDispatchDestinations } from "./branchApi";
+import { getBranches, getDispatchDestinations, normalizeBranchList } from "./branchApi";
 
 // C5 javob shakli: { statusCode, message, data: { items, total } }.
 const envelope = (items: unknown[]) => ({
@@ -103,5 +103,100 @@ describe("getDispatchDestinations (GET /branches/dispatch-destinations)", () => 
     getMock.mockRejectedValue(error);
 
     await expect(getDispatchDestinations({ region_id: "12" })).rejects.toBe(error);
+  });
+});
+
+describe("getBranches (GET /branches) — sahifalash meta'dan", () => {
+  const branch = (id: number, name: string) => ({ id, name, code: `B-${id}`, type: "REGIONAL", status: "active" });
+  // Jonli API: GET /branches?page=1&limit=12 → 12 ta (Andijon..Namangan), meta.total = 13.
+  const PAGE_1 = Array.from({ length: 12 }, (_, index) => branch(index + 1, `Filial ${index + 1}`));
+
+  const listEnvelope = (items: unknown[], meta: Record<string, number>) => ({
+    data: { statusCode: 200, message: "Branches list", data: { items, meta } },
+  });
+
+  it("⭐ jami JORIY sahifa uzunligi emas, meta.total (12 emas — 13)", async () => {
+    getMock.mockResolvedValue(listEnvelope(PAGE_1, { page: 1, limit: 12, total: 13, totalPages: 2 }));
+    const result = await getBranches({ page: 1, limit: 12 });
+
+    expect(getMock).toHaveBeenCalledWith(API_ENDPOINTS.BRANCHES.BASE, { params: { page: 1, limit: 12 } });
+    expect(result.data).toHaveLength(12);
+    expect(result).toMatchObject({ total: 13, page: 1, limit: 12 });
+  });
+
+  it("⭐ 2-sahifa: HQ Toshkent yetib boriladigan (page meta'dan)", async () => {
+    getMock.mockResolvedValue(
+      listEnvelope([branch(13, "HQ Toshkent")], { page: 2, limit: 12, total: 13, totalPages: 2 }),
+    );
+    const result = await getBranches({ page: 2, limit: 12 });
+
+    expect(result.data.map((item) => item.name)).toEqual(["HQ Toshkent"]);
+    expect(result).toMatchObject({ total: 13, page: 2, limit: 12 });
+  });
+
+  it("karta rejimi (limit 8): jami 13 — 2 sahifa", async () => {
+    getMock.mockResolvedValue(listEnvelope(PAGE_1.slice(0, 8), { page: 1, limit: 8, total: 13, totalPages: 2 }));
+    const result = await getBranches({ page: 1, limit: 8 });
+
+    expect(result).toMatchObject({ total: 13, page: 1, limit: 8 });
+  });
+
+  it("meta yo'q eski javob — avvalgidek ro'yxat uzunligi va so'rov parametrlari", async () => {
+    getMock.mockResolvedValue({ data: { statusCode: 200, data: [branch(1, "A"), branch(2, "B")] } });
+    const result = await getBranches({ page: 3, limit: 24 });
+
+    expect(result).toMatchObject({ total: 2, page: 3, limit: 24 });
+  });
+});
+
+describe("normalizeBranchList — qabul mezonlari", () => {
+  const items = (count: number, from = 1) =>
+    Array.from({ length: count }, (_, index) => ({ id: index + from, name: `Filial ${index + from}`, status: "active" }));
+
+  it("⭐ unit: {data:{items:[...12], meta:{total:13,page:1,limit:12,totalPages:2}}} → total=13, page=1, limit=12", () => {
+    const result = normalizeBranchList({
+      data: { items: items(12), meta: { total: 13, page: 1, limit: 12, totalPages: 2 } },
+    });
+
+    expect(result.data).toHaveLength(12);
+    expect(result.total).toBe(13);
+    expect(result.page).toBe(1);
+    expect(result.limit).toBe(12);
+  });
+
+  describe("⭐ regressiya: eski (flat total) javob shakllari buzilmaydi", () => {
+    it("ildizda tekis: { data: [...], total, page, limit }", () => {
+      expect(normalizeBranchList({ data: items(12), total: 13, page: 1, limit: 12 })).toMatchObject({
+        total: 13,
+        page: 1,
+        limit: 12,
+      });
+    });
+
+    it("data ichida tekis: { data: { items, total, page, limit } }", () => {
+      expect(normalizeBranchList({ data: { items: items(12), total: 13, page: 2, limit: 12 } })).toMatchObject({
+        total: 13,
+        page: 2,
+        limit: 12,
+      });
+    });
+
+    it("tekis total satr bo'lsa ham son (\"13\" → 13)", () => {
+      expect(normalizeBranchList({ data: items(12), total: "13" }).total).toBe(13);
+    });
+
+    it("jami umuman yo'q — ro'yxat uzunligi va so'rov parametrlari", () => {
+      expect(normalizeBranchList({ data: items(3) }, { page: 4, limit: 24 })).toMatchObject({
+        total: 3,
+        page: 4,
+        limit: 24,
+      });
+    });
+
+    it("tekis total va meta birga kelsa — tekis (eski) qiymat ustun", () => {
+      expect(
+        normalizeBranchList({ data: { items: items(2), total: 20, meta: { total: 13 } } }).total,
+      ).toBe(20);
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
@@ -49,6 +49,7 @@ vi.mock("../../../entities/orders", () => ({
     PartlySellOrder: idleMutation,
     CancelOrder: idleMutation,
     RollbackOrder: idleMutation,
+    scanMarketCancelledQr: idleMutation,
   }),
 }));
 
@@ -332,3 +333,132 @@ describe("NewOrderUpdate — buyurtma ma'lumotlari (OrderMeta)", () => {
   });
 });
 
+
+describe("NewOrderUpdate — Sotish/Bekor qilish tugmalari (backend: WAITING + post_id)", () => {
+  // Hududiy menejer — tugmalar faqat shu rolga chiqadi.
+  const renderAsRegionalManager = () =>
+    renderWithProviders(
+      <Routes>
+        <Route path="/orders/edit/:orderId" element={<NewOrderUpdate />} />
+      </Routes>,
+      {
+        route: "/orders/edit/1251175",
+        preloadedState: {
+          role: { id: "manager-1", role: "manager", region: null, name: "manager" },
+          user: {
+            user: { id: "manager-1", role: "manager", branch: { id: "1", type: "REGIONAL" } },
+            isAuthenticated: true,
+            accessToken: null,
+            loading: false,
+            isAppInitializing: false,
+          },
+        } as never,
+      },
+    );
+  const actionButtons = () =>
+    Array.from(document.querySelectorAll("button"))
+      .map((button) => button.textContent?.trim())
+      .filter((text) => text === "Sotish" || text === "Bekor qilish");
+
+  afterEach(() => {
+    orderState.status = undefined;
+    orderState.extra = undefined;
+  });
+
+  it("⭐ waiting + post_id — Sotish va Bekor qilish chiqadi", () => {
+    orderState.status = "waiting";
+    orderState.extra = { post_id: "90" };
+    renderAsRegionalManager();
+    expect(actionButtons()).toEqual(["Sotish", "Bekor qilish"]);
+  });
+
+  it.each(["on the road", "new", "received"])(
+    "⭐ %s (post_id bor) — tugmalar YO'Q (backend 400 \"not in waiting status\")",
+    (status) => {
+      orderState.status = status;
+      orderState.extra = { post_id: "90" };
+      renderAsRegionalManager();
+      expect(actionButtons()).toEqual([]);
+    },
+  );
+
+  it("⭐ waiting, lekin post_id yo'q — tugmalar YO'Q (backend 400 \"Order has no post\")", () => {
+    orderState.status = "waiting";
+    orderState.extra = { post_id: null };
+    renderAsRegionalManager();
+    expect(actionButtons()).toEqual([]);
+  });
+});
+
+describe("NewOrderUpdate — marketga qaytarish (initiate-return / mark-returned-to-market)", () => {
+  afterEach(() => {
+    orderState.status = undefined;
+    orderState.extra = undefined;
+  });
+  const button = (testId: string) => document.querySelector<HTMLButtonElement>(`[data-testid="${testId}"]`);
+
+  it.each(["superadmin", "admin", "registrator"])("⭐ %s — waiting buyurtmada \"Marketga qaytarish\" → sabab oynasi", (role) => {
+    orderState.status = "waiting";
+    renderPage(role);
+    expect(button("initiate-return-button")).toHaveTextContent("Marketga qaytarish");
+    expect(button("mark-returned-button")).toBeNull();
+
+    fireEvent.click(button("initiate-return-button")!);
+    expect(screen.getByTestId("initiate-return-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("return-reason-input")).toBeInTheDocument();
+  });
+
+  it("⭐ waiting_customer da ham chiqadi; new / sold da yo'q", () => {
+    orderState.status = "waiting_customer";
+    const first = renderPage("admin");
+    expect(button("initiate-return-button")).not.toBeNull();
+    first.unmount();
+
+    for (const status of ["new", "sold"]) {
+      orderState.status = status;
+      const view = renderPage("admin");
+      expect(button("initiate-return-button"), status).toBeNull();
+      view.unmount();
+    }
+  });
+
+  it("manager / courier / market — \"Marketga qaytarish\" yo'q (backend 403)", () => {
+    orderState.status = "waiting";
+    for (const role of ["manager", "courier", "market"]) {
+      const view = renderPage(role);
+      expect(button("initiate-return-button"), role).toBeNull();
+      view.unmount();
+    }
+  });
+
+  it("⭐ return_requested — sarlavhada amber badge (sabab bilan), qaytarish tugmasi takrorlanmaydi", () => {
+    orderState.status = "waiting";
+    orderState.extra = { return_requested: true, return_reason: "Mijoz rad etdi" };
+    renderPage("admin");
+    const badge = screen.getByTestId("return-requested-badge");
+    expect(badge).toHaveTextContent("Qaytarish so'ralgan");
+    expect(badge).toHaveAttribute("aria-label", "Qaytarish so'ralgan. Sabab: Mijoz rad etdi");
+    expect(button("initiate-return-button")).toBeNull();
+    // Topshirish — filial roli, admin emas.
+    expect(button("mark-returned-button")).toBeNull();
+  });
+
+  it.each(["manager", "registrator"])("⭐ %s — return_requested bo'lsa \"Marketga topshirildi\" → QR oynasi", (role) => {
+    orderState.status = "waiting";
+    orderState.extra = { return_requested: true, return_reason: "Sabab" };
+    renderPage(role);
+    expect(button("mark-returned-button")).toHaveTextContent("Marketga topshirildi");
+
+    fireEvent.click(button("mark-returned-button")!);
+    expect(screen.getByTestId("mark-returned-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("mark-returned-qr-input")).toBeInTheDocument();
+  });
+
+  it("return_requested false (GET /orders/95) — badge ham, topshirish tugmasi ham yo'q", () => {
+    orderState.status = "waiting";
+    orderState.extra = { return_requested: false, return_reason: null };
+    renderPage("manager");
+    expect(screen.queryByTestId("return-requested-badge")).not.toBeInTheDocument();
+    expect(button("mark-returned-button")).toBeNull();
+  });
+});

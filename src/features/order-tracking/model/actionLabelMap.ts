@@ -14,4 +14,5 @@ export const actionLabelMap: Record<string, string> = {
   rollback: "tracking.action.rollback",
   sent: "tracking.action.sent",
   waiting: "tracking.action.waiting",
+  returned_to_market: "tracking.action.returnedToMarket",
 };

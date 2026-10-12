@@ -20,6 +20,7 @@ import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import OrderIdBadge from "../../../shared/ui/OrderIdBadge";
 import TableSkeleton from "../../../shared/ui/TableSkeleton";
 import OrderStatusBadge from "./OrderStatusBadge";
+import { ReturnRequestedBadge } from "../../../entities/order";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import type { RootState } from "../../../app/config/store";
@@ -217,7 +218,10 @@ const createColumns = (
         label: "Holat",
         sortable: true as const,
         render: (status: OrderListItem["status"], row: OrderListItem) => (
-            <OrderStatusBadge orderId={row.id} status={status} />
+            <span className="inline-flex flex-wrap items-center gap-1">
+                <OrderStatusBadge orderId={row.id} status={status} />
+                <ReturnRequestedBadge order={row} />
+            </span>
         ),
     },
     {
@@ -486,8 +490,8 @@ const OrdersTable = ({
                 ? "border-red-400/60 ring-1 ring-red-400/30 dark:border-red-400/60"
                 : "border-gray-100 dark:border-primarydark/70"
         }`}>
-            <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                     {isSelectable && onSelectChange ? (
                         <input
                             type="checkbox"
@@ -499,6 +503,7 @@ const OrdersTable = ({
                         />
                     ) : null}
                     <OrderStatusBadge orderId={order.id} status={order.status} />
+                    <ReturnRequestedBadge order={order} />
                     {pinnedOrderId && String(order.id) === pinnedOrderId ? (
                         <ExactMatchBadge label={t("exactNumberMatch")} title={t("exactNumberMatchTitle")} />
                     ) : null}
