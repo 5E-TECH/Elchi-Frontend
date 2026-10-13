@@ -20,7 +20,8 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /\.mobile\.spec\.ts$/,
+      // `*.preview.spec.ts` — PROD build ustida, alohida konfiguratsiya (playwright.preview.config.ts).
+      testIgnore: /\.(mobile|preview)\.spec\.ts$/,
       use: { ...devices["Desktop Chrome"], ...channel },
     },
     {
