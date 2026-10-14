@@ -306,4 +306,6 @@
   ,"financialEntrySubmit": "Saqlash"
   ,"financialEntryCreated": "Yozuv qo'shildi"
   ,"financialEntryFailed": "Yozuvni saqlab bo'lmadi"
+  ,"paymentConfirmTitle": "To'lovni tasdiqlaysizmi?"
+  ,"paymentConfirmMessage": "{{amount}} so'm — {{action}}: {{target}} ({{method}}). Tasdiqlangach pul o'tkaziladi va bekor qilib bo'lmaydi."
 }

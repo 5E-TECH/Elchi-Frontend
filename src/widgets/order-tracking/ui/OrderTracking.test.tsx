@@ -98,4 +98,28 @@ describe("OrderTracking (Ho5qcDn4)", () => {
     renderWithProviders(<OrderTracking orderId="1" />, { preloadedState: asAdmin });
     expect(screen.getByText("Tarixni yuklab bo'lmadi")).toBeInTheDocument();
   });
+
+  it("TC7: tarix bo'sh — blok o'rnida tushunarli o'zbekcha matn (bo'sh oq joy emas)", () => {
+    setViewport(false);
+    tracking.state = { ...tracking.state, events: [], isError: false };
+    renderWithProviders(<OrderTracking orderId="1" />, { preloadedState: asAdmin });
+    expect(screen.getByText("Bu buyurtma bo'yicha hali tarix yozuvlari yo'q")).toBeInTheDocument();
+    expect(screen.queryByText(/Tracking/)).toBeNull();
+  });
+
+  it("tarmoq xatosi (backend matni yo'q) — umumiy tarjima qilingan matn", () => {
+    setViewport(false);
+    tracking.state = { ...tracking.state, events: [], isError: true, errorMessage: "" };
+    renderWithProviders(<OrderTracking orderId="1" />, { preloadedState: asAdmin });
+    expect(screen.getByText("Ma'lumotlarni yuklashda xatolik yuz berdi")).toBeInTheDocument();
+  });
+
+  it("TC9: market roli o'z buyurtmasi tarixini ko'radi (blok chiqadi)", () => {
+    setViewport(false);
+    renderWithProviders(<OrderTracking orderId="1" />, {
+      preloadedState: { role: { id: "37", role: "market", region: null, name: "Market" } } as never,
+    });
+    expect(screen.getByText("Buyurtma tarixi")).toBeInTheDocument();
+    expect(screen.getAllByTestId("tracking-event")).toHaveLength(3);
+  });
 });

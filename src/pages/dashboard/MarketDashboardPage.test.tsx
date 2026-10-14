@@ -199,4 +199,20 @@ describe("MarketDashboardPage", () => {
     expect(chart).toHaveAttribute("data-markets-count", "1");
     expect(chart).toHaveAttribute("data-couriers-count", "undefined");
   });
+
+  it("chart uses the FULL `markets` stats, not the ≥30-order top ranking (PMa5dgYQ)", () => {
+    const response = buildDashboardResponse();
+    response.data.data.topMarkets = [];
+    (response.data.data as Record<string, unknown>).markets = [
+      { market: { id: "37", name: "TEST Claude Market" }, totalOrders: 11, soldOrders: 4, sellingRate: 36.36 },
+    ];
+    getDashboardMock.mockReturnValue(response);
+    renderWithProviders(<MarketDashboardPage />, {
+      preloadedState: {
+        role: { id: "37", role: "market", region: null, name: "Market" },
+      },
+    });
+
+    expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-markets-count", "1");
+  });
 });

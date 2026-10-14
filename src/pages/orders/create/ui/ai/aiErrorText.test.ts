@@ -90,8 +90,10 @@ describe("aiErrorText", () => {
     );
   });
 
-  it("duplicate_recent: mavjud buyurtma raqami ko'rsatiladi; rus tilida ham tarjima", () => {
+  it("duplicate_recent: mavjud buyurtma raqami ko'rsatiladi; rus tilida ham tarjima", async () => {
     expect(confirmFailureText({ index: 0, ok: false, code: "duplicate_recent", order_id: "512" }, t)).toContain("#512");
+    // ru tarjimasi kerak bo'lganda yuklanadi (NIFAnCvf) — avval yuklab olinadi.
+    await i18n.loadLanguages("ru");
     const ruT = i18n.getFixedT("ru", "orders");
     expect(confirmFailureText({ index: 0, ok: false, code: "timeout_unknown", reason: "Natija noma’lum" }, ruT)).toMatch(
       /Результат неизвестен/,

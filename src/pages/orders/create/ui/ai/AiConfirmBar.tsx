@@ -1,4 +1,4 @@
-import { memo, useId, useState } from "react";
+import { memo, useId, useState, type Ref } from "react";
 import { AlertTriangle, Loader2, SendHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Popup from "../../../../../shared/ui/Popup";
@@ -19,13 +19,15 @@ type AiConfirmBarProps = {
   onConfirm: () => void;
   /** Keyingi to'ldirilmagan kartaga o'tish (10-30 karta orasida yo'qolmaslik uchun). */
   onJumpToUnready: () => void;
+  /** Panel elementi — klaviatura ochilganda maydon shu panel ustida turishi uchun. */
+  barRef?: Ref<HTMLDivElement>;
 };
 
 /**
  * ⚠️ "Hammasini yaratish" tugmasi ATAYLAB YO'Q: faqat `ready` kartalar
  * yaratiladi, to'ldirilmaganlari so'rovga umuman qo'shilmaydi.
  */
-const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm, onJumpToUnready }: AiConfirmBarProps) => {
+const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm, onJumpToUnready, barRef }: AiConfirmBarProps) => {
   const { t } = useTranslation(["orders", "common"]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const dialogTitleId = useId();
@@ -44,6 +46,7 @@ const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm, onJumpTo
   return (
     <>
       <div
+        ref={barRef}
         data-testid="ai-confirm-bar"
         className="sticky bottom-0 z-20 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary p-3 shadow-lg dark:border-primarydark dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:p-4"
       >

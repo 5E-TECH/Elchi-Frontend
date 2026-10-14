@@ -120,6 +120,11 @@ const MarketDashboardPage = () => {
   const profit = myStat?.profit ?? orders?.profit ?? 0;
   const topMarkets = data?.data?.topMarkets ?? [];
   const topOperators = data?.data?.topOperators ?? [];
+  // Grafik TO'LIQ statistikadan (`markets`) chiziladi (PMa5dgYQ): `topMarkets`
+  // ≥30 buyurtma chegarali reyting — market o'z ma'lumoti bo'lsa ham bo'sh
+  // grafik ko'rardi. "Barchasi" davrida `markets` bo'sh keladi — top-reyting.
+  const marketStats = data?.data?.markets ?? [];
+  const chartMarkets = marketStats.length ? marketStats : topMarkets;
 
   const successRate = myStat?.successRate ?? ratio(sold, accepted);
 
@@ -263,7 +268,7 @@ const MarketDashboardPage = () => {
           bir xil qoida). */}
       {widgets.performanceChart && !dashboardError && !isDataLoading && (
         <div className="mb-5">
-          <PerformanceChart markets={topMarkets} />
+          <PerformanceChart markets={chartMarkets} />
         </div>
       )}
 
