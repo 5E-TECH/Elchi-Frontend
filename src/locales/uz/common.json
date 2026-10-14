@@ -124,6 +124,8 @@
   "incomingScanAdded": "ro'yxatga qo'shildi",
   "incomingScanDuplicate": "allaqachon skanerlangan",
   "incomingScanNotFound": "Bu QR ro'yxatda topilmadi — posilka boshqa hamkordanmi yoki allaqachon qabul qilinganmi?",
+  "incomingBatchMarked": "Qop: {{size}} posilkadan {{count}} tasi belgilandi",
+  "incomingBatchAlready": "Qop: {{size}} posilkadan {{count}} tasi allaqachon belgilangan",
   "incomingScanListNotReady": "Ro'yxat hali yuklanmagan — posilkani tekshirib bo'lmadi. Ro'yxatni yangilab, qayta skanerlang.",
   "incomingReceive": "QABUL QILISH",
   "incomingReceiving": "Qabul qilinmoqda...",

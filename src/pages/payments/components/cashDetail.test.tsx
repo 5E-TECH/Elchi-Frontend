@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
@@ -118,8 +118,16 @@ const lastCashboxParams = () => cashboxState.calls.at(-1)?.params;
 const setAmount = (amount: string) =>
   fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: amount } });
 
-const submitCourierPayment = () =>
-  userEvent.setup().click(screen.getByRole("button", { name: "Qabul qilish" }));
+/**
+ * Yuborish: forma tugmasi → (5hBeDuyn) tasdiq oynasi ochilsa, undagi tasdiq tugmasi.
+ * Oyna ochilmasa (forma xatosi / bloklangan) — hech narsa bosilmaydi.
+ */
+const submitCourierPayment = async () => {
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Qabul qilish" }));
+  const dialog = screen.queryByRole("dialog");
+  if (dialog) await user.click(within(dialog).getByRole("button", { name: "Qabul qilish" }));
+};
 
 const chooseMethod = (method: string) =>
   userEvent.setup().click(screen.getByRole("radio", { name: method }));
@@ -558,5 +566,62 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getAllByText("Filial kuryeri").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Qabul qilish" })).toBeInTheDocument();
+  });
+});
+
+/**
+ * 5hBeDuyn — pul yuborishdan OLDIN tasdiq oynasi; javobsiz (504) holatda
+ * kuryer oyog'i ham "natija noma'lum" deb ogohlantiradi (market/filial kabi).
+ */
+describe("CashDetail — kuryerdan qabul: tasdiq va noma'lum natija (5hBeDuyn)", () => {
+  const OUTCOME_UNKNOWN =
+    "Server javob bermadi — to'lov o'tgan bo'lishi mumkin. Kassa yangilandi, summani tekshiring: aynan shu to'lovni qayta yuborsangiz, u ikki marta yozilmaydi";
+
+  beforeEach(() => {
+    courierPayment.mutateAsync.mockReset();
+    cashboxRefetch.mockClear();
+  });
+
+  it("⭐ tasdiq oynasi summa, amal, kuryer va to'lov turini ko'rsatadi; \"Bekor qilish\" — so'rov KETMAYDI", async () => {
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+
+    setAmount("150000");
+    await chooseMethod("Naqd");
+    await user.click(screen.getByRole("button", { name: "Qabul qilish" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("To'lovni tasdiqlaysizmi?");
+    expect(dialog).toHaveTextContent(/150\D?000 so'm — Qabul qilish: .+ \(Naqd\)/);
+    expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
+    // Forma joyida qoladi — operator summani tuzatishi mumkin.
+    expect(screen.getByPlaceholderText("0")).not.toHaveValue("");
+  });
+
+  it("⭐ tasdiqlangandagina POST ketadi", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    await fillCourierPayment("150000");
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(RECEIVE_SUCCESS)).toBeInTheDocument();
+  });
+
+  it("⭐ 504 / javob kelmadi — xato + \"natija noma'lum, qayta yubormang\" ogohlantirishi, kassa qayta o'qiladi", async () => {
+    courierPayment.mutateAsync.mockRejectedValue(requestTimeout());
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    await fillCourierPayment("150000");
+
+    expect(await screen.findByText(OUTCOME_UNKNOWN)).toBeInTheDocument();
+    await waitFor(() => expect(cashboxRefetch).toHaveBeenCalled());
   });
 });

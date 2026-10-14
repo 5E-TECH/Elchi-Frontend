@@ -49,6 +49,8 @@ export interface OrderDetailMockOptions {
   onWrite?: (method: string, path: string) => unknown;
   /** `GET orders/:id/tracking` hodisalari (har so'rovda chaqiriladi — o'zgarishi mumkin). */
   tracking?: () => unknown[];
+  /** `GET orders/:id/tracking` xato bilan javob beradi (masalan boshqa market buyurtmasi — 403). */
+  trackingError?: { status: number; message: string };
   /** Qo'shimcha buyurtmalar (masalan ota buyurtma) — `GET orders/:id` ularni ham qaytaradi. */
   extraOrders?: Record<string, unknown>[];
 }
@@ -103,6 +105,10 @@ export const mockOrderDetailApi = async (
     if (path === `orders/${order.id}`) return reply(route, wrap(order));
     const extra = options.extraOrders?.find((item) => path === `orders/${item.id}`);
     if (extra) return reply(route, wrap(extra));
+    if (path === `orders/${order.id}/tracking` && options.trackingError) {
+      const { status, message } = options.trackingError;
+      return reply(route, { statusCode: status, message, error: "Forbidden" }, status);
+    }
     if (path === `orders/${order.id}/tracking` && options.tracking) {
       const events = options.tracking();
       return reply(route, { data: events, total: events.length, page: 1, limit: 20 });

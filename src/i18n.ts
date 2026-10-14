@@ -1,4 +1,4 @@
-import i18n, { type Resource } from "i18next";
+import i18n, { type BackendModule, type Resource } from "i18next";
 import { initReactI18next } from "react-i18next";
 import {
   readStoredLanguage,
@@ -11,10 +11,39 @@ const FALLBACK_LANGUAGE = "uz";
 const SUPPORTED_LANGUAGES = ["uz", "en", "ru"] as const;
 type SupportedLanguage = StoredLanguage;
 
+/**
+ * ⚠️ FAQAT STANDART TIL (uz) BUNDLE ICHIDA (NIFAnCvf). Ilgari uchala til
+ * (uz + ru + en) entry chunk'ga eager tushardi — foydalanuvchi bittasini
+ * ishlatsa ham har sahifada ~150 KB gzip ortiqcha tarjima yuklanardi.
+ * ru / en — `lazyLocaleBackend` orqali faqat kerak bo'lganda (har til bitta
+ * `locale-<til>` chunk, vite.config.ts).
+ */
 const localeModules = import.meta.glob<{ default: Record<string, string | object> }>(
-  "./locales/*/*.json",
+  "./locales/uz/*.json",
   { eager: true },
 );
+const lazyLocaleModules = import.meta.glob<{ default: Record<string, string | object> }>(
+  "./locales/{en,ru}/*.json",
+);
+
+/**
+ * i18next backend: `changeLanguage("ru")` til fayllarini YUKLAB BO'LGACH
+ * yakunlanadi — chaqiruvchi (va testlar) matn tayyor bo'lishini kutadi.
+ */
+const lazyLocaleBackend: BackendModule = {
+  type: "backend",
+  init: () => undefined,
+  read: (language, namespace, callback) => {
+    const load = lazyLocaleModules[`./locales/${language}/${namespace}.json`];
+    if (!load) {
+      callback(null, {});
+      return;
+    }
+    load()
+      .then((module) => callback(null, module.default))
+      .catch((error: unknown) => callback(error as Error, null));
+  },
+};
 
 const resources = Object.entries(localeModules).reduce<Resource>(
   (accumulator, [modulePath, moduleValue]) => {
@@ -68,8 +97,11 @@ const getInitialLanguage = () => {
   return DEFAULT_LANGUAGE;
 };
 
-void i18n.use(initReactI18next).init({
+/** Boshlang'ich til (ru/en bo'lsa — uning fayllari) yuklangach bajariladi. */
+const i18nReady = i18n.use(lazyLocaleBackend).use(initReactI18next).init({
   resources,
+  // `resources` faqat uz — qolgan tillar backend'dan olinadi.
+  partialBundledLanguages: true,
   lng: getInitialLanguage(),
   fallbackLng: FALLBACK_LANGUAGE,
   supportedLngs: [...SUPPORTED_LANGUAGES],
@@ -90,6 +122,7 @@ const changeAppLanguage = (language: string) => {
 };
 
 export {
+  i18nReady,
   DEFAULT_LANGUAGE,
   FALLBACK_LANGUAGE,
   SUPPORTED_LANGUAGES,

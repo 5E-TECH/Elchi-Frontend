@@ -124,6 +124,8 @@
   "incomingScanAdded": "added to the list",
   "incomingScanDuplicate": "already scanned",
   "incomingScanNotFound": "This QR was not found in the list — is the parcel from another partner or already received?",
+  "incomingBatchMarked": "Bag: {{count}} of {{size}} parcels marked",
+  "incomingBatchAlready": "Bag: {{count}} of {{size}} parcels already marked",
   "incomingScanListNotReady": "The list has not loaded yet — the parcel could not be checked. Refresh the list and scan again.",
   "incomingReceive": "RECEIVE",
   "incomingReceiving": "Receiving...",

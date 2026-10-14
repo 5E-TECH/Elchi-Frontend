@@ -225,7 +225,7 @@
   "district": "District",
   "tracking": {
     "title": "Order history",
-    "empty": "No tracking history found",
+    "empty": "No history entries for this order yet",
     "error": "An error occurred while loading data",
     "loadMore": "Load more",
     "adminOnly": "Admin only",

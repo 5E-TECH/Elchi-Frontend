@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AxiosError } from "axios";
 import { orderActivityLogApi } from "../../../entities/order";
 import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import type { ActivityLogResponse, TrackingEvent } from "../../../entities/order";
@@ -24,8 +23,8 @@ const sortEvents = (items: TrackingEvent[]) =>
     return rightTime - leftTime;
   });
 
-const getErrorMessage = (error: unknown) =>
-  getApiErrorMessage(error, (error as AxiosError)?.message ?? "");
+/** Faqat backend matni. Javob kelmagan (tarmoq) — bo'sh: blok `tracking.error` ni ko'rsatadi, xom "Network Error" emas. */
+const getErrorMessage = (error: unknown) => getApiErrorMessage(error, "");
 
 const normalizeEvent = (event: TrackingEvent): TrackingEvent => {
   const oldStatus = event.old_value?.status ?? event.from_status ?? undefined;

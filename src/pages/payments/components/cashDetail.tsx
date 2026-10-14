@@ -34,6 +34,7 @@ import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { getExportErrorMessage } from "../../../shared/lib/exportFile";
+import PopupConfirm from "../../../shared/components/popupConfirm";
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -338,6 +339,12 @@ const CashDetail = () => {
   const [historyTab, setHistoryTab] = useState<"all" | "payments">("all");
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [balanceOverride, setBalanceOverride] = useState<number | null>(null);
+  /**
+   * TASDIQLASH (5hBeDuyn): pul yuborish tugmasi darhol so'rov yubormaydi —
+   * avval summa, yo'nalish va to'lov turi ko'rsatilib, tasdiq so'raladi.
+   * "Bekor qilish" — hech qanday so'rov ketmaydi.
+   */
+  const [pendingPayment, setPendingPayment] = useState<CashboxActionFormValues | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const currentRole = useSelector((store: RootState) => store.role.role);
   const isCurrentManagerRole = String(currentRole).toLowerCase() === "manager";
@@ -977,6 +984,17 @@ const CashDetail = () => {
           placement: "topRight",
           duration: 5,
         });
+        if (isUncertainPaymentError(error)) {
+          // Javob kelmadi (504 / tarmoq) — pul o'tgan bo'lishi mumkin: boshqa
+          // oyoqlardagi kabi ogohlantirilib, kassa qayta o'qiladi.
+          notify.warning({
+            message: t("common:warning"),
+            description: t("paymentOutcomeUnknown"),
+            placement: "topRight",
+            duration: 10,
+          });
+          await refetchCashbox();
+        }
         return;
       }
 
@@ -1034,6 +1052,40 @@ const CashDetail = () => {
       successMessage: t("marketPaymentSuccess"),
       errorMessage: t("marketPaymentError"),
     });
+  };
+
+  const paymentMethodLabel = (value: CashboxActionFormValues["paymentType"]) =>
+    paymentTypeOptions.find((option) => option.value === value)?.label ?? String(value ?? "");
+
+  /**
+   * Tasdiq oynasidan OLDIN — ochiq bo'lmasligi kerak bo'lgan holatlar: forma
+   * xatosi tasdiqdan keyin emas, darhol, maydon ostida ko'rinsin.
+   */
+  const requestPaymentConfirm = (values: CashboxActionFormValues) => {
+    if (isTypeUnknown) return;
+    if (type === "courier") {
+      if (!id || isCourierReceiveBlocked) return;
+      const amount = parseAmountInput(values.amount);
+      if (courierReceiveLimit !== null && amount > courierReceiveLimit) {
+        setError("amount", {
+          type: "max",
+          message: t("amountExceedsBalance", { amount: courierReceiveLimit.toLocaleString("uz-UZ") }),
+        });
+        return;
+      }
+    }
+    if (type === "market" && (cashbox?.cashbox_type !== "markets" || !id)) {
+      notify.error({ message: t("marketPaymentError"), description: t("cashDetailNotMarketCashbox") });
+      return;
+    }
+    if (type === "branch" && !id) return;
+    setPendingPayment(values);
+  };
+
+  const confirmPendingPayment = async () => {
+    const values = pendingPayment;
+    setPendingPayment(null);
+    if (values) await onSubmit(values);
   };
 
   if (isLoading) {
@@ -1185,7 +1237,27 @@ const CashDetail = () => {
             register={register}
             errors={errors}
             handleSubmit={handleSubmit}
-            onSubmit={onSubmit}
+            onSubmit={requestPaymentConfirm}
+        />
+        <PopupConfirm
+          isOpen={pendingPayment !== null}
+          onClose={() => setPendingPayment(null)}
+          onConfirm={() => void confirmPendingPayment()}
+          title={t("paymentConfirmTitle")}
+          message={
+            pendingPayment
+              ? t("paymentConfirmMessage", {
+                  amount: parseAmountInput(pendingPayment.amount).toLocaleString("uz-UZ"),
+                  action: t(cfg.actionLabelKey),
+                  target: entityName,
+                  method: paymentMethodLabel(pendingPayment.paymentType),
+                })
+              : null
+          }
+          confirmLabel={t(cfg.submitLabelKey)}
+          cancelLabel={t("common:cancel")}
+          isLoading={isSubmitting}
+          variant="warning"
         />
         </>
         )

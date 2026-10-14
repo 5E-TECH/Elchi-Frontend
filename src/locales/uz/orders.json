@@ -225,7 +225,7 @@
   "district": "Tuman",
   "tracking": {
     "title": "Buyurtma tarixi",
-    "empty": "Tracking tarix topilmadi",
+    "empty": "Bu buyurtma bo'yicha hali tarix yozuvlari yo'q",
     "error": "Ma'lumotlarni yuklashda xatolik yuz berdi",
     "loadMore": "Ko'proq yuklash",
     "adminOnly": "Faqat admin",
@@ -327,7 +327,7 @@
       "rollback": "Qaytarildi",
       "sent": "Jo'natildi",
       "waiting": "Kutilmoqda",
-      "courierAssigned": "Courierga biriktirildi",
+      "courierAssigned": "Kuryerga biriktirildi",
       "cancelledPostCreated": "Bekor buyurtma jo‘natildi",
       "cancelledPostReceived": "Bekor buyurtma qabul qilindi",
       "returnRequested": "Qaytarish so'raldi",

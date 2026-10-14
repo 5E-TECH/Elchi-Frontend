@@ -27,6 +27,13 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Har til (ru / en) — bitta chunk: til almashganda 30 ta mayda so'rov emas.
+          // uz bundle ichida qoladi (i18n.ts — eager).
+          const locale = /\/src\/locales\/(en|ru)\//.exec(id)?.[1];
+          if (locale) {
+            return `locale-${locale}`;
+          }
+
           if (!id.includes("node_modules")) {
             return;
           }

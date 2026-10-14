@@ -20,6 +20,7 @@ import { confirmFailureText, confirmHttpErrorText } from "./aiErrorText";
 import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "./aiDraft";
 import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
+import { useKeepFocusedFieldVisible } from "./useKeepFocusedFieldVisible";
 
 type AiCreatePanelProps = {
   /** Tab faolmi (yashirin turganda ham holat saqlanadi). */
@@ -53,6 +54,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
   const submittingRef = useRef(false);
   const nextKey = useRef(0);
   const cardsRef = useRef<HTMLDivElement | null>(null);
+  const barRef = useRef<HTMLDivElement | null>(null);
 
   const hasMarket = isMarketRole || Boolean(market);
   const marketId = !isMarketRole && market ? String(market.id) : undefined;
@@ -71,6 +73,8 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
 
   const readyDrafts = drafts.filter((draft) => evalPreview(draft.order).ready);
   const hasUnconfirmedReady = readyDrafts.length > 0;
+
+  useKeepFocusedFieldVisible(cardsRef, barRef, active && drafts.length > 0);
 
   /**
    * Sahifadan chiqish himoyasi. ⚠️ Ilova `BrowserRouter` da ishlaydi —
@@ -252,6 +256,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
           pending={confirm.isPending}
           onConfirm={() => submit(readyDrafts)}
           onJumpToUnready={jumpToUnready}
+          barRef={barRef}
         />
       )}
     </div>

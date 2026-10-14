@@ -258,7 +258,7 @@ const SettingRow = ({
     <div className="min-w-0">
       <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>{title}</p>
       {hint && (
-        <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
+        <p className="block mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
           {hint}
         </p>
       )}
@@ -273,7 +273,7 @@ const PushChannelControl = () => {
   const { status } = usePushSubscription();
   if (status === "unsupported" || status === "unavailable") {
     return (
-      <span className="text-[12px]" style={{ color: TEXT.soft }}>
+      <span className="inline text-[12px]" style={{ color: TEXT.soft }}>
         {t("notifications.push_unsupported")}
       </span>
     );
@@ -317,7 +317,7 @@ const NotificationsTab = ({
         className="flex items-start gap-3 rounded-2xl border px-4 py-3.5"
         style={{ borderColor: toneAccent("warning"), background: toneSoftBg("warning", 10) }}
       >
-        <Info size={18} className="mt-0.5 shrink-0" style={{ color: toneAccent("warning") }} />
+        <Info size={18} className="shrink-0 mt-0.5" style={{ color: toneAccent("warning") }} />
         <div>
           <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>
             {t("notifications.scope_title")}
@@ -334,7 +334,7 @@ const NotificationsTab = ({
           title={t("notifications.channels_title")}
           hint={t("notifications.channels_hint")}
         />
-        <div className="space-y-2.5">
+        <div className="block space-y-2.5">
           {NOTIFICATION_CHANNEL_IDS.map((id) => (
             <SettingRow
               key={id}
@@ -364,7 +364,7 @@ const NotificationsTab = ({
           title={t("notifications.categories_title")}
           hint={t("notifications.categories_hint")}
         />
-        <div className="space-y-2.5">
+        <div className="block space-y-2.5">
           <SettingRow
             title={t("notifications.critical")}
             hint={t("notifications.critical_hint")}
@@ -433,7 +433,7 @@ const NotificationsTab = ({
           <div className="flex flex-wrap items-end gap-4">
             {(["from", "to"] as const).map((key) => (
               <label key={key} className="flex flex-col gap-1.5">
-                <span className="text-[12px] font-semibold" style={{ color: TEXT.soft }}>
+                <span className="font-semibold text-[12px]" style={{ color: TEXT.strong }}>
                   {t(`notifications.quiet_${key}`)}
                 </span>
                 <TimePicker
@@ -448,7 +448,7 @@ const NotificationsTab = ({
                 />
               </label>
             ))}
-            <span className="pb-1.5 text-[12px] font-semibold" style={{ color: TEXT.soft }}>
+            <span className="font-semibold pb-1.5 text-[12px]" style={{ color: TEXT.strong }}>
               {t("notifications.quiet_timezone")}
             </span>
           </div>

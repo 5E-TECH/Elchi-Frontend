@@ -20,6 +20,7 @@ import { extractScannerToken } from "../../shared/lib/scanToken";
 import { playScanFeedback } from "../scan/lib/scanShared";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import {
+  fetchExternalBatchScan,
   sourceLabel,
   useIncomingExternalOrders,
   useIncomingSources,
@@ -130,6 +131,21 @@ const IncomingOrdersPage = () => {
   const listErrorText =
     (hasServerResponse ? getBackendErrorMessage(query.error) : undefined) ?? t("incomingLoadError");
 
+  /**
+   * Qop (batch) tokeni → shu qopdagi KUTAYOTGAN posilkalar. Ro'yxat faqat
+   * `new` holatidagilar, ya'ni oldin bittalab qabul qilinganlar bu yerda yo'q:
+   * qop skani faqat qolganlarini belgilaydi, javobgarlik yozuvi ikkilanmaydi.
+   */
+  const byBatch = useMemo(() => {
+    const map = new Map<string, IncomingOrder[]>();
+    for (const order of orders) {
+      const token = String(order.external_batch_token ?? "").trim();
+      if (!token) continue;
+      map.set(token, [...(map.get(token) ?? []), order]);
+    }
+    return map;
+  }, [orders]);
+
   /** Skanerlangan token → buyurtma. Har skanda qayta qurilmaydi. */
   const byToken = useMemo(() => {
     const map = new Map<string, IncomingOrder>();
@@ -152,6 +168,57 @@ const IncomingOrdersPage = () => {
     setScannedTokens([]);
   }, [query.dataUpdatedAt]);
 
+  /**
+   * QOP SKANI: qopdagi hali belgilanmagan posilkalar belgilanadi. Serverga har
+   * birining O'Z tokeni ketadi (bittalab skan bilan ayni yo'l) — qop tokeni
+   * esa faqat ularni topish uchun. Hisob: "Qop: N posilkadan M tasi".
+   */
+  const markBatch = (members: IncomingOrder[], size: number | null) => {
+    const fresh = members.filter((order) => !scannedIds.has(order.id) && String(order.qr_code_token ?? "").trim());
+    const total = Math.max(size ?? 0, members.length);
+    if (!fresh.length) {
+      void playScanFeedback("error");
+      setMessage({ tone: "warn", text: t("incomingBatchAlready", { size: total, count: members.length }) });
+      return;
+    }
+    void playScanFeedback("success");
+    setScannedIds((prev) => {
+      const next = new Set(prev);
+      fresh.forEach((order) => next.add(order.id));
+      return next;
+    });
+    setScannedTokens((prev) => [...prev, ...fresh.map((order) => String(order.qr_code_token).trim())]);
+    const marked = members.filter((order) => scannedIds.has(order.id)).length + fresh.length;
+    setMessage({
+      tone: marked < total ? "warn" : "success",
+      text: t("incomingBatchMarked", { size: total, count: marked }),
+    });
+  };
+
+  /**
+   * Ro'yxatda na posilka, na qop topilmadi — server qop tokenini biladimi?
+   * (`GET /scan/:token` qop qidiruvi.) Faqat moslik bo'lmaganda so'raladi:
+   * oddiy skan avvalgidek serverga bormaydi.
+   */
+  const resolveRemoteBatch = async (token: string) => {
+    const batch = await fetchExternalBatchScan(token).catch(() => null);
+    const members = batch
+      ? orders.filter((order) =>
+          batch.members.some(
+            (member) =>
+              (member.id && member.id === order.id) ||
+              (member.token && member.token === String(order.qr_code_token ?? "").trim()),
+          ),
+        )
+      : [];
+    if (!batch || !members.length) {
+      void playScanFeedback("missing");
+      setMessage({ tone: "error", text: t("incomingScanNotFound") });
+      return;
+    }
+    markBatch(members, batch.size ?? members.length);
+  };
+
   const handleScan = (raw: string) => {
     const token = extractScannerToken(raw) ?? raw.trim();
     if (!token) return;
@@ -166,8 +233,13 @@ const IncomingOrdersPage = () => {
 
     const order = byToken.get(token);
     if (!order) {
-      void playScanFeedback("missing");
-      setMessage({ tone: "error", text: t("incomingScanNotFound") });
+      const batchMembers = byBatch.get(token);
+      if (batchMembers?.length) {
+        const size = Number(batchMembers[0].external_batch_size);
+        markBatch(batchMembers, Number.isFinite(size) && size > 0 ? size : batchMembers.length);
+        return;
+      }
+      void resolveRemoteBatch(token);
       return;
     }
     if (scannedIds.has(order.id)) {
@@ -408,6 +480,9 @@ const IncomingOrdersPage = () => {
               return (
                 <div
                   key={order.id}
+                  data-testid="incoming-row"
+                  data-order-id={order.id}
+                  data-scanned={scanned ? "true" : "false"}
                   className={`flex flex-wrap items-center gap-3 px-4 py-3 transition ${
                     scanned ? "bg-emerald-500/8" : ""
                   }`}
