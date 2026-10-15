@@ -108,3 +108,13 @@ export const formatCompactMoneyLocalized = (
   }
   return options.withCurrency === false ? text : `${text} ${CURRENCY_LABEL[lang]}`;
 };
+
+/**
+ * Foiz: `fractionDigits` xonagacha (sukut 1), ortiqcha nollarsiz, locale ajratkichi bilan.
+ * `formatPercentLocalized(67.43)` → uz/ru "67,4%", en "67.4%"; `formatPercentLocalized(50)` → "50%".
+ * Eski `designSystem.formatPercent` ("67.4%", har tilda nuqta) o'rniga.
+ */
+export const formatPercentLocalized = (
+  value: unknown,
+  options: { language?: string | null; fractionDigits?: number } = {},
+): string => `${formatNumberLocalized(value, { language: options.language, fractionDigits: options.fractionDigits ?? 1 })}%`;

@@ -1,0 +1,174 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">SMS</h1>
+    <p class="el-sub">Kampaniyalar, shablonlar, xarajat va provayder sozlamalari</p>
+  </div>
+</div>
+
+<div class="el-tabs el-hide-mobile" role="tablist" aria-label="SMS bo'limlari">
+  <a class="el-tab" href="@notifications-sms-campaign" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Kampaniya</a>
+  <a class="el-tab" href="@notifications-sms-templates" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Shablonlar</a>
+  <a class="el-tab" href="@notifications-sms-report" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Xarajat</a>
+  <a class="el-tab" href="@notifications-sms-settings" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Sozlamalar</a>
+</div>
+<div class="el-tabs el-show-mobile" role="tablist" aria-label="SMS bo'limlari" style="gap: 0">
+  <a class="el-tab" href="@notifications-sms-campaign" role="tab" aria-selected="false" tabindex="-1" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Kampaniya</a>
+  <a class="el-tab" href="@notifications-sms-templates" role="tab" aria-selected="true" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text)">Shablonlar</a>
+  <a class="el-tab" href="@notifications-sms-report" role="tab" aria-selected="false" tabindex="-1" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Xarajat</a>
+  <a class="el-tab" href="@notifications-sms-settings" role="tab" aria-selected="false" tabindex="-1" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Sozlamalar</a>
+</div>
+
+<section class="el-card" aria-labelledby="st-new-title">
+  <div class="el-card-head"><h2 class="el-h2" id="st-new-title">Yangi shablon</h2></div>
+  <div style="display: flex; flex-wrap: wrap; gap: 24px 32px; padding: 20px">
+    <div style="flex: 2 1 280px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); align-content: start; gap: 16px">
+      <div class="el-field">
+        <label class="el-label" for="st-code">Kod <span class="el-req">*</span></label>
+        <input class="el-input" id="st-code" type="text" value="order.out_for_delivery" placeholder="order.delivered">
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="st-class">Xabar turi</label>
+        <button class="el-input el-select" type="button" id="st-class" aria-haspopup="listbox" aria-expanded="false"><span>Xizmat xabari</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="st-lang">Til</label>
+        <button class="el-input el-select" type="button" id="st-lang" aria-haspopup="listbox" aria-expanded="false"><span>O'zbekcha</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+    </div>
+    <div style="flex: 3 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+      <div class="el-field">
+        <label class="el-label" for="st-text">Matn <span class="el-req">*</span></label>
+        <textarea class="el-input el-textarea" id="st-text" rows="4" maxlength="1000" aria-describedby="st-text-hint" style="height: 112px; flex: none">Elchi: &#123;&#123;order_number&#125;&#125; raqamli buyurtmangiz yo'lda. Kuryer bugun yetkazadi. Kuzatish: elchipochta.uz</textarea>
+        <span class="el-hint" id="st-text-hint">O'zgaruvchilar: &#123;&#123;order_number&#125;&#125; kabi. Ism, manzil va mahsulotlar SMS'ga yozilmaydi.</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-neutral">&#123;&#123;order_number&#125;&#125;</span></div>
+      <div aria-live="polite" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px"><span class="el-badge el-tone-neutral">GSM-7</span><span class="el-small el-muted">105 / 160 belgi</span><span class="el-small el-strong">1 bo'lak</span><span class="el-small el-muted">≈ 115 so'm (taxminiy)</span></div>
+    </div>
+  </div>
+  <div class="el-card-foot" style="justify-content: flex-end">
+    <button class="el-btn el-btn-primary" type="button" style="flex: 0 1 calc((480px - 100%) * 999)">Saqlash</button>
+  </div>
+</section>
+
+<section class="el-card" aria-labelledby="st-list-title" style="overflow: hidden">
+  <div class="el-card-head"><h2 class="el-h2" id="st-list-title">Shablonlar</h2><span class="el-badge el-tone-neutral">5 ta</span></div>
+  <div class="el-table-wrap el-hide-tablet">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Kod</th>
+          <th>Til</th>
+          <th>Turi</th>
+          <th>Matn</th>
+          <th>Tasdiq</th>
+          <th style="width: 88px"><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="el-cell-title" style="white-space: nowrap">order.created</td>
+          <td style="white-space: nowrap">O'zbekcha</td>
+          <td><span class="el-badge el-tone-neutral">Xizmat xabari</span></td>
+          <td><div style="display: flex; flex-direction: column; gap: 4px; min-width: 240px; max-width: 340px"><span>Elchi: &#123;&#123;order_number&#125;&#125; raqamli buyurtmangiz qabul qilindi. Kuzatish: elchipochta.uz</span><span class="el-cell-sub">GSM-7 · 1 bo'lak</span></div></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan: 10482</span></td>
+          <td><div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="order.created (O'zbekcha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="order.created (O'zbekcha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title" style="white-space: nowrap">order.delivered</td>
+          <td style="white-space: nowrap">O'zbekcha</td>
+          <td><span class="el-badge el-tone-neutral">Xizmat xabari</span></td>
+          <td><div style="display: flex; flex-direction: column; gap: 4px; min-width: 240px; max-width: 340px"><span>Elchi: &#123;&#123;order_number&#125;&#125; buyurtmangiz yetkazildi. Rahmat!</span><span class="el-cell-sub">GSM-7 · 1 bo'lak</span></div></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan: 10483</span></td>
+          <td><div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="order.delivered (O'zbekcha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="order.delivered (O'zbekcha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title" style="white-space: nowrap">order.delivered</td>
+          <td style="white-space: nowrap">Ruscha</td>
+          <td><span class="el-badge el-tone-neutral">Xizmat xabari</span></td>
+          <td><div style="display: flex; flex-direction: column; gap: 4px; min-width: 240px; max-width: 340px"><span>Elchi: заказ &#123;&#123;order_number&#125;&#125; доставлен. Спасибо!</span><span class="el-cell-sub"><span style="color: var(--warning-fg)">UCS-2</span> · 1 bo'lak</span></div></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan: 10490</span></td>
+          <td><div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="order.delivered (Ruscha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="order.delivered (Ruscha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title" style="white-space: nowrap">promo.autumn</td>
+          <td style="white-space: nowrap">O'zbekcha</td>
+          <td><span class="el-badge el-tone-neutral">Reklama</span></td>
+          <td><div style="display: flex; flex-direction: column; gap: 4px; min-width: 240px; max-width: 340px"><span>Elchi: kuzgi chegirma 20%! Promokod &#123;&#123;promo&#125;&#125; bilan 31-oktabrgacha yetkazish bepul.</span><span class="el-cell-sub">GSM-7 · 2 bo'lak</span></div></td>
+          <td><div style="display: flex; flex-direction: column; gap: 8px; min-width: 300px">
+              <span class="el-badge el-badge-dot el-tone-warning" style="align-self: flex-start">Operator tasdig'i kerak</span>
+              <div style="display: flex; gap: 8px">
+                <input class="el-input" type="text" aria-label="promo.autumn uchun tasdiq id" placeholder="Provayder bergan shablon id" style="height: 32px; font-size: 13px; border-radius:8px; min-width: 0; flex: 1">
+                <button class="el-btn el-btn-secondary el-btn-sm" type="button" disabled>Tasdiqlash</button>
+              </div>
+            </div></td>
+          <td><div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="promo.autumn (O'zbekcha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="promo.autumn (O'zbekcha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title" style="white-space: nowrap">auth.otp</td>
+          <td style="white-space: nowrap">O'zbekcha</td>
+          <td><span class="el-badge el-tone-neutral">Xavfsizlik (OTP)</span></td>
+          <td><div style="display: flex; flex-direction: column; gap: 4px; min-width: 240px; max-width: 340px"><span>Elchi: tasdiqlash kodi &#123;&#123;code&#125;&#125;. Uni hech kimga bermang.</span><span class="el-cell-sub">GSM-7 · 1 bo'lak</span></div></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan: 10477</span></td>
+          <td><div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="auth.otp (O'zbekcha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="auth.otp (O'zbekcha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="el-list el-show-tablet el-show-mobile" style="width: 100%; vertical-align: top; margin: 0; padding: 0; list-style: none; flex-direction: column">
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">order.created</span><span class="el-cell-sub">O'zbekcha · Xizmat xabari</span></span>
+          <div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn" type="button" aria-label="order.created (O'zbekcha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn" type="button" aria-label="order.created (O'zbekcha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <span class="el-small">Elchi: &#123;&#123;order_number&#125;&#125; raqamli buyurtmangiz qabul qilindi. Kuzatish: elchipochta.uz</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><span class="el-cell-sub">GSM-7 · 1 bo'lak</span><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan: 10482</span></div>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">order.delivered</span><span class="el-cell-sub">O'zbekcha · Xizmat xabari</span></span>
+          <div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn" type="button" aria-label="order.delivered (O'zbekcha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn" type="button" aria-label="order.delivered (O'zbekcha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <span class="el-small">Elchi: &#123;&#123;order_number&#125;&#125; buyurtmangiz yetkazildi. Rahmat!</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><span class="el-cell-sub">GSM-7 · 1 bo'lak</span><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan: 10483</span></div>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">order.delivered</span><span class="el-cell-sub">Ruscha · Xizmat xabari</span></span>
+          <div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn" type="button" aria-label="order.delivered (Ruscha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn" type="button" aria-label="order.delivered (Ruscha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <span class="el-small">Elchi: заказ &#123;&#123;order_number&#125;&#125; доставлен. Спасибо!</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><span class="el-cell-sub"><span style="color: var(--warning-fg)">UCS-2</span> · 1 bo'lak</span><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan: 10490</span></div>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">promo.autumn</span><span class="el-cell-sub">O'zbekcha · Reklama</span></span>
+          <div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn" type="button" aria-label="promo.autumn (O'zbekcha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn" type="button" aria-label="promo.autumn (O'zbekcha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <span class="el-small">Elchi: kuzgi chegirma 20%! Promokod &#123;&#123;promo&#125;&#125; bilan 31-oktabrgacha yetkazish bepul.</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><span class="el-cell-sub">GSM-7 · 2 bo'lak</span><span class="el-badge el-badge-dot el-tone-warning">Operator tasdig'i kerak</span></div>
+        <div style="display: flex; gap: 8px; max-width: 520px">
+          <input class="el-input" type="text" aria-label="promo.autumn uchun tasdiq id" placeholder="Provayder shablon id" style="min-width: 0">
+          <button class="el-btn el-btn-secondary" type="button" disabled>Tasdiqlash</button>
+        </div>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px">
+          <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-cell-title">auth.otp</span><span class="el-cell-sub">O'zbekcha · Xavfsizlik (OTP)</span></span>
+          <div style="display: flex; gap: 4px; justify-content: flex-end"><button class="el-iconbtn" type="button" aria-label="auth.otp (O'zbekcha) — tahrirlash" title="Tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="el-iconbtn" type="button" aria-label="auth.otp (O'zbekcha) — o'chirish" title="O'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+        </div>
+        <span class="el-small">Elchi: tasdiqlash kodi &#123;&#123;code&#125;&#125;. Uni hech kimga bermang.</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><span class="el-cell-sub">GSM-7 · 1 bo'lak</span><span class="el-badge el-badge-dot el-tone-success">Tasdiqlangan: 10477</span></div>
+      </div>
+    </li>
+  </ul>
+</section>
+  

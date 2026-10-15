@@ -1,0 +1,162 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Buyurtmalar</h1>
+    <p class="el-sub">Jami 3 ta buyurtma</p>
+  </div>
+</div>
+
+<nav class="el-tabs el-show-mobile" role="tablist" aria-label="Buyurtmalar turi" style="flex: none; gap: 0; margin: 0 -16px; padding: 0 4px; background: var(--surface); border-top: 1px solid var(--border)">
+  <a class="el-tab" href="@orders-pending" role="tab" aria-selected="false" style="flex: 1 1 auto; justify-content: center; gap: 6px; padding: 0 6px; text-decoration: none; color: var(--text-muted)">Kutilayotgan <span class="el-tab-count">7</span></a>
+  <a class="el-tab" href="@orders-all" role="tab" aria-selected="false" style="flex: 1 1 auto; justify-content: center; gap: 6px; padding: 0 6px; text-decoration: none; color: var(--text-muted)">Barchasi <span class="el-tab-count">24</span></a>
+  <a class="el-tab" href="@orders-cancelled" role="tab" aria-selected="true" style="flex: 1 1 auto; justify-content: center; gap: 6px; padding: 0 6px; text-decoration: none; color: var(--text)">Bekor qilingan <span class="el-tab-count">3</span></a>
+</nav>
+
+<div class="el-alert el-tone-info el-show-mobile" role="note" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 14px">
+  <div style="display: flex; gap: 10px; align-items: flex-start">
+    <span style="display: inline-flex; color: var(--info-fg); margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></span>
+    <p class="el-alert-body el-small">Skaner yoki kamera bilan buyurtma QR kodini o'qitsangiz, u shu ro'yxatda avtomatik belgilanadi.</p>
+  </div>
+  <a class="el-btn el-btn-secondary el-btn-block" href="@scan-camera" style="height: 44px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/></svg>Kamera bilan skanerlash</a>
+</div>
+
+<section class="el-card" aria-label="Pochtaga yuborilmagan bekor qilingan buyurtmalar" style="overflow: hidden">
+  <div class="el-tabs el-hide-mobile" role="tablist" aria-label="Holat bo'yicha" style="padding: 0 12px">
+    <a class="el-tab" href="@orders-pending" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Kutilayotgan <span class="el-tab-count">7</span></a>
+    <a class="el-tab" href="@orders-all" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Barchasi <span class="el-tab-count">24</span></a>
+    <a class="el-tab" href="@orders-cancelled" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Bekor qilingan <span class="el-tab-count">3</span></a>
+  </div>
+
+  <div class="el-hide-mobile" role="region" aria-label="Skanerlash" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px 20px">
+    <span class="el-stat-icon" style="width: 40px; height: 40px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></span>
+    <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+      <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px"><span class="el-h3">Skaner bilan tanlash</span><span class="el-badge el-badge-dot el-tone-success" role="status">USB skaner tayyor</span></span>
+      <span class="el-small el-muted">Buyurtma QR kodini o'qiting — u shu ro'yxatda avtomatik belgilanadi. Skaner ulanmagan bo'lsa, kameradan foydalaning.</span>
+    </div>
+    <a class="el-btn el-btn-secondary" href="@scan-camera" style="flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/></svg>Kamera bilan skanerlash</a>
+  </div>
+
+  <div class="el-hide-mobile" role="region" aria-label="Tanlangan buyurtmalar" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 20px; background: var(--action-soft); border-top: 1px solid var(--border)">
+    <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 280px; min-width: 0">
+      <span class="el-strong" style="color: var(--action-fg)" aria-live="polite">3 / 3 ta buyurtma tanlandi</span>
+      <span class="el-xs el-muted">Faqat pochtaga hali yuborilmagan bekor buyurtmalar ro'yxatda turadi.</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-left: auto">
+      <button class="el-btn el-btn-ghost" type="button">Tanlovni bekor qilish</button>
+      <button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>3 ta buyurtmani pochtaga yuborish</button>
+    </div>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile" style="border-top: 1px solid var(--border)">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th class="el-col-check"><input class="el-check" type="checkbox" checked aria-label="Sahifadagi barcha bekor buyurtmalarni tanlash"></th>
+          <th aria-sort="descending" style="padding-left: 8px; padding-right: 8px"><button class="el-th-sort" type="button" aria-pressed="true" title="Sana bo'yicha saralash">Buyurtma<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button></th>
+          <th style="padding-left: 8px; padding-right: 8px">Mijoz</th>
+          <th class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px">Tuman / viloyat</th>
+          <th class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px">Market</th>
+          <th style="padding-left: 8px; padding-right: 8px">Holat</th>
+          <th class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px">Yetkazish</th>
+          <th class="el-num" style="padding-left: 8px; padding-right: 20px"><button class="el-th-sort" type="button" aria-pressed="false">Summa<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="is-selected">
+          <td class="el-col-check"><input class="el-check" type="checkbox" checked aria-label="№10235 ni tanlash"></td>
+          <td style="padding-left: 8px; padding-right: 8px"><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10235</a><button class="el-iconbtn el-iconbtn-sm el-hide-tablet" type="button" aria-label="№10235 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Kecha, 18:04</div></td>
+          <td style="padding-left: 8px; padding-right: 8px"><div class="el-cell-title" style="white-space: nowrap">Malika Yusupova</div><a class="el-cell-sub" href="tel:+998998124011" aria-label="Malika Yusupovaga qo'ng'iroq qilish, +998 99 812 40 11" style="text-decoration: none; color: var(--text-muted)">+998 99 812 40 11</a></td>
+          <td class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px"><div style="white-space: nowrap">Sergeli tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap; padding-left: 8px; padding-right: 8px">Nur Elektronika</td>
+          <td style="padding-left: 8px; padding-right: 8px"><div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px"><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span></div></td>
+          <td class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num" style="padding-left: 8px; padding-right: 20px"><div class="el-strong">96 000 so'm</div><div class="el-show-tablet el-cell-sub">Nur Elektronika</div></td>
+        </tr>
+        <tr class="is-selected">
+          <td class="el-col-check"><input class="el-check" type="checkbox" checked aria-label="№10233 ni tanlash"></td>
+          <td style="padding-left: 8px; padding-right: 8px"><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10233</a><button class="el-iconbtn el-iconbtn-sm el-hide-tablet" type="button" aria-label="№10233 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Kecha, 16:47</div></td>
+          <td style="padding-left: 8px; padding-right: 8px"><div class="el-cell-title" style="white-space: nowrap">Bekzod Aliyev</div><a class="el-cell-sub" href="tel:+998913302774" aria-label="Bekzod Aliyevga qo'ng'iroq qilish, +998 91 330 27 74" style="text-decoration: none; color: var(--text-muted)">+998 91 330 27 74</a></td>
+          <td class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px"><div style="white-space: nowrap">Olmazor tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap; padding-left: 8px; padding-right: 8px">Nur Elektronika</td>
+          <td style="padding-left: 8px; padding-right: 8px"><div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px"><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span></div></td>
+          <td class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num" style="padding-left: 8px; padding-right: 20px"><div class="el-strong">410 000 so'm</div><div class="el-show-tablet el-cell-sub">Nur Elektronika</div></td>
+        </tr>
+        <tr class="is-selected">
+          <td class="el-col-check"><input class="el-check" type="checkbox" checked aria-label="№10225 ni tanlash"></td>
+          <td style="padding-left: 8px; padding-right: 8px"><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10225</a><button class="el-iconbtn el-iconbtn-sm el-hide-tablet" type="button" aria-label="№10225 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Kecha, 15:30</div></td>
+          <td style="padding-left: 8px; padding-right: 8px"><div class="el-cell-title" style="white-space: nowrap">Gulnora Tosheva</div><a class="el-cell-sub" href="tel:+998935061472" aria-label="Gulnora Toshevaga qo'ng'iroq qilish, +998 93 506 14 72" style="text-decoration: none; color: var(--text-muted)">+998 93 506 14 72</a></td>
+          <td class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px"><div style="white-space: nowrap">Yunusobod tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap; padding-left: 8px; padding-right: 8px">Ipak Yo'li Savdo</td>
+          <td style="padding-left: 8px; padding-right: 8px"><div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px"><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span></div></td>
+          <td class="el-hide-tablet" style="padding-left: 8px; padding-right: 8px"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num" style="padding-left: 8px; padding-right: 20px"><div class="el-strong">132 000 so'm</div><div class="el-show-tablet el-cell-sub">Ipak Yo'li Savdo</div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-show-mobile" style="align-items: center; gap: 0; padding: 0 16px 0 0; border-bottom: 1px solid var(--border)">
+    <button type="button" role="checkbox" aria-checked="true" aria-describedby="canc-count" style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; height: 48px; padding: 0 0 0 20px; border: 0; background: transparent; font: inherit; color: var(--text); text-align: left; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" fill="var(--action)" stroke="var(--action)"/><path d="m9 12 2 2 4-4" stroke="var(--on-solid)"/></svg><span class="el-h3">Barchasini tanlash</span></button>
+    <span class="el-small el-muted" id="canc-count">3 / 3 ta tanlandi</span>
+  </div>
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <div class="el-list-item is-selected" style="position: relative; display: flex; align-items: flex-start; gap: 0; padding: 0; background: var(--action-soft)">
+      <button class="el-iconbtn" type="button" role="checkbox" aria-checked="true" aria-label="Malika Yusupovani tanlash" style="flex: none; width: 48px; height: 48px; margin: 4px 0 0 6px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" fill="var(--action)" stroke="var(--action)"/><path d="m9 12 2 2 4-4" stroke="var(--on-solid)"/></svg></button>
+      <a href="@orders-detail" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 12px 16px 12px 0; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-right: 56px"><span class="el-cell-title">Malika Yusupova</span><span class="el-strong" style="white-space: nowrap">96 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal; padding-right: 56px">№10235 · Sergeli tumani · <span style="white-space: nowrap">Nur Elektronika</span></span>
+        <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span><span class="el-badge el-tone-neutral">Uygacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Kecha, 18:04</span></span>
+      </a>
+      <a class="el-iconbtn el-iconbtn-lg" href="tel:+998998124011" aria-label="Malika Yusupovaga qo'ng'iroq qilish, +998 99 812 40 11" style="position: absolute; top: 12px; right: 16px; background: var(--surface); color: var(--action-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></svg></a>
+    </div>
+    <div class="el-list-item is-selected" style="position: relative; display: flex; align-items: flex-start; gap: 0; padding: 0; background: var(--action-soft)">
+      <button class="el-iconbtn" type="button" role="checkbox" aria-checked="true" aria-label="Bekzod Aliyevni tanlash" style="flex: none; width: 48px; height: 48px; margin: 4px 0 0 6px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" fill="var(--action)" stroke="var(--action)"/><path d="m9 12 2 2 4-4" stroke="var(--on-solid)"/></svg></button>
+      <a href="@orders-detail" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 12px 16px 12px 0; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-right: 56px"><span class="el-cell-title">Bekzod Aliyev</span><span class="el-strong" style="white-space: nowrap">410 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal; padding-right: 56px">№10233 · Olmazor tumani · <span style="white-space: nowrap">Nur Elektronika</span></span>
+        <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span><span class="el-badge el-tone-neutral">Markazgacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Kecha, 16:47</span></span>
+      </a>
+      <a class="el-iconbtn el-iconbtn-lg" href="tel:+998913302774" aria-label="Bekzod Aliyevga qo'ng'iroq qilish, +998 91 330 27 74" style="position: absolute; top: 12px; right: 16px; background: var(--surface); color: var(--action-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></svg></a>
+    </div>
+    <div class="el-list-item is-selected" style="position: relative; display: flex; align-items: flex-start; gap: 0; padding: 0; background: var(--action-soft)">
+      <button class="el-iconbtn" type="button" role="checkbox" aria-checked="true" aria-label="Gulnora Toshevani tanlash" style="flex: none; width: 48px; height: 48px; margin: 4px 0 0 6px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" fill="var(--action)" stroke="var(--action)"/><path d="m9 12 2 2 4-4" stroke="var(--on-solid)"/></svg></button>
+      <a href="@orders-detail" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 12px 16px 12px 0; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-right: 56px"><span class="el-cell-title">Gulnora Tosheva</span><span class="el-strong" style="white-space: nowrap">132 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal; padding-right: 56px">№10225 · Yunusobod tumani · <span style="white-space: nowrap">Ipak Yo'li Savdo</span></span>
+        <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span><span class="el-badge el-tone-neutral">Uygacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Kecha, 15:30</span></span>
+      </a>
+      <a class="el-iconbtn el-iconbtn-lg" href="tel:+998935061472" aria-label="Gulnora Toshevaga qo'ng'iroq qilish, +998 93 506 14 72" style="position: absolute; top: 12px; right: 16px; background: var(--surface); color: var(--action-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></svg></a>
+    </div>
+  </div>
+
+  <div class="el-card-foot el-pagination el-hide-mobile">
+    <span>1–3 / 3 ta buyurtma</span>
+    <nav class="el-pages" aria-label="Sahifalar">
+      <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="el-page" type="button" aria-current="page">1</button>
+      <button class="el-page" type="button" disabled aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+    </nav>
+  </div>
+</section>
+
+<div class="el-show-mobile" aria-hidden="true" style="height: 64px"></div>
+
+<div class="el-toast el-hide-mobile" role="status" style="position: absolute; top: 80px; right: 32px; z-index: 6; align-items: center">
+  <span style="color: var(--success-fg); display: inline-flex"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+    <span class="el-strong">Buyurtma tanlandi</span>
+    <span class="el-small el-muted">Bekzod Aliyev ro'yxatda tanlandi</span>
+  </div>
+  <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Xabarni yopish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+</div>
+<div class="el-toast el-show-mobile" role="status" style="position: absolute; left: 12px; right: 12px; bottom: 148px; z-index: 6; max-width: none; min-width: 0; padding: 10px 12px 10px 14px; align-items: center">
+  <span style="color: var(--success-fg); display: inline-flex"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+    <span class="el-strong">Buyurtma tanlandi</span>
+    <span class="el-small el-muted">Bekzod Aliyev ro'yxatda tanlandi</span>
+  </div>
+  <button class="el-iconbtn" type="button" aria-label="Xabarni yopish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+</div>
+<div class="el-sticky-bar el-show-mobile" style="position: absolute; left: 0; right: 0; bottom: 64px; z-index: 6">
+  <button class="el-btn el-btn-primary el-btn-lg el-btn-block" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>3 ta buyurtmani pochtaga yuborish</button>
+</div>

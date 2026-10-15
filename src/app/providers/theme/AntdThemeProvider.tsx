@@ -42,6 +42,25 @@ import { LEGACY_MAIN, SEMANTIC_TOKENS, TEXT_MUTED } from '../../../shared/config
  * `action` (#8ea6ff) esa oq yozuv bilan 2.2:1 beradi. `LEGACY_MAIN.dark`
  * (#5574ee) oq yozuvni ham, qorong'i yuzadagi havolani ham o'qiladigan qiladi.
  */
+type Tokens = (typeof SEMANTIC_TOKENS)["light"];
+const STATUS = [
+  ["Success", "success"],
+  ["Warning", "warning"],
+  ["Info", "info"],
+  ["Error", "danger"],
+] as const;
+
+/** antd `colorXBg / colorXBorder / colorXText` — v2 `*-soft` va `*-fg` tokenlaridan. */
+const statusTokens = (t: Tokens, isDark: boolean) =>
+  Object.fromEntries(
+    STATUS.flatMap(([antd, key]) => [
+      [`color${antd}Bg`, t[`${key}-soft`]],
+      [`color${antd}Border`, isDark ? `color-mix(in srgb, ${t[`${key}-fg`]} 35%, transparent)` : `color-mix(in srgb, ${t[key]} 30%, white)`],
+      [`color${antd}Text`, t[`${key}-fg`]],
+      ...(isDark ? [[`color${antd}TextHover`, t[`${key}-fg`]], [`color${antd}TextActive`, t[`${key}-fg`]]] : []),
+    ]),
+  );
+
 const buildAntdTheme = (isDark: boolean) => {
   const mode = isDark ? "dark" : "light";
   const t = SEMANTIC_TOKENS[mode];
@@ -68,9 +87,17 @@ const buildAntdTheme = (isDark: boolean) => {
        */
       colorTextPlaceholder: isDark ? "rgba(232, 235, 247, 0.6)" : t["text-subtle"],
       controlOutline: t.focus,
-      /** Burchak 10px, boshqaruv balandligi 40px — docs/DESIGN_SYSTEM.md. */
+      /**
+       * Holat ranglarining yumshoq fonlari/matnlari ham tokenlardan — aks holda
+       * antd ularni to'q urug'dan HISOBLAB xira jigarrang/yashil fon chiqaradi
+       * (Alert, Tag, Message). Matn — `*-fg` (dark'da yorqin, AA).
+       */
+      ...statusTokens(t, isDark),
+      /** Burchak 10px, boshqaruv balandligi 32 / 40 / 48 — docs/DESIGN_SYSTEM.md §5. */
       borderRadius: 10,
       controlHeight: 40,
+      controlHeightSM: 32,
+      controlHeightLG: 48,
       fontFamily: "inherit",
     },
     components: {
@@ -86,6 +113,8 @@ const buildAntdTheme = (isDark: boolean) => {
         borderColor: t.border,
       },
       Card: { paddingLG: 16 },
+      /** controlHeight 40 kalendar kataklarini kattalashtirmasin (popup eni o'zgarmasin). */
+      DatePicker: { cellHeight: 28, cellWidth: 36 },
       /**
        * Faol tab `action-fg` — dark'da #8ea6ff (yuzada 7.4:1). antd'ning
        * qoraytirilgan sukuti dark'da 2.38:1 edi (7L68tqsa).

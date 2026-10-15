@@ -34,6 +34,8 @@ const setTheme = (value: "dark" | "light") => {
   window.localStorage.clear();
   // ThemeProvider `readStoredTheme()` dan boshlang'ich qiymatni oladi.
   window.localStorage.setItem("theme", value);
+  // Dizayn v2: versiyasiz saqlangan mavzu e'tiborga olinmaydi (preferencesStorage).
+  window.localStorage.setItem("theme-version", "2");
 };
 
 /** `#rrggbb` yoki `rgb(...)` dan yorqinlik (0–255). */

@@ -1,0 +1,370 @@
+<div style="max-width: 1440px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 48px) 72px; display: flex; flex-direction: column; gap: 56px">
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<a class="el-back" href="@main" style="margin: 0; align-self: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Dizayn tizimi</a>
+<header style="background: var(--sidebar); border: 1px solid var(--border); border-radius:20px; padding: clamp(24px, 3vw, 40px); display: flex; flex-wrap: wrap; gap: 32px 48px; align-items: flex-end; justify-content: space-between">
+  <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0; flex: 1 1 520px">
+    <img src="/_blob/6c64e6604f822b10da1545ec86677c82" alt="Elchi Pochta" width="145" height="48" style="display: block">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-overline" style="color: var(--sidebar-muted)">Dizayn tizimi · 03 · Holatlar</span>
+      <h1 class="el-h1" style="color: var(--sidebar-text)">Tugmalar va havolalar</h1>
+      <p style="color: var(--sidebar-text); max-width: 620px">Har bir tugma turi oltita holatda chiziladi. Holat tugmaning ma'nosini o'zgartirmaydi — faqat fon, chegara yoki shaffoflik o'zgaradi. Ishlab chiqishda shu taxtadagi ko'rinishdan chetga chiqilmaydi.</p>
+    </div>
+  </div>
+  <dl style="display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 0; max-width: 452px">
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Turlar</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">12 ta, 3 ta o'lcham</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Holatlar</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">6 ta, har bir tur uchun</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Fokus</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">2 px ko'k halqa</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Asosiy tugma</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">Har ekranda bittadan</dd></div>
+  </dl>
+</header>
+</div>
+
+<section aria-labelledby="s-matritsa" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">01</span>
+    <h2 class="el-h1" id="s-matritsa">Holatlar matritsasi</h2>
+    <p class="el-sub" style="max-width: 920px">Qatorda — tugma turi, ustunda — holat. Kompyuterda o'rta o'lcham (40 px), telefon tugmasi — 48 px va to'liq kenglikda. Har bir katak ostida holat nomi yozilgan.</p>
+  </div>
+  <section class="el-card" aria-labelledby="t-matritsa">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-matritsa">12 tur × 6 holat</h3>
+      <p class="el-small el-muted">Kodda — <span class="el-strong">:hover</span> · <span class="el-strong">:focus-visible</span> · <span class="el-strong">:active</span> · <span class="el-strong">aria-busy</span> · <span class="el-strong">disabled</span></p>
+    </div>
+    <div class="el-table-wrap">
+      <table class="el-table" style="table-layout: fixed; min-width: 1200px">
+        <thead><tr><th style="width: 216px">Turi</th><th style="text-align: center; padding: 0 8px">Oddiy</th><th style="text-align: center; padding: 0 8px">Ustiga kelganda</th><th style="text-align: center; padding: 0 8px">Fokus (klaviatura)</th><th style="text-align: center; padding: 0 8px">Bosilgan</th><th style="text-align: center; padding: 0 8px">Yuklanmoqda</th><th style="text-align: center; padding: 0 8px">O'chirilgan</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><div class="el-cell-title">Asosiy</div><div class="el-xs el-subtle">el-btn-primary</div><div class="el-small el-muted" style="margin-top: 2px">Ekrandagi bitta bosh amal</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary" type="button">Saqlash</button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary is-hover" type="button">Saqlash</button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary is-focus" type="button">Saqlash</button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary is-active" type="button">Saqlash</button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>Saqlanmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary" type="button" disabled>Saqlash</button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Ikkinchi darajali</div><div class="el-xs el-subtle">el-btn-secondary</div><div class="el-small el-muted" style="margin-top: 2px">Yuklash, chop etish, filtr</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary" type="button">Excelga yuklash</button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary is-hover" type="button">Excelga yuklash</button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary is-focus" type="button">Excelga yuklash</button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary is-active" type="button">Excelga yuklash</button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>Yuklanmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary" type="button" disabled>Excelga yuklash</button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Shaffof</div><div class="el-xs el-subtle">el-btn-ghost</div><div class="el-small el-muted" style="margin-top: 2px">Tozalash, orqaga, yana ko'rsatish</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-ghost" type="button">Yana ko'rsatish</button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-ghost is-hover" type="button">Yana ko'rsatish</button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-ghost is-focus" type="button">Yana ko'rsatish</button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-ghost is-active" type="button">Yana ko'rsatish</button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-ghost is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>Yuklanmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-ghost" type="button" disabled>Yana ko'rsatish</button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Havola</div><div class="el-xs el-subtle">el-btn-link</div><div class="el-small el-muted" style="margin-top: 2px">Matn ichida yoki karta oxirida</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-link" type="button">Qayta yuborish</button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-link is-hover" type="button">Qayta yuborish</button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-link is-focus" type="button">Qayta yuborish</button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-link is-hover is-active" type="button" style="color: var(--action-hover)">Qayta yuborish</button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-link is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>Yuborilmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-link" type="button" disabled>Qayta yuborish</button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Muvaffaqiyat</div><div class="el-xs el-subtle">el-btn-success</div><div class="el-small el-muted" style="margin-top: 2px">Faqat sotish va pul tasdig'i</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-success" type="button">Sotish</button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-success is-hover" type="button">Sotish</button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-success is-focus" type="button">Sotish</button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-success is-hover is-active" type="button">Sotish</button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-success is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>Sotilmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-success" type="button" disabled>Sotish</button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Xavfli</div><div class="el-xs el-subtle">el-btn-danger</div><div class="el-small el-muted" style="margin-top: 2px">Faqat tasdiqlash oynasi ichida</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger" type="button">O'chirish</button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger is-hover" type="button">O'chirish</button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger is-focus" type="button">O'chirish</button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger is-hover is-active" type="button">O'chirish</button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>O'chirilmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger" type="button" disabled>O'chirish</button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Xavfli (yumshoq)</div><div class="el-xs el-subtle">el-btn-danger-soft</div><div class="el-small el-muted" style="margin-top: 2px">Jadval qatori, menyu, pastki panel</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger-soft" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>O'chirish</button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger-soft is-hover" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>O'chirish</button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger-soft is-focus" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>O'chirish</button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger-soft is-hover is-active" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>O'chirish</button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger-soft is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>O'chirilmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-danger-soft" type="button" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>O'chirish</button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Ikonka tugma</div><div class="el-xs el-subtle">el-iconbtn</div><div class="el-small el-muted" style="margin-top: 2px">Asboblar paneli, karta sarlavhasi</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn " type="button" aria-label="Yangilash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn is-hover" type="button" aria-label="Yangilash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn is-focus" type="button" aria-label="Yangilash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn is-active" type="button" aria-label="Yangilash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn is-loading" type="button" aria-label="Yangilanmoqda" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span></button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn " type="button" aria-label="Yangilash" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Ikonka tugma, chegarali</div><div class="el-xs el-subtle">el-iconbtn-bordered</div><div class="el-small el-muted" style="margin-top: 2px">Matnli tugmalar yonida</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn el-iconbtn-bordered" type="button" aria-label="Chek chop etish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn el-iconbtn-bordered is-hover" type="button" aria-label="Chek chop etish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn el-iconbtn-bordered is-focus" type="button" aria-label="Chek chop etish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn el-iconbtn-bordered is-active" type="button" aria-label="Chek chop etish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn el-iconbtn-bordered is-loading" type="button" aria-label="Chek tayyorlanmoqda" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span></button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-iconbtn el-iconbtn-bordered" type="button" aria-label="Chek chop etish" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Ikonka va matn</div><div class="el-xs el-subtle">svg 18 px, oraliq 8 px</div><div class="el-small el-muted" style="margin-top: 2px">Ikonka chapda, yuklanganda spinner o'rnida</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yaratish</button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary is-hover" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yaratish</button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary is-focus" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yaratish</button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary is-active" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yaratish</button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>Yaratilmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary" type="button" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yaratish</button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Sanoqli tugma</div><div class="el-xs el-subtle">el-tab-count</div><div class="el-small el-muted" style="margin-top: 2px">Tanlanganlar yoki filtrlar soni</div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chop etish <span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">12</span></button><span class="el-state-label">Oddiy</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary is-hover" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chop etish <span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">12</span></button><span class="el-state-label">Ustiga kelganda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary is-focus" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chop etish <span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">12</span></button><span class="el-state-label">Fokus</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary is-active" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chop etish <span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">12</span></button><span class="el-state-label">Bosilgan</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true"></span>Tayyorlanmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div></td>
+            <td style="text-align: center; padding: 14px 8px"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-secondary" type="button" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chop etish <span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">12</span></button><span class="el-state-label">O'chirilgan</span></div></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Telefon: to'liq kenglik</div><div class="el-xs el-subtle">el-btn-lg el-btn-block</div><div class="el-small el-muted" style="margin-top: 2px">Kuryer ekranining pastki paneli, 48 px</div></td>
+            <td colspan="6" style="padding: 16px 16px 16px 8px"><div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+              <div style="background: var(--sunken); border-radius:12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary el-btn-lg el-btn-block" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qabul qilish</button><span class="el-state-label">Oddiy</span></div>
+              <div style="background: var(--sunken); border-radius:12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary el-btn-lg el-btn-block is-hover" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qabul qilish</button><span class="el-state-label">Ustiga kelganda</span></div>
+              <div style="background: var(--sunken); border-radius:12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary el-btn-lg el-btn-block is-focus" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qabul qilish</button><span class="el-state-label">Fokus</span></div>
+              <div style="background: var(--sunken); border-radius:12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary el-btn-lg el-btn-block is-active" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qabul qilish</button><span class="el-state-label">Bosilgan</span></div>
+              <div style="background: var(--sunken); border-radius:12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary el-btn-lg el-btn-block is-loading" type="button" aria-busy="true" aria-disabled="true"><span class="el-spinner" aria-hidden="true" style="width: 18px; height: 18px"></span>Qabul qilinmoqda…</button><span class="el-state-label">Yuklanmoqda</span></div>
+              <div style="background: var(--sunken); border-radius:12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px"><button class="el-btn el-btn-primary el-btn-lg el-btn-block" type="button" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qabul qilish</button><span class="el-state-label">O'chirilgan</span></div>
+            </div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="el-card-foot" style="justify-content: flex-start">
+      <p class="el-small el-muted" style="display: flex; align-items: flex-start; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Yashil va qizil tugmalarda bosilgan holat ustiga kelgandagi rangda qoladi. Havola bosilganda ham ustiga kelgandagi rangda qoladi va tagiga chiziladi.</p>
+    </div>
+  </section>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 20px 32px">
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Asosiy — bitta</h3><p class="el-small el-muted">Ekranda faqat bitta: sahifa sarlavhasining o'ng tomonida yoki oyna oxirida. Ikkinchi muhim amal ikkinchi darajali bo'ladi.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Ikkinchi darajali, shaffof, havola</h3><p class="el-small el-muted">Ikkinchi darajali — yuklash, chop etish, filtr. Shaffof — orqaga va kam muhim amallar. Havola boshqa sahifaga olib borsa — <span class="el-strong">&lt;a&gt;</span>, joyida amal bajarsa — tugma.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Yashil va qizil</h3><p class="el-small el-muted">Yashil — faqat sotish va pul tasdig'i. To'liq qizil — faqat tasdiqlash oynasi ichida. Jadval, menyu va pastki panelda — yumshoq qizil.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Ikonka tugma</h3><p class="el-small el-muted">Har doim yozuvli nom (aria-label) va ustiga kelganda maslahat. Kompyuterda 40 px, telefonda 44 px. Nomi tushunarsiz bo'lsa — ikonka va matn.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Fokus</h3><p class="el-small el-muted">Faqat klaviaturadan <span class="el-kbd">Tab</span> bilan kelganda chiqadi: 2 px ko'k halqa, 2 px oraliqda. Yashil va qizil tugmada ham ko'k — fokus ma'no emas, joylashuv.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Yuklanmoqda va o'chirilgan</h3><p class="el-small el-muted">Yuklanayotgan tugma rangini saqlaydi, spinner ikonka o'rnida, qayta bosilmaydi. O'chirilgan — 45% shaffof; nega o'chirilganini yonida yozing.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="s-olcham" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">02</span>
+    <h2 class="el-h1" id="s-olcham">O'lchamlar</h2>
+    <p class="el-sub" style="max-width: 920px">Uchta o'lcham, bitta shakl. Bir qatordagi tugmalar doim bir xil o'lchamda. Ikonka tugma katta o'lchamda 44 px — telefon uchun eng kichik bosish maydoni.</p>
+  </div>
+  <section class="el-card el-card-pad" aria-label="Tugma o'lchamlari">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 32px 24px">
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px"><h3 class="el-h2">Kichik</h3><span class="el-badge el-tone-neutral">32 px</span></div>
+        <div style="background: var(--sunken); border-radius:12px; padding: 20px; min-height: 96px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+          <button class="el-btn el-btn-primary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qo'llash</button><button class="el-btn el-btn-secondary el-btn-sm" type="button">Bekor qilish</button><button class="el-iconbtn el-iconbtn-sm el-iconbtn-bordered" type="button" aria-label="Chek chop etish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button>
+        </div>
+        <dl class="el-kv" style="margin: 0">
+          <dt>Balandlik</dt><dd>32 px</dd>
+          <dt>Ichki oraliq</dt><dd>12 px</dd>
+          <dt>Shrift</dt><dd>13 px · 600</dd>
+          <dt>Radius</dt><dd>8 px</dd>
+          <dt>Ikonka</dt><dd>16 px</dd>
+          <dt>Ikonka tugma</dt><dd>32 × 32 px</dd>
+          <dt>Qayerda</dt><dd style="font-weight: 500">Jadval qatori, karta sarlavhasi, zich panel</dd>
+        </dl>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px"><h3 class="el-h2">O'rta</h3><span class="el-badge el-tone-neutral">40 px</span></div>
+        <div style="background: var(--sunken); border-radius:12px; padding: 20px; min-height: 96px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+          <button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Saqlash</button><button class="el-btn el-btn-secondary" type="button">Bekor qilish</button><button class="el-iconbtn el-iconbtn-bordered" type="button" aria-label="Chek chop etish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button>
+        </div>
+        <dl class="el-kv" style="margin: 0">
+          <dt>Balandlik</dt><dd>40 px</dd>
+          <dt>Ichki oraliq</dt><dd>16 px</dd>
+          <dt>Shrift</dt><dd>14 px · 600</dd>
+          <dt>Radius</dt><dd>10 px</dd>
+          <dt>Ikonka</dt><dd>18 px</dd>
+          <dt>Ikonka tugma</dt><dd>40 × 40 px</dd>
+          <dt>Qayerda</dt><dd style="font-weight: 500">Kompyuterdagi barcha sahifa, forma va oynalar — sukut bo'yicha</dd>
+        </dl>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px"><h3 class="el-h2">Katta</h3><span class="el-badge el-tone-neutral">48 px</span></div>
+        <div style="background: var(--sunken); border-radius:12px; padding: 20px; min-height: 96px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+          <button class="el-btn el-btn-primary el-btn-lg" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qabul qilish</button><button class="el-btn el-btn-secondary el-btn-lg" type="button">Orqaga</button><button class="el-iconbtn el-iconbtn-lg el-iconbtn-bordered" type="button" aria-label="Skanerlash"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></button>
+        </div>
+        <dl class="el-kv" style="margin: 0">
+          <dt>Balandlik</dt><dd>48 px</dd>
+          <dt>Ichki oraliq</dt><dd>20 px</dd>
+          <dt>Shrift</dt><dd>15 px · 600</dd>
+          <dt>Radius</dt><dd>12 px</dd>
+          <dt>Ikonka</dt><dd>18 px</dd>
+          <dt>Ikonka tugma</dt><dd>44 × 44 px</dd>
+          <dt>Qayerda</dt><dd style="font-weight: 500">Kuryer telefoni, pastki panel, kirish sahifasi</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 20px 32px">
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">O'rta — sukut bo'yicha</h3><p class="el-small el-muted">Kompyuterdagi barcha sahifa, forma va oynalarda. Telefon kengligida (767 px dan tor) o'rta tugma o'zi kamida 44 px bo'ladi.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Kichik — zich joyda</h3><p class="el-small el-muted">Jadval qatori, karta sarlavhasi va xabar ichida. Telefon ekranida asosiy amal uchun ishlatilmaydi.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Katta — telefon</h3><p class="el-small el-muted">Kuryer ekranlari, pastki panel va kirish sahifasi. Pastki paneldagi yagona amal to'liq kenglikda.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="s-guruh" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">03</span>
+    <h2 class="el-h1" id="s-guruh">Tugmalar guruhi</h2>
+    <p class="el-sub" style="max-width: 920px">Tartib hamma joyda bir xil: ikkinchi darajali chapda, asosiy o'ngda. Xavfli juftlikda to'liq qizil tugma faqat tasdiqlash oynasi ichida.</p>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr)); gap: 24px">
+
+    <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h3 class="el-h3">Forma va oyna oxiri</h3><span class="el-xs el-muted">ikkinchi darajali chapda, asosiy o'ngda · oraliq 8 px</span></div>
+      <section class="el-card" aria-label="Forma oxiri namunasi" style="flex: 1; display: flex; flex-direction: column">
+        <div class="el-card-pad" style="flex: 1; display: flex; flex-direction: column; gap: 16px">
+          <div class="el-field"><label class="el-label" for="g-name">Filial nomi <span class="el-req">*</span></label><input class="el-input" id="g-name" type="text" value="Urgut filiali"></div>
+          <div class="el-field"><label class="el-label" for="g-region">Viloyat <span class="el-req">*</span></label><button class="el-input el-select" id="g-region" type="button" aria-label="Viloyat: Samarqand"><span>Samarqand</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="el-field"><label class="el-label" for="g-phone">Telefon</label><input class="el-input" id="g-phone" type="tel" value="+998 90 123 45 67"></div>
+        </div>
+        <div class="el-card-foot" style="justify-content: flex-end; gap: 8px">
+          <button class="el-btn el-btn-secondary" type="button">Bekor qilish</button>
+          <button class="el-btn el-btn-primary" type="button">Saqlash</button>
+        </div>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h3 class="el-h3">Sahifa sarlavhasi</h3><span class="el-xs el-muted">ikkinchi darajalilar chapda, bitta asosiy eng o'ngda</span></div>
+      <section class="el-card el-card-pad" aria-label="Sahifa sarlavhasi namunasi" style="flex: 1; display: flex; flex-direction: column; gap: 20px">
+        <div class="el-pagehead">
+          <div class="el-pagehead-text">
+            <span class="el-h1">Buyurtmalar</span>
+            <span class="el-sub">Jami 1 248 ta buyurtma</span>
+          </div>
+          <div class="el-actions">
+            <button class="el-btn el-btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Excelga yuklash</button>
+            <button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</button>
+          </div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; padding-top: 20px; border-top: 1px solid var(--border)">
+          <div style="flex: 0 1 390px; min-width: 0; background: var(--sunken); border-radius:12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h2">Buyurtmalar</span><span class="el-small el-muted">Jami 1 248 ta buyurtma</span></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <button class="el-btn el-btn-secondary" type="button" style="min-height: 44px; padding: 0 12px; flex: 1 1 0; min-width: max-content"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Excelga yuklash</button>
+              <button class="el-btn el-btn-primary" type="button" style="min-height: 44px; padding: 0 12px; flex: 1 1 0; min-width: max-content"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</button>
+            </div>
+          </div>
+          <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <span class="el-overline">Telefonda</span>
+            <p class="el-small el-muted">Guruh ekran kengligiga cho'ziladi, tugmalar teng bo'linadi. Sig'masa ustma-ust turadi, asosiy pastda — bosh barmoqqa yaqin. Tartib o'zgarmaydi.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h3 class="el-h3">Tasdiqlash oynasi — xavfli juftlik</h3><span class="el-xs el-muted">«Bekor qilish» chapda, qizil tugma o'ngda va aniq fe'l bilan</span></div>
+      <section class="el-card" aria-label="Xavfli juftlik namunasi" style="position: relative; overflow: hidden; min-height: 380px; flex: 1">
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px" aria-hidden="true">
+          <div class="el-skel" style="width: 40%; height: 16px"></div>
+          <div class="el-skel" style="width: 64%"></div>
+          <div class="el-skel" style="width: 100%; height: 40px"></div>
+          <div class="el-skel" style="width: 100%; height: 40px"></div>
+          <div class="el-skel" style="width: 100%; height: 40px"></div>
+          <div class="el-skel" style="width: 100%; height: 40px"></div>
+        </div>
+        <div class="el-overlay">
+          <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="g-dlg-title" aria-describedby="g-dlg-text" style="width: min(440px, 100%)">
+            <div class="el-dialog-head">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius:999px; background: var(--danger-soft); color: var(--danger-fg); flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/></svg></span>
+              <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+                <h4 class="el-h2" id="g-dlg-title" style="margin: 0">Nofaol qilishni tasdiqlang</h4>
+                <p class="el-small el-muted" id="g-dlg-text">Farrux Sobirov hisobi nofaol holatga o'tadi. Kerak bo'lsa, uni istalgan vaqtda amallar menyusidan qayta faollashtirish mumkin.</p>
+              </div>
+            </div>
+            <div class="el-dialog-foot">
+              <button class="el-btn el-btn-secondary" type="button">Bekor qilish</button>
+              <button class="el-btn el-btn-danger" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/></svg>Nofaol qilish</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h3 class="el-h3">Telefon pastki paneli</h3><span class="el-xs el-muted">48 px, oraliq 12 px · asosiy amal o'ngda va kengroq</span></div>
+      <section class="el-card el-card-pad" aria-label="Telefon pastki paneli namunasi" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px">
+        <div style="width: min(390px, 100%); display: flex; flex-direction: column; gap: 6px">
+          <span class="el-xs el-muted">Ikki amal: buyurtma tafsiloti</span>
+          <div style="background: var(--sunken); border-radius:12px; overflow: hidden; display: flex; flex-direction: column">
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 10px" aria-hidden="true"><div class="el-skel" style="background: var(--border); width: 56%; height: 14px"></div><div class="el-skel" style="background: var(--border); width: 82%"></div></div>
+            <div class="el-sticky-bar" style="gap: 12px">
+              <button class="el-btn el-btn-lg el-btn-danger-soft" type="button" style="flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Bekor qilish</button>
+              <button class="el-btn el-btn-lg el-btn-success" type="button" style="flex: 1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sotish</button>
+            </div>
+          </div>
+        </div>
+        <div style="width: min(390px, 100%); display: flex; flex-direction: column; gap: 6px">
+          <span class="el-xs el-muted">Bitta amal: to'liq kenglik</span>
+          <div style="background: var(--sunken); border-radius:12px; overflow: hidden; display: flex; flex-direction: column">
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 10px" aria-hidden="true"><div class="el-skel" style="background: var(--border); width: 56%; height: 14px"></div><div class="el-skel" style="background: var(--border); width: 82%"></div></div>
+            <div class="el-sticky-bar">
+              <button class="el-btn el-btn-primary el-btn-lg el-btn-block" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Kunni yakunlash</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <section class="el-card" aria-labelledby="t-xato">
+    <div class="el-card-head"><h3 class="el-h2" id="t-xato">Bunday qilmang</h3><span class="el-xs el-muted">kod ko'rib chiqishda qaytariladi</span></div>
+    <div class="el-card-pad" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
+        <div style="background: var(--sunken); border-radius:12px; padding: 20px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px">
+          <button class="el-btn el-btn-primary" type="button">Saqlash</button>
+          <button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Yuborish</button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start"><span style="color: var(--danger-fg); display: inline-flex; margin-top: 1px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><p class="el-small"><span class="el-strong">Ikkita asosiy tugma.</span> <span class="el-muted">Qaysi biri muhimligi yo'qoladi — ikkinchisini ikkinchi darajali qiling.</span></p></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
+        <div style="background: var(--sunken); border-radius:12px; padding: 20px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px">
+          <button class="el-btn el-btn-primary" type="button">Saqlash</button>
+          <button class="el-btn el-btn-secondary" type="button">Bekor qilish</button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start"><span style="color: var(--danger-fg); display: inline-flex; margin-top: 1px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><p class="el-small"><span class="el-strong">Asosiy tugma chapda.</span> <span class="el-muted">Boshqa oynalardagi tartib buziladi, foydalanuvchi adashib bosadi.</span></p></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
+        <div style="background: var(--sunken); border-radius:12px; padding: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+          <span class="el-small"><span class="el-strong">№10241</span> <span class="el-muted">· Dilnoza Karimova</span></span>
+          <button class="el-btn el-btn-danger el-btn-sm" type="button">O'chirish</button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start"><span style="color: var(--danger-fg); display: inline-flex; margin-top: 1px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><p class="el-small"><span class="el-strong">Jadvalda to'liq qizil tugma.</span> <span class="el-muted">Sahifani qizilga bo'yaydi — qatorda yumshoq qizil, tasdiq oynada.</span></p></div>
+      </div>
+    </div>
+  </section>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 20px 32px">
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Tartib</h3><p class="el-small el-muted">Ikkinchi darajali chapda, asosiy o'ngda — ko'z oxirgi tugmada to'xtaydi. Forma va oyna oxirida guruh o'ng chetga tekislanadi.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Xavfli juftlik</h3><p class="el-small el-muted">«Bekor qilish» chapda, qizil tugma o'ngda va aniq fe'l bilan: «O'chirish», «Nofaol qilish» — «Ha» yoki «OK» emas. Pul o'tkazmasi va «Kunni yakunlash» ham tasdiqlanadi.</p></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); min-width: 0"><h3 class="el-h3">Telefonda</h3><p class="el-small el-muted">Ikkala tugma 48 px, orasi 12 px, asosiy amal o'ngda va kengroq. Bitta amal bo'lsa — to'liq kenglikda, pastki panelda.</p></div>
+  </div>
+</section>
+
+</div>
+  

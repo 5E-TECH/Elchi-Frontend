@@ -1,27 +1,184 @@
 # Elchi Frontend — majburiy qoidalar (frontchilar va AI agentlar uchun)
 
 React 19 + Vite + Tailwind v4 + antd 6, Feature-Sliced Design (`app → pages → widgets → features → entities → shared`).
-To'liq dizayn qoidalari: **`docs/DESIGN_SYSTEM.md`** — UI'ga tegadigan har ishdan oldin o'qing.
+Bu fayl jamoaning **majburiy** qoidalari. Ular odamga ham, AI agentga ham (Claude Code `CLAUDE.md` orqali o'qiydi,
+Codex to'g'ridan-to'g'ri) bir xil amal qiladi.
+To'liq dizayn qoidalari: **`docs/DESIGN_SYSTEM.md`**. UI'ga tegadigan har ishdan oldin o'qing.
+
+## Loyiha holati: dizayn v2 ga o'tish
+
+Dizayn v2 ga **bosqichma-bosqich** o'tilmoqda. Ega yangi dizaynni tasdiqlagan (2026-10-09) va uning barcha ekranlari
+repoda turadi (`design/`).
+
+| Bosqich | Nima | Holat |
+|---|---|---|
+| 0 | tokenlar, kunduzgi/tungi mavzu, Manrope, valyuta i18n, maketlar repoda, dizayn qo'riqchisi | **tayyor** |
+| 1 | primitivlar: `Button`, `IconButton`, `Badge`/`StatusBadge`, `Card`/`StatCard`, `PageHeader`, `Tabs`/`SegmentedControl`, `Dialog`/`ConfirmDialog`, `Field`/`TextInput`/`Select`/`DateRange`, `QueryBoundary` | navbatda |
+| 2 | shell: yon menyu, topbar, pastki menyu | navbatda |
+| 3 | forma, dialog, bo'sh/yuklanish/xato holatlari | navbatda |
+| 4 | sahifalar migratsiyasi (har sahifa alohida PR) | navbatda |
+| 5 | qo'shimcha qo'riqchilar (ESLint, vizual snapshotlar) | navbatda |
+
+Ilovada hozir ikki xil sahifa bor:
+- **v2 ga ko'chirilgan** sahifalar. Faylning birinchi qatorida `// dizayn-v2: <ekran>` belgisi turadi.
+- **Eski (v1)** sahifalar. Ular eski nomlar (alias) orqali yangi ranglarda ko'rinadi, lekin tuzilmasi va
+  komponentlari eski.
+
+Trello'dagi «Dizayn v2» kartalari bosqichlarni kuzatadi.
+
+## Dizaynni qayerdan ko'rish
+
+- **`design/`**: 411 ekran (superadmin, admin, manager, registrator, market, courier, umumiy ekranlar va `tizim-*`
+  dizayn tizimi taxtalari). Har biri desktop 1440 / planshet 768 / telefon 390, kunduzgi va tungi. Tavsif:
+  `design/README.md`.
+- **Ekranni topish:** `design/SCREENS.md` (route / sahifa fayli → `<rol>-<viewId>`).
+- **Ko'rish:** `npm run design:preview` (http://127.0.0.1:4199, barcha ekranlar ro'yxati) yoki
+  `npm run design:shot -- <ekran>` (`design/shots/` ga PNG; agent ularni o'qib dizaynni ko'radi).
+- **Kodga tarjima:** `design/CODE-MAP.md` (maket `el-*` klassi → Tailwind + tokenlar → mavjud komponent →
+  1-bosqich primitivi).
+- Asl nusxa egadagi Claude Design kanvasi. Dasturchilar uchun manba esa repodagi `design/`. Maket fayllari qo'lda
+  tahrirlanmaydi, faqat ega yoki dizaynerning sinxron PR'i orqali o'zgaradi. Yagona istisno
+  `design/kit/route-map.json` (route ↔ maket xaritasi, quyida).
+
+## Har qanday UI o'zgarishi dizayn v2 bo'yicha
+
+Kim yozishidan qat'i nazar (odam yoki agent), UI'ga tegadigan har o'zgarish shu oqim bo'yicha:
+
+```text
+UI'ga tegadimi? ── yo'q ─→ bu bo'lim talab qilmaydi
+   │ ha
+   ├─ Yangi ekran / komponent / dialog / bo'lim ........... to'liq v2: maket + tokenlar + primitivlar
+   ├─ v2 ga ko'chirilgan sahifa (`// dizayn-v2:` bor) ..... faqat v2; eski klass, komponent, uslub qaytmaydi
+   └─ Eski (v1) sahifa
+        ├─ ko'rinishga tegmaydigan tuzatish (mantiq, API, matn) ....... ko'rinish o'zgarishi shart emas
+        ├─ kichik UI qo'shimchasi (tugma, ustun, maydon, badge) ......... yangi yoki tegilgan qism v2 da
+        └─ katta o'zgarish (bo'limni qayta tuzish; yangi karta, jadval,
+           dialog yoki forma; bo'limning yarmidan ko'pi) ................ o'sha bo'lim to'liq v2 ga ko'chiriladi
+```
+
+- **Eski uslub kengaytirilmaydi.** Eski klass satrini nusxalamang. Yangi `bg-main`, `text-maindark`, `dark:`,
+  `bg-white`, rang oilasi qo'shmang. Eski komponentning v1 ko'rinishini yangi joyga olib o'tmang.
+- **Bitta element ichida aralash bo'lmaydi.** Karta, jadval yoki dialog v2 ga o'tsa, ichidagi tugma, badge va
+  maydonlar ham v2. Shuning uchun eski sahifaga yangi v2 element qo'shilsa, uni o'rab turgan **eng kichik
+  karta/bo'lim** ham v2 ga ko'chiriladi. Bu «kichik» doiradan oshib ketsa, yangi element eski kartaga
+  tiqilmaydi — o'zining alohida v2 bloki bo'lib, eski karta yonida turadi.
+  *Misol:* kuryer buyurtmalar sahifasiga (`src/pages/orders/list/courier/index.tsx`, sarlavha kartasi
+  `bg-primary dark:bg-maindark …`) filtr qo'shilsa — sarlavha kartasi (sarlavha + tablar + filtr) birga v2 ga
+  o'tadi; sahifaning qolgan qismi (ro'yxat) eski holicha qolishi mumkin.
+- **Bir nechta sahifa ishlatadigan umumiy widget** (`SuccessGauge`, `DashboardStatistics`, `TopPerformers` …)
+  bitta sahifa uchun «yo'l-yo'lakay» qayta bo'yalmaydi — u boshqa rollarning sahifalarini ham jimgina o'zgartiradi.
+  Ikki yo'l: (1) widget alohida PR'da ko'chiriladi va **har bir** iste'molchi ekranining skrinshoti ilova qilinadi
+  (ro'yxat: `design/SCREENS.md` §6 «Fayl → route»); (2) yangi v2 komponent yoniga yaratiladi, eskisi tegilmaydi.
+- **Sahifa to'liq ko'chirilsa** (4-bosqich qoidasi): alohida PR, maketdagi barcha holatlar (bo'sh, yuklanish, xato,
+  dialoglar, telefon), faylning birinchi qatorida `// dizayn-v2: <ekran>[, <ekran>]`.
+- **Route qo'shilsa, o'chirilsa yoki sahifa ko'chirilsa:** `design/kit/route-map.json` yangilanadi va
+  `npm run design:screens` yuriladi (`design/SCREENS.md` qayta yoziladi, qo'lda tahrirlanmaydi).
+- **Menyu bandi** (`src/widgets/Sidebar/model/menuConfig.tsx`) faqat maketdagi menyu (`design/kit/roles.json`) bilan
+  birga qo'shiladi yoki olinadi. Yangi band uchun avval ega maketni yangilaydi.
+- **Maket yo'q bo'lsa:** `docs/DESIGN_SYSTEM.md` va eng yaqin maket asos bo'ladi, PR'da «Maket yo'q — eng yaqini:
+  `<ekran>`» deb yoziladi. Katta yangi ekran uchun avval egadan maket so'raladi. Maketsiz yangi route
+  `design/kit/route-map.json` ga `"views": {}` va `"roleNotes": { "<rol>": "Maket yo'q — eng yaqini: <ekran>" }`
+  bilan yoziladi; v2 da yozilgan maketsiz sahifa belgisi: `// dizayn-v2: (maket yo'q) <eng yaqin ekran>`.
+- **Maket elementni ataylab yashirgan bo'lsa** (masalan `courier-orders-all` telefonda faqat qidiruv, filtrlar
+  `el-hide-mobile`; yoki element boshqa rolda bor, bu rolda yo'q) — bu «maket yo'q» emas, **dizayn ziddiyati**:
+  kod yozishdan oldin egadan so'raladi, taklif sifatida shu breakpoint/rolning eng yaqin namunasi ko'rsatiladi
+  (masalan `superadmin-orders-filters-mobile`).
+- **So'rov dizaynga zid bo'lsa** (yangi rang, gradient, maketda yo'q uslub), kod yozilmaydi, avval ega qaror qiladi.
+  Maket «kod qulay bo'lsin» deb o'zgartirilmaydi.
+- **Tokenlar** (`src/index.css`, `themeTokens.ts`) va **shell** (`widgets/layout`, `widgets/Sidebar`,
+  `widgets/header`) faqat o'z bosqichining PR'ida yoki ega roziligi bilan o'zgaradi.
 
 ## Dizayn v2 (ega qarori, qulflangan)
 - **Ranglar faqat tokenlardan.** `bg-surface`, `text-text-muted`, `border-border`, `bg-action text-on-solid`,
   `bg-success-soft text-success-fg` … Yangi kodda hex/`rgb()`, Tailwind rang oilalari (`bg-blue-500`,
-  `text-gray-400`), `dark:` juftlari va eski nomlar (`main`, `maindark`, `primarydark`, `purple*`, `border-soft`)
-  **yozilmaydi**. Token yetmasa — `src/index.css` + `src/shared/config/themeTokens.ts` ga birga qo'shing
+  `text-gray-400`), `dark:` juftlari va eski nomlar (`main`, `maindark`, `primary` — bu **oq** yuza, brend emas,
+  `primarydark`, `purple*`, `border-soft`, `sidebar`, `error` …; to'liq jadval `docs/DESIGN_SYSTEM.md` §2)
+  **yozilmaydi**. Token yetmasa, `src/index.css` va `src/shared/config/themeTokens.ts` ga birga qo'shing
   (`themeTokens.test.ts` ularni solishtiradi).
 - **Brend:** navy `#1f2853` + ko'k action. Binafsha/indigo (`#7c3aed`, `#6366f1`, `#576adb`) qaytarilmaydi
-  (`src/test/paletteGuard.test.ts`). Ko'k — faqat interaktiv narsa.
-- **Sukut mavzusi — kunduzgi.** Shrift — Manrope. Matn 12px dan kichik emas.
-- **Pul/son** faqat `src/shared/lib/formatMoney.ts` orqali (`formatMoneyLocalized`, `formatCompactMoneyLocalized`,
-  `formatNumberLocalized`). `Intl.NumberFormat("uz-UZ")` va qo'lda `" so'm"` qo'shish taqiqlanadi.
+  (`src/test/paletteGuard.test.ts`). Ko'k faqat interaktiv narsa uchun.
+- **Sukut mavzusi kunduzgi.** Shrift Manrope. Matn 12px dan kichik emas.
+- **Pul/son/foiz** faqat `src/shared/lib/formatMoney.ts` orqali (`formatMoneyLocalized`, `formatCompactMoneyLocalized`,
+  `formatNumberLocalized`, `formatPercentLocalized`) yoki uning `designSystem.ts` dagi o'ramlari (`formatMoney`,
+  `formatCompactMoney`, `formatCompactAxisMoney`). `Intl.NumberFormat("uz-UZ")`, `.toFixed(1) + "%"` va qo'lda
+  `" so'm"` qo'shish taqiqlanadi. `designSystem.ts` dagi `TYPO`, `TEXT`, `TONE`, `toneAccent`, `formatPercent` — v1.
   Valyuta: uz `so'm` · ru `сум` · en `UZS`.
-- **Ikonkalar** faqat `lucide-react` (`docs/design/icon-registry.json` dagi kanonik nom).
-- **Holat** rangi faqat matn/ikonka bilan; ton qoidasi `docs/DESIGN_SYSTEM.md` §8.
+- **Ikonkalar** faqat `lucide-react` (`design/icon-registry.json` dagi kanonik nom).
+- **Holat** rangi faqat matn yoki ikonka bilan birga. Ton qoidasi: `docs/DESIGN_SYSTEM.md` §8.
 - **Telefon:** bosiladigan har narsa ≥ 44px, jadval → kartalar, dialog → pastdan oyna, gorizontal skroll yo'q.
-- **Matn:** o'zbek lotin, gap registri, inglizcha so'z yo'q; uz/ru/en uchala locale'ni birga yangilang.
+  Breakpointlar: telefon `max-md:` (< 768), planshet `max-lg:` (< 1024).
+- **Matn:** o'zbek lotin, gap registri, inglizcha so'z yo'q. uz/ru/en uchala locale birga yangilanadi.
+- **Bitta ekranda bitta asosiy amal**, karta ichida karta yo'q (ko'pi bilan 2 qavat), pul o'tkazish, nofaol qilish
+  va «Kunni yakunlash» tasdiqlash oynasi orqali.
+
+## Dizayn qo'riqchisi (CI)
+
+CI (`.github/workflows/deploy.yml`) har PR'da `npm run lint` → `npm test` → `npm run build` →
+`npm run check:bundle` ni yuradi. Biri yiqilsa, merge va deploy bo'lmaydi. `npm test` ichidagi dizayn tekshiruvlari:
+
+- `src/test/designGuard.test.ts` (`scripts/design-guard.mjs`): rang literallari, Tailwind palitrasi (`bg-white`
+  ham), `dark:` rang juftlari, eski token nomlari, qo'lda pul formati, boshqa ikonka kutubxonalari, 12px dan kichik
+  matn. Ratchet usulida ishlaydi: `design/guard-baseline.json` dagi son har fayl uchun faqat **kamayadi**, yangi
+  faylda 0. `// dizayn-v2:` belgili faylda esa har doim 0.
+- `src/test/paletteGuard.test.ts`: eski brend ranglari qaytmasin.
+- `src/shared/config/themeTokens.test.ts`: `index.css` ↔ `themeTokens.ts` mosligi va kontrast.
+- `src/test/inputFontGuard.test.ts`: telefonda maydon shrifti 16px (iOS zoom).
+- `design/tools/screens.test.mjs` (`npm run design:screens -- --check`): `routes.tsx` dagi har route
+  `design/kit/route-map.json` da bor, har maket biror route'ga bog'langan, menyu bandlari maketdagi menyu bilan bir xil
+  va `design/SCREENS.md` yangi.
+
+Qoidalar (`scripts/design-guard.mjs`): `colour`, `palette`, `dark-pair`, `legacy`, `money`, `icons`, `tiny-text`,
+`v1-class` (`index.css` dagi eski `el-card`, `el-glass-control`, `el-segmented*` …), `weight` (`font-black`,
+`font-extrabold`), `gradient` (`bg-linear-*`, `linear-gradient(…)`), `v1-helper` (`TYPO`, `TEXT`, `TONE`,
+`toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`).
+
+- **PR diff qadami** (CI, faqat PR'da): `npm run design:guard -- --diff origin/<base>` — PR'da **qo'shilgan**
+  qatorlarda yangi buzilish bo'lmasin. Eski qatorni tahrirlash yoki kodni ko'chirish o'tadi, lekin bir joyda
+  `bg-white` ni o'chirib boshqa joyga `text-gray-400` qo'shish o'tmaydi (ratchet buni ko'rmaydi, diff ko'radi).
+
+Lokal tekshiruv: `npm run design:guard -- --diff` (push oldidan, `origin/dev` bilan), `npm run design:guard -- <fayl>`
+(har buzilish va uning v2 o'rnini bosuvchisi) yoki `npm run design:guard -- --changed`. Eski fayldagi buzilishlarni
+kamaytirgach `npm run design:guard -- --update` bilan yangi sonni qotiring, aks holda keyingi PR ularni qaytara oladi.
+
+Qo'riqchi hammasini ushlamaydi: rangsiz maxsus soya, antd vizual komponentlari (`Card`, `Tag`, `Segmented`),
+`sm:` ni telefon chegarasi sifatida ishlatish, ikkinchi asosiy tugma va karta ichidagi karta review'da tekshiriladi.
+
+Qo'riqchini o'chirish, testni yumshatish, baseline'ni oshirish (`--allow-increase`) va sababsiz
+`design-guard-ignore` **taqiqlanadi**. Asosli istisno bo'lsa, sababi belgining o'zida yoziladi, PR'da ko'rsatiladi
+va ega rozi bo'ladi.
+
+## AI agentlar (Claude Code, Codex …)
+
+- **Claude Code:** UI ishida `.claude/skills/elchi-design/SKILL.md` skill'i yuklanadi (avtomatik yoki
+  `/elchi-design`). U 8 qadamli tartibni beradi: qoidalar → maketni topish → maketni o'qish va **ko'rish**
+  (`npm run design:shot`) → CODE-MAP bo'yicha yozish → eski uslubsiz → 390/768/1440 + tungi tekshiruv →
+  lint/test/build → maket yo'q bo'lsa eng yaqini.
+- **Codex va boshqa agentlar:** UI ishidan oldin `.claude/skills/elchi-design/SKILL.md` ni o'qing va xuddi shu
+  tartibda ishlang.
+- Agent maketni taxmin qilmaydi: fragment HTML'ini o'qiydi va PNG'ni ko'radi. Agent yozgan kod ham shu qoidalarga
+  bo'ysunadi. Tekshirilmagan narsa «tekshirildi» deb yozilmaydi.
 
 ## Ish tartibi
-- Push qilishdan **oldin** to'liq `npm test` (nishonli test menyu invariantlarini — `ops.reachability.test.ts` —
-  o'tkazib yuboradi) va `npm run build` (CI `tsc -b` qat'iy).
-- Kodni `origin/dev` bo'yicha tekshiring; lokal branch eskirgan bo'lishi mumkin.
+- Push qilishdan **oldin** to'liq `npm test` (nishonli test menyu invariantlarini, ya'ni `ops.reachability.test.ts`
+  ni, o'tkazib yuboradi), `npm run design:guard -- --diff` va `npm run build` (CI `tsc -b` qat'iy).
+- **Backend maydoni yoki filtri** qo'shishdan oldin API'da borligini tekshiring: `../Elchi-Backend/docs/frontend/openapi.json`
+  (endpointlar ro'yxati: `src/shared/api/endpoints.ts`). Yo'q query param yoki maydon UI'ga chizilmaydi — avval
+  backend bilan kelishiladi.
+- **Rol bo'yicha tekshirish** uchun test akkauntlarini egadan so'rang (superadmin, admin, menejer, registrator,
+  market, kuryer). Parol kodga, commit'ga, chatga yoki PR'ga yozilmaydi. Menejer va kuryer tablari filial turiga
+  bog'liq (`REGIONAL` · `HYBRID` · `HQ` · `PICKUP`, `menuConfig.tsx` dagi `MANAGER_CAPABILITIES`) — kerakli turdagi
+  filial akkauntini so'rang.
+- Kodni `origin/dev` bo'yicha tekshiring, lokal branch eskirgan bo'lishi mumkin.
 - `.env.local` hech qachon commit qilinmaydi.
+
+## PR tekshiruv ro'yxati (UI'ga tegadigan har PR)
+
+`.github/pull_request_template.md` dagi ro'yxat to'ldiriladi:
+
+- [ ] maket topildi: `<rol>-<viewId>` (yoki «maket yo'q — eng yaqini: …»)
+- [ ] kunduzgi, tungi va 390px (kerak bo'lsa 768px) skrinshotlar ilova qilingan
+- [ ] faqat tokenlar; eski nomlar, hex, rang oilalari, `dark:` juftlari yo'q
+- [ ] `formatMoney`, `lucide-react`, uz/ru/en matnlar
+- [ ] eski sahifada: tegilgan qism v2 da, eski uslub kengaytirilmagan
+- [ ] dizayn qo'riqchisi yashil (`npm test` + `npm run design:guard -- --diff`), baseline oshirilmagan
+- [ ] `npm run lint`, to'liq `npm test`, `npm run build` yashil

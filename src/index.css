@@ -52,7 +52,7 @@
      bo'lishi shart — `themeTokens.test.ts` ikkalasini solishtiradi.
      Yangi kod FAQAT shu bo'limdagi nomlardan foydalanadi.
      ═══════════════════════════════════════════════════════════════════════ */
-  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
 
   --color-bg: #f4f6fb;
   --color-surface: #ffffff;
@@ -67,6 +67,8 @@
   --color-text-subtle: #7c859f;
   --color-brand: #1f2853;
   --color-nav: #1f2853;
+  /* Doim navy bo'lgan "orollar" (xato sahifasi, skaner oynasi, yon menyu) ustidagi urg'u — ikkala mavzuda bir xil */
+  --color-nav-accent: #8ea6ff;
   --color-action: #2b50d8;
   --color-action-hover: #2443b8;
   --color-action-fg: #2b50d8;
@@ -170,6 +172,7 @@
   --color-error-page-digit: rgba(255, 255, 255, 0.95);
   --color-error-page-ring-soft: rgba(142, 166, 255, 0.22);
   --color-error-page-ring-border: rgba(255, 255, 255, 0.12);
+  --color-error-page-icon: var(--color-nav-accent);
   /* Hudud xaritasi — bitta ko'k ketma-ket shkala (sequential) */
   --color-region-map-low: #cde2fb;
   --color-region-map-medium: #86b6ef;
@@ -437,9 +440,10 @@ select:-webkit-autofill:focus {
   --color-chart-muted: #3a4366;
 
   /* ── eski nomlar (tungi) ── */
-  /* `main` — oq matnli fon VA qorong'i yuzadagi matn: ikkalasida ~4.1:1
-     beradigan muvozanat (to'liq AA uchun yangi kod `action`+`on-solid`). */
-  --color-main: #5574ee;
+  /* `main` — eski kodda asosan OQ MATNLI FON (bg-main 500+ joyda): oq matn
+     4.6:1 (AA). Yuzadagi matn sifatida ~3.7:1 (eski binafshada 3.0 edi);
+     yangi kod `action` + `on-solid` / `action-fg` ishlatadi. */
+  --color-main: #4c6ae6;
   --color-maindark: var(--color-surface);
   --color-primarydark: var(--color-raised);
   --color-sidebar: var(--color-sunken);
@@ -461,8 +465,13 @@ select:-webkit-autofill:focus {
   --color-surface-dark: var(--color-sunken);
   --color-surface-elevated: var(--color-raised);
   --color-surface-elevated-dark: var(--color-raised);
-  --color-border-soft: var(--color-border);
+  /* Eski `border-soft` (329 joy) yarim shaffof qoladi — aralash yuzalarda ham ko'rinadi */
+  --color-border-soft: rgba(142, 166, 255, 0.14);
   --color-table-label-dark: rgba(232, 235, 247, 0.8);
+  /* Ogohlantirish gradientlari dark'da yorqin (origin/dev bilan bir xil) — light'dagi to'q tus qorong'i yuzada 2.9:1 edi */
+  --color-warning-start: #f59e0b;
+  --color-warning-end: #f97316;
+  --color-warning-border: rgba(245, 158, 11, 0.26);
   --color-table-header-start: #2b50d8;
   --color-table-header-end: #2443b8;
   --color-table-row-alt: rgba(142, 166, 255, 0.04);

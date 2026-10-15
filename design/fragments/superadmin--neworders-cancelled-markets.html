@@ -1,0 +1,180 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Qabul va yaratish</h1>
+    <p class="el-sub">Buyurtma yaratish va marketlar, filiallar hamda hamkorlardan kelgan buyurtmalarni qabul qilish</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@neworders-create-manual-step1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</a>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Bekor qilingan buyurtmalari bor marketlar">
+  <div class="el-tabs el-hide-mobile" role="tablist" aria-label="Qabul manbalari" style="padding: 0 12px">
+    <a class="el-tab" href="@neworders-markets" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted)">Marketlar <span class="el-tab-count">7</span></a>
+    <a class="el-tab" href="@neworders-incoming-sources" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted)">Kiruvchi posilkalar <span class="el-tab-count">12</span></a>
+    <a class="el-tab" href="@neworders-branches" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted)">Filial paketlari <span class="el-tab-count">3</span></a>
+    <a class="el-tab" href="@neworders-cancelled-markets" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Bekor qilinganlar <span class="el-tab-count">9</span></a>
+  </div>
+  <!-- Telefon: faol tab ko'rinib turishi uchun qator oxiridan boshlanadi (row-reverse + order); o'qish tartibi tabiiy -->
+  <div class="el-tabs el-show-mobile" role="tablist" aria-label="Qabul manbalari" style="padding: 0 12px; flex-direction: row-reverse">
+    <a class="el-tab" href="@neworders-markets" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted); order: 4">Marketlar <span class="el-tab-count">7</span></a>
+    <a class="el-tab" href="@neworders-incoming-sources" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted); order: 3">Kiruvchi posilkalar <span class="el-tab-count">12</span></a>
+    <a class="el-tab" href="@neworders-branches" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted); order: 2">Filial paketlari <span class="el-tab-count">3</span></a>
+    <a class="el-tab" href="@neworders-cancelled-markets" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text); order: 1">Bekor qilinganlar <span class="el-tab-count">9</span></a>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; padding: 16px 20px; align-items: center; justify-content: space-between">
+    <label class="el-search" style="flex: 1 1 320px; max-width: 480px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input class="el-input" type="search" placeholder="Market nomi yoki telefon raqami" aria-label="Marketlarni qidirish">
+    </label>
+    <p class="el-small el-muted el-hide-mobile"><span style="white-space: nowrap"><span class="el-strong">9</span> ta market</span> · <span style="white-space: nowrap"><span class="el-strong">21</span> ta bekor qilingan buyurtma</span> · <span style="white-space: nowrap">jami <span class="el-strong">6 869 000 so'm</span></span></p>
+    <p class="el-small el-muted el-show-mobile" style="flex: 1 1 100%; flex-direction: column; gap: 2px"><span><span class="el-strong">9</span> ta market · <span class="el-strong">21</span> ta bekor qilingan buyurtma</span><span style="white-space: nowrap">jami <span class="el-strong">6 869 000 so'm</span></span></p>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th style="width: 34%">Market</th>
+          <th style="width: 22%">Telefon</th>
+          <th class="el-num" aria-sort="descending" style="width: 16%"><button class="el-th-sort" type="button" aria-pressed="true">Buyurtmalar<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button></th>
+          <th class="el-num" style="width: 22%">Umumiy summa</th>
+          <th style="width: 56px"><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Baraka Shop</a></td>
+          <td style="white-space: nowrap">+998 90 315 22 41</td>
+          <td class="el-num">6 ta</td>
+          <td class="el-num el-strong">1 845 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Baraka Shop bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Nur Elektronika</a></td>
+          <td style="white-space: nowrap">+998 93 604 18 72</td>
+          <td class="el-num">4 ta</td>
+          <td class="el-num el-strong">2 140 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Nur Elektronika bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Chilonzor Market</a></td>
+          <td style="white-space: nowrap">+998 97 228 90 13</td>
+          <td class="el-num">3 ta</td>
+          <td class="el-num el-strong">486 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Chilonzor Market bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Ipak Yo'li Savdo</a></td>
+          <td style="white-space: nowrap">+998 99 471 05 36</td>
+          <td class="el-num">2 ta</td>
+          <td class="el-num el-strong">395 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Ipak Yo'li Savdo bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Gulzor Kiyim</a></td>
+          <td style="white-space: nowrap">+998 91 852 63 20</td>
+          <td class="el-num">2 ta</td>
+          <td class="el-num el-strong">410 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Gulzor Kiyim bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Zamon Mebel</a></td>
+          <td style="white-space: nowrap">+998 95 612 48 07</td>
+          <td class="el-num">1 ta</td>
+          <td class="el-num el-strong">1 120 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Zamon Mebel bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Mehr Kosmetika</a></td>
+          <td style="white-space: nowrap">+998 94 117 39 84</td>
+          <td class="el-num">1 ta</td>
+          <td class="el-num el-strong">145 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Mehr Kosmetika bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Oila Market</a></td>
+          <td style="white-space: nowrap">+998 95 240 76 58</td>
+          <td class="el-num">1 ta</td>
+          <td class="el-num el-strong">230 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Oila Market bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">Ko'k Saroy Savdo</a></td>
+          <td style="white-space: nowrap">+998 88 903 15 26</td>
+          <td class="el-num">1 ta</td>
+          <td class="el-num el-strong">98 000 so'm</td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-handover" aria-label="Ko'k Saroy Savdo bekor qilingan buyurtmalarini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Baraka Shop</span><span class="el-strong" style="white-space: nowrap">1 845 000 so'm</span></div>
+        <div class="el-cell-sub">+998 90 315 22 41 · 6 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Nur Elektronika</span><span class="el-strong" style="white-space: nowrap">2 140 000 so'm</span></div>
+        <div class="el-cell-sub">+998 93 604 18 72 · 4 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Chilonzor Market</span><span class="el-strong" style="white-space: nowrap">486 000 so'm</span></div>
+        <div class="el-cell-sub">+998 97 228 90 13 · 3 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Ipak Yo'li Savdo</span><span class="el-strong" style="white-space: nowrap">395 000 so'm</span></div>
+        <div class="el-cell-sub">+998 99 471 05 36 · 2 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Gulzor Kiyim</span><span class="el-strong" style="white-space: nowrap">410 000 so'm</span></div>
+        <div class="el-cell-sub">+998 91 852 63 20 · 2 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Zamon Mebel</span><span class="el-strong" style="white-space: nowrap">1 120 000 so'm</span></div>
+        <div class="el-cell-sub">+998 95 612 48 07 · 1 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Mehr Kosmetika</span><span class="el-strong" style="white-space: nowrap">145 000 so'm</span></div>
+        <div class="el-cell-sub">+998 94 117 39 84 · 1 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Oila Market</span><span class="el-strong" style="white-space: nowrap">230 000 so'm</span></div>
+        <div class="el-cell-sub">+998 95 240 76 58 · 1 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@neworders-cancelled-handover" style="text-decoration: none; color: var(--text)">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Ko'k Saroy Savdo</span><span class="el-strong" style="white-space: nowrap">98 000 so'm</span></div>
+        <div class="el-cell-sub">+998 88 903 15 26 · 1 ta buyurtma</div>
+      </div>
+      <span class="el-subtle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+  </div>
+</section>
+  

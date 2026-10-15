@@ -26,7 +26,7 @@ import {
   type RevenuePoint,
 } from "../../../entities/dashboard";
 import {
-  formatCompactMoney,
+  formatCompactMoney, formatCompactAxisMoney,
   formatNumber,
   formatPercent,
   toneAccent,
@@ -150,7 +150,7 @@ const AreaVariant = ({ data, showPrevious, currentLabel, previousLabel }: ChartV
     </defs>
     <CartesianGrid {...GRID_PROPS} />
     <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatCompactMoney} {...AXIS_PROPS} width={54} />
+    <YAxis tickFormatter={formatCompactAxisMoney} {...AXIS_PROPS} width={54} />
     <Tooltip content={<CustomTooltip />} />
     <Area
       type="monotone"
@@ -170,7 +170,7 @@ const BarVariant = ({ data, showPrevious, currentLabel, previousLabel }: ChartVa
   <ComposedChart data={data} barSize={10}>
     <CartesianGrid {...GRID_PROPS} />
     <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatCompactMoney} {...AXIS_PROPS} width={54} />
+    <YAxis tickFormatter={formatCompactAxisMoney} {...AXIS_PROPS} width={54} />
     <Tooltip content={<CustomTooltip />} />
     <Bar dataKey="revenue" name={currentLabel} fill={MAIN_COLOR} fillOpacity={0.7} radius={[3, 3, 0, 0]} />
     {showPrevious && <PreviousLine name={previousLabel} />}
@@ -181,7 +181,7 @@ const ComboVariant = ({ data, showPrevious, currentLabel, previousLabel }: Chart
   <ComposedChart data={data} barSize={10}>
     <CartesianGrid {...GRID_PROPS} />
     <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatCompactMoney} {...AXIS_PROPS} width={54} />
+    <YAxis tickFormatter={formatCompactAxisMoney} {...AXIS_PROPS} width={54} />
     <Tooltip content={<CustomTooltip />} />
     <Bar dataKey="revenue" name={currentLabel} fill={MAIN_COLOR} fillOpacity={0.35} radius={[3, 3, 0, 0]} />
     <Line

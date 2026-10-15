@@ -1,0 +1,142 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back" href="@notifications-inbox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Bildirishnomalar</a>
+    <h1 class="el-h1">Xabar yuborish</h1>
+    <p class="el-sub">Tizim ichidagi foydalanuvchilarga bildirishnoma</p>
+  </div>
+</div>
+
+<form id="ns-form" aria-label="Xabar yuborish formasi" style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+  <div style="flex: 1 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+  <section class="el-card" aria-labelledby="ns-who-title">
+    <div class="el-card-head"><h2 class="el-h2" id="ns-who-title">Kimga</h2></div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <div class="el-seg el-hide-mobile" role="group" aria-label="Qabul qiluvchilar turi" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr))">
+        <button type="button" aria-pressed="false" style="padding: 0 8px">Bitta odam</button>
+        <button type="button" aria-pressed="false" style="padding: 0 8px">Rol</button>
+        <button type="button" aria-pressed="false" style="padding: 0 8px">Tanlangan ro'yxat</button>
+        <button type="button" aria-pressed="true" style="padding: 0 8px">Hamma</button>
+      </div>
+      <div class="el-seg el-show-mobile" role="group" aria-label="Qabul qiluvchilar turi" style="width: 100%; flex-wrap: wrap">
+        <button type="button" aria-pressed="false" style="flex: 1 1 40%; height: 44px; padding: 0 8px">Bitta odam</button>
+        <button type="button" aria-pressed="false" style="flex: 1 1 40%; height: 44px; padding: 0 8px">Rol</button>
+        <button type="button" aria-pressed="false" style="flex: 1 1 40%; height: 44px; padding: 0 8px">Tanlangan ro'yxat</button>
+        <button type="button" aria-pressed="true" style="flex: 1 1 40%; height: 44px; padding: 0 8px">Hamma</button>
+      </div>
+      <div class="el-alert el-tone-warning" role="status">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <div class="el-alert-body">Xabar tizimdagi barcha xodim va marketlarga boradi.</div>
+      </div>
+      <div aria-live="polite" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius:10px; background: var(--sunken)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-muted)"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="el-small"><span class="el-strong">Taxminan 1 312 ta</span> qabul qiluvchi</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="el-card" aria-labelledby="ns-ch-title">
+    <div class="el-card-head"><h2 class="el-h2" id="ns-ch-title">Kanal</h2></div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(max(220px, 34%), 100%), 1fr)); gap: 8px">
+        <label class="el-choice-card" style="grid-column: 1 / -1; align-items: center; background: var(--sunken); border-color: var(--border); cursor: default"><input class="el-check" style="flex-shrink: 0" type="checkbox" checked disabled aria-describedby="ns-inapp-hint"><span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-strong">Ilova ichida</span><span class="el-xs el-muted" id="ns-inapp-hint">Doim yoqiq — xabar Bildirishnomalar qutisida saqlanadi</span></span></label>
+        <label class="el-choice-card is-selected" style="align-items: center"><input class="el-check" type="checkbox" checked>Darhol (ochiq ekranga)</label>
+        <label class="el-choice-card" style="align-items: center"><input class="el-check" type="checkbox">Telegram</label>
+        <label class="el-choice-card" style="align-items: center"><input class="el-check" type="checkbox">SMS</label>
+        <label class="el-choice-card is-selected" style="align-items: center"><input class="el-check" type="checkbox" checked>Push</label>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+  <section class="el-card" aria-labelledby="ns-ct-title">
+    <div class="el-card-head"><h2 class="el-h2" id="ns-ct-title">Mazmun</h2></div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <div class="el-field">
+        <label class="el-label" for="ns-title">Sarlavha <span class="el-req">*</span></label>
+        <input class="el-input" id="ns-title" type="text" value="Bugun 23:00–23:30 tizimda texnik ishlar" placeholder="Masalan: Ertaga ish vaqti o'zgaradi" maxlength="255" aria-describedby="ns-title-count">
+        <span class="el-xs el-subtle" id="ns-title-count" style="text-align: right">39 / 255</span>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="ns-body">Matn</label>
+        <textarea class="el-input el-textarea" id="ns-body" rows="4" maxlength="4096" placeholder="Xabar matni" style="height: 104px; flex: none">Shu vaqt oralig'ida CRM ochilmaydi. Kunni yakunlashni 23:00 gacha tugating.</textarea>
+        <span class="el-xs el-subtle" style="text-align: right">75 / 4096</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 16px">
+        <div class="el-field">
+          <label class="el-label" for="ns-cat">Kategoriya</label>
+          <button class="el-input el-select" type="button" id="ns-cat" aria-haspopup="listbox" aria-expanded="false"><span>Tizim</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="ns-pri">Muhimlik</label>
+          <button class="el-input el-select" type="button" id="ns-pri" aria-haspopup="listbox" aria-expanded="false"><span>Muhim</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="ns-link">Havola (ixtiyoriy)</label>
+        <input class="el-input" id="ns-link" type="text" placeholder="/orders" maxlength="512">
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="ns-gk">Guruh kaliti <span class="el-req">*</span></label>
+        <input class="el-input" id="ns-gk" type="text" value="xabar-20261008-161040" maxlength="255" aria-describedby="ns-gk-hint">
+        <span class="el-hint" id="ns-gk-hint">Qayta yuborilsa shu kalit bo'yicha dublikat yaratilmaydi, mavjud xabar yangilanadi.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="el-card" aria-labelledby="ns-pv-title">
+      <div class="el-card-head"><h2 class="el-h2" id="ns-pv-title">Oldindan ko'rish</h2></div>
+      <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 16px 16px 16px 12px; border-radius:12px; background: var(--sunken)">
+          <span aria-hidden="true" style="width: 8px; height: 8px; flex: none; margin-top: 14px; border-radius:999px; background: var(--info)"></span>
+          <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg></span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span style="font-weight: 700">Bugun 23:00–23:30 tizimda texnik ishlar</span><span class="el-badge el-tone-danger">Muhim</span></span>
+            <span class="el-small el-muted">Shu vaqt oralig'ida CRM ochilmaydi. Kunni yakunlashni 23:00 gacha tugating.</span>
+            <span class="el-xs el-subtle">Tizim · hozir</span>
+          </div>
+        </div>
+        <button class="el-btn el-btn-primary el-btn-lg el-btn-block" type="submit" form="ns-form"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Yuborish</button>
+      </div>
+    </section>
+  </div>
+</form>
+
+<div class="el-overlay" style="position: absolute">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="nsc-title" style="width: min(520px, 100%)">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="nsc-title">Xabarni yuborishni tasdiqlang</h2>
+      </div>
+      <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Yopish" style="margin: -4px -8px 0 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+
+    <div class="el-alert el-tone-danger" role="alert">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      <div class="el-alert-body"><div class="el-alert-title">Diqqat: xabar barcha foydalanuvchilarga yuboriladi</div></div>
+    </div>
+
+    <dl style="margin: 0; padding: 4px 16px; border-radius:12px; background: var(--sunken); display: flex; flex-direction: column">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0"><dt class="el-muted">Kimga</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">Barcha foydalanuvchilar</dd></div>
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Qabul qiluvchilar</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">taxminan 1 312 ta</dd></div>
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Kanallar</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">Ilova ichida, Darhol (ochiq ekranga), Push</dd></div>
+    </dl>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-label">Xabar</span>
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius:12px; background: var(--sunken)">
+        <p class="el-strong">Bugun 23:00–23:30 tizimda texnik ishlar</p>
+        <p class="el-small el-muted">Shu vaqt oralig'ida CRM ochilmaydi. Kunni yakunlashni 23:00 gacha tugating.</p>
+      </div>
+    </div>
+
+    <p class="el-small el-strong">Yuborilgan xabarni qaytarib bo'lmaydi.</p>
+
+    <div class="el-dialog-foot">
+      <button class="el-btn el-btn-secondary" type="button">Bekor qilish</button>
+      <button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Ha, yuborish</button>
+    </div>
+  </div>
+</div>
+  

@@ -27,6 +27,7 @@ export type SemanticToken =
   | "text-subtle"
   | "brand"
   | "nav"
+  | "nav-accent"
   | "action"
   | "action-hover"
   | "action-fg"
@@ -61,6 +62,7 @@ export const SEMANTIC_TOKENS: Record<ThemeName, Record<SemanticToken, string>> =
     "text-subtle": "#7c859f",
     brand: "#1f2853",
     nav: "#1f2853",
+    "nav-accent": "#8ea6ff",
     action: "#2b50d8",
     "action-hover": "#2443b8",
     "action-fg": "#2b50d8",
@@ -94,6 +96,7 @@ export const SEMANTIC_TOKENS: Record<ThemeName, Record<SemanticToken, string>> =
     "text-subtle": "#7a83a3",
     brand: "#c9d2f5",
     nav: "#0a0e1b",
+    "nav-accent": "#8ea6ff",
     action: "#8ea6ff",
     "action-hover": "#a9bbff",
     "action-fg": "#8ea6ff",
@@ -120,11 +123,11 @@ export const SEMANTIC_TOKENS: Record<ThemeName, Record<SemanticToken, string>> =
 export const TEXT_MUTED: Record<ThemeName, string> = { light: "#4b5575", dark: "#a7afcb" };
 
 /**
- * Eski `--color-main` — oq matnli FON ham, qorong'i yuzadagi MATN ham bo'lib
- * ishlatiladi. Dark'dagi qiymat ikkala holatda ~4.1:1 beradigan muvozanat;
+ * Eski `--color-main` — eski kodda asosan OQ MATNLI FON (dark'da oq matn 4.6:1,
+ * AA), kamroq qorong'i yuzadagi matn (~3.7:1, eski binafshada 3.0 edi).
  * antd tugmalari (oq yozuvli) ham shu rangni oladi.
  */
-export const LEGACY_MAIN: Record<ThemeName, string> = { light: "#2b50d8", dark: "#5574ee" };
+export const LEGACY_MAIN: Record<ThemeName, string> = { light: "#2b50d8", dark: "#4c6ae6" };
 
 /**
  * Grafiklar uchun kategorial palitra — `validate_palette.js` bilan ikkala

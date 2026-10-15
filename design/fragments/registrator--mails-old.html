@@ -1,0 +1,238 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Pochta</h1>
+    <p class="el-sub">Viloyatlar bo'yicha pochtalarni jo'natish va qabul qilish</p>
+  </div>
+  <div class="el-actions">
+    <button class="el-btn el-btn-secondary" type="button" style="padding: 0 12px; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Excelga yuklash</button>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Eski pochtalar">
+  <div class="el-tabs el-hide-mobile" role="tablist" aria-label="Pochta turlari" style="padding: 0 12px">
+    <a class="el-tab" role="tab" aria-selected="false" href="@mails-today" title="Bugungi pochtalar" style="text-decoration: none; color: var(--text-muted)">Bugungi <span class="el-tab-count">8</span></a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@mails-return" title="Qaytarish so'rovlari" style="text-decoration: none; color: var(--text-muted)">Qaytarish <span class="el-tab-count">9</span></a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@mails-refused" title="Rad etilgan pochtalar" style="text-decoration: none; color: var(--text-muted)">Rad etilgan <span class="el-tab-count">2</span></a>
+    <a class="el-tab" role="tab" aria-selected="true" href="@mails-old" title="Eski pochtalar" style="text-decoration: none; color: var(--text)">Eski</a>
+  </div>
+  <div class="el-show-mobile" style="padding: 12px 20px; border-bottom: 1px solid var(--border)">
+    <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Pochta bo'limi: Eski pochtalar"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="el-strong">Eski pochtalar</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <div class="el-hide-mobile" role="group" aria-label="Filtrlar" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; padding: 16px 20px">
+    <div class="el-field">
+      <span class="el-label" id="mo-region">Viloyat</span>
+      <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="mo-region"><span class="el-select-placeholder">Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+    <div class="el-field">
+      <span class="el-label" id="mo-courier">Kuryer</span>
+      <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="mo-courier"><span class="el-select-placeholder">Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+    <div class="el-field">
+      <span class="el-label" id="mo-status">Holat</span>
+      <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="mo-status"><span class="el-select-placeholder">Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+    <div class="el-field">
+      <span class="el-label" id="mo-date">Sana</span>
+      <button class="el-input el-select" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Sana oralig'i: 01.10.2026 dan 08.10.2026 gacha"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>01.10 – 08.10.2026</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+  </div>
+
+  <div class="el-show-mobile" style="padding: 12px 20px">
+    <button class="el-btn el-btn-secondary" type="button" style="flex: 1 1 auto" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filtrlar <span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">1</span></button>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 0 20px 16px; align-items: center">
+    <span class="el-chip el-chip-active">Sana: 01.10 – 08.10.2026<button class="el-chip-x" type="button" style="width: 28px; height: 28px; margin-right: -8px" aria-label="Sana filtrini olib tashlash"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+    <button class="el-btn el-btn-link el-btn-sm el-hide-mobile" type="button">Filtrlarni tozalash</button>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile" style="border-top: 1px solid var(--border)">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Pochta</th>
+          <th>Viloyat</th>
+          <th class="el-hide-tablet">Kuryer</th>
+          <th>Holat</th>
+          <th class="el-num el-hide-tablet">Buyurtmalar</th>
+          <th class="el-num">Summa</th>
+          <th style="width: 96px"><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-old" style="text-decoration: none; color: var(--text)">№2477</a><div class="el-cell-sub">Kecha, 18:20</div></td>
+          <td><div style="white-space: nowrap">Toshkent sh.</div><span class="el-cell-sub el-show-tablet">Jasur Tursunov</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Jasur Tursunov</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span></td>
+          <td class="el-num el-hide-tablet">42 ta</td>
+          <td class="el-num"><div class="el-strong">8 120 000 so'm</div><span class="el-cell-sub el-show-tablet">42 ta buyurtma</span></td>
+          <td><div style="display: flex; justify-content: flex-end; gap: 4px"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№2477: chekni qayta chiqarish" title="Chekni qayta chiqarish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-old" aria-label="№2477 pochtani ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-old" style="text-decoration: none; color: var(--text)">№2476</a><div class="el-cell-sub">Kecha, 17:55</div></td>
+          <td><div style="white-space: nowrap">Samarqand</div><span class="el-cell-sub el-show-tablet">Sherzod Komilov</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Sherzod Komilov</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span></td>
+          <td class="el-num el-hide-tablet">28 ta</td>
+          <td class="el-num"><div class="el-strong">5 640 000 so'm</div><span class="el-cell-sub el-show-tablet">28 ta buyurtma</span></td>
+          <td><div style="display: flex; justify-content: flex-end; gap: 4px"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№2476: chekni qayta chiqarish" title="Chekni qayta chiqarish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-old" aria-label="№2476 pochtani ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-old" style="text-decoration: none; color: var(--text)">№2475</a><div class="el-cell-sub">Kecha, 17:31</div></td>
+          <td><div style="white-space: nowrap">Farg'ona</div><span class="el-cell-sub el-show-tablet">Bekzod Usmonov</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Bekzod Usmonov</td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">Jo'natilgan</span></td>
+          <td class="el-num el-hide-tablet">25 ta</td>
+          <td class="el-num"><div class="el-strong">4 980 000 so'm</div><span class="el-cell-sub el-show-tablet">25 ta buyurtma</span></td>
+          <td><div style="display: flex; justify-content: flex-end; gap: 4px"><span aria-hidden="true" style="display: inline-block; width: 32px"></span><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-old" aria-label="№2475 pochtani ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-old" style="text-decoration: none; color: var(--text)">№2471</a><div class="el-cell-sub">Kecha, 16:02</div></td>
+          <td><div style="white-space: nowrap">Surxondaryo</div><span class="el-cell-sub el-show-tablet">Sherzod Komilov</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Sherzod Komilov</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span></td>
+          <td class="el-num el-hide-tablet">9 ta</td>
+          <td class="el-num"><div class="el-strong">1 860 000 so'm</div><span class="el-cell-sub el-show-tablet">9 ta buyurtma</span></td>
+          <td><div style="display: flex; justify-content: flex-end; gap: 4px"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№2471: chekni qayta chiqarish" title="Chekni qayta chiqarish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-old" aria-label="№2471 pochtani ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-old" style="text-decoration: none; color: var(--text)">№2468</a><div class="el-cell-sub">06.10.2026, 18:40</div></td>
+          <td><div style="white-space: nowrap">Andijon</div><span class="el-cell-sub el-show-tablet">Jasur Tursunov</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Jasur Tursunov</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span></td>
+          <td class="el-num el-hide-tablet">19 ta</td>
+          <td class="el-num"><div class="el-strong">3 610 000 so'm</div><span class="el-cell-sub el-show-tablet">19 ta buyurtma</span></td>
+          <td><div style="display: flex; justify-content: flex-end; gap: 4px"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№2468: chekni qayta chiqarish" title="Chekni qayta chiqarish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-old" aria-label="№2468 pochtani ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-old" style="text-decoration: none; color: var(--text)">№2466</a><div class="el-cell-sub">06.10.2026, 18:12</div></td>
+          <td><div style="white-space: nowrap">Xorazm</div><span class="el-cell-sub el-show-tablet">Bekzod Usmonov</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Bekzod Usmonov</td>
+          <td><span class="el-badge el-badge-dot el-tone-neutral">Qaytarilgan</span></td>
+          <td class="el-num el-hide-tablet">14 ta</td>
+          <td class="el-num"><div class="el-strong">2 735 000 so'm</div><span class="el-cell-sub el-show-tablet">14 ta buyurtma</span></td>
+          <td><div style="display: flex; justify-content: flex-end; gap: 4px"><span aria-hidden="true" style="display: inline-block; width: 32px"></span><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-old" aria-label="№2466 pochtani ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-old" style="text-decoration: none; color: var(--text)">№2463</a><div class="el-cell-sub">06.10.2026, 17:05</div></td>
+          <td><div style="white-space: nowrap">Namangan</div><span class="el-cell-sub el-show-tablet">Ulug'bek Sobirov</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Ulug'bek Sobirov</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span></td>
+          <td class="el-num el-hide-tablet">16 ta</td>
+          <td class="el-num"><div class="el-strong">2 945 000 so'm</div><span class="el-cell-sub el-show-tablet">16 ta buyurtma</span></td>
+          <td><div style="display: flex; justify-content: flex-end; gap: 4px"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№2463: chekni qayta chiqarish" title="Chekni qayta chiqarish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-old" aria-label="№2463 pochtani ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-refused" style="text-decoration: none; color: var(--text)">№2459</a><div class="el-cell-sub">06.10.2026, 09:30</div></td>
+          <td><div style="white-space: nowrap">Andijon</div><span class="el-cell-sub el-show-tablet">Sherzod Komilov</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Sherzod Komilov</td>
+          <td><span class="el-badge el-badge-dot el-tone-danger">Rad etilgan</span></td>
+          <td class="el-num el-hide-tablet">4 ta</td>
+          <td class="el-num"><div class="el-strong">813 000 so'm</div><span class="el-cell-sub el-show-tablet">4 ta buyurtma</span></td>
+          <td><div style="display: flex; justify-content: flex-end; gap: 4px"><span aria-hidden="true" style="display: inline-block; width: 32px"></span><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-refused" aria-label="№2459 pochtani ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+      <a href="@mails-detail-old" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Toshkent sh.</span><span class="el-strong" style="white-space: nowrap">8 120 000 so'm</span></span>
+          <span class="el-cell-sub" style="white-space: normal">№2477 · Jasur Tursunov · 42 ta buyurtma · <span style="white-space: nowrap">Kecha, 18:20</span></span>
+        </span>
+        <span class="el-subtle" style="display: inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px"><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span><button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-label="№2477: chekni qayta chiqarish" style="margin-right: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chekni qayta chiqarish</button></div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+      <a href="@mails-detail-old" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Samarqand</span><span class="el-strong" style="white-space: nowrap">5 640 000 so'm</span></span>
+          <span class="el-cell-sub" style="white-space: normal">№2476 · Sherzod Komilov · 28 ta buyurtma · <span style="white-space: nowrap">Kecha, 17:55</span></span>
+        </span>
+        <span class="el-subtle" style="display: inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px"><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span><button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-label="№2476: chekni qayta chiqarish" style="margin-right: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chekni qayta chiqarish</button></div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+      <a href="@mails-detail-old" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Farg'ona</span><span class="el-strong" style="white-space: nowrap">4 980 000 so'm</span></span>
+          <span class="el-cell-sub" style="white-space: normal">№2475 · Bekzod Usmonov · 25 ta buyurtma · <span style="white-space: nowrap">Kecha, 17:31</span></span>
+        </span>
+        <span class="el-subtle" style="display: inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span class="el-badge el-badge-dot el-tone-warning">Jo'natilgan</span></div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+      <a href="@mails-detail-old" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Surxondaryo</span><span class="el-strong" style="white-space: nowrap">1 860 000 so'm</span></span>
+          <span class="el-cell-sub" style="white-space: normal">№2471 · Sherzod Komilov · 9 ta buyurtma · <span style="white-space: nowrap">Kecha, 16:02</span></span>
+        </span>
+        <span class="el-subtle" style="display: inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px"><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span><button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-label="№2471: chekni qayta chiqarish" style="margin-right: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chekni qayta chiqarish</button></div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+      <a href="@mails-detail-old" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Andijon</span><span class="el-strong" style="white-space: nowrap">3 610 000 so'm</span></span>
+          <span class="el-cell-sub" style="white-space: normal">№2468 · Jasur Tursunov · 19 ta buyurtma · <span style="white-space: nowrap">06.10.2026, 18:40</span></span>
+        </span>
+        <span class="el-subtle" style="display: inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px"><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span><button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-label="№2468: chekni qayta chiqarish" style="margin-right: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chekni qayta chiqarish</button></div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+      <a href="@mails-detail-old" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Xorazm</span><span class="el-strong" style="white-space: nowrap">2 735 000 so'm</span></span>
+          <span class="el-cell-sub" style="white-space: normal">№2466 · Bekzod Usmonov · 14 ta buyurtma · <span style="white-space: nowrap">06.10.2026, 18:12</span></span>
+        </span>
+        <span class="el-subtle" style="display: inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span class="el-badge el-badge-dot el-tone-neutral">Qaytarilgan</span></div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+      <a href="@mails-detail-old" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Namangan</span><span class="el-strong" style="white-space: nowrap">2 945 000 so'm</span></span>
+          <span class="el-cell-sub" style="white-space: normal">№2463 · Ulug'bek Sobirov · 16 ta buyurtma · <span style="white-space: nowrap">06.10.2026, 17:05</span></span>
+        </span>
+        <span class="el-subtle" style="display: inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px"><span class="el-badge el-badge-dot el-tone-success">Qabul qilingan</span><button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-label="№2463: chekni qayta chiqarish" style="margin-right: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Chekni qayta chiqarish</button></div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 8px">
+      <a href="@mails-detail-refused" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text)">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Andijon</span><span class="el-strong" style="white-space: nowrap">813 000 so'm</span></span>
+          <span class="el-cell-sub" style="white-space: normal">№2459 · Sherzod Komilov · 4 ta buyurtma · <span style="white-space: nowrap">06.10.2026, 09:30</span></span>
+        </span>
+        <span class="el-subtle" style="display: inline-flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span class="el-badge el-badge-dot el-tone-danger">Rad etilgan</span></div>
+    </div>
+  </div>
+
+  <div class="el-card-foot el-pagination">
+    <span>1–8 / 46 ta pochta</span>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <button class="el-input el-select el-btn-sm" type="button" style="width: auto; height: 32px; gap: 8px" aria-label="Sahifadagi kartalar soni: 8 ta">8 ta<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      <nav class="el-pages" aria-label="Sahifalar">
+        <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="el-page" type="button" aria-current="page">1</button>
+        <button class="el-page" type="button">2</button>
+        <button class="el-page" type="button">3</button>
+        <span class="el-subtle" aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 32px">…</span>
+        <button class="el-page" type="button">6</button>
+        <button class="el-page" type="button" aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</section>
+  

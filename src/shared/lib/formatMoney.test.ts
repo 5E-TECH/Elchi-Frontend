@@ -4,6 +4,7 @@ import {
   formatCompactMoneyLocalized,
   formatMoneyLocalized,
   formatNumberLocalized,
+  formatPercentLocalized,
   resolveMoneyLanguage,
 } from "./formatMoney";
 import uzOrders from "../../locales/uz/orders.json";
@@ -91,5 +92,16 @@ describe("valyuta kalitlari locale JSON'da bir xil", () => {
       CURRENCY_LABEL.ru,
       CURRENCY_LABEL.en,
     ]);
+  });
+});
+
+describe("formatPercentLocalized", () => {
+  it("locale ajratkichi, 1 xona sukut, ortiqcha nolsiz", () => {
+    expect(formatPercentLocalized(67.43, { language: "uz" })).toBe("67,4%");
+    expect(formatPercentLocalized(67.43, { language: "ru" })).toBe("67,4%");
+    expect(formatPercentLocalized(67.43, { language: "en" })).toBe("67.4%");
+    expect(formatPercentLocalized(50, { language: "uz" })).toBe("50%");
+    expect(formatPercentLocalized(12.345, { language: "uz", fractionDigits: 2 })).toBe("12,35%");
+    expect(formatPercentLocalized(null, { language: "uz" })).toBe("0%");
   });
 });

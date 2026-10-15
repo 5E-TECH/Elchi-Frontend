@@ -5,7 +5,8 @@
 
 Bu hujjat — yangi UI yozayotgan har bir frontchi va AI agent uchun **majburiy** qoidalar. Qisqa versiyasi
 `AGENTS.md` da. Barcha ekranlarning tasdiqlangan chizmalari (desktop / planshet / telefon × kunduzgi / tungi)
-egada: Claude Design kanvasi «Elchi CRM dizayn v2» (havolani Shodiyordan so'rang).
+repo'da — `design/` (qanday ko'rish: `design/README.md`; marshrut → maket: `design/SCREENS.md`;
+`npm run design:shot -- <view>` PNG chiqaradi). Asl nusxa — egadagi Claude Design kanvasi «Elchi CRM dizayn v2».
 
 ## 1. Qulflangan qarorlar (ega, 2026-10-09)
 
@@ -13,12 +14,18 @@ egada: Claude Design kanvasi «Elchi CRM dizayn v2» (havolani Shodiyordan so'ra
 |---|---|
 | Brend | navy `#1f2853` + ko'k action (`#2b50d8` kunduzgi / `#8ea6ff` tungi) |
 | Sukut mavzusi | **Kunduzgi (light)** — tungi faqat foydalanuvchi tanlasa |
-| Shrift | **Manrope** (400/500/600/700) |
+| Shrift | **Manrope** (o'zgaruvchan 400–800; asosan 400/500/600/700, KPI raqamlari 800 gacha) |
 | Valyuta | uz `so'm` · ru `сум` · en `UZS`; ixcham `mln/ming/mlrd` · `млн/тыс./млрд` · `M/K/B` |
 | Ikonkalar | faqat `lucide-react` |
 
 Eski to'rt brend (`#576adb`, `#7c3aed`, antd `#6366f1`, `#7c5cff`) va binafsha tungi mavzu **olib tashlangan** —
 `src/test/paletteGuard.test.ts` ularning qaytishiga yo'l qo'ymaydi.
+
+**Mavzu migratsiyasi.** Ilgari server sozlamasi va `localStorage["theme"]` ga sukut bo'yicha `"dark"` yozilardi.
+Endi saqlangan mavzu faqat foydalanuvchi uni **o'zi tanlagan** bo'lsa qo'llanadi: serverda
+`appearance.themeChosen === true`, brauzerda `localStorage["theme-version"] === "2"` (`preferencesStorage.ts`,
+`entities/settings`). Shuning uchun avval tungini tanlagan foydalanuvchilar bir marta kunduzgiga qaytadi va
+Sozlamalardan qayta tanlaydi. Mavzuni yozadigan yangi kod `writeStoredTheme()` va `themeChosen: true` dan foydalanadi.
 
 ## 2. Tokenlar
 
@@ -42,6 +49,7 @@ Tailwind'da token nomi bilan ishlatiladi: `bg-surface`, `text-text-muted`, `bord
 | `text-subtle` | `#7c859f` | `#7a83a3` | placeholder, o'q yorliqlari (faqat ≥ 12px) |
 | `brand` | `#1f2853` | `#c9d2f5` | logotip, brend urg'usi |
 | `nav` | `#1f2853` | `#0a0e1b` | yon menyu foni (2-bosqich) |
+| `nav-accent` | `#8ea6ff` | `#8ea6ff` | **navy/to'q fon ustidagi** urg'u: faol menyu, skaner ramkasi, xato sahifasi ikonkasi (oq yuzada ishlatilmaydi) |
 | `action` | `#2b50d8` | `#8ea6ff` | asosiy tugma foni, faol holat — **ko'k faqat interaktiv narsa** |
 | `action-hover` | `#2443b8` | `#a9bbff` | hover |
 | `action-fg` | `#2b50d8` | `#8ea6ff` | havola, faol tab matni |
@@ -59,15 +67,36 @@ Tailwind'da token nomi bilan ishlatiladi: `bg-surface`, `text-text-muted`, `bord
 - Holat rangi har doim **matn yoki ikonka bilan** birga (faqat rang bilan ma'no berilmaydi).
 - Holat **matni** uchun `*-fg`, yumshoq fon uchun `*-soft`, to'liq fon uchun asosiy token (`success`, `danger` …).
 - Tungi mavzuda `action` fon ustidagi matn — `on-solid` (to'q). Oq matn faqat eski `main` ustida (alias, quyida).
+- Navy (`nav`) fon ustidagi matn uchun hali token yo'q (`on-solid` tungida to'q bo'lib qoladi). 2-bosqich (shell)
+  `on-nav` tokenini ega roziligi bilan qo'shadi; ungacha navy fonli yangi joy yaratilmaydi.
 - Yangi kodda **hex, `rgb()`, Tailwind rang oilalari (`bg-blue-500`, `text-gray-400` …) yozilmaydi** — faqat tokenlar.
   `dark:` juftlari ham kerak emas: tokenlar mavzuga o'zi moslashadi.
 
 ### Eski nomlar (alias — yangi kodda ishlatilmaydi)
-Sahifalar 4-bosqichda ko'chiriladi; hozircha eski nomlar yangi tokenlarga ishora qiladi:
-`main → action` (tungida `#5574ee`: oq yozuvli fon ham, yuzadagi matn ham ~4.1:1),
-`maindark → brand` (tungida `surface`), `primarydark → action-hover`, `sidebar → bg`, `border-soft → border`,
-`page-surface → surface`, `card-surface → row-hover`, `purple* → action*`, `error → danger`,
-`surface-elevated → raised`, `dark-bg-py → bg`, hudud xaritasi yashil shkalasi → bitta ko'k ketma-ket shkala.
+Sahifalar 4-bosqichda ko'chiriladi; hozircha eski nomlar yangi tokenlarga ishora qiladi. Ba'zilari mavzuga qarab
+**boshqa** tokenga boradi (eski kodda bir nom ikki xil vazifada ishlatilgani uchun):
+
+| Eski nom | Kunduzgi | Tungi |
+|---|---|---|
+| `main` | `action` | `#4c6ae6` — eski kodda asosan oq yozuvli fon: oq matn 4.6:1 (AA), yuzadagi matn ~3.7:1 (eski binafsha 3.0 edi). Yangi kodda `bg-action text-on-solid` / `text-action-fg` |
+| `maindark` | `brand` | `surface` |
+| `primary` | `#ffffff` | `#ffffff` — **brend emas, oq**: eski kodda kunduzgi karta foni (`bg-primary dark:bg-maindark`) va tungi oq matn (`dark:text-primary`). v2: `bg-surface`, `text-text` |
+| `primarydark` | `action-hover` | `raised` |
+| `sidebar` | `bg` | `sunken` |
+| `border-soft` | `border` | `rgba(142,166,255,.14)` |
+| `page-surface` | `surface` | `surface` |
+| `card-surface` | `row-hover` | `surface` |
+| `purple` / `purple-dark` / `purple-light` / `purple-soft` | `action` / `action-hover` / `#5b7cf0` / 18% | `main` / `#2f4bc4` / `#a9bbff` / 20% |
+| `error` | `danger` | `danger` |
+| `surface-elevated` | `raised` | `raised` |
+| `dark-bg-py` | `#0d1120` | `bg` |
+| `warning-start` / `-end` | `#b26a10` / `#95560a` | `#f59e0b` / `#f97316` |
+| `error-page-*` | navy → ko'k gradient, ikonka `nav-accent` | xuddi shu |
+| `region-map-*` | bitta ko'k ketma-ket shkala (eski yashil o'rniga) | to'q ko'k shkala |
+
+Muhim: 0-bosqich faqat **tokenlar** darajasida. Sahifa TSX fayllarida eski hex / Tailwind rang oilalari
+(`bg-gray-*`, `text-[#…]`, `dark:…`) 4-bosqichgacha **qoladi** — ularni ko'chirish o'sha sahifaning PR'ida.
+Yangi qo'shilgani esa design guard (`npm run design:guard`, CI) tomonidan bloklanadi.
 
 ## 3. Grafiklar
 
@@ -122,6 +151,11 @@ darajali ustunlari yashiriladi · **< 768** pastki menyu (5 band, yorliq bir qat
 markazda «Skaner»), jadval → kartalar, filtrlar «Filtrlar» tugmasi orqasida, dialog → pastdan chiquvchi oyna,
 asosiy amal pastda to'liq enli. Telefon kamerasi bilan skanerlash — to'liq ekran.
 
+**Telefonda filtrlar:** ≤ 2 ta filtr — qatorda, ustma-ust (`max-md:min-h-11`; namuna `manager-returns-list`);
+≥ 3 ta — «Filtrlar» tugmasi (soni bilan) + pastdan chiquvchi oyna, «Tozalash» va «Natijalarni ko'rsatish (N)»
+(namuna `superadmin-orders-list` → `superadmin-orders-filters-mobile`). Maket telefonda filtrni ataylab
+yashirgan bo'lsa (`courier-orders-all`), uni qo'shish — ega qarori.
+
 ## 7. Format qoidalari
 
 Pul va sonlar **faqat** `src/shared/lib/formatMoney.ts` orqali:
@@ -131,6 +165,16 @@ formatMoneyLocalized(185000)            // uz "185 000 so'm" · ru "185 000 су
 formatCompactMoneyLocalized(48_600_000) // uz "48,6 mln so'm" · ru "48,6 млн сум" · en "48.6M UZS"
 formatNumberLocalized(1545000)          // uz "1 545 000" · en "1,545,000"
 ```
+
+Grafik o'qi uchun — `formatCompactAxisMoney` (`shared/config/designSystem.ts`, 2 xonagacha: `1,05 mln`, `3 mln`);
+KPI kartalar uchun — `formatCompactMoney` (1 xona: `1,1 mln`).
+
+Foiz — `formatPercentLocalized(67.43)` → uz/ru `67,4%`, en `67.4%` (1 xona sukut, ortiqcha nolsiz: `50%`).
+`.toFixed(1) + "%"` yozilmaydi.
+
+`shared/config/designSystem.ts` dan v2 da faqat `formatNumber`, `formatMoney`, `formatCompactMoney`,
+`formatCompactAxisMoney` (formatMoney.ts ustidagi o'ramlar) va `ratio` ishlatiladi. `TYPO`, `TEXT`, `TONE`,
+`toneAccent`, `toneSoftBg`, `formatPercent` — v1 (`@deprecated`, qo'riqchining `v1-helper` qoidasi sanaydi).
 
 `Intl.NumberFormat("uz-UZ")` ishlatilmaydi — Chrome'da `uz` ICU ma'lumoti yo'q va u "1,545,000" beradi
 (testda esa to'g'ri chiqib, xatoni yashiradi). Valyuta yorlig'i locale'da ham bir xil: `orders.currency`,
@@ -158,13 +202,51 @@ formatNumberLocalized(1545000)          // uz "1 545 000" · en "1,545,000"
 ## 10. Ikonkalar
 
 Faqat `lucide-react`, chiziq 2, `currentColor`. Bitta ma'no = bitta ikonka: kanonik ro'yxat va eski
-sinonimlarning o'rnini bosuvchilari — `docs/design/icon-registry.json` (132 ikonka, 12 guruh).
+sinonimlarning o'rnini bosuvchilari — `design/icon-registry.json` (132 ikonka, 12 guruh).
 
 ## 11. Bosqichlar va PR qoidasi
 
-0 tokenlar/mavzu/shrift/valyuta → 1 primitivlar (`Button`, `IconButton`, `Badge/StatusBadge`, `Card/StatCard`,
+0 tokenlar/mavzu/shrift/valyuta + `design/` manbasi + design guard (ratchet) → 1 primitivlar (`Button`, `IconButton`, `Badge/StatusBadge`, `Card/StatCard`,
 `PageHeader`, `Tabs/SegmentedControl`, formatlovchilar) → 2 shell → 3 forma/dialog/holatlar → 4 sahifalar
-(har sahifa alohida PR) → 5 qo'riqchilar (ESLint, palitra testi, vizual snapshotlar).
+(har sahifa alohida PR) → 5 qo'riqchilar (ESLint qoidasi, vizual snapshotlar). Palitra testi va ratchet guard
+0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa CI qizil bo'ladi.
+
+**Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
+`legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:
+`npm test` ichida ratchet (`design/guard-baseline.json`, fayl × qoida soni faqat kamayadi, yangi va `// dizayn-v2:`
+faylda 0) va CI'da PR qadami `--diff` (PR'da qo'shilgan qatorlarda yangi buzilish yo'q).
 
 Har PR: faqat tokenlar · `PageHeader` · bitta asosiy amal · `StatusBadge` · formatlovchilar · 2 qavatdan ko'p
 karta yo'q · kunduzgi / tungi / 390px skrinshot · to'liq `npm test` + `npm run build` yashil.
+
+### Dizayn qo'riqchisi (ratchet)
+
+`src/test/designGuard.test.ts` (CI'da har PR'da `npm test`) va `npm run design:guard` bitta dvigateldan
+foydalanadi: `scripts/design-guard.mjs`. U `src/**/*.{ts,tsx}` ni skanerlaydi (testlar, `src/test`, `src/locales`
+kirmaydi). Izohlar hisobga olinmaydi.
+
+| Qoida | Nimani sanaydi | O'rniga |
+|---|---|---|
+| `colour` | hex, `rgb()`/`rgba()`/`hsl()`: className, `bg-[#fff]`, `shadow-[…rgba()]`, style, JS (`themeTokens.ts` dan tashqari) | tokenlar; JS'da `themeTokens.ts` |
+| `palette` | `bg-blue-500`, `text-gray-400`, `border-red-200/50`, `bg-white`, `text-white`, `bg-black/65` … | `bg-surface`, `text-text-muted`, `bg-action text-on-solid`, `bg-*-soft text-*-fg`, `bg-overlay` |
+| `dark-pair` | `dark:` rang jufti: `dark:bg-slate-800`, `dark:text-white`, `dark:hover:border-…` (`dark:text-sm` kabi o'lcham sanalmaydi) | hech narsa: tokenlar mavzuga o'zi moslashadi |
+| `legacy` | `main`, `maindark`, `primary`, `primarydark`, `purple*`, `border-soft`, `card-surface`, `page-surface`, `background(-soft/-deep)`, `dashboard-*`, `table-*`, `glass*`, `warning-start/end/surface/border/text`, `sidebar`, `error`, `surface-elevated`, `surface-dark`, `text-muted-dark` (utilita yoki `--color-*`) | §2 jadvali |
+| `money` | `Intl.NumberFormat`, sonning `.toLocaleString()`, qo'lda `so'm` / `сум` / `UZS` (`formatMoney.ts` dan tashqari) | §7 formatlovchilari |
+| `icons` | `@ant-design/icons` va boshqa ikonka kutubxonalari | `lucide-react` (§10) |
+| `tiny-text` | 12px dan kichik: `text-[10px]`, `text-[11px]`, `fontSize: 10` … | `text-xs` |
+
+- **Ratchet.** Har fayl × qoida soni `design/guard-baseline.json` da turadi. Son faqat kamayadi, yangi faylda 0.
+  Oshsa, test yiqiladi va qator, ustun hamda v2 o'rnini bosuvchisini ko'rsatadi. Eski kodni darhol qayta yozish
+  shart emas, lekin unga yangi buzilish qo'shib bo'lmaydi.
+- **Buyruqlar.** `npm run design:guard` (fayllar bo'yicha hisobot) · `-- --changed` (faqat farqlar) · `-- <fayl>`
+  (har buzilish va maslahat) · `-- --update` (kamayishni qotiradi, yo'q faylni o'chiradi, oshishni **rad etadi**).
+- **Sahifani tozalagach** `npm run design:guard -- --update` bilan yangi sonni qotiring. Aks holda keyingi PR o'sha
+  joyga eski uslubni qaytara oladi.
+- **Oshirish** faqat asosli holatda va ega roziligi bilan (masalan, fayl ko'chirildi yoki bo'lindi):
+  `npm run design:guard -- --update --allow-increase "<sabab>"`. Sabab baseline'ning `increases` ro'yxatiga
+  yoziladi va PR review'da ko'rinadi. Baseline qo'lda tahrirlanmaydi.
+- **v2 ga ko'chirilgan fayl** (birinchi qatorda `// dizayn-v2: <ekran>`) uchun baseline qo'llanmaydi: har qoida
+  bo'yicha ruxsat 0, `--allow-increase` ham yordam bermaydi.
+- **Bitta qator istisnosi:** shu yoki oldingi qatorda `// design-guard-ignore: <sabab>` (JSX'da
+  `{/* design-guard-ignore: <sabab> */}`). Sabab majburiy, sababsiz belgi testni yiqitadi.
+- Baseline'da bor, lekin o'chirilgan fayl faqat ogohlantirish beradi; `--update` uni olib tashlaydi.

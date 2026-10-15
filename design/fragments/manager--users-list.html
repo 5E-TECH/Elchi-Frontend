@@ -1,0 +1,231 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Foydalanuvchilar</h1>
+    <p class="el-sub">Urgut filiali xodimlari va marketlari</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@users-create-hybrid"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>Foydalanuvchi qo'shish</a>
+  </div>
+</div>
+
+<!-- Sahifalash: 16 ta = 1-sahifa 10 ta (quyida) + 2-sahifa 6 ta. 2-sahifa (Qo'shilgan bo'yicha davomi): Jasur Tursunov, Ulug'bek Rasulov, Diyor Hamroyev (Kuryer); Nur Elektronika, Ipak Yo'li Savdo, Bulung'ur Savdo (Market). Jami: Kuryerlar 5+3=8, Ro'yxatchilar 2, Marketlar 3+3=6. -->
+<section class="el-card" aria-label="Foydalanuvchilar ro'yxati">
+  <div class="el-tabs" role="tablist" aria-label="Rol bo'yicha" style="padding: 0 12px; gap: 0">
+    <button class="el-tab" type="button" role="tab" style="padding: 0 8px; gap: 6px" aria-selected="true">Barchasi <span class="el-tab-count">16</span></button>
+    <button class="el-tab" type="button" role="tab" style="padding: 0 8px; gap: 6px" aria-selected="false" tabindex="-1">Kuryerlar <span class="el-tab-count">8</span></button>
+    <button class="el-tab" type="button" role="tab" style="padding: 0 8px; gap: 6px" aria-selected="false" tabindex="-1">Ro'yxatchilar <span class="el-tab-count">2</span></button>
+    <button class="el-tab" type="button" role="tab" style="padding: 0 8px; gap: 6px" aria-selected="false" tabindex="-1">Marketlar <span class="el-tab-count">6</span></button>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 20px; align-items: center">
+    <label class="el-search" style="flex: 10 1 320px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input class="el-input" type="search" placeholder="Ism yoki telefon raqami" aria-label="Foydalanuvchilarni qidirish">
+    </label>
+    <button class="el-input el-select" type="button" style="flex: 1 1 200px; width: auto; max-width: 420px" aria-haspopup="listbox" aria-expanded="false" aria-label="Holat bo'yicha: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="el-muted">Holat:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile" style="border-top: 1px solid var(--border)">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Foydalanuvchi</th>
+          <th>Telefon</th>
+          <th>Rol</th>
+          <th>Holat</th>
+          <th class="el-hide-tablet">Qo'shilgan</th>
+          <th style="width: 64px"><span class="el-sr">Ochish</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">GA</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Gulnoza Abdullayeva</a></div></td>
+          <td style="white-space: nowrap">+998 91 204 37 15</td>
+          <td><span class="el-badge el-tone-neutral">Ro'yxatchi</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">Bugun, 10:20</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Gulnoza Abdullayeva tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">SI</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Shahzod Islomov</a></div></td>
+          <td style="white-space: nowrap">+998 93 518 62 04</td>
+          <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">Kecha, 17:45</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Shahzod Islomov tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">US</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Urgut Savdo</a></div></td>
+          <td style="white-space: nowrap">+998 91 540 22 18</td>
+          <td><span class="el-badge el-tone-neutral">Market</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">06.10.2026, 11:30</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Urgut Savdo tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">FJ</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text-muted)">Farhod Jo'rayev</a></div></td>
+          <td style="white-space: nowrap">+998 97 330 84 19</td>
+          <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">02.10.2026, 09:15</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Farhod Jo'rayev tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">BN</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Bekzod Normurodov</a></div></td>
+          <td style="white-space: nowrap">+998 90 214 55 08</td>
+          <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">28.09.2026, 14:05</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Bekzod Normurodov tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">OM</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Oila Market</a></div></td>
+          <td style="white-space: nowrap">+998 94 280 57 36</td>
+          <td><span class="el-badge el-tone-neutral">Market</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">21.09.2026, 16:40</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Oila Market tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">SQ</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Sardor Qurbonov</a></div></td>
+          <td style="white-space: nowrap">+998 91 532 18 40</td>
+          <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">15.09.2026, 10:00</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Sardor Qurbonov tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr class="is-hover">
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">KR</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Kamola Rustamova</a></div></td>
+          <td style="white-space: nowrap">+998 93 806 19 52</td>
+          <td><span class="el-badge el-tone-neutral">Ro'yxatchi</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">09.09.2026, 09:30</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Kamola Rustamova tafsilotlari" style="color: var(--text)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">BS</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Baraka Shop</a></div></td>
+          <td style="white-space: nowrap">+998 90 315 22 41</td>
+          <td><span class="el-badge el-tone-neutral">Market</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">01.09.2026, 12:10</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Baraka Shop tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-avatar" style="width: 36px; height: 36px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">OX</span><a class="el-cell-title" href="@users-detail" style="text-decoration: none; color: var(--text)">Otabek Xoliqov</a></div></td>
+          <td style="white-space: nowrap">+998 97 448 03 62</td>
+          <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap"><span class="el-muted">26.08.2026, 15:20</span></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@users-detail" aria-label="Otabek Xoliqov tafsilotlari" style="color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">GA</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Gulnoza Abdullayeva</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 91 204 37 15</span> · <span style="white-space: nowrap">Bugun, 10:20</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Ro'yxatchi</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">SI</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Shahzod Islomov</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 93 518 62 04</span> · <span style="white-space: nowrap">Kecha, 17:45</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Kuryer</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">US</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Urgut Savdo</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 91 540 22 18</span> · <span style="white-space: nowrap">06.10.2026, 11:30</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Market</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">FJ</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title" style="color: var(--text-muted)">Farhod Jo'rayev</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 97 330 84 19</span> · <span style="white-space: nowrap">02.10.2026, 09:15</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Kuryer</span><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">BN</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Bekzod Normurodov</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 90 214 55 08</span> · <span style="white-space: nowrap">28.09.2026, 14:05</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Kuryer</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">OM</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Oila Market</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 94 280 57 36</span> · <span style="white-space: nowrap">21.09.2026, 16:40</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Market</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">SQ</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Sardor Qurbonov</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 91 532 18 40</span> · <span style="white-space: nowrap">15.09.2026, 10:00</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Kuryer</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">KR</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Kamola Rustamova</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 93 806 19 52</span> · <span style="white-space: nowrap">09.09.2026, 09:30</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Ro'yxatchi</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">BS</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Baraka Shop</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 90 315 22 41</span> · <span style="white-space: nowrap">01.09.2026, 12:10</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Market</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@users-detail" style="padding: 12px 12px 12px 16px; gap: 12px; align-items: flex-start; text-decoration: none; color: var(--text)">
+      <span class="el-avatar" style="width: 40px; height: 40px; background: var(--sunken); color: var(--text-muted)" aria-hidden="true">OX</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Otabek Xoliqov</span>
+        <span class="el-cell-sub" style="white-space: normal"><span style="white-space: nowrap">+998 97 448 03 62</span> · <span style="white-space: nowrap">26.08.2026, 15:20</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-tone-neutral">Kuryer</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+      </span>
+      <span style="align-self: center; display: inline-flex; color: var(--text-subtle)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+  </div>
+
+  <div class="el-card-foot el-pagination">
+    <span>1–10 / 16 ta foydalanuvchi</span>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <button class="el-input el-select el-btn-sm" type="button" style="width: auto; height: 32px; gap: 8px" aria-label="Sahifadagi qatorlar soni: 10 ta">10 ta<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      <nav class="el-pages" aria-label="Sahifalar">
+        <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="el-page" type="button" aria-current="page">1</button>
+        <button class="el-page" type="button">2</button>
+        <button class="el-page" type="button" aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</section>
+  

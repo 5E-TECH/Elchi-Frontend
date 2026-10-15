@@ -1,0 +1,152 @@
+<div class="el-cam-screen">
+  <header class="el-hide-mobile" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+    <div style="display: flex; align-items: center; gap: 16px; min-width: 0">
+      <a class="el-btn el-btn-secondary" href="@dashboard-home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Orqaga</a>
+      <div style="display: flex; flex-direction: column; min-width: 0">
+        <h1 class="el-h1">QR skaner</h1>
+        <p class="el-sub">Buyurtma, paket yoki pochta QR kodini o'qing — sahifa o'zi ochiladi</p>
+      </div>
+    </div>
+    <div class="el-actions">
+      <a class="el-btn el-btn-ghost" href="@settings-scanner"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>Skaner ovozi</a>
+    </div>
+  </header>
+
+  <div class="el-cam-split">
+    <section class="el-cam" aria-label="Kamera skaneri">
+      <div class="el-cam-top">
+        <a class="el-cam-btn el-show-mobile" href="@dashboard-home" aria-label="Skanerni yopish"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+        <div class="el-cam-heading el-show-mobile">
+          <h2 class="el-cam-title">QR skaner</h2>
+          <p class="el-cam-context">Buyurtma, paket yoki pochta</p>
+        </div>
+        <span class="el-cam-chip is-live el-hide-mobile">Skanerlash faol</span>
+        <div class="el-cam-tools">
+          <button class="el-cam-btn" type="button" aria-label="Kamerani almashtirish"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><circle cx="12" cy="12" r="3"/><path d="m18 22-3-3 3-3"/><path d="m6 2 3 3-3 3"/></svg></button>
+        </div>
+      </div>
+      <div class="el-cam-stage">
+        <div class="el-cam-feed el-hide-mobile" aria-hidden="true"></div>
+        <div class="el-cam-feed is-paused el-show-mobile" aria-hidden="true"></div>
+        <div class="el-cam-finder el-hide-mobile" aria-hidden="true"><span class="el-cam-corner"></span><span class="el-cam-corner"></span><span class="el-cam-corner"></span><span class="el-cam-corner"></span><span class="el-cam-line"></span></div>
+        <div class="el-cam-finder is-paused el-show-mobile" aria-hidden="true"><span class="el-cam-corner"></span><span class="el-cam-corner"></span><span class="el-cam-corner"></span><span class="el-cam-corner"></span><span class="el-cam-line"></span></div>
+        <div class="el-cam-status el-show-mobile"><span class="el-cam-chip">Kamera to'xtatildi</span></div>
+        <p class="el-cam-hint el-hide-mobile">QR kodni ramka ichiga olib keling</p>
+        <div class="el-cam-toasts" role="status" aria-live="polite"></div>
+      </div>
+      <div class="el-cam-bottom el-show-mobile">
+        <a class="el-cam-last" href="@scan-order-detail">
+          <span class="el-cam-last-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span>
+          <span class="el-cam-last-body"><span class="el-cam-last-title">Oxirgi: №10241 · Buyurtma</span><span class="el-cam-last-sub">Dilnoza Karimova · Bugun, 14:12</span></span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--cam-muted); margin-right: 6px"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+        <div class="el-cam-actions">
+          <button class="el-btn el-btn-secondary el-btn-lg" type="button" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>Qo'lda kiritish</button>
+          <button class="el-btn el-btn-secondary el-btn-lg" type="button" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v1"/><path d="M17 2a1 1 0 0 1 1 1v4a3 3 0 0 1-.6 1.8l-.6.8A4 4 0 0 0 16 12v8a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-8a4 4 0 0 0-.8-2.4l-.6-.8A3 3 0 0 1 6 7V3a1 1 0 0 1 1-1z"/><path d="M6 6h12"/></svg>Chiroq</button>
+        </div>
+      </div>
+      <div class="el-cam-backdrop el-show-mobile" aria-hidden="true"></div>
+      <form class="el-cam-sheet el-show-mobile" role="dialog" aria-modal="true" aria-labelledby="sme-title" style="bottom: 248px">
+        <div class="el-sheet-grip" aria-hidden="true"></div>
+        <div class="el-cam-sheet-head" style="border-bottom: 0; padding-bottom: 0">
+          <h2 class="el-h2" id="sme-title" style="flex: 1; min-width: 0">Kodni qo'lda kiriting</h2>
+          <button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Yopish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+        <div style="padding: 12px 16px 4px; display: flex; flex-direction: column; gap: 6px">
+          <label class="el-label" for="sme-in">Buyurtma raqami yoki yorliqdagi kod</label>
+          <div style="display: flex; gap: 8px">
+            <input class="el-input el-input-lg is-focus" id="sme-in" type="text" inputmode="numeric" enterkeyhint="go" autocomplete="off" value="10243" aria-describedby="sme-hint" style="flex: 1; min-width: 0">
+            <button class="el-btn el-btn-secondary el-btn-lg" type="button" aria-pressed="false" aria-label="Harfli klaviaturaga o'tish" style="flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>Harflar</button>
+          </div>
+          <span class="el-hint" id="sme-hint">Masalan, 10243 · harfli kod (P-0412) uchun «Harflar»</span>
+        </div>
+        <div class="el-cam-sheet-foot" style="border-top: 0">
+          <button class="el-btn el-btn-secondary el-btn-lg" type="button">Bekor</button>
+          <button class="el-btn el-btn-primary el-btn-lg" type="submit">Ochish</button>
+        </div>
+      </form>
+      <div class="el-show-mobile" aria-hidden="true" style="position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; flex-direction: column; padding: 8px 6px 28px; background: var(--sunken); border-top: 1px solid var(--border)">
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">1</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">2</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">3</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">4</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">5</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">6</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">7</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">8</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">9</span>
+          <span style="height: 48px"></span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; background: var(--raised); color: var(--text); font-size: 22px; font-weight: 500">0</span>
+          <span style="height: 48px; display: flex; align-items: center; justify-content: center; border-radius:8px; color: var(--text-muted)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5a2 2 0 0 0-1.344.519l-6.328 5.74a1 1 0 0 0 0 1.481l6.328 5.741A2 2 0 0 0 10 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="m12 9 6 6"/><path d="m18 9-6 6"/></svg></span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="el-cam-side" aria-label="Skaner yordamchisi">
+      <section class="el-card" aria-labelledby="sme-usb">
+        <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+          <div style="display: flex; gap: 12px; align-items: flex-start">
+            <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="7" r="1"/><circle cx="4" cy="20" r="1"/><path d="M4.7 19.3 19 5"/><path d="m21 3-3 1 2 2Z"/><path d="M9.26 7.68 5 12l2 5"/><path d="m10 14 5 2 3.5-3.5"/><path d="m18 12 1-1 1 1-1 1Z"/></svg></span>
+            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap">
+                <h2 class="el-h2" id="sme-usb">USB skaner ham tayyor</h2>
+                <span class="el-badge el-badge-dot el-tone-success">Tinglanmoqda</span>
+              </div>
+              <p class="el-small el-muted">Kodni o'qiting — kamera bilan birga ishlaydi. Kursor qayerda turganining farqi yo'q.</p>
+            </div>
+          </div>
+          <div class="el-divider"></div>
+          <form class="el-field" aria-label="Kodni qo'lda kiritish">
+            <label class="el-label" for="sme-code">Kodni qo'lda kiriting</label>
+            <div style="display: flex; gap: 8px">
+              <input class="el-input is-focus" id="sme-code" type="text" inputmode="text" autocomplete="off" value="10243" aria-describedby="sme-hint" style="flex: 1; min-width: 0">
+              <button class="el-btn el-btn-primary" type="submit">Ochish</button>
+            </div>
+            <span class="el-hint" id="sme-hint"><span class="el-kbd">Enter</span> ham ochadi. Kamera to'xtamaydi</span>
+          </form>
+          <div class="el-hide-tablet"><ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+            <li class="el-small el-muted" style="display: flex; gap: 8px; align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>Yorug'lik yetarli bo'lsin</li>
+            <li class="el-small el-muted" style="display: flex; gap: 8px; align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M17 12v4a1 1 0 0 1-1 1h-4"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M17 8V7"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M7 17h.01"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="5" height="5" rx="1"/></svg>Kod ramka markaziga yaqin tursin</li>
+            <li class="el-small el-muted" style="display: flex; gap: 8px; align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>Posilkani qimirlatmasdan ushlang</li>
+          </ul></div>
+        </div>
+      </section>
+      <section class="el-card" aria-labelledby="sme-recent" style="overflow: hidden">
+        <div class="el-card-head" style="padding: 14px 20px">
+          <h2 class="el-h2" id="sme-recent">Oxirgi skanerlar</h2>
+          <span class="el-xs el-muted">Shu qurilmada</span>
+        </div>
+        <ul style="list-style: none; margin: 0 0 -1px; padding: 0">
+        <li style="border-bottom: 1px solid var(--border)"><a class="el-list-item" href="@scan-order-detail" style="border-bottom: 0; text-decoration: none; color: var(--text)">
+          <span class="el-stat-icon" style="width: 36px; height: 36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+            <span class="el-cell-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">№10241 · Buyurtma</span>
+            <span class="el-cell-sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Dilnoza Karimova · Chilonzor tumani</span>
+          </span>
+          <span class="el-xs el-muted" style="white-space: nowrap">Bugun, 14:12</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+        </a></li>
+        <li style="border-bottom: 1px solid var(--border)"><a class="el-list-item" href="@scan-post-detail" style="border-bottom: 0; text-decoration: none; color: var(--text)">
+          <span class="el-stat-icon" style="width: 36px; height: 36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+            <span class="el-cell-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Pochta №2493</span>
+            <span class="el-cell-sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Toshkent sh. · 40 ta buyurtma</span>
+          </span>
+          <span class="el-xs el-muted" style="white-space: nowrap">Bugun, 13:41</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+        </a></li>
+        <li class="el-hide-tablet" style="border-bottom: 1px solid var(--border)"><a class="el-list-item" href="@scan-order-detail" style="border-bottom: 0; text-decoration: none; color: var(--text)">
+          <span class="el-stat-icon" style="width: 36px; height: 36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+            <span class="el-cell-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">№10236 · Buyurtma</span>
+            <span class="el-cell-sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Aziz Rahimov · Yunusobod tumani</span>
+          </span>
+          <span class="el-xs el-muted" style="white-space: nowrap">Bugun, 13:20</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m9 18 6-6-6-6"/></svg>
+        </a></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</div>

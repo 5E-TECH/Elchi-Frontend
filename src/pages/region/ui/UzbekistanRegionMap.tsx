@@ -176,14 +176,29 @@ const UzbekistanRegionMap = ({
     }),
     [t],
   );
+  /**
+   * Dizayn v2: xarita va legenda BITTA manbadan — `--color-region-map-*`
+   * tokenlari (index.css; dark qiymatlar `.dark` da). Ilgari legenda yashil
+   * literallar edi, xarita esa token — ikkalasi ajralib qolardi.
+   */
+  const mapScale = useMemo(
+    () => ({
+      low: readCssColor("--color-region-map-low", isDarkMode ? "#1c3a63" : "#cde2fb"),
+      medium: readCssColor("--color-region-map-medium", isDarkMode ? "#24569a" : "#86b6ef"),
+      high: readCssColor("--color-region-map-high", "#3987e5"),
+      xhigh: readCssColor("--color-region-map-xhigh", isDarkMode ? "#86b6ef" : "#1c5cab"),
+      stroke: readCssColor("--color-region-map-stroke", isDarkMode ? "rgba(232, 235, 247, 0.84)" : "#ffffff"),
+    }),
+    [isDarkMode],
+  );
   const legendItems = useMemo(
     () => [
-      { name: labels.low, color: isDarkMode ? "#334155" : "#d1fae5" },
-      { name: labels.medium, color: isDarkMode ? "#14532d" : "#86efac" },
-      { name: labels.high, color: isDarkMode ? "#15803d" : "#22c55e" },
-      { name: labels.veryHigh, color: isDarkMode ? "#166534" : "#15803d" },
+      { name: labels.low, color: mapScale.low },
+      { name: labels.medium, color: mapScale.medium },
+      { name: labels.high, color: mapScale.high },
+      { name: labels.veryHigh, color: mapScale.xhigh },
     ],
-    [isDarkMode, labels.high, labels.low, labels.medium, labels.veryHigh],
+    [mapScale, labels.high, labels.low, labels.medium, labels.veryHigh],
   );
 
   const computedSummary = useMemo(() => {
@@ -375,11 +390,6 @@ const UzbekistanRegionMap = ({
   useEffect(() => {
     const mapTheme = isDarkMode
       ? {
-          low: "#334155",
-          medium: "#256d4f",
-          high: "#10b981",
-          xhigh: "#34d399",
-          stroke: "rgba(226, 232, 240, 0.72)",
           tooltipBg: "#312b48",
           tooltipBorder: "rgba(255, 255, 255, 0.14)",
           tooltipText: "#ffffff",
@@ -387,24 +397,14 @@ const UzbekistanRegionMap = ({
           tooltipShadow: "0 18px 40px rgba(0,0,0,.38)",
         }
       : {
-          low: "#dbeafe",
-          medium: "#93c5fd",
-          high: "#3b82f6",
-          xhigh: "#1d4ed8",
-          stroke: "#ffffff",
           tooltipBg: "#ffffff",
           tooltipBorder: "#e5e7eb",
           tooltipText: "#111827",
           tooltipMuted: "#6b7280",
           tooltipShadow: "0 14px 34px rgba(15,23,42,.18)",
         };
-    const palette = {
-      low: isDarkMode ? mapTheme.low : readCssColor("--color-region-map-low", mapTheme.low),
-      medium: isDarkMode ? mapTheme.medium : readCssColor("--color-region-map-medium", mapTheme.medium),
-      high: isDarkMode ? mapTheme.high : readCssColor("--color-region-map-high", mapTheme.high),
-      xhigh: isDarkMode ? mapTheme.xhigh : readCssColor("--color-region-map-xhigh", mapTheme.xhigh),
-      stroke: mapTheme.stroke,
-    };
+    // Xarita ranglari legenda bilan bir manbadan (`mapScale` — region-map tokenlari).
+    const palette = mapScale;
     const regionLabelColor = isDarkMode ? "#ffffff" : "#111827";
 
     const mapData: MapPoint[] = regions
@@ -607,7 +607,7 @@ const UzbekistanRegionMap = ({
         },
       ],
     });
-  }, [regions, isDarkMode, labels, showFinancialMetrics]);
+  }, [regions, isDarkMode, labels, showFinancialMetrics, mapScale]);
 
   if (!mapOptions) {
     return (

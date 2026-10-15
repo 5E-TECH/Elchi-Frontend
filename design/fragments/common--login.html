@@ -1,0 +1,61 @@
+<!-- Height: a real device fills the viewport (100vh); on the canvas the frame is capped to a device screen: phone 844, tablet 1024, desktop 900. -->
+<div style="display: flex; min-height: min(100vh, 1024px, 2340px - 100cqw, 610px + 60cqw)">
+
+  <!-- Desktop (1024+): navy brand panel on the left. Tablet and phone: it is replaced by the brand band at the top of <main>. -->
+  <aside class="el-hide-tablet" aria-label="Elchi CRM" style="position: relative; flex: 0 0 42%; max-width: 620px; background: var(--sidebar)">
+    <div style="position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; gap: 32px; padding: 48px 56px">
+      <img src="/_blob/6c64e6604f822b10da1545ec86677c82" alt="Elchi Pochta" width="145" height="48" style="display: block">
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 12px; max-width: 440px">
+        <span class="el-overline" style="color: var(--sidebar-text)">Elchi CRM</span>
+        <p class="el-h1" style="color: var(--sidebar-text)">Logistika va kuryer xizmatini boshqarish tizimi</p>
+        <p style="max-width: 340px; color: var(--sidebar-text)">Buyurtmalarni kuzatish, pochta jo'natish va yetkazib berish&nbsp;— bitta joyda.</p>
+      </div>
+      <p class="el-small" style="padding-top: 24px; border-top: 1px solid var(--sidebar-line); color: var(--sidebar-text)">© 2026 Elchi Pochta</p>
+    </div>
+  </aside>
+
+  <main style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; background: var(--surface)">
+
+    <div class="el-show-tablet" style="flex: 2 1 auto; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px 16px 32px; background: var(--sidebar); text-align: center">
+      <img src="/_blob/6c64e6604f822b10da1545ec86677c82" alt="Elchi Pochta" width="145" height="48" style="display: block">
+      <span class="el-overline" style="color: var(--sidebar-text)">Elchi CRM</span>
+      <p style="max-width: 320px; color: var(--sidebar-text)">Logistika va kuryer xizmatini boshqarish tizimi</p>
+    </div>
+
+    <div style="flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: 32px 16px">
+      <form aria-labelledby="login-title" style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 24px">
+
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px">
+          <h1 class="el-h1" id="login-title">Tizimga kirish</h1>
+          <p class="el-sub">Hisobingizga kirish uchun ma'lumotlarni kiriting</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div class="el-field">
+            <label class="el-label" for="login-phone">Telefon raqam</label>
+            <div style="position: relative; display: flex; align-items: center">
+              <span class="el-strong" aria-hidden="true" style="position: absolute; left: 16px; display: flex; align-items: center; gap: 12px; pointer-events: none; color: var(--text-muted)">+998<span style="width: 1px; height: 24px; background: var(--border-strong)"></span></span>
+              <input class="el-input el-input-lg" id="login-phone" type="tel" inputmode="numeric" autocomplete="username" value="90 700 12 34" placeholder="90 123 45 67" aria-describedby="login-phone-prefix" style="padding-left: 78px">
+              <span class="el-sr" id="login-phone-prefix">Raqam +998 bilan boshlanadi</span>
+            </div>
+          </div>
+
+          <div class="el-field">
+            <label class="el-label" for="login-password">Parol</label>
+            <div style="position: relative; display: flex; align-items: center">
+              <input class="el-input el-input-lg" id="login-password" type="password" autocomplete="current-password" value="namuna12" placeholder="Parolni kiriting" style="padding-right: 52px">
+              <button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Parolni ko'rsatish" aria-pressed="false" aria-controls="login-password" style="position: absolute; right: 2px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <button class="el-btn el-btn-primary el-btn-lg el-btn-block" type="submit" style="margin-top: 8px">Kirish</button>
+
+      </form>
+    </div>
+
+    <p class="el-small el-subtle el-show-tablet" style="justify-content: center; padding: 0 16px 24px">© 2026 Elchi Pochta</p>
+  </main>
+
+</div>
+  

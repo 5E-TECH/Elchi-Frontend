@@ -145,6 +145,7 @@ export const submitManualExpense = async (page: Page, comment: string) => {
   await dialog.getByRole("button", { name: "Qo'lda chiqim" }).click();
   await dialog.getByLabel("Summa").fill("1000");
   await dialog.getByLabel("Izoh").fill(comment);
-  await expect(dialog.getByText("Balansga ta'siri: -1 000 UZS")).toBeVisible();
+  // Dizayn v2: uz valyutasi "so'm" (payments.currency).
+  await expect(dialog.getByText(/^Balansga ta'siri: -1\D?000 so'm$/)).toBeVisible();
   return dialog;
 };

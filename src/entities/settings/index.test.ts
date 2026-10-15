@@ -106,3 +106,42 @@ describe("applySettingsPatch — notifications", () => {
     expect(next.notifications.muted_categories).toEqual(["marketing"]);
   });
 });
+
+/**
+ * DIZAYN v2 — sukut mavzusi LIGHT (ega qarori 2026-10-09). Ilgari sukut "dark"
+ * edi va to'liq sozlama har yozuvda serverga ketardi, ya'ni serverdagi "dark"
+ * ko'pincha tanlov emas, eski sukut. Faqat `themeChosen: true` bilan yozilgani
+ * hurmat qilinadi.
+ */
+describe("mergeSettings — dizayn v2 mavzu migratsiyasi", () => {
+  it("⭐ belgisiz saqlangan 'dark' (eski avtomatik sukut) light'ga qaytadi", () => {
+    expect(mergeSettings({ appearance: { theme: "dark", language: "ru" } }).appearance).toEqual({
+      theme: "light",
+      language: "ru",
+    });
+  });
+
+  it("⭐ foydalanuvchi O'ZI tanlagan dark saqlanadi", () => {
+    expect(mergeSettings({ appearance: { theme: "dark", language: "uz", themeChosen: true } }).appearance).toEqual({
+      theme: "dark",
+      language: "uz",
+      themeChosen: true,
+    });
+  });
+
+  it("bo'sh sozlama — light", () => {
+    expect(mergeSettings(undefined).appearance.theme).toBe("light");
+  });
+});
+
+describe("readStoredTheme — dizayn v2 versiya belgisi", () => {
+  it("⭐ versiyasiz localStorage 'dark' e'tiborga olinmaydi, writeStoredTheme bilan yozilgani o'qiladi", async () => {
+    const { readStoredTheme, writeStoredTheme } = await import("../../shared/lib/preferencesStorage");
+    window.localStorage.clear();
+    window.localStorage.setItem("theme", "dark");
+    expect(readStoredTheme()).toBeNull();
+    writeStoredTheme("dark");
+    expect(readStoredTheme()).toBe("dark");
+    window.localStorage.clear();
+  });
+});

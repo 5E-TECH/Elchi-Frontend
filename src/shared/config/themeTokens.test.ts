@@ -248,9 +248,12 @@ describe("dizayn v2: asosiy juftliklar WCAG kontrastida", () => {
     ["dark danger-fg / surface", T.dark["danger-fg"], T.dark.surface, 4.5],
     ["dark warning-fg / surface", T.dark["warning-fg"], T.dark.surface, 4.5],
     ["dark info-fg / surface", T.dark["info-fg"], T.dark.surface, 4.5],
-    // Eski `main` dark'da ikki vazifali (oq yozuvli fon + yuzadagi matn) — kamida 4:1 ikkalasida.
-    ["dark oq / main", "#ffffff", LEGACY_MAIN.dark, 4],
-    ["dark main / surface", LEGACY_MAIN.dark, T.dark.surface, 4],
+    // Eski `main` dark'da asosan oq yozuvli FON (AA) va ba'zan yuzadagi matn (UI 3:1, eski binafshada 3.0 edi).
+    ["dark oq / main", "#ffffff", LEGACY_MAIN.dark, 4.5],
+    ["dark main / surface", LEGACY_MAIN.dark, T.dark.surface, 3.5],
+    // Doim navy orollar (xato sahifasi, skaner) ustidagi urg'u.
+    ["nav-accent / navy (light)", T.light["nav-accent"], T.light.nav, 4.5],
+    ["dark warning-fg / raised", T.dark["warning-fg"], T.dark.raised, 4.5],
   ];
   for (const [name, fg, bg, min] of cases) {
     it(`${name} >= ${min}:1`, () => {
