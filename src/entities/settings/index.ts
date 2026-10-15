@@ -108,7 +108,7 @@ export interface AppSettingsPatch {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  appearance: { theme: "dark", language: "uz" },
+  appearance: { theme: "light", language: "uz" },
   dashboard: {
     widgets: {
       stats: true,

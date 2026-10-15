@@ -21,11 +21,16 @@ vi.mock("highcharts-react-official", () => ({
 const apiGet = vi.hoisted(() => vi.fn());
 vi.mock("../../../shared/api/api", () => ({ api: { get: (...args: unknown[]) => apiGet(...args) } }));
 
-/** index.css dagi token qiymati: `.dark` blokida qayta aniqlangan bo'lsa o'shani, aks holda umumiy qiymatni oladi. */
+/**
+ * index.css dagi token qiymati: `.dark` blokida qayta aniqlangan bo'lsa o'shani, aks holda umumiy qiymatni oladi.
+ * Dizayn v2'da eski nomlar `var(--color-…)` alias — havola zanjiri ham shu tartibda yechiladi.
+ */
 const darkBlock = css.slice(css.indexOf("\n.dark {"), css.indexOf("\n}", css.indexOf("\n.dark {")));
-const tokenValue = (name: string, dark: boolean) => {
-  const re = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`);
-  return (dark && darkBlock.match(re)?.[1]) || css.match(re)?.[1];
+const tokenValue = (name: string, dark: boolean): string | undefined => {
+  const re = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6}|var\\(--color-([\\w-]+)\\))`);
+  const match = (dark && darkBlock.match(re)) || css.match(re);
+  if (!match) return undefined;
+  return match[2] ? tokenValue(match[2], dark) : match[1];
 };
 const luminance = (hex: string) => {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));

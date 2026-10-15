@@ -150,8 +150,8 @@ describe("FinancialAnalysis comparison", () => {
       <FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" analyticsScope="admin:1" />,
     );
 
-    // formatCompactMoney(1_500_000) === "1.50 mln" — must NOT be the raw "1 500 000".
-    expect(screen.getByTestId("y-axis")).toHaveAttribute("data-sample-tick", "1.50 mln");
+    // formatCompactMoney(1_500_000) === "1,5 mln" (uz, dizayn v2) — must NOT be the raw "1 500 000".
+    expect(screen.getByTestId("y-axis")).toHaveAttribute("data-sample-tick", "1,5 mln");
   });
 
   it("hides the previous-period line when the chart arrays have mismatched lengths", () => {
@@ -208,7 +208,8 @@ describe("FinancialAnalysis CustomTooltip", () => {
       />,
     );
 
-    expect(screen.getByText("Joriy davr: 0 UZS")).toBeInTheDocument();
+    // Dizayn v2: uz valyutasi "so'm" (ilgari bu ekranda "UZS", boshqasida "so'm" edi).
+    expect(screen.getByText("Joriy davr: 0 so'm")).toBeInTheDocument();
     expect(screen.getByText("Oldingi davr: —")).toBeInTheDocument();
   });
 });

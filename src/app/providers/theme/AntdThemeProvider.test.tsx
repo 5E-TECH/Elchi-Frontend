@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { theme as antdTheme, Card, Table } from "antd";
 import AntdThemeProvider from "./AntdThemeProvider";
 import { ThemeProvider } from "./ThemeContext";
+import { LEGACY_MAIN } from "../../../shared/config/themeTokens";
 
 /**
  * ANTD MAVZUSI ILOVA MAVZUSIGA BOG'LANGANMI.
@@ -87,15 +88,14 @@ describe("AntdThemeProvider", () => {
     expect(luminance(bg)).toBeGreaterThan(200);
   });
 
-  it("urg'u rangi sahifa INDIGO'si bilan bir xil", () => {
+  it("⭐ urg'u rangi dizayn v2 brendi (Tailwind `--color-main`/`action` bilan bir xil)", () => {
     /**
-     * Aks holda antd tugmalari ko'k, sahifa chiplari esa indigo bo'lib,
-     * bitta ekranda ikki xil "asosiy rang" paydo bo'lardi.
+     * Aks holda antd tugmalari bir rangda, sahifa tugmalari boshqasida
+     * bo'lib, bitta ekranda ikki xil "asosiy rang" paydo bo'lardi (dizayn
+     * auditi: ilgari antd #6366f1, sahifa #576adb/#7c3aed edi).
      *
      * ⚠️ YORUG' rejimda tekshiriladi. Qorong'ida antd urug' rangdan
-     * boshqa soyani HISOBLAB chiqaradi (#6366f1 → #575ad0) — bu uning
-     * ataylab qilgan ishi, shuning uchun u yerda aniq tenglik talab
-     * qilish testni noto'g'ri yiqitardi.
+     * boshqa soyani HISOBLAB chiqaradi — bu uning ataylab qilgan ishi.
      */
     setTheme("light");
     render(
@@ -105,7 +105,8 @@ describe("AntdThemeProvider", () => {
         </AntdThemeProvider>
       </ThemeProvider>,
     );
-    expect(screen.getByTestId("probe").textContent).toBe("#6366f1");
+    expect(screen.getByTestId("probe").textContent).toBe(LEGACY_MAIN.light);
+    expect(LEGACY_MAIN.light).toBe("#2b50d8");
   });
 
   it("⭐ qorong'ida ham urg'u antd SUKUTIDAGI ko'k EMAS", () => {

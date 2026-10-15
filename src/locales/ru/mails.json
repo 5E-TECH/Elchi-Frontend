@@ -61,7 +61,7 @@
   "returnActionError": "Не удалось обработать запрос на возврат",
   "returnSkippedNote": "Уже обработаны ранее и пропущены: {{count}}",
   "courierFallback": "Курьер",
-  "currencyLabel": "UZS",
+  "currencyLabel": "сум",
   "ordersLabel": "Заказы",
   "amountLabel": "Сумма",
   "loadError": "Не удалось загрузить данные",

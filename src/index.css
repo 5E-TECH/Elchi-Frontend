@@ -45,47 +45,103 @@
 }
 
 @theme {
-  /* Brand and light mode palette */
-  --color-main: #576adb;
-  --color-maindark: #272c52;
-  --color-primary: #ffffff;
-  --color-primarydark: #4c5798;
-  --color-sidebar: #f4f5fa;
-  --color-background: #322d48;
-  --color-background-soft: rgba(87, 106, 219, 0.12);
-  --color-background-deep: rgba(39, 44, 82, 0.88);
-  --color-main-soft: rgba(87, 106, 219, 0.18);
-  --color-page-surface: #ffffff;
-  --color-card-surface: #f8f9fd;
-  --color-card-surface-strong: #ffffff;
-  --color-card-shadow: rgba(39, 44, 82, 0.08);
+  /* ═══════════════════════════════════════════════════════════════════════
+     ELCHI DIZAYN v2 — SEMANTIK TOKENLAR (yagona manba; docs/DESIGN_SYSTEM.md)
+     Brend: navy #1f2853 + ko'k action. Sukut mavzusi — LIGHT.
+     ⚠️ Qiymatlar `src/shared/config/themeTokens.ts` bilan AYNAN bir xil
+     bo'lishi shart — `themeTokens.test.ts` ikkalasini solishtiradi.
+     Yangi kod FAQAT shu bo'limdagi nomlardan foydalanadi.
+     ═══════════════════════════════════════════════════════════════════════ */
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* Shared surfaces and text */
-  --color-purple-soft: rgba(124, 58, 237, 0.22);
-  --color-purple: #7c3aed;
-  --color-purple-light: #8b5cf6;
-  --color-purple-dark: #5b21b6;
+  --color-bg: #f4f6fb;
+  --color-surface: #ffffff;
+  --color-raised: #ffffff;
+  --color-sunken: #f0f3f9;
+  --color-input: #ffffff;
+  --color-row-hover: #f7f9fd;
+  --color-border: #e1e6f0;
+  --color-border-strong: #c9d1e0;
+  --color-text: #101733;
+  --color-text-muted: #4b5575;
+  --color-text-subtle: #7c859f;
+  --color-brand: #1f2853;
+  --color-nav: #1f2853;
+  --color-action: #2b50d8;
+  --color-action-hover: #2443b8;
+  --color-action-fg: #2b50d8;
+  --color-action-soft: #e8edfd;
+  --color-on-solid: #ffffff;
+  --color-focus: rgba(43, 80, 216, 0.28);
+  --color-success: #12704f;
+  --color-success-fg: #12704f;
+  --color-success-soft: #e3f4ec;
+  --color-warning: #95560a;
+  --color-warning-fg: #95560a;
+  --color-warning-soft: #fcf0dc;
+  --color-danger: #be2a3b;
+  --color-danger-fg: #be2a3b;
+  --color-danger-soft: #fde8ea;
+  --color-info: #1a62a8;
+  --color-info-fg: #1a62a8;
+  --color-info-soft: #e2effa;
+  --color-overlay: rgba(16, 23, 51, 0.45);
+
+  /* Grafiklar (tekshirilgan kategorial palitra — tartibi o'zgarmaydi) */
+  --color-chart-1: #2b50d8;
+  --color-chart-2: #eb6834;
+  --color-chart-3: #1baf7a;
+  --color-chart-4: #eda100;
+  --color-chart-5: #e87ba4;
+  --color-chart-6: #008300;
+  --color-chart-7: #4a3aa7;
+  --color-chart-8: #e34948;
+  --color-chart-muted: #c9d1e0;
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     ESKI NOMLAR — v2 tokenlariga ALIAS (sahifalar sinmasin; 4-bosqichda
+     sahifalar yangi nomlarga ko'chiriladi). Yangi kodda ISHLATILMAYDI.
+     ═══════════════════════════════════════════════════════════════════════ */
+  /* `main` — eski "to'liq fon + oq matn" urg'usi. Dark'da alohida qiymat
+     (#5574ee): ham oq matnli fon, ham qorong'i yuzadagi matn sifatida
+     ishlatiladi — yangi kodda `action` + `on-solid` / `action-fg` ishlating. */
+  --color-main: var(--color-action);
+  --color-maindark: var(--color-brand);
+  --color-primary: #ffffff;
+  --color-primarydark: var(--color-action-hover);
+  --color-sidebar: var(--color-bg);
+  --color-background: var(--color-brand);
+  --color-background-soft: rgba(43, 80, 216, 0.1);
+  --color-background-deep: rgba(16, 23, 51, 0.88);
+  --color-main-soft: rgba(43, 80, 216, 0.14);
+  --color-page-surface: var(--color-surface);
+  --color-card-surface: var(--color-row-hover);
+  --color-card-surface-strong: var(--color-raised);
+  --color-card-shadow: rgba(16, 23, 51, 0.08);
+
+  /* Eski "binafsha" oilasi endi brend ko'k oilasiga ishora qiladi */
+  --color-purple-soft: rgba(43, 80, 216, 0.18);
+  --color-purple: var(--color-action);
+  --color-purple-light: #5b7cf0;
+  --color-purple-dark: var(--color-action-hover);
   --color-glass: rgba(255, 255, 255, 0.08);
   --color-glass-border: rgba(255, 255, 255, 0.15);
-  --color-surface: rgba(255, 255, 255, 0.6);
-  --color-surface-dark: rgba(39, 44, 82, 0.85);
-  --color-border-soft: rgba(87, 106, 219, 0.14);
-  --color-border-strong: rgba(87, 106, 219, 0.24);
-  --color-text-muted: rgba(39, 44, 82, 0.62);
-  --color-text-muted-dark: rgba(255, 255, 255, 0.62);
-  --color-dark-bg-py: #2a2540;
+  --color-surface-dark: rgba(31, 40, 83, 0.88);
+  --color-border-soft: var(--color-border);
+  --color-text-muted-dark: #a7afcb;
+  --color-dark-bg-py: #0d1120;
 
   /* Tables and elevated blocks */
-  --color-table-label: rgba(39, 44, 82, 0.82);
-  --color-table-label-dark: rgba(255, 255, 255, 0.78);
+  --color-table-label: rgba(16, 23, 51, 0.82);
+  --color-table-label-dark: rgba(232, 235, 247, 0.8);
   --color-table-header-start: var(--color-main);
   --color-table-header-end: var(--color-primarydark);
-  --color-table-row-alt: rgba(87, 106, 219, 0.05);
-  --color-table-row-hover: rgba(87, 106, 219, 0.08);
-  --color-table-card-hover: rgba(87, 106, 219, 0.16);
-  --color-table-card-hover-dark: rgba(87, 106, 219, 0.32);
-  --color-surface-elevated: rgba(255, 255, 255, 0.96);
-  --color-surface-elevated-dark: rgba(39, 44, 82, 0.96);
+  --color-table-row-alt: rgba(43, 80, 216, 0.04);
+  --color-table-row-hover: rgba(43, 80, 216, 0.06);
+  --color-table-card-hover: rgba(43, 80, 216, 0.12);
+  --color-table-card-hover-dark: rgba(142, 166, 255, 0.16);
+  --color-surface-elevated: var(--color-raised);
+  --color-surface-elevated-dark: #1c2240;
 
   /* Flags */
   --color-flag-uz-blue: #38bdf8;
@@ -95,46 +151,43 @@
   --color-flag-en-red: #ef4444;
   --color-flag-en-blue: #1d4ed8;
 
-  /* ── Semantic colors ── */
-  --color-info: #3b82f6;
-  --color-success: #22c55e;
-  --color-error: #ef4444;
-  --color-warning: #f59e0b;
-  --color-warning-soft: rgba(245, 158, 11, 0.12);
-  --color-warning-surface: rgba(245, 158, 11, 0.16);
-  --color-warning-border: rgba(245, 158, 11, 0.26);
-  --color-warning-start: #f59e0b;
-  --color-warning-end: #f97316;
+  /* Eski semantik nomlar */
+  --color-error: var(--color-danger);
+  --color-warning-surface: var(--color-warning-soft);
+  --color-warning-border: rgba(149, 86, 10, 0.28);
+  --color-warning-start: #b26a10;
+  --color-warning-end: #95560a;
   --color-warning-text: #fff7ed;
-  --color-loader-start: #0f172a;
-  --color-loader-end: #1e1b4b;
-  --color-error-page-start: #1a0533;
-  --color-error-page-middle: #3d1a6e;
-  --color-error-page-end: #6b21a8;
+  --color-loader-start: #0d1120;
+  --color-loader-end: #1f2853;
+  --color-error-page-start: #0d1120;
+  --color-error-page-middle: #1f2853;
+  --color-error-page-end: #2b50d8;
   --color-error-page-card: rgba(255, 255, 255, 0.07);
   --color-error-page-card-strong: rgba(255, 255, 255, 0.1);
   --color-error-page-text: var(--color-primary);
   --color-error-page-text-muted: rgba(255, 255, 255, 0.6);
   --color-error-page-digit: rgba(255, 255, 255, 0.95);
-  --color-error-page-ring-soft: rgba(168, 85, 247, 0.22);
+  --color-error-page-ring-soft: rgba(142, 166, 255, 0.22);
   --color-error-page-ring-border: rgba(255, 255, 255, 0.12);
-  --color-region-map-low: #d7f5de;
-  --color-region-map-medium: #76d88f;
-  --color-region-map-high: #10b84f;
-  --color-region-map-xhigh: #087a2f;
-  --color-region-map-stroke: #4d6bff;
-  --color-region-map-label: #1f3157;
-  --color-region-map-tooltip-shadow: rgba(39, 44, 82, 0.18);
-  --color-dashboard-chart-axis: rgba(39, 44, 82, 0.78);
-  --color-dashboard-chart-grid: rgba(87, 106, 219, 0.14);
-  --color-dashboard-text-soft: rgba(39, 44, 82, 0.66);
-  --color-dashboard-text-muted: rgba(39, 44, 82, 0.82);
-  --color-dashboard-border: rgba(39, 44, 82, 0.08);
-  --color-footer-text: rgba(39, 44, 82, 0.72);
-  --color-footer-divider: rgba(39, 44, 82, 0.14);
-  --color-date-picker-trigger: rgba(39, 44, 82, 0.9);
-  --color-date-picker-placeholder: rgba(39, 44, 82, 0.72);
-  --color-date-picker-weekday: rgba(39, 44, 82, 0.62);
+  /* Hudud xaritasi — bitta ko'k ketma-ket shkala (sequential) */
+  --color-region-map-low: #cde2fb;
+  --color-region-map-medium: #86b6ef;
+  --color-region-map-high: #3987e5;
+  --color-region-map-xhigh: #1c5cab;
+  --color-region-map-stroke: #ffffff;
+  --color-region-map-label: #101733;
+  --color-region-map-tooltip-shadow: rgba(16, 23, 51, 0.18);
+  --color-dashboard-chart-axis: rgba(16, 23, 51, 0.7);
+  --color-dashboard-chart-grid: var(--color-border);
+  --color-dashboard-text-soft: rgba(16, 23, 51, 0.62);
+  --color-dashboard-text-muted: rgba(16, 23, 51, 0.82);
+  --color-dashboard-border: rgba(16, 23, 51, 0.08);
+  --color-footer-text: rgba(16, 23, 51, 0.68);
+  --color-footer-divider: rgba(16, 23, 51, 0.12);
+  --color-date-picker-trigger: rgba(16, 23, 51, 0.9);
+  --color-date-picker-placeholder: rgba(16, 23, 51, 0.68);
+  --color-date-picker-weekday: rgba(16, 23, 51, 0.6);
 }
 
 /* Keep browser autofill background aligned with app input surfaces */
@@ -147,9 +200,9 @@ textarea:-webkit-autofill:focus,
 select:-webkit-autofill,
 select:-webkit-autofill:hover,
 select:-webkit-autofill:focus {
-  -webkit-text-fill-color: #1f2937;
-  -webkit-box-shadow: 0 0 0 1000px var(--color-primary) inset;
-  box-shadow: 0 0 0 1000px var(--color-primary) inset;
+  -webkit-text-fill-color: var(--color-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-input) inset;
+  box-shadow: 0 0 0 1000px var(--color-input) inset;
   transition: background-color 9999s ease-out 0s;
 }
 
@@ -162,9 +215,9 @@ select:-webkit-autofill:focus {
 .dark select:-webkit-autofill,
 .dark select:-webkit-autofill:hover,
 .dark select:-webkit-autofill:focus {
-  -webkit-text-fill-color: #ffffff;
-  -webkit-box-shadow: 0 0 0 1000px var(--color-maindark) inset;
-  box-shadow: 0 0 0 1000px var(--color-maindark) inset;
+  -webkit-text-fill-color: var(--color-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-input) inset;
+  box-shadow: 0 0 0 1000px var(--color-input) inset;
 }
 
 /* ───────────────────────────── Print (MailDetail) ─────────────────────────── */
@@ -336,68 +389,117 @@ select:-webkit-autofill:focus {
 }
 
 .dark {
-  /* Dark mode palette inspired by the reference dashboard */
-  --color-main: #7c3aed;
-  --color-maindark: #252039;
-  --color-primarydark: #302b49;
-  --color-sidebar: #252039;
-  --color-background: #211d34;
-  --color-background-soft: rgba(139, 92, 246, 0.12);
-  --color-background-deep: rgba(18, 15, 29, 0.92);
-  --color-dark-bg-py: #2a2540;
-  --color-main-soft: rgba(124, 58, 237, 0.18);
-  --color-page-surface: #26213a;
-  --color-card-surface: #1f1a31;
-  --color-card-surface-strong: #28223b;
-  --color-card-shadow: rgba(11, 8, 21, 0.36);
-  --color-purple-soft: rgba(124, 58, 237, 0.22);
-  --color-purple: #7c3aed;
-  --color-purple-light: #9f7aea;
-  --color-purple-dark: #6d28d9;
-  --color-glass: rgba(231, 227, 252, 0.07);
-  --color-glass-border: rgba(231, 227, 252, 0.12);
-  --color-surface: rgba(48, 43, 73, 0.84);
-  --color-surface-dark: #2b2741;
-  --color-surface-elevated: #312c4a;
-  --color-surface-elevated-dark: #312c4a;
-  --color-border-soft: rgba(169, 152, 255, 0.14);
-  --color-border-strong: rgba(169, 152, 255, 0.28);
-  /* ⚠️ `--color-text-muted` ning O'ZI ham dark'da qayta aniqlanadi. Ilgari
-     faqat `-dark` jufti bor edi va `dark:` variant yozilmagan har bir joyda
-     (≈76 ta) dark fonda och-mavzu rangi qolib, kontrast 1.00:1 ga tushardi.
-     Endi token mavzuga o'zi moslashadi; `-dark` jufti moslik uchun qoladi. */
+  color-scheme: dark;
+  /* ── v2 semantik tokenlar (tungi) ── */
+  --color-bg: #0d1120;
+  --color-surface: #151a2e;
+  --color-raised: #1c2240;
+  --color-sunken: #11162a;
+  --color-input: #11162a;
+  --color-row-hover: #1a2036;
+  --color-border: #262d4a;
+  --color-border-strong: #3a4366;
+  --color-text: #e8ebf7;
   --color-text-muted: var(--color-text-muted-dark);
-  --color-text-muted-dark: rgba(231, 227, 252, 0.62);
-  --color-table-label-dark: rgba(231, 227, 252, 0.8);
-  --color-table-header-start: #7c3aed;
-  --color-table-header-end: #5b21b6;
-  --color-table-row-alt: rgba(124, 58, 237, 0.06);
-  --color-table-row-hover: rgba(124, 58, 237, 0.1);
-  --color-table-card-hover-dark: rgba(124, 58, 237, 0.2);
-  --color-dashboard-chart-axis: rgba(231, 227, 252, 0.7);
-  --color-dashboard-chart-grid: rgba(231, 227, 252, 0.1);
-  --color-dashboard-text-soft: rgba(231, 227, 252, 0.46);
-  --color-dashboard-text-muted: rgba(231, 227, 252, 0.78);
-  --color-dashboard-border: rgba(231, 227, 252, 0.08);
-  --color-footer-text: rgba(231, 227, 252, 0.6);
-  --color-footer-divider: rgba(231, 227, 252, 0.12);
-  --color-date-picker-trigger: rgba(231, 227, 252, 0.96);
-  --color-date-picker-placeholder: rgba(231, 227, 252, 0.72);
-  --color-date-picker-weekday: rgba(231, 227, 252, 0.62);
-  --color-info: #2563d8;
+  --color-text-muted-dark: #a7afcb;
+  --color-text-subtle: #7a83a3;
+  --color-brand: #c9d2f5;
+  --color-nav: #0a0e1b;
+  --color-action: #8ea6ff;
+  --color-action-hover: #a9bbff;
+  --color-action-fg: #8ea6ff;
+  --color-action-soft: rgba(142, 166, 255, 0.14);
+  --color-on-solid: #0d1120;
+  --color-focus: rgba(142, 166, 255, 0.38);
+  /* `success/warning/danger/info` — oq matnli FON sifatida ham ishlatiladi
+     (eski kod), shuning uchun to'q tus; qorong'i yuzadagi MATN uchun `-fg`. */
   --color-success: #0d8f5b;
-  --color-error: #d82f48;
+  --color-success-fg: #4fc58e;
+  --color-success-soft: rgba(79, 197, 142, 0.14);
   --color-warning: #c97900;
-  --color-region-map-low: #334a66;
-  --color-region-map-medium: #2f6f7d;
-  --color-region-map-high: #1f9d65;
-  --color-region-map-xhigh: #0f7f4c;
-  --color-region-map-stroke: rgba(241, 238, 255, 0.84);
+  --color-warning-fg: #f1b24e;
+  --color-warning-soft: rgba(241, 178, 78, 0.14);
+  --color-danger: #d82f48;
+  --color-danger-fg: #ff7182;
+  --color-danger-soft: rgba(255, 113, 130, 0.14);
+  --color-info: #2563d8;
+  --color-info-fg: #6bb6f3;
+  --color-info-soft: rgba(107, 182, 243, 0.14);
+  --color-overlay: rgba(3, 5, 12, 0.62);
+  --color-chart-1: #5b7cf0;
+  --color-chart-2: #d95926;
+  --color-chart-3: #199e70;
+  --color-chart-4: #c98500;
+  --color-chart-5: #d55181;
+  --color-chart-6: #008300;
+  --color-chart-7: #9085e9;
+  --color-chart-8: #e66767;
+  --color-chart-muted: #3a4366;
+
+  /* ── eski nomlar (tungi) ── */
+  /* `main` — oq matnli fon VA qorong'i yuzadagi matn: ikkalasida ~4.1:1
+     beradigan muvozanat (to'liq AA uchun yangi kod `action`+`on-solid`). */
+  --color-main: #5574ee;
+  --color-maindark: var(--color-surface);
+  --color-primarydark: var(--color-raised);
+  --color-sidebar: var(--color-sunken);
+  --color-background: var(--color-bg);
+  --color-background-soft: rgba(142, 166, 255, 0.1);
+  --color-background-deep: rgba(5, 7, 13, 0.92);
+  --color-dark-bg-py: var(--color-bg);
+  --color-main-soft: rgba(142, 166, 255, 0.16);
+  --color-page-surface: var(--color-surface);
+  --color-card-surface: var(--color-surface);
+  --color-card-surface-strong: var(--color-raised);
+  --color-card-shadow: rgba(0, 0, 0, 0.36);
+  --color-purple-soft: rgba(142, 166, 255, 0.2);
+  --color-purple: var(--color-main);
+  --color-purple-light: #a9bbff;
+  --color-purple-dark: #2f4bc4;
+  --color-glass: rgba(232, 235, 247, 0.07);
+  --color-glass-border: rgba(232, 235, 247, 0.12);
+  --color-surface-dark: var(--color-sunken);
+  --color-surface-elevated: var(--color-raised);
+  --color-surface-elevated-dark: var(--color-raised);
+  --color-border-soft: var(--color-border);
+  --color-table-label-dark: rgba(232, 235, 247, 0.8);
+  --color-table-header-start: #2b50d8;
+  --color-table-header-end: #2443b8;
+  --color-table-row-alt: rgba(142, 166, 255, 0.04);
+  --color-table-row-hover: rgba(142, 166, 255, 0.08);
+  --color-table-card-hover-dark: rgba(142, 166, 255, 0.16);
+  --color-dashboard-chart-axis: rgba(232, 235, 247, 0.7);
+  --color-dashboard-chart-grid: var(--color-border);
+  --color-dashboard-text-soft: rgba(232, 235, 247, 0.5);
+  --color-dashboard-text-muted: rgba(232, 235, 247, 0.8);
+  --color-dashboard-border: rgba(232, 235, 247, 0.08);
+  --color-footer-text: rgba(232, 235, 247, 0.6);
+  --color-footer-divider: rgba(232, 235, 247, 0.12);
+  --color-date-picker-trigger: rgba(232, 235, 247, 0.96);
+  --color-date-picker-placeholder: rgba(232, 235, 247, 0.72);
+  --color-date-picker-weekday: rgba(232, 235, 247, 0.62);
+  --color-region-map-low: #1c3a63;
+  --color-region-map-medium: #24569a;
+  --color-region-map-high: #3987e5;
+  --color-region-map-xhigh: #86b6ef;
+  --color-region-map-stroke: rgba(232, 235, 247, 0.84);
   --color-region-map-label: rgba(255, 255, 255, 0.96);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
 }
 
 .dark body {
   background: var(--color-dark-bg-py);
+}
+
+/* Raqamlar ustunlarda tekis turishi uchun (jadval, o'q yorliqlari). Katta
+   yakka raqamlarga (KPI) qo'llanmaydi — docs/DESIGN_SYSTEM.md, "Raqamlar". */
+:where(td, th, .tabular-nums) {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ─── Klaviatura fokusi ─────────────────────────────────────────────────────── */
@@ -430,30 +532,15 @@ select:-webkit-autofill:focus {
   [role='tab'],
   [role='link']
 ):focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--color-action);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 /*
-  Qorong'i mavzuda indigo fon bilan qo'shilib ketmasligi uchun ochroq tus.
-  `#a5b4fc` (indigo-300) — yuza `#3A3358` ustida ~6.5:1.
+  Fokus halqasi `--color-action` tokenidan: dark'da u o'zi ochroq
+  (#8ea6ff — yuza #151a2e ustida 7.4:1), alohida qoida kerak emas.
 */
-.dark
-  :where(
-    a[href],
-    button,
-    input,
-    select,
-    textarea,
-    summary,
-    [tabindex]:not([tabindex='-1']),
-    [role='button'],
-    [role='tab'],
-    [role='link']
-  ):focus-visible {
-  outline-color: #a5b4fc;
-}
 
 /* ─── Global Cursor Defaults ───────────────────────────────────────────────── */
 :where(
@@ -484,23 +571,31 @@ select:-webkit-autofill:focus {
 }
 
 /* ─── Global Dark Mode overrides ──────────────────────────────────────────── */
-/* input / select / textarea – Tailwind bg class YO'Q bo'lsa dark fonda matn ko'rinadigan bo'lsin */
-.dark input:not([class*="bg-"]),
-.dark select:not([class*="bg-"]),
-.dark textarea:not([class*="bg-"]) {
-  background-color: var(--color-surface-dark);
-  color: var(--color-primary);
-  border-color: var(--color-border-soft);
-}
+/*
+  ⚠️ `@layer base` ICHIDA: ilgari bu qoidalar qatlamsiz edi va har qanday
+  Tailwind utility'dan (`text-*`, `bg-*`, `dark:text-*`) KUCHLI chiqardi —
+  jadval katagiga yozilgan `dark:text-emerald-400` ham oq-kulrangga
+  aylanardi. Endi ular faqat SUKUT: utility yozilgan joyda utility yutadi.
+*/
+@layer base {
+  /* input / select / textarea – Tailwind bg class YO'Q bo'lsa dark fonda matn ko'rinadigan bo'lsin */
+  .dark input:not([class*="bg-"]),
+  .dark select:not([class*="bg-"]),
+  .dark textarea:not([class*="bg-"]) {
+    background-color: var(--color-input);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
 
-.dark input:not([class*="bg-"])::placeholder,
-.dark textarea:not([class*="bg-"])::placeholder {
-  color: rgba(231, 227, 252, 0.38);
-}
+  .dark input:not([class*="bg-"])::placeholder,
+  .dark textarea:not([class*="bg-"])::placeholder {
+    color: var(--color-text-subtle);
+  }
 
-/* Jadval qator matnlari – dark modeda */
-.dark td {
-  color: rgba(244, 245, 250, 0.85);
+  /* Jadval qator matnlari – dark modeda */
+  .dark td {
+    color: rgba(232, 235, 247, 0.88);
+  }
 }
 
 /* Ant Design notifications must stay above app modals/popups. */
@@ -526,7 +621,7 @@ select:-webkit-autofill:focus {
   }
 
   .login-field::selection {
-    background: rgba(87, 106, 219, 0.2);
+    background: rgba(43, 80, 216, 0.2);
     color: var(--color-maindark);
   }
 
@@ -643,7 +738,7 @@ select:-webkit-autofill:focus {
     padding-inline: 1rem;
     color: #ffffff;
     font-weight: 500;
-    box-shadow: 0 14px 28px rgba(87, 106, 219, 0.24);
+    box-shadow: 0 14px 28px rgba(43, 80, 216, 0.24);
   }
 
   .branch-settings-primary-action.ant-btn:hover {
@@ -816,7 +911,7 @@ select:-webkit-autofill:focus {
   .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-in-range::before,
   .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-start:not(.ant-picker-cell-range-start-single)::before,
   .dark .region-range-picker-popup .ant-picker-cell-in-view.ant-picker-cell-range-end:not(.ant-picker-cell-range-end-single)::before {
-    background: rgba(87, 106, 219, 0.28);
+    background: rgba(43, 80, 216, 0.28);
   }
 
   .popup-select-option-selected .popup-select-option-content {
@@ -829,7 +924,7 @@ select:-webkit-autofill:focus {
 
   .popup-select-option-selected .popup-select-option-content [class*="text-white/85"],
   .popup-select-option-selected .popup-select-option-content [class*="text-white/80"] {
-    color: rgba(39, 44, 82, 0.78) !important;
+    color: rgba(16, 23, 51, 0.78) !important;
   }
 
   .popup-select-option-selected .popup-select-option-content [class*="text-white/70"],
@@ -840,7 +935,7 @@ select:-webkit-autofill:focus {
 
   .popup-select-option-selected .popup-select-option-content [class*="bg-white/20"],
   .popup-select-option-selected .popup-select-option-content [class*="bg-white/10"] {
-    background-color: rgba(87, 106, 219, 0.14) !important;
+    background-color: rgba(43, 80, 216, 0.14) !important;
     color: var(--color-main) !important;
   }
 
@@ -1007,13 +1102,13 @@ select:-webkit-autofill:focus {
     100% {
       transform: scale(1);
       opacity: 0.8;
-      filter: drop-shadow(0 0 15px rgba(87, 106, 219, 0.4));
+      filter: drop-shadow(0 0 15px rgba(43, 80, 216, 0.4));
     }
 
     50% {
       transform: scale(1.05);
       opacity: 1;
-      filter: drop-shadow(0 0 30px rgba(87, 106, 219, 0.7));
+      filter: drop-shadow(0 0 30px rgba(43, 80, 216, 0.7));
     }
   }
 
@@ -1111,7 +1206,7 @@ select:-webkit-autofill:focus {
     isolation: isolate;
     overflow: hidden;
     background:
-      radial-gradient(circle at 50% 42%, rgba(124, 58, 237, 0.14), transparent 34%),
+      radial-gradient(circle at 50% 42%, rgba(142, 166, 255, 0.14), transparent 34%),
       linear-gradient(145deg, var(--color-maindark), var(--color-loader-end));
   }
 
@@ -1122,7 +1217,7 @@ select:-webkit-autofill:focus {
     width: min(70vw, 720px);
     height: min(70vw, 720px);
     border-radius: 9999px;
-    background: rgba(124, 58, 237, 0.08);
+    background: rgba(142, 166, 255, 0.08);
     filter: blur(110px);
   }
 
@@ -1142,14 +1237,14 @@ select:-webkit-autofill:focus {
 
   .page-loader-halo {
     z-index: 0;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.28), transparent 68%);
+    background: radial-gradient(circle, rgba(142, 166, 255, 0.28), transparent 68%);
     filter: blur(20px);
     animation: pageLoaderHalo 2.4s ease-in-out infinite;
   }
 
   .page-loader-logo {
     animation: pageLoaderLogoMotion 1.45s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    filter: drop-shadow(0 12px 28px rgba(139, 92, 246, 0.3));
+    filter: drop-shadow(0 12px 28px rgba(142, 166, 255, 0.3));
     will-change: transform;
   }
 
@@ -1162,7 +1257,7 @@ select:-webkit-autofill:focus {
   }
 
   .page-loader-progress span {
-    background: linear-gradient(90deg, transparent, var(--color-main), #a78bfa, transparent);
+    background: linear-gradient(90deg, transparent, var(--color-main), #a9bbff, transparent);
     animation: pageLoaderProgress 1.35s ease-in-out infinite;
   }
 

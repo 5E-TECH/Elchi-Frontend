@@ -39,9 +39,9 @@
   "totalCouriers": "Курьеры филиала",
   "activeCouriers": "Активны сегодня",
   "money": {
-    "full": "{{value}} UZS",
+    "full": "{{value}} сум",
     "million": "{{value}} млн",
-    "thousand": "{{value}} тыс"
+    "thousand": "{{value}} тыс."
   },
   "chartOrders": "Заказы",
   "chartAmount": "Итого: {{amount}}",

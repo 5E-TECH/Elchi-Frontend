@@ -175,7 +175,7 @@
   "partialSellPriceExceedsTotal": "The partial sale amount must not exceed the order total",
   "decreaseQuantity": "Decrease quantity of {{name}}",
   "increaseQuantity": "Increase quantity of {{name}}",
-  "currency": "sum",
+  "currency": "UZS",
   "extraPayment": "Additional payment",
   "writeNote": "Write a note...",
   "selectLabel": "Select",

@@ -1,3 +1,5 @@
+import { formatCompactMoneyLocalized, formatNumberLocalized } from "../lib/formatMoney";
+
 /**
  * ────────────────────────────────────────────────────────────────────────────
  *  ELCHI DESIGN SYSTEM — yagona stil manbasi (single source of truth)
@@ -97,27 +99,24 @@ export const TEXT = {
 } as const;
 
 // ─── Formatlash yordamchilari ────────────────────────────────────────────────
-const nf = new Intl.NumberFormat("uz-UZ");
+// Dizayn v2: hammasi `shared/lib/formatMoney.ts` ga tayanadi — joriy tilga mos
+// (uz "12 345", en "12,345") va brauzer ICU'siga bog'liq emas (Chrome'da `uz`
+// yo'q, `Intl.NumberFormat("uz-UZ")` u yerda "12,345" berardi).
 
-/** Butun son: 12345 → "12 345" */
+/** Butun son: 12345 → uz "12 345" / en "12,345". */
 export const formatNumber = (value: number): string =>
-  nf.format(Math.round(value || 0)).replace(/\s/g, " ");
+  formatNumberLocalized(Math.round(value || 0));
 
-/** Pul (so'm): minglik ajratgich bilan. */
+/** Pul (valyutasiz raqam) — valyuta yorlig'i chaqiruvchi tomonda qo'shiladi. */
 export const formatMoney = (value: number): string => formatNumber(value);
 
 /**
- * Ixcham pul: katta summalar uchun qisqartma — 1 250 000 → "1.25M".
- * Kartalarda joy tejash uchun.
+ * Ixcham pul (valyutasiz): 1 250 000 → uz "1,3 mln" / ru "1,3 млн" / en "1.3M".
+ * Kartalar va grafik o'qlari uchun; valyuta bilan kerak bo'lsa —
+ * `formatCompactMoneyLocalized` (shared/lib/formatMoney).
  */
-export const formatCompactMoney = (value: number): string => {
-  const v = value || 0;
-  const abs = Math.abs(v);
-  if (abs >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(2)} mlrd`;
-  if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(2)} mln`;
-  if (abs >= 1_000) return `${(v / 1_000).toFixed(1)} ming`;
-  return formatNumber(v);
-};
+export const formatCompactMoney = (value: number): string =>
+  formatCompactMoneyLocalized(value || 0, { withCurrency: false });
 
 /** Foiz: 42.5 → "42.5%". `digits` — kasr xonalari. */
 export const formatPercent = (value: number, digits = 1): string =>

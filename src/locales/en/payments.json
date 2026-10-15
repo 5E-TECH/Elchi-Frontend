@@ -270,7 +270,7 @@
   ,"deliveryCenter": "To center"
   ,"region": "Region"
   ,"no": "No"
-  ,"currencyAmountSuffix": "so'm"
+  ,"currencyAmountSuffix": "UZS"
   ,"selectReceiveSourceDescription": "Select a branch manager or an HQ courier"
   ,"hqCourierLabel": "HQ courier"
   ,"branchCourierNotReceivable": "This courier belongs to a branch — the branch manager receives the cash"

@@ -55,7 +55,8 @@ const superadmin = { role: { id: "1", role: "superadmin", region: null, name: "A
 const manager = { role: { id: "198", role: "manager", region: null, name: "Menejer" } } as never;
 
 /** uz-UZ guruhlash belgisi U+00A0 — Testing Library matnni oddiy bo'shliqqa normallaydi. */
-const money = (amount: number) => `${amount.toLocaleString("uz-UZ")} UZS`.replace(/\s+/g, " ");
+// Dizayn v2: uz valyutasi "so'm" (payments.currency — ilgari "UZS" edi).
+const money = (amount: number) => `${amount.toLocaleString("uz-UZ")} so'm`.replace(/\s+/g, " ");
 
 /**
  * GET /finance/cashbox/user/:id?cashbox_type=couriers — superadmin/admin uchun
@@ -325,7 +326,7 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
 
       expect(
         await screen.findByText(
-          `Summa ko'rsatilgan balansdan (${money(250000).replace(" UZS", "")} so'm) oshmasligi kerak`,
+          `Summa ko'rsatilgan balansdan (${money(250000).replace(" so'm", "")} so'm) oshmasligi kerak`,
         ),
       ).toBeInTheDocument();
       expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
