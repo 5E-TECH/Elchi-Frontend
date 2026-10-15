@@ -315,10 +315,11 @@ const OrderRow = memo(({
                 event.stopPropagation();
                 onDelete(order.id);
               }}
-              className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20 transition-all duration-200 shrink-0"
-              aria-label={t("mails:delete")}
+              // yokjwjXG: v2 (`.el-iconbtn-sm`, xavfli) — pochtadan o'chirish.
+              className="inline-flex size-8 flex-none items-center justify-center rounded-lg text-danger-fg transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
+              aria-label={t("mails:deleteFromPostAction", { id: order.id })}
             >
-              <Trash2 size={13} />
+              <Trash2 className="size-4" aria-hidden="true" />
             </button>
           ) : null}
         </div>
@@ -409,10 +410,10 @@ const OrderRow = memo(({
                         event.stopPropagation();
                         onDelete(order.id);
                       }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-500 transition-all duration-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
-                      aria-label={t("mails:delete")}
+                      className="inline-flex size-8 flex-none items-center justify-center rounded-lg text-danger-fg transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
+                      aria-label={t("mails:deleteFromPostAction", { id: order.id })}
                     >
-                      <Trash2 size={12} />
+                      <Trash2 className="size-4" aria-hidden="true" />
                     </button>
                   ) : null}
                 </div>
@@ -504,10 +505,10 @@ const OrderRow = memo(({
                     event.stopPropagation();
                     onDelete(order.id);
                   }}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-500 transition-all duration-200 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20"
-                  aria-label={t("mails:delete")}
+                  className="inline-flex size-8 flex-none items-center justify-center rounded-lg text-danger-fg transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
+                  aria-label={t("mails:deleteFromPostAction", { id: order.id })}
                 >
-                  <Trash2 size={12} />
+                  <Trash2 className="size-4" aria-hidden="true" />
                 </button>
               ) : null}
             </div>

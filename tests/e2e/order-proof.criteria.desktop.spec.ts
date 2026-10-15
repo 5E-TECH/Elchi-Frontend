@@ -107,11 +107,13 @@ test.describe("Buyurtma dalillari — qabul mezonlari (1440px)", () => {
     await openProofOrder(page, "102");
     await page.locator("button").filter({ hasText: /^Sotish$/ }).first().click();
 
-    const label = page.locator("p").filter({ hasText: /^Rasm yoki video\*?$/ });
+    // Dizayn v2 oyna: majburiylik `*` yorliqda, sabab «Sotish» yonida; tugma o'chiq.
+    const dialog = page.getByRole("dialog", { name: "Sotish" });
+    const label = dialog.locator("span").filter({ hasText: /^Rasm yoki video\s*\*$/ });
     await expect(label).toHaveCount(1);
-    await expect(label.locator("span.text-red-400")).toHaveText("*");
+    await expect(dialog.getByText("Sotishda rasm yoki video majburiy").first()).toBeVisible();
 
-    const submit = page.locator("button").filter({ hasText: "Sotishda rasm yoki video majburiy" });
+    const submit = dialog.getByRole("button", { name: "Sotish", exact: true });
     await expect(submit).toBeDisabled();
 
     // Dalil biriktirilgach tugma ochiladi (so'rov yuborilmaydi).
@@ -120,7 +122,7 @@ test.describe("Buyurtma dalillari — qabul mezonlari (1440px)", () => {
       mimeType: "image/png",
       buffer: Buffer.from("iVBORw0KGgo=", "base64"),
     });
-    await expect(page.locator("button").filter({ hasText: /^Sotish$/ }).last()).toBeEnabled();
+    await expect(submit).toBeEnabled();
     expect(leaked).toEqual([]);
   });
 

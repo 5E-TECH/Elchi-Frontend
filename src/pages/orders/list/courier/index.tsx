@@ -28,6 +28,8 @@ import { useAppNotification } from "../../../../app/providers/notification/Notif
 import { getActionErrorMessage } from "../../../../shared/lib/actionError";
 import { canCourierRestoreCancelledOrder } from "../../../../entities/orders/custody";
 import { getRollbackWarning } from "../../../../entities/orders/rollbackResult";
+import type { CancelOrderPayload } from "../../../../entities/orders/cancelReason";
+import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../../entities/orders/sellPayment";
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? value as Record<string, unknown> : {};
@@ -518,22 +520,29 @@ const CourierOrders = () => {
     setApprovalOrderId(null);
   };
 
-  const handleSell = (
-    orderId: string,
-    payload: { comment: string; extraCost: number; proof?: File },
-  ) => {
+  const handleSell = (orderId: string, payload: SellOrderPayload) => {
     const order = sellOrder ?? { id: orderId };
     sellMutate(
       { orderId, data: payload },
       {
-        onSuccess: (response) =>
+        onSuccess: (response) => {
           resolveOrderActionResponse(response, {
             order,
             action: "sell",
             extraCost: payload.extraCost,
             onCompleted: closeSellModal,
             onApprovalRequested: () => setApprovalOrderId(orderId),
-          }),
+          });
+          // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
+          const paymentStatus = getSellPaymentStatus(response);
+          if (paymentStatus) {
+            notificationApi.success({
+              message: t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus]),
+              placement: "topRight",
+              duration: 4,
+            });
+          }
+        },
         onError: notifyActionError,
       },
     );
@@ -568,7 +577,7 @@ const CourierOrders = () => {
 
   const handleCancel = (
     orderId: string,
-    payload: { comment: string; extraCost: number; paidAmount: number; proof?: File },
+    payload: CancelOrderPayload,
   ) => {
     const order = cancelOrder ?? { id: orderId };
     cancelMutate(

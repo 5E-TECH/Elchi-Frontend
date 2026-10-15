@@ -17,8 +17,9 @@ export const mockSettingsApi = async (
   { initialSettings = {}, theme = "dark" }: { initialSettings?: Record<string, unknown>; theme?: "dark" | "light" } = {},
 ) => {
   // Mavzu serverdagi `appearance.theme` dan sinxronlanadi (SettingsSync) — localStorage yetarli emas.
+  // Dizayn v2: server mavzusi faqat foydalanuvchi uni O'ZI tanlagan bo'lsa (`themeChosen`) qo'llanadi.
   const state = {
-    settings: { ...initialSettings, appearance: { theme, ...(initialSettings.appearance as object | undefined) } } as Record<string, unknown>,
+    settings: { ...initialSettings, appearance: { theme, themeChosen: true, ...(initialSettings.appearance as object | undefined) } } as Record<string, unknown>,
   };
   const patches: Record<string, unknown>[] = [];
   const leaked: string[] = [];

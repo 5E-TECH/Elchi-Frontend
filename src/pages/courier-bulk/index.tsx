@@ -226,7 +226,6 @@ const CourierBulkPage = () => {
           data: {
             comment: t("bulkCancelComment"),
             extraCost: 0,
-            paidAmount: 0,
           },
         });
       } else {

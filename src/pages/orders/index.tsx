@@ -37,6 +37,8 @@ import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResourc
 import { playScanFeedback } from "../scan/lib/scanShared";
 import { getActionErrorMessage } from "../../shared/lib/actionError";
 import { isCourierHeldOrder } from "../../entities/orders/custody";
+import type { CancelOrderPayload } from "../../entities/orders/cancelReason";
+import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../entities/orders/sellPayment";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
@@ -741,24 +743,28 @@ const Orders = () => {
   );
 
   const handleSellOrder = useCallback(
-    (orderId: string, payload: { comment: string; extraCost: number; proof?: File }) => {
+    (orderId: string, payload: SellOrderPayload) => {
       const order = sellOrder ?? { id: orderId };
       SellOrder.mutate(
         { orderId, data: payload },
         {
-          onSuccess: (response) =>
+          onSuccess: (response) => {
             resolveOrderActionResponse(response, {
               order,
               action: "sell",
               extraCost: payload.extraCost,
               onCompleted: closeSellModal,
               onApprovalRequested: () => setApprovalOrderId(orderId),
-            }),
+            });
+            // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
+            const paymentStatus = getSellPaymentStatus(response);
+            if (paymentStatus) message.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus]));
+          },
           onError: notifyActionError,
         },
       );
     },
-    [SellOrder, closeSellModal, notifyActionError, sellOrder],
+    [SellOrder, closeSellModal, notifyActionError, sellOrder, t],
   );
 
   const handlePartlySellOrder = useCallback(
@@ -794,7 +800,7 @@ const Orders = () => {
   const handleCancelOrder = useCallback(
     (
       orderId: string,
-      payload: { comment: string; extraCost: number; paidAmount: number; proof?: File },
+      payload: CancelOrderPayload,
     ) => {
       const order = cancelOrder ?? { id: orderId };
       CancelOrder.mutate(

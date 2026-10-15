@@ -140,6 +140,8 @@ export interface MailDetailData {
   allOrdersByPostId: PostOrder[];
   homeOrders: HomeOrders;
   centerOrders: CenterOrders;
+  /** Pochtaning o'zi (yokjwjXG) — savat faqat `status === "new"` da. Eski backendda yo'q. */
+  post?: { id: string; status: string } | null;
 }
 
 export interface MailDetailResponse {
@@ -496,6 +498,45 @@ export const useMailDetail = (postId: string) =>
     enabled: !!postId,
     retry: false,
   });
+
+/** `POST /post/delete` javobi. */
+export interface DeleteOrdersFromPostResult {
+  post_id: string;
+  deleted: string[];
+  skipped: string[];
+  /** Oxirgi buyurtma o'chdi — bo'sh pochta ham o'chirildi. */
+  post_deleted: boolean;
+  order_quantity?: number;
+  post_total_price?: number;
+}
+
+/**
+ * Buyurtmalarni SHU pochtadan o'chirish (yokjwjXG). Faqat superadmin va
+ * jo'natilmagan (NEW) pochta; bitta tranzaksiya — yo hammasi, yo hech biri.
+ * ⚠️ `POST /post/cancel` (bekor qilinganlarni qaytarish oqimi) EMAS.
+ */
+export const useDeleteOrdersFromPost = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { post_id: string; order_ids: string[]; reason: string }) =>
+      api.post(API_ENDPOINTS.POSTS.DELETE_ORDERS, body).then((res) => {
+        const raw = (res.data?.data ?? res.data ?? {}) as Partial<DeleteOrdersFromPostResult>;
+        return {
+          post_id: String(raw.post_id ?? body.post_id),
+          deleted: Array.isArray(raw.deleted) ? raw.deleted.map(String) : [],
+          skipped: Array.isArray(raw.skipped) ? raw.skipped.map(String) : [],
+          post_deleted: raw.post_deleted === true,
+          order_quantity: raw.order_quantity,
+          post_total_price: raw.post_total_price,
+        } satisfies DeleteOrdersFromPostResult;
+      }),
+    onSuccess: () => {
+      // Pochta ro'yxatlari, sonlar ("Markazgacha N ta · summa") va buyurtmalar.
+      queryClient.invalidateQueries({ queryKey: [MAILS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+};
 
 export const useRefusedMailDetail = (postId: string) =>
   useQuery<RefusedMailDetailResponse>({
