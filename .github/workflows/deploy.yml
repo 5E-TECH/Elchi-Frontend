@@ -37,8 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          # PR'da dizayn qo'riqchisi (`--diff`) base branch bilan solishtiradi — to'liq tarix kerak.
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          # To'liq tarix: PR'da dizayn qo'riqchisi (`--diff`) base branch bilan merge-base topadi.
+          # (`cond && 0 || 1` ishlatilmaydi — GitHub ifodalarida 0 "false", natija doim 1 bo'lardi.)
+          fetch-depth: 0
 
       - uses: actions/setup-node@v6
         with:
@@ -56,7 +57,11 @@ jobs:
       # qo'shish ("almashtirish") ni ham ushlaydi.
       - name: Dizayn qo'riqchisi (PR diff)
         if: github.event_name == 'pull_request'
-        run: npm run design:guard -- --diff origin/${{ github.base_ref }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          npm run design:guard -- --diff "origin/${BASE_REF}"
 
       # `npm run build` = `tsc -b && vite build`, ya'ni tip tekshiruvi shu yerda.
       - run: npm run build
