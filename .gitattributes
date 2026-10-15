@@ -1,0 +1,5 @@
+# design/ — ega tasdiqlagan dizayn maketlari (HTML fragmentlar, kit), ilova kodi EMAS.
+# GitHub til statistikasiga kirmasin (aks holda ~14 MB HTML repo tilini "HTML" qilib ko'rsatadi)
+# va PR diff'larida maket fayllari yig'ilgan holda tursin.
+design/** linguist-documentation
+design/fragments/** linguist-generated
