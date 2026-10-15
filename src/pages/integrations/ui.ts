@@ -17,47 +17,16 @@
  */
 
 /**
- * YAGONA QORONG'I YUZA — hisoblab tanlangan.
+ * YAGONA QORONG'I YUZA — dizayn v2 tokeni `bg-surface` (#151a2e, sahifa
+ * foni `bg` #0d1120 dan chegara bilan ajraladi). Ilgari bu yerda hisoblab
+ * tanlangan binafsha `#3A3358` literal turardi — u eski binafsha sahifa
+ * fonga (`#2a2540`) moslangan edi va navy fonda begona ko'rinardi.
  *
- * ⚠️ NIMA BUZILGAN EDI. Bitta ekranda UCH XIL qorong'i yuza bor edi:
- *
- *   sahifa foni   `#2a2540`  (`index.css` — `--color-dark-bg-py`)
- *   Tailwind karta `#2A263D` ← fondan kontrast **1.00**, ya'ni MUTLAQO
- *                              ajralmaydi
- *   antd karta     `#141414` ← neytral qora, binafsha sahifada butunlay
- *                              boshqa oiladan
- *
- * Foydalanuvchi shikoyati: "bg qora rangga o'tmayapti" — u aynan shuni
- * ko'rgan: kartalar fonga singib ketgan, antd kartalari esa begona qora
- * to'rtburchak bo'lib turgan.
- *
- * `#3A3358` HISOBLAB tanlandi:
- *   fondan kontrast 1.25 — antd sukutidagi ajralish darajasi bilan bir xil,
- *   lekin ilovaning O'Z rang oilasida;
- *   oq matn 11.70:1, `gray-200` 9.45:1, `gray-400` 4.61:1 — uchalasi ham AA.
- *
- * ⚠️ AYNI QIYMAT `AntdThemeProvider` da `colorBgContainer` ga ham beriladi.
- * Ikki joyda yozilgani ataylab: Tailwind sinf satri va antd tokeni bitta
- * manbadan kelmaydi. Biri o'zgarsa ikkinchisi ham o'zgarishi SHART —
- * `palette.test.ts` shuni tekshiradi.
+ * ⚠️ Token nomi STATIK sinf (`dark:bg-surface`) — Tailwind skaneri uni
+ * topadi; `` `dark:bg-[${...}]` `` kabi shablon yozilmaydi (u yaroqsiz nom
+ * va qoida yaratilmaydi). antd tomoni ham shu tokenni `themeTokens.ts`
+ * orqali oladi — `palette.test.ts` ikkalasini tekshiradi.
  */
-/**
- * ⚠️ SINF SATRLARIDA BU KONSTANTA ISHLATILMAYDI — faqat antd tomoni va
- * testlar uchun.
- *
- * NEGA. Tailwind sinflarni manba faylidan STATIK matn sifatida topadi.
- * `` `dark:bg-[${DARK_SURFACE_HEX}]` `` yozsak, skaner
- * `dark:bg-[${DARK_SURFACE_HEX}]` degan yaroqsiz nomni ko'radi va
- * `dark:bg-[#3A3358]` qoidasini UMUMAN yaratmaydi — natijada karta
- * qorong'ida SHAFFOF bo'lib qoladi va sahifa foni ko'rinib turadi.
- * (Bu tuzoqqa aynan shu faylda tushilgan va build CSS'ini tekshirib
- * aniqlangan.)
- *
- * Shu bois sinflarda hex LITERAL yoziladi, bu konstanta esa ikkinchi
- * nusxani bir joyda ushlab turadi. Ikkisi bir xil qolishini
- * `palette.test.ts` tekshiradi.
- */
-export const DARK_SURFACE_HEX = "#3A3358";
 
 /** Sahifa/bo'lim sarlavhasi — eng baland kontrast. */
 export const TITLE = "text-gray-800 dark:text-white";
@@ -83,7 +52,7 @@ export const MUTED = "text-gray-500 dark:text-gray-400";
 export const FAINT = "text-gray-400 dark:text-gray-400";
 
 /** Karta/panel yuzasi. */
-export const SURFACE = "bg-white dark:bg-[#3A3358] border border-gray-200 dark:border-gray-700";
+export const SURFACE = "bg-white dark:bg-surface border border-gray-200 dark:border-border";
 
 /** Faqat chegara (yuza alohida berilganda). */
 export const BORDER = "border-gray-200 dark:border-gray-700";
@@ -100,7 +69,7 @@ export const chip = (on: boolean) =>
   `flex shrink-0 items-center gap-2.5 rounded-xl border-2 px-4 py-2.5 text-left transition-all cursor-pointer ${
     on
       ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/25 shadow-sm"
-      : `${BORDER} bg-white dark:bg-[#3A3358] hover:border-indigo-300 dark:hover:border-indigo-700`
+      : `${BORDER} bg-white dark:bg-surface hover:border-indigo-300 dark:hover:border-indigo-700`
   }`;
 
 export const chipIcon = (on: boolean) =>
@@ -145,13 +114,13 @@ export const HEALTH_DOT = {
    ham, o'lchamlar ham. Sabab: foydalanuvchi ikki variantni ko'rib PCS
    shaklini tanladi ("UI tomonlama Beepostniki yaxshiroq").
    
-   ⚠️ `dark:bg-[#3A3358]` — PCS'ning aniq qorong'i yuzasi. Uni `gray-800` ga
+   ⚠️ `dark:bg-surface` — v2 qorong'i yuzasi (ilgari `#3A3358`). Uni `gray-800` ga
    almashtirmang: PCS'da butun ilova shu tusda va karta fondan ajralib
    turishi shunga tayanadi.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /** PCS karta yuzasi. */
-export const PCS_SURFACE = "bg-white dark:bg-[#3A3358]";
+export const PCS_SURFACE = "bg-white dark:bg-surface";
 
 /** Sahifa sarlavhasidagi gradient ikonka qutisi. */
 export const HEADER_ICON =
@@ -163,7 +132,7 @@ export const PAGE_SUBTITLE = "text-sm text-gray-500 dark:text-gray-400";
 
 /** Qidiruv maydoni — PCS'dagi fokus halqasi bilan. */
 export const SEARCH_INPUT =
-  "w-48 sm:w-64 pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#3A3358] text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all";
+  "w-48 sm:w-64 pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-border bg-white dark:bg-input text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all";
 
 /** Birlamchi amal — ko'k gradient. */
 export const CTA_BTN =

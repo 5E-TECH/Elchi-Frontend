@@ -13,6 +13,9 @@ Backend: NestJS microservices (see `../Elchi-Backend`). The API contract lives i
 to check endpoint coverage. An audit of this codebase is in
 [`docs/FRONTEND_AUDIT.md`](docs/FRONTEND_AUDIT.md).
 
+**Design system v2** (tokens, colours, typography, money format, rules for every PR):
+[`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) · short mandatory rules: [`AGENTS.md`](AGENTS.md).
+
 ## Getting started
 
 ```bash

@@ -158,7 +158,8 @@ const MARKET_SUCCESS = "Marketga to'lov muvaffaqiyatli amalga oshirildi";
 const BRANCH_SUCCESS = "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi";
 
 /** uz-UZ guruhlash belgisi U+00A0 — Testing Library matnni oddiy bo'shliqqa normallaydi. */
-const money = (amount: number) => `${amount.toLocaleString("uz-UZ")} UZS`.replace(/\s+/g, " ");
+// Dizayn v2: uz valyutasi "so'm" (payments.currency — ilgari "UZS" edi).
+const money = (amount: number) => `${amount.toLocaleString("uz-UZ")} so'm`.replace(/\s+/g, " ");
 
 const renderAt = (
   route: string | { pathname: string; search?: string; state?: unknown },

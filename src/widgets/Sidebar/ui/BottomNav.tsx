@@ -51,7 +51,7 @@ const BottomNav = () => {
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up pb-[env(safe-area-inset-bottom)] lg:hidden">
             <div
-                className="mx-2 mb-2 grid gap-1 overflow-hidden rounded-2xl border border-white/60 bg-[rgba(255,255,255,0.72)] p-1.5 shadow-[0_10px_30px_rgba(56,37,135,0.18)] backdrop-blur-xl backdrop-saturate-150 sm:mx-4 sm:mb-3 sm:p-2 dark:border-white/15 dark:bg-[rgba(33,25,73,0.64)] dark:shadow-[0_12px_34px_rgba(0,0,0,0.42)]"
+                className="mx-2 mb-2 grid gap-1 overflow-hidden rounded-2xl border border-white/60 bg-[rgba(255,255,255,0.72)] p-1.5 shadow-[0_10px_30px_rgba(16,23,51,0.18)] backdrop-blur-xl backdrop-saturate-150 sm:mx-4 sm:mb-3 sm:p-2 dark:border-white/15 dark:bg-surface/70 dark:shadow-[0_12px_34px_rgba(0,0,0,0.42)]"
                 style={{ gridTemplateColumns: `repeat(${Math.max(navItems.length, 1)}, minmax(0, 1fr))` }}
             >
                 {navItems.map((item) => (

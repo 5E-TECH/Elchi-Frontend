@@ -1,0 +1,391 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Integratsiyalar</h1>
+    <p class="el-sub">Tashqi tizimlar bilan ulanishlarni boshqarish</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@integrations-new-partner-dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yangi hamkor</a>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Hamkorlar ro'yxati">
+  <div class="el-tabs" role="tablist" aria-label="Ulanish turlari" style="padding: 0 12px">
+    <a class="el-tab" href="@integrations-partners-console" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Hamkorlar <span class="el-tab-count el-hide-mobile">5</span></a>
+    <a class="el-tab" href="@integrations-external-console" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Tashqi tizimlar <span class="el-tab-count el-hide-mobile">6</span></a>
+    <a class="el-tab" href="@integrations-marketplace-console" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Marketplace <span class="el-tab-count el-hide-mobile">2</span></a>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 20px; align-items: center">
+    <p class="el-small el-muted" style="flex: 1 1 100%; min-width: 0">Bizga ulanadiganlar — kalit bizdan chiqadi, buyurtma holati ularga webhook orqali qaytadi.</p>
+    <label class="el-search" style="flex: 1 1 280px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input class="el-input" type="search" placeholder="Nomi yoki manzil bo'yicha" aria-label="Ulanishlarni qidirish">
+    </label>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile" style="border-top: 1px solid var(--border)">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Hamkor</th>
+          <th>Holat</th>
+          <th class="el-num">Hodisalar, 24 soat</th>
+          <th class="el-num el-hide-tablet">Muvaffaqiyat</th>
+          <th class="el-hide-tablet">Oxirgi hodisa</th>
+          <th style="width: 64px"><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background: var(--action-soft)" aria-current="true">
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text)">BeePost</a><div class="el-cell-sub">Webhook manzili yo'q — holat qaytmaydi</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">E'tibor kerak</span></td>
+          <td class="el-num"><span class="el-strong">37</span><div class="el-cell-sub" style="color: var(--warning-fg)">37 tasi navbatda</div></td>
+          <td class="el-num el-muted el-hide-tablet">—</td>
+          <td class="el-hide-tablet"><div>Bugun, 14:05</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="BeePost ulanishini ochish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text)">Baraka Shop</a><div class="el-cell-sub">https://barakashop.uz/elchi/status</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">E'tibor kerak</span></td>
+          <td class="el-num"><span class="el-strong">212</span><div class="el-cell-sub" style="color: var(--danger-fg)">3 tasi yetmadi</div><span class="el-cell-sub el-show-tablet">98,6% muvaffaqiyat</span></td>
+          <td class="el-num el-strong el-hide-tablet">98,6%</td>
+          <td class="el-hide-tablet"><div>Bugun, 13:58</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="Baraka Shop ulanishini ochish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text)">Chilonzor Market</a><div class="el-cell-sub">https://chilonzor-market.uz/webhook</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-neutral">O'chirilgan</span></td>
+          <td class="el-num el-muted">0</td>
+          <td class="el-num el-muted el-hide-tablet">—</td>
+          <td class="el-hide-tablet"><div class="el-muted">05.10.2026, 09:12</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="Chilonzor Market ulanishini ochish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text)">Ipak Yo'li Savdo</a><div class="el-cell-sub">https://ipak-yoli-savdo.uz/api/elchi</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Ishlayapti</span></td>
+          <td class="el-num"><div class="el-strong">1 120</div><span class="el-cell-sub el-show-tablet">99,8% muvaffaqiyat</span></td>
+          <td class="el-num el-strong el-hide-tablet">99,8%</td>
+          <td class="el-hide-tablet"><div>Bugun, 14:31</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="Ipak Yo'li Savdo ulanishini ochish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 8px"><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text)">Nur Elektronika</a><span class="el-badge el-tone-info">Sinov rejimi</span></div><div class="el-cell-sub">https://nur-elektronika.uz/hooks/elchi</div></td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Ishlayapti</span></td>
+          <td class="el-num"><div class="el-strong">486</div><span class="el-cell-sub el-show-tablet">100% muvaffaqiyat</span></td>
+          <td class="el-num el-strong el-hide-tablet">100%</td>
+          <td class="el-hide-tablet"><div>Bugun, 14:27</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="Nur Elektronika ulanishini ochish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
+    <a class="el-list-item" href="#" aria-current="true" style="text-decoration: none; color: var(--text); align-items: flex-start; background: var(--action-soft)">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">BeePost</span>
+        <span class="el-cell-sub" style="white-space: normal; overflow-wrap: anywhere">Webhook manzili yo'q — holat qaytmaydi</span>
+        <span class="el-cell-sub">24 soatda 37 ta hodisa · <span style="color: var(--warning-fg)">37 tasi navbatda</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-badge-dot el-tone-warning">E'tibor kerak</span></span>
+      </span>
+    </a>
+    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Baraka Shop</span>
+        <span class="el-cell-sub" style="white-space: normal; overflow-wrap: anywhere">https://barakashop.uz/elchi/status</span>
+        <span class="el-cell-sub">24 soatda 212 ta hodisa · <span style="color: var(--danger-fg)">3 tasi yetmadi</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-badge-dot el-tone-warning">E'tibor kerak</span></span>
+      </span>
+    </a>
+    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Chilonzor Market</span>
+        <span class="el-cell-sub" style="white-space: normal; overflow-wrap: anywhere">https://chilonzor-market.uz/webhook</span>
+        <span class="el-cell-sub">Oxirgi hodisa 05.10.2026, 09:12</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-badge-dot el-tone-neutral">O'chirilgan</span></span>
+      </span>
+    </a>
+    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Ipak Yo'li Savdo</span>
+        <span class="el-cell-sub" style="white-space: normal; overflow-wrap: anywhere">https://ipak-yoli-savdo.uz/api/elchi</span>
+        <span class="el-cell-sub">24 soatda 1 120 ta hodisa · 99,8%</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-badge-dot el-tone-success">Ishlayapti</span></span>
+      </span>
+    </a>
+    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-cell-title">Nur Elektronika</span>
+        <span class="el-cell-sub" style="white-space: normal; overflow-wrap: anywhere">https://nur-elektronika.uz/hooks/elchi</span>
+        <span class="el-cell-sub">24 soatda 486 ta hodisa · 100%</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-badge-dot el-tone-success">Ishlayapti</span><span class="el-badge el-tone-info">Sinov rejimi</span></span>
+      </span>
+    </a>
+  </div>
+</section>
+
+<section class="el-card" aria-labelledby="sel-name" style="overflow: hidden">
+  <div class="el-card-head" style="flex-wrap: wrap; align-items: center; gap: 12px 16px; border-bottom: 0; padding-bottom: 8px">
+    <div style="display: flex; align-items: flex-start; gap: 12px; min-width: 0; flex: 1 1 360px">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px">
+          <h2 class="el-h2" id="sel-name" style="margin-right: 4px">BeePost</h2>
+          <span class="el-badge el-badge-dot el-tone-warning">E'tibor kerak</span>
+          <span class="el-badge el-tone-neutral">Buyurtma manbasi</span>
+          <span class="el-badge el-tone-neutral">Marketplace</span>
+        </div>
+        <p class="el-small el-muted">Bizga ulanadi: kalit bizdan chiqadi, holat o'zgarganda biz ularga webhook yuboramiz.</p>
+      </div>
+    </div>
+  </div>
+  <div class="el-tabs" role="tablist" aria-label="BeePost bo'limlari" style="padding: 0 12px">
+    <a class="el-tab" href="@integrations-partners-console" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Umumiy holat</a>
+    <a class="el-tab" href="@integrations-panel-settings" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Sozlamalar</a>
+    <a class="el-tab" href="@integrations-panel-shipments" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Posilkalar</a>
+    <a class="el-tab" href="@integrations-panel-events" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Hodisalar</a>
+    <a class="el-tab" href="@integrations-panel-settlement" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Hisob-kitob</a>
+    <a class="el-tab" href="@integrations-panel-control" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Ish rejimi</a>
+    <a class="el-tab" href="@integrations-panel-security" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Xavfsizlik</a>
+  </div>
+
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 1px; background: var(--border)">
+
+    <div style="background: var(--surface); padding: 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-height: 32px">
+        <h3 class="el-h3">Tayyorlik ro'yxati</h3>
+        <span class="el-badge el-tone-warning">1 ta sozlama yetishmaydi</span>
+      </div>
+      <div role="list" style="display: flex; flex-direction: column; gap: 4px; margin: 0 -12px">
+        <div role="listitem" style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px">
+          <span style="display: inline-flex; margin-top: 1px; color: var(--success-fg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span class="el-sr">Bajarilgan:</span></span>
+          <div style="min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span class="el-strong">Ulanish yoqilgan</span>
+            <span class="el-small el-muted" style="overflow-wrap: anywhere">Faol — hamkor so'rovlari qabul qilinmoqda</span>
+          </div>
+        </div>
+        <div role="listitem" style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; border-radius:10px; background: var(--warning-soft)">
+          <span style="display: inline-flex; margin-top: 1px; color: var(--warning-fg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><span class="el-sr">Yetishmaydi:</span></span>
+          <div style="min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span class="el-strong">Webhook manzili</span>
+            <span class="el-small el-muted" style="overflow-wrap: anywhere">Kiritilmagan — holat o'zgarishi hamkorga yetmaydi, hodisalar navbatda kutib qoladi</span>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px"><a class="el-btn el-btn-secondary" href="@integrations-panel-settings">Webhook manzilini kiritish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></div>
+          </div>
+        </div>
+        <div role="listitem" style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px">
+          <span style="display: inline-flex; margin-top: 1px; color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span class="el-sr">Ixtiyoriy:</span></span>
+          <div style="min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><span class="el-strong">Sinov rejimi</span><span class="el-xs el-subtle">ixtiyoriy</span></span>
+            <span class="el-small el-muted" style="overflow-wrap: anywhere">O'chirilgan — sinov nusxasi yuborilmaydi</span>
+            <a class="el-small el-strong" href="@integrations-panel-settings" style="display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; text-decoration: none; color: var(--action-fg)">Sozlamalar → Sinov rejimi<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: var(--surface); padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px">
+        <h3 class="el-h3">Oxirgi 24 soat</h3>
+        <a class="el-btn el-btn-ghost el-btn-sm" href="@integrations-panel-events" style="margin-right: -8px">Barcha hodisalar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 8px">
+        <div style="background: var(--sunken); border-radius:10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+          <span class="el-small el-muted">Hodisalar</span>
+          <span class="el-stat-value">37</span>
+        </div>
+        <div style="background: var(--sunken); border-radius:10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+          <span class="el-small el-muted">Yetkazildi</span>
+          <span class="el-stat-value">0</span>
+        </div>
+        <div style="background: var(--sunken); border-radius:10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+          <span class="el-small el-muted">Yetkazilmadi</span>
+          <span class="el-stat-value">0</span>
+        </div>
+        <div style="background: var(--sunken); border-radius:10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+          <span class="el-small el-muted">Navbatda</span>
+          <span class="el-stat-value" style="color: var(--warning-fg)">37</span>
+        </div>
+      </div>
+      <dl class="el-kv" style="margin: 0; grid-template-columns: 140px 1fr">
+        <dt>Muvaffaqiyat</dt><dd>—</dd>
+        <dt>Javob vaqti</dt><dd>—</dd>
+        <dt>Oxirgi hodisa</dt><dd>Bugun, 14:05</dd>
+      </dl>
+      <p class="el-small el-muted" style="display: flex; align-items: flex-start; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Webhook manzili qo'yilishi bilan navbatdagi 37 ta hodisa avtomatik yuboriladi.</p>
+    </div>
+
+  </div>
+</section>
+
+<div class="el-overlay el-hide-mobile" style="position: absolute; align-items: flex-start; padding: 64px 16px 24px">
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 24px; width: 100%">
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1 1 300px; max-width: 520px; min-width: 0">
+      <span class="el-badge el-tone-neutral">1-qadam · Ma'lumotlar</span>
+      <form class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="np-title" style="width: 100%; margin: 0">
+        <div class="el-dialog-head">
+          <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+            <h2 class="el-h2" id="np-title">Yangi hamkor</h2>
+            <p class="el-small el-muted">Hamkorlar ro'yxatiga qo'shiladi</p>
+          </div>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Yopish" style="margin: -4px -8px 0 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+
+        <div class="el-alert el-tone-info" role="note">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <div class="el-alert-body">
+            <div class="el-alert-title">Hamkor — bizga ulanadigan tizim</div>
+            <p class="el-small" style="margin-top: 2px">BeePost yoki marketplace. Yaratilgach API kalit bir marta ko'rsatiladi — uni hamkorga berasiz, u shu kalit bilan bizning API'ga kiradi.</p>
+          </div>
+        </div>
+
+        <div class="el-field">
+          <label class="el-label" for="np-name">Nom <span class="el-req">*</span></label>
+          <input class="el-input" id="np-name" type="text" value="Tez Savdo" placeholder="BeePost" maxlength="100">
+        </div>
+
+        <div class="el-field">
+          <label class="el-label" for="np-url">Webhook manzili (ularniki)</label>
+          <input class="el-input" id="np-url" type="url" value="https://tezsavdo.uz/api/elchi/webhook" placeholder="https://beepost.uz/api/v1/elchi/webhook">
+          <span class="el-hint">Holat o'zgarishlarini biz shu manzilga yuboramiz. Keyinroq ham qo'shsa bo'ladi.</span>
+        </div>
+
+        <div class="el-field">
+          <label class="el-label" for="np-secret">Webhook sekreti (umumiy) <span class="el-req">*</span></label>
+          <div class="el-input is-invalid" style="padding-right: 4px">
+            <input class="el-input" id="np-secret" type="password" placeholder="Kuchli tasodifiy satr" autocomplete="new-password" aria-invalid="true" aria-describedby="np-secret-err np-secret-hint" style="border: 0; padding: 0; height: 38px; min-height: 0; flex: 1; width: auto; min-width: 0">
+            <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Sekretni ko'rsatish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+          <span class="el-error-text" id="np-secret-err">Webhook manzili kiritilgan — sekret majburiy</span>
+          <span class="el-hint" id="np-secret-hint">Webhookni HMAC-SHA256 bilan imzolaymiz. Aynan shu qiymat hamkorda ham bo'lishi shart.</span>
+        </div>
+
+        <div class="el-field">
+          <label class="el-label" for="np-ip">IP ro'yxati <span class="el-subtle" style="font-weight: 500">(ixtiyoriy)</span></label>
+          <div class="el-input" style="height: auto; min-height: 40px; flex-wrap: wrap; gap: 6px; padding: 6px 8px">
+            <span class="el-badge el-tone-neutral" style="height: 26px; padding-right: 4px">203.0.113.10<button class="el-chip-x" type="button" aria-label="203.0.113.10 ni olib tashlash" style="margin-right: 0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+            <span class="el-badge el-tone-neutral" style="height: 26px; padding-right: 4px">203.0.113.11<button class="el-chip-x" type="button" aria-label="203.0.113.11 ni olib tashlash" style="margin-right: 0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+            <input class="el-input" id="np-ip" type="text" placeholder="IP yozing va Enter bosing" style="border: 0; padding: 0 4px; height: 26px; min-height: 0; flex: 1 1 160px; width: auto; min-width: 0">
+          </div>
+          <span class="el-hint">To'ldirilsa, faqat shu IP'lardan kelgan so'rov qabul qilinadi. Bo'sh — cheklov yo'q.</span>
+        </div>
+
+        <div class="el-dialog-foot" style="padding-top: 4px">
+          <a class="el-btn el-btn-secondary" href="@integrations-partners-console">Bekor qilish</a>
+          <button class="el-btn el-btn-primary" type="button">Yaratish</button>
+        </div>
+      </form>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1 1 300px; max-width: 520px; min-width: 0">
+      <span class="el-badge el-tone-neutral">2-qadam · API kalit</span>
+      <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="nk-title" aria-describedby="nk-desc" style="width: 100%">
+        <div class="el-dialog-head">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius:999px; background: var(--warning-soft); color: var(--warning-fg); flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+            <h2 class="el-h2" id="nk-title">API kalit — bir marta ko'rsatiladi</h2>
+            <p class="el-small el-muted" id="nk-desc">«Tez Savdo» hamkori yaratildi</p>
+          </div>
+        </div>
+
+        <div class="el-alert el-tone-warning" role="alert">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          <div class="el-alert-body">
+            <div class="el-alert-title">Kalitni hozir ko'chirib oling</div>
+            <p class="el-small" style="margin-top: 2px">Bu kalit boshqa ko'rsatilmaydi — bazada faqat xeshi saqlanadi. Yo'qolsa, Xavfsizlik bo'limida yangisini yaratasiz.</p>
+          </div>
+        </div>
+
+        <div class="el-field">
+          <span class="el-label" id="nk-key-l">API kalit (X-Api-Key)</span>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; background: var(--sunken); border: 1px solid var(--border); border-radius:10px">
+            <span class="el-strong" aria-labelledby="nk-key-l" style="flex: 1; min-width: 0; overflow-wrap: anywhere; letter-spacing: .02em">elc_9f2c4e7a1b8d3f6a0c5e2b7d4a9f1c3e</span>
+            <button class="el-btn el-btn-secondary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Nusxalash</button>
+          </div>
+        </div>
+
+        <div class="el-field">
+          <span class="el-label" id="nk-sec-l">Webhook sekreti</span>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; background: var(--sunken); border: 1px solid var(--border); border-radius:10px">
+            <span class="el-strong" aria-labelledby="nk-sec-l" style="flex: 1; min-width: 0; overflow-wrap: anywhere; letter-spacing: .02em">tz-7Kq2vMr9xW4pL8sD</span>
+            <button class="el-btn el-btn-secondary el-btn-sm" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Nusxalash</button>
+          </div>
+          <span class="el-hint">Shu sekretni hamkorda ham o'rnating — aks holda webhook imzosi mos kelmaydi.</span>
+        </div>
+
+        <label class="el-choice" style="padding: 12px 14px; border: 1px solid var(--border-strong); border-radius:12px">
+          <input class="el-check" type="checkbox">
+          <span>Kalitni ko'chirib oldim va xavfsiz saqladim</span>
+        </label>
+
+        <div class="el-dialog-foot" style="align-items: center; justify-content: space-between">
+          <span class="el-xs el-muted">Belgilamaguncha oyna yopilmaydi</span>
+          <button class="el-btn el-btn-primary" type="button" disabled style="margin-left: auto">Yakunlash</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="el-overlay el-show-mobile" style="position: absolute">
+  <form class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="npm-title">
+    <div class="el-dialog-head" style="flex: none; align-items: center">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="npm-title">Yangi hamkor</h2>
+        <p class="el-small el-muted">Hamkorlar ro'yxatiga qo'shiladi</p>
+      </div>
+      <a class="el-iconbtn" href="@integrations-partners-console" role="button" aria-label="Yopish" style="margin-right: -8px; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+    </div>
+
+    <div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; margin: 0 -16px; padding: 0 16px 4px">
+      <div class="el-alert el-tone-info" role="note">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <div class="el-alert-body">
+          <div class="el-alert-title">Hamkor — bizga ulanadigan tizim</div>
+          <p class="el-small" style="margin-top: 2px">BeePost yoki marketplace. Yaratilgach API kalit bir marta ko'rsatiladi — uni hamkorga berasiz, u shu kalit bilan bizning API'ga kiradi.</p>
+        </div>
+      </div>
+
+      <div class="el-field">
+        <label class="el-label" for="npm-name">Nom <span class="el-req">*</span></label>
+        <input class="el-input" id="npm-name" type="text" value="Tez Savdo" placeholder="BeePost" maxlength="100">
+      </div>
+
+      <div class="el-field">
+        <label class="el-label" for="npm-url">Webhook manzili (ularniki)</label>
+        <input class="el-input" id="npm-url" type="url" inputmode="url" value="https://tezsavdo.uz/api/elchi/webhook" placeholder="https://beepost.uz/api/v1/elchi/webhook">
+        <span class="el-hint">Holat o'zgarishlarini biz shu manzilga yuboramiz. Keyinroq ham qo'shsa bo'ladi.</span>
+      </div>
+
+      <div class="el-field">
+        <label class="el-label" for="npm-secret">Webhook sekreti (umumiy) <span class="el-req">*</span></label>
+        <div class="el-input is-invalid" style="padding-right: 0">
+          <input class="el-input" id="npm-secret" type="password" placeholder="Kuchli tasodifiy satr" autocomplete="new-password" aria-invalid="true" aria-describedby="npm-secret-err npm-secret-hint" style="border: 0; padding: 0; height: 42px; min-height: 0; flex: 1; width: auto; min-width: 0">
+          <button class="el-iconbtn" type="button" aria-label="Sekretni ko'rsatish" style="height: 44px; margin: -1px 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+        <span class="el-error-text" id="npm-secret-err">Webhook manzili kiritilgan — sekret majburiy</span>
+        <span class="el-hint" id="npm-secret-hint">Webhookni HMAC-SHA256 bilan imzolaymiz. Aynan shu qiymat hamkorda ham bo'lishi shart.</span>
+      </div>
+
+      <div class="el-field">
+        <label class="el-label" for="npm-ip">IP ro'yxati <span class="el-subtle" style="font-weight: 500">(ixtiyoriy)</span></label>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px" role="list" aria-label="Kiritilgan IP manzillar">
+          <span role="listitem"><span class="el-chip" style="height: 44px; padding: 0 0 0 12px; gap: 0">203.0.113.10<button class="el-chip-x" type="button" aria-label="203.0.113.10 ni olib tashlash" style="width: 44px; height: 44px; margin: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span></span>
+          <span role="listitem"><span class="el-chip" style="height: 44px; padding: 0 0 0 12px; gap: 0">203.0.113.11<button class="el-chip-x" type="button" aria-label="203.0.113.11 ni olib tashlash" style="width: 44px; height: 44px; margin: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span></span>
+        </div>
+        <input class="el-input" id="npm-ip" type="text" inputmode="decimal" placeholder="IP yozing va Enter bosing">
+        <span class="el-hint">To'ldirilsa, faqat shu IP'lardan kelgan so'rov qabul qilinadi. Bo'sh — cheklov yo'q.</span>
+      </div>
+    </div>
+
+    <div class="el-dialog-foot" style="flex: none; margin: 0 -16px; padding: 16px 16px 0; border-top: 1px solid var(--border)">
+      <a class="el-btn el-btn-secondary" href="@integrations-partners-console">Bekor qilish</a>
+      <button class="el-btn el-btn-primary" type="button">Yaratish</button>
+    </div>
+  </form>
+</div>
+  

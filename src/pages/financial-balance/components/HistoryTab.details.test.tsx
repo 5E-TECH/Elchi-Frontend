@@ -117,7 +117,7 @@ describe("HistoryTab — Excel va qo'lda yozuv (GtAoqHlk)", () => {
 
     fireEvent.change(within(dialog).getByLabelText("Summa"), { target: { value: "50 000" } });
     fireEvent.change(within(dialog).getByLabelText("Izoh"), { target: { value: "  Ofis ijarasi  " } });
-    expect(within(dialog).getByText("Balansga ta'siri: -50 000 UZS")).toBeInTheDocument();
+    expect(within(dialog).getByText("Balansga ta'siri: -50 000 so'm")).toBeInTheDocument(); // dizayn v2: uz "so'm"
     fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
 
     expect(mocks.mutate).toHaveBeenCalledTimes(1);

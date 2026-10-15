@@ -40,8 +40,8 @@
     "from": "Boshlanish",
     "to": "Tugash"
   },
-  "currency_value": "{{value}} UZS",
-  "currency": "UZS",
+  "currency_value": "{{value}} so'm",
+  "currency": "so'm",
   "currency_sum": "so'm",
   "unit": {
     "orders": "ta"
@@ -132,7 +132,7 @@
   "chart": {
     "title": "Kunlik daromad trendi",
     "description": "Daromad = Market tarifi − Kuryer tarifi (faqat sotilgan buyurtmalar hisoblanadi)",
-    "tooltip_value": "{{value}}M UZS",
+    "tooltip_value": "{{value}} mln so'm",
     "types": {
       "area": "Maydon",
       "bar": "Ustun",

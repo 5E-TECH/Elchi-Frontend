@@ -9,7 +9,7 @@ interface ErrorInfoCardProps {
 const ErrorInfoCard = ({ icon, label, value }: ErrorInfoCardProps) => {
   return (
     <article className="error-page-card rounded-3xl p-5">
-      <div className="text-main">{icon}</div>
+      <div className="text-[color:var(--color-error-page-icon)]">{icon}</div>
       <p className="error-page-muted mt-4 text-xs uppercase tracking-[0.22em]">
         {label}
       </p>

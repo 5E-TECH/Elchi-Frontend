@@ -1,0 +1,249 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Sozlamalar</h1>
+    <p class="el-sub">Faqat sizning hisobingiz uchun · o'zgarishlar avtomatik saqlanadi</p>
+  </div>
+  <div class="el-actions">
+    <p class="el-small el-muted" role="status" style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--success-fg)"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span class="el-strong">Saqlandi</span></p>
+  </div>
+</div>
+
+<div class="el-tabs el-show-tablet el-hide-mobile" role="tablist" aria-label="Sozlamalar bo'limlari" style="margin: 0 -16px; padding: 0 16px">
+    <a class="el-tab" href="@settings-appearance" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Ko'rinish</a>
+    <a class="el-tab" href="@settings-dashboard" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Bosh sahifa</a>
+    <a class="el-tab" href="@settings-interface" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Interfeys</a>
+    <a class="el-tab" href="@settings-scanner" role="tab" aria-selected="true" style="text-decoration: none">Skaner</a>
+    <a class="el-tab" href="@settings-notifications" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Bildirishnomalar</a>
+</div>
+
+<!-- Telefon: faol bo'lim ko'rinib turishi uchun qator oxiridan boshlanadi (row-reverse + order); DOM va o'qish tartibi tabiiy -->
+<div class="el-tabs el-show-mobile" role="tablist" aria-label="Sozlamalar bo'limlari" style="margin: 0 -16px; padding: 0 16px; flex-direction: row-reverse">
+    <a class="el-tab" href="@settings-appearance" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted); order: 5">Ko'rinish</a>
+    <a class="el-tab" href="@settings-dashboard" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted); order: 4">Bosh sahifa</a>
+    <a class="el-tab" href="@settings-interface" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted); order: 3">Interfeys</a>
+    <a class="el-tab" href="@settings-scanner" role="tab" aria-selected="true" style="text-decoration: none; order: 2">Skaner</a>
+    <a class="el-tab" href="@settings-notifications" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted); order: 1">Bildirishnomalar</a>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+  <div class="el-hide-tablet" style="flex: 0 0 272px; position: sticky; top: 24px">
+  <div class="el-card" role="tablist" aria-orientation="vertical" aria-label="Sozlamalar bo'limlari" style="display: flex; flex-direction: column; gap: 4px; padding: 8px">
+    <a class="el-btn el-btn-ghost" href="@settings-appearance" role="tab" id="tab-korinish" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 11.994 2z"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Ko'rinish</span><span class="el-xs el-muted" style="font-weight: 500">Mavzu va til</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-dashboard" role="tab" id="tab-bosh-sahifa" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Bosh sahifa</span><span class="el-xs el-muted" style="font-weight: 500">Ko'rsatiladigan bloklar</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-interface" role="tab" id="tab-interfeys" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Interfeys</span><span class="el-xs el-muted" style="font-weight: 500">Yon panel holati</span></span></a>
+    <a class="el-btn" href="@settings-scanner" role="tab" id="tab-skaner" aria-selected="true" aria-controls="panel-skaner" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal; background: var(--action-soft); color: var(--action-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span>Skaner</span><span class="el-xs el-muted" style="font-weight: 500">Kamera, ovoz va tebranish</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-notifications" role="tab" id="tab-bildirish" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Bildirishnomalar</span><span class="el-xs el-muted" style="font-weight: 500">Shu qurilmaga xabarlar</span></span></a>
+  </div>
+  </div>
+
+  <section class="el-card" id="panel-skaner" role="tabpanel" aria-labelledby="tab-skaner" style="flex: 1 1 440px; min-width: 0">
+    <fieldset class="el-card-pad" aria-labelledby="kam-t" aria-describedby="kam-h" style="border: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 320px">
+          <h2 class="el-h2" id="kam-t">Kamera</h2>
+          <p class="el-small el-muted" id="kam-h">Telefon yoki planshet kamerasi QR skaner bo'lib ishlaydi — USB skaner shart emas. Bu sozlamalar shu qurilmada saqlanadi.</p>
+        </div>
+        <a class="el-btn el-btn-secondary" href="@scan-camera" style="flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>Kamerani sinash</a>
+      </div>
+
+      <div role="radiogroup" aria-labelledby="kam-cam-t" aria-describedby="kam-cam-h" style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3" id="kam-cam-t">Asosiy kamera</span><span class="el-small el-muted" id="kam-cam-h">Skaner ochilganda shu kamera yoqiladi. Kamera ichida «Kamerani almashtirish» bilan vaqtincha o'zgartiriladi.</span></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px">
+        <label class="el-choice-card is-selected" style="align-items: center; gap: 12px; padding: 10px 14px; min-height: 64px">
+          <input class="el-sr" type="radio" name="kamera" value="back" checked>
+          <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--action); display: inline-flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius:999px; background: var(--action)"></span></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-strong">Orqa kamera</span><span class="el-xs el-muted">Tavsiya etiladi — posilka yorlig'i uchun</span></span>
+        </label>
+        <label class="el-choice-card" style="align-items: center; gap: 12px; padding: 10px 14px; min-height: 64px">
+          <input class="el-sr" type="radio" name="kamera" value="front">
+          <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-strong">Old kamera</span><span class="el-xs el-muted">Noutbuk, planshet yoki stendga o'rnatilgan telefon</span></span>
+        </label>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; border-radius:12px; background: var(--sunken); overflow: hidden">
+        <label style="display: flex; align-items: center; gap: 16px; padding: 12px 16px; min-height: 68px; cursor: pointer;">
+          <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v1"/><path d="M17 2a1 1 0 0 1 1 1v4a3 3 0 0 1-.6 1.8l-.6.8A4 4 0 0 0 16 12v8a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-8a4 4 0 0 0-.8-2.4l-.6-.8A3 3 0 0 1 6 7V3a1 1 0 0 1 1-1z"/><path d="M6 6h12"/></svg></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-h3" id="kam-torch-t">Chiroq — avtomatik</span><span class="el-small el-muted" id="kam-torch-h">Chiroqli telefonda kam yorug'likda o'zi yoqiladi. Kamerada «Chiroq» tugmasi bilan istalgan payt o'chiriladi.</span></span>
+          <input class="el-sr" type="checkbox" role="switch" aria-labelledby="kam-torch-t" aria-describedby="kam-torch-h" checked>
+          <span class="el-switch" aria-hidden="true" aria-checked="true"></span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 16px; padding: 12px 16px; min-height: 68px; cursor: pointer; border-top: 1px solid var(--border);">
+          <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-h3" id="kam-cont-t">Uzluksiz skanerlash</span><span class="el-small el-muted" id="kam-cont-h">Skandan keyin kamera ochiq qoladi — keyingi posilkani darhol o'qiydi. O'chirilsa, bitta koddan keyin yopiladi.</span></span>
+          <input class="el-sr" type="checkbox" role="switch" aria-labelledby="kam-cont-t" aria-describedby="kam-cont-h" checked>
+          <span class="el-switch" aria-hidden="true" aria-checked="true"></span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 16px; padding: 12px 16px; min-height: 68px; cursor: pointer; border-top: 1px solid var(--border);">
+          <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-h3" id="kam-sound-t">Ovoz</span><span class="el-small el-muted" id="kam-sound-h">Har skanda ohang chalinadi. Ohang pastda tanlanadi.</span></span>
+          <input class="el-sr" type="checkbox" role="switch" aria-labelledby="kam-sound-t" aria-describedby="kam-sound-h" checked>
+          <span class="el-switch" aria-hidden="true" aria-checked="true"></span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 16px; padding: 12px 16px; min-height: 68px; cursor: pointer; border-top: 1px solid var(--border);">
+          <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/></svg></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-h3" id="kam-vib-t">Tebranish</span><span class="el-small el-muted" id="kam-vib-h">Topildi — bir marta qisqa, xato — uch marta. Faqat telefonda.</span></span>
+          <input class="el-sr" type="checkbox" role="switch" aria-labelledby="kam-vib-t" aria-describedby="kam-vib-h" checked>
+          <span class="el-switch" aria-hidden="true" aria-checked="true"></span>
+        </label>
+      </div>
+
+      <div role="radiogroup" aria-labelledby="kam-frame-t" aria-describedby="kam-frame-h" style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3" id="kam-frame-t">Ramka o'lchami</span><span class="el-small el-muted" id="kam-frame-h">Kamera faqat ramka ichidagi QR kodni o'qiydi.</span></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px">
+        <label class="el-choice-card" style="align-items: center; gap: 12px; padding: 10px 14px; min-height: 64px">
+          <input class="el-sr" type="radio" name="ramka" value="s">
+          <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-strong">Kichik</span><span class="el-xs el-muted">Yonma-yon yorliqlar</span></span><span aria-hidden="true" style="width: 34px; height: 46px; flex: none; border-radius:8px; border: 1px solid var(--border-strong); background: var(--sunken); display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg></span>
+        </label>
+        <label class="el-choice-card is-selected" style="align-items: center; gap: 12px; padding: 10px 14px; min-height: 64px">
+          <input class="el-sr" type="radio" name="ramka" value="m" checked>
+          <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--action); display: inline-flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius:999px; background: var(--action)"></span></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-strong">O'rta</span><span class="el-xs el-muted">Standart</span></span><span aria-hidden="true" style="width: 34px; height: 46px; flex: none; border-radius:8px; border: 1px solid var(--border-strong); background: var(--sunken); display: inline-flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--action)"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg></span>
+        </label>
+        <label class="el-choice-card" style="align-items: center; gap: 12px; padding: 10px 14px; min-height: 64px">
+          <input class="el-sr" type="radio" name="ramka" value="l">
+          <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-strong">Katta</span><span class="el-xs el-muted">Katta yorliq, uzoqdan</span></span><span aria-hidden="true" style="width: 34px; height: 46px; flex: none; border-radius:8px; border: 1px solid var(--border-strong); background: var(--sunken); display: inline-flex; align-items: center; justify-content: center"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg></span>
+        </label>
+        </div>
+      </div>
+    </fieldset>
+
+    <hr class="el-divider">
+
+    <fieldset class="el-card-pad" aria-labelledby="ovoz-ok-t" aria-describedby="ovoz-ok-h" style="border: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h2 class="el-h2" id="ovoz-ok-t">Muvaffaqiyat ovozi</h2>
+        <p class="el-small el-muted" id="ovoz-ok-h">QR kod muvaffaqiyatli o'qilganda chalinadi — kamera va USB skaner uchun bir xil.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px">
+        <div class="el-choice-card is-selected" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-ok" value="classic" checked>
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--action); display: inline-flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius:999px; background: var(--action)"></span></span>
+            <span class="el-strong">Klassik</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Klassik — muvaffaqiyat ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-ok" value="soft">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Yumshoq</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Yumshoq — muvaffaqiyat ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-ok" value="digital">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Raqamli</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Raqamli — muvaffaqiyat ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-ok" value="bell">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Qo'ng'iroq</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Qo'ng'iroq — muvaffaqiyat ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-ok" value="pulse">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Puls</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Puls — muvaffaqiyat ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-ok" value="bright">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Yorqin</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Yorqin — muvaffaqiyat ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+      </div>
+    </fieldset>
+
+    <hr class="el-divider">
+
+    <fieldset class="el-card-pad" aria-labelledby="ovoz-xato-t" aria-describedby="ovoz-xato-h" style="border: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h2 class="el-h2" id="ovoz-xato-t">Xato ovozi</h2>
+        <p class="el-small el-muted" id="ovoz-xato-h">QR kod topilmaganda yoki skanerlashda xatolik bo'lganda chalinadi.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px">
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-xato" value="classic">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Klassik</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Klassik — xato ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-xato" value="soft">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Yumshoq</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Yumshoq — xato ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card is-selected" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-xato" value="digital" checked>
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--action); display: inline-flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius:999px; background: var(--action)"></span></span>
+            <span class="el-strong">Raqamli</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Raqamli — xato ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-xato" value="bell">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Qo'ng'iroq</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Qo'ng'iroq — xato ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-xato" value="pulse">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Puls</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Puls — xato ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+        <div class="el-choice-card" style="align-items: center; gap: 8px; padding: 6px 6px 6px 14px; min-height: 56px">
+          <label style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer">
+            <input class="el-sr" type="radio" name="ovoz-xato" value="bright">
+            <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+            <span class="el-strong">Yorqin</span>
+          </label>
+          <button class="el-iconbtn el-iconbtn-sm" type="button" title="Eshitib ko'rish" aria-label="Yorqin — xato ovozini eshitib ko'rish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button>
+        </div>
+      </div>
+    </fieldset>
+
+
+    <hr class="el-divider el-hide-mobile">
+
+    <div class="el-card-pad el-hide-mobile" style="display: flex; align-items: flex-start; gap: 16px">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="7" r="1"/><circle cx="4" cy="20" r="1"/><path d="M4.7 19.3 19 5"/><path d="m21 3-3 1 2 2Z"/><path d="M9.26 7.68 5 12l2 5"/><path d="m10 14 5 2 3.5-3.5"/><path d="m18 12 1-1 1 1-1 1Z"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+        <div style="display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap"><h2 class="el-h2">USB skaner</h2><span class="el-badge el-badge-dot el-tone-success">USB skaner tayyor</span></div>
+        <p class="el-small el-muted">Sozlash shart emas: ilova ochiq turganda doim tinglaydi va har kodni Enter bilan qabul qiladi. Kamera bilan bir vaqtda ishlaydi; ovoz tanlovi unga ham amal qiladi.</p>
+      </div>
+    </div>
+
+    <div class="el-card-foot">
+      <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Eshitib ko'rish tugmasi ovozni faqat chaladi — tanlov o'zgarmaydi.</span>
+    </div>
+  </section>
+
+</div>
+  

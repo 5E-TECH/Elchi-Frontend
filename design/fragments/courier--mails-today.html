@@ -1,0 +1,129 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Pochta</h1>
+    <p class="el-sub el-hide-mobile">Sizga biriktirilgan pochtalar: qabul qilish, rad etilganlar va tarix</p>
+  </div>
+</div>
+
+<nav class="el-tabs el-hide-mobile" role="tablist" aria-label="Pochta turlari">
+  <a class="el-tab" href="@mails-today" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Bugungi pochtalar <span class="el-tab-count">4</span></a>
+  <a class="el-tab" href="@mails-refused" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted)">Rad etilgan pochtalar <span class="el-tab-count" style="background: var(--surface); border: 1px solid var(--border)">3</span></a>
+  <a class="el-tab" href="@mails-old" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted)">Eski pochtalar</a>
+</nav>
+<nav class="el-tabs el-show-mobile" role="tablist" aria-label="Pochta turlari" style="gap: 0">
+  <a class="el-tab" href="@mails-today" role="tab" aria-selected="true" title="Bugungi pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text)">Bugungi <span class="el-tab-count">4</span></a>
+  <a class="el-tab" href="@mails-refused" role="tab" aria-selected="false" title="Rad etilgan pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Rad etilgan <span class="el-tab-count" style="background: var(--surface); border: 1px solid var(--border)">3</span></a>
+  <a class="el-tab" href="@mails-old" role="tab" aria-selected="false" title="Eski pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Eski</a>
+</nav>
+
+<div class="el-grid el-hide-mobile" style="grid-template-columns: repeat(3, minmax(0, 1fr))">
+  <div class="el-stat">
+    <div class="el-stat-top"><span class="el-stat-label">Bugungi pochtalar</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg></span></div>
+    <div class="el-stat-value">4<span class="el-stat-unit">ta</span></div>
+  </div>
+  <div class="el-stat">
+    <div class="el-stat-top"><span class="el-stat-label">Buyurtmalar</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span></div>
+    <div class="el-stat-value">37<span class="el-stat-unit">ta</span></div>
+  </div>
+  <div class="el-stat">
+    <div class="el-stat-top"><span class="el-stat-label">Jami summa</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span></div>
+    <div class="el-stat-value">7 556 000<span class="el-stat-unit">so'm</span></div>
+  </div>
+</div>
+
+<div class="el-show-mobile" style="flex-direction: column; gap: 10px">
+  <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-label="Viloyat: barchasi" style="flex: none"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg><span class="el-muted">Viloyat:</span>Barchasi</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  <p class="el-small el-muted"><span style="white-space: nowrap"><span class="el-strong">4</span> ta pochta</span> · <span style="white-space: nowrap"><span class="el-strong">37</span> ta buyurtma</span> · <span style="white-space: nowrap">jami <span class="el-strong">7 556 000 so'm</span></span></p>
+</div>
+
+<section class="el-card" aria-label="Bugungi pochtalar">
+  <div class="el-card-head el-hide-mobile" style="flex-wrap: wrap">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2">Qabul qilinishi kerak</h2>
+      <p class="el-small el-muted">Pochtani oching, buyurtmalarni tekshirib qabul qiling</p>
+    </div>
+    <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-label="Viloyat: barchasi" style="flex: 0 1 260px; width: auto; min-width: 200px"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg><span class="el-muted">Viloyat:</span>Barchasi</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table" aria-label="Bugungi pochtalar">
+      <thead>
+        <tr>
+          <th aria-sort="descending"><button class="el-th-sort" type="button" aria-pressed="true" title="Sana bo'yicha saralash">Pochta<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button></th>
+          <th>Viloyat</th>
+          <th>Holat</th>
+          <th class="el-num"><button class="el-th-sort" type="button" aria-pressed="false" title="Buyurtmalar soni bo'yicha saralash">Buyurtmalar<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th class="el-num"><button class="el-th-sort" type="button" aria-pressed="false" title="Summa bo'yicha saralash">Summa<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-receive" style="text-decoration: none; color: var(--text); white-space: nowrap">№2493</a><div class="el-cell-sub">Bugun, 13:10</div></td>
+          <td style="white-space: nowrap">Toshkent sh.</td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+          <td class="el-num">6 ta</td>
+          <td class="el-num el-strong">1 411 000 so'm</td>
+          <td style="text-align: right; width: 64px"><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-receive" aria-label="Pochta №2493ni ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-receive" style="text-decoration: none; color: var(--text); white-space: nowrap">№2488</a><div class="el-cell-sub">Bugun, 11:45</div></td>
+          <td style="white-space: nowrap">Toshkent viloyati</td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+          <td class="el-num">8 ta</td>
+          <td class="el-num el-strong">1 560 000 so'm</td>
+          <td style="text-align: right; width: 64px"><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-receive" aria-label="Pochta №2488ni ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-receive" style="text-decoration: none; color: var(--text); white-space: nowrap">№2484</a><div class="el-cell-sub">Bugun, 10:25</div></td>
+          <td style="white-space: nowrap">Toshkent sh.</td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+          <td class="el-num">14 ta</td>
+          <td class="el-num el-strong">2 860 000 so'm</td>
+          <td style="text-align: right; width: 64px"><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-receive" aria-label="Pochta №2484ni ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-receive" style="text-decoration: none; color: var(--text); white-space: nowrap">№2480</a><div class="el-cell-sub">Bugun, 08:40</div></td>
+          <td style="white-space: nowrap">Toshkent viloyati</td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+          <td class="el-num">9 ta</td>
+          <td class="el-num el-strong">1 725 000 so'm</td>
+          <td style="text-align: right; width: 64px"><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-receive" aria-label="Pochta №2480ni ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <a class="el-list-item" href="@mails-detail-receive" aria-label="Pochta №2493, Toshkent sh., Bugun, 13:10, 6 ta buyurtma, 1 411 000 so'm — ochish" style="text-decoration: none; color: var(--text); gap: 6px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-cell-title">Bugun, 13:10</span><span class="el-strong" style="white-space: nowrap">1 411 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Pochta №2493 · Toshkent sh. · <span style="white-space: nowrap">6 ta buyurtma</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-info">Yangi</span></span>
+      </span>
+      <span class="el-subtle" style="display: inline-flex; margin-right: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@mails-detail-receive" aria-label="Pochta №2488, Toshkent viloyati, Bugun, 11:45, 8 ta buyurtma, 1 560 000 so'm — ochish" style="text-decoration: none; color: var(--text); gap: 6px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-cell-title">Bugun, 11:45</span><span class="el-strong" style="white-space: nowrap">1 560 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Pochta №2488 · Toshkent viloyati · <span style="white-space: nowrap">8 ta buyurtma</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-info">Yangi</span></span>
+      </span>
+      <span class="el-subtle" style="display: inline-flex; margin-right: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@mails-detail-receive" aria-label="Pochta №2484, Toshkent sh., Bugun, 10:25, 14 ta buyurtma, 2 860 000 so'm — ochish" style="text-decoration: none; color: var(--text); gap: 6px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-cell-title">Bugun, 10:25</span><span class="el-strong" style="white-space: nowrap">2 860 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Pochta №2484 · Toshkent sh. · <span style="white-space: nowrap">14 ta buyurtma</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-info">Yangi</span></span>
+      </span>
+      <span class="el-subtle" style="display: inline-flex; margin-right: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@mails-detail-receive" aria-label="Pochta №2480, Toshkent viloyati, Bugun, 08:40, 9 ta buyurtma, 1 725 000 so'm — ochish" style="text-decoration: none; color: var(--text); gap: 6px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-cell-title">Bugun, 08:40</span><span class="el-strong" style="white-space: nowrap">1 725 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Pochta №2480 · Toshkent viloyati · <span style="white-space: nowrap">9 ta buyurtma</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-info">Yangi</span></span>
+      </span>
+      <span class="el-subtle" style="display: inline-flex; margin-right: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+  </div>
+</section>

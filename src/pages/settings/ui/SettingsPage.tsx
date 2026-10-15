@@ -1,4 +1,5 @@
 import { memo, useState, type ReactNode } from "react";
+import { SEMANTIC_TOKENS } from "../../../shared/config/themeTokens";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { TimePicker } from "antd";
@@ -123,9 +124,11 @@ const ThemeChoiceCard = ({
   onClick: () => void;
 }) => {
   const isDark = mode === "dark";
-  const previewBg = isDark ? "#211d34" : "#f4f5fa";
-  const previewCard = isDark ? "#2b2741" : "#ffffff";
-  const previewAccent = isDark ? "#7c3aed" : "#576adb";
+  // Dizayn v2: namuna ranglari haqiqiy tokenlardan (eski binafsha/indigo emas).
+  const preview = SEMANTIC_TOKENS[isDark ? "dark" : "light"];
+  const previewBg = preview.bg;
+  const previewCard = preview.surface;
+  const previewAccent = preview.action;
   return (
     <button
       type="button"
@@ -476,7 +479,8 @@ const SettingsPage = () => {
 
   const onTheme = (next: ThemeMode) => {
     setTheme(next);
-    persist({ appearance: { theme: next } });
+    // `themeChosen` — aniq tanlov belgisi (entities/settings mergeSettings).
+    persist({ appearance: { theme: next, themeChosen: true } });
   };
   const onLanguage = (next: Language) => {
     void changeAppLanguage(next);

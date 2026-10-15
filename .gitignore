@@ -21,7 +21,9 @@ playwright-report
 .vscode/*
 !.vscode/extensions.json
 .idea
-.claude/
+# Claude Code: shaxsiy sozlamalar ignore, lekin jamoa skill'lari (dizayn qoidalari) repoda
+.claude/*
+!.claude/skills/
 .DS_Store
 *.suo
 *.ntvs*
@@ -43,3 +45,7 @@ playwright-report
 
 # Playwright MCP brauzer-avtomatlashtirish artefaktlari (skrinshot/snapshot loglari)
 .playwright-mcp/
+
+# Dizayn maketlarining lokal yig'ilgan nusxasi (npm run design:build / design:shot)
+design/.build/
+design/shots/

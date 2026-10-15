@@ -40,9 +40,9 @@
     "from": "Начало",
     "to": "Конец"
   },
-  "currency_value": "{{value}} UZS",
-  "currency": "UZS",
-  "currency_sum": "UZS",
+  "currency_value": "{{value}} сум",
+  "currency": "сум",
+  "currency_sum": "сум",
   "unit": {
     "orders": "шт"
   },
@@ -132,7 +132,7 @@
   "chart": {
     "title": "Тренд ежедневной выручки",
     "description": "Выручка = тариф маркета − тариф курьера (учитываются только проданные заказы)",
-    "tooltip_value": "{{value}}M UZS",
+    "tooltip_value": "{{value}} млн сум",
     "types": {
       "area": "Площадь",
       "bar": "Столбец",

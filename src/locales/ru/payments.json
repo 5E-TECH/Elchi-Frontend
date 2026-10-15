@@ -203,7 +203,7 @@
   "spendError": "Ошибка при сохранении расхода",
   "closeShiftSuccess": "Смена успешно закрыта",
   "closeShiftError": "Ошибка при закрытии смены",
-  "currency": "UZS",
+  "currency": "сум",
   "mainCashboxReport": "Отчет по основной кассе"
   ,"marketCashboxLabel": "Касса маркета"
   ,"courierCashboxLabel": "Касса курьера"

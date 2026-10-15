@@ -50,6 +50,8 @@ export interface AppSettings {
   appearance: {
     theme: ThemeMode;
     language: Language;
+    /** Dizayn v2: foydalanuvchi mavzuni Sozlamalar'da O'ZI tanlaganmi (aks holda sukut — light). */
+    themeChosen?: boolean;
   };
   dashboard: {
     widgets: Record<DashboardWidgetId, boolean>;
@@ -108,7 +110,7 @@ export interface AppSettingsPatch {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  appearance: { theme: "dark", language: "uz" },
+  appearance: { theme: "light", language: "uz" },
   dashboard: {
     widgets: {
       stats: true,
@@ -186,7 +188,14 @@ export const mergeSettings = (raw: unknown): AppSettings => {
   const s = (raw ?? {}) as Partial<AppSettings>;
   return {
     appearance: {
-      theme: s.appearance?.theme ?? DEFAULT_SETTINGS.appearance.theme,
+      // Dizayn v2: serverdagi mavzu faqat foydalanuvchi uni O'ZI tanlagan bo'lsa
+      // (`themeChosen`) hurmat qilinadi. Ilgari to'liq sozlama har yozuvda
+      // serverga ketardi va eski sukut "dark" ko'pchilikda saqlanib qolgan —
+      // u tanlov emas, shuning uchun bir marta light'ga qaytadi.
+      theme: s.appearance?.themeChosen === true
+        ? (s.appearance.theme ?? DEFAULT_SETTINGS.appearance.theme)
+        : DEFAULT_SETTINGS.appearance.theme,
+      ...(s.appearance?.themeChosen === true ? { themeChosen: true } : {}),
       language: s.appearance?.language ?? DEFAULT_SETTINGS.appearance.language,
     },
     dashboard: {

@@ -1,0 +1,35 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Pochta</h1>
+  </div>
+</div>
+
+<nav class="el-tabs" role="tablist" aria-label="Pochta turlari" style="gap: 0">
+  <a class="el-tab" href="@mails-today" role="tab" aria-selected="false" title="Bugungi pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Bugungi <span class="el-tab-count" style="background: var(--surface); border: 1px solid var(--border)">4</span></a>
+  <a class="el-tab" href="@mails-refused" role="tab" aria-selected="true" title="Rad etilgan pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text)">Rad etilgan <span class="el-tab-count">3</span></a>
+  <a class="el-tab" href="@mails-old" role="tab" aria-selected="false" title="Eski pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Eski</a>
+</nav>
+
+<p class="el-sr" role="status">Rad etilgan pochtalar yuklanmoqda</p>
+<div style="display: flex; flex-direction: column; gap: 10px">
+  <div class="el-skel-line" style="width: 236px; max-width: 100%; margin: 4px 0; background: var(--border)"></div>
+  <section class="el-card el-shimmer" aria-busy="true" aria-label="Rad etilgan pochtalar yuklanmoqda">
+    <div class="el-list">
+    <div class="el-list-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px">
+      <div style="display: flex; justify-content: space-between; gap: 16px"><div class="el-skel-line" style="width: 42%; height: 14px"></div><div class="el-skel-line" style="width: 96px; height: 14px"></div></div>
+      <div class="el-skel-line" style="width: 58%"></div>
+      <div class="el-skel-block" style="width: 96px; height: 24px; border-radius:6px"></div>
+    </div>
+    <div class="el-list-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px">
+      <div style="display: flex; justify-content: space-between; gap: 16px"><div class="el-skel-line" style="width: 50%; height: 14px"></div><div class="el-skel-line" style="width: 96px; height: 14px"></div></div>
+      <div class="el-skel-line" style="width: 52%"></div>
+      <div class="el-skel-block" style="width: 96px; height: 24px; border-radius:6px"></div>
+    </div>
+    <div class="el-list-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px">
+      <div style="display: flex; justify-content: space-between; gap: 16px"><div class="el-skel-line" style="width: 46%; height: 14px"></div><div class="el-skel-line" style="width: 96px; height: 14px"></div></div>
+      <div class="el-skel-line" style="width: 60%"></div>
+      <div class="el-skel-block" style="width: 96px; height: 24px; border-radius:6px"></div>
+    </div>
+    </div>
+  </section>
+</div>

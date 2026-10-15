@@ -32,7 +32,7 @@ const applyTheme = (theme: Theme) => {
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-    const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? 'dark');
+    const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? 'light'); // dizayn v2: sukut — light
 
     useEffect(() => {
         applyTheme(theme);

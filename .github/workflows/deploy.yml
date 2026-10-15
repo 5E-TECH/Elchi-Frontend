@@ -36,6 +36,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          # To'liq tarix: PR'da dizayn qo'riqchisi (`--diff`) base branch bilan merge-base topadi.
+          # (`cond && 0 || 1` ishlatilmaydi — GitHub ifodalarida 0 "false", natija doim 1 bo'lardi.)
+          fetch-depth: 0
 
       - uses: actions/setup-node@v6
         with:
@@ -47,6 +51,17 @@ jobs:
       # Sifat darvozasi — yiqilsa deploy umuman boshlanmaydi.
       - run: npm run lint
       - run: npm test
+
+      # Dizayn v2: PR'da QO'SHILGAN qatorlarda yangi buzilish bo'lmasin (AGENTS.md «Dizayn qo'riqchisi»).
+      # `npm test` dagi ratchet fayl × qoida sonini tekshiradi; bu qadam esa eskisini o'chirib yangisini
+      # qo'shish ("almashtirish") ni ham ushlaydi.
+      - name: Dizayn qo'riqchisi (PR diff)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          npm run design:guard -- --diff "origin/${BASE_REF}"
 
       # `npm run build` = `tsc -b && vite build`, ya'ni tip tekshiruvi shu yerda.
       - run: npm run build

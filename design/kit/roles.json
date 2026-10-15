@@ -1,0 +1,697 @@
+{
+ "order": [
+  "superadmin",
+  "admin",
+  "manager",
+  "registrator",
+  "market",
+  "courier"
+ ],
+ "roles": {
+  "superadmin": {
+   "label": "Superadmin",
+   "persona": {
+    "initials": "SE",
+    "name": "Shodiyor Ergashev",
+    "role": "Superadmin",
+    "scan": true
+   },
+   "grouped": true,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "orders",
+     "label": "Buyurtmalar",
+     "icon": "i2",
+     "group": "Ish",
+     "short": {
+      "uz": "Buyurtmalar",
+      "ru": "Заказы",
+      "en": "Orders"
+     }
+    },
+    {
+     "key": "newOrders",
+     "label": "Qabul va yaratish",
+     "icon": "i3",
+     "group": "Ish",
+     "count": "7",
+     "short": {
+      "uz": "Qabul",
+      "ru": "Приём",
+      "en": "Intake"
+     }
+    },
+    {
+     "key": "mails",
+     "label": "Pochta",
+     "icon": "i4",
+     "group": "Ish",
+     "short": {
+      "uz": "Pochta",
+      "ru": "Почта",
+      "en": "Mail"
+     }
+    },
+    {
+     "key": "batches",
+     "label": "Paketlar",
+     "icon": "i5",
+     "group": "Ish",
+     "short": {
+      "uz": "Paketlar",
+      "ru": "Пакеты",
+      "en": "Batches"
+     }
+    },
+    {
+     "key": "returns",
+     "label": "Qaytarishlar",
+     "icon": "i6",
+     "group": "Ish"
+    },
+    {
+     "key": "payments",
+     "label": "To'lovlar",
+     "icon": "i7",
+     "group": "Moliya",
+     "short": {
+      "uz": "To'lovlar",
+      "ru": "Платежи",
+      "en": "Payments"
+     }
+    },
+    {
+     "key": "balance",
+     "label": "Balans",
+     "icon": "i8",
+     "group": "Moliya"
+    },
+    {
+     "key": "products",
+     "label": "Mahsulotlar",
+     "icon": "i9",
+     "group": "Ma'lumotnoma",
+     "short": {
+      "uz": "Mahsulotlar",
+      "ru": "Товары",
+      "en": "Products"
+     }
+    },
+    {
+     "key": "users",
+     "label": "Foydalanuvchilar",
+     "icon": "i10",
+     "group": "Ma'lumotnoma"
+    },
+    {
+     "key": "regions",
+     "label": "Hududlar",
+     "icon": "i11",
+     "group": "Ma'lumotnoma",
+     "short": {
+      "uz": "Hududlar",
+      "ru": "Регионы",
+      "en": "Regions"
+     }
+    },
+    {
+     "key": "branches",
+     "label": "Filiallar",
+     "icon": "i12",
+     "group": "Ma'lumotnoma"
+    },
+    {
+     "key": "integrations",
+     "label": "Integratsiyalar",
+     "icon": "i13",
+     "group": "Ma'lumotnoma"
+    },
+    {
+     "key": "notifications",
+     "label": "Bildirishnomalar",
+     "icon": "i14",
+     "group": "Tizim"
+    },
+    {
+     "key": "activityLogs",
+     "label": "Faoliyat jurnali",
+     "icon": "i15",
+     "group": "Tizim"
+    },
+    {
+     "key": "ops",
+     "label": "Ops vositalari",
+     "icon": "i16",
+     "group": "Tizim"
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "orders",
+    "@scan",
+    "newOrders",
+    "@menu"
+   ]
+  },
+  "admin": {
+   "label": "Admin",
+   "persona": {
+    "initials": "NR",
+    "name": "Nilufar Rashidova",
+    "role": "Admin",
+    "scan": true
+   },
+   "grouped": true,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "orders",
+     "label": "Buyurtmalar",
+     "icon": "i2",
+     "group": "Ish",
+     "short": {
+      "uz": "Buyurtmalar",
+      "ru": "Заказы",
+      "en": "Orders"
+     }
+    },
+    {
+     "key": "newOrders",
+     "label": "Qabul va yaratish",
+     "icon": "i3",
+     "group": "Ish",
+     "count": "7",
+     "short": {
+      "uz": "Qabul",
+      "ru": "Приём",
+      "en": "Intake"
+     }
+    },
+    {
+     "key": "mails",
+     "label": "Pochta",
+     "icon": "i4",
+     "group": "Ish",
+     "short": {
+      "uz": "Pochta",
+      "ru": "Почта",
+      "en": "Mail"
+     }
+    },
+    {
+     "key": "batches",
+     "label": "Paketlar",
+     "icon": "i5",
+     "group": "Ish",
+     "short": {
+      "uz": "Paketlar",
+      "ru": "Пакеты",
+      "en": "Batches"
+     }
+    },
+    {
+     "key": "returns",
+     "label": "Qaytarishlar",
+     "icon": "i6",
+     "group": "Ish"
+    },
+    {
+     "key": "payments",
+     "label": "To'lovlar",
+     "icon": "i7",
+     "group": "Moliya",
+     "short": {
+      "uz": "To'lovlar",
+      "ru": "Платежи",
+      "en": "Payments"
+     }
+    },
+    {
+     "key": "balance",
+     "label": "Balans",
+     "icon": "i8",
+     "group": "Moliya"
+    },
+    {
+     "key": "products",
+     "label": "Mahsulotlar",
+     "icon": "i9",
+     "group": "Ma'lumotnoma",
+     "short": {
+      "uz": "Mahsulotlar",
+      "ru": "Товары",
+      "en": "Products"
+     }
+    },
+    {
+     "key": "users",
+     "label": "Foydalanuvchilar",
+     "icon": "i10",
+     "group": "Ma'lumotnoma"
+    },
+    {
+     "key": "regions",
+     "label": "Hududlar",
+     "icon": "i11",
+     "group": "Ma'lumotnoma",
+     "short": {
+      "uz": "Hududlar",
+      "ru": "Регионы",
+      "en": "Regions"
+     }
+    },
+    {
+     "key": "integrations",
+     "label": "Integratsiyalar",
+     "icon": "i13",
+     "group": "Ma'lumotnoma"
+    },
+    {
+     "key": "activityLogs",
+     "label": "Faoliyat jurnali",
+     "icon": "i15",
+     "group": "Tizim"
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "orders",
+    "@scan",
+    "newOrders",
+    "@menu"
+   ]
+  },
+  "manager": {
+   "label": "Menejer",
+   "persona": {
+    "initials": "RO",
+    "name": "Ravshan Ortiqov",
+    "role": "Menejer · Urgut filiali",
+    "scan": true
+   },
+   "grouped": true,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "dispatch",
+     "label": "Biriktirish",
+     "icon": "i17",
+     "group": "Ish",
+     "short": {
+      "uz": "Biriktirish",
+      "ru": "Привязка",
+      "en": "Assign"
+     }
+    },
+    {
+     "key": "orders",
+     "label": "Buyurtmalar",
+     "icon": "i2",
+     "group": "Ish",
+     "short": {
+      "uz": "Buyurtmalar",
+      "ru": "Заказы",
+      "en": "Orders"
+     }
+    },
+    {
+     "key": "quickAction",
+     "label": "Tezkor amal",
+     "icon": "i18",
+     "group": "Ish",
+     "short": {
+      "uz": "Tezkor amal",
+      "ru": "Закрыть день",
+      "en": "Close day"
+     }
+    },
+    {
+     "key": "newOrders",
+     "label": "Qabul va yaratish",
+     "icon": "i3",
+     "group": "Ish",
+     "count": "4",
+     "short": {
+      "uz": "Qabul",
+      "ru": "Приём",
+      "en": "Intake"
+     }
+    },
+    {
+     "key": "mails",
+     "label": "Pochta",
+     "icon": "i4",
+     "group": "Ish",
+     "short": {
+      "uz": "Pochta",
+      "ru": "Почта",
+      "en": "Mail"
+     }
+    },
+    {
+     "key": "batches",
+     "label": "Paketlar",
+     "icon": "i5",
+     "group": "Ish",
+     "short": {
+      "uz": "Paketlar",
+      "ru": "Пакеты",
+      "en": "Batches"
+     }
+    },
+    {
+     "key": "returns",
+     "label": "Qaytarishlar",
+     "icon": "i6",
+     "group": "Ish"
+    },
+    {
+     "key": "payments",
+     "label": "To'lovlar",
+     "icon": "i7",
+     "group": "Moliya",
+     "short": {
+      "uz": "To'lovlar",
+      "ru": "Платежи",
+      "en": "Payments"
+     }
+    },
+    {
+     "key": "products",
+     "label": "Mahsulotlar",
+     "icon": "i9",
+     "group": "Ma'lumotnoma",
+     "short": {
+      "uz": "Mahsulotlar",
+      "ru": "Товары",
+      "en": "Products"
+     }
+    },
+    {
+     "key": "users",
+     "label": "Foydalanuvchilar",
+     "icon": "i10",
+     "group": "Ma'lumotnoma"
+    },
+    {
+     "key": "regions",
+     "label": "Hududlar",
+     "icon": "i11",
+     "group": "Ma'lumotnoma",
+     "short": {
+      "uz": "Hududlar",
+      "ru": "Регионы",
+      "en": "Regions"
+     }
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "orders",
+    "@scan",
+    "dispatch",
+    "@menu"
+   ]
+  },
+  "registrator": {
+   "label": "Registrator",
+   "persona": {
+    "initials": "BX",
+    "name": "Bobur Xolmatov",
+    "role": "Ro'yxatchi · Toshkent HQ",
+    "scan": true
+   },
+   "grouped": false,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "dispatch",
+     "label": "Biriktirish",
+     "icon": "i17",
+     "short": {
+      "uz": "Biriktirish",
+      "ru": "Привязка",
+      "en": "Assign"
+     }
+    },
+    {
+     "key": "orders",
+     "label": "Buyurtmalar",
+     "icon": "i2",
+     "short": {
+      "uz": "Buyurtmalar",
+      "ru": "Заказы",
+      "en": "Orders"
+     }
+    },
+    {
+     "key": "newOrders",
+     "label": "Qabul va yaratish",
+     "icon": "i3",
+     "count": "7",
+     "short": {
+      "uz": "Qabul",
+      "ru": "Приём",
+      "en": "Intake"
+     }
+    },
+    {
+     "key": "mails",
+     "label": "Pochta",
+     "icon": "i4",
+     "short": {
+      "uz": "Pochta",
+      "ru": "Почта",
+      "en": "Mail"
+     }
+    },
+    {
+     "key": "products",
+     "label": "Mahsulotlar",
+     "icon": "i9",
+     "short": {
+      "uz": "Mahsulotlar",
+      "ru": "Товары",
+      "en": "Products"
+     }
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "orders",
+    "@scan",
+    "newOrders",
+    "@menu"
+   ]
+  },
+  "market": {
+   "label": "Market",
+   "persona": {
+    "initials": "AN",
+    "name": "Akbar Nurmatov",
+    "role": "Market · Baraka Shop",
+    "scan": false
+   },
+   "grouped": false,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "orders",
+     "label": "Buyurtmalar",
+     "icon": "i2",
+     "short": {
+      "uz": "Buyurtmalar",
+      "ru": "Заказы",
+      "en": "Orders"
+     }
+    },
+    {
+     "key": "newOrders",
+     "label": "Qabul va yaratish",
+     "icon": "i3",
+     "short": {
+      "uz": "Yaratish",
+      "ru": "Создать",
+      "en": "Create"
+     }
+    },
+    {
+     "key": "products",
+     "label": "Mahsulotlar",
+     "icon": "i9",
+     "short": {
+      "uz": "Mahsulotlar",
+      "ru": "Товары",
+      "en": "Products"
+     }
+    },
+    {
+     "key": "payments",
+     "label": "To'lovlar",
+     "icon": "i19",
+     "short": {
+      "uz": "To'lovlar",
+      "ru": "Платежи",
+      "en": "Payments"
+     }
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "orders",
+    "newOrders",
+    "products",
+    "payments"
+   ]
+  },
+  "courier": {
+   "label": "Kuryer",
+   "persona": {
+    "initials": "JT",
+    "name": "Jasur Tursunov",
+    "role": "Kuryer",
+    "scan": true
+   },
+   "grouped": false,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "orders",
+     "label": "Buyurtmalar",
+     "icon": "i2",
+     "short": {
+      "uz": "Buyurtmalar",
+      "ru": "Заказы",
+      "en": "Orders"
+     }
+    },
+    {
+     "key": "quickAction",
+     "label": "Tezkor amal",
+     "icon": "i18",
+     "short": {
+      "uz": "Tezkor amal",
+      "ru": "Закрыть день",
+      "en": "Close day"
+     }
+    },
+    {
+     "key": "mails",
+     "label": "Pochta",
+     "icon": "i4",
+     "short": {
+      "uz": "Pochta",
+      "ru": "Почта",
+      "en": "Mail"
+     }
+    },
+    {
+     "key": "payments",
+     "label": "Kassa",
+     "icon": "i19",
+     "short": {
+      "uz": "Kassa",
+      "ru": "Касса",
+      "en": "Cashbox"
+     }
+    },
+    {
+     "key": "regions",
+     "label": "Hududlar",
+     "icon": "MapPinned",
+     "short": {
+      "uz": "Hududlar",
+      "ru": "Регионы",
+      "en": "Regions"
+     }
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "orders",
+    "@scan",
+    "quickAction",
+    "@menu"
+   ]
+  }
+ },
+ "icons": {
+  "i1": "<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\"/><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/>",
+  "i2": "<path d=\"M16 10a4 4 0 0 1-8 0\"/><path d=\"M3.103 6.034h17.794\"/><path d=\"M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z\"/>",
+  "i3": "<polyline points=\"22 12 16 12 14 15 10 15 8 12 2 12\"/><path d=\"M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z\"/>",
+  "i4": "<path d=\"m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7\"/><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"/>",
+  "i5": "<path d=\"M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z\"/><path d=\"M12 22V12\"/><polyline points=\"3.29 7 12 12 20.71 7\"/><path d=\"m7.5 4.27 9 5.15\"/>",
+  "i6": "<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/>",
+  "i7": "<rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\"/><line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\"/>",
+  "i8": "<path d=\"M12 3v18\"/><path d=\"m19 8 3 8a5 5 0 0 1-6 0zV7\"/><path d=\"M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1\"/><path d=\"m5 8 3 8a5 5 0 0 1-6 0zV7\"/><path d=\"M7 21h10\"/>",
+  "i9": "<path d=\"M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z\"/><circle cx=\"7.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/>",
+  "i10": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M16 3.128a4 4 0 0 1 0 7.744\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/>",
+  "i11": "<path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\"/><path d=\"M15 5.764v15\"/><path d=\"M9 3.236v15\"/>",
+  "i12": "<path d=\"M10 12h4\"/><path d=\"M10 8h4\"/><path d=\"M14 21v-3a2 2 0 0 0-4 0v3\"/><path d=\"M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2\"/><path d=\"M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16\"/>",
+  "i13": "<path d=\"M12 22v-5\"/><path d=\"M15 8V2\"/><path d=\"M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z\"/><path d=\"M9 8V2\"/>",
+  "i14": "<path d=\"M10.268 21a2 2 0 0 0 3.464 0\"/><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"/>",
+  "i15": "<path d=\"M15 12h-5\"/><path d=\"M15 8h-5\"/><path d=\"M19 17V5a2 2 0 0 0-2-2H4\"/><path d=\"M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3\"/>",
+  "i16": "<path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z\"/>",
+  "i17": "<path d=\"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2\"/><path d=\"M15 18H9\"/><path d=\"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/><circle cx=\"7\" cy=\"18\" r=\"2\"/>",
+  "i18": "<path d=\"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z\"/>",
+  "i19": "<path d=\"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\"/><path d=\"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4\"/>",
+  "bell": "<path d=\"M10.268 21a2 2 0 0 0 3.464 0\"/><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"/>",
+  "MapPinned": "<path d=\"M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0\"/><circle cx=\"12\" cy=\"8\" r=\"2\"/><path d=\"M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712\"/>",
+  "ScanLine": "<path d=\"M3 7V5a2 2 0 0 1 2-2h2\"/><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"/><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"/><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"/><path d=\"M7 12h10\"/>"
+ }
+}
