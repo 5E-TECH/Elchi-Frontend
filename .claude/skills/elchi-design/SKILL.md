@@ -66,9 +66,18 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
 
 - Klasslarni `design/CODE-MAP.md` bo'yicha tarjima qiling. Maketdagi `el-*` nomini JSX'ga **ko'chirmang**:
   `index.css` dagi `.el-card`, `.el-segmented` va boshqalar eski v1 klasslari.
-- Avval `src/shared/ui/` dagi 1-bosqich primitivlari (`Button`, `IconButton`, `Badge`/`StatusBadge`,
-  `Card`/`StatCard`, `PageHeader`, `Tabs`/`SegmentedControl`, `Dialog`/`ConfirmDialog`,
-  `Field`/`TextInput`/`Select`/`DateRange`, `QueryBoundary`). Hali yo'q bo'lsa, CODE-MAP dagi Tailwind klasslari.
+- Avval 1-bosqich primitivlari — `src/shared/ui/primitives` (barrel, faqat nomli eksport):
+  `import { Button, IconButton, Spinner, Badge, StatusBadge, Card, StatCard, PageHeader, Tabs, SegmentedControl }
+  from "…/shared/ui/primitives"`; ton klasslari `TONE_SOFT` / `TONE_FG` / `TONE_SOLID` / `TONE_RING` (`tone.ts`).
+  Buyurtma holati — `OrderStatusBadge` (`src/entities/order`; matn va ton `statusRegistry.ts` dan, shared'da emas).
+  Sana/vaqt — `formatDateTimeLocalized` / `formatDateLocalized` / `formatTimeLocalized` (`src/shared/lib/formatDateTime.ts`),
+  telefon — `formatPhone` / `toTelHref` (`formatPhone.ts`), ishorali pul — `formatSignedMoneyLocalized`, klass
+  birlashtirish — `cx` (`src/shared/lib/cx.ts`). Hammasining namunasi: `/ops/ui-kit` (superadmin).
+  v1 o'rnini bosuvchilar: `shared/components/button` → `Button`, `shared/ui/StatusBadge` va
+  `pages/orders/list/OrderStatusBadge` → `StatusBadge` / `OrderStatusBadge`, `statusColorMap` → `statusRegistry` +
+  `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized` (qo'riqchi yangi importni ushlaydi).
+  `Dialog`/`ConfirmDialog`, `Field`/`TextInput`/`Select`/`DateRange`, `QueryBoundary` hali yo'q (3-bosqich) —
+  ular uchun CODE-MAP dagi Tailwind klasslari.
 - Faqat tokenlar: `bg-surface`, `text-text-muted`, `border-border`, `bg-action text-on-solid`,
   `bg-success-soft text-success-fg` … JS'da `themeTokens(theme)`, `CHART_PALETTE[theme]`.
 - Pul va son faqat `src/shared/lib/formatMoney.ts`. Ikonka faqat `lucide-react` (`design/icon-registry.json` dagi
@@ -100,7 +109,8 @@ Yangi yoki o'zgargan qatorlarda bo'lmasligi kerak: hex / `rgb()` / `hsl()`, Tail
 `text-gray-400`), `dark:` juftlari, eski nomlar (`main`, `maindark`, `primary`, `primarydark`, `purple*`,
 `border-soft`, `card-surface`, `page-surface`, `dashboard-*`), 12px dan kichik matn (`text-[11px]`), `font-black` /
 `font-extrabold`, gradient, v1 klasslari (`el-card`, `el-glass-control`, `el-segmented*`), v1 yordamchilari (`TYPO`,
-`TEXT`, `toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`), maxsus soya, `Intl.NumberFormat`, qo'lda `so'm`,
+`TEXT`, `toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`), v1 komponent importlari (`shared/components/button`,
+`shared/ui/StatusBadge`, `pages/orders/list/OrderStatusBadge`, `statusColorMap`, `shared/lib/formatDate`), maxsus soya, `Intl.NumberFormat`, qo'lda `so'm`,
 boshqa ikonka kutubxonalari.
 
 ```bash
@@ -120,6 +130,8 @@ belgisini qo'riqchidan o'tish uchun ishlatmang. Ular faqat asosli istisno uchun,
 ## 6. Ilovada ko'ring
 
 `npm run dev`, sahifani kerakli rol bilan oching (o'z test akkauntingiz; parol kodga yoki chatga yozilmaydi).
+Akkauntsiz tez ko'rish: `npm run app:shot -- <route> [--device phone] [--theme dark] [--role manager]` →
+`design/shots/app/*.png` + JSON hisobot (toshish, 44px nishonlar, mayda matn, konsol xatolari); PNG'larni Read qiling.
 Tekshiring:
 
 - **390, 768, 1440** kenglikda, **kunduzgi va tungi** mavzuda. Tungi mavzu: Sozlamalar sahifasida tanlang yoki

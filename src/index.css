@@ -416,16 +416,16 @@ select:-webkit-autofill:focus {
   --color-focus: rgba(142, 166, 255, 0.38);
   /* `success/warning/danger/info` — oq matnli FON sifatida ham ishlatiladi
      (eski kod), shuning uchun to'q tus; qorong'i yuzadagi MATN uchun `-fg`. */
-  --color-success: #0d8f5b;
+  --color-success: #4fc58e;
   --color-success-fg: #4fc58e;
   --color-success-soft: rgba(79, 197, 142, 0.14);
-  --color-warning: #c97900;
+  --color-warning: #f1b24e;
   --color-warning-fg: #f1b24e;
   --color-warning-soft: rgba(241, 178, 78, 0.14);
-  --color-danger: #d82f48;
+  --color-danger: #ff7182;
   --color-danger-fg: #ff7182;
   --color-danger-soft: rgba(255, 113, 130, 0.14);
-  --color-info: #2563d8;
+  --color-info: #6bb6f3;
   --color-info-fg: #6bb6f3;
   --color-info-soft: rgba(107, 182, 243, 0.14);
   --color-overlay: rgba(3, 5, 12, 0.62);
@@ -543,7 +543,30 @@ body {
 ):focus-visible {
   outline: 2px solid var(--color-action);
   outline-offset: 2px;
-  border-radius: 4px;
+}
+
+/*
+  ⚠️ Halqa (outline) ataylab QATLAMSIZ: eski kodda ~20 joyda `outline-none`
+  o'rnini bosuvchisiz yozilgan, bu qoida ularda fokusni ko'rinadigan qiladi.
+  Burchak esa `@layer base` da: qatlamsiz `border-radius` har qanday Tailwind
+  `rounded-*` dan kuchli edi va fokusda tugma/tab burchagi 4px ga sakrardi.
+  Endi o'z burchagi bor element o'zinikini saqlaydi, yo'g'i (havola) 4px oladi.
+*/
+@layer base {
+  :where(
+    a[href],
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex='-1']),
+    [role='button'],
+    [role='tab'],
+    [role='link']
+  ):focus-visible {
+    border-radius: 4px;
+  }
 }
 
 /*
@@ -552,31 +575,34 @@ body {
 */
 
 /* ─── Global Cursor Defaults ───────────────────────────────────────────────── */
-:where(
-  a[href],
-  button:not(:disabled),
-  [role="button"]:not([aria-disabled="true"]),
-  summary,
-  label[for],
-  select:not(:disabled),
-  input[type="button"]:not(:disabled),
-  input[type="checkbox"]:not(:disabled),
-  input[type="file"]:not(:disabled),
-  input[type="radio"]:not(:disabled),
-  input[type="reset"]:not(:disabled),
-  input[type="submit"]:not(:disabled)
-) {
-  cursor: pointer;
-}
+/* `@layer base`: sukut. `cursor-*` / `aria-busy:cursor-progress` utility'lari yutadi. */
+@layer base {
+  :where(
+    a[href],
+    button:not(:disabled),
+    [role="button"]:not([aria-disabled="true"]),
+    summary,
+    label[for],
+    select:not(:disabled),
+    input[type="button"]:not(:disabled),
+    input[type="checkbox"]:not(:disabled),
+    input[type="file"]:not(:disabled),
+    input[type="radio"]:not(:disabled),
+    input[type="reset"]:not(:disabled),
+    input[type="submit"]:not(:disabled)
+  ) {
+    cursor: pointer;
+  }
 
-:where(
-  button:disabled,
-  select:disabled,
-  input:disabled,
-  textarea:disabled,
-  [aria-disabled="true"]
-) {
-  cursor: not-allowed;
+  :where(
+    button:disabled,
+    select:disabled,
+    input:disabled,
+    textarea:disabled,
+    [aria-disabled="true"]
+  ) {
+    cursor: not-allowed;
+  }
 }
 
 /* ─── Global Dark Mode overrides ──────────────────────────────────────────── */

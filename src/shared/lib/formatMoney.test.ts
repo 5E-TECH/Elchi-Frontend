@@ -5,6 +5,8 @@ import {
   formatMoneyLocalized,
   formatNumberLocalized,
   formatPercentLocalized,
+  formatSignedMoneyLocalized,
+  MINUS_SIGN,
   resolveMoneyLanguage,
 } from "./formatMoney";
 import uzOrders from "../../locales/uz/orders.json";
@@ -28,7 +30,7 @@ describe("formatMoneyLocalized", () => {
 
   it("butun so'mga yaxlitlaydi, manfiy va nolni to'g'ri chiqaradi", () => {
     expect(formatMoneyLocalized(1545000.6, { language: "uz" })).toBe("1 545 001 so'm");
-    expect(formatMoneyLocalized(-13458000, { language: "uz" })).toBe("-13 458 000 so'm");
+    expect(formatMoneyLocalized(-13458000, { language: "uz" })).toBe("−13 458 000 so'm");
     expect(formatMoneyLocalized(0, { language: "en" })).toBe("0 UZS");
     expect(formatMoneyLocalized(-0.4, { language: "uz" })).toBe("0 so'm");
   });
@@ -46,6 +48,68 @@ describe("formatMoneyLocalized", () => {
   it("⭐ brauzer ICU'siga bog'liq emas (Chrome'da uz yo'q — vergul chiqmasin)", () => {
     expect(formatNumberLocalized(1545000, { language: "uz" })).not.toContain(",");
     expect(formatNumberLocalized(1545000, { language: "uz" })).toBe("1 545 000");
+  });
+});
+
+describe("⭐ manfiy son — haqiqiy minus U+2212 (maket «Format standarti»: «−240 000 so'm»)", () => {
+  it("MINUS_SIGN — U+2212, chiziqcha emas", () => {
+    expect(MINUS_SIGN).toBe("\u2212");
+    expect(MINUS_SIGN).not.toBe("-");
+  });
+
+  it("pul, son, ixcham va foizda uchala tilda U+2212; chiziqcha '-' hech qayerda yo'q", () => {
+    const outputs = (["uz", "ru", "en"] as const).flatMap((language) => [
+      formatMoneyLocalized(-240_000, { language }),
+      formatNumberLocalized(-1_545_000.5, { language, fractionDigits: 1 }),
+      formatCompactMoneyLocalized(-48_600_000, { language }),
+      formatCompactMoneyLocalized(-950, { language }),
+      formatPercentLocalized(-6.2, { language }),
+    ]);
+    for (const text of outputs) {
+      expect(text.startsWith(MINUS_SIGN)).toBe(true);
+      expect(text).not.toContain("-");
+    }
+    expect(formatMoneyLocalized(-240_000, { language: "uz" })).toBe("−240 000 so'm");
+    expect(formatMoneyLocalized(-240_000, { language: "ru" })).toBe("−240 000 сум");
+    expect(formatMoneyLocalized(-240_000, { language: "en" })).toBe("−240,000 UZS");
+    expect(formatCompactMoneyLocalized(-1_200_000_000, { language: "en" })).toBe("−1.2B UZS");
+  });
+
+  it("yaxlitlab nol bo'lsa — minussiz '0' ('−0' emas)", () => {
+    expect(formatNumberLocalized(-0.04, { language: "uz", fractionDigits: 1 })).toBe("0");
+    expect(formatNumberLocalized(-0, { language: "uz" })).toBe("0");
+    expect(formatCompactMoneyLocalized(-0.4, { language: "uz" })).toBe("0 so'm");
+    expect(formatPercentLocalized(-0.01, { language: "uz" })).toBe("0%");
+  });
+});
+
+describe("formatSignedMoneyLocalized — kirim '+', chiqim/qarz '−'", () => {
+  it("maketdagi qatorlar uchala tilda", () => {
+    expect(formatSignedMoneyLocalized(120_000, { language: "uz" })).toBe("+120 000 so'm");
+    expect(formatSignedMoneyLocalized(120_000, { language: "ru" })).toBe("+120 000 сум");
+    expect(formatSignedMoneyLocalized(120_000, { language: "en" })).toBe("+120,000 UZS");
+    expect(formatSignedMoneyLocalized(-240_000, { language: "uz" })).toBe("−240 000 so'm");
+    expect(formatSignedMoneyLocalized(-240_000, { language: "ru" })).toBe("−240 000 сум");
+    expect(formatSignedMoneyLocalized(-240_000, { language: "en" })).toBe("−240,000 UZS");
+  });
+
+  it("nol — ishorasiz; yaxlitlab nolga tushsa ham", () => {
+    expect(formatSignedMoneyLocalized(0, { language: "uz" })).toBe("0 so'm");
+    expect(formatSignedMoneyLocalized(0.4, { language: "uz" })).toBe("0 so'm");
+    expect(formatSignedMoneyLocalized(-0.4, { language: "uz" })).toBe("0 so'm");
+  });
+
+  it("butun so'mga yaxlitlaydi; satr son va noto'g'ri qiymat", () => {
+    expect(formatSignedMoneyLocalized(0.6, { language: "uz" })).toBe("+1 so'm");
+    expect(formatSignedMoneyLocalized("185000.4", { language: "uz" })).toBe("+185 000 so'm");
+    expect(formatSignedMoneyLocalized("-95348635.57", { language: "uz" })).toBe("−95 348 636 so'm");
+    expect(formatSignedMoneyLocalized(undefined, { language: "ru" })).toBe("0 сум");
+    expect(formatSignedMoneyLocalized(Number.NaN, { language: "en" })).toBe("0 UZS");
+  });
+
+  it("withCurrency: false — faqat ishorali raqam", () => {
+    expect(formatSignedMoneyLocalized(185_000, { language: "uz", withCurrency: false })).toBe("+185 000");
+    expect(formatSignedMoneyLocalized(-185_000, { language: "en", withCurrency: false })).toBe("−185,000");
   });
 });
 
@@ -71,7 +135,11 @@ describe("formatCompactMoneyLocalized", () => {
 
   it("⭐ pog'ona chegarasi: 999 950 → '1 mln', '1000 ming' emas", () => {
     expect(formatCompactMoneyLocalized(999_950, { language: "uz" })).toBe("1 mln so'm");
-    expect(formatCompactMoneyLocalized(-13_458_000, { language: "uz", withCurrency: false })).toBe("-13,5 mln");
+    // 1000 dan sal kichik: butunga yaxlitlab 1000 bo'lsa — "1000 so'm" emas, "1 ming".
+    expect(formatCompactMoneyLocalized(999.6, { language: "uz" })).toBe("1 ming so'm");
+    expect(formatCompactMoneyLocalized(-999.6, { language: "en" })).toBe("\u22121K UZS");
+    expect(formatCompactMoneyLocalized(999.4, { language: "uz" })).toBe("999 so'm");
+    expect(formatCompactMoneyLocalized(-13_458_000, { language: "uz", withCurrency: false })).toBe("−13,5 mln");
   });
 });
 
@@ -96,9 +164,18 @@ describe("valyuta kalitlari locale JSON'da bir xil", () => {
 });
 
 describe("formatPercentLocalized", () => {
+  it("⭐ maket «Format standarti»: uz '8,2%' · ru '8,2 %' (bo'linmas bo'sh joy) · en '8.2%'", () => {
+    expect(formatPercentLocalized(8.2, { language: "uz" })).toBe("8,2%");
+    expect(formatPercentLocalized(8.2, { language: "ru" })).toBe("8,2\u00a0%");
+    expect(formatPercentLocalized(8.2, { language: "en" })).toBe("8.2%");
+    // Oddiy bo'sh joy emas — tor katakda «8,2» va «%» alohida qatorga tushmasin.
+    expect(formatPercentLocalized(8.2, { language: "ru" })).not.toContain(" ");
+    expect(formatPercentLocalized(-6.2, { language: "ru" })).toBe("−6,2\u00a0%");
+  });
+
   it("locale ajratkichi, 1 xona sukut, ortiqcha nolsiz", () => {
     expect(formatPercentLocalized(67.43, { language: "uz" })).toBe("67,4%");
-    expect(formatPercentLocalized(67.43, { language: "ru" })).toBe("67,4%");
+    expect(formatPercentLocalized(67.43, { language: "ru" })).toBe("67,4\u00a0%");
     expect(formatPercentLocalized(67.43, { language: "en" })).toBe("67.4%");
     expect(formatPercentLocalized(50, { language: "uz" })).toBe("50%");
     expect(formatPercentLocalized(12.345, { language: "uz", fractionDigits: 2 })).toBe("12,35%");

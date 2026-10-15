@@ -1,0 +1,16 @@
+{
+  "order": {
+    "new": "New",
+    "created": "Created",
+    "received": "Received",
+    "on_the_road": "On the road",
+    "waiting": "Waiting",
+    "partly_paid": "Partially paid",
+    "sold": "Sold",
+    "paid": "Paid",
+    "cancelled": "Cancelled",
+    "cancelled_sent": "Cancelled — sent",
+    "closed": "Closed",
+    "unknown": "Unknown"
+  }
+}

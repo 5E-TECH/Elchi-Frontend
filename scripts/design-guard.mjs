@@ -44,7 +44,11 @@
  *    weight    — `font-black` / `font-extrabold` / `fontWeight: 800|900` (v2 da eng qalin — `font-bold`).
  *    gradient  — `bg-linear-*`, `bg-gradient-*`, `bg-radial*`, `bg-conic*`, `linear-gradient(...)` (v2 — tekis fon).
  *    v1-helper — designSystem.ts dagi v1 yordamchilari (`TYPO.*`, `TEXT.*`, `TONE`, `toneAccent()`, `toneSoftBg()`,
- *                `formatPercent()`) va v1 komponentlari (`headerName`, `MetricCard`) importi.
+ *                `formatPercent()`) va v1 komponentlari (`headerName`, `MetricCard`) importi; 1-bosqich
+ *                o'rnini bosgan v1 modullari importi (`V1_MODULES`, yo'l fayl joyiga nisbatan aniq hal qilinadi):
+ *                shared/components/button → Button, shared/ui/StatusBadge va pages/orders/list/OrderStatusBadge →
+ *                StatusBadge / entities/order OrderStatusBadge, shared/config/statusColorMap → statusRegistry +
+ *                tone.ts, shared/lib/formatDate → formatDateTimeLocalized.
  *
  *  Tezlik: ~600 fayl ≈ 0.3 s (bitta o'tishli izoh-niqoblovchi + qator regexlari, AST yo'q).
  */
@@ -280,6 +284,53 @@ const V1_HELPER_HINT =
 const V1_IMPORT_HINT =
   "v1 komponenti: HeaderName → PageHeader, MetricCard → StatCard (1-bosqich) yoki design/CODE-MAP.md retsepti";
 
+/**
+ * 1-bosqich primitivlari o'rnini bosgan v1 modullari (src'ga nisbatan, kengaytmasiz) → v2 o'rnini bosuvchisi.
+ * Import yo'li fayl joylashuviga nisbatan ANIQ hal qilinadi (`./button`, `../../shared/components/button`,
+ * `@/shared/components/button`, `src/…`, `/src/…`): `primitives/Button`, `primitives/StatusBadge`,
+ * `formatDateTime` kabi nomdoshlar tutilmaydi.
+ */
+export const V1_MODULES = {
+  "src/shared/components/button":
+    "v1 Button → Button / IconButton (src/shared/ui/primitives) — design/CODE-MAP.md 2.1",
+  "src/shared/ui/StatusBadge":
+    "v1 StatusBadge → StatusBadge (src/shared/ui/primitives); buyurtma holati — OrderStatusBadge (src/entities/order)",
+  "src/pages/orders/list/OrderStatusBadge":
+    "v1 OrderStatusBadge → OrderStatusBadge (src/entities/order: statusRegistry + StatusBadge)",
+  "src/shared/config/statusColorMap":
+    "v1 statusColorMap → buyurtma holati: ORDER_STATUS_REGISTRY / OrderStatusBadge (src/entities/order); ton klasslari: tone.ts (TONE_SOFT / TONE_FG / TONE_SOLID)",
+  "src/shared/lib/formatDate":
+    "v1 formatDate → formatDateTimeLocalized / formatDateLocalized / formatTimeLocalized (src/shared/lib/formatDateTime.ts)",
+};
+
+// `from "…"`, `import("…")`, `require("…")`, yon ta'sirli `import "…"`; `?raw` kabi so'rov qismi tashlanadi.
+const RE_IMPORT_SPEC =
+  /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)(["'])([^"'?\n]+)(?:\?[^"'\n]*)?\1/g;
+
+/**
+ * Import spetsifikatorini src'ga nisbatan modul yo'liga aylantiradi (kengaytma va `/index` siz).
+ * Paket (`antd`, `react`) — `null`.
+ * @param {string} spec @param {string} file
+ */
+export function resolveImportPath(spec, file) {
+  let p;
+  if (spec === "." || spec === ".." || spec.startsWith("./") || spec.startsWith("../")) {
+    p = path.posix.join(path.posix.dirname(file.split(path.sep).join("/")), spec);
+  } else if (spec.startsWith("@/")) {
+    p = `src/${spec.slice(2)}`;
+  } else if (spec.startsWith("/src/")) {
+    p = spec.slice(1);
+  } else if (spec.startsWith("src/")) {
+    p = spec;
+  } else {
+    return null;
+  }
+  return path.posix
+    .normalize(p)
+    .replace(/\.(?:[cm]?[jt]sx?)$/, "")
+    .replace(/\/index$/, "");
+}
+
 export const RULES = [
   {
     id: "colour",
@@ -397,11 +448,20 @@ export const RULES = [
   },
   {
     id: "v1-helper",
-    title: "v1 yordamchisi/komponenti (TYPO, TEXT, toneAccent, formatPercent, HeaderName, MetricCard)",
+    title:
+      "v1 yordamchisi/komponenti (TYPO, TEXT, toneAccent, formatPercent, HeaderName, MetricCard, v1 Button, StatusBadge, statusColorMap, formatDate)",
     exempt: [DESIGN_SYSTEM_SOURCE],
-    find(line, out) {
+    find(line, out, file) {
       collect(RE_V1_HELPER, line, () => V1_HELPER_HINT, out);
       if (line.includes("from")) collect(RE_V1_IMPORT, line, () => V1_IMPORT_HINT, out);
+      if (file && (line.includes("from") || line.includes("import") || line.includes("require"))) {
+        collect(
+          RE_IMPORT_SPEC,
+          line,
+          (m) => V1_MODULES[resolveImportPath(m[2], file) ?? ""] ?? null,
+          out,
+        );
+      }
     },
   },
 ];
@@ -694,7 +754,7 @@ export function scanSource(file, text) {
     if (line.length < 4 || !/\S/.test(line)) continue;
     for (const rule of rules) {
       found.length = 0;
-      rule.find(line, found);
+      rule.find(line, found, file);
       if (!found.length) continue;
       if (found.length > 1) found.sort((x, y) => x.col - y.col);
       const marker = skipLine.get(idx);
