@@ -21,7 +21,7 @@ import { useGetIntegrationById, useReconcileNow, useUpdateIntegration } from "..
 import { useIntegrationHealthcheck } from "../../../entities/integrations/healthcheck";
 import { useProcessQueue, useRetryFailed } from "../../../entities/integrations/shipments";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
-import { formatDate } from "../../../shared/lib/formatDate";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { useFocusTrap } from "../../../shared/lib/useFocusTrap";
 import type { Connection } from "../useConnections";
@@ -442,7 +442,7 @@ const ConnectionControl = ({
                 </span>
                 <span className="flex min-w-0 flex-col">
                   <span className="whitespace-nowrap text-base font-bold text-text">
-                    {lastReconcile ? formatDate(lastReconcile) : t("ctlNeverReconciled")}
+                    {lastReconcile ? formatDateTimeLocalized(lastReconcile, { language: i18n.language }) : t("ctlNeverReconciled")}
                   </span>
                   <span className="truncate text-xs text-text-muted">{t("ctlLastReconcile")}</span>
                 </span>

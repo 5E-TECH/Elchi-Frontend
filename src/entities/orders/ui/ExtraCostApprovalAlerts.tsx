@@ -2,7 +2,7 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Clock } from "lucide-react";
-import { formatDate } from "../../../shared/lib/formatDate";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { isExtraCostAction, type ExtraCostAction, type PendingExtraCostApproval } from "../extraCostApproval";
 
@@ -21,14 +21,6 @@ const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {
 };
 
 const ALERT = "flex items-start gap-2 rounded-xl bg-warning-soft px-3 py-2.5 text-[13px] text-warning-fg";
-
-/** Bugun bo'lsa faqat soat, aks holda kun va soat. */
-const formatRequestedAt = (iso: string) => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  const sameDay = date.toDateString() === new Date().toDateString();
-  return formatDate(iso, sameDay ? "HH:mm" : "DD.MM HH:mm");
-};
 
 /** Xarajat yozilganda: market tasdig'idan o'tishi haqida oldindan ogohlantirish. */
 export const ExtraCostNoticeAlert = memo(({ id }: { id?: string }) => {
@@ -73,7 +65,8 @@ export const ExtraCostSentAlert = memo(({ approval }: { approval: PendingExtraCo
   const { t, i18n } = useTranslation("orders");
   const params = {
     amount: formatMoneyLocalized(approval.amount, { language: i18n.language }),
-    time: formatRequestedAt(approval.requestedAt),
+    // "Bugun, 14:15" / "Kecha, 18:04" / "06.10.2026, 19:05" (dizayn v2 sana formati).
+    time: formatDateTimeLocalized(approval.requestedAt, { language: i18n.language }),
   };
   return (
     <div className={ALERT}>

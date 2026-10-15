@@ -71,7 +71,7 @@ test.describe("Integratsiya — Ish rejimi, desktop (1440 / 1920)", () => {
     await expect(page.getByText("Solishtiruv tugadi: tekshirildi 1 200, yangilandi 3, yiqildi 1")).toBeVisible();
     expect(reconcileCalls).toHaveLength(1);
     await expect(tile).not.toContainText("Hali bo'lmagan");
-    await expect(tile).toContainText(/15\.10\.2026 \d{2}:45/);
+    await expect(tile).toContainText(/(Bugun|Kecha|15\.10\.2026), \d{2}:45/);
     expect(leaked).toEqual([]);
   });
 

@@ -125,7 +125,7 @@ describe("ConnectionControl — «Hoziroq tenglashtirish» (fG48Xv5X)", () => {
       await screen.findByText("Solishtiruv tugadi: tekshirildi 1 200, yangilandi 3, yiqildi 1"),
     ).toBeInTheDocument();
     await waitFor(() => expect(tile).not.toHaveTextContent("Hali bo'lmagan"));
-    expect(tile).toHaveTextContent(/15\.10\.2026 \d{2}:20/);
+    expect(tile).toHaveTextContent(/(Bugun|Kecha|15\.10\.2026), \d{2}:20/);
   });
 
   it("409 — master o'chiq yoki boshqa solishtiruv ishlayapti", async () => {
