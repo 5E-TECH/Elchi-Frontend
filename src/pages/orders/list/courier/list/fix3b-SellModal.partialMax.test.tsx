@@ -38,7 +38,7 @@ const setup = async (amount: string, overrides: Partial<typeof order> = {}) => {
       onPartlySell={onPartlySell}
     />,
   );
-  await user.click(screen.getByRole("button", { name: /Qisman sotish/ }));
+  await user.click(screen.getByRole("switch", { name: /Qisman sotish/ }));
   await user.click(screen.getByRole("button", { name: "Krossovka sonini kamaytirish" }));
   await user.type(screen.getAllByPlaceholderText("0")[0], amount);
   return { user, onPartlySell };
@@ -49,7 +49,9 @@ describe("SellModal — qisman sotuv summasi chegarasi (fix3b M10)", () => {
     const { user, onPartlySell } = await setup("1500000");
 
     expect(screen.getByRole("alert")).toHaveTextContent(EXCEEDS);
-    const submit = screen.getByRole("button", { name: EXCEEDS });
+    // Sabab «Sotish» yonida ham yoziladi; tugma o'chiq.
+    expect(screen.getAllByText(EXCEEDS)).toHaveLength(2);
+    const submit = screen.getByRole("button", { name: /^Sotish$/ });
     expect(submit).toBeDisabled();
 
     await user.click(submit);

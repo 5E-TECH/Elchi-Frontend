@@ -79,10 +79,12 @@ import {
   parseOrderTotalPrice,
   type EditableOrderSnapshot,
 } from "./newOrderUpdateRules";
+import type { CancelOrderPayload } from "../../../entities/orders/cancelReason";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { getOrderItemName } from "../../../shared/lib/orderItemName";
 import { isCourierHeldOrder } from "../../../entities/orders/custody";
+import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../entities/orders/sellPayment";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -777,24 +779,34 @@ const NewOrderUpdate = () => {
   }, []);
 
   const handleSell = useCallback(
-    (id: string, payload: { comment: string; extraCost: number; proof?: File }) => {
+    (id: string, payload: SellOrderPayload) => {
       const actionOrder = order ?? { id };
       SellOrder.mutate(
         { orderId: id, data: payload },
         {
-          onSuccess: (response) =>
+          onSuccess: (response) => {
             resolveOrderActionResponse(response, {
               order: actionOrder,
               action: "sell",
               extraCost: payload.extraCost,
               onCompleted: closeSellModal,
               onApprovalRequested: () => setIsApprovalRequested(true),
-            }),
+            });
+            // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
+            const paymentStatus = getSellPaymentStatus(response);
+            if (paymentStatus) {
+              notificationApi.success({
+                message: t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }),
+                placement: "topRight",
+                duration: 4,
+              });
+            }
+          },
           onError: showActionError,
         },
       );
     },
-    [SellOrder, closeSellModal, order, showActionError],
+    [SellOrder, closeSellModal, notificationApi, order, showActionError, t],
   );
 
   const handlePartlySell = useCallback(
@@ -828,7 +840,7 @@ const NewOrderUpdate = () => {
   );
 
   const handleCancelOrder = useCallback(
-    (id: string, payload: { comment: string; extraCost: number; paidAmount: number; proof?: File }) => {
+    (id: string, payload: CancelOrderPayload) => {
       const actionOrder = order ?? { id };
       CancelOrder.mutate(
         { orderId: id, data: payload },
@@ -895,6 +907,9 @@ const NewOrderUpdate = () => {
       customer: { name: order.customer.name, phone_number: order.customer.phone_number },
       district: { name: districtName },
       region: { name: regionName },
+      // «Marketga to'langan summa» chegarasi va hamkor buyurtmasini aniqlash (uguUEhin).
+      to_be_paid: order.to_be_paid,
+      external_id: (orderFlags.external_id ?? orderFlags.externalId ?? null) as string | number | null,
       sell_requires_media: Boolean(
         orderFlags.sell_requires_media ??
         orderFlags.sellRequiresMedia ??
