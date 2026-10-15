@@ -1,0 +1,373 @@
+{
+  "common": {
+    "back": "Back",
+    "loading": "Loading…",
+    "close": "Close",
+    "more": "More",
+    "empty": "No data"
+  },
+  "card": {
+    "groups": {
+      "surfaces": {
+        "title": "Card",
+        "meta": "title, description, actions and footer · plain card without a title"
+      },
+      "inset": {
+        "title": "Inset card",
+        "meta": "inside a card — grey surface, no border · 2 levels at most"
+      },
+      "chart": {
+        "title": "Title without a divider",
+        "meta": "chart card: title and content share one padding"
+      },
+      "stats": {
+        "title": "Stat cards",
+        "meta": "icon, change (good / bad), loading, clickable card"
+      }
+    },
+    "demo": {
+      "address": {
+        "title": "Address",
+        "edit": "Edit",
+        "editLabel": "Edit address",
+        "region": "Region",
+        "regionValue": "Tashkent city",
+        "district": "District",
+        "districtValue": "Chilonzor district",
+        "street": "Address",
+        "streetValue": "14 Lutfiy St., apt 32"
+      },
+      "payment": {
+        "title": "Payment",
+        "total": "Total",
+        "due": "Amount due",
+        "paid": "Paid"
+      },
+      "plain": "Not enough data yet — ranking results may change",
+      "regions": {
+        "title": "By region",
+        "description": "Orders and sales by region · today",
+        "topOrders": "Most orders",
+        "topOrdersValue": "Tashkent city",
+        "topOrdersMeta": "{{orders}} pcs · {{percent}} of total",
+        "lowSales": "Lowest sales (10+ pcs)",
+        "lowSalesValue": "Andijan",
+        "lowSalesMeta": "{{percent}} · {{sold}} / {{total}} pcs",
+        "couriers": "Active couriers",
+        "couriersValue": "{{couriers}} pcs",
+        "couriersMeta": "in {{regions}} regions",
+        "all": "All {{regions}} regions"
+      },
+      "status": {
+        "title": "Order statuses",
+        "description": "Accepted today",
+        "list": "List",
+        "total": "Total accepted"
+      },
+      "stats": {
+        "revenue": "Total revenue",
+        "lostRevenue": "Lost revenue",
+        "profit": "Net profit",
+        "profitHint": "Market fee − courier fee",
+        "cancelled": "Cancelled",
+        "vsYesterday": "vs yesterday",
+        "pcs": "pcs"
+      }
+    }
+  },
+  "format": {
+    "tableLabel": "Format examples",
+    "columns": {
+      "type": "Type",
+      "rule": "Rule",
+      "uz": "Uzbek",
+      "ru": "Russian",
+      "en": "English"
+    },
+    "rows": {
+      "money": {
+        "title": "Money",
+        "rule": "Thousands — space (comma in English); unit: {{units}}"
+      },
+      "income": {
+        "title": "Income",
+        "rule": "Plus sign, green"
+      },
+      "debt": {
+        "title": "Debt, expense",
+        "rule": "True minus (−), red"
+      },
+      "compactThousand": {
+        "title": "Compact · thousands",
+        "rule": "Stat cards and charts only"
+      },
+      "compactMillion": {
+        "title": "Compact · millions",
+        "rule": "One decimal place"
+      },
+      "compactBillion": {
+        "title": "Compact · billions",
+        "rule": "One decimal place"
+      },
+      "percent": {
+        "title": "Percent",
+        "rule": "One decimal place"
+      },
+      "phone": {
+        "title": "Phone",
+        "rule": "+998 and 2-3-2-2 groups"
+      },
+      "date": {
+        "title": "Date",
+        "rule": "DD.MM.YYYY — in every language"
+      },
+      "dateTime": {
+        "title": "Date and time",
+        "rule": "24-hour time, after a comma"
+      },
+      "relative": {
+        "title": "Relative date",
+        "rule": "In tables and lists: today and yesterday; older — {{example}}"
+      }
+    }
+  },
+  "button": {
+    "groups": {
+      "variants": "Variants and sizes",
+      "states": "States",
+      "icons": "Icon and text",
+      "sizes": "Sizes",
+      "block": "Phone: full width",
+      "iconButtons": "Icon button",
+      "asLink": "Link styled as a button"
+    },
+    "variants": {
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "ghost": "Ghost",
+      "link": "Link",
+      "success": "Success",
+      "danger": "Danger",
+      "dangerSoft": "Danger (soft)"
+    },
+    "iconVariants": {
+      "ghost": "Icon button",
+      "secondary": "Icon button, bordered",
+      "primary": "Primary",
+      "danger": "Danger"
+    },
+    "sizes": {
+      "sm": "Small",
+      "md": "Medium",
+      "lg": "Large",
+      "compact": "Compact"
+    },
+    "states": {
+      "default": "Default",
+      "loading": "Loading",
+      "disabled": "Disabled"
+    },
+    "notes": {
+      "primary": "Only one per screen: on the right of the page header or at the end of a dialog.",
+      "danger": "Solid red only inside a confirmation dialog. In tables, menus and the bottom bar use soft red.",
+      "states": "A loading button keeps its colour, the spinner replaces the icon and it cannot be pressed again. A disabled button is 45% opaque; say next to it why it is disabled.",
+      "focus": "Focus appears only when arriving with the keyboard (Tab): a 2 px blue ring with a 2 px gap.",
+      "loadingNoText": "Without an icon or loading text the spinner sits in the centre, so the button width does not change.",
+      "iconButton": "Always has a name (aria-label) and a tooltip on hover. 40 px on desktop, 44 px on phone.",
+      "block": "The only action in the bottom bar is full width; with two actions the primary one is on the right and wider.",
+      "asLink": "If it leads to another page use <a>; if it acts in place use a button.",
+      "compact": "Compact: 12 px side padding, 16 px icon, 6 px gap. The pair of page header actions fits on one line on a phone."
+    },
+    "samples": {
+      "save": "Save",
+      "saving": "Saving…",
+      "exportExcel": "Export to Excel",
+      "exporting": "Loading…",
+      "showMore": "Show more",
+      "loadingMore": "Loading…",
+      "resend": "Resend",
+      "resending": "Sending…",
+      "sell": "Sell",
+      "selling": "Selling…",
+      "delete": "Delete",
+      "deleting": "Deleting…",
+      "create": "Create",
+      "creating": "Creating…",
+      "next": "Next",
+      "print": "Print",
+      "preparing": "Preparing…",
+      "accept": "Accept",
+      "accepting": "Accepting…",
+      "cancel": "Cancel",
+      "finishDay": "Finish the day",
+      "back": "Back",
+      "refresh": "Refresh",
+      "printReceipt": "Print receipt",
+      "scan": "Scan",
+      "apply": "Apply",
+      "createOrder": "Create order",
+      "refreshing": "Refreshing",
+      "preparingReceipt": "Preparing receipt"
+    }
+  },
+  "badge": {
+    "tones": {
+      "neutral": "Neutral",
+      "info": "Info",
+      "success": "Success",
+      "warning": "Warning",
+      "danger": "Error"
+    },
+    "variants": {
+      "soft": "Soft",
+      "outline": "Outline",
+      "solid": "Solid"
+    },
+    "sizes": {
+      "md": "24 px",
+      "sm": "20 px"
+    },
+    "groups": {
+      "orderStatus": {
+        "title": "Order status",
+        "meta": "11 · with dot"
+      },
+      "variants": {
+        "title": "Tones, variants and sizes",
+        "meta": "5 tones × 3 variants × 2 sizes"
+      },
+      "deliveryType": {
+        "title": "Delivery type",
+        "meta": "no colour · no dot"
+      },
+      "userStatus": {
+        "title": "User status",
+        "meta": "user, branch, partner"
+      },
+      "payment": {
+        "title": "Payment operation",
+        "meta": "colourless badge · colour only on the amount"
+      },
+      "normalize": {
+        "title": "API values",
+        "meta": "different spellings map to one status; unknown status is neutral"
+      }
+    },
+    "samples": {
+      "address": "To home",
+      "center": "To center",
+      "active": "Active",
+      "inactive": "Inactive",
+      "income": "Income",
+      "expense": "Expense"
+    },
+    "solidNote": "Solid fill: dark background with white text in the light theme, light background with dark text in the dark theme; contrast is at least 4.5:1 in both."
+  },
+  "pageHeader": {
+    "samples": {
+      "simple": "Title only",
+      "description": "Description and actions (one primary action)",
+      "back": "With a back link",
+      "meta": "Status, copy and actions",
+      "long": "Long title — wraps, never truncated"
+    },
+    "demo": {
+      "dashboardTitle": "Home",
+      "ordersTitle": "Orders",
+      "cancelledTitle": "Cancelled",
+      "ordersTotal": "{{total}} orders in total",
+      "exportExcel": "Export to Excel",
+      "createOrder": "Create order",
+      "orderNumber": "№{{number}}",
+      "copyNumber": "Copy order number",
+      "createdToday": "Created: Today, 14:15 · Baraka Shop",
+      "createdYesterday": "Created: Yesterday, 11:40 · Nur Elektronika",
+      "cancel": "Cancel",
+      "sell": "Sell",
+      "longTitle": "Weekly report on cancelled and returned orders at the Chilonzor drop-off point",
+      "longDescription": "01.10 – 08.10.2026 · 94 orders"
+    }
+  },
+  "tabs": {
+    "scrollPrev": "Previous tabs",
+    "scrollNext": "Next tabs",
+    "demo": {
+      "statusesTitle": "By status · with counts",
+      "statusesNote": "When they don't fit — they scroll and fade at the edge",
+      "statusesLabel": "By status",
+      "all": "All",
+      "new": "New",
+      "received": "Received",
+      "onTheRoad": "On the road",
+      "waiting": "Waiting",
+      "sold": "Sold",
+      "paid": "Paid",
+      "cancelled": "Cancelled",
+      "paidHint": "Paid and partly paid orders",
+      "cancelledHint": "Cancelled and cancelled — sent orders",
+      "panel": "Orders: {{total}}",
+      "iconsTitle": "With icons · disabled tab",
+      "connectionsLabel": "Connection types",
+      "partners": "Partners",
+      "external": "External systems",
+      "marketplace": "Marketplace",
+      "linksTitle": "Link tabs · each tab is a separate page",
+      "balanceLabel": "Balance sections",
+      "overview": "Overview",
+      "history": "History",
+      "analysis": "Analysis",
+      "fullWidthTitle": "Full width",
+      "courierLabel": "Order type",
+      "pending": "Pending",
+      "segmentTitle": "Segment · applies immediately",
+      "period": "Period",
+      "today": "Today",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "allTime": "All",
+      "sizeSm": "Small · 32 px",
+      "view": "View",
+      "viewLabel": "Financial analysis view",
+      "chart": "Chart",
+      "table": "Table",
+      "dayClose": "Close the day",
+      "dayCloseLabel": "Result for №10238",
+      "closeSold": "Sold",
+      "closeCancel": "Cancel",
+      "closeTomorrow": "Tomorrow"
+    }
+  },
+  "kit": {
+    "title": "Component kit",
+    "description": "Design v2 primitives and formatters — light and dark themes side by side.",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "placeholder": "Sample not added yet.",
+    "sections": {
+      "buttons": {
+        "title": "Buttons",
+        "description": "Variants, sizes, loading state and icon button."
+      },
+      "badges": {
+        "title": "Badges and statuses",
+        "description": "Tones and order statuses."
+      },
+      "cards": {
+        "title": "Cards",
+        "description": "Card and stat card."
+      },
+      "pageHeader": {
+        "title": "Page header",
+        "description": "Title, description, back link and actions."
+      },
+      "tabs": {
+        "title": "Tabs and segments",
+        "description": "Tabs and segmented control."
+      },
+      "format": {
+        "title": "Formatting",
+        "description": "Money, phone number and date."
+      }
+    }
+  }
+}

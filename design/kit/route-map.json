@@ -22,6 +22,7 @@
     "canSendNotifications": { "source": "access.ts → canSendNotifications", "roles": { "superadmin": "", "admin": "" } },
     "canViewBranches": { "source": "access.ts → canViewBranches", "roles": { "superadmin": "" } },
     "canViewLogs": { "source": "access.ts → canViewLogs", "roles": { "superadmin": "" } },
+    "canViewUiKit": { "source": "access.ts → canViewUiKit", "roles": { "superadmin": "" } },
     "canViewDispatch": { "source": "access.ts → canViewDispatchPage", "roles": { "superadmin": "", "admin": "", "manager": "REGIONAL · HYBRID", "registrator": "HQ · REGIONAL · HYBRID" } },
     "canViewCourierBulk": { "source": "access.ts → canViewCourierBulkPage", "roles": { "manager": "REGIONAL · HYBRID", "courier": "" } },
     "isPaymentsManager": { "source": "access.ts → canViewPaymentsPage", "roles": { "superadmin": "", "admin": "", "manager": "HQ · REGIONAL · HYBRID" } },
@@ -1124,6 +1125,25 @@
         "superadmin": ["ops-finance-operators", "ops-integrations", "ops-investors", "ops-logistics", "ops-branches", "ops-identity", "ops-system", "ops-auth-diagnostics"]
       },
       "note": "Har tab quyidagi eski to'g'ridan-to'g'ri sahifani ichida ko'rsatadi (/finance-operators … /logs)."
+    },
+    {
+      "path": "/ops/ui-kit",
+      "section": "system",
+      "title": "Komponentlar to'plami — dizayn v2 primitivlari namunasi (kunduzgi + tungi yonma-yon; ?section=<id>, ?theme-pair=0)",
+      "components": [
+        "src/pages/ui-kit/index.tsx",
+        "src/pages/ui-kit/KitSection.tsx",
+        "src/pages/ui-kit/ThemePair.tsx",
+        "src/pages/ui-kit/sections/ButtonsSection.tsx",
+        "src/pages/ui-kit/sections/BadgesSection.tsx",
+        "src/pages/ui-kit/sections/CardsSection.tsx",
+        "src/pages/ui-kit/sections/PageHeaderSection.tsx",
+        "src/pages/ui-kit/sections/TabsSection.tsx",
+        "src/pages/ui-kit/sections/FormatSection.tsx"
+      ],
+      "views": {},
+      "roleNotes": { "superadmin": "Maket yo'q — ichki komponentlar namunasi; eng yaqini: Main" },
+      "note": "Ichki sahifa, menyuda yo'q (URL orqali). Skrinshot: npm run app:shot -- /ops/ui-kit."
     },
     {
       "path": "/finance-operators",

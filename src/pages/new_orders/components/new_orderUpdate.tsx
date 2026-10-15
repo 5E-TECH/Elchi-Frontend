@@ -959,7 +959,7 @@ const NewOrderUpdate = () => {
                       <button
                         type="button"
                         onClick={() => setIsSellModalOpen(true)}
-                        className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                        className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-on-solid transition-opacity hover:opacity-90"
                       >
                         {t("sell", { ns: "orders" })}
                       </button>
@@ -967,7 +967,7 @@ const NewOrderUpdate = () => {
                     <button
                       type="button"
                       onClick={() => setIsCancelModalOpen(true)}
-                      className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                      className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-on-solid transition-opacity hover:opacity-90"
                     >
                       {t("cancelOrderAction", { ns: "orders" })}
                     </button>

@@ -1,7 +1,7 @@
 # Elchi CRM — Dizayn tizimi v2
 
-> Holat: **0-bosqich** (tokenlar, mavzu, shrift, valyuta). Komponentlar (1-bosqich), shell (2), forma/dialog (3),
-> sahifalar migratsiyasi (4) va qo'riqchilar (5) keyingi PR'larda. Trello: «Dizayn v2» kartalari.
+> Holat: **0-bosqich** (tokenlar, mavzu, shrift, valyuta) va **1-bosqich** (primitivlar, §11) tayyor. Shell (2),
+> forma/dialog/holatlar (3), sahifalar migratsiyasi (4) va qo'riqchilar (5) keyingi PR'larda. Trello: «Dizayn v2» kartalari.
 
 Bu hujjat — yangi UI yozayotgan har bir frontchi va AI agent uchun **majburiy** qoidalar. Qisqa versiyasi
 `AGENTS.md` da. Barcha ekranlarning tasdiqlangan chizmalari (desktop / planshet / telefon × kunduzgi / tungi)
@@ -56,16 +56,18 @@ Tailwind'da token nomi bilan ishlatiladi: `bg-surface`, `text-text-muted`, `bord
 | `action-soft` | `#e8edfd` | `rgba(142,166,255,.14)` | tanlangan qator, yumshoq tugma |
 | `on-solid` | `#ffffff` | `#0d1120` | `action` fon ustidagi matn (tungida to'q!) |
 | `focus` | `rgba(43,80,216,.28)` | `rgba(142,166,255,.38)` | fokus soyasi |
-| `success` / `-fg` / `-soft` | `#12704f` / `#12704f` / `#e3f4ec` | `#0d8f5b` / `#4fc58e` / 14% | sotilgan, to'langan, faol |
-| `warning` / `-fg` / `-soft` | `#95560a` / `#95560a` / `#fcf0dc` | `#c97900` / `#f1b24e` / 14% | jarayonda, kutilmoqda |
-| `danger` / `-fg` / `-soft` | `#be2a3b` / `#be2a3b` / `#fde8ea` | `#d82f48` / `#ff7182` / 14% | bekor, xato, qarz |
-| `info` / `-fg` / `-soft` | `#1a62a8` / `#1a62a8` / `#e2effa` | `#2563d8` / `#6bb6f3` / 14% | yangi, yaratilgan, qabul qilindi |
+| `success` / `-fg` / `-soft` | `#12704f` / `#12704f` / `#e3f4ec` | `#4fc58e` / `#4fc58e` / 14% | sotilgan, to'langan, faol |
+| `warning` / `-fg` / `-soft` | `#95560a` / `#95560a` / `#fcf0dc` | `#f1b24e` / `#f1b24e` / 14% | jarayonda, kutilmoqda |
+| `danger` / `-fg` / `-soft` | `#be2a3b` / `#be2a3b` / `#fde8ea` | `#ff7182` / `#ff7182` / 14% | bekor, xato, qarz |
+| `info` / `-fg` / `-soft` | `#1a62a8` / `#1a62a8` / `#e2effa` | `#6bb6f3` / `#6bb6f3` / 14% | yangi, yaratilgan, qabul qilindi |
 | `overlay` | `rgba(16,23,51,.45)` | `rgba(3,5,12,.62)` | modal orqa foni |
 | `chart-1…8`, `chart-muted` | 3-bo'limga qarang | | grafiklar |
 
 **Qoidalar**
 - Holat rangi har doim **matn yoki ikonka bilan** birga (faqat rang bilan ma'no berilmaydi).
-- Holat **matni** uchun `*-fg`, yumshoq fon uchun `*-soft`, to'liq fon uchun asosiy token (`success`, `danger` …).
+- Holat **matni** uchun `*-fg`, yumshoq fon uchun `*-soft`, to'liq fon uchun asosiy token (`success`, `danger` …)
+  + `on-solid` matn. Tungi mavzuda asosiy holat rangi maketdagidek ochiq (`*-fg` bilan bir xil) va matn to'q —
+  ikkala mavzuda AA (1-bosqichda maketga moslashtirildi; ilgari tungi qiymat to'qroq edi).
 - Tungi mavzuda `action` fon ustidagi matn — `on-solid` (to'q). Oq matn faqat eski `main` ustida (alias, quyida).
 - Navy (`nav`) fon ustidagi matn uchun hali token yo'q (`on-solid` tungida to'q bo'lib qoladi). 2-bosqich (shell)
   `on-nav` tokenini ega roziligi bilan qo'shadi; ungacha navy fonli yangi joy yaratilmaydi.
@@ -158,31 +160,74 @@ yashirgan bo'lsa (`courier-orders-all`), uni qo'shish — ega qarori.
 
 ## 7. Format qoidalari
 
-Pul va sonlar **faqat** `src/shared/lib/formatMoney.ts` orqali:
+Manba — maket `Main` → «Format standarti» (`design/fragments/tizim--main.html`); ilovada `/ops/ui-kit?section=format`.
+Pul, son va foiz **faqat** `src/shared/lib/formatMoney.ts`, telefon — `src/shared/lib/formatPhone.ts`, sana —
+`src/shared/lib/formatDateTime.ts` orqali. Har formatlovchi `{ language: "uz" | "ru" | "en" }` oladi; berilmasa —
+i18n joriy tili (`resolveMoneyLanguage`, `ru-RU` → `ru`, noma'lum → `uz`).
 
-```ts
-formatMoneyLocalized(185000)            // uz "185 000 so'm" · ru "185 000 сум" · en "185,000 UZS"
-formatCompactMoneyLocalized(48_600_000) // uz "48,6 mln so'm" · ru "48,6 млн сум" · en "48.6M UZS"
-formatNumberLocalized(1545000)          // uz "1 545 000" · en "1,545,000"
-```
+| Formatlovchi | O'zbekcha | Ruscha | Inglizcha |
+|---|---|---|---|
+| `formatMoneyLocalized(185000)` | `185 000 so'm` | `185 000 сум` | `185,000 UZS` |
+| `formatMoneyLocalized(-240000)` (qarz) | `−240 000 so'm` | `−240 000 сум` | `−240,000 UZS` |
+| `formatSignedMoneyLocalized(185000)` (kirim) | `+185 000 so'm` | `+185 000 сум` | `+185,000 UZS` |
+| `formatSignedMoneyLocalized(-240000)` (chiqim) | `−240 000 so'm` | `−240 000 сум` | `−240,000 UZS` |
+| `formatCompactMoneyLocalized(48_600_000)` | `48,6 mln so'm` | `48,6 млн сум` | `48.6M UZS` |
+| `formatCompactMoneyLocalized(185_000)` | `185 ming so'm` | `185 тыс. сум` | `185K UZS` |
+| `formatCompactMoneyLocalized(1_200_000_000)` | `1,2 mlrd so'm` | `1,2 млрд сум` | `1.2B UZS` |
+| `formatCompactAxisMoney(1_050_000)` (grafik o'qi) | `1,05 mln` | `1,05 млн` | `1.05M` |
+| `formatNumberLocalized(1545000)` | `1 545 000` | `1 545 000` | `1,545,000` |
+| `formatPercentLocalized(8.2)` | `8,2%` | `8,2 %` | `8.2%` |
+| `formatPercentLocalized(-6.2)` | `−6,2%` | `−6,2 %` | `−6.2%` |
+| `formatPhone("998901234567")` | `+998 90 123 45 67` | `+998 90 123 45 67` | `+998 90 123 45 67` |
+| `toTelHref("90 123 45 67")` | `tel:+998901234567` | `tel:+998901234567` | `tel:+998901234567` |
+| `formatDateLocalized(value)` | `08.10.2026` | `08.10.2026` | `08.10.2026` |
+| `formatTimeLocalized(value)` | `19:05` | `19:05` | `19:05` |
+| `formatDateTimeLocalized(value)` — eski | `06.10.2026, 19:05` | `06.10.2026, 19:05` | `06.10.2026, 19:05` |
+| `formatDateTimeLocalized(value)` — bugun | `Bugun, 14:15` | `Сегодня, 14:15` | `Today, 14:15` |
+| `formatDateTimeLocalized(value)` — kecha | `Kecha, 18:04` | `Вчера, 18:04` | `Yesterday, 18:04` |
 
-Grafik o'qi uchun — `formatCompactAxisMoney` (`shared/config/designSystem.ts`, 2 xonagacha: `1,05 mln`, `3 mln`);
-KPI kartalar uchun — `formatCompactMoney` (1 xona: `1,1 mln`).
+**Pul.** Butun so'mga yaxlitlanadi; minglik ajratkichi uz/ru — bo'sh joy, en — vergul; kasr ajratkichi uz/ru — vergul,
+en — nuqta. `withCurrency: false` — faqat raqam (valyuta ustun sarlavhasida bo'lsa). Noto'g'ri qiymat (`null`, `"abc"`,
+`NaN`) — `0`; satr son qabul qilinadi (xom SQL `numeric` satr qaytaradi).
 
-Foiz — `formatPercentLocalized(67.43)` → uz/ru `67,4%`, en `67.4%` (1 xona sukut, ortiqcha nolsiz: `50%`).
-`.toFixed(1) + "%"` yozilmaydi.
+**Manfiy son — haqiqiy minus `−` (U+2212)**, chiziqcha `-` emas: pul, son, ixcham, foiz — hammasi. Yaxlitlab nol
+bo'lsa — minussiz `0`. Qo'lda `"-" + formatMoney(...)` yozilmaydi.
+
+**Ishorali pul** (kirim/chiqim ro'yxati, balans harakati, «Balansga ta'siri») — `formatSignedMoneyLocalized`:
+musbat `+`, manfiy `−`, nol ishorasiz (`0 so'm`). Rangni chaqiruvchi beradi: kirim `text-success-fg`, qarz/chiqim
+`text-danger-fg`; ishora matnda turadi — rang yolg'iz ma'no bermaydi.
+
+**Ixcham** — faqat ko'rsatkich kartasi (KPI) va grafik: 1000 dan kichik summa to'liq, so'ng ming / mln / mlrd
+(ru `тыс.` / `млн` / `млрд`, en `K` / `M` / `B` raqamga yopishib), bitta kasr xonasi, ortiqcha `,0` yo'q (`5 mln`).
+Pog'ona chegarasi yaxlitlangandan keyin tanlanadi (`999 950` → `1 mln`, `1000 ming` emas). Grafik o'qi —
+`formatCompactAxisMoney` (`shared/config/designSystem.ts`, 2 xonagacha: `1,05 mln`, `3 mln`); KPI karta —
+`formatCompactMoney` (1 xona: `1,1 mln`). Ikkalasi joriy tilni oladi va valyutasiz.
+
+**Foiz** — 1 xona sukut, ortiqcha nolsiz (`50%`); rus tilida son va `%` orasida bo'linmas bo'sh joy (U+00A0,
+maketdagi `8,2 %`), uz/en — bo'sh joysiz. `.toFixed(1) + "%"` yozilmaydi.
 
 `shared/config/designSystem.ts` dan v2 da faqat `formatNumber`, `formatMoney`, `formatCompactMoney`,
 `formatCompactAxisMoney` (formatMoney.ts ustidagi o'ramlar) va `ratio` ishlatiladi. `TYPO`, `TEXT`, `TONE`,
 `toneAccent`, `toneSoftBg`, `formatPercent` — v1 (`@deprecated`, qo'riqchining `v1-helper` qoidasi sanaydi).
 
-`Intl.NumberFormat("uz-UZ")` ishlatilmaydi — Chrome'da `uz` ICU ma'lumoti yo'q va u "1,545,000" beradi
-(testda esa to'g'ri chiqib, xatoni yashiradi). Valyuta yorlig'i locale'da ham bir xil: `orders.currency`,
-`payments.currency` … → uz `so'm` / ru `сум` / en `UZS`.
+`Intl.NumberFormat("uz-UZ")`, `Intl.DateTimeFormat`, `toLocaleString` va yangi kodda `dayjs` ishlatilmaydi —
+Chrome'da `uz` ICU ma'lumoti yo'q va u "1,545,000" beradi (testda esa to'g'ri chiqib, xatoni yashiradi).
+Valyuta yorlig'i locale'da ham bir xil: `orders.currency`, `payments.currency` … → uz `so'm` / ru `сум` / en `UZS`
+(`CURRENCY_LABEL`).
 
-- Telefon: `+998 90 123 45 67` · Buyurtma: `№10241` · Soni: `12 ta`
-- Sana: bugun `Bugun, 14:15`, kecha `Kecha, 18:04`, eskiroq `06.10.2026, 19:05`
-- Qarz/manfiy: `−240 000 so'm` (`danger-fg`), kirim `+` (`success-fg`)
+**Telefon** — hamma tilda `+998 90 123 45 67` (2-3-2-2). Qabul qilinadi: 9 xona (`901234567`), 12 xona `998` bilan
+(`+` bilan yoki siz), `00998…`; bo'sh joy, chiziqcha, qavs, nuqta bilan ham. Xorijiy yoki chala raqam — o'zgarishsiz
+(xato ko'rinib tursin), bo'sh — `—`. `toTelHref` — `<a href>` uchun; telefonga o'xshamasa yoki `+998` bilan
+boshlanib xonasi 12 ta bo'lmasa — `undefined` (havola chizilmaydi). Maydon niqobi (yozish paytida) — `phone.ts`.
+
+**Sana** — hamma tilda `KK.OO.YYYY`, vaqt 24 soatlik, sana va vaqt vergul bilan. Jadval va ro'yxatda
+`formatDateTimeLocalized`: bugun / kecha — so'z bilan (kalendar kuni bo'yicha, 24 soatlik oyna emas), eskiroq yoki
+kelajak — to'liq sana; `{ relative: false }` — har doim to'liq. Qiymat — `Date`, ISO satr (`Z` / `+05:00` hisobga
+olinadi, mintaqasiz — mahalliy vaqt), millisekund yoki ilovaning o'z ko'rinishi (`06.10.2026, 19:05`); bo'sh yoki
+noto'g'ri (`2026-02-30`, `10/06/2026`) — `—`. Brauzerning mahalliy vaqti (timezone plagini yo'q).
+
+- Buyurtma: `№10241` (bo'sh joysiz) · Soni: `1 248 ta buyurtma` (ru ko'plik shakli: `1 248 заказов`) — i18n kaliti +
+  `formatNumberLocalized`.
 
 ## 8. Matn va holatlar
 
@@ -206,10 +251,28 @@ sinonimlarning o'rnini bosuvchilari — `design/icon-registry.json` (132 ikonka,
 
 ## 11. Bosqichlar va PR qoidasi
 
-0 tokenlar/mavzu/shrift/valyuta + `design/` manbasi + design guard (ratchet) → 1 primitivlar (`Button`, `IconButton`, `Badge/StatusBadge`, `Card/StatCard`,
-`PageHeader`, `Tabs/SegmentedControl`, formatlovchilar) → 2 shell → 3 forma/dialog/holatlar → 4 sahifalar
-(har sahifa alohida PR) → 5 qo'riqchilar (ESLint qoidasi, vizual snapshotlar). Palitra testi va ratchet guard
-0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa CI qizil bo'ladi.
+0 tokenlar/mavzu/shrift/valyuta + `design/` manbasi + design guard (ratchet) → 1 primitivlar → 2 shell →
+3 forma/dialog/holatlar (`Dialog`/`ConfirmDialog`, `Field`/`TextInput`/`Select`/`DateRange`, `QueryBoundary`) →
+4 sahifalar (har sahifa alohida PR) → 5 qo'riqchilar (ESLint qoidasi, vizual snapshotlar). Palitra testi va ratchet
+guard 0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa CI qizil bo'ladi.
+
+**1-bosqich — tayyor.** Hammasi maketga (`design/kit/helmet.html`, `tizim-*` taxtalari) o'lchab moslangan, ikkala
+mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivga mos — `design/CODE-MAP.md`.
+
+- **Primitivlar** — `src/shared/ui/primitives` (barrel, faqat nomli eksport): `Button` (+ `buttonClasses` havola
+  uchun), `IconButton`, `Spinner`, `Badge`, `StatusBadge`, `Card`, `StatCard`, `PageHeader`, `Tabs` (+ `getTabId` /
+  `getPanelId`), `SegmentedControl`; ton klasslari `tone.ts` (`TONE_SOFT`, `TONE_FG`, `TONE_SOLID`, `TONE_RING`, §8).
+- **Buyurtma holati** — `OrderStatusBadge` va `ORDER_STATUS_REGISTRY` (`src/entities/order`): backend'ning har
+  holati uchun ton, ikonka va yorliq (`status` nomlar fazosi, uz/ru/en); noma'lum holat yiqitmaydi.
+- **Formatlovchilar** — `formatDateTimeLocalized` / `formatDateLocalized` / `formatTimeLocalized`
+  (`src/shared/lib/formatDateTime.ts`), `formatPhone` / `toTelHref` (`formatPhone.ts`), `formatSignedMoneyLocalized`
+  (`formatMoney.ts`), klass birlashtirish `cx` (`cx.ts`).
+- **Namuna sahifasi** — `/ops/ui-kit` (faqat superadmin, menyuda yo'q): har primitiv kunduzgi va tungi mavzuda
+  yonma-yon; `?section=<id>` bitta bo'lim. Ilovani akkauntsiz ko'rish: `npm run app:shot -- <route>`
+  (`design/README.md`).
+- **v1 o'rnini bosuvchilar** (yangi kodda v1 importi qo'riqchining `v1-helper` qoidasida): `shared/components/button`
+  → `Button`, `shared/ui/StatusBadge` va `pages/orders/list/OrderStatusBadge` → `StatusBadge` / `OrderStatusBadge`,
+  `shared/config/statusColorMap` → `statusRegistry` + `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized`.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:
@@ -234,6 +297,10 @@ kirmaydi). Izohlar hisobga olinmaydi.
 | `money` | `Intl.NumberFormat`, sonning `.toLocaleString()`, qo'lda `so'm` / `сум` / `UZS` (`formatMoney.ts` dan tashqari) | §7 formatlovchilari |
 | `icons` | `@ant-design/icons` va boshqa ikonka kutubxonalari | `lucide-react` (§10) |
 | `tiny-text` | 12px dan kichik: `text-[10px]`, `text-[11px]`, `fontSize: 10` … | `text-xs` |
+| `v1-class` | `index.css` dagi eski `el-card`, `el-card-soft`, `el-glass-control`, `el-segmented*`, `el-surface-page`, `el-muted-text`, `el-soft-text` | `design/CODE-MAP.md` retsepti / primitiv |
+| `weight` | `font-black`, `font-extrabold`, `fontWeight: 800/900` | `font-bold` |
+| `gradient` | `bg-linear-*`, `bg-gradient-*`, `bg-radial*`, `bg-conic*`, `linear-gradient(…)` | tekis token fon |
+| `v1-helper` | `TYPO.*`, `TEXT.*`, `TONE[…]`, `toneAccent()`, `toneSoftBg()`, `formatPercent()`; `headerName` / `MetricCard` importi; 1-bosqich almashtirgan v1 modullari importi — yo'l fayl joyiga nisbatan aniq hal qilinadi (`./button`, `../../shared/ui/StatusBadge`, `@/shared/lib/formatDate` …) | `PageHeader`, `StatCard`, `Button`, `StatusBadge` / `OrderStatusBadge`, `statusRegistry` + `tone.ts`, `formatDateTimeLocalized`, `formatPercentLocalized` |
 
 - **Ratchet.** Har fayl × qoida soni `design/guard-baseline.json` da turadi. Son faqat kamayadi, yangi faylda 0.
   Oshsa, test yiqiladi va qator, ustun hamda v2 o'rnini bosuvchisini ko'rsatadi. Eski kodni darhol qayta yozish

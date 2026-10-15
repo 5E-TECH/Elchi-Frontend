@@ -145,7 +145,8 @@ export const submitManualExpense = async (page: Page, comment: string) => {
   await dialog.getByRole("button", { name: "Qo'lda chiqim" }).click();
   await dialog.getByLabel("Summa").fill("1000");
   await dialog.getByLabel("Izoh").fill(comment);
-  // Dizayn v2: uz valyutasi "so'm" (payments.currency).
-  await expect(dialog.getByText(/^Balansga ta'siri: -1\D?000 so'm$/)).toBeVisible();
+  // Dizayn v2: uz valyutasi "so'm" (payments.currency); minus — haqiqiy `−` (U+2212,
+  // `formatSignedMoneyLocalized`) yoki eski `-` (modal hali ko'chirilmagan).
+  await expect(dialog.getByText(/^Balansga ta'siri: [-\u2212]1\D?000 so'm$/)).toBeVisible();
   return dialog;
 };

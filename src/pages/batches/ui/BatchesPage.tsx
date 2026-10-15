@@ -35,7 +35,7 @@ const batchTabs: BatchTabItem[] = [
     icon: <Package size={18} />,
     status: "new",
     direction: "forward",
-    activeClassName: "border-success bg-success text-primary shadow-lg shadow-success/25",
+    activeClassName: "border-success bg-success text-on-solid shadow-lg shadow-success/25",
     inactiveIconClassName: "bg-success/10 text-success",
   },
   {

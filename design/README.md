@@ -63,6 +63,29 @@ npm run design:build                        # hammasini yig'ish → design/.buil
 - `design:shot` avval yig'ilgan `design/.build/<ekran>.dc.html` ni qayta ishlatadi. `design/` yangilangandan keyin
   `npm run design:build` ni qayta yuring (yoki `design/.build/` ni o'chiring), aks holda eski maketni ko'rasiz.
 
+### Ilovani ko'rish (app:shot)
+
+Maket bilan solishtirish uchun **haqiqiy ilova** sahifasining skrinshoti. Akkaunt va backend kerak emas: Vite shu
+buyruq ichida ishga tushadi, API so'rovlari brauzerda ushlanib bo'sh JSON bilan javob beriladi, sessiya soxta token
+bilan ochiladi (rol `--role`, sukut `superadmin`).
+
+```bash
+npm run app:shot -- /ops/ui-kit                                  # 6 ta PNG → design/shots/app/
+npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone --theme dark
+npm run app:shot -- /orders --role manager --lang ru --split 1200
+```
+
+- Natija: `design/shots/app/<route>--<desktop|tablet|phone>-<light|dark>.png` (rol yoki til sukutdan farq qilsa,
+  nomga qo'shiladi). Qobiq balandligi oynaga teng, shuning uchun skript oynani `<main>` kontenti to'liq tushadigan
+  qilib cho'zadi.
+- JSON hisobot: `finalPath` (`/403` yoki `/login` — guard o'tkazmadi), `overflowX` / `contentOverflowX` (0 bo'lsin),
+  telefonda `smallTargets` / `smallTargetsInMain` (44px dan kichik bosiladigan elementlar, namunasi bilan),
+  `tinyText` / `tinyTextInMain` (12px dan kichik matn), `consoleErrors`.
+- Ma'lumot bo'sh — sahifa bo'sh holatida chiziladi. To'ldirilgan holatni rol akkaunti bilan `npm run dev` da tekshiring.
+- `/ops/ui-kit` (faqat superadmin, menyuda yo'q) — 1-bosqich primitivlari (`src/shared/ui/primitives`) namunasi,
+  kunduzgi va tungi yonma-yon; `?section=buttons|badges|cards|page-header|tabs|format` bitta bo'lim,
+  `?theme-pair=0` faqat joriy mavzu.
+
 ## Ekranni qanday topish
 
 1. **`design/SCREENS.md`**: sahifa fayli yoki route bo'yicha qidiring. U ekran nomini (`<rol>-<viewId>`) beradi.
