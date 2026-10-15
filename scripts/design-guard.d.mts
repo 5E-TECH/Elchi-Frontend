@@ -95,6 +95,14 @@ export const BASELINE_FILE: string;
 export const IGNORE_MARKER: string;
 export const RULES: readonly GuardRule[];
 export const RULE_IDS: readonly RuleId[];
+/** 1-bosqich o'rnini bosgan v1 modullari (src'ga nisbatan, kengaytmasiz) → v2 o'rnini bosuvchisi (hint). */
+export const V1_MODULES: Readonly<Record<string, string>>;
+
+/**
+ * Import spetsifikatorini `file` joylashuviga nisbatan src modul yo'liga aylantiradi
+ * (`./x`, `../x`, `@/x`, `src/x`, `/src/x`; kengaytma va `/index` tashlanadi). Paket — `null`.
+ */
+export function resolveImportPath(spec: string, file: string): string | null;
 
 export function maskComments(text: string): string;
 export function scanSource(file: string, text: string): FileScan;

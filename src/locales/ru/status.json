@@ -1,0 +1,16 @@
+{
+  "order": {
+    "new": "Новый",
+    "created": "Создан",
+    "received": "Получен",
+    "on_the_road": "В пути",
+    "waiting": "Ожидается",
+    "partly_paid": "Частично оплачен",
+    "sold": "Продан",
+    "paid": "Оплачен",
+    "cancelled": "Отменен",
+    "cancelled_sent": "Отменен — отправлен",
+    "closed": "Закрыт",
+    "unknown": "Неизвестно"
+  }
+}

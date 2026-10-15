@@ -12,7 +12,7 @@
     "v1-class": "Eski v1 klassi (el-card, el-glass-control, el-segmented …)",
     "weight": "font-black / font-extrabold (v2 da eng qalin — font-bold)",
     "gradient": "Gradient (bg-linear-*, linear-gradient(...)) — v2 da tekis fon",
-    "v1-helper": "v1 yordamchisi/komponenti (TYPO, TEXT, toneAccent, formatPercent, HeaderName, MetricCard)"
+    "v1-helper": "v1 yordamchisi/komponenti (TYPO, TEXT, toneAccent, formatPercent, HeaderName, MetricCard, v1 Button, StatusBadge, statusColorMap, formatDate)"
   },
   "increases": [
     {
@@ -20,6 +20,162 @@
       "reason": "Boshlang'ich baseline: Dizayn v2 0-bosqich, eski kod holati (2026-10-15)",
       "initial": true,
       "total": 14111
+    },
+    {
+      "date": "2026-10-15",
+      "reason": "1-bosqich: v1 komponent importlari endi v1 (Button, StatusBadge, statusColorMap, formatDate) — eski kodning boshlang'ich holati",
+      "changes": {
+        "src/features/order-tracking/ui/StatusTransitionBadge.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/pages/batches/ui/BatchDetailPage.tsx": {
+          "v1-helper": [
+            1,
+            2
+          ]
+        },
+        "src/pages/branches/ui/BranchesPage.tsx": {
+          "v1-helper": [
+            1,
+            2
+          ]
+        },
+        "src/pages/dispatch/index.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/pages/new_orders/external_orders/create.tsx": {
+          "v1-helper": [
+            1,
+            2
+          ]
+        },
+        "src/pages/new_orders/index.tsx": {
+          "v1-helper": [
+            1,
+            2
+          ]
+        },
+        "src/pages/orders/list/OrderStatusBadge.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/pages/orders/list/OrdersTable.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/pages/payments/components/CashboxFormPopup.tsx": {
+          "v1-helper": [
+            1,
+            2
+          ]
+        },
+        "src/pages/products/create/index.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/pages/products/list/index.tsx": {
+          "v1-helper": [
+            1,
+            2
+          ]
+        },
+        "src/pages/users/list/UserListPage.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/shared/components/popupSelect.tsx": {
+          "v1-helper": [
+            1,
+            2
+          ]
+        },
+        "src/shared/components/popupUpdate.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/shared/ui/FormPopup/FormPopup.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/shared/ui/StatusBadge.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/widgets/activity-log/ui/ActivityLogViewer.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/widgets/branch-detail/ui/BranchDetailWidget.tsx": {
+          "v1-helper": [
+            0,
+            2
+          ]
+        },
+        "src/widgets/branch-detail/ui/BranchEmployeesSection.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/widgets/branch-list/ui/BranchTable.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/widgets/notification-inbox/ui/NotificationInboxItem.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        },
+        "src/widgets/notification-table/ui/NotificationTable.tsx": {
+          "v1-helper": [
+            0,
+            1
+          ]
+        }
+      }
     }
   ],
   "files": {
@@ -51,7 +207,7 @@
     "src/features/notification-edit/ui/NotificationEditModal.tsx": { "dark-pair": 4, "legacy": 8 },
     "src/features/order-return/ui/InitiateReturnModal.tsx": { "palette": 26, "dark-pair": 10, "legacy": 5, "gradient": 1 },
     "src/features/order-return/ui/MarkReturnedModal.tsx": { "palette": 31, "dark-pair": 13, "legacy": 5, "gradient": 1 },
-    "src/features/order-tracking/ui/StatusTransitionBadge.tsx": { "palette": 2, "dark-pair": 1 },
+    "src/features/order-tracking/ui/StatusTransitionBadge.tsx": { "palette": 2, "dark-pair": 1, "v1-helper": 1 },
     "src/features/order-tracking/ui/TrackingEmptyState.tsx": { "palette": 7, "dark-pair": 3, "legacy": 7 },
     "src/features/order-tracking/ui/TrackingTimelineItem.tsx": { "palette": 51, "dark-pair": 27, "legacy": 37, "tiny-text": 11, "weight": 12 },
     "src/features/push-notifications/ui/PushPermissionButton.tsx": { "palette": 2, "dark-pair": 2, "legacy": 8 },
@@ -61,15 +217,15 @@
     "src/features/user/update-user/ui/UpdateUserModal.tsx": { "colour": 1, "palette": 30, "dark-pair": 16, "legacy": 6, "tiny-text": 4, "weight": 2 },
     "src/pages/activity-logs/index.tsx": { "v1-helper": 1 },
     "src/pages/batches/lib/batchFormat.ts": { "palette": 16, "dark-pair": 4, "money": 2 },
-    "src/pages/batches/ui/BatchDetailPage.tsx": { "palette": 15, "dark-pair": 19, "legacy": 29, "tiny-text": 2, "weight": 7, "v1-helper": 1 },
-    "src/pages/batches/ui/BatchesPage.tsx": { "colour": 2, "palette": 85, "dark-pair": 12, "legacy": 11, "tiny-text": 7, "weight": 4, "gradient": 5, "v1-helper": 1 },
+    "src/pages/batches/ui/BatchDetailPage.tsx": { "palette": 15, "dark-pair": 19, "legacy": 29, "tiny-text": 2, "weight": 7, "v1-helper": 2 },
+    "src/pages/batches/ui/BatchesPage.tsx": { "colour": 2, "palette": 85, "dark-pair": 12, "legacy": 10, "tiny-text": 7, "weight": 4, "gradient": 5, "v1-helper": 1 },
     "src/pages/branch-dashboard/ui/BranchDashboardCards.tsx": { "colour": 7, "palette": 32, "dark-pair": 30, "legacy": 43, "money": 1, "tiny-text": 9, "weight": 5, "gradient": 5 },
     "src/pages/branch-dashboard/ui/BranchDashboardPage.tsx": { "colour": 1, "palette": 10, "dark-pair": 13, "legacy": 20, "tiny-text": 3, "weight": 4, "gradient": 2, "v1-helper": 1 },
-    "src/pages/branches/ui/BranchesPage.tsx": { "icons": 1, "v1-helper": 1 },
-    "src/pages/courier-bulk/index.tsx": { "palette": 19, "dark-pair": 29, "legacy": 68, "money": 1, "weight": 2 },
+    "src/pages/branches/ui/BranchesPage.tsx": { "icons": 1, "v1-helper": 2 },
+    "src/pages/courier-bulk/index.tsx": { "palette": 18, "dark-pair": 29, "legacy": 68, "money": 1, "weight": 2 },
     "src/pages/dashboard/DashboardPage.tsx": { "palette": 1, "dark-pair": 1, "legacy": 2, "money": 1, "v1-helper": 2 },
     "src/pages/dashboard/MarketDashboardPage.tsx": { "palette": 44, "dark-pair": 26, "legacy": 23, "money": 2, "weight": 1, "v1-helper": 2 },
-    "src/pages/dispatch/index.tsx": { "colour": 1, "palette": 74, "dark-pair": 51, "legacy": 53, "money": 1, "tiny-text": 1, "weight": 11 },
+    "src/pages/dispatch/index.tsx": { "colour": 1, "palette": 74, "dark-pair": 51, "legacy": 53, "money": 1, "tiny-text": 1, "weight": 11, "v1-helper": 1 },
     "src/pages/finance-operators/index.tsx": { "money": 7 },
     "src/pages/financial-balance/components/AnalysisTab.tsx": { "palette": 67, "dark-pair": 41, "legacy": 49, "weight": 3 },
     "src/pages/financial-balance/components/FinancialEntryModal.tsx": { "palette": 27, "dark-pair": 15, "legacy": 15 },
@@ -112,7 +268,7 @@
     "src/pages/mails/detail/ui/OrdersTable.tsx": { "palette": 42, "dark-pair": 22, "legacy": 4, "tiny-text": 7 },
     "src/pages/mails/detail/ui/SendButton.tsx": { "palette": 20, "dark-pair": 4 },
     "src/pages/mails/detail/ui/SendPostModal.tsx": { "palette": 35, "dark-pair": 17, "legacy": 15, "tiny-text": 1 },
-    "src/pages/mails/index.tsx": { "palette": 23, "dark-pair": 19, "legacy": 50, "gradient": 1, "v1-helper": 1 },
+    "src/pages/mails/index.tsx": { "palette": 23, "dark-pair": 19, "legacy": 48, "gradient": 1, "v1-helper": 1 },
     "src/pages/market-operators/index.tsx": { "palette": 44, "dark-pair": 25, "legacy": 21, "weight": 6, "v1-helper": 1 },
     "src/pages/new_orders/branches/batchDetail.tsx": { "palette": 19, "dark-pair": 9, "legacy": 13, "gradient": 1, "v1-helper": 1 },
     "src/pages/new_orders/branches/batches.tsx": { "palette": 62, "dark-pair": 49, "legacy": 58, "tiny-text": 5, "weight": 8, "gradient": 1 },
@@ -122,12 +278,12 @@
     "src/pages/new_orders/components/OrderCard.tsx": { "palette": 83, "dark-pair": 26, "legacy": 16, "money": 2, "tiny-text": 9, "weight": 5, "gradient": 3 },
     "src/pages/new_orders/components/lib/printLabelPdf.ts": { "colour": 11, "money": 1 },
     "src/pages/new_orders/components/new_orderDetail.tsx": { "palette": 25, "dark-pair": 12, "legacy": 25, "money": 1, "weight": 1, "gradient": 1 },
-    "src/pages/new_orders/components/new_orderUpdate.tsx": { "palette": 157, "dark-pair": 47, "legacy": 19, "money": 1, "tiny-text": 3, "weight": 4, "gradient": 1, "v1-helper": 1 },
+    "src/pages/new_orders/components/new_orderUpdate.tsx": { "palette": 157, "dark-pair": 47, "legacy": 17, "money": 1, "tiny-text": 3, "weight": 4, "gradient": 1, "v1-helper": 1 },
     "src/pages/new_orders/components/new_orderUpdate.ui.tsx": { "palette": 59, "dark-pair": 32, "legacy": 12, "tiny-text": 2, "weight": 1 },
-    "src/pages/new_orders/external_orders/create.tsx": { "colour": 1, "palette": 4, "dark-pair": 36, "legacy": 104, "v1-helper": 1 },
+    "src/pages/new_orders/external_orders/create.tsx": { "colour": 1, "palette": 4, "dark-pair": 36, "legacy": 104, "v1-helper": 2 },
     "src/pages/new_orders/external_orders/detail.tsx": { "palette": 16, "dark-pair": 15, "legacy": 25, "tiny-text": 5, "weight": 4 },
     "src/pages/new_orders/external_orders/index.tsx": { "palette": 46, "dark-pair": 82, "legacy": 199, "tiny-text": 13 },
-    "src/pages/new_orders/index.tsx": { "palette": 54, "dark-pair": 24, "legacy": 27, "gradient": 2, "v1-helper": 1 },
+    "src/pages/new_orders/index.tsx": { "palette": 54, "dark-pair": 24, "legacy": 27, "gradient": 2, "v1-helper": 2 },
     "src/pages/new_orders/markets/index.tsx": { "palette": 28, "dark-pair": 30, "legacy": 38, "money": 1, "weight": 1 },
     "src/pages/notification-send/index.tsx": { "v1-helper": 1 },
     "src/pages/notifications/ui/CampaignPage.tsx": { "palette": 1, "dark-pair": 4, "legacy": 6, "money": 2 },
@@ -151,15 +307,21 @@
     "src/pages/orders/index.tsx": { "palette": 21, "dark-pair": 13, "legacy": 13, "money": 2, "gradient": 1, "v1-helper": 1 },
     "src/pages/orders/lib/exportOrdersToExcel.ts": { "colour": 5 },
     "src/pages/orders/list/OrderFilters.tsx": { "palette": 20, "dark-pair": 7, "legacy": 13, "tiny-text": 1 },
-    "src/pages/orders/list/OrdersTable.tsx": { "palette": 70, "dark-pair": 28, "legacy": 29, "money": 1, "tiny-text": 2, "weight": 1, "gradient": 3 },
+    "src/pages/orders/list/OrderStatusBadge.tsx": { "v1-helper": 1 },
+    "src/pages/orders/list/OrdersTable.tsx": { "palette": 70, "dark-pair": 28, "legacy": 29, "money": 1, "tiny-text": 2, "weight": 1, "gradient": 3, "v1-helper": 1 },
     "src/pages/orders/list/courier/index.tsx": { "palette": 15, "dark-pair": 9, "legacy": 8, "money": 2, "v1-helper": 1 },
     "src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx": { "palette": 42, "dark-pair": 16, "money": 1, "tiny-text": 4 },
     "src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx": { "colour": 1, "palette": 49, "dark-pair": 24, "legacy": 6, "money": 1, "tiny-text": 4 },
     "src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx": { "palette": 44, "dark-pair": 15, "money": 1, "tiny-text": 4 },
+    "src/pages/orders/list/courier/list/CancelModal.tsx": { "palette": 78, "dark-pair": 34, "legacy": 11, "gradient": 2 },
+    "src/pages/orders/list/courier/list/SellModal.tsx": { "palette": 119, "dark-pair": 49, "legacy": 20, "money": 2, "gradient": 2 },
+    "src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx": { "palette": 42, "dark-pair": 16, "money": 1, "tiny-text": 4, "v1-helper": 1 },
+    "src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx": { "colour": 1, "palette": 49, "dark-pair": 24, "legacy": 6, "money": 1, "tiny-text": 4, "v1-helper": 1 },
+    "src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx": { "palette": 44, "dark-pair": 15, "money": 1, "tiny-text": 4, "v1-helper": 1 },
     "src/pages/orders/list/courier/list/tabs.tsx": { "colour": 5, "palette": 26, "dark-pair": 7, "gradient": 2 },
     "src/pages/partners/index.tsx": { "palette": 118, "dark-pair": 90, "legacy": 110, "tiny-text": 5, "weight": 7 },
     "src/pages/payments/components/CashboxActionFormCard.tsx": { "colour": 1, "palette": 17, "dark-pair": 18, "legacy": 40, "tiny-text": 1, "weight": 3, "gradient": 2 },
-    "src/pages/payments/components/CashboxFormPopup.tsx": { "colour": 2, "palette": 37, "dark-pair": 17, "legacy": 7, "tiny-text": 1, "gradient": 2, "v1-helper": 1 },
+    "src/pages/payments/components/CashboxFormPopup.tsx": { "colour": 2, "palette": 37, "dark-pair": 17, "legacy": 7, "tiny-text": 1, "gradient": 2, "v1-helper": 2 },
     "src/pages/payments/components/CashboxRolePageLayout.tsx": { "palette": 21, "dark-pair": 5, "legacy": 12, "money": 1, "tiny-text": 1, "weight": 2, "v1-helper": 1 },
     "src/pages/payments/components/CashboxSummaryCard.tsx": { "colour": 12, "palette": 18, "legacy": 5, "money": 1, "tiny-text": 6, "weight": 2, "gradient": 4 },
     "src/pages/payments/components/CashboxView.tsx": { "palette": 49, "dark-pair": 19, "legacy": 16, "money": 1, "tiny-text": 4, "weight": 2, "gradient": 2 },
@@ -176,8 +338,8 @@
     "src/pages/payments/components/mainCashbox.tsx": { "palette": 109, "dark-pair": 24, "legacy": 25, "money": 1, "tiny-text": 6, "weight": 3, "gradient": 3, "v1-helper": 1 },
     "src/pages/payments/components/patmentHistoryTable.tsx": { "palette": 36, "dark-pair": 16, "legacy": 13, "money": 1 },
     "src/pages/payments/index.tsx": { "palette": 28, "dark-pair": 10, "legacy": 8, "money": 1, "v1-helper": 1 },
-    "src/pages/products/create/index.tsx": { "colour": 2, "palette": 57, "dark-pair": 23, "legacy": 7, "gradient": 1 },
-    "src/pages/products/list/index.tsx": { "palette": 39, "dark-pair": 22, "legacy": 15, "v1-helper": 1 },
+    "src/pages/products/create/index.tsx": { "colour": 2, "palette": 57, "dark-pair": 23, "legacy": 7, "gradient": 1, "v1-helper": 1 },
+    "src/pages/products/list/index.tsx": { "palette": 39, "dark-pair": 22, "legacy": 15, "v1-helper": 2 },
     "src/pages/profile/ui/ProfilePage.tsx": { "v1-helper": 1 },
     "src/pages/region/index.tsx": { "palette": 18, "dark-pair": 26, "legacy": 43 },
     "src/pages/region/pages/districts/index.tsx": { "palette": 3, "dark-pair": 16, "legacy": 38 },
@@ -194,7 +356,7 @@
     "src/pages/system-ops/index.tsx": { "colour": 2 },
     "src/pages/users/create/CreateUserPage.tsx": { "v1-helper": 1 },
     "src/pages/users/detail/UserDetailPage.tsx": { "v1-helper": 1 },
-    "src/pages/users/list/UserListPage.tsx": { "palette": 1, "dark-pair": 5, "legacy": 13, "weight": 1 },
+    "src/pages/users/list/UserListPage.tsx": { "palette": 1, "dark-pair": 5, "legacy": 13, "weight": 1, "v1-helper": 1 },
     "src/shared/components/PrintModeSelect.tsx": { "palette": 6, "dark-pair": 4, "legacy": 13 },
     "src/shared/components/ScanFeedbackOverlay.tsx": { "colour": 6, "palette": 11, "weight": 1, "gradient": 1 },
     "src/shared/components/ScannerActionButton.tsx": { "colour": 1, "dark-pair": 3, "legacy": 7, "v1-class": 1, "weight": 1, "gradient": 1 },
@@ -204,8 +366,8 @@
     "src/shared/components/headerName.tsx": { "dark-pair": 5, "legacy": 11, "weight": 1 },
     "src/shared/components/pagination/index.tsx": { "palette": 18, "dark-pair": 19, "legacy": 36, "weight": 1 },
     "src/shared/components/popupConfirm.tsx": { "palette": 49, "dark-pair": 28, "legacy": 6 },
-    "src/shared/components/popupSelect.tsx": { "colour": 9, "palette": 28, "dark-pair": 31, "legacy": 42, "gradient": 1, "v1-helper": 1 },
-    "src/shared/components/popupUpdate.tsx": { "colour": 8, "palette": 21, "dark-pair": 21, "legacy": 23, "gradient": 3 },
+    "src/shared/components/popupSelect.tsx": { "colour": 9, "palette": 28, "dark-pair": 31, "legacy": 42, "gradient": 1, "v1-helper": 2 },
+    "src/shared/components/popupUpdate.tsx": { "colour": 8, "palette": 21, "dark-pair": 21, "legacy": 23, "gradient": 3, "v1-helper": 1 },
     "src/shared/config/designSystem.ts": { "legacy": 9, "tiny-text": 2 },
     "src/shared/config/statusColorMap.ts": { "palette": 58, "dark-pair": 22 },
     "src/shared/lib/downscaleImage.ts": { "colour": 1 },
@@ -223,7 +385,7 @@
     "src/shared/ui/FilterSearch.tsx": { "palette": 11, "dark-pair": 8, "legacy": 5 },
     "src/shared/ui/FilterSelect.tsx": { "palette": 18, "dark-pair": 16, "legacy": 23, "tiny-text": 1 },
     "src/shared/ui/Forbidden.tsx": { "palette": 2, "dark-pair": 2, "legacy": 7 },
-    "src/shared/ui/FormPopup/FormPopup.tsx": { "colour": 1, "palette": 8, "dark-pair": 7, "legacy": 14, "gradient": 2 },
+    "src/shared/ui/FormPopup/FormPopup.tsx": { "colour": 1, "palette": 8, "dark-pair": 7, "legacy": 14, "gradient": 2, "v1-helper": 1 },
     "src/shared/ui/GlobalSearchInput.tsx": { "palette": 14, "dark-pair": 11, "legacy": 11 },
     "src/shared/ui/InlineErrorBoundary.tsx": { "palette": 2, "dark-pair": 2, "legacy": 5 },
     "src/shared/ui/Loader.tsx": { "legacy": 2 },
@@ -242,7 +404,7 @@
     "src/shared/ui/Select.tsx": { "palette": 21, "dark-pair": 16, "legacy": 14, "tiny-text": 1 },
     "src/shared/ui/ServerError.tsx": { "legacy": 1, "weight": 1 },
     "src/shared/ui/SmsMeter.tsx": { "palette": 1, "dark-pair": 4, "legacy": 7, "money": 1 },
-    "src/shared/ui/StatusBadge.tsx": { "tiny-text": 1 },
+    "src/shared/ui/StatusBadge.tsx": { "tiny-text": 1, "v1-helper": 1 },
     "src/shared/ui/TableSkeleton.tsx": { "palette": 7, "dark-pair": 7, "legacy": 7 },
     "src/shared/ui/Timeline/TimelineItem.tsx": { "palette": 6, "dark-pair": 6, "legacy": 5, "gradient": 1 },
     "src/shared/ui/Toggle.tsx": { "palette": 1, "legacy": 2 },
@@ -255,12 +417,12 @@
     "src/widgets/Sidebar/ui/Sidebar.tsx": { "palette": 6, "dark-pair": 10, "legacy": 18, "tiny-text": 1 },
     "src/widgets/Sidebar/ui/SidebarItem.tsx": { "dark-pair": 2, "legacy": 8 },
     "src/widgets/activity-log/ui/ActivityLogDetail.tsx": { "palette": 6, "dark-pair": 6, "legacy": 4 },
-    "src/widgets/activity-log/ui/ActivityLogViewer.tsx": { "palette": 4, "dark-pair": 4, "legacy": 2 },
-    "src/widgets/branch-detail/ui/BranchDetailWidget.tsx": { "colour": 5, "palette": 26, "dark-pair": 34, "legacy": 46, "weight": 2 },
-    "src/widgets/branch-detail/ui/BranchEmployeesSection.tsx": { "palette": 15, "dark-pair": 11, "legacy": 5 },
+    "src/widgets/activity-log/ui/ActivityLogViewer.tsx": { "palette": 4, "dark-pair": 4, "legacy": 2, "v1-helper": 1 },
+    "src/widgets/branch-detail/ui/BranchDetailWidget.tsx": { "colour": 5, "palette": 26, "dark-pair": 34, "legacy": 46, "weight": 2, "v1-helper": 2 },
+    "src/widgets/branch-detail/ui/BranchEmployeesSection.tsx": { "palette": 15, "dark-pair": 11, "legacy": 5, "v1-helper": 1 },
     "src/widgets/branch-detail/ui/BranchSettingsSection.tsx": { "palette": 2, "dark-pair": 2, "legacy": 2 },
     "src/widgets/branch-list/ui/BranchListWidget.tsx": { "colour": 1, "palette": 9, "dark-pair": 9, "legacy": 10, "icons": 1 },
-    "src/widgets/branch-list/ui/BranchTable.tsx": { "palette": 16, "dark-pair": 15, "legacy": 14, "icons": 1 },
+    "src/widgets/branch-list/ui/BranchTable.tsx": { "palette": 16, "dark-pair": 15, "legacy": 14, "icons": 1, "v1-helper": 1 },
     "src/widgets/branch-list/ui/BranchTree.tsx": { "colour": 10, "palette": 100, "dark-pair": 61, "legacy": 65, "icons": 1, "tiny-text": 3, "weight": 3, "gradient": 4 },
     "src/widgets/branch-settings/ui/BranchSettingsWidget.tsx": { "palette": 1, "dark-pair": 1, "legacy": 1 },
     "src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx": { "palette": 2, "dark-pair": 3, "legacy": 9, "tiny-text": 2, "v1-class": 3, "v1-helper": 6 },
@@ -277,9 +439,9 @@
     "src/widgets/layout/dashboardLayout.tsx": { "dark-pair": 3, "legacy": 7, "v1-class": 1 },
     "src/widgets/layout/rootLayout.tsx": { "dark-pair": 2, "legacy": 4 },
     "src/widgets/layout/scanLayout.tsx": { "dark-pair": 1, "legacy": 3 },
-    "src/widgets/notification-inbox/ui/NotificationInboxItem.tsx": { "palette": 3, "dark-pair": 6, "legacy": 9, "weight": 1 },
+    "src/widgets/notification-inbox/ui/NotificationInboxItem.tsx": { "palette": 3, "dark-pair": 6, "legacy": 9, "weight": 1, "v1-helper": 1 },
     "src/widgets/notification-inbox/ui/NotificationInboxList.tsx": { "palette": 3, "dark-pair": 2, "legacy": 9 },
-    "src/widgets/notification-table/ui/NotificationTable.tsx": { "palette": 7, "dark-pair": 5, "legacy": 8, "icons": 1, "gradient": 1 },
+    "src/widgets/notification-table/ui/NotificationTable.tsx": { "palette": 7, "dark-pair": 5, "legacy": 8, "icons": 1, "gradient": 1, "v1-helper": 1 },
     "src/widgets/order-meta/ui/OrderMeta.tsx": { "palette": 26, "dark-pair": 13, "legacy": 10 },
     "src/widgets/order-meta/ui/OrderParentBanner.tsx": { "palette": 7, "dark-pair": 4, "legacy": 1 },
     "src/widgets/order-tracking/ui/OrderTracking.tsx": { "palette": 6, "dark-pair": 9, "legacy": 18 },

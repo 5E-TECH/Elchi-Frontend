@@ -1,0 +1,293 @@
+// Ilova skrinshoti — HAQIQIY ilova route'larini ko'rish uchun (odam ham, Claude ham: PNG'ni Read qiladi).
+// Haqiqiy akkaunt va backend KERAK EMAS: Vite shu jarayon ichida ishga tushadi, API so'rovlari brauzerda
+// ushlanib bo'sh (lekin to'g'ri shakldagi) JSON bilan javob beriladi, sessiya soxta token bilan ochiladi.
+//
+//   npm run app:shot -- /ops/ui-kit                                   (6 PNG: desktop/tablet/phone × light/dark)
+//   npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone --theme dark
+//   npm run app:shot -- /orders /mails --role manager --lang ru
+//   npm run app:shot -- /ops/ui-kit --device phone --split 1200      (uzun sahifa: + -1.png, -2.png … bo'laklar)
+//
+// Bayroqlar: --device desktop|tablet|phone · --theme light|dark · --role superadmin|admin|manager|registrator|market|courier
+//            (sukut superadmin) · --lang uz|ru|en (sukut uz) · --split <px>
+//            · --wait <css-selektor> (shu element chiqquncha kutadi; sukut: <main> ichida kontent)
+// Natija: design/shots/app/<route>--<qurilma>-<mavzu>.png (rol/til sukutdan farq qilsa nomga qo'shiladi:
+// <route>-<rol>-<til>--…). design/shots git'ga kirmaydi.
+// Har shot uchun JSON hisobot:
+//   finalPath        — yo'naltirishdan keyingi yo'l (/403 yoki /login bo'lsa — guard o'tkazmadi)
+//   overflowX        — documentElement.scrollWidth − innerWidth (0 bo'lishi kerak)
+//   contentOverflowX — <main> ichidagi gorizontal toshish (qobiq h-dvh, kontent <main> ichida aylanadi)
+//   smallTargets     — faqat telefonda: 44px dan kichik ko'rinadigan bosiladigan elementlar (jami va <main> ichida + namuna)
+//   tinyText         — 12px dan kichik matnli elementlar (jami va <main> ichida)
+//   consoleErrors    — konsol xatolari va ushlanmagan istisnolar
+// Eslatma: qobiq (yon menyu, yuqori panel) hali v1 — undagi kichik nishonlar 2-bosqichda tuzatiladi; sahifa uchun
+// `…InMain` sonlariga qarang.
+import { createServer } from 'vite';
+import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
+import { createServer as createNetServer } from 'node:net';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const DESIGN = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = join(DESIGN, '..');
+const OUT_DIR = join(DESIGN, 'shots', 'app');
+
+const DEVICES = {
+  desktop: { viewport: { width: 1440, height: 900 } },
+  tablet: { viewport: { width: 768, height: 1024 } },
+  phone: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
+};
+const THEMES = ['light', 'dark'];
+const ROLES = ['superadmin', 'admin', 'manager', 'registrator', 'market', 'courier'];
+const LANGS = ['uz', 'ru', 'en'];
+/** API yo'qligini bildiruvchi soxta manzil — hech qachon tarmoqqa chiqmaydi, brauzerda ushlanadi. */
+const MOCK_API = 'http://api.app-shot.test';
+
+// ───────────── argumentlar ─────────────
+const args = process.argv.slice(2);
+const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait'];
+const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
+const fail = (message) => { console.error(message); process.exit(1); };
+const device = opt('--device');
+const theme = opt('--theme');
+const role = opt('--role') ?? 'superadmin';
+const lang = opt('--lang') ?? 'uz';
+const split = Number(opt('--split')) || 0;
+const waitFor = opt('--wait');
+const routes = args.filter((a, i) => !a.startsWith('--') && !FLAGS.includes(args[i - 1]));
+if (!routes.length) fail("Route bering, masalan: npm run app:shot -- /ops/ui-kit [--device phone] [--theme dark]");
+if (device && !DEVICES[device]) fail(`--device: ${Object.keys(DEVICES).join(' | ')}`);
+if (theme && !THEMES.includes(theme)) fail(`--theme: ${THEMES.join(' | ')}`);
+if (!ROLES.includes(role)) fail(`--role: ${ROLES.join(' | ')}`);
+if (!LANGS.includes(lang)) fail(`--lang: ${LANGS.join(' | ')}`);
+for (const r of routes) if (!r.startsWith('/')) fail(`Route "/" bilan boshlanadi: ${r}`);
+
+const slugOf = (route) => {
+  const base = route.replace(/^\/+|\/+$/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'home';
+  return [base, role !== 'superadmin' && role, lang !== 'uz' && lang].filter(Boolean).join('-');
+};
+
+// ───────────── soxta API ─────────────
+// Ro'yxat qaytaradigan endpointlar (`data: []`); qolganlari sahifalangan obyekt.
+const ARRAYISH = /(^|\/)(regions?|districts?|markets?|couriers?|branches|categories|tariffs|sato|logists?|sources|partners|statuses|roles)(\/|$|\?)/;
+/** Ro'yxat endpointi (`GET orders`) — tanasi `{ data: [], meta }` (sahifa `data.data` ni massiv deb o'qiydi). */
+const ARRAY_LIST = /(^|\/)orders$/;
+const profile = (themeName) => ({
+  statusCode: 200,
+  data: {
+    id: '1',
+    role,
+    name: 'Ilova skrinshoti',
+    phone_number: '+998900000000',
+    status: 'active',
+    settings: { appearance: { theme: themeName, themeChosen: true, language: lang } },
+  },
+});
+const mockBody = (path, themeName) => {
+  if (path.endsWith('auth/my-profile')) return profile(themeName);
+  if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
+  if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
+  return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };
+};
+
+// ───────────── Vite (shu jarayon ichida) ─────────────
+// .env fayllaridagi qiymatdan ustun: ilova haqiqiy backendga emas, soxta manzilga murojaat qiladi.
+process.env.VITE_BASE_URL = MOCK_API;
+process.env.VITE_USE_POLLING = 'false';
+/** Bo'sh port (ishlab turgan `npm run dev` bilan to'qnashmasin). */
+const freePort = () =>
+  new Promise((resolve, reject) => {
+    const probe = createNetServer();
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const { port } = probe.address();
+      probe.close(() => resolve(port));
+    });
+  });
+const server = await createServer({
+  root: ROOT,
+  logLevel: 'error',
+  clearScreen: false,
+  server: { host: '127.0.0.1', port: await freePort(), strictPort: false },
+});
+await server.listen();
+const BASE = `http://127.0.0.1:${server.httpServer.address().port}`;
+
+// ───────────── o'lchovlar (brauzerda) ─────────────
+/** Ichki skroll konteynerini (qobiq h-dvh, kontent <main> ichida) to'liq ko'rsatish uchun oyna balandligi. */
+const fullHeight = () => {
+  const main = document.querySelector('main');
+  const extra = main ? Math.max(0, main.scrollHeight - main.clientHeight) : 0;
+  return Math.max(document.documentElement.scrollHeight, window.innerHeight + extra);
+};
+
+const measure = (isPhone) => {
+  const main = document.querySelector('main');
+  const visible = (el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width <= 1 || r.height <= 1) return false; // sr-only
+    return el.checkVisibility ? el.checkVisibility({ opacityProperty: true, visibilityProperty: true }) : true;
+  };
+  const describe = (el) => {
+    const r = el.getBoundingClientRect();
+    const name = (el.getAttribute('aria-label') || el.textContent || el.getAttribute('placeholder') || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    return `${el.tagName.toLowerCase()}${el.getAttribute('role') ? `[role=${el.getAttribute('role')}]` : ''} «${name}» ${Math.round(r.width)}×${Math.round(r.height)}`;
+  };
+  const textEls = [...document.body.querySelectorAll('*')].filter(
+    (el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && visible(el),
+  );
+  const tiny = textEls.filter((el) => parseFloat(getComputedStyle(el).fontSize) < 12);
+  const report = {
+    finalPath: location.pathname + location.search,
+    overflowX: Math.max(0, document.documentElement.scrollWidth - window.innerWidth),
+    contentOverflowX: main ? Math.max(0, main.scrollWidth - main.clientWidth) : null,
+    tinyText: tiny.length,
+    tinyTextInMain: main ? tiny.filter((el) => main.contains(el)).length : null,
+  };
+  if (isPhone) {
+    const targets = [
+      ...document.querySelectorAll(
+        'a[href], button, [role=button], [role=tab], [role=radio], [role=switch], [role=checkbox], input:not([type=hidden]), select, textarea, summary',
+      ),
+    ].filter(visible);
+    const small = targets.filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width < 44 || r.height < 44;
+    });
+    const inMain = main ? small.filter((el) => main.contains(el)) : small;
+    report.smallTargets = small.length;
+    report.smallTargetsInMain = inMain.length;
+    report.smallTargetsSample = inMain.slice(0, 8).map(describe);
+  }
+  return report;
+};
+
+/** Sahifa tinchlanguncha kutadi (Vite birinchi ochilishda bog'liqliklarni optimallashtirib qayta yuklashi mumkin). */
+const settle = async (page, navCount) => {
+  for (let i = 0; i < 4; i += 1) {
+    const before = navCount();
+    await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+    await page.evaluate(() => document.fonts && document.fonts.ready).catch(() => {});
+    await page.waitForTimeout(700);
+    if (navCount() === before) return;
+  }
+};
+
+// ───────────── skrinshotlar ─────────────
+mkdirSync(OUT_DIR, { recursive: true });
+const browser = await chromium.launch();
+const devices = device ? [device] : Object.keys(DEVICES);
+const themes = theme ? [theme] : THEMES;
+const results = [];
+try {
+  for (const themeName of themes) {
+    for (const deviceName of devices) {
+      const spec = DEVICES[deviceName];
+      const context = await browser.newContext({ ...spec, deviceScaleFactor: 1 });
+      await context.route('**/*', async (route) => {
+        const request = route.request();
+        const url = new URL(request.url());
+        if (url.origin === BASE) return route.continue();
+        if (/(^|\.)fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) return route.continue();
+        const isApi = url.origin === MOCK_API || ['xhr', 'fetch'].includes(request.resourceType());
+        if (!isApi) return route.abort();
+        const headers = {
+          'access-control-allow-origin': BASE,
+          'access-control-allow-credentials': 'true',
+          'access-control-allow-headers': '*',
+          'access-control-allow-methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
+        };
+        if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+        const body = mockBody(url.pathname.replace(/^\//, ''), themeName);
+        return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(body) });
+      });
+      await context.addInitScript(({ themeName, lang, role }) => {
+        const far = Date.now() + 86_400_000;
+        try {
+          if (!location.pathname.startsWith('/login')) {
+            sessionStorage.setItem('accessToken', 'e2e.local.token');
+            sessionStorage.setItem(
+              'authSessionMetadata',
+              JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
+            );
+            sessionStorage.setItem('role', role);
+          }
+          localStorage.setItem('theme', themeName);
+          localStorage.setItem('theme-version', '2');
+          localStorage.setItem('app-language', lang);
+        } catch {
+          /* saqlash yopiq bo'lsa ham sahifa ochiladi */
+        }
+      }, { themeName, lang, role });
+
+      const page = await context.newPage();
+      let navigations = 0;
+      page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) navigations += 1; });
+      let errors = [];
+      page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text().slice(0, 300)); });
+      page.on('pageerror', (error) => errors.push(`pageerror: ${String(error.message ?? error).slice(0, 300)}`));
+
+      for (const route of routes) {
+        errors = [];
+        await page.setViewportSize(spec.viewport);
+        await page.goto(BASE + route, { waitUntil: 'networkidle', timeout: 60000 }).catch((e) => errors.push(`goto: ${e.message}`));
+        await settle(page, () => navigations);
+        // Yuklanish ekranini (splash) suratga olmaslik: kontent chiqquncha kutamiz. Kelmasa — ogohlantirish, xato emas.
+        const ready = await page
+          .waitForFunction(
+            (selector) => {
+              if (selector) return Boolean(document.querySelector(selector));
+              const main = document.querySelector('main');
+              return Boolean(main && main.querySelectorAll('*').length > 5 && main.innerText.trim().length > 0);
+            },
+            waitFor,
+            { timeout: 30000 },
+          )
+          .then(() => true)
+          .catch(() => false);
+        if (!ready) errors.push(`wait: ${waitFor ?? '<main> kontenti'} 30 s ichida chiqmadi (splash yoki xato sahifasi)`);
+        else await page.waitForTimeout(300);
+        const report = await page.evaluate(measure, deviceName === 'phone');
+        // Qobiq balandligi oynaga teng (h-dvh): <main> ichidagi kontent to'liq tushishi uchun oynani cho'zamiz.
+        const height = Math.min(16000, await page.evaluate(fullHeight));
+        if (height > spec.viewport.height) {
+          await page.setViewportSize({ width: spec.viewport.width, height });
+          await page.waitForTimeout(400);
+        }
+        const file = join(OUT_DIR, `${slugOf(route)}--${deviceName}-${themeName}.png`);
+        await page.screenshot({ path: file, fullPage: true });
+        const tiles = [];
+        if (split > 0) {
+          const total = await page.evaluate(() => document.documentElement.scrollHeight);
+          for (let y = 0, k = 1; y < total; y += split, k += 1) {
+            const tile = file.replace(/\.png$/, `-${k}.png`);
+            await page.screenshot({ path: tile, fullPage: true, clip: { x: 0, y, width: spec.viewport.width, height: Math.min(split, total - y) } });
+            tiles.push(tile.slice(ROOT.length + 1));
+          }
+        }
+        const entry = {
+          route,
+          role,
+          lang,
+          device: deviceName,
+          theme: themeName,
+          shot: file.slice(ROOT.length + 1),
+          ...(tiles.length ? { tiles } : {}),
+          ...report,
+          consoleErrors: [...new Set(errors)],
+        };
+        results.push(entry);
+        console.log(JSON.stringify(entry, null, 1));
+      }
+      await context.close();
+    }
+  }
+} finally {
+  await browser.close();
+  await server.close();
+}
+const redirected = results.filter((r) => r.finalPath.split('?')[0] !== r.route.split('?')[0]);
+if (redirected.length) {
+  console.error(`Diqqat: ${redirected.length} ta shot boshqa sahifaga yo'naltirildi (guard yoki rol): ` +
+    [...new Set(redirected.map((r) => `${r.route} → ${r.finalPath}`))].join(', '));
+}

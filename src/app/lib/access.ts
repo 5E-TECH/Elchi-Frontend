@@ -98,6 +98,13 @@ export const canViewBranches: Predicate = hasRole("superadmin");
 
 export const canViewLogs: Predicate = hasRole("superadmin");
 
+/**
+ * Dizayn v2 komponentlar to'plami (`/ops/ui-kit`) — ichki namuna sahifasi.
+ * Faqat superadmin; menyuda YO'Q (URL orqali ochiladi). Ma'lumot o'qimaydi,
+ * lekin ichki vosita bo'lgani uchun boshqa rollarga ko'rinmaydi.
+ */
+export const canViewUiKit: Predicate = hasRole("superadmin");
+
 // ═════════ Filial qobiliyatiga bog'liq guardlar ═════════
 
 /**

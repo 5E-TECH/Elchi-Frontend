@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**75 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **20** · qisman: **4** · v2 ga ko'chirilgan route: **0 / 75**
+**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **20** · qisman: **4** · v2 ga ko'chirilgan route: **1 / 76**
 
 ## Qanday ishlatiladi
 
@@ -109,6 +109,7 @@
 | `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 5 | eski |
 | `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | eski |
 | `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 8 | eski |
+| `/ops/ui-kit` | Tizim | `src/pages/ui-kit/index.tsx` | superadmin | 0 | v2 |
 | `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | eski |
 | `/integrations-ops` | Tizim | `src/pages/integrations-ops/index.tsx` | superadmin | 1 | eski |
 | `/investors-ops` | Tizim | `src/pages/investors-ops/index.tsx` | superadmin | 1 | eski |
@@ -1333,6 +1334,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | eski |
 | `/ops` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | eski |
 
+#### `/ops/ui-kit` — Komponentlar to'plami — dizayn v2 primitivlari namunasi (kunduzgi + tungi yonma-yon; ?section=<id>, ?theme-pair=0)
+
+- **Fayllar:** `src/pages/ui-kit/index.tsx` · `src/pages/ui-kit/KitSection.tsx` · `src/pages/ui-kit/ThemePair.tsx` · `src/pages/ui-kit/sections/ButtonsSection.tsx` · `src/pages/ui-kit/sections/BadgesSection.tsx` · `src/pages/ui-kit/sections/CardsSection.tsx` · `src/pages/ui-kit/sections/PageHeaderSection.tsx` · `src/pages/ui-kit/sections/TabsSection.tsx` · `src/pages/ui-kit/sections/FormatSection.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewUiKit` (access.ts → canViewUiKit)
+- **Rollar:** superadmin
+- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
+- **Holat:** v2
+- **Izoh:** Ichki sahifa, menyuda yo'q (URL orqali). Skrinshot: npm run app:shot -- /ops/ui-kit.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/ops/ui-kit` | superadmin | — Maket yo'q — ichki komponentlar namunasi; eng yaqini: Main | — | — | v2 |
+
 #### `/finance-operators` — Ops — Moliya operatorlari (eski to'g'ridan-to'g'ri yo'l)
 
 - **Fayllar:** `src/pages/finance-operators/index.tsx`
@@ -2164,6 +2178,15 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/scan/ui/ScanPostDetail.tsx` | `/scan/:token` |
 | `src/pages/settings/ui/SettingsPage.tsx` | `/settings` |
 | `src/pages/system-ops/index.tsx` | `/system-ops` |
+| `src/pages/ui-kit/KitSection.tsx` | `/ops/ui-kit` |
+| `src/pages/ui-kit/ThemePair.tsx` | `/ops/ui-kit` |
+| `src/pages/ui-kit/index.tsx` | `/ops/ui-kit` |
+| `src/pages/ui-kit/sections/BadgesSection.tsx` | `/ops/ui-kit` |
+| `src/pages/ui-kit/sections/ButtonsSection.tsx` | `/ops/ui-kit` |
+| `src/pages/ui-kit/sections/CardsSection.tsx` | `/ops/ui-kit` |
+| `src/pages/ui-kit/sections/FormatSection.tsx` | `/ops/ui-kit` |
+| `src/pages/ui-kit/sections/PageHeaderSection.tsx` | `/ops/ui-kit` |
+| `src/pages/ui-kit/sections/TabsSection.tsx` | `/ops/ui-kit` |
 | `src/pages/users/create/CreateUserPage.tsx` | `/all-users/create-user` |
 | `src/pages/users/detail/UserDetailPage.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id` |
 | `src/pages/users/list/UserListPage.tsx` | `/all-users` |

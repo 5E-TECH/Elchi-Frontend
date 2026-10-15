@@ -1,0 +1,119 @@
+import type { ReactNode } from "react";
+import { Check, Copy, Download, Plus, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { OrderStatusBadge } from "../../../entities/order/ui/OrderStatusBadge";
+import { copyToClipboard } from "../../../shared/lib/clipboard";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { Button } from "../../../shared/ui/primitives/Button";
+import { IconButton } from "../../../shared/ui/primitives/IconButton";
+import { PageHeader } from "../../../shared/ui/primitives/PageHeader";
+import { KitSection } from "../KitSection";
+import { ThemePair } from "../ThemePair";
+
+/** Namunadagi «orqaga» havolasi shu bo'limning o'ziga olib keladi (sahifadan chiqarmaydi). */
+const SELF_ROUTE = "/ops/ui-kit?section=page-header";
+
+const Sample = ({ caption, children }: { caption: string; children: ReactNode }) => (
+  <div className="flex min-w-0 flex-col gap-4 py-5 first:pt-0 last:pb-0">
+    <p className="text-[13px] font-semibold text-text-muted">{caption}</p>
+    {children}
+  </div>
+);
+
+/**
+ * «Sahifa sarlavhasi» bo'limi — `PageHeader` namunalari (kunduzgi + tungi).
+ * Matn va tuzilma maketlardan: `superadmin-orders-list` (izoh + 2 amal),
+ * `superadmin-orders-detail` (orqaga havolasi), `manager-orders-detail`
+ * (nusxalash, holat, «Bekor qilish» + «Sotish»), `manager-branch-dashboard-main` (faqat sarlavha).
+ */
+export const PageHeaderSection = () => {
+  const { t, i18n } = useTranslation("ui");
+  const ordersTitle = t("pageHeader.demo.ordersTitle");
+
+  const copyAction = (number: string) => (
+    <IconButton
+      size="sm"
+      icon={Copy}
+      label={t("pageHeader.demo.copyNumber")}
+      onClick={() => void copyToClipboard(number)}
+    />
+  );
+
+  return (
+    <KitSection
+      id="page-header"
+      title={t("kit.sections.pageHeader.title")}
+      description={t("kit.sections.pageHeader.description")}
+    >
+      <ThemePair>
+        <div className="flex min-w-0 flex-col divide-y divide-border">
+          <Sample caption={t("pageHeader.samples.simple")}>
+            <PageHeader title={t("pageHeader.demo.dashboardTitle")} />
+          </Sample>
+
+          <Sample caption={t("pageHeader.samples.description")}>
+            <PageHeader
+              title={ordersTitle}
+              description={t("pageHeader.demo.ordersTotal", {
+                total: formatNumberLocalized(1248, { language: i18n.language }),
+              })}
+              actions={
+                <>
+                  <Button variant="secondary" leftIcon={Download} compact>
+                    {t("pageHeader.demo.exportExcel")}
+                  </Button>
+                  <Button leftIcon={Plus} compact>{t("pageHeader.demo.createOrder")}</Button>
+                </>
+              }
+            />
+          </Sample>
+
+          <Sample caption={t("pageHeader.samples.back")}>
+            <PageHeader
+              back={SELF_ROUTE}
+              backLabel={ordersTitle}
+              title={t("pageHeader.demo.orderNumber", { number: "10241" })}
+              description={t("pageHeader.demo.createdToday")}
+            />
+          </Sample>
+
+          <Sample caption={t("pageHeader.samples.meta")}>
+            <PageHeader
+              back={SELF_ROUTE}
+              backLabel={ordersTitle}
+              title={t("pageHeader.demo.orderNumber", { number: "10305" })}
+              titleAction={copyAction("10305")}
+              meta={<OrderStatusBadge status="waiting" />}
+              description={t("pageHeader.demo.createdYesterday")}
+              actions={
+                <>
+                  <Button variant="danger-soft" leftIcon={X}>
+                    {t("pageHeader.demo.cancel")}
+                  </Button>
+                  <Button leftIcon={Check}>{t("pageHeader.demo.sell")}</Button>
+                </>
+              }
+            />
+          </Sample>
+
+          <Sample caption={t("pageHeader.samples.long")}>
+            <PageHeader
+              back={SELF_ROUTE}
+              backLabel={t("pageHeader.demo.cancelledTitle")}
+              title={t("pageHeader.demo.longTitle")}
+              description={t("pageHeader.demo.longDescription")}
+              actions={
+                <>
+                  <Button variant="secondary" leftIcon={Download} compact>
+                    {t("pageHeader.demo.exportExcel")}
+                  </Button>
+                  <Button leftIcon={Plus} compact>{t("pageHeader.demo.createOrder")}</Button>
+                </>
+              }
+            />
+          </Sample>
+        </div>
+      </ThemePair>
+    </KitSection>
+  );
+};

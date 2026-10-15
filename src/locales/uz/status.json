@@ -1,0 +1,16 @@
+{
+  "order": {
+    "new": "Yangi",
+    "created": "Yaratilgan",
+    "received": "Qabul qilindi",
+    "on_the_road": "Yo'lda",
+    "waiting": "Kutilmoqda",
+    "partly_paid": "Qisman to'langan",
+    "sold": "Sotilgan",
+    "paid": "To'langan",
+    "cancelled": "Bekor qilingan",
+    "cancelled_sent": "Bekor — jo'natilgan",
+    "closed": "Yopilgan",
+    "unknown": "Noma'lum"
+  }
+}

@@ -13,9 +13,9 @@ repoda turadi (`design/`).
 | Bosqich | Nima | Holat |
 |---|---|---|
 | 0 | tokenlar, kunduzgi/tungi mavzu, Manrope, valyuta i18n, maketlar repoda, dizayn qo'riqchisi | **tayyor** |
-| 1 | primitivlar: `Button`, `IconButton`, `Badge`/`StatusBadge`, `Card`/`StatCard`, `PageHeader`, `Tabs`/`SegmentedControl`, `Dialog`/`ConfirmDialog`, `Field`/`TextInput`/`Select`/`DateRange`, `QueryBoundary` | navbatda |
+| 1 | primitivlar (`src/shared/ui/primitives`): `Button`, `IconButton`, `Spinner`, `Badge`, `StatusBadge` (+ `OrderStatusBadge`/`statusRegistry` — `src/entities/order`), `Card`, `StatCard`, `PageHeader`, `Tabs`, `SegmentedControl`; formatlovchilar `formatPhone`, `formatDateTime*`, `formatSigned*`; namuna sahifasi `/ops/ui-kit` | **tayyor** |
 | 2 | shell: yon menyu, topbar, pastki menyu | navbatda |
-| 3 | forma, dialog, bo'sh/yuklanish/xato holatlari | navbatda |
+| 3 | forma, dialog, bo'sh/yuklanish/xato holatlari: `Dialog`/`ConfirmDialog`, `Field`/`TextInput`/`Select`/`DateRange`, `QueryBoundary` | navbatda |
 | 4 | sahifalar migratsiyasi (har sahifa alohida PR) | navbatda |
 | 5 | qo'shimcha qo'riqchilar (ESLint, vizual snapshotlar) | navbatda |
 
@@ -36,6 +36,11 @@ Trello'dagi «Dizayn v2» kartalari bosqichlarni kuzatadi.
   `npm run design:shot -- <ekran>` (`design/shots/` ga PNG; agent ularni o'qib dizaynni ko'radi).
 - **Kodga tarjima:** `design/CODE-MAP.md` (maket `el-*` klassi → Tailwind + tokenlar → mavjud komponent →
   1-bosqich primitivi).
+- **Primitivlar namunasi:** `/ops/ui-kit` (faqat superadmin, menyuda yo'q) — har primitiv kunduzgi va tungi
+  mavzuda yonma-yon; `?section=buttons|badges|cards|page-header|tabs|format` bitta bo'lim.
+- **Ilovani ko'rish (akkauntsiz):** `npm run app:shot -- <route> [--device phone] [--theme dark] [--role manager]`
+  → `design/shots/app/*.png` + JSON hisobot (gorizontal toshish, 44px dan kichik nishon, 12px dan kichik matn,
+  konsol xatolari). Batafsil: `design/README.md`.
 - Asl nusxa egadagi Claude Design kanvasi. Dasturchilar uchun manba esa repodagi `design/`. Maket fayllari qo'lda
   tahrirlanmaydi, faqat ega yoki dizaynerning sinxron PR'i orqali o'zgaradi. Yagona istisno
   `design/kit/route-map.json` (route ↔ maket xaritasi, quyida).
@@ -130,7 +135,10 @@ CI (`.github/workflows/deploy.yml`) har PR'da `npm run lint` → `npm test` → 
 Qoidalar (`scripts/design-guard.mjs`): `colour`, `palette`, `dark-pair`, `legacy`, `money`, `icons`, `tiny-text`,
 `v1-class` (`index.css` dagi eski `el-card`, `el-glass-control`, `el-segmented*` …), `weight` (`font-black`,
 `font-extrabold`), `gradient` (`bg-linear-*`, `linear-gradient(…)`), `v1-helper` (`TYPO`, `TEXT`, `TONE`,
-`toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`).
+`toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`; 1-bosqich o'rnini bosgan v1 modullari importi:
+`shared/components/button` → `Button`, `shared/ui/StatusBadge` va `pages/orders/list/OrderStatusBadge` →
+`StatusBadge` / `OrderStatusBadge`, `shared/config/statusColorMap` → `statusRegistry` + `tone.ts`,
+`shared/lib/formatDate` → `formatDateTimeLocalized`).
 
 - **PR diff qadami** (CI, faqat PR'da): `npm run design:guard -- --diff origin/<base>` — PR'da **qo'shilgan**
   qatorlarda yangi buzilish bo'lmasin. Eski qatorni tahrirlash yoki kodni ko'chirish o'tadi, lekin bir joyda

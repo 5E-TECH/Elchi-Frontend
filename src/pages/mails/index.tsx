@@ -31,7 +31,7 @@ const tabs: TabItem[] = [
     icon: <Package size={18} />,
     labelKey: "todayTab",
     activeWrapperClassName:
-      "border-success bg-success text-primary shadow-lg shadow-success/25",
+      "border-success bg-success text-on-solid shadow-lg shadow-success/25",
     inactiveIconClassName: "bg-success/10 text-success",
   },
   {
@@ -52,7 +52,7 @@ const tabs: TabItem[] = [
     icon: <AlertTriangle size={18} />,
     labelKey: "refusedTab",
     activeWrapperClassName:
-      "border-error bg-error text-primary shadow-lg shadow-error/25",
+      "border-error bg-error text-on-solid shadow-lg shadow-error/25",
     inactiveIconClassName: "bg-error/10 text-error",
   },
   {

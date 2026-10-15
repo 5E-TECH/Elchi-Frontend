@@ -11,7 +11,9 @@ import {
   parseUnifiedDiff,
   scanSource,
   scanTree,
+  resolveImportPath,
   serializeBaseline,
+  V1_MODULES,
   type Baseline,
   type TreeScan,
 } from "../../scripts/design-guard.mjs";
@@ -240,6 +242,92 @@ describe("design guard rules", () => {
         "v1-helper"
       ],
     ).toBeUndefined();
+  });
+
+  describe("v1-helper: 1-bosqich o'rnini bosgan v1 modullari importi (yo'l aniq hal qilinadi)", () => {
+    const v1 = (src: string, file = "src/pages/demo/Demo.tsx") => scanSource(file, src).counts["v1-helper"];
+    const hintOf = (src: string, file = "src/pages/demo/Demo.tsx") =>
+      scanSource(file, src).violations.map((v) => v.hint);
+
+    it("resolveImportPath: nisbiy, @/, src/, /src/ shakllari; paket — null", () => {
+      expect(resolveImportPath("../../shared/components/button", "src/pages/demo/Demo.tsx")).toBe(
+        "src/shared/components/button",
+      );
+      expect(resolveImportPath("./button.tsx", "src/shared/components/popupUpdate.tsx")).toBe(
+        "src/shared/components/button",
+      );
+      expect(resolveImportPath("@/shared/lib/formatDate", "src/x.ts")).toBe("src/shared/lib/formatDate");
+      expect(resolveImportPath("src/shared/ui/StatusBadge/index", "src/x.ts")).toBe("src/shared/ui/StatusBadge");
+      expect(resolveImportPath("/src/shared/config/statusColorMap.ts", "src/x.ts")).toBe(
+        "src/shared/config/statusColorMap",
+      );
+      expect(resolveImportPath("antd", "src/x.ts")).toBeNull();
+      expect(resolveImportPath("@ant-design/icons", "src/x.ts")).toBeNull();
+    });
+
+    it("v1 Button (shared/components/button) → Button", () => {
+      expect(v1(`import Button from "../../shared/components/button";`)).toBe(1);
+      expect(v1(`import Button from "@/shared/components/button";`)).toBe(1);
+      expect(v1(`import Button from "src/shared/components/button.tsx";`)).toBe(1);
+      expect(v1(`import Button from "./button";`, "src/shared/components/popupUpdate.tsx")).toBe(1);
+      expect(v1(`import Button from "../../components/button";`, "src/shared/ui/FormPopup/FormPopup.tsx")).toBe(1);
+      expect(v1(`export { default as Button } from "../../shared/components/button";`)).toBe(1);
+      expect(v1(`const B = lazy(() => import("../../shared/components/button"));`)).toBe(1);
+      expect(hintOf(`import Button from "../../shared/components/button";`)[0]).toContain("src/shared/ui/primitives");
+    });
+
+    it("v1 StatusBadge va pages/orders/list/OrderStatusBadge → StatusBadge / entities/order", () => {
+      expect(v1(`import { StatusBadge } from "../../shared/ui/StatusBadge";`)).toBe(1);
+      expect(v1(`import OrderStatusBadge from "../orders/list/OrderStatusBadge";`, "src/pages/dispatch/index.tsx")).toBe(1);
+      expect(
+        v1(
+          `import OrderStatusBadge from "../../../OrderStatusBadge";`,
+          "src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx",
+        ),
+      ).toBe(1);
+      expect(v1(`import OrderStatusBadge from "./OrderStatusBadge";`, "src/pages/orders/list/OrdersTable.tsx")).toBe(1);
+      expect(hintOf(`import { StatusBadge } from "@/shared/ui/StatusBadge";`)[0]).toContain("src/entities/order");
+      expect(hintOf(`import X from "@/pages/orders/list/OrderStatusBadge";`)[0]).toContain("src/entities/order");
+    });
+
+    it("statusColorMap → statusRegistry + tone.ts; formatDate → formatDateTimeLocalized", () => {
+      expect(v1(`import { getStatusColor } from "../config/statusColorMap";`, "src/shared/ui/StatusBadge.tsx")).toBe(1);
+      expect(hintOf(`import { getStatusColor } from "@/shared/config/statusColorMap";`)[0]).toMatch(
+        /ORDER_STATUS_REGISTRY.*tone\.ts/,
+      );
+      expect(v1(`import { formatDate } from "../../../shared/lib/formatDate";`, "src/widgets/a/ui/A.tsx")).toBe(1);
+      expect(hintOf(`import { formatDate } from "@/shared/lib/formatDate";`)[0]).toContain("formatDateTimeLocalized");
+      // Ko'p qatorli import: yo'l `from` qatorida.
+      expect(v1(`import {\n  formatDate,\n} from "../../shared/lib/formatDate";`)).toBe(1);
+    });
+
+    it("v2 nomdoshlar, boshqa joydagi bir xil nomli fayllar, oddiy satr va izohlar — tutilmaydi", () => {
+      expect(v1(`import { Button } from "../../shared/ui/primitives/Button";`)).toBeUndefined();
+      expect(v1(`import { Button, StatusBadge } from "../../shared/ui/primitives";`)).toBeUndefined();
+      expect(v1(`import { StatusBadge } from "../../shared/ui/primitives/StatusBadge";`)).toBeUndefined();
+      expect(v1(`import { OrderStatusBadge } from "../../entities/order";`)).toBeUndefined();
+      expect(v1(`import { OrderStatusBadge } from "../../entities/order/ui/OrderStatusBadge";`)).toBeUndefined();
+      expect(v1(`import { ORDER_STATUS_REGISTRY } from "@/entities/order/model/statusRegistry";`)).toBeUndefined();
+      expect(v1(`import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";`)).toBeUndefined();
+      expect(v1(`import { formatDate } from "../../shared/lib/formatDateRange";`)).toBeUndefined();
+      expect(v1(`import { Button } from "antd";`)).toBeUndefined();
+      // `src/pages/demo/button` — boshqa modul (nisbiy yo'l fayl joyidan hal qilinadi).
+      expect(v1(`import Button from "./button";`)).toBeUndefined();
+      expect(v1(`import Button from "../shared/components/button";`)).toBeUndefined();
+      expect(v1(`const path = "../../shared/components/button";`)).toBeUndefined();
+      expect(v1(`// import Button from "../../shared/components/button";`)).toBeUndefined();
+    });
+
+    it("har v1 modul uchun hint v2 o'rnini bosuvchisini nomlaydi", () => {
+      expect(Object.keys(V1_MODULES).sort()).toEqual([
+        "src/pages/orders/list/OrderStatusBadge",
+        "src/shared/components/button",
+        "src/shared/config/statusColorMap",
+        "src/shared/lib/formatDate",
+        "src/shared/ui/StatusBadge",
+      ]);
+      for (const hint of Object.values(V1_MODULES)) expect(hint).toMatch(/→/);
+    });
   });
 });
 
