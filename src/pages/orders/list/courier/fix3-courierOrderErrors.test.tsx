@@ -75,7 +75,7 @@ describe("Kuryer ro'yxati — rad javobi ko'rinadi (fix3 FE-ORD-02)", () => {
     renderPage();
 
     await openFirst(user, /^Sotish$/);
-    await user.type(screen.getAllByPlaceholderText("0").at(-1)!, "5000");
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
     await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
 
     expect(sellMutate).toHaveBeenCalledWith(
@@ -97,6 +97,7 @@ describe("Kuryer ro'yxati — rad javobi ko'rinadi (fix3 FE-ORD-02)", () => {
     renderPage();
 
     await openFirst(user, /^Bekor qilish$/);
+    await user.selectOptions(screen.getByLabelText(/^Sabab/), "WRONG_ADDRESS");
     await user.click(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!);
 
     expect(await screen.findByText("Buyurtma holati noto'g'ri")).toBeInTheDocument();
@@ -134,7 +135,9 @@ describe("Kuryer sotuvi — uyga yetkazishda qo'shimcha xarajat yo'q (fix3 FE-OR
     expect(
       screen.getByText("Uyga yetkazishda qo'shimcha xarajat yozilmaydi — uy tarifi allaqachon yuqori."),
     ).toBeInTheDocument();
-    expect(screen.queryAllByPlaceholderText("0")).toHaveLength(0);
+    // Xarajat maydoni yo'q (faqat «Marketga to'langan summa» qoladi — uguUEhin).
+    expect(screen.queryByRole("textbox", { name: "Qo'shimcha xarajat" })).toBeNull();
+    expect(screen.getByLabelText("Marketga to'langan summa")).toBeInTheDocument();
 
     await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
     expect(sellMutate).toHaveBeenCalledWith(
@@ -163,6 +166,7 @@ describe("Market isbot shartlari — xarajat yozilganda isbot (fix3 FE-ORD-02)",
     renderPage();
 
     await openFirst(user, /^Bekor qilish$/);
+    await user.selectOptions(screen.getByLabelText(/^Sabab/), "CUSTOMER_REFUSED");
     // Xarajatsiz — isbot shart emas.
     expect(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!).toBeEnabled();
 
@@ -170,8 +174,9 @@ describe("Market isbot shartlari — xarajat yozilganda isbot (fix3 FE-ORD-02)",
     await user.clear(extraCostInput);
     await user.type(extraCostInput, "5000");
 
-    const submit = screen.getByRole("button", { name: /rasm yoki video majburiy/ });
-    expect(submit).toBeDisabled();
+    // Sabab tugma yonida yoziladi, «Bekor qilish» o'chiq.
+    expect(screen.getAllByText("Bekor qilishda rasm yoki video majburiy").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!).toBeDisabled();
     expect(cancelMutate).not.toHaveBeenCalled();
   });
 
@@ -182,9 +187,49 @@ describe("Market isbot shartlari — xarajat yozilganda isbot (fix3 FE-ORD-02)",
     await openFirst(user, /^Sotish$/);
     expect(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!).toBeEnabled();
 
-    await user.type(screen.getAllByPlaceholderText("0").at(-1)!, "3000");
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "3000");
 
-    const submit = screen.getByRole("button", { name: /Sotishda rasm yoki video majburiy/ });
-    expect(submit).toBeDisabled();
+    // Sabab tugma yonida yoziladi, «Sotish» o'chiq.
+    expect(screen.getAllByText("Sotishda rasm yoki video majburiy").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!).toBeDisabled();
+  });
+});
+
+describe("Sotishdan keyin marketga to'lov natijasi (uguUEhin)", () => {
+  beforeEach(() => {
+    sellMutate.mockReset();
+    listState.orders = [{ ...baseOrder, id: "7004", where_deliver: "center", market: { name: "BeePost" } }];
+  });
+
+  it.each([
+    ["paid", "Sotildi, marketga to'liq to'landi"],
+    ["partly_paid", "Sotildi, marketga qisman to'landi"],
+  ])("data.status=%s — «%s» bildirishnomasi", async (status, text) => {
+    const user = userEvent.setup();
+    sellMutate.mockImplementation((_vars, options: MutateOptions) =>
+      options.onSuccess?.({ statusCode: 200, data: { id: "7004", status } }),
+    );
+    renderPage();
+
+    await openFirst(user, /^Sotish$/);
+    await user.type(screen.getByLabelText("Marketga to'langan summa"), "100000");
+    await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
+
+    expect(sellMutate).toHaveBeenCalledWith(
+      { orderId: "7004", data: expect.objectContaining({ paidAmount: 100000 }) },
+      expect.any(Object),
+    );
+    expect(await screen.findByText(text)).toBeInTheDocument();
+  });
+
+  it("data.status=sold — qo'shimcha bildirishnoma yo'q (avvalgidek)", async () => {
+    const user = userEvent.setup();
+    sellMutate.mockImplementation((_vars, options: MutateOptions) =>
+      options.onSuccess?.({ statusCode: 200, data: { id: "7004", status: "sold" } }),
+    );
+    renderPage();
+    await openFirst(user, /^Sotish$/);
+    await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
+    expect(screen.queryByText(/marketga (to'liq|qisman) to'landi/)).toBeNull();
   });
 });

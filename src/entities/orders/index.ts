@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import type { CancelOrderPayload } from "./cancelReason";
+import type { SellOrderPayload } from "./sellPayment";
 
 const orders = "orders";
 
@@ -207,7 +209,7 @@ export const useOrders = () => {
       data,
     }: {
       orderId: string;
-      data: { comment: string; extraCost: number; proof?: File };
+      data: SellOrderPayload;
     }) =>
       toOrderActionBody(data).then((body) =>
         api.post(API_ENDPOINTS.ORDERS.SELL(orderId), body).then((res) => res.data),
@@ -291,7 +293,7 @@ export const useOrders = () => {
       data,
     }: {
       orderId: string;
-      data: { comment: string; extraCost: number; paidAmount: number; proof?: File };
+      data: CancelOrderPayload;
     }) =>
       toOrderActionBody(data).then((body) =>
         api.post(API_ENDPOINTS.ORDERS.CANCEL(orderId), body).then((res) => res.data),

@@ -111,6 +111,13 @@ export type Integration = {
   status_sync_config?: unknown;
   total_synced_orders: number;
   last_sync_at: string | null;
+  /**
+   * Quyi kalitlar (fG48Xv5X) — `GET /integrations/:id` beradi. Master
+   * (`is_active`) o'chiq bo'lsa ular ta'sir qilmaydi. Eski backendda yo'q.
+   */
+  webhook_enabled?: boolean;
+  reconcile_enabled?: boolean;
+  last_reconcile_at?: string | null;
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;
@@ -149,7 +156,10 @@ export type CreateIntegrationPayload = {
   status_sync_config?: unknown;
 };
 
-export type UpdateIntegrationPayload = Partial<CreateIntegrationPayload>;
+export type UpdateIntegrationPayload = Partial<CreateIntegrationPayload> & {
+  webhook_enabled?: boolean;
+  reconcile_enabled?: boolean;
+};
 
 export type IntegrationsMeta = {
   page: number;
@@ -243,6 +253,36 @@ export const useUpdateIntegration = () => {
     onSuccess: (_response, variables) => {
       queryClient.invalidateQueries({ queryKey: integrationKeys.all });
       queryClient.invalidateQueries({ queryKey: integrationKeys.byId(variables.id) });
+    },
+  });
+};
+
+/** `POST /integrations/:id/reconcile-now` natijasi. */
+export type ReconcileNowResult = {
+  checked: number;
+  applied: number;
+  failed: number;
+};
+
+/**
+ * Status solishtiruvini HOZIROQ yurgizish (fG48Xv5X). Tugagach ulanish qayta
+ * o'qiladi — `last_reconcile_at` yangilanadi.
+ */
+export const useReconcileNow = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string | number) =>
+      api.post(API_ENDPOINTS.INTEGRATIONS.RECONCILE_NOW(id), {}).then((res): ReconcileNowResult => {
+        const body = (res.data?.data ?? res.data ?? {}) as Partial<Record<keyof ReconcileNowResult, unknown>>;
+        return {
+          checked: Number(body.checked ?? 0) || 0,
+          applied: Number(body.applied ?? 0) || 0,
+          failed: Number(body.failed ?? 0) || 0,
+        };
+      }),
+    onSettled: (_result, _error, id) => {
+      queryClient.invalidateQueries({ queryKey: integrationKeys.byId(id) });
     },
   });
 };

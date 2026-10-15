@@ -72,10 +72,11 @@ describe("Courier orders — extra cost approval flow", () => {
     const [extraCostInput] = screen.getAllByRole("spinbutton");
     await user.clear(extraCostInput);
     await user.type(extraCostInput, "5000");
+    await user.selectOptions(screen.getByLabelText(/^Sabab/), "CUSTOMER_REFUSED");
     await user.click(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!);
 
     expect(cancelMutate).toHaveBeenCalledWith(
-      { orderId: "1251165", data: expect.objectContaining({ extraCost: 5000 }) },
+      { orderId: "1251165", data: expect.objectContaining({ extraCost: 5000, reason: "CUSTOMER_REFUSED" }) },
       expect.any(Object),
     );
     expect(await screen.findByRole("status")).toHaveTextContent("Market tasdig'i kutilmoqda");
@@ -92,6 +93,7 @@ describe("Courier orders — extra cost approval flow", () => {
     const [extraCostInput] = screen.getAllByRole("spinbutton");
     await user.clear(extraCostInput);
     await user.type(extraCostInput, "5000");
+    await user.selectOptions(screen.getByLabelText(/^Sabab/), "CUSTOMER_REFUSED");
     await user.click(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!);
     await user.click(screen.getByText("Yopish", { selector: "button" }));
 

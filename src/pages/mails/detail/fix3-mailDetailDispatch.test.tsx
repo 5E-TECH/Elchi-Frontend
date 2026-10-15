@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   getDispatchDestinations: vi.fn(),
   useMailDetail: vi.fn(),
   tableProps: { last: null as null | { canDelete?: boolean } },
+  deleteFromPost: vi.fn(),
 }));
 
 vi.mock("../../../entities/branch", async (importOriginal) => ({
@@ -26,6 +27,7 @@ vi.mock("../../../entities/mails", () => ({
   useReceivePost: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useReceiveCanceledPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDispatchPostToBranch: () => ({ mutateAsync: vi.fn(), isPending: false, reset: vi.fn() }),
+  useDeleteOrdersFromPost: () => ({ mutateAsync: mocks.deleteFromPost, isPending: false }),
 }));
 
 vi.mock("../../../entities/batch", () => ({
@@ -33,16 +35,17 @@ vi.mock("../../../entities/batch", () => ({
   useSendTransferBatch: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
-vi.mock("../../../entities/orders", () => ({
-  useOrders: () => ({ SendToPost: { mutateAsync: vi.fn(), isPending: false } }),
-}));
-
 vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
   useOrderQrScanner: () => undefined,
 }));
 
 vi.mock("./ui/OrdersTable", () => ({
-  default: (props: { orders: Array<{ id: string }>; onToggleAll: () => void; canDelete?: boolean }) => {
+  default: (props: {
+    orders: Array<{ id: string }>;
+    onToggleAll: () => void;
+    canDelete?: boolean;
+    onDeleteOne?: (id: string) => void;
+  }) => {
     mocks.tableProps.last = props;
     return (
       <div>
@@ -50,6 +53,11 @@ vi.mock("./ui/OrdersTable", () => ({
         <button type="button" onClick={props.onToggleAll}>
           test-select-all
         </button>
+        {props.canDelete ? (
+          <button type="button" onClick={() => props.onDeleteOne?.(props.orders[0].id)}>
+            test-delete-first
+          </button>
+        ) : null}
       </div>
     );
   },
@@ -113,6 +121,8 @@ const renderPage = (
 ) =>
   renderWithProviders(
     <Routes>
+      {/* Haqiqiy ilovada ham `/mails/today` — ro'yxat, tafsilot emas. */}
+      <Route path="/mails/today" element={<div data-testid="navigated-away" />} />
       <Route path="/mails/:id" element={<MailDetailPage />} />
       <Route path="*" element={<div data-testid="navigated-away" />} />
     </Routes>,
@@ -192,20 +202,113 @@ describe("MailDetailPage — qayta biriktirilgan tuman pochtasi (fix3 LC-09)", (
   });
 });
 
-describe("MailDetailPage — SA 'pochtadan olib tashlash' yashirilgan (fix3 C5)", () => {
-  beforeEach(() => {
+describe("MailDetailPage — savat: buyurtmani pochtadan o'chirish (yokjwjXG)", () => {
+  const refetch = vi.fn();
+  const detail = (post: { id: string; status: string } | undefined, orders = [order("101"), order("102")]) => {
     mocks.useMailDetail.mockImplementation((postId: string) => ({
-      data: postId ? { data: { allOrdersByPostId: [order("101")] } } : undefined,
+      data: postId ? { data: { allOrdersByPostId: orders, ...(post !== undefined ? { post } : {}) } } : undefined,
       isLoading: false,
       isError: false,
-      refetch: vi.fn(),
+      refetch,
     }));
+  };
+
+  beforeEach(() => {
+    mocks.deleteFromPost.mockReset();
+    refetch.mockReset().mockResolvedValue({ data: { data: { allOrdersByPostId: [order("102")] } } });
   });
 
-  it("superadmin uchun ham canDelete=false (POST /post/cancel doim 403 berardi)", () => {
+  it.each([
+    ["superadmin", { id: POST_ID, status: "new" }, true],
+    ["superadmin", { id: POST_ID, status: "on_the_road" }, false],
+    ["superadmin", undefined, false],
+    ["admin", { id: POST_ID, status: "new" }, false],
+  ] as const)("%s, pochta %j — savat ko'rinishi: %s", (role, post, expected) => {
+    detail(post as never);
+    renderPage(stateFor(role));
+    expect(mocks.tableProps.last?.canDelete).toBe(expected);
+  });
+
+  it("⭐ savat → sabab majburiy → POST /post/delete { post_id, order_ids, reason }; /post/cancel EMAS", async () => {
+    const user = userEvent.setup();
+    detail({ id: POST_ID, status: "new" });
+    mocks.deleteFromPost.mockResolvedValue({ post_id: POST_ID, deleted: ["101"], skipped: [], post_deleted: false });
     renderPage(stateFor("superadmin"));
 
-    expect(screen.getByTestId("orders-count")).toHaveTextContent("1");
-    expect(mocks.tableProps.last?.canDelete).toBe(false);
+    await user.click(screen.getByRole("button", { name: "test-delete-first" }));
+    const dialog = screen.getByRole("alertdialog", { name: "1 ta buyurtmani pochtadan o'chirish" });
+    expect(within(dialog).getByText("Buyurtma pochtadan butunlay o'chiriladi, qaytarib bo'lmaydi.")).toBeInTheDocument();
+    const confirm = within(dialog).getByRole("button", { name: "Ha, o'chirish" });
+    expect(confirm).toBeDisabled();
+
+    await user.type(within(dialog).getByLabelText(/^Sabab/), "ab");
+    expect(confirm).toBeDisabled();
+    await user.type(within(dialog).getByLabelText(/^Sabab/), "c — market qaytarib oldi");
+    expect(confirm).toBeEnabled();
+    await user.click(confirm);
+
+    expect(mocks.deleteFromPost).toHaveBeenCalledWith({
+      post_id: POST_ID,
+      order_ids: ["101"],
+      reason: "abc — market qaytarib oldi",
+    });
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(refetch).toHaveBeenCalled();
+    expect(await screen.findByText("1 ta buyurtma pochtadan o'chirildi")).toBeInTheDocument();
+  });
+
+  it("409 — backend sababi oynada, oyna ochiq qoladi", async () => {
+    const user = userEvent.setup();
+    detail({ id: POST_ID, status: "new" });
+    mocks.deleteFromPost.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 409, data: { statusCode: 409, message: "#101 — buyurtma kuryer qo'lida" } },
+    });
+    renderPage(stateFor("superadmin"));
+
+    await user.click(screen.getByRole("button", { name: "test-delete-first" }));
+    const dialog = screen.getByRole("alertdialog");
+    await user.type(within(dialog).getByLabelText(/^Sabab/), "Xato qo'shilgan");
+    await user.click(within(dialog).getByRole("button", { name: "Ha, o'chirish" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("#101 — buyurtma kuryer qo'lida");
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+  });
+
+  it("backend hech narsani o'chirmasa (deleted: []) — «o'chirildi» emas, ogohlantirish", async () => {
+    const user = userEvent.setup();
+    detail({ id: POST_ID, status: "new" });
+    mocks.deleteFromPost.mockResolvedValue({ post_id: POST_ID, deleted: [], skipped: ["101"], post_deleted: false });
+    renderPage(stateFor("superadmin"));
+
+    await user.click(screen.getByRole("button", { name: "test-delete-first" }));
+    const dialog = screen.getByRole("alertdialog");
+    await user.type(within(dialog).getByLabelText(/^Sabab/), "Xato qo'shilgan");
+    await user.click(within(dialog).getByRole("button", { name: "Ha, o'chirish" }));
+
+    expect(await screen.findByText("Hech bir buyurtma o'chirilmadi")).toBeInTheDocument();
+    expect(screen.getByText("1 tasi o'chirilmadi")).toBeInTheDocument();
+    expect(screen.queryByText(/pochtadan o'chirildi/)).toBeNull();
+  });
+
+  it("tanlanganlarni birdaniga; oxirgisi o'chsa (post_deleted) ro'yxatga qaytadi", async () => {
+    const user = userEvent.setup();
+    detail({ id: POST_ID, status: "new" });
+    mocks.deleteFromPost.mockResolvedValue({ post_id: POST_ID, deleted: ["101", "102"], skipped: [], post_deleted: true });
+    renderPage(stateFor("superadmin"));
+
+    expect(screen.queryByTestId("mail-delete-selected")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "test-select-all" }));
+    await user.click(
+      within(screen.getByTestId("mail-delete-selected")).getByRole("button", { name: "Tanlanganlarni o'chirish" }),
+    );
+    const dialog = screen.getByRole("alertdialog", { name: "2 ta buyurtmani pochtadan o'chirish" });
+    await user.type(within(dialog).getByLabelText(/^Sabab/), "Pochta bekor qilindi");
+    await user.click(within(dialog).getByRole("button", { name: "Ha, o'chirish" }));
+
+    expect(mocks.deleteFromPost).toHaveBeenCalledWith(
+      expect.objectContaining({ post_id: POST_ID, order_ids: ["101", "102"] }),
+    );
+    expect(await screen.findByTestId("navigated-away")).toBeInTheDocument();
   });
 });

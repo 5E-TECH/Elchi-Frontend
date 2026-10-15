@@ -1,9 +1,10 @@
 import { memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Ban, FileText, Globe, MapPin, ScanLine } from "lucide-react";
+import { AlertTriangle, Ban, FileText, Globe, MapPin, ScanLine, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  useDeleteOrdersFromPost,
   useMails,
   useMailDetail,
   type PostOrder,
@@ -29,8 +30,7 @@ import { useMailDetailState } from "./model/useMailDetailState";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
-import { useOrders } from "../../../entities/orders";
-import PopupConfirm from "../../../shared/components/popupConfirm";
+import DeleteFromPostDialog from "./ui/DeleteFromPostDialog";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
@@ -515,9 +515,14 @@ const MailDetailPage = () => {
   const isReceiving = isEffectiveRefusedDetail
     ? receiveCanceledPost.isPending
     : receivePost.isPending;
-  const { SendToPost } = useOrders();
+  // Pochtadan o'chirish (yokjwjXG): faqat superadmin, faqat jo'natilmagan (NEW) pochta.
+  const deleteFromPost = useDeleteOrdersFromPost();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
+  const [deleteError, setDeleteError] = useState("");
+  const postStatus = regularResponse?.data?.post?.status ?? null;
+  const canDeleteFromPost =
+    role === "superadmin" && !isEffectiveRefusedDetail && !isOldDetail && postStatus === "new";
 
   // ─── Region nomi ──────────────────────────────────────────────────────────
   const regionName = useMemo(
@@ -860,31 +865,61 @@ const MailDetailPage = () => {
     [handlePrintOrders],
   );
 
-  const handleDeleteOne = useCallback((orderId: string) => {
-    setDeleteTargetIds([orderId]);
+  const openDeleteConfirm = useCallback((orderIds: string[]) => {
+    if (orderIds.length === 0) return;
+    setDeleteTargetIds(orderIds);
+    setDeleteError("");
     setIsDeleteConfirmOpen(true);
   }, []);
 
-  const handleDeleteSelected = useCallback(() => {
-    if (deleteTargetIds.length === 0) return;
+  const handleDeleteOne = useCallback((orderId: string) => openDeleteConfirm([orderId]), [openDeleteConfirm]);
 
-    apiRequest({
-      request: () => SendToPost.mutateAsync(deleteTargetIds),
-      successMessage: t("selectedOrdersRemovedSuccess"),
-      errorMessage: t("selectedOrdersRemovedError"),
-      onSuccess: async () => {
-        setIsDeleteConfirmOpen(false);
-        setDeleteTargetIds([]);
+  const closeDeleteConfirm = useCallback(() => {
+    setIsDeleteConfirmOpen(false);
+    setDeleteTargetIds([]);
+    setDeleteError("");
+  }, []);
+
+  /**
+   * `POST /post/delete` — yo hammasi, yo hech biri. Rad etilsa (409: pochta
+   * jo'natilgan, buyurtma kuryerda …) sabab oynada qoladi.
+   */
+  const handleDeleteFromPost = useCallback(
+    async (reason: string) => {
+      if (!postId || deleteTargetIds.length === 0) return;
+      setDeleteError("");
+      try {
+        const result = await deleteFromPost.mutateAsync({ post_id: postId, order_ids: deleteTargetIds, reason });
+        closeDeleteConfirm();
         clearSelection();
-        const refreshed = await refetchRegularDetail();
-        const remainingOrders = refreshed.data?.data?.allOrdersByPostId?.length ?? 0;
-
-        if (remainingOrders === 0) {
-          navigate(getMailTabPath("today"));
+        if (result.deleted.length > 0) {
+          notifApi.success({
+            message: t("deleteFromPostSuccess", { count: result.deleted.length }),
+            description: result.skipped.length > 0 ? t("deleteFromPostSkipped", { count: result.skipped.length }) : undefined,
+            placement: "topRight",
+            duration: 4,
+          });
+        } else {
+          // Backend hech narsani o'chirmadi — "o'chirildi" deyish yolg'on bo'lardi.
+          notifApi.warning({
+            message: t("deleteFromPostNothing"),
+            description: result.skipped.length > 0 ? t("deleteFromPostSkipped", { count: result.skipped.length }) : undefined,
+            placement: "topRight",
+            duration: 6,
+          });
         }
-      },
-    });
-  }, [deleteTargetIds, apiRequest, SendToPost, t, clearSelection, refetchRegularDetail, navigate]);
+        if (result.post_deleted) {
+          notifApi.info({ message: t("deleteFromPostEmptied"), placement: "topRight", duration: 4 });
+          navigate(getMailTabPath("today"));
+          return;
+        }
+        await refetchRegularDetail();
+      } catch (error) {
+        setDeleteError(getBackendErrorMessage(error) ?? t("deleteFromPostFailed"));
+      }
+    },
+    [postId, deleteTargetIds, deleteFromPost, closeDeleteConfirm, clearSelection, notifApi, t, navigate, refetchRegularDetail],
+  );
 
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (regularLoading || refusedLoading || transferBatchLoading || regionFallbackLoading || refusedRegionFallbackLoading)
@@ -977,15 +1012,33 @@ const MailDetailPage = () => {
         onToggleOne={handleManualToggleOne}
         onPrintOne={handlePrintOne}
         onDeleteOne={handleDeleteOne}
-        // fix3 LC-15 / FE-MAIL-10 (C5): "pochtadan olib tashlash" YASHIRILDI.
-        // U POST /post/cancel ga ketardi — bu kuryer/menejerning "bekor
-        // qilinganlarni pochtaga yuborish" amali (superadminga doim 403, ruxsat
-        // bo'lsa ham buyurtmani CANCELLED_SENT qilardi, olib tashlamasdi).
-        // Haqiqiy "pochtadan ajratish" endpointi qo'shilganda qayta yoqiladi.
-        canDelete={false}
+        // yokjwjXG: savat = buyurtmani SHU pochtadan o'chirish (`POST /post/delete`),
+        // `POST /post/cancel` (bekor qilinganlarni qaytarish) EMAS. Faqat
+        // superadmin va jo'natilmagan (NEW) pochtada — backend bilan bir xil.
+        canDelete={canDeleteFromPost}
         variant={isOldDetail ? "history" : "default"}
         readOnly={isOldDetail || isReadOnlyRefusedCourier}
       />
+
+      {/* Tanlanganlarni pochtadan o'chirish — alohida v2 blok (eski jadval tegilmaydi). */}
+      {canDeleteFromPost && selectedIds.size > 0 ? (
+        <div
+          data-testid="mail-delete-selected"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3"
+        >
+          <span className="text-sm font-semibold text-text">
+            {t("selectedCountLabel", { count: selectedIds.size })}
+          </span>
+          <button
+            type="button"
+            onClick={() => openDeleteConfirm(Array.from(selectedIds))}
+            className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border border-transparent bg-danger-soft px-4 text-sm font-semibold text-danger-fg transition-colors duration-150 hover:bg-danger hover:text-on-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action max-md:min-h-11 max-md:w-full"
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
+            {t("deleteSelectedFromPost")}
+          </button>
+        </div>
+      ) : null}
 
       {/* Rol asosida tugma. "Jo'natish" rejimi faqat filialga jo'nata oladiganlarga
           (superadmin/admin, HQ registratori); qabul rejimlari o'zgarmagan. */}
@@ -1021,18 +1074,13 @@ const MailDetailPage = () => {
         />
       )}
 
-      <PopupConfirm
-        isOpen={isDeleteConfirmOpen}
-        onClose={() => {
-          setIsDeleteConfirmOpen(false);
-          setDeleteTargetIds([]);
-        }}
-        onConfirm={handleDeleteSelected}
-        isLoading={SendToPost.isPending}
-        title={t("deleteSelectedOrdersTitle")}
-        message={t("deleteSelectedOrdersMessage", { count: deleteTargetIds.length })}
-        confirmLabel={t("delete", { ns: "common" })}
-        variant="danger"
+      <DeleteFromPostDialog
+        open={isDeleteConfirmOpen}
+        count={deleteTargetIds.length}
+        pending={deleteFromPost.isPending}
+        error={deleteError}
+        onCancel={closeDeleteConfirm}
+        onConfirm={(reason) => void handleDeleteFromPost(reason)}
       />
     </PageContainer>
   );
