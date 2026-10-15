@@ -350,7 +350,7 @@ for (const r of MAP.routes) {
   const entryFiles = rec?.comps.length ? rec.comps.map((c) => c.file) : (r.components ?? []).slice(0, 1);
   const marks = entryFiles.map(markerOf);
   const marked = marks.length > 0 && marks.every(Boolean);
-  for (const ms of marks.filter(Boolean)) for (const raw of ms) for (const s of [raw.replace(NO_MOCKUP, '')]) if (!viewByKey.has(s) && s !== 'Main' && !VIEWS.some((v) => stemOf(v) === s)) warnings.push(`\`// dizayn-v2:\` belgisida noma'lum ekran \`${s}\` (${r.path}).`);
+  for (const ms of marks.filter(Boolean)) for (const raw of ms) for (const s of [raw.replace(NO_MOCKUP, '')]) if (!viewByKey.has(s) && s !== 'Main' && s !== 'shell' && !VIEWS.some((v) => stemOf(v) === s)) warnings.push(`\`// dizayn-v2:\` belgisida noma'lum ekran \`${s}\` (${r.path}).`);
   if (r.status === 'v2' && !marked) warnings.push(`\`${r.path}\`: route-map da status v2, lekin asosiy faylda \`// dizayn-v2:\` belgisi yo'q.`);
   statusOf.set(r.path, r.status === 'v2' || marked ? 'v2' : 'eski');
 }

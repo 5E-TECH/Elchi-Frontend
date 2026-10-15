@@ -1,51 +1,98 @@
-import { memo, useState } from "react";
+// dizayn-v2: shell
+import { memo, Suspense, useEffect, useRef } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Header from "../header/ui/Header";
-import Footer from "../footer/ui/Footer";
 import Sidebar from "../Sidebar/ui/Sidebar";
 import BottomNav from "../Sidebar/ui/BottomNav";
 import MobileMenu from "../Sidebar/ui/MobileMenu";
+import { useMobileMenu } from "../Sidebar/model/shellNav";
+import { useShellScroll } from "./model/useShellScroll";
+import RouteProgress, { RouteSuspenseFallback } from "./ui/RouteProgress";
 
+/** Yon menyu ko'rinadigan kenglik (Tailwind `lg`). Undan torda — menyu tugmasi + suriluvchi menyu. */
+export const SHELL_DESKTOP_QUERY = "(min-width: 1024px)";
+
+/**
+ * SHELL (maket `.el-app` / `.el-main` / `.el-topbar` / `.el-content`, design/kit/helmet.html).
+ *
+ * Bitta kanvas: sahifa foni `bg`, kontent KARTA EMAS — `max-w-[1440px]`, undan keng ekranda MARKAZDA
+ * (`mx-auto`; taxta `tizim-responsive`: «Mazmun 1440 px dan kengaymaydi — katta ekranda markazda turadi»),
+ * chekkalar maketdagidek: ≥ 1024: 24px 32px 48px · < 1024: 16px 16px 88px (`@container el (max-width:1023px)`).
+ * Sahifaning ichki ritmi (sarlavha → bo'limlar, `gap-6` / telefonda `gap-4`) sahifaning o'z ildizida.
+ *
+ * Slotlar (har birini o'z quruvchisi to'ldiradi, shell faqat joy beradi):
+ *   - `sidebar`   — faqat ≥ 1024 (`hidden lg:flex`), balandlik to'liq; kenglik `Sidebar` ning o'zida
+ *                   (maket 248px; yig'ilgan holat — Sidebar qarori).
+ *   - `topbar`    — `Header`: balandligi 64px (`h-16`), `shrink-0`; < 1024 da menyu tugmasi `onMenuClick`
+ *                   (yoki `useMobileMenu().open`) bilan suriluvchi menyuni ochadi. Slot `z-40` — undagi
+ *                   ochiladigan ro'yxatlar (profil menyusi) `<main>` VA pastki menyu (`z-30`) ustida chiqadi
+ *                   (taxta `tizim-motion` 08: «Ochiladigan» qatlam «Yopishqoq»dan yuqori; aks holda telefon
+ *                   yotiq holatida profil menyusining pastki bandlari pastki menyu ostida qolardi);
+ *                   yuqori chiziq (`RouteProgress`) `z-50`.
+ *   - `<main>`    — YAGONA skroll konteyneri (`useShellScroll`: yo'l o'zgarsa tepaga).
+ *   - `bottomnav` — faqat telefonda (< 768, `md:hidden`). `BottomNav` `fixed inset-x-0 bottom-0`,
+ *                   balandligi 64px + `env(safe-area-inset-bottom)`; ustun pastdan shuncha joy qoldiradi
+ *                   (`--shell-bottomnav-h`), kontent pastki menyu ostida qolmaydi.
+ *   - `MobileMenu` — < 1024, holati `useMobileMenu()` (redux `sidebar.isMobileMenuOpen`). Ochiq paytda
+ *                   orqa fon `inert`.
+ */
 const DashboardLayout = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
-  const isBranchDashboard = location.pathname === "/branch-dashboard";
+  const { isOpen: isMenuOpen, open: openMenu, close: closeMenu } = useMobileMenu();
+  const { pathname } = useLocation();
+  const scrollRef = useRef<HTMLElement>(null);
+  useShellScroll(scrollRef);
+
+  // Bo'lim almashsa suriluvchi menyu yopiladi (band bosilganda yoki «Orqaga» bilan).
+  useEffect(() => {
+    closeMenu();
+  }, [pathname, closeMenu]);
+
+  // Ekran ≥ 1024 ga kengaysa menyu ko'rinmaydi (`lg:hidden`) — ochiq qolsa orqa fon `inert` bo'lib qotardi.
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return undefined;
+    const query = window.matchMedia(SHELL_DESKTOP_QUERY);
+    const onChange = () => {
+      if (query.matches) closeMenu();
+    };
+    query.addEventListener?.("change", onChange);
+    return () => query.removeEventListener?.("change", onChange);
+  }, [closeMenu]);
 
   return (
-    <div className="relative flex h-dvh overflow-hidden bg-sidebar font-sans text-main transition-colors duration-300 dark:bg-maindark">
-      {/* Sidebar - Desktop only */}
-      <Sidebar />
-
-      {/* Main Content Wrapper — mobil menyu ochiq bo'lsa orqa fon `inert`:
-          Tab va skrinrider menyudan tashqariga chiqmaydi. */}
-      <div inert={isMenuOpen} className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden bg-sidebar dark:bg-maindark">
-
-        {/* Header - Sticky */}
-        <Header onMenuClick={() => setIsMenuOpen(true)} />
-
-        {/* Content */}
-        <main
-          className={`el-surface-page mx-2 mb-0 flex-1 rounded-[1rem] bg-[color:var(--color-page-surface)] p-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))] custom-scrollbar dark:bg-[color:var(--color-surface-elevated-dark)] sm:mx-4 sm:rounded-[1.35rem] sm:p-4 sm:pb-[calc(6rem+env(safe-area-inset-bottom))] md:ml-0 md:mr-3 md:mb-0 md:border-l-0 md:shadow-none md:p-5 md:pb-5 xl:p-6 xl:pb-6 ${
-            isBranchDashboard ? "overflow-y-auto xl:overflow-hidden" : "overflow-y-auto"
-          }`}
-        >
-          <Outlet />
-        </main>
-
-        {/* Footer - doim pastda */}
-        <Footer />
+    <div className="flex h-dvh overflow-hidden bg-bg font-sans text-text [--shell-bottomnav-h:calc(4rem+env(safe-area-inset-bottom))]">
+      <div data-shell-slot="sidebar" className="hidden h-full shrink-0 lg:flex">
+        <Sidebar />
       </div>
 
-      {/* Mobile Navigation */}
-      <div inert={isMenuOpen} className="contents">
+      {/* Asosiy ustun — telefon menyusi ochiq bo'lsa `inert`: Tab va skrinrider menyudan tashqariga chiqmaydi. */}
+      <div
+        inert={isMenuOpen}
+        data-shell-slot="column"
+        className="relative flex min-w-0 flex-1 flex-col max-md:pb-[var(--shell-bottomnav-h)]"
+      >
+        <RouteProgress />
+
+        <div data-shell-slot="topbar" className="relative z-40 shrink-0">
+          <Header onMenuClick={openMenu} />
+        </div>
+
+        <main ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain">
+          <div
+            data-shell-slot="content"
+            className="mx-auto w-full max-w-[1440px] flex-1 px-8 pt-6 pb-12 max-lg:px-4 max-lg:pt-4 max-lg:pb-[88px]"
+          >
+            <Suspense fallback={<RouteSuspenseFallback />}>
+              <Outlet />
+            </Suspense>
+          </div>
+        </main>
+      </div>
+
+      <div inert={isMenuOpen} data-shell-slot="bottomnav" className="md:hidden">
         <BottomNav />
       </div>
 
-      {/* Mobile Drawer Menu */}
-      <MobileMenu
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-      />
+      <MobileMenu isOpen={isMenuOpen} onClose={closeMenu} />
     </div>
   );
 };

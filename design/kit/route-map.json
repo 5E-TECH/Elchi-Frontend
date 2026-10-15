@@ -75,8 +75,10 @@
         "src/widgets/Sidebar/ui/MobileMenu.tsx",
         "src/widgets/Sidebar/model/menuConfig.tsx",
         "src/widgets/header/ui/Header.tsx",
-        "src/widgets/header/ui/HeaderSearchPopup.tsx",
-        "src/widgets/footer/ui/Footer.tsx"
+        "src/widgets/header/ui/HeaderSearch.tsx",
+        "src/widgets/header/ui/SearchScreen.tsx",
+        "src/widgets/header/ui/NotificationsMenu.tsx",
+        "src/widgets/header/ui/UserMenu.tsx"
       ],
       "views": {
         "courier": ["dashboard-mobile-menu", "dashboard-mobile-search"],
@@ -1289,8 +1291,7 @@
     "courier-courier-bulk-scanner-camera-list": "Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera).",
     "courier-courier-bulk-confirm-dialog": "«Kunni yakunlash» oldidan tasdiqlash oynasi yo'q (ega tasdiqlagan UX qo'shimchasi).",
     "courier-scan-offline": "Internet yo'qda skanlarni navbatga qo'yish yo'q.",
-    "courier-scan-manual-entry": "Kodni qo'lda kiritish yo'q.",
-    "common-bell-dropdown": "Qo'ng'iroqcha hozir to'g'ridan-to'g'ri /inbox ga o'tadi — ochiladigan «so'nggi bildirishnomalar» ro'yxati yo'q."
+    "courier-scan-manual-entry": "Kodni qo'lda kiritish yo'q."
   },
   "partialViews": {
     "courier-scan-other-courier": "Alohida holat yo'q — backend xato matni umumiy xato blokida chiqadi (scan/detail.tsx).",
@@ -1310,8 +1311,8 @@
     "superadmin-regions-region-modal": "src/pages/region/ui/UzbekistanRegionMap.tsx",
     "admin-regions-region-detail-dialog": "src/pages/region/ui/UzbekistanRegionMap.tsx",
     "courier-dashboard-mobile-menu": "src/widgets/Sidebar/ui/MobileMenu.tsx",
-    "courier-dashboard-mobile-search": "src/widgets/header/ui/HeaderSearchPopup.tsx",
-    "common-bell-dropdown": "src/widgets/header/ui/Header.tsx",
+    "courier-dashboard-mobile-search": "src/widgets/header/ui/SearchScreen.tsx",
+    "common-bell-dropdown": "src/widgets/header/ui/NotificationsMenu.tsx",
     "superadmin-orders-filters-mobile": "src/pages/orders/list/OrderFilters.tsx",
     "admin-orders-filters-mobile": "src/pages/orders/list/OrderFilters.tsx",
     "registrator-orders-filters-mobile": "src/pages/orders/list/OrderFilters.tsx",

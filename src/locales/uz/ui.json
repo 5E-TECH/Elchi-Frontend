@@ -6,6 +6,87 @@
     "more": "Yana",
     "empty": "Ma'lumot yo'q"
   },
+  "shell": {
+    "pageLoading": "Sahifa yuklanmoqda",
+    "bottomNav": {
+      "label": "Asosiy bo'limlar",
+      "home": "Bosh sahifa",
+      "orders": "Buyurtmalar",
+      "intake": "Qabul",
+      "create": "Yaratish",
+      "dispatch": "Biriktirish",
+      "quickAction": "Tezkor amal",
+      "products": "Mahsulotlar",
+      "payments": "To'lovlar",
+      "scanner": "Skaner",
+      "menu": "Menyu"
+    }
+  },
+  "header": {
+    "label": "Yuqori panel",
+    "openMenu": "Menyuni ochish",
+    "scan": "Skanerlash",
+    "search": {
+      "label": "Global qidiruv",
+      "placeholder": "Ism, telefon yoki buyurtma raqami",
+      "open": "Qidiruvni ochish",
+      "clear": "Qidiruvni tozalash",
+      "close": "Yopish",
+      "results": "Qidiruv natijalari",
+      "groups": {
+        "orders": "Buyurtmalar",
+        "users": "Foydalanuvchilar",
+        "other": "Boshqa natijalar"
+      },
+      "count": "{{count}} ta",
+      "loading": "Qidirilmoqda…",
+      "loadingMore": "Yana yuklanmoqda…",
+      "empty": "Natija topilmadi",
+      "emptyHint": "Buyurtma raqami, ism yoki telefonni tekshiring.",
+      "error": "Qidirib bo'lmadi. Birozdan keyin qayta urinib ko'ring.",
+      "recent": "So'nggi qidiruvlar",
+      "clearRecent": "Tozalash",
+      "hintSelect": "tanlash",
+      "hintOpen": "ochish",
+      "hintClose": "yopish",
+      "orderTitle": "Buyurtma №{{id}}"
+    },
+    "notifications": {
+      "title": "Bildirishnomalar",
+      "label": "Bildirishnomalar",
+      "labelUnread": "Bildirishnomalar, {{count}} ta yangi",
+      "labelMany": "Bildirishnomalar, 99 dan ortiq yangi",
+      "list": "So'nggi bildirishnomalar",
+      "unread": "O'qilmagan:",
+      "viewAll": "Barchasini ko'rish",
+      "close": "Bildirishnomalarni yopish",
+      "empty": "Yangi bildirishnoma yo'q",
+      "emptyHint": "Yangi xabar kelsa, shu yerda ko'rinadi.",
+      "error": "Bildirishnomalarni yuklab bo'lmadi."
+    },
+    "profile": {
+      "menu": "Profil menyusi",
+      "profile": "Profil",
+      "settings": "Sozlamalar",
+      "shortcuts": "Tezkor tugmalar",
+      "theme": "Mavzu",
+      "themeLight": "Kunduzgi",
+      "themeDark": "Tungi",
+      "language": "Til",
+      "logout": "Chiqish"
+    },
+    "shortcuts": {
+      "title": "Tezkor tugmalar",
+      "close": "Yopish",
+      "search": "Qidiruvga o'tish",
+      "orders": "Buyurtmalarga o'tish",
+      "batches": "Paketlarga o'tish",
+      "escape": "Ochiq oynani yopish",
+      "tab": "Keyingi band · fokus halqasi bilan",
+      "list": "Tezkor tugmalar ro'yxati",
+      "then": "keyin"
+    }
+  },
   "card": {
     "groups": {
       "surfaces": {

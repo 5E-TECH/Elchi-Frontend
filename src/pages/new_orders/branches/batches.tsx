@@ -389,7 +389,7 @@ const BranchSentBatchesPage = () => {
         hoverable
       />
 
-      <div className="fixed bottom-22 right-6 z-40 sm:bottom-24 sm:right-8 md:bottom-14 md:right-12">
+      <div className="fixed bottom-[calc(var(--shell-bottomnav-h)+1rem)] right-6 z-40 sm:right-8 md:bottom-14 md:right-12">
         <button
           type="button"
           disabled={selectedBatchIds.size === 0 || receiveTransferBatch.isPending}

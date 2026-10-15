@@ -3,14 +3,16 @@ import {
   Plug,
   Wrench,
   ShoppingBag,
-  MailOpen,
-  Apple,
-  UserRound,
+  Mail,
+  Tag,
+  Users,
+  Map as MapIcon,
   MapPinned,
-  Calendar1,
-  PackageCheck,
+  Inbox,
+  Package,
   RotateCcw,
   CreditCard,
+  Wallet,
   Scale,
   ScrollText,
   Bell,
@@ -18,7 +20,6 @@ import {
   Truck,
   Zap,
   type LucideIcon,
-  //   LucideIcon,
 } from "lucide-react";
 import type { User } from "../../../entities/user/model/types";
 
@@ -57,22 +58,26 @@ export const normalizeSidebarRole = (
 /**
  * Barcha roller uchun static navigation configuration
  * Icon'lar component'ga JSX sifatida ishlatiladi
+ *
+ * Ikonkalar — kanonik (`design/icon-registry.json`, maket `design/kit/roles.json` → `icon`) va YAGONA
+ * manba: yon menyu, suriluvchi menyu va pastki menyu ularni shu yerdan oladi (almashtirish xaritasi yo'q).
+ * `/payments` — `CreditCard`, kassa `/cash-box` — `Wallet`; «Hududlar» — `Map`, kuryerda `MapPinned`.
  */
 export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   superadmin: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-    { to: "/mails", icon: MailOpen, label: "mails" },
+    { to: "/new-orders", icon: Inbox, label: "newOrders" },
+    { to: "/mails", icon: Mail, label: "mails" },
     // fix3 CODE-21: marshrut guardi (`canViewBatchesPage`/`canViewReturnsPage`)
     // superadminga ochiq edi, lekin menyuda yo'q edi — faqat URL orqali.
-    { to: "/batches", icon: PackageCheck, label: "batches" },
+    { to: "/batches", icon: Package, label: "batches" },
     { to: "/returns", icon: RotateCcw, label: "returns" },
-    { to: "/products", icon: Apple, label: "products" },
-    { to: "/all-users", icon: UserRound, label: "users" },
+    { to: "/products", icon: Tag, label: "products" },
+    { to: "/all-users", icon: Users, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
-    { to: "/regions", icon: MapPinned, label: "regions" },
+    { to: "/regions", icon: MapIcon, label: "regions" },
     { to: "/notifications", icon: Bell, label: "notifications" },
     { to: "/branches", icon: Building2, label: "branches" },
     { to: "/integrations", icon: Plug, label: "integrations" },
@@ -85,24 +90,24 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   admin: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-    { to: "/mails", icon: MailOpen, label: "mails" },
-    { to: "/batches", icon: PackageCheck, label: "batches" },
+    { to: "/new-orders", icon: Inbox, label: "newOrders" },
+    { to: "/mails", icon: Mail, label: "mails" },
+    { to: "/batches", icon: Package, label: "batches" },
     { to: "/returns", icon: RotateCcw, label: "returns" },
-    { to: "/products", icon: Apple, label: "products" },
-    { to: "/all-users", icon: UserRound, label: "users" },
+    { to: "/products", icon: Tag, label: "products" },
+    { to: "/all-users", icon: Users, label: "users" },
     { to: "/payments", icon: CreditCard, label: "payments" },
     { to: "/financial-balance", icon: Scale, label: "balance" },
-    { to: "/regions", icon: MapPinned, label: "regions" },
+    { to: "/regions", icon: MapIcon, label: "regions" },
     { to: "/integrations", icon: Plug, label: "integrations" },
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
   ],
   market: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-    { to: "/products", icon: Apple, label: "products" },
-    { to: "/cash-box", icon: CreditCard, label: "payments" },
+    { to: "/new-orders", icon: Inbox, label: "newOrders" },
+    { to: "/products", icon: Tag, label: "products" },
+    { to: "/cash-box", icon: Wallet, label: "payments" },
     // fix3 RBAC-18: "/market-operators" olib tashlandi — sahifa GET /users ga
     // tayanadi, u esa marketga doim 403 (backendda market yo'li yo'q).
   ],
@@ -110,16 +115,17 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/dispatch", icon: Truck, label: "dispatch" },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/new-orders", icon: Calendar1, label: "newOrders" },
-    { to: "/mails", icon: MailOpen, label: "mails" },
-    { to: "/products", icon: Apple, label: "products" },
+    { to: "/new-orders", icon: Inbox, label: "newOrders" },
+    { to: "/mails", icon: Mail, label: "mails" },
+    { to: "/products", icon: Tag, label: "products" },
   ],
   courier: [
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
     { to: "/courier-bulk", icon: Zap, label: "quickAction" },
-    { to: "/mails", icon: MailOpen, label: "mails" },
-    { to: "/cash-box", icon: CreditCard, label: "payments" },
+    { to: "/mails", icon: Mail, label: "mails" },
+    { to: "/cash-box", icon: Wallet, label: "payments" },
+    // Kuryerda «Hududlar» — `MapPinned` (roles.json istisnosi: kuryer o'z hududini ko'radi).
     { to: "/regions", icon: MapPinned, label: "regions" },
   ],
   /**
@@ -132,8 +138,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   manager: [
     { to: "/branch-dashboard", icon: House, label: "dashboard", end: true },
     { to: "/orders", icon: ShoppingBag, label: "orders" },
-    { to: "/products", icon: Apple, label: "products" },
-    { to: "/regions", icon: MapPinned, label: "regions" },
+    { to: "/products", icon: Tag, label: "products" },
+    { to: "/regions", icon: MapIcon, label: "regions" },
   ],
 };
 
@@ -198,16 +204,16 @@ const MANAGER_MENU_ORDER: { item: NavItem; capability: ManagerCapability | null 
   { item: { to: "/dispatch", icon: Truck, label: "dispatch" }, capability: 'dispatch' },
   { item: { to: "/orders", icon: ShoppingBag, label: "orders" }, capability: null },
   { item: { to: "/courier-bulk", icon: Zap, label: "quickAction" }, capability: 'dispatch' },
-  { item: { to: "/new-orders", icon: Calendar1, label: "newOrders" }, capability: 'intake' },
-  { item: { to: "/mails", icon: MailOpen, label: "mails" }, capability: 'mails' },
-  { item: { to: "/batches", icon: PackageCheck, label: "batches" }, capability: 'intake' },
+  { item: { to: "/new-orders", icon: Inbox, label: "newOrders" }, capability: 'intake' },
+  { item: { to: "/mails", icon: Mail, label: "mails" }, capability: 'mails' },
+  { item: { to: "/batches", icon: Package, label: "batches" }, capability: 'intake' },
   { item: { to: "/returns", icon: RotateCcw, label: "returns" }, capability: 'intake' },
   // Mahsulotlar — menejer filiali uchun mahsulot qo'sha oladi (registrator
   // menyusidagidek shartsiz; backend POST /product MANAGER ga ruxsat beradi).
-  { item: { to: "/products", icon: Apple, label: "products" }, capability: null },
-  { item: { to: "/all-users", icon: UserRound, label: "users" }, capability: 'staff' },
+  { item: { to: "/products", icon: Tag, label: "products" }, capability: null },
+  { item: { to: "/all-users", icon: Users, label: "users" }, capability: 'staff' },
   { item: { to: "/payments", icon: CreditCard, label: "payments" }, capability: 'finance' },
-  { item: { to: "/regions", icon: MapPinned, label: "regions" }, capability: null },
+  { item: { to: "/regions", icon: MapIcon, label: "regions" }, capability: null },
 ];
 
 /**

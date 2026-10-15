@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **20** · qisman: **4** · v2 ga ko'chirilgan route: **1 / 76**
+**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **4** · v2 ga ko'chirilgan route: **1 / 76**
 
 ## Qanday ishlatiladi
 
@@ -45,7 +45,7 @@
 
 | Route | Bo'lim | Asosiy fayl | Rollar | Maketlar | Holat |
 |---|---|---|---|---|---|
-| `(qobiq)` | Qobiq | `src/widgets/layout/dashboardLayout.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | eski |
+| `(qobiq)` | Qobiq | `src/widgets/layout/dashboardLayout.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | v2 |
 | `/login` | Kirish va xato sahifalari | `src/features/auth/index.tsx` | hamma (kirishsiz) | 3 | eski |
 | `/403` | Kirish va xato sahifalari | `src/shared/ui/Forbidden.tsx` | hamma (kirishsiz) | 1 | eski |
 | `/404` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | hamma (kirishsiz) | 1 | eski |
@@ -131,21 +131,21 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `(qobiq)` — Har sahifa atrofidagi qobiq: yon menyu, yuqori panel (qidiruv, skaner, qo'ng'iroqcha, profil), pastki menyu va telefon menyusi
 
-- **Fayllar:** `src/widgets/layout/dashboardLayout.tsx` · `src/widgets/layout/scanLayout.tsx` · `src/widgets/Sidebar/ui/Sidebar.tsx` · `src/widgets/Sidebar/ui/SidebarItem.tsx` · `src/widgets/Sidebar/ui/BottomNav.tsx` · `src/widgets/Sidebar/ui/MobileMenu.tsx` · `src/widgets/Sidebar/model/menuConfig.tsx` · `src/widgets/header/ui/Header.tsx` · `src/widgets/header/ui/HeaderSearchPopup.tsx` · `src/widgets/footer/ui/Footer.tsx`
+- **Fayllar:** `src/widgets/layout/dashboardLayout.tsx` · `src/widgets/layout/scanLayout.tsx` · `src/widgets/Sidebar/ui/Sidebar.tsx` · `src/widgets/Sidebar/ui/SidebarItem.tsx` · `src/widgets/Sidebar/ui/BottomNav.tsx` · `src/widgets/Sidebar/ui/MobileMenu.tsx` · `src/widgets/Sidebar/model/menuConfig.tsx` · `src/widgets/header/ui/Header.tsx` · `src/widgets/header/ui/HeaderSearch.tsx` · `src/widgets/header/ui/SearchScreen.tsx` · `src/widgets/header/ui/NotificationsMenu.tsx` · `src/widgets/header/ui/UserMenu.tsx`
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
-- **Holat:** eski
+- **Holat:** v2
 - **Izoh:** Maketlardagi yon menyu, yuqori panel va pastki menyu design/kit/roles.json dan chiziladi (bandlar, guruhlar, pastki menyu tartibi, persona). Menyu bandi qo'shsangiz — menuConfig.tsx bilan birga roles.json ni ham solishtiring.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `(qobiq)` | superadmin | — Qobiq har sahifa maketida o'z rolining menyusi bilan chizilgan — masalan superadmin-orders-list (oltin sahifa). | — | — | eski |
-| `(qobiq)` | admin | — Qobiq har sahifa maketida chizilgan — masalan admin-orders-list. | — | — | eski |
-| `(qobiq)` | manager | — Qobiq har sahifa maketida chizilgan — masalan manager-orders-list-all (pastki menyuda «Skaner» va «Biriktirish»). | — | — | eski |
-| `(qobiq)` | registrator | — Qobiq har sahifa maketida chizilgan — masalan registrator-orders-list. | — | — | eski |
-| `(qobiq)` | market | — Qobiq har sahifa maketida chizilgan — masalan market-orders-list (pastki menyuda skaner yo'q). | — | — | eski |
-| `(qobiq)` | courier | `courier-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/courier--dashboard-mobile-menu.html](fragments/courier--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | eski |
-| `(qobiq)` | courier | `courier-dashboard-mobile-search` — Global qidiruv (telefon)<br>↳ `src/widgets/header/ui/HeaderSearchPopup.tsx` | [design/fragments/courier--dashboard-mobile-search.html](fragments/courier--dashboard-mobile-search.html) | oyna · faqat telefon | eski |
-| `(qobiq)` | umumiy (barcha rollar) | `common-bell-dropdown` — Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar)<br>↳ `src/widgets/header/ui/Header.tsx` | [design/fragments/common--bell-dropdown.html](fragments/common--bell-dropdown.html) | oyna | yangi (kodda yo'q) |
+| `(qobiq)` | superadmin | — Qobiq har sahifa maketida o'z rolining menyusi bilan chizilgan — masalan superadmin-orders-list (oltin sahifa). | — | — | v2 |
+| `(qobiq)` | admin | — Qobiq har sahifa maketida chizilgan — masalan admin-orders-list. | — | — | v2 |
+| `(qobiq)` | manager | — Qobiq har sahifa maketida chizilgan — masalan manager-orders-list-all (pastki menyuda «Skaner» va «Biriktirish»). | — | — | v2 |
+| `(qobiq)` | registrator | — Qobiq har sahifa maketida chizilgan — masalan registrator-orders-list. | — | — | v2 |
+| `(qobiq)` | market | — Qobiq har sahifa maketida chizilgan — masalan market-orders-list (pastki menyuda skaner yo'q). | — | — | v2 |
+| `(qobiq)` | courier | `courier-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/courier--dashboard-mobile-menu.html](fragments/courier--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
+| `(qobiq)` | courier | `courier-dashboard-mobile-search` — Global qidiruv (telefon)<br>↳ `src/widgets/header/ui/SearchScreen.tsx` | [design/fragments/courier--dashboard-mobile-search.html](fragments/courier--dashboard-mobile-search.html) | oyna · faqat telefon | v2 |
+| `(qobiq)` | umumiy (barcha rollar) | `common-bell-dropdown` — Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar)<br>↳ `src/widgets/header/ui/NotificationsMenu.tsx` | [design/fragments/common--bell-dropdown.html](fragments/common--bell-dropdown.html) | oyna | v2 |
 | `(qobiq)` | tizim taxtasi | `tizim-states-navigation` — Holatlar — navigatsiya | [design/fragments/tizim--states-navigation.html](fragments/tizim--states-navigation.html) | taxta | qoida |
 | `(qobiq)` | tizim taxtasi | `tizim-responsive` — Moslashuvchanlik — telefon, planshet, desktop | [design/fragments/tizim--responsive.html](fragments/tizim--responsive.html) | taxta | qoida |
 
@@ -1907,8 +1907,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `courier-dashboard-home` | Bosh sahifa — kuryer statistikasi | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | eski |
-| `courier-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | eski |
-| `courier-dashboard-mobile-search` | Global qidiruv (telefon) | oyna · faqat telefon | `(qobiq)` | `src/widgets/header/ui/HeaderSearchPopup.tsx` | eski |
+| `courier-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | v2 |
+| `courier-dashboard-mobile-search` | Global qidiruv (telefon) | oyna · faqat telefon | `(qobiq)` | `src/widgets/header/ui/SearchScreen.tsx` | v2 |
 | `courier-orders-pending` | Buyurtmalar — Kutilayotganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | eski |
 | `courier-orders-tab-switcher-open` | Buyurtmalar — tab almashtirildi, yuklanmoqda | sahifa · faqat telefon | `/orders` | `src/pages/orders/list/courier/list/tabs.tsx` | eski |
 | `courier-orders-all` | Buyurtmalar — Hammasi | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | eski |
@@ -1956,7 +1956,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### umumiy ekranlar (common — barcha rollar)
 
-12 ta maket · kodda bor: 11 · kodda yo'q: 1
+12 ta maket · kodda bor: 12 · kodda yo'q: 0
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1971,7 +1971,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `common-profile` | Profil | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | eski |
 | `common-profile-password-dialog` | Profil — parolni o'zgartirish | oyna | `/profile` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | qisman — Alohida «Parolni o'zgartirish» oynasi (yangi parol + takrorlash, saqlangach chiqish) yo'q — parol umumiy tahrirlash oynasida (UpdateUserModal). |
 | `common-inbox` | Bildirishnomalar qutisi | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | eski |
-| `common-bell-dropdown` | Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar) | oyna | `(qobiq)` | `src/widgets/header/ui/Header.tsx` | yangi (kodda yo'q) — Qo'ng'iroqcha hozir to'g'ridan-to'g'ri /inbox ga o'tadi — ochiladigan «so'nggi bildirishnomalar» ro'yxati yo'q. |
+| `common-bell-dropdown` | Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar) | oyna | `(qobiq)` | `src/widgets/header/ui/NotificationsMenu.tsx` | v2 |
 
 ## 5. Dizayn tizimi taxtalari
 
@@ -2225,9 +2225,11 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/widgets/dashboard-statistics/ui/SuccessGauge.tsx` | `/` |
 | `src/widgets/dashboard-top-performers/ui/TopPerformers.tsx` | `/`, `/branch-dashboard` |
 | `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` | `/` |
-| `src/widgets/footer/ui/Footer.tsx` | `(qobiq)` |
 | `src/widgets/header/ui/Header.tsx` | `(qobiq)` |
-| `src/widgets/header/ui/HeaderSearchPopup.tsx` | `(qobiq)` |
+| `src/widgets/header/ui/HeaderSearch.tsx` | `(qobiq)` |
+| `src/widgets/header/ui/NotificationsMenu.tsx` | `(qobiq)` |
+| `src/widgets/header/ui/SearchScreen.tsx` | `(qobiq)` |
+| `src/widgets/header/ui/UserMenu.tsx` | `(qobiq)` |
 | `src/widgets/layout/dashboardLayout.tsx` | `(qobiq)` |
 | `src/widgets/layout/scanLayout.tsx` | `(qobiq)` |
 | `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` | `/notifications/send`, `/inbox` |

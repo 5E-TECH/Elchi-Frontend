@@ -254,10 +254,71 @@ describe("dizayn v2: asosiy juftliklar WCAG kontrastida", () => {
     // Doim navy orollar (xato sahifasi, skaner) ustidagi urg'u.
     ["nav-accent / navy (light)", T.light["nav-accent"], T.light.nav, 4.5],
     ["dark warning-fg / raised", T.dark["warning-fg"], T.dark.raised, 4.5],
+    // Avatar bosh harflari (13px/700) — maket `.el-avatar` / `.el.dark .el-avatar`.
+    ["light on-avatar / avatar", T.light["on-avatar"], T.light.avatar, 4.5],
+    ["dark on-avatar / avatar", T.dark["on-avatar"], T.dark.avatar, 4.5],
+    // Tungi avatar sirtdan ajralib tursin (UI elementi).
+    ["dark avatar / surface (chegara)", T.dark.avatar, T.dark.surface, 1.3],
   ];
   for (const [name, fg, bg, min] of cases) {
     it(`${name} >= ${min}:1`, () => {
       expect(contrast(fg, bg)).toBeGreaterThanOrEqual(min);
     });
   }
+});
+
+/**
+ * YON MENYU (shell, 2-bosqich): `nav-*` tokenlari maketdagi `--sidebar-*`
+ * (design/kit/helmet.html) nusxasi. Ular yarim shaffof — fon `nav` ustiga
+ * aralashtirilib (hover/faol holat, son pilyulasi faol band ichida) o'lchanadi.
+ *
+ * O'lchangan qiymatlar (2026-10-15): kunduzgi — nav-text 9.55, faol band
+ * ustida 6.55; on-nav: faol 9.14, son pilyulasi faol band ichida 6.16;
+ * nav-muted 4.93. Tungi — nav-text 9.98 (faol 8.17), on-nav faol 14.86,
+ * pilyula 9.55, nav-muted 4.38.
+ */
+describe("dizayn v2: yon menyu (nav) tokenlari kontrasti", () => {
+  /** Yarim shaffof `top` rangni `base` ustiga aralashtirib, shaffofsiz `rgb()` beradi. */
+  const over = (top: string, base: string) => {
+    const [r, g, b, a] = parseColor(top);
+    const [br, bgG, bb] = parseColor(base);
+    return `rgb(${r * a + br * (1 - a)}, ${g * a + bgG * (1 - a)}, ${b * a + bb * (1 - a)})`;
+  };
+
+  for (const theme of ["light", "dark"] as const) {
+    const T = SEMANTIC_TOKENS[theme];
+    const nav = T.nav;
+    const hover = over(T["nav-hover"], nav);
+    const active = over(T["nav-active"], nav);
+    const countIdle = over(T["nav-count"], nav);
+    const countActive = over(T["nav-count"], active);
+    const cases: Array<[string, string, string, number]> = [
+      // Band matni (14px/500) — AA
+      ["nav-text / nav", T["nav-text"], nav, 4.5],
+      ["nav-text / nav-hover", T["nav-text"], hover, 4.5],
+      ["nav-text / nav-active", T["nav-text"], active, 4.5],
+      // hover/faol band matni va son pilyulasi (12px/600) — oq
+      ["on-nav / nav", T["on-nav"], nav, 4.5],
+      ["on-nav / nav-hover", T["on-nav"], hover, 4.5],
+      ["on-nav / nav-active", T["on-nav"], active, 4.5],
+      ["on-nav / nav-count", T["on-nav"], countIdle, 4.5],
+      ["on-nav / nav-count (faol band ichida)", T["on-nav"], countActive, 4.5],
+      // Guruh sarlavhasi: 12px/600, katta harf — kamida 3:1 (amalda AA ham)
+      ["nav-muted / nav", T["nav-muted"], nav, 3],
+      // Faol band urg'usi (ikonka, chiziq) — UI elementi 3:1
+      ["nav-accent / nav-active", T["nav-accent"], active, 3],
+    ];
+    for (const [name, fg, bg, min] of cases) {
+      it(`${theme}: ${name} >= ${min}:1`, () => {
+        expect(contrast(fg, bg)).toBeGreaterThanOrEqual(min);
+      });
+    }
+  }
+
+  it("⭐ nav-* nomlari eski `sidebar` aliasi bilan aralashmaydi (u sahifa foni)", () => {
+    const light = readBlock(indexCss, "@theme");
+    // `--color-sidebar` eski alias — sahifa foni (`bg`), yon menyu emas.
+    expect(resolveVar(readVar(light, "--color-sidebar"), light)).toBe(SEMANTIC_TOKENS.light.bg);
+    expect(readVar(light, "--color-sidebar-text")).toBeUndefined();
+  });
 });

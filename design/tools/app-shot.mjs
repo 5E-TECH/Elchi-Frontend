@@ -6,12 +6,18 @@
 //   npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone --theme dark
 //   npm run app:shot -- /orders /mails --role manager --lang ru
 //   npm run app:shot -- /ops/ui-kit --device phone --split 1200      (uzun sahifa: + -1.png, -2.png … bo'laklar)
+//   npm run app:shot -- / /orders --role manager --branch-type REGIONAL  (menejer/kuryer/registrator menyusi filial turiga bog'liq)
 //
 // Bayroqlar: --device desktop|tablet|phone · --theme light|dark · --role superadmin|admin|manager|registrator|market|courier
 //            (sukut superadmin) · --lang uz|ru|en (sukut uz) · --split <px>
+//            · --branch-type HQ|REGIONAL|HYBRID|PICKUP — profildagi filial turi (`menuConfig.tsx` →
+//              `getUserBranchType`). Sukut: manager HYBRID (maketdagi to'liq menyu), registrator HQ, courier REGIONAL;
+//              boshqa rollarda filial yo'q. `--branch-type none` — filial turi aniqlanmagan holat (menejer ogohlantirishi).
 //            · --wait <css-selektor> (shu element chiqquncha kutadi; sukut: <main> ichida kontent)
+//            · --width <px> — qurilma oynasining kengligi (masalan 375 telefon, 1024 kichik desktop); balandlik va
+//              sensorli rejim `--device` dan qoladi. Fayl nomiga `-w<px>` qo'shiladi.
 // Natija: design/shots/app/<route>--<qurilma>-<mavzu>.png (rol/til sukutdan farq qilsa nomga qo'shiladi:
-// <route>-<rol>-<til>--…). design/shots git'ga kirmaydi.
+// <route>-<rol>[-<filial turi>]-<til>--…; filial turi faqat sukutdan farq qilsa). design/shots git'ga kirmaydi.
 // Har shot uchun JSON hisobot:
 //   finalPath        — yo'naltirishdan keyingi yo'l (/403 yoki /login bo'lsa — guard o'tkazmadi)
 //   overflowX        — documentElement.scrollWidth − innerWidth (0 bo'lishi kerak)
@@ -19,8 +25,8 @@
 //   smallTargets     — faqat telefonda: 44px dan kichik ko'rinadigan bosiladigan elementlar (jami va <main> ichida + namuna)
 //   tinyText         — 12px dan kichik matnli elementlar (jami va <main> ichida)
 //   consoleErrors    — konsol xatolari va ushlanmagan istisnolar
-// Eslatma: qobiq (yon menyu, yuqori panel) hali v1 — undagi kichik nishonlar 2-bosqichda tuzatiladi; sahifa uchun
-// `…InMain` sonlariga qarang.
+// Qobiq (yon menyu, yuqori panel, pastki menyu) 2-bosqichda v2 ga o'tkaziladi; sahifaning o'zi uchun `…InMain` sonlariga qarang.
+// Rasm olishdan oldin yuqori chiziq (`[data-route-progress]`, bo'lim yuklanishi) yo'qolishi kutiladi.
 import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
@@ -40,12 +46,15 @@ const DEVICES = {
 const THEMES = ['light', 'dark'];
 const ROLES = ['superadmin', 'admin', 'manager', 'registrator', 'market', 'courier'];
 const LANGS = ['uz', 'ru', 'en'];
+const BRANCH_TYPES = ['HQ', 'REGIONAL', 'HYBRID', 'PICKUP'];
+/** Rol → sukut filial turi (maketdagi persona menyusi: menejer — to'liq, registrator — «Toshkent HQ»). */
+const DEFAULT_BRANCH_TYPE = { manager: 'HYBRID', registrator: 'HQ', courier: 'REGIONAL' };
 /** API yo'qligini bildiruvchi soxta manzil — hech qachon tarmoqqa chiqmaydi, brauzerda ushlanadi. */
 const MOCK_API = 'http://api.app-shot.test';
 
 // ───────────── argumentlar ─────────────
 const args = process.argv.slice(2);
-const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait'];
+const FLAGS = ['--device', '--theme', '--role', '--lang', '--split', '--wait', '--branch-type', '--width'];
 const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
 const fail = (message) => { console.error(message); process.exit(1); };
 const device = opt('--device');
@@ -54,17 +63,24 @@ const role = opt('--role') ?? 'superadmin';
 const lang = opt('--lang') ?? 'uz';
 const split = Number(opt('--split')) || 0;
 const waitFor = opt('--wait');
+const branchTypeArg = opt('--branch-type');
+const widthArg = opt('--width');
+const width = widthArg ? Number(widthArg) : 0;
+const branchType = branchTypeArg === 'none' ? null : (branchTypeArg ?? DEFAULT_BRANCH_TYPE[role] ?? null);
 const routes = args.filter((a, i) => !a.startsWith('--') && !FLAGS.includes(args[i - 1]));
 if (!routes.length) fail("Route bering, masalan: npm run app:shot -- /ops/ui-kit [--device phone] [--theme dark]");
 if (device && !DEVICES[device]) fail(`--device: ${Object.keys(DEVICES).join(' | ')}`);
 if (theme && !THEMES.includes(theme)) fail(`--theme: ${THEMES.join(' | ')}`);
 if (!ROLES.includes(role)) fail(`--role: ${ROLES.join(' | ')}`);
 if (!LANGS.includes(lang)) fail(`--lang: ${LANGS.join(' | ')}`);
+if (branchTypeArg && branchTypeArg !== 'none' && !BRANCH_TYPES.includes(branchTypeArg)) fail(`--branch-type: ${BRANCH_TYPES.join(' | ')} | none`);
+if (widthArg && !(Number.isInteger(width) && width >= 320 && width <= 3840)) fail('--width: 320…3840 oralig\'idagi butun son (px)');
 for (const r of routes) if (!r.startsWith('/')) fail(`Route "/" bilan boshlanadi: ${r}`);
 
 const slugOf = (route) => {
   const base = route.replace(/^\/+|\/+$/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'home';
-  return [base, role !== 'superadmin' && role, lang !== 'uz' && lang].filter(Boolean).join('-');
+  const branchSlug = branchTypeArg && branchType !== (DEFAULT_BRANCH_TYPE[role] ?? null) && (branchType ?? 'none').toLowerCase();
+  return [base, role !== 'superadmin' && role, branchSlug, lang !== 'uz' && lang].filter(Boolean).join('-');
 };
 
 // ───────────── soxta API ─────────────
@@ -81,6 +97,10 @@ const profile = (themeName) => ({
     phone_number: '+998900000000',
     status: 'active',
     settings: { appearance: { theme: themeName, themeChosen: true, language: lang } },
+    // Filial turi: menejer/registrator menyusi va guardlari shundan (`getUserBranchType` o'qiydigan shakllar).
+    ...(branchType
+      ? { branch_id: '1', branch_type: branchType, branch: { id: '1', name: 'Namuna filiali', type: branchType, branch_type: branchType } }
+      : {}),
   },
 });
 const mockBody = (path, themeName) => {
@@ -144,6 +164,9 @@ const measure = (isPhone) => {
     tinyText: tiny.length,
     tinyTextInMain: main ? tiny.filter((el) => main.contains(el)).length : null,
   };
+  // Qobiqdagi (<main> tashqarisidagi) mayda matn — 2-bosqich qobig'i uchun 0 bo'lishi kerak.
+  const tinyShell = main ? tiny.filter((el) => !main.contains(el)) : [];
+  if (tinyShell.length) report.tinyTextShellSample = tinyShell.slice(0, 8).map(describe);
   if (isPhone) {
     const targets = [
       ...document.querySelectorAll(
@@ -158,6 +181,8 @@ const measure = (isPhone) => {
     report.smallTargets = small.length;
     report.smallTargetsInMain = inMain.length;
     report.smallTargetsSample = inMain.slice(0, 8).map(describe);
+    const shellSmall = main ? small.filter((el) => !main.contains(el)) : [];
+    if (shellSmall.length) report.smallTargetsShellSample = shellSmall.slice(0, 8).map(describe);
   }
   return report;
 };
@@ -182,7 +207,8 @@ const results = [];
 try {
   for (const themeName of themes) {
     for (const deviceName of devices) {
-      const spec = DEVICES[deviceName];
+      const base = DEVICES[deviceName];
+      const spec = width ? { ...base, viewport: { ...base.viewport, width } } : base;
       const context = await browser.newContext({ ...spec, deviceScaleFactor: 1 });
       await context.route('**/*', async (route) => {
         const request = route.request();
@@ -247,6 +273,8 @@ try {
           .catch(() => false);
         if (!ready) errors.push(`wait: ${waitFor ?? '<main> kontenti'} 30 s ichida chiqmadi (splash yoki xato sahifasi)`);
         else await page.waitForTimeout(300);
+        // Bo'lim yuklanish chizig'i (shell `RouteProgress`) so'nguncha — u suratda qolmasin.
+        await page.waitForFunction(() => !document.querySelector('[data-route-progress]'), null, { timeout: 10000 }).catch(() => {});
         const report = await page.evaluate(measure, deviceName === 'phone');
         // Qobiq balandligi oynaga teng (h-dvh): <main> ichidagi kontent to'liq tushishi uchun oynani cho'zamiz.
         const height = Math.min(16000, await page.evaluate(fullHeight));
@@ -254,7 +282,7 @@ try {
           await page.setViewportSize({ width: spec.viewport.width, height });
           await page.waitForTimeout(400);
         }
-        const file = join(OUT_DIR, `${slugOf(route)}--${deviceName}-${themeName}.png`);
+        const file = join(OUT_DIR, `${slugOf(route)}--${deviceName}${width ? `-w${width}` : ''}-${themeName}.png`);
         await page.screenshot({ path: file, fullPage: true });
         const tiles = [];
         if (split > 0) {
@@ -268,8 +296,10 @@ try {
         const entry = {
           route,
           role,
+          ...(branchType ? { branchType } : {}),
           lang,
           device: deviceName,
+          width: spec.viewport.width,
           theme: themeName,
           shot: file.slice(ROOT.length + 1),
           ...(tiles.length ? { tiles } : {}),

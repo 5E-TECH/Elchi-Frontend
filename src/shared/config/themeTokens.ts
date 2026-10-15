@@ -28,6 +28,15 @@ export type SemanticToken =
   | "brand"
   | "nav"
   | "nav-accent"
+  | "nav-text"
+  | "nav-muted"
+  | "nav-hover"
+  | "nav-active"
+  | "nav-line"
+  | "nav-count"
+  | "on-nav"
+  | "avatar"
+  | "on-avatar"
   | "action"
   | "action-hover"
   | "action-fg"
@@ -63,6 +72,15 @@ export const SEMANTIC_TOKENS: Record<ThemeName, Record<SemanticToken, string>> =
     brand: "#1f2853",
     nav: "#1f2853",
     "nav-accent": "#8ea6ff",
+    "nav-text": "rgba(255, 255, 255, 0.8)",
+    "nav-muted": "rgba(255, 255, 255, 0.52)",
+    "nav-hover": "rgba(255, 255, 255, 0.08)",
+    "nav-active": "rgba(255, 255, 255, 0.14)",
+    "nav-line": "rgba(255, 255, 255, 0.1)",
+    "nav-count": "rgba(255, 255, 255, 0.14)",
+    "on-nav": "#ffffff",
+    avatar: "#1f2853",
+    "on-avatar": "#ffffff",
     action: "#2b50d8",
     "action-hover": "#2443b8",
     "action-fg": "#2b50d8",
@@ -97,6 +115,15 @@ export const SEMANTIC_TOKENS: Record<ThemeName, Record<SemanticToken, string>> =
     brand: "#c9d2f5",
     nav: "#0a0e1b",
     "nav-accent": "#8ea6ff",
+    "nav-text": "rgba(232, 235, 247, 0.78)",
+    "nav-muted": "rgba(232, 235, 247, 0.48)",
+    "nav-hover": "rgba(232, 235, 247, 0.06)",
+    "nav-active": "rgba(142, 166, 255, 0.16)",
+    "nav-line": "rgba(232, 235, 247, 0.08)",
+    "nav-count": "rgba(255, 255, 255, 0.14)",
+    "on-nav": "#ffffff",
+    avatar: "#2b3768",
+    "on-avatar": "#e8ebf7",
     action: "#8ea6ff",
     "action-hover": "#a9bbff",
     "action-fg": "#8ea6ff",

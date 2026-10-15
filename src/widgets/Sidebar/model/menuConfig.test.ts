@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
 import {
+  Bell,
+  Building2,
+  CreditCard,
+  House,
+  Inbox,
+  Mail,
+  Map as MapIcon,
+  MapPinned,
+  Package,
+  Plug,
+  RotateCcw,
+  Scale,
+  ScrollText,
+  ShoppingBag,
+  Tag,
+  Truck,
+  Users,
+  Wallet,
+  Wrench,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import designRoles from "../../../../design/kit/roles.json";
+import {
   MANAGER_CAPABILITIES,
   SIDEBAR_CONFIG,
   SIDEBAR_GROUP_BY_PATH,
@@ -255,5 +279,55 @@ describe("B1 — menyu guruhlari", () => {
       }
     }
     expect([...ungrouped]).toEqual([]);
+  });
+});
+
+/**
+ * Ikonkalar — yagona manba `menuConfig.tsx`, maket `design/kit/roles.json` → `icon` bilan bir xil
+ * (`iN` — `roles.json` → `icons` dagi SVG; quyida uning lucide nomi, `design/icon-registry.json`).
+ */
+describe("sidebar menu icons — roles.json bilan bir xil", () => {
+  const ICON_OF_DESIGN_ID: Record<string, LucideIcon> = {
+    i1: House,
+    i2: ShoppingBag,
+    i3: Inbox,
+    i4: Mail,
+    i5: Package,
+    i6: RotateCcw,
+    i7: CreditCard,
+    i8: Scale,
+    i9: Tag,
+    i10: Users,
+    i11: MapIcon,
+    i12: Building2,
+    i13: Plug,
+    i14: Bell,
+    i15: ScrollText,
+    i16: Wrench,
+    i17: Truck,
+    i18: Zap,
+    i19: Wallet,
+    MapPinned,
+  };
+  type DesignItem = { key: string; icon: string };
+  const designMenu = (role: string): DesignItem[] =>
+    (designRoles as unknown as { roles: Record<string, { menu: DesignItem[] }> }).roles[role].menu;
+
+  it.each([
+    ["superadmin", null],
+    ["admin", null],
+    ["manager", "HYBRID"],
+    ["registrator", "HQ"],
+    ["market", null],
+    ["courier", "REGIONAL"],
+  ] as const)("%s: har bir bandning ikonkasi maketdagidek", (role, type) => {
+    const items = getSidebarConfigForUser(role, type ? userWithBranchType(type) : null);
+    const design = designMenu(role);
+    // Tartib bu yerda emas (guruhlash `navSections` da) — faqat bandlar to'plami.
+    expect(items.map((item) => item.label).sort()).toEqual(design.map((item) => item.key).sort());
+    for (const item of items) {
+      const designIcon = design.find((entry) => entry.key === item.label)!.icon;
+      expect({ to: item.to, icon: item.icon }).toEqual({ to: item.to, icon: ICON_OF_DESIGN_ID[designIcon] });
+    }
   });
 });
