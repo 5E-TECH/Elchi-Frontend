@@ -1,12 +1,15 @@
 import { memo, useState } from "react";
 import { Alert, Button, Input, Popconfirm, Space, Table, Typography } from "antd";
 import { useBranchCoverage } from "../../entities/branch/branchCoverage";
+import { extractArray } from "../../entities/branch";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 
 const { Title, Text } = Typography;
 
 // Backend (branch-service) rejects a cancel without a reason of at least 10 chars.
 const MIN_REASON_LENGTH = 10;
+
+type BranchWithNewOrders = { id: string; name: string; new_orders_count: number };
 
 const columns = [
   { title: "ID", dataIndex: "id", key: "id" },
@@ -27,7 +30,8 @@ const BranchOpsPage = () => {
   const reasonTooShort = trimmedReason.length > 0 && trimmedReason.length < MIN_REASON_LENGTH;
   const canCancel = trimmedBatchId.length > 0 && trimmedReason.length >= MIN_REASON_LENGTH;
 
-  const dataSource: object[] = Array.isArray(newOrders.data) ? newOrders.data : [];
+  // Javob konverti `{ statusCode, message, data: [...] }` — massiv `data` ichida.
+  const dataSource = extractArray<BranchWithNewOrders>(newOrders.data);
 
   return (
     <div style={{ padding: 16, maxWidth: 920, margin: "0 auto" }}>

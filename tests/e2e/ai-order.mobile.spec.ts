@@ -189,4 +189,117 @@ test.describe("AI buyurtma — 390px", () => {
 
     expect(leaked).toEqual([]);
   });
+
+  test("iPhone safe-area: yakuniy panel tugmalari home indikator zonasidan va pastki nav'dan yuqorida", async ({ page }) => {
+    // iPhone 12: home indikator zonasi pastki 34px (notch — yuqori 47px).
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 47, bottom: 34, left: 0, right: 0 } });
+    const leaked = await mockApi(page);
+    await openAiMode(page);
+    expect(await page.evaluate(() => {
+      const probe = document.createElement("div");
+      probe.style.height = "env(safe-area-inset-bottom)";
+      document.body.append(probe);
+      const height = probe.getBoundingClientRect().height;
+      probe.remove();
+      return height;
+    })).toBe(34);
+
+    const bar = page.getByTestId("ai-confirm-bar");
+    const nav = page.locator("nav.fixed");
+    // Ro'yxat boshida, o'rtasida va oxirida.
+    for (const position of [0, 0.5, 1]) {
+      await page.locator("main.el-surface-page").evaluate((main, ratio) => {
+        main.scrollTop = (main.scrollHeight - main.clientHeight) * ratio;
+      }, position);
+      const state = await bar.evaluate((barEl) => {
+        const navEl = document.querySelector("nav.fixed > div")!;
+        const buttons = Array.from(barEl.querySelectorAll("button")).map((button) => {
+          const box = button.getBoundingClientRect();
+          const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+          return { bottom: box.bottom, clickable: Boolean(hit && button.contains(hit)) };
+        });
+        return { buttons, navTop: navEl.getBoundingClientRect().top, navBottom: navEl.getBoundingClientRect().bottom };
+      });
+      const homeIndicatorTop = 844 - 34;
+      expect(state.buttons.length, `${position}`).toBe(2);
+      for (const button of state.buttons) {
+        expect(button.bottom, `${position}`).toBeLessThanOrEqual(state.navTop);
+        expect(button.bottom, `${position}`).toBeLessThanOrEqual(homeIndicatorTop);
+        expect(button.clickable, `${position}`).toBe(true);
+      }
+      // Pastki nav ham home indikatordan yuqorida (`pb-[env(safe-area-inset-bottom)]`).
+      expect(state.navBottom).toBeLessThanOrEqual(homeIndicatorTop);
+    }
+    await expect(nav).toBeVisible();
+
+    expect(leaked).toEqual([]);
+  });
+
+  test("klaviatura ochilganda tahrirlanayotgan maydon yakuniy panel ustida ko'rinadi", async ({ page }) => {
+    const leaked = await mockApi(page);
+    await openAiMode(page);
+
+    // iPhone 12 ekran klaviaturasi ~336px: ko'rinadigan oyna 844 → 508.
+    const KEYBOARD_OPEN = { width: 390, height: 508 };
+    const KEYBOARD_CLOSED = { width: 390, height: 844 };
+    const bar = page.getByTestId("ai-confirm-bar");
+    const fields = page
+      .locator('[data-testid="ai-card-body"]:visible')
+      .locator("input:not([type=checkbox]):not([type=file]), textarea");
+    const count = await fields.count();
+    expect(count).toBeGreaterThan(10);
+
+    const expectVisibleAboveBar = async (label: string) => {
+      await expect
+        .poll(async () => {
+          const [field, barBox, mainTop] = await Promise.all([
+            page.evaluate(() => document.activeElement!.getBoundingClientRect().toJSON() as DOMRect),
+            bar.boundingBox(),
+            page.locator("main.el-surface-page").evaluate((main) => main.getBoundingClientRect().top),
+          ]);
+          return field.top >= mainTop && field.bottom <= barBox!.y && field.bottom <= KEYBOARD_OPEN.height;
+        }, { message: label })
+        .toBe(true);
+    };
+
+    for (let i = 0; i < count; i += 1) {
+      const field = fields.nth(i);
+      // Maydon ekran pastida, panel ustida — operator uni shu yerda bosadi.
+      await field.evaluate((el) => {
+        const main = document.querySelector("main")!;
+        const barTop = document.querySelector('[data-testid="ai-confirm-bar"]')!.getBoundingClientRect().top;
+        main.scrollTop += el.getBoundingClientRect().bottom - (barTop - 8);
+      });
+      const box = (await field.boundingBox())!;
+      await page.touchscreen.tap(box.x + 12, box.y + box.height / 2);
+      await expect(field).toBeFocused();
+
+      // Klaviatura ochildi.
+      await page.setViewportSize(KEYBOARD_OPEN);
+      await expectVisibleAboveBar(`#${i} ${await field.getAttribute("id")}`);
+
+      // Klaviatura yopildi.
+      await field.evaluate((el) => (el as HTMLElement).blur());
+      await page.setViewportSize(KEYBOARD_CLOSED);
+    }
+
+    // Klaviatura ochiq holda keyingi maydonga o'tish ("Keyingi" / Tab).
+    await page.setViewportSize(KEYBOARD_OPEN);
+    await fields.first().focus();
+    for (let step = 0; step < 6; step += 1) {
+      await page.keyboard.press("Tab");
+      const tag = await page.evaluate(() => document.activeElement?.tagName);
+      if (tag === "INPUT" || tag === "TEXTAREA") await expectVisibleAboveBar(`Tab ${step}`);
+    }
+
+    // Yozilgan matn shu ko'rinib turgan maydonda.
+    const comment = page.locator("textarea[id$='-comment']:visible").last();
+    await comment.focus();
+    await page.keyboard.type("eshik oldida");
+    await expect(comment).toHaveValue(/eshik oldida$/);
+    await expectVisibleAboveBar("comment");
+
+    expect(leaked).toEqual([]);
+  });
 });

@@ -21,6 +21,7 @@ import {
   canViewPaymentsPage,
   canHandoverCancelledToMarket,
   canCreateProducts,
+  canViewUiKit,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 
@@ -40,6 +41,7 @@ const BranchOpsPage = lazy(() => import("../../pages/branch-ops"));
 const IdentityOpsPage = lazy(() => import("../../pages/identity-ops"));
 const SystemOpsPage = lazy(() => import("../../pages/system-ops"));
 const OpsPage = lazy(() => import("../../pages/ops"));
+const UiKitPage = lazy(() => import("../../pages/ui-kit"));
 const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
 
 // ✅ Login page:
@@ -527,6 +529,19 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewOpsPages}>
                   <OpsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              /**
+               * Dizayn v2 komponentlar to'plami — primitivlar namunasi (kunduzgi +
+               * tungi yonma-yon). Faqat superadmin, menyuda yo'q.
+               * `?section=<id>` — bitta bo'lim, `?theme-pair=0` — faqat joriy mavzu.
+               */
+              path: "ops/ui-kit",
+              element: (
+                <ProtectedRoute canActivate={canViewUiKit}>
+                  <UiKitPage />
                 </ProtectedRoute>
               ),
             },

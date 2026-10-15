@@ -1,0 +1,1041 @@
+<div style="max-width: 1440px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 48px) 72px; display: flex; flex-direction: column; gap: 56px">
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<a class="el-back" href="@main" style="margin: 0; align-self: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Dizayn tizimi</a>
+<header style="background: var(--sidebar); border: 1px solid var(--border); border-radius:20px; padding: clamp(24px, 3vw, 40px); display: flex; flex-wrap: wrap; gap: 32px 48px; align-items: flex-end; justify-content: space-between">
+  <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0; flex: 1 1 520px">
+    <img src="/_blob/6c64e6604f822b10da1545ec86677c82" alt="Elchi Pochta" width="145" height="48" style="display: block">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-overline" style="color: var(--sidebar-muted)">Dizayn tizimi · 10 · Naqshlar</span>
+      <h1 class="el-h1" style="color: var(--sidebar-text)">Harakat, fokus va kirish qulayligi</h1>
+      <p style="color: var(--sidebar-text); max-width: 640px">Harakat nima o'zgarganini ko'rsatadi — bezak uchun emas. Bu taxtada davomiylik, egri chiziq, fokus halqasi, bosish maydoni, kontrast va qatlamlar tartibi jamlangan. Har bir qiymat kodga token sifatida ko'chiriladi.</p>
+    </div>
+  </div>
+  <dl style="display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 0; max-width: 452px">
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Davomiylik</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">100–250 ms, 4 bosqich</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Fokus</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">2 px halqa, 2 px oraliq</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Bosish maydoni</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">44 px · kuryer amali 48 px</dd></div>
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 210px"><dt class="el-xs" style="color: var(--sidebar-muted)">Kontrast</dt><dd class="el-strong" style="margin: 0; color: var(--sidebar-text)">AA, ikkala mavzuda · 2 istisno</dd></div>
+  </dl>
+</header>
+</div>
+
+<section aria-labelledby="s-dur" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">01</span>
+    <h2 class="el-h1" id="s-dur">Davomiylik</h2>
+    <p class="el-sub" style="max-width: 920px">To'rt bosqich va bitta takroriy qiymat. Kichik element tez, katta panel sekinroq o'zgaradi. Hech bir o'tish 250 ms dan oshmaydi — foydalanuvchi harakatni kutmaydi.</p>
+  </div>
+  <section class="el-card" aria-labelledby="t-dur">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-dur">Davomiylik shkalasi</h3>
+      <p class="el-small el-muted">Eski: 23 xil qiymat, 150 ms dan 7 s gacha</p>
+    </div>
+    <div class="el-table-wrap">
+      <table class="el-table" style="min-width: 980px">
+        <thead><tr><th style="width: 180px">Token</th><th class="el-num" style="width: 96px">Vaqt</th><th style="width: 220px">Shkala</th><th style="width: 280px">Nima o'zgaradi</th><th>Qayerda</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><div class="el-cell-title">Bosish</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-dur-press</div></td>
+            <td class="el-num"><span class="el-strong">100 ms</span></td>
+            <td><div class="el-bar" role="img" aria-label="100 ms"><span style="width: 40%"></span></div></td>
+            <td>Fon rangi, bosilgandagi ichki soya</td>
+            <td class="el-muted">Tugma, ikonka tugma, jadval qatori, menyu bandi — kursor ustiga kelganda va bosilganda</td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Rang</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-dur-color</div></td>
+            <td class="el-num"><span class="el-strong">150 ms</span></td>
+            <td><div class="el-bar" role="img" aria-label="150 ms"><span style="width: 60%"></span></div></td>
+            <td>Matn va chegara rangi, fokus halqasi, kalit tugmachasi</td>
+            <td class="el-muted">Maydon fokusi, tab chizig'i, chip, kalit, sahifa raqami</td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Ochiladigan</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-dur-menu</div></td>
+            <td class="el-num"><span class="el-strong">200 ms</span></td>
+            <td><div class="el-bar" role="img" aria-label="200 ms"><span style="width: 80%"></span></div></td>
+            <td>Shaffoflik va 4 px pastga siljish</td>
+            <td class="el-muted">Ochiladigan ro'yxat, amallar menyusi, kalendar, tooltip, qidiruv natijalari</td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Panel</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-dur-panel</div></td>
+            <td class="el-num"><span class="el-strong">250 ms</span></td>
+            <td><div class="el-bar" role="img" aria-label="250 ms"><span style="width: 100%"></span></div></td>
+            <td>Shaffoflik va kattalashish yoki siljish</td>
+            <td class="el-muted">Dialog, pastki oyna, qalqib chiquvchi xabar, telefon menyusi</td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Takroriy</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-dur-loop</div></td>
+            <td class="el-num"><span class="el-strong">1,4 s</span></td>
+            <td><div style="display: flex; align-items: center; gap: 12px"><div class="el-skel-line el-shimmer" style="flex: 1; min-width: 0" role="img" aria-label="Skelet yaltirashi"></div><span class="el-spinner" style="color: var(--text-muted)" aria-hidden="true"></span></div></td>
+            <td>Skelet yaltirashi chapdan o'ngga; yuklanish halqasi — 0,7 s, to'xtovsiz</td>
+            <td class="el-muted">Sahifa va jadval skeleti, tugma ichidagi yuklanish halqasi</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <div class="el-grid">
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-overline">01</span>
+      <h3 class="el-h2">Faqat ma'no uchun</h3>
+      <p class="el-small el-muted" style="flex: 1">Harakat nima ochilganini va qayerdan kelganini ko'rsatadi. Bezak animatsiyasi qo'yilmaydi.</p>
+      <p class="el-xs el-subtle" style="padding-top: 12px; border-top: 1px solid var(--border)">Eski: suzuvchi zarra, porlash, aylanuvchi halqa</p>
+    </div>
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-overline">02</span>
+      <h3 class="el-h2">Yopilish tezroq</h3>
+      <p class="el-small el-muted" style="flex: 1">Yopilishda vaqt 50 ms qisqaradi: 250 → 200 ms, 200 → 150 ms. Yopilgan narsani kutish shart emas.</p>
+      <p class="el-xs el-subtle" style="padding-top: 12px; border-top: 1px solid var(--border)">Chiqish egri chizig'i bilan</p>
+    </div>
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-overline">03</span>
+      <h3 class="el-h2">Faqat shaffoflik va siljish</h3>
+      <p class="el-small el-muted" style="flex: 1">Kenglik, balandlik va joylashuv animatsiya qilinmaydi — sahifa sakramaydi, arzon telefon qotmaydi.</p>
+      <p class="el-xs el-subtle" style="padding-top: 12px; border-top: 1px solid var(--border)">opacity va transform</p>
+    </div>
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 8px">
+      <span class="el-overline">04</span>
+      <h3 class="el-h2">Bir vaqtda bitta</h3>
+      <p class="el-small el-muted" style="flex: 1">Fon va oyna birga ochiladi. Ro'yxat qatorlari ketma-ket chiqmaydi — hammasi bir vaqtda ko'rinadi.</p>
+      <p class="el-xs el-subtle" style="padding-top: 12px; border-top: 1px solid var(--border)">Zanjirli animatsiya yo'q</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="s-ease" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">02</span>
+    <h2 class="el-h1" id="s-ease">Harakat egri chiziqlari</h2>
+    <p class="el-sub" style="max-width: 920px">Gorizontal o'q — vaqt, vertikal — o'zgarish. Punktir — tekis harakat, ko'k chiziq — tokenning haqiqiy egri chizig'i.</p>
+  </div>
+  <div class="el-grid">
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; justify-content: center; padding: 16px; border-radius:12px; background: var(--sunken)">
+        <svg width="112" height="112" viewBox="-8 -8 116 116" fill="none" role="img" aria-label="Kirish egri chizig'i">
+          <rect x="0" y="0" width="100" height="100" rx="4" stroke="var(--border-strong)" stroke-width="1"/>
+          <path d="M0 100 L100 0" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="4 4"/>
+          <path d="M0 100 C20 100 0 0 100 0" stroke="var(--action)" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="0" cy="100" r="4" fill="var(--action)"/><circle cx="100" cy="0" r="4" fill="var(--action)"/>
+        </svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h3 class="el-h2">Kirish</h3>
+        <span class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-ease-enter · cubic-bezier(0.2, 0, 0, 1)</span>
+      </div>
+      <p class="el-small el-muted">Ochilish: dialog, pastki oyna, menyu, xabar. Tez boshlanadi — 50 ms da yo'lning yarmi — va yumshoq to'xtaydi.</p>
+    </div>
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; justify-content: center; padding: 16px; border-radius:12px; background: var(--sunken)">
+        <svg width="112" height="112" viewBox="-8 -8 116 116" fill="none" role="img" aria-label="Chiqish egri chizig'i">
+          <rect x="0" y="0" width="100" height="100" rx="4" stroke="var(--border-strong)" stroke-width="1"/>
+          <path d="M0 100 L100 0" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="4 4"/>
+          <path d="M0 100 C40 100 100 0 100 0" stroke="var(--action)" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="0" cy="100" r="4" fill="var(--action)"/><circle cx="100" cy="0" r="4" fill="var(--action)"/>
+        </svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h3 class="el-h2">Chiqish</h3>
+        <span class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-ease-exit · cubic-bezier(0.4, 0, 1, 1)</span>
+      </div>
+      <p class="el-small el-muted">Yopilish. Sekin boshlanib, tez ketadi; vaqt ochilishdan 50 ms qisqa.</p>
+    </div>
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; justify-content: center; padding: 16px; border-radius:12px; background: var(--sunken)">
+        <svg width="112" height="112" viewBox="-8 -8 116 116" fill="none" role="img" aria-label="Rang egri chizig'i">
+          <rect x="0" y="0" width="100" height="100" rx="4" stroke="var(--border-strong)" stroke-width="1"/>
+          <path d="M0 100 L100 0" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="4 4"/>
+          <path d="M0 100 C25 90 25 0 100 0" stroke="var(--action)" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="0" cy="100" r="4" fill="var(--action)"/><circle cx="100" cy="0" r="4" fill="var(--action)"/>
+        </svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h3 class="el-h2">Rang</h3>
+        <span class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-ease-color · ease</span>
+      </div>
+      <p class="el-small el-muted">Kursor ustiga kelganda, bosilganda, fokusda — rang, fon va chegara o'tishlari.</p>
+    </div>
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; justify-content: center; padding: 16px; border-radius:12px; background: var(--sunken)">
+        <svg width="112" height="112" viewBox="-8 -8 116 116" fill="none" role="img" aria-label="Takroriy egri chizig'i">
+          <rect x="0" y="0" width="100" height="100" rx="4" stroke="var(--border-strong)" stroke-width="1"/>
+          <path d="M0 100 L100 0" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="4 4"/>
+          <path d="M0 100 C42 100 58 0 100 0" stroke="var(--action)" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="0" cy="100" r="4" fill="var(--action)"/><circle cx="100" cy="0" r="4" fill="var(--action)"/>
+        </svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h3 class="el-h2">Takroriy</h3>
+        <span class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-ease-loop · ease-in-out</span>
+      </div>
+      <p class="el-small el-muted">Skelet yaltirashi: boshida va oxirida sekin, ko'zni charchatmaydi.</p>
+    </div>
+    <div class="el-card el-card-pad" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; justify-content: center; padding: 16px; border-radius:12px; background: var(--sunken)">
+        <svg width="112" height="112" viewBox="-8 -8 116 116" fill="none" role="img" aria-label="Chiziqli egri chizig'i">
+          <rect x="0" y="0" width="100" height="100" rx="4" stroke="var(--border-strong)" stroke-width="1"/>
+          <path d="M0 100 L100 0" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="4 4"/>
+          <path d="M0 100 L100 0" stroke="var(--action)" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="0" cy="100" r="4" fill="var(--action)"/><circle cx="100" cy="0" r="4" fill="var(--action)"/>
+        </svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h3 class="el-h2">Chiziqli</h3>
+        <span class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-ease-linear · linear</span>
+      </div>
+      <p class="el-small el-muted">Yuklanish halqasi aylanishi va jarayon chizig'i. Boshqa joyda ishlatilmaydi.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="s-story" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">03</span>
+    <h2 class="el-h1" id="s-story">Ochilish kadrlari</h2>
+    <p class="el-sub" style="max-width: 920px">Uchta panel qanday paydo bo'ladi. Har biri uch kadrda: boshlanish, 50 ms — kirish egri chizig'i tez boshlangani uchun yo'lning yarmi shu yerda — va 250 ms.</p>
+  </div>
+  <section class="el-card" aria-labelledby="t-dialog">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-dialog">Tasdiqlash oynasi — paydo bo'lish va kattalashish</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-neutral">250 ms</span><span class="el-badge el-tone-neutral">Kirish egri chizig'i</span></div>
+    </div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 20px">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 20px">
+      <figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 340px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex">
+        <div style="width: 44px; flex: none; background: var(--sidebar); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0">
+          <img src="/_blob/e1f00e084ded5f41b8d7023517fa5b2c" alt="" width="22" height="20" style="display: block; margin-bottom: 6px">
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-active); display: flex; align-items: center; justify-content: center; color: var(--sidebar-text)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <div style="height: 40px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)"></div>
+          <div style="padding: 14px 12px; display: flex; flex-direction: column; gap: 10px">
+            <span class="el-h3">Foydalanuvchilar</span>
+            <div style="background: var(--surface); border-radius:10px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Farrux Sobirov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Ravshan Ortiqov</span><span class="el-xs el-muted">Menejer · Urgut filiali</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Jasur Tursunov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            </div>
+          </div>
+        </div>
+        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px">
+          <div style="position: relative; width: min(480px, 100%); height: 176px; border: 2px dashed var(--border-strong); border-radius:20px">
+            <span class="el-badge el-tone-neutral" style="position: absolute; top: -13px; left: 50%; transform: translateX(-50%)">Oyna shu yerda chiqadi</span>
+          </div>
+        </div>
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">0 ms</span><span class="el-small el-muted">Fon 0% · oyna 0% · kattalik 98%</span></figcaption>
+    </figure><figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 340px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex">
+        <div style="width: 44px; flex: none; background: var(--sidebar); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0">
+          <img src="/_blob/e1f00e084ded5f41b8d7023517fa5b2c" alt="" width="22" height="20" style="display: block; margin-bottom: 6px">
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-active); display: flex; align-items: center; justify-content: center; color: var(--sidebar-text)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <div style="height: 40px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)"></div>
+          <div style="padding: 14px 12px; display: flex; flex-direction: column; gap: 10px">
+            <span class="el-h3">Foydalanuvchilar</span>
+            <div style="background: var(--surface); border-radius:10px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Farrux Sobirov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Ravshan Ortiqov</span><span class="el-xs el-muted">Menejer · Urgut filiali</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Jasur Tursunov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            </div>
+          </div>
+        </div>
+        <div class="el-overlay" style="opacity: 0.5"></div>
+        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px">
+          <div class="el-dialog" style="padding: 20px; gap: 16px; opacity: 0.5; transform: scale(0.99);">
+            <div class="el-dialog-head">
+              <span class="el-stat-icon" style="background: var(--danger-soft); color: var(--danger-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/></svg></span>
+              <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+                <span class="el-h2">Nofaol qilishni tasdiqlang</span>
+                <span class="el-small el-muted">Farrux Sobirov hisobi nofaol holatiga o'tadi. Kerak bo'lsa, uni istalgan vaqtda amallar menyusidan qayta faollashtirish mumkin.</span>
+              </div>
+            </div>
+            <div class="el-dialog-foot">
+              <button class="el-btn el-btn-secondary" type="button" tabindex="-1">Bekor qilish</button>
+              <button class="el-btn el-btn-danger" type="button" tabindex="-1">Nofaol qilish</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">50 ms · yo'lning yarmi</span><span class="el-small el-muted">Fon 50% · oyna 50% · kattalik 99%</span></figcaption>
+    </figure><figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 340px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex">
+        <div style="width: 44px; flex: none; background: var(--sidebar); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0">
+          <img src="/_blob/e1f00e084ded5f41b8d7023517fa5b2c" alt="" width="22" height="20" style="display: block; margin-bottom: 6px">
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-active); display: flex; align-items: center; justify-content: center; color: var(--sidebar-text)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <div style="height: 40px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)"></div>
+          <div style="padding: 14px 12px; display: flex; flex-direction: column; gap: 10px">
+            <span class="el-h3">Foydalanuvchilar</span>
+            <div style="background: var(--surface); border-radius:10px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Farrux Sobirov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Ravshan Ortiqov</span><span class="el-xs el-muted">Menejer · Urgut filiali</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Jasur Tursunov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            </div>
+          </div>
+        </div>
+        <div class="el-overlay"></div>
+        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px">
+          <div class="el-dialog" style="padding: 20px; gap: 16px;">
+            <div class="el-dialog-head">
+              <span class="el-stat-icon" style="background: var(--danger-soft); color: var(--danger-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/></svg></span>
+              <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+                <span class="el-h2">Nofaol qilishni tasdiqlang</span>
+                <span class="el-small el-muted">Farrux Sobirov hisobi nofaol holatiga o'tadi. Kerak bo'lsa, uni istalgan vaqtda amallar menyusidan qayta faollashtirish mumkin.</span>
+              </div>
+            </div>
+            <div class="el-dialog-foot">
+              <button class="el-btn el-btn-secondary is-focus" type="button" tabindex="-1">Bekor qilish</button>
+              <button class="el-btn el-btn-danger" type="button" tabindex="-1">Nofaol qilish</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">250 ms · tayyor</span><span class="el-small el-muted">Fon 100% · oyna 100% · fokus «Bekor qilish» tugmasida</span></figcaption>
+    </figure>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 2px">
+        <div style="position: relative; height: 12px; display: flex; align-items: center">
+          <div class="el-bar" style="width: 100%"><span style="width: 100%"></span></div>
+          <span style="position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+          <span style="position: absolute; left: calc(20% - 6px); top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+          <span style="position: absolute; right: 0; top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+        </div>
+        <div style="position: relative; height: 18px">
+          <span class="el-xs el-muted" style="position: absolute; left: 0">0 ms</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 20%; transform: translateX(-50%)">50</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 40%; transform: translateX(-50%)">100</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 60%; transform: translateX(-50%)">150</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 80%; transform: translateX(-50%)">200</span>
+          <span class="el-xs el-muted" style="position: absolute; right: 0">250 ms</span>
+        </div>
+      </div>
+      <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px 24px; padding: 16px 20px; border-radius:12px; background: var(--sunken)"><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Fon</dt><dd class="el-small el-strong" style="margin: 0">Shaffoflik 0 → 100%</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Oyna</dt><dd class="el-small el-strong" style="margin: 0">Shaffoflik 0 → 100%, kattalik 98% → 100%, markazdan</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Yopilish</dt><dd class="el-small el-strong" style="margin: 0">200 ms, chiqish egri chizig'i, teskari tartibda</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Fokus</dt><dd class="el-small el-strong" style="margin: 0">Xavfsiz tugmaga — «Bekor qilish»; Esc oynani yopadi</dd></div></dl>
+    </div>
+  </section>
+
+  <section class="el-card" aria-labelledby="t-sheet">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-sheet">Pastki oyna — pastdan siljib chiqish</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-neutral">250 ms</span><span class="el-badge el-tone-neutral">Kirish egri chizig'i</span><span class="el-badge el-tone-neutral">Telefon</span></div>
+    </div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 20px">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 20px">
+      <figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 420px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex; flex-direction: column">
+        <div class="el-mtop"><span class="el-mtitle">Kunni yakunlash</span><button class="el-iconbtn el-iconbtn-lg" type="button" tabindex="-1" aria-label="Skanerlash"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></button></div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); border-radius:14px">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px"><span class="el-badge el-badge-dot el-tone-success" style="align-self: flex-start">Sotilgan</span><span class="el-h2">4 ta</span></div>
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-left: 1px solid var(--border)"><span class="el-badge el-badge-dot el-tone-danger" style="align-self: flex-start">Bekor</span><span class="el-h2">1 ta</span></div>
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-left: 1px solid var(--border)"><span class="el-badge el-badge-dot el-tone-warning" style="align-self: flex-start">Ertaga</span><span class="el-h2">2 ta</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; background: var(--surface); border-radius:14px">
+            <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Laylo Hasanova</span><span class="el-strong">185 000 so'm</span></span>
+            <span class="el-cell-sub">Qibray tumani · Baraka Shop</span>
+          </div>
+        </div>
+        
+        
+        <span class="el-badge el-tone-neutral" style="position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%)">Oyna ekran ostida</span>
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">0 ms</span><span class="el-small el-muted">Fon 0% · oyna ekran ostida, 100% pastda</span></figcaption>
+    </figure><figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 420px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex; flex-direction: column">
+        <div class="el-mtop"><span class="el-mtitle">Kunni yakunlash</span><button class="el-iconbtn el-iconbtn-lg" type="button" tabindex="-1" aria-label="Skanerlash"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></button></div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); border-radius:14px">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px"><span class="el-badge el-badge-dot el-tone-success" style="align-self: flex-start">Sotilgan</span><span class="el-h2">4 ta</span></div>
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-left: 1px solid var(--border)"><span class="el-badge el-badge-dot el-tone-danger" style="align-self: flex-start">Bekor</span><span class="el-h2">1 ta</span></div>
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-left: 1px solid var(--border)"><span class="el-badge el-badge-dot el-tone-warning" style="align-self: flex-start">Ertaga</span><span class="el-h2">2 ta</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; background: var(--surface); border-radius:14px">
+            <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Laylo Hasanova</span><span class="el-strong">185 000 so'm</span></span>
+            <span class="el-cell-sub">Qibray tumani · Baraka Shop</span>
+          </div>
+        </div>
+        <div class="el-overlay" style="opacity: 0.5"></div>
+        <div class="el-sheet" style="padding: 8px 16px 16px; gap: 12px; transform: translateY(50%);">
+          <div class="el-sheet-grip"></div>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span class="el-h2">Kunni yakunlashni tasdiqlang</span>
+            <span class="el-small el-muted">7 ta buyurtma bo'yicha quyidagilar bajariladi</span>
+          </div>
+          <div style="background: var(--sunken); border-radius:12px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px"><span style="color: var(--success-fg); display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span><span class="el-small el-strong">4 ta sotilgan deb belgilanadi</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border)"><span style="color: var(--danger-fg); display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><span class="el-small el-strong">1 ta bekor qilinadi</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border)"><span style="color: var(--warning-fg); display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v4"/><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M3 10h5"/><path d="M8 2v4"/><circle cx="16" cy="16" r="6"/></svg></span><span class="el-small el-strong">2 tasi ertaga qoladi</span></div>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <button class="el-btn el-btn-secondary el-btn-lg" type="button" tabindex="-1" style="flex: 1 1 0">Bekor qilish</button>
+            <button class="el-btn el-btn-primary el-btn-lg" type="button" tabindex="-1" style="flex: 1 1 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Tasdiqlash</button>
+          </div>
+        </div>
+        
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">50 ms · yo'lning yarmi</span><span class="el-small el-muted">Fon 50% · oyna balandligining yarmi chiqqan</span></figcaption>
+    </figure><figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 420px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex; flex-direction: column">
+        <div class="el-mtop"><span class="el-mtitle">Kunni yakunlash</span><button class="el-iconbtn el-iconbtn-lg" type="button" tabindex="-1" aria-label="Skanerlash"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></button></div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); border-radius:14px">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px"><span class="el-badge el-badge-dot el-tone-success" style="align-self: flex-start">Sotilgan</span><span class="el-h2">4 ta</span></div>
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-left: 1px solid var(--border)"><span class="el-badge el-badge-dot el-tone-danger" style="align-self: flex-start">Bekor</span><span class="el-h2">1 ta</span></div>
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-left: 1px solid var(--border)"><span class="el-badge el-badge-dot el-tone-warning" style="align-self: flex-start">Ertaga</span><span class="el-h2">2 ta</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; background: var(--surface); border-radius:14px">
+            <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Laylo Hasanova</span><span class="el-strong">185 000 so'm</span></span>
+            <span class="el-cell-sub">Qibray tumani · Baraka Shop</span>
+          </div>
+        </div>
+        <div class="el-overlay"></div>
+        <div class="el-sheet" style="padding: 8px 16px 16px; gap: 12px;">
+          <div class="el-sheet-grip"></div>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span class="el-h2">Kunni yakunlashni tasdiqlang</span>
+            <span class="el-small el-muted">7 ta buyurtma bo'yicha quyidagilar bajariladi</span>
+          </div>
+          <div style="background: var(--sunken); border-radius:12px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px"><span style="color: var(--success-fg); display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span><span class="el-small el-strong">4 ta sotilgan deb belgilanadi</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border)"><span style="color: var(--danger-fg); display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span><span class="el-small el-strong">1 ta bekor qilinadi</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border)"><span style="color: var(--warning-fg); display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 14v2.2l1.6 1"/><path d="M16 2v4"/><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M3 10h5"/><path d="M8 2v4"/><circle cx="16" cy="16" r="6"/></svg></span><span class="el-small el-strong">2 tasi ertaga qoladi</span></div>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <button class="el-btn el-btn-secondary el-btn-lg" type="button" tabindex="-1" style="flex: 1 1 0">Bekor qilish</button>
+            <button class="el-btn el-btn-primary el-btn-lg" type="button" tabindex="-1" style="flex: 1 1 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Tasdiqlash</button>
+          </div>
+        </div>
+        
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">250 ms · tayyor</span><span class="el-small el-muted">Fon 100% · oyna joyida, ekran o'quvchi sarlavhani o'qiydi</span></figcaption>
+    </figure>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 2px">
+        <div style="position: relative; height: 12px; display: flex; align-items: center">
+          <div class="el-bar" style="width: 100%"><span style="width: 100%"></span></div>
+          <span style="position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+          <span style="position: absolute; left: calc(20% - 6px); top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+          <span style="position: absolute; right: 0; top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+        </div>
+        <div style="position: relative; height: 18px">
+          <span class="el-xs el-muted" style="position: absolute; left: 0">0 ms</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 20%; transform: translateX(-50%)">50</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 40%; transform: translateX(-50%)">100</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 60%; transform: translateX(-50%)">150</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 80%; transform: translateX(-50%)">200</span>
+          <span class="el-xs el-muted" style="position: absolute; right: 0">250 ms</span>
+        </div>
+      </div>
+      <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px 24px; padding: 16px 20px; border-radius:12px; background: var(--sunken)"><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Fon</dt><dd class="el-small el-strong" style="margin: 0">Shaffoflik 0 → 100%</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Oyna</dt><dd class="el-small el-strong" style="margin: 0">Pastdan siljish: 100% → 0, shaffoflik o'zgarmaydi</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Yopilish</dt><dd class="el-small el-strong" style="margin: 0">200 ms, pastga, chiqish egri chizig'i; fonni bosish yoki «Bekor qilish»</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Fokus</dt><dd class="el-small el-strong" style="margin: 0">Oyna ichida qamaladi; yopilgach «Kunni yakunlash» tugmasiga qaytadi</dd></div></dl>
+    </div>
+  </section>
+
+  <section class="el-card" aria-labelledby="t-toast">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-toast">Qalqib chiquvchi xabar — o'ngdan kirish</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-neutral">250 ms</span><span class="el-badge el-tone-neutral">Kirish egri chizig'i</span></div>
+    </div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 20px">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 20px">
+      <figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 340px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex">
+        <div style="width: 44px; flex: none; background: var(--sidebar); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0">
+          <img src="/_blob/e1f00e084ded5f41b8d7023517fa5b2c" alt="" width="22" height="20" style="display: block; margin-bottom: 6px">
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-active); display: flex; align-items: center; justify-content: center; color: var(--sidebar-text)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <div style="height: 40px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)"></div>
+          <div style="padding: 14px 12px; display: flex; flex-direction: column; gap: 10px">
+            <span class="el-h3">Foydalanuvchilar</span>
+            <div style="background: var(--surface); border-radius:10px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Farrux Sobirov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Ravshan Ortiqov</span><span class="el-xs el-muted">Menejer · Urgut filiali</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Jasur Tursunov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            </div>
+          </div>
+        </div>
+        <span class="el-badge el-tone-neutral" style="position: absolute; right: 12px; bottom: 12px">Xabar ekran chetidan tashqarida</span>
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">0 ms</span><span class="el-small el-muted">Xabar o'ngda, ekran tashqarisida · shaffoflik 0%</span></figcaption>
+    </figure><figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 340px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex">
+        <div style="width: 44px; flex: none; background: var(--sidebar); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0">
+          <img src="/_blob/e1f00e084ded5f41b8d7023517fa5b2c" alt="" width="22" height="20" style="display: block; margin-bottom: 6px">
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-active); display: flex; align-items: center; justify-content: center; color: var(--sidebar-text)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <div style="height: 40px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)"></div>
+          <div style="padding: 14px 12px; display: flex; flex-direction: column; gap: 10px">
+            <span class="el-h3">Foydalanuvchilar</span>
+            <div style="background: var(--surface); border-radius:10px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Farrux Sobirov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Ravshan Ortiqov</span><span class="el-xs el-muted">Menejer · Urgut filiali</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Jasur Tursunov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            </div>
+          </div>
+        </div>
+        <div style="position: absolute; bottom: 12px; right: 12px; left: 56px; display: flex; justify-content: flex-end">
+          <div class="el-toast" role="status" style="min-width: 0; width: 100%; max-width: 340px; padding: 12px 12px 12px 14px; opacity: 0.5; transform: translateX(calc(50% + 6px));">
+            <span style="color: var(--success-fg); display: inline-flex"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-strong">Foydalanuvchi nofaol qilindi</span><span class="el-small el-muted">Farrux Sobirov hisobi nofaol holatiga o'tdi</span></div>
+            <button class="el-iconbtn el-iconbtn-sm" type="button" tabindex="-1" aria-label="Yopish" style="margin: -4px -4px 0 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">50 ms · yo'lning yarmi</span><span class="el-small el-muted">Yarmi chiqqan · shaffoflik 50%</span></figcaption>
+    </figure><figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div aria-hidden="true" style="position: relative; height: 340px; overflow: hidden; border: 1px solid var(--border); border-radius:12px; background: var(--bg); display: flex">
+        <div style="width: 44px; flex: none; background: var(--sidebar); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0">
+          <img src="/_blob/e1f00e084ded5f41b8d7023517fa5b2c" alt="" width="22" height="20" style="display: block; margin-bottom: 6px">
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-active); display: flex; align-items: center; justify-content: center; color: var(--sidebar-text)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span style="width: 24px; height: 24px; border-radius:8px; background: var(--sidebar-hover)"></span>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <div style="height: 40px; flex: none; background: var(--surface); border-bottom: 1px solid var(--border)"></div>
+          <div style="padding: 14px 12px; display: flex; flex-direction: column; gap: 10px">
+            <span class="el-h3">Foydalanuvchilar</span>
+            <div style="background: var(--surface); border-radius:10px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Farrux Sobirov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Ravshan Ortiqov</span><span class="el-xs el-muted">Menejer · Urgut filiali</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            <div style="border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px">
+              <div style="display: flex; flex-direction: column; min-width: 0"><span class="el-small el-strong">Jasur Tursunov</span><span class="el-xs el-muted">Kuryer · Toshkent HQ</span></div><span class="el-badge el-badge-dot el-tone-success">Faol</span>
+            </div>
+            </div>
+          </div>
+        </div>
+        <div style="position: absolute; bottom: 12px; right: 12px; left: 56px; display: flex; justify-content: flex-end">
+          <div class="el-toast" role="status" style="min-width: 0; width: 100%; max-width: 340px; padding: 12px 12px 12px 14px;">
+            <span style="color: var(--success-fg); display: inline-flex"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-strong">Foydalanuvchi nofaol qilindi</span><span class="el-small el-muted">Farrux Sobirov hisobi nofaol holatiga o'tdi</span></div>
+            <button class="el-iconbtn el-iconbtn-sm" type="button" tabindex="-1" aria-label="Yopish" style="margin: -4px -4px 0 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px"><span class="el-strong">250 ms · tayyor</span><span class="el-small el-muted">Pastki o'ng burchakda · fokusni olmaydi</span></figcaption>
+    </figure>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 2px">
+        <div style="position: relative; height: 12px; display: flex; align-items: center">
+          <div class="el-bar" style="width: 100%"><span style="width: 100%"></span></div>
+          <span style="position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+          <span style="position: absolute; left: calc(20% - 6px); top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+          <span style="position: absolute; right: 0; top: 0; width: 12px; height: 12px; border-radius:999px; background: var(--surface); border: 3px solid var(--action)"></span>
+        </div>
+        <div style="position: relative; height: 18px">
+          <span class="el-xs el-muted" style="position: absolute; left: 0">0 ms</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 20%; transform: translateX(-50%)">50</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 40%; transform: translateX(-50%)">100</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 60%; transform: translateX(-50%)">150</span>
+          <span class="el-xs el-muted" style="position: absolute; left: 80%; transform: translateX(-50%)">200</span>
+          <span class="el-xs el-muted" style="position: absolute; right: 0">250 ms</span>
+        </div>
+      </div>
+      <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px 24px; padding: 16px 20px; border-radius:12px; background: var(--sunken)"><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Joyi</dt><dd class="el-small el-strong" style="margin: 0">Kompyuterda pastki o'ng burchak, chetdan 24 px; telefonda yuqori panel ostida, chetdan 12 px</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Harakat</dt><dd class="el-small el-strong" style="margin: 0">O'ngdan siljish va shaffoflik 0 → 100%; telefonda yuqoridan tushadi</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Yopilish</dt><dd class="el-small el-strong" style="margin: 0">200 ms, o'ngga; qolgan xabarlar burchak tomon suriladi</dd></div><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><dt class="el-xs el-muted">Ekran o'quvchi</dt><dd class="el-small el-strong" style="margin: 0">role="status" — fokusni olmaydi; matn va vaqt qoidalari «Bildirishnoma» taxtasida</dd></div></dl>
+    </div>
+  </section>
+  <p class="el-small el-muted">Xabar matni, ko'rinish vaqti va turlari — <a href="@feedback">Bildirishnoma va ogohlantirishlar</a> taxtasida.</p>
+</section>
+
+<section aria-labelledby="s-reduce" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">04</span>
+    <h2 class="el-h1" id="s-reduce">Harakatni kamaytirish</h2>
+    <p class="el-sub" style="max-width: 920px">Telefon yoki kompyuterda «Harakatni kamaytirish» yoqilgan bo'lsa, barcha o'tish va animatsiyalar o'chadi. Natija o'zgarmaydi — faqat darhol ko'rinadi.</p>
+  </div>
+  <section class="el-card" aria-labelledby="t-reduce">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-reduce">Odatiy va kamaytirilgan</h3>
+      <span class="el-badge el-tone-neutral">@media (prefers-reduced-motion: reduce)</span>
+    </div>
+    <div class="el-table-wrap">
+      <table class="el-table" style="min-width: 760px">
+        <thead><tr><th style="width: 240px">Element</th><th>Odatiy</th><th>Harakat kamaytirilganda</th></tr></thead>
+        <tbody>
+          <tr><td class="el-cell-title">Tugma, maydon, tab</td><td class="el-muted">100–150 ms rang o'tishi</td><td>Darhol, o'tishsiz</td></tr>
+          <tr><td class="el-cell-title">Ro'yxat, menyu, tooltip</td><td class="el-muted">200 ms, shaffoflik va 4 px siljish</td><td>Darhol, siljishsiz</td></tr>
+          <tr><td class="el-cell-title">Tasdiqlash oynasi</td><td class="el-muted">250 ms, kattalashish 98% → 100%</td><td>Darhol paydo bo'ladi, fon ham</td></tr>
+          <tr><td class="el-cell-title">Pastki oyna</td><td class="el-muted">250 ms, pastdan siljish</td><td>Darhol joyida</td></tr>
+          <tr><td class="el-cell-title">Qalqib chiquvchi xabar</td><td class="el-muted">250 ms, o'ngdan siljish</td><td>Darhol joyida</td></tr>
+          <tr><td class="el-cell-title">Skelet</td><td class="el-muted">1,4 s yaltirash</td><td>Harakatsiz kulrang blok</td></tr>
+          <tr><td class="el-cell-title">Yuklanish halqasi</td><td class="el-muted">0,7 s aylanish</td><td>To'xtaydi; yonidagi «Yuklanmoqda…» matni holatni aytadi</td></tr>
+          <tr><td class="el-cell-title">Skan natijasi (kuryer)</td><td class="el-muted">Kattalashib chiqish</td><td>Darhol; rang, ikonka va matn o'zgarmaydi</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="el-card-foot" style="flex-wrap: wrap; justify-content: flex-start">
+      <span class="el-small el-muted">Kodda bitta qoida:</span>
+      <span class="el-small el-strong">transition: none; animation: none</span>
+      <span class="el-small el-muted">— barcha .el elementlari uchun.</span>
+    </div>
+  </section>
+  <div class="el-alert el-tone-info" role="note">
+    <span style="display: inline-flex; padding-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+    <div class="el-alert-body">
+      <div class="el-alert-title">Ma'no hech qachon faqat harakatda bo'lmaydi</div>
+      <p class="el-small">Holat doim matn, ikonka yoki rang bilan ham ko'rsatiladi. Harakatsiz ham foydalanuvchi nima bo'lganini tushunadi.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="s-focus" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">05</span>
+    <h2 class="el-h1" id="s-focus">Fokus halqasi</h2>
+    <p class="el-sub" style="max-width: 920px">Klaviatura bilan ishlaganda foydalanuvchi qayerda turganini doim ko'radi. Halqa faqat klaviaturada chiqadi (:focus-visible) — sichqoncha bilan bosilganda ko'rinmaydi.</p>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 16px; align-items: start">
+    <section class="el-card" aria-labelledby="t-ring">
+      <div class="el-card-head" style="flex-wrap: wrap">
+        <h3 class="el-h2" id="t-ring">Halqa o'lchami</h3>
+        <p class="el-small el-muted">Eski: 63 joyda fokus o'chirilgan</p>
+      </div>
+      <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 20px">
+        <div aria-hidden="true" style="position: relative; height: 240px; overflow: hidden; border-radius:12px; background: var(--sunken)">
+          <div style="position: absolute; left: calc(50% - 126px); top: calc(50% - 54px); transform: scale(3); transform-origin: 0 0">
+            <button class="el-btn el-btn-primary is-focus" type="button" tabindex="-1">Saqlash</button>
+          </div>
+          <span class="el-badge el-tone-neutral" style="position: absolute; right: 12px; top: 12px">3 marta kattalashtirilgan</span>
+        </div>
+        <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px 24px">
+          <div style="display: flex; gap: 12px; align-items: flex-start"><span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:6px; border: 2px solid var(--action); margin-top: 2px"></span><div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-small el-strong">Halqa — 2 px</dt><dd class="el-xs el-muted" style="margin: 0">To'liq chiziq, rang <span style="margin-right: 1px">-</span>-action; ikkala mavzuda 3&nbsp;:&nbsp;1 dan yuqori</dd></div></div>
+          <div style="display: flex; gap: 12px; align-items: flex-start"><span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:6px; border: 2px dashed var(--border-strong); margin-top: 2px"></span><div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-small el-strong">Oraliq — 2 px</dt><dd class="el-xs el-muted" style="margin: 0">Element bilan halqa orasida fon ko'rinadi — ko'k tugmada ham halqa ajralib turadi</dd></div></div>
+          <div style="display: flex; gap: 12px; align-items: flex-start"><span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--text-muted); margin-top: 2px"></span><div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-small el-strong">Burchak</dt><dd class="el-xs el-muted" style="margin: 0">Element radiusiga ergashadi; shakl o'zgarmaydi, o'lcham sakramaydi</dd></div></div>
+          <div style="display: flex; gap: 12px; align-items: flex-start"><span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:6px; background: var(--focus); margin-top: 2px"></span><div style="display: flex; flex-direction: column; gap: 2px"><dt class="el-small el-strong">Maydonlarda — 3 px</dt><dd class="el-xs el-muted" style="margin: 0">Chegara <span style="margin-right: 1px">-</span>-action va <span style="margin-right: 1px">-</span>-focus yumshoq halqa, oraliqsiz</dd></div></div>
+        </dl>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border)">
+          <span class="el-overline">Qoidalar</span>
+          <ul class="el-small" style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px">
+            <li>Halqa faqat :focus-visible da chiziladi; sichqoncha bilan bosilganda chiqmaydi.</li>
+            <li>outline: none faqat o'rniga boshqa halqa berilganda yoziladi.</li>
+            <li>overflow: hidden konteynerda 4 px ichki joy qoldiriladi — halqa kesilmaydi.</li>
+            <li>Halqa rangi holatga qarab o'zgarmaydi: xavfli tugmada ham ko'k.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+    <section class="el-card" aria-labelledby="t-ringset">
+      <div class="el-card-head"><h3 class="el-h2" id="t-ringset">Har bir elementda</h3></div>
+      <div class="el-card-pad" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 20px 16px">
+        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 16px; border-radius:12px; background: var(--sunken)"><button class="el-btn el-btn-primary is-focus" type="button">Saqlash</button></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Asosiy tugma</span><span class="el-xs el-muted">2 px halqa, 2 px oraliq</span></div>
+        </div><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 16px; border-radius:12px; background: var(--sunken)"><button class="el-btn el-btn-secondary is-focus" type="button">Excelga yuklash</button></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Ikkinchi darajali</span><span class="el-xs el-muted">2 px halqa, 2 px oraliq</span></div>
+        </div><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 16px; border-radius:12px; background: var(--sunken)"><button class="el-iconbtn el-iconbtn-bordered is-focus" type="button" aria-label="Chop etish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></button></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Ikonka tugma</span><span class="el-xs el-muted">2 px halqa, 2 px oraliq</span></div>
+        </div><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 16px; border-radius:12px; background: var(--sunken)"><a class="el-btn el-btn-link is-focus" href="#">Batafsil</a></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Havola</span><span class="el-xs el-muted">2 px halqa, 2 px oraliq, matn atrofida</span></div>
+        </div><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 16px; border-radius:12px; background: var(--sunken)"><div class="el-tabs" role="tablist" aria-label="Namuna" style="border-bottom: 0; padding: 4px"><button class="el-tab" type="button" role="tab" aria-selected="true">Barchasi <span class="el-tab-count">1 248</span></button><button class="el-tab is-focus" type="button" role="tab" aria-selected="false">Yo'lda <span class="el-tab-count">86</span></button></div></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Tab</span><span class="el-xs el-muted">Halqa tab ustida; tanlov chizig'idan alohida</span></div>
+        </div><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 16px; border-radius:12px; background: var(--sunken)"><button class="el-switch is-focus" type="button" role="switch" aria-checked="true" aria-label="Faol"></button></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Kalit</span><span class="el-xs el-muted">2 px halqa, 2 px oraliq</span></div>
+        </div><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 16px; border-radius:12px; background: var(--sunken)"><input class="el-input is-focus" id="f-tel" type="tel" value="+998 90 123 45 67" aria-label="Telefon"></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Kiritish maydoni</span><span class="el-xs el-muted">Chegara ko'k va 3 px yumshoq halqa, oraliqsiz</span></div>
+        </div><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 88px; padding: 16px; border-radius:12px; background: var(--sidebar)"><a class="el-nav-item" href="#" style="width: 100%; outline: 2px solid var(--sidebar-text); outline-offset: 2px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Buyurtmalar</a></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span class="el-h3">Yon menyu</span><span class="el-xs el-muted">Navy fonda halqa oq — --sidebar-text</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <section class="el-card" aria-labelledby="t-order">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <div style="display: flex; align-items: center; gap: 10px"><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg></span><h3 class="el-h2" id="t-order">Klaviatura bilan yurish tartibi</h3></div>
+      <p class="el-small el-muted">Namuna: menejer qo'shish formasi · fokus 3-qadamda</p>
+    </div>
+    <div class="el-card-pad" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 24px 40px; align-items: start">
+      <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0"><form aria-label="Namuna: menejer qo'shish formasi" style="display: flex; flex-direction: column; gap: 20px; padding: 28px 24px 24px; border-radius:12px; background: var(--sunken)">
+          <div class="el-field">
+            <label class="el-label" for="k-name"><span class="el-badge" aria-hidden="true" style="min-width: 24px; height: 24px; padding: 0 5px; justify-content: center; border-radius:999px; vertical-align: middle; margin-right: 8px; background: var(--surface); color: var(--action-fg); border: 2px solid var(--action)">1</span>Ism familiya <span class="el-req">*</span></label>
+            <div style="position: relative"><input class="el-input" id="k-name" type="text" value="Sardor Aliyev"></div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 20px 16px">
+            <div class="el-field">
+              <label class="el-label" for="k-tel"><span class="el-badge" aria-hidden="true" style="min-width: 24px; height: 24px; padding: 0 5px; justify-content: center; border-radius:999px; vertical-align: middle; margin-right: 8px; background: var(--surface); color: var(--action-fg); border: 2px solid var(--action)">2</span>Telefon <span class="el-req">*</span></label>
+              <div style="position: relative"><input class="el-input" id="k-tel" type="tel" value="+998 90 123 45 67"></div>
+            </div>
+            <div class="el-field">
+              <label class="el-label" for="k-pass"><span class="el-badge" aria-hidden="true" style="min-width: 24px; height: 24px; padding: 0 5px; justify-content: center; border-radius:999px; vertical-align: middle; margin-right: 8px; background: var(--action); color: var(--on-solid); border: 2px solid var(--action)">3</span>Parol <span class="el-req">*</span></label>
+              <div style="position: relative; display: flex; align-items: center"><input class="el-input is-focus" id="k-pass" type="password" value="namuna12" style="padding-right: 48px">
+                <span style="position: absolute; right: 2px; display: inline-flex"><span class="el-badge" aria-hidden="true" style="position: absolute; top: -13px; right: -13px; z-index: 1; min-width: 24px; height: 24px; padding: 0 5px; justify-content: center; border-radius:999px; background: var(--surface); color: var(--action-fg); border: 2px solid var(--action)">4</span><button class="el-iconbtn" type="button" aria-label="Parolni ko'rsatish" aria-pressed="false" style="width: 36px; height: 36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button></span>
+              </div>
+            </div>
+          </div>
+          <div class="el-field">
+            <span class="el-label" id="k-branch-l"><span class="el-badge" aria-hidden="true" style="min-width: 24px; height: 24px; padding: 0 5px; justify-content: center; border-radius:999px; vertical-align: middle; margin-right: 8px; background: var(--surface); color: var(--action-fg); border: 2px solid var(--action)">5</span>Filial <span class="el-req">*</span></span>
+            <div style="position: relative"><button class="el-input el-select" type="button" aria-labelledby="k-branch-l"><span>Urgut filiali</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 16px; flex-wrap: wrap; padding-top: 4px">
+            <span style="position: relative; display: inline-flex"><span class="el-badge" aria-hidden="true" style="position: absolute; top: -11px; left: -11px; z-index: 1; min-width: 24px; height: 24px; padding: 0 5px; justify-content: center; border-radius:999px; background: var(--surface); color: var(--action-fg); border: 2px solid var(--action)">6</span><button class="el-btn el-btn-secondary" type="button">Bekor qilish</button></span>
+            <span style="position: relative; display: inline-flex"><span class="el-badge" aria-hidden="true" style="position: absolute; top: -11px; left: -11px; z-index: 1; min-width: 24px; height: 24px; padding: 0 5px; justify-content: center; border-radius:999px; background: var(--surface); color: var(--action-fg); border: 2px solid var(--action)">7</span><button class="el-btn el-btn-primary" type="button">Saqlash</button></span>
+          </div>
+        </form>
+        <p class="el-small el-muted" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 4px">Hozir fokus 3-qadamda — Parol. <span class="el-kbd">Tab</span> bosilsa, 4 — «Parolni ko'rsatish» tugmasi.</p></div>
+      <div style="display: flex; flex-direction: column; gap: 20px; min-width: 0">
+        <div style="display: flex; flex-direction: column">
+          <span class="el-overline" style="padding-bottom: 4px">Tugmalar</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-small">Keyingi element</span><span style="display: inline-flex; align-items: center; gap: 4px; flex: none"><span class="el-kbd">Tab</span></span></div><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-small">Oldingi element</span><span style="display: inline-flex; align-items: center; gap: 4px; flex: none"><span class="el-kbd">Shift</span><span class="el-xs el-muted">+</span><span class="el-kbd">Tab</span></span></div><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-small">Tugmani bosish, formani yuborish</span><span style="display: inline-flex; align-items: center; gap: 4px; flex: none"><span class="el-kbd">Enter</span></span></div><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-small">Katak, kalit va tugmani bosish</span><span style="display: inline-flex; align-items: center; gap: 4px; flex: none"><span class="el-kbd">Probel</span></span></div><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-small">Ro'yxat, menyu va tablar ichida yurish</span><span style="display: inline-flex; align-items: center; gap: 4px; flex: none"><span class="el-kbd">↑</span><span class="el-xs el-muted">+</span><span class="el-kbd">↓</span></span></div><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-small">Menyu yoki oynani yopish, fokus ochgan tugmaga qaytadi</span><span style="display: inline-flex; align-items: center; gap: 4px; flex: none"><span class="el-kbd">Esc</span></span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span class="el-overline">Qoidalar</span>
+          <ul class="el-small" style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px">
+            <li>Tartib ko'rinish tartibiga teng: yuqoridan pastga, chapdan o'ngga. Musbat tabindex ishlatilmaydi.</li>
+            <li>Maydon ichidagi tugma (parolni ko'rsatish) maydondan keyin keladi.</li>
+            <li>Oyna ochilganda fokus ichida aylanadi; yopilganda uni ochgan tugmaga qaytadi.</li>
+            <li>Xatoli forma yuborilsa, fokus birinchi xato maydonga o'tadi.</li>
+            <li>O'chirilgan va yashirin elementlar tartibdan chiqariladi.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
+<section aria-labelledby="s-touch" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">06</span>
+    <h2 class="el-h1" id="s-touch">Bosish maydoni</h2>
+    <p class="el-sub" style="max-width: 920px">Telefonda har qanday bosiladigan narsa kamida 44 × 44 px. Kuryer ekranlarida asosiy amal — 48 px va pastki panelda. Ikonka kichik bo'lsa ham, bosish maydoni kichraymaydi.</p>
+  </div>
+  <section class="el-card" aria-labelledby="t-touch">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-touch">Kuryer ekranida o'lchov</h3>
+      <p class="el-small el-muted">Eski: 115 joyda 28–36 px ikonka tugma</p>
+    </div>
+    <div class="el-card-pad" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 24px 40px; align-items: start">
+      <div style="max-width: 100%; min-width: 0; overflow-x: auto; justify-self: center"><div aria-hidden="true" style="width: 390px; margin: 0 auto; border: 1px solid var(--border); border-radius:20px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column">
+        <div class="el-mtop">
+          <span class="el-mtitle">Buyurtmalar</span>
+          <span style="position: relative; display: inline-flex"><button class="el-iconbtn el-iconbtn-lg" type="button" tabindex="-1" aria-label="Skanerlash"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></button><span style="position: absolute; inset: -3px; border: 2px dashed var(--info); border-radius:14px; pointer-events: none"></span><span class="el-badge" aria-hidden="true" style="position: absolute; top: 50%; right: calc(100% + 8px); transform: translateY(-50%); min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid)">1</span></span>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <div style="background: var(--surface); border-radius:14px">
+            <div class="el-list-item" style="position: relative; display: block; padding: 0">
+              <a href="#" tabindex="-1" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+                <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-right: 60px"><span class="el-cell-title">Laylo Hasanova</span><span class="el-strong" style="white-space: nowrap">185 000 so'm</span></span>
+                <span class="el-cell-sub" style="white-space: normal; padding-right: 60px">Qibray tumani · Baraka Shop</span>
+                <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-warning">Yo'lda</span><span class="el-badge el-tone-neutral">Uygacha</span></span>
+              </a>
+              <span style="position: absolute; top: 12px; right: 16px; display: inline-flex"><a class="el-iconbtn el-iconbtn-lg" href="#" tabindex="-1" aria-label="Qo'ng'iroq qilish" style="background: var(--action-soft); color: var(--action-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></svg></a><span style="position: absolute; inset: -3px; border: 2px dashed var(--info); border-radius:14px; pointer-events: none"></span><span class="el-badge" aria-hidden="true" style="position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid)">2</span></span>
+            </div>
+            <div class="el-list-item" style="position: relative; display: block; padding: 0">
+              <a href="#" tabindex="-1" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+                <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-right: 60px"><span class="el-cell-title">Javohir Toshmatov</span><span class="el-strong" style="white-space: nowrap">1 280 000 so'm</span></span>
+                <span class="el-cell-sub" style="white-space: normal; padding-right: 60px">Mirobod tumani · Nur Elektronika</span>
+              </a>
+              <span style="position: absolute; top: 12px; right: 16px; display: inline-flex"><a class="el-iconbtn el-iconbtn-lg" href="#" tabindex="-1" aria-label="Qo'ng'iroq qilish" style="background: var(--action-soft); color: var(--action-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></svg></a></span>
+              <span style="position: absolute; inset: 0; border: 2px dashed var(--info); border-radius:0 0 14px 14px; pointer-events: none"></span><span class="el-badge" aria-hidden="true" style="position: absolute; top: 50%; left: -12px; transform: translateY(-50%); min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid)">3</span>
+            </div>
+          </div>
+        </div>
+        <div class="el-sticky-bar">
+          <span style="position: relative; display: flex; flex: 1"><button class="el-btn el-btn-primary el-btn-lg el-btn-block" type="button" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Kunni yakunlash</button><span style="position: absolute; inset: -3px; border: 2px dashed var(--info); border-radius:14px; pointer-events: none"></span><span class="el-badge" aria-hidden="true" style="position: absolute; top: -11px; left: -11px; min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid)">4</span></span>
+        </div>
+        <nav class="el-mnav" aria-label="Namuna menyu">
+          <a href="#" tabindex="-1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="el-bn-label">Bosh sahifa</span></a>
+          <a href="#" tabindex="-1" aria-current="page" style="position: relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span class="el-bn-label">Buyurtmalar</span><span style="position: absolute; inset: 2px 0; border: 2px dashed var(--info); border-radius:12px; pointer-events: none"></span><span class="el-badge" aria-hidden="true" style="position: absolute; top: 4px; right: 2px; min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid)">5</span></a>
+          <a class="el-bn-scan" href="#" tabindex="-1"><span class="el-bn-fab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></span><span class="el-bn-label">Skaner</span></a>
+          <a href="#" tabindex="-1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg><span class="el-bn-label">Tezkor amal</span></a>
+          <a href="#" tabindex="-1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg><span class="el-bn-label">Menyu</span></a>
+        </nav>
+      </div></div>
+      <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0">
+        <div style="display: flex; flex-direction: column">
+          <span class="el-overline" style="padding-bottom: 4px">O'lchovlar</span>
+          <div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-badge" aria-hidden="true" style="min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid); flex: none">1</span><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-small el-strong">Yuqori panel tugmasi</span><span class="el-xs el-muted">44 × 44 px</span></div></div><div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-badge" aria-hidden="true" style="min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid); flex: none">2</span><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-small el-strong">Qo'ng'iroq tugmasi</span><span class="el-xs el-muted">44 × 44 px</span></div></div><div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-badge" aria-hidden="true" style="min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid); flex: none">3</span><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-small el-strong">Ro'yxat qatori</span><span class="el-xs el-muted">Butun qator bosiladi, kamida 56 px</span></div></div><div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-badge" aria-hidden="true" style="min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid); flex: none">4</span><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-small el-strong">Asosiy amal</span><span class="el-xs el-muted">48 px, to'liq kenglik, bosh barmoq yetadigan pastki panelda</span></div></div><div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border)"><span class="el-badge" aria-hidden="true" style="min-width: 22px; height: 22px; padding: 0 6px; justify-content: center; border-radius:999px; background: var(--info); color: var(--on-solid); flex: none">5</span><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-small el-strong">Pastki menyu bandi</span><span class="el-xs el-muted">64 px balandlik, ekran kengligining beshdan biri</span></div></div>
+        </div>
+        <ul class="el-small" style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px">
+          <li>Qo'shni bosish maydonlari orasida kamida 8 px.</li>
+          <li>768 px dan tor ekranda tugma, maydon va ikonka tugma avtomatik 44 px bo'ladi.</li>
+          <li>Xavfli amal asosiy amal yonida turmaydi — tasdiqlash oynasi orqali.</li>
+        </ul>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border-top: 1px solid var(--border)">
+      <span class="el-overline">Kompyuter va telefon</span>
+      <div class="el-table-wrap" style="border: 1px solid var(--border); border-radius:12px">
+        <table class="el-table" style="min-width: 1040px">
+          <thead><tr><th style="width: 130px">Ekran</th><th>Asosiy tugma</th><th>Oddiy tugma</th><th>Ikonka tugma</th><th>Kiritish maydoni</th><th>Tab</th><th>Ro'yxat qatori</th><th>Katak va kalit</th></tr></thead>
+          <tbody>
+            <tr><td class="el-cell-title">Kompyuter</td><td>40 px</td><td>40 px · kichigi 32</td><td>40 × 40 · kichigi 32</td><td>40 px</td><td>44 px</td><td>56 px</td><td>Yorliq bilan birga</td></tr>
+            <tr><td class="el-cell-title">Telefon</td><td><span class="el-strong">48 px</span></td><td><span class="el-strong">44 px</span></td><td><span class="el-strong">44 × 44 px</span></td><td><span class="el-strong">48 px</span></td><td><span class="el-strong">48 px</span></td><td><span class="el-strong">kamida 56 px</span></td><td><span class="el-strong">Butun qator, 44 px</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</section>
+
+<section aria-labelledby="s-contrast" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">07</span>
+    <h2 class="el-h1" id="s-contrast">Kontrast</h2>
+    <p class="el-sub" style="max-width: 920px">Asosiy token juftliklari ikkala mavzuda o'lchangan. Matn uchun talab — kamida 4,5&nbsp;:&nbsp;1; ikonka, fokus halqasi, 24 px va undan katta matn (qalin matnda 19 px dan) uchun — 3&nbsp;:&nbsp;1. Barcha holat belgilari kamida 5&nbsp;:&nbsp;1.</p>
+  </div>
+  <section class="el-card" aria-labelledby="t-contrast">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-contrast">Token juftliklari</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="el-badge el-tone-neutral">Kunduzgi</span><span class="el-badge el-tone-neutral">Tungi</span></div>
+    </div>
+    <div class="el-table-wrap">
+      <table class="el-table" style="min-width: 1040px">
+        <thead><tr><th style="width: 280px">Juftlik</th><th style="width: 200px">Namuna</th><th class="el-num" style="width: 110px">Kunduzgi</th><th class="el-num" style="width: 110px">Tungi</th><th>Talab</th><th style="width: 160px">Natija</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><div class="el-cell-title">Asosiy matn</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-text / <span style="margin-right: 1px">-</span>-surface</div></td>
+            <td><span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius:8px; border: 1px solid var(--border); background: var(--surface)"><span class="el-strong" style="color: var(--text)">Aa</span><span class="el-small" style="color: var(--text)">Buyurtmalar</span></span></td>
+            <td class="el-num">17,61</td>
+            <td class="el-num">14,48</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AAA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Ikkinchi darajali matn</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-text-muted / <span style="margin-right: 1px">-</span>-surface</div></td>
+            <td><span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius:8px; border: 1px solid var(--border); background: var(--surface)"><span class="el-strong" style="color: var(--text-muted)">Aa</span><span class="el-small" style="color: var(--text-muted)">Toshkent HQ</span></span></td>
+            <td class="el-num">7,35</td>
+            <td class="el-num">7,91</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AAA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Yordamchi matn</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-text-subtle / <span style="margin-right: 1px">-</span>-surface</div></td>
+            <td><span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius:8px; border: 1px solid var(--border); background: var(--surface)"><span class="el-strong" style="color: var(--text-subtle)">Aa</span><span class="el-small" style="color: var(--text-subtle)">Ism kiriting</span></span></td>
+            <td class="el-num"><span class="el-strong" style="color: var(--warning-fg)">3,68</span></td>
+            <td class="el-num">4,60</td>
+            <td class="el-muted el-small">3&nbsp;:&nbsp;1 · faqat ikonka, namuna matn, o'chirilgan</td>
+            <td><span class="el-badge el-badge-dot el-tone-warning">Faqat yordamchi</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Havola va ikonka tugma</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-action-fg / <span style="margin-right: 1px">-</span>-surface</div></td>
+            <td><span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius:8px; border: 1px solid var(--border); background: var(--surface)"><span class="el-strong" style="color: var(--action-fg)">Aa</span><span class="el-small" style="color: var(--action-fg)">Batafsil</span></span></td>
+            <td class="el-num">6,48</td>
+            <td class="el-num">7,42</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Asosiy tugma</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-on-solid / <span style="margin-right: 1px">-</span>-action</div></td>
+            <td><button class="el-btn el-btn-primary el-btn-sm" type="button">Saqlash</button></td>
+            <td class="el-num">6,48</td>
+            <td class="el-num">8,09</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Sotish tugmasi</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-on-solid / <span style="margin-right: 1px">-</span>-success</div></td>
+            <td><button class="el-btn el-btn-success el-btn-sm" type="button">Sotish</button></td>
+            <td class="el-num">6,08</td>
+            <td class="el-num">8,68</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Xavfli tugma</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-on-solid / <span style="margin-right: 1px">-</span>-danger</div></td>
+            <td><button class="el-btn el-btn-danger el-btn-sm" type="button">O'chirish</button></td>
+            <td class="el-num">5,86</td>
+            <td class="el-num">7,10</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Holat: muvaffaqiyat</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-success-fg / <span style="margin-right: 1px">-</span>-success-soft</div></td>
+            <td><span class="el-badge el-badge-dot el-tone-success">Sotilgan</span></td>
+            <td class="el-num">5,33</td>
+            <td class="el-num">6,18</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Holat: jarayonda</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-warning-fg / <span style="margin-right: 1px">-</span>-warning-soft</div></td>
+            <td><span class="el-badge el-badge-dot el-tone-warning">Yo'lda</span></td>
+            <td class="el-num">5,16</td>
+            <td class="el-num">7,02</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Holat: bekor</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-danger-fg / <span style="margin-right: 1px">-</span>-danger-soft</div></td>
+            <td><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span></td>
+            <td class="el-num">5,00</td>
+            <td class="el-num">5,31</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Holat: yangi</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-info-fg / <span style="margin-right: 1px">-</span>-info-soft</div></td>
+            <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+            <td class="el-num">5,35</td>
+            <td class="el-num">6,06</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Tanlangan element</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-action-fg / <span style="margin-right: 1px">-</span>-action-soft</div></td>
+            <td><span class="el-badge el-tone-action">Tanlangan</span></td>
+            <td class="el-num">5,54</td>
+            <td class="el-num">5,75</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Yon menyu matni</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-sidebar-text / <span style="margin-right: 1px">-</span>-sidebar</div></td>
+            <td><span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius:8px; background: var(--sidebar)"><span class="el-small el-strong" style="color: var(--sidebar-text)">Buyurtmalar</span></span></td>
+            <td class="el-num">9,55</td>
+            <td class="el-num">9,95</td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AAA</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Yon menyu guruh nomi</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-sidebar-muted / <span style="margin-right: 1px">-</span>-sidebar</div></td>
+            <td><span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius:8px; background: var(--sidebar)"><span class="el-overline" style="color: var(--sidebar-muted)">Moliya</span></span></td>
+            <td class="el-num">4,93</td>
+            <td class="el-num"><span class="el-strong" style="color: var(--warning-fg)">4,38</span></td>
+            <td class="el-muted el-small">4,5&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-warning">Tungida past</span></td>
+          </tr>
+          <tr>
+            <td><div class="el-cell-title">Fokus halqasi</div><div class="el-xs el-subtle"><span style="margin-right: 1px">-</span>-action / <span style="margin-right: 1px">-</span>-surface</div></td>
+            <td><button class="el-btn el-btn-secondary el-btn-sm is-focus" type="button">Fokus</button></td>
+            <td class="el-num">6,48</td>
+            <td class="el-num">7,42</td>
+            <td class="el-muted el-small">3&nbsp;:&nbsp;1</td>
+            <td><span class="el-badge el-badge-dot el-tone-success">AA</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="el-card-foot" style="flex-wrap: wrap; justify-content: flex-start">
+      <span class="el-xs el-muted">WCAG 2.1 bo'yicha hisoblangan. Tungi mavzudagi yumshoq fonlar <span style="margin-right: 1px">-</span>-surface ustida 14% shaffoflik bilan o'lchangan.</span>
+    </div>
+  </section>
+  <div class="el-grid">
+    <div class="el-alert el-tone-warning" role="note">
+      <span style="display: inline-flex; padding-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+      <div class="el-alert-body">
+        <div class="el-alert-title">Yordamchi matn — faqat ikkinchi darajali ma'lumot</div>
+        <p class="el-small"><span style="margin-right: 1px">-</span>-text-subtle kunduzgi mavzuda 3,68&nbsp;:&nbsp;1. Narx, holat, sana va xato matni uchun ishlatilmaydi — ular uchun <span style="margin-right: 1px">-</span>-text-muted.</p>
+      </div>
+    </div>
+    <div class="el-alert el-tone-warning" role="note">
+      <span style="display: inline-flex; padding-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+      <div class="el-alert-body">
+        <div class="el-alert-title">Tungi yon menyu guruh nomi — 4,38&nbsp;:&nbsp;1</div>
+        <p class="el-small">Taklif: tungi <span style="margin-right: 1px">-</span>-sidebar-muted shaffofligini 48% dan 52% ga ko'tarish — 4,94&nbsp;:&nbsp;1, kunduzgi bilan teng.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="s-z" style="display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span class="el-overline">08</span>
+    <h2 class="el-h1" id="s-z">Qatlamlar tartibi</h2>
+    <p class="el-sub" style="max-width: 920px">Ekranda nima ustida nima turishi beshta qiymat bilan belgilanadi. Yangi son qo'shilmaydi — har bir yangi element shu qatlamlardan biriga tushadi.</p>
+  </div>
+  <section class="el-card" aria-labelledby="t-z">
+    <div class="el-card-head" style="flex-wrap: wrap">
+      <h3 class="el-h2" id="t-z">z-index shkalasi</h3>
+      <p class="el-small el-muted">Eski: 16 xil qiymat, 0 dan 10 080 gacha</p>
+    </div>
+    <div class="el-card-pad" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 24px 40px; align-items: center">
+      <div role="img" aria-label="Beshta qatlam: pastdan yuqoriga 0, 10, 1000, 1200, 1300" style="position: relative; height: 300px; max-width: 520px; width: 100%; align-self: center">
+          <div style="position: absolute; left: 0px; top: 184px; width: calc(100% - 112px); height: 112px; border-radius:12px; border: 1px solid var(--border-strong); background: var(--surface); box-shadow:var(--shadow-1); padding: 10px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px">
+            <span class="el-small el-strong">Oddiy oqim</span><span class="el-badge el-tone-neutral">0</span>
+          </div>
+          <div style="position: absolute; left: 28px; top: 138px; width: calc(100% - 112px); height: 112px; border-radius:12px; border: 1px solid var(--border-strong); background: var(--surface); box-shadow:var(--shadow-1); padding: 10px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px">
+            <span class="el-small el-strong">Yopishqoq</span><span class="el-badge el-tone-neutral">10</span>
+          </div>
+          <div style="position: absolute; left: 56px; top: 92px; width: calc(100% - 112px); height: 112px; border-radius:12px; border: 1px solid var(--border-strong); background: var(--surface); box-shadow:var(--shadow-2); padding: 10px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px">
+            <span class="el-small el-strong">Ochiladigan</span><span class="el-badge el-tone-neutral">1000</span>
+          </div>
+          <div style="position: absolute; left: 84px; top: 46px; width: calc(100% - 112px); height: 112px; border-radius:12px; border: 1px solid var(--border-strong); background: var(--surface); box-shadow:var(--shadow-2); padding: 10px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px">
+            <span class="el-small el-strong">Qoplama</span><span class="el-badge el-tone-neutral">1200</span>
+          </div>
+          <div style="position: absolute; left: 112px; top: 0px; width: calc(100% - 112px); height: 112px; border-radius:12px; border: 1px solid var(--border-strong); background: var(--surface); box-shadow:var(--shadow-2); padding: 10px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px">
+            <span class="el-small el-strong">Xabar</span><span class="el-badge el-tone-neutral">1300</span>
+          </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+        <div class="el-table-wrap" style="border: 1px solid var(--border); border-radius:12px">
+          <table class="el-table" style="min-width: 620px">
+            <thead><tr><th style="width: 130px">Qatlam</th><th class="el-num" style="width: 90px">z-index</th><th>Nima turadi</th><th style="width: 170px">Eski qiymatlar</th></tr></thead>
+            <tbody>
+            <tr><td><div class="el-cell-title">Xabar</div></td><td class="el-num"><span class="el-strong">1300</span></td><td>Qalqib chiquvchi xabar, sessiya tugashi ogohlantirishi, skan natijasi</td><td class="el-xs el-muted"><span style="white-space: nowrap">z-[10040]</span>, <span style="white-space: nowrap">z-[10050]</span>, <span style="white-space: nowrap">10080</span></td></tr>
+            <tr><td><div class="el-cell-title">Qoplama</div></td><td class="el-num"><span class="el-strong">1200</span></td><td>Fon qoplamasi, tasdiqlash oynasi, pastki oyna, telefon menyusi, sahifa yuklanishi</td><td class="el-xs el-muted"><span style="white-space: nowrap">z-50</span>, <span style="white-space: nowrap">z-60</span>, <span style="white-space: nowrap">z-100</span>, <span style="white-space: nowrap">z-[120]</span>, <span style="white-space: nowrap">z-[9998]</span>, <span style="white-space: nowrap">z-[9999]</span></td></tr>
+            <tr><td><div class="el-cell-title">Ochiladigan</div></td><td class="el-num"><span class="el-strong">1000</span></td><td>Ro'yxat, amallar menyusi, kalendar, tooltip, qidiruv natijalari</td><td class="el-xs el-muted"><span style="white-space: nowrap">z-40</span>, <span style="white-space: nowrap">z-70</span>, <span style="white-space: nowrap">z-[9999]</span></td></tr>
+            <tr><td><div class="el-cell-title">Yopishqoq</div></td><td class="el-num"><span class="el-strong">10</span></td><td>Yuqori panel, yon menyu, jadval sarlavhasi, pastki tugmalar paneli, telefon pastki menyusi</td><td class="el-xs el-muted"><span style="white-space: nowrap">z-20</span>, <span style="white-space: nowrap">z-30</span>, <span style="white-space: nowrap">z-40</span>, <span style="white-space: nowrap">z-50</span></td></tr>
+            <tr><td><div class="el-cell-title">Oddiy oqim</div></td><td class="el-num"><span class="el-strong">0</span></td><td>Sahifa mazmuni, kartalar, jadval</td><td class="el-xs el-muted"><span style="white-space: nowrap">z-0</span>, <span style="white-space: nowrap">1</span>, <span style="white-space: nowrap">z-10</span>, <span style="white-space: nowrap">z-20</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="el-small" style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px">
+          <li>Oyna ichidan ochilgan ro'yxat, kalendar va tooltip oyna qatlamida chiziladi — fon ostida qolmaydi.</li>
+          <li>Xabar qatlami bosishni to'smaydi: xabardan tashqaridagi joy bosiladi.</li>
+          <li>Bir qatlam ichida tartib DOM tartibi bilan belgilanadi, qo'shimcha son bilan emas.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</section>
+
+</div>
+  

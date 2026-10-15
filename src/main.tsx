@@ -4,12 +4,17 @@ import "./index.css";
 import App from "./app/ui/App";
 import { registerBeforeLogout } from "./auth/authService";
 import { unsubscribePushOnLogout } from "./features/push-notifications/lib/pushClient";
+import { i18nReady } from "./i18n";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// Tanlangan til (ru/en) fayllari yuklangach chiziladi — bir lahza o'zbekcha
+// matn ko'rinib qolmasin. Standart til (uz) bundle ichida: kutish yo'q.
+const render = () =>
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+void i18nReady.then(render, render);
 
 // Web Push uchun Service Worker (QgqO0CdZ). Faqat PROD: dev'da HMR bilan
 // urushmasin. Sahifa to'liq yuklangach — birinchi chizishni sekinlashtirmasin.

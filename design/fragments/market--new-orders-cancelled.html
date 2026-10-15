@@ -1,0 +1,154 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Qabul va yaratish</h1>
+    <p class="el-sub">Yangi buyurtmalaringiz va bekor qilinganlarni pochtaga topshirish</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@new-orders-create-manual"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</a>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Bekor qilingan buyurtmalar">
+  <div class="el-tabs" role="tablist" aria-label="Qabul va yaratish bo'limlari" style="padding: 0 min(12px, 1cqw)">
+    <a class="el-tab" role="tab" aria-selected="false" href="@new-orders-list" style="text-decoration: none; color: var(--text-muted); padding: 0 min(12px, 2.5cqw)">Yangi buyurtmalar <span class="el-tab-count">5</span></a>
+    <a class="el-tab" role="tab" aria-selected="true" href="@new-orders-cancelled" style="text-decoration: none; color: var(--text); padding: 0 min(12px, 2.5cqw)">Bekor qilinganlar <span class="el-tab-count">6</span></a>
+  </div>
+
+  <div class="el-card-pad" style="padding: 16px 16px 12px">
+    <div role="region" aria-labelledby="handover-title" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; padding: 16px; border-radius:12px; background: var(--sunken)">
+      <div style="display: flex; gap: 14px; align-items: flex-start; flex: 1 1 380px; min-width: 0">
+        <span class="el-stat-icon" style="flex: none; background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></span>
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+          <h2 class="el-h2" id="handover-title">Bekor qilingan buyurtmalarni pochtaga topshirish</h2>
+          <p class="el-small el-muted">Qabul qilish tugmasini bosing va chiqqan QR kodni pochtada skaner qildiring.</p>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; flex: 0 1 auto">
+        <span class="el-badge el-badge-dot el-tone-success" role="status">QR chiqarishga tayyor</span>
+        <a class="el-btn el-btn-secondary" href="@new-orders-cancelled-qr-dialog" aria-haspopup="dialog" style="flex: 1 0 auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>Qabul qilish</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; padding: 4px 20px 16px">
+    <h3 class="el-h3">Bekor qilingan buyurtmalar</h3>
+    <p class="el-small el-muted"><span style="white-space: nowrap"><span class="el-strong">6</span> ta bekor qilingan buyurtma</span> · <span style="white-space: nowrap">jami <span class="el-strong">1 845 000 so'm</span></span></p>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th aria-sort="descending"><button class="el-th-sort" type="button" aria-pressed="true">Buyurtma<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button></th>
+          <th>Mijoz</th>
+          <th class="el-hide-tablet">Tuman / viloyat</th>
+          <th>Mahsulotlar</th>
+          <th class="el-hide-tablet">Yetkazish</th>
+          <th class="el-num">Summa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="el-cell-title">№10235</div><div class="el-cell-sub">Kecha, 18:04</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Malika Yusupova</div><div class="el-cell-sub">+998 99 812 40 11</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Sergeli tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Bolalar kurtkasi, 110 sm <span class="el-muted">· 1 ta</span></span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num el-strong">96 000 so'm</td>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title">№10219</div><div class="el-cell-sub">06.10.2026, 15:20</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Dilfuza Hasanova</div><div class="el-cell-sub">+998 90 441 27 63</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Chilonzor tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Ayollar sumkasi, jigarrang <span class="el-muted">· 1 ta</span></span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num el-strong">245 000 so'm</td>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title">№10212</div><div class="el-cell-sub">05.10.2026, 11:42</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Kamron Islomov</div><div class="el-cell-sub">+998 93 118 50 92</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Samarqand sh.</div><div class="el-cell-sub">Samarqand vil.</div></td>
+          <td><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Bluetooth kolonka <span class="el-muted">· 1 ta</span></span><span style="white-space: nowrap">Termos, 0,5 l <span class="el-muted">· 2 ta</span></span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num el-strong">420 000 so'm</td>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title">№10204</div><div class="el-cell-sub">04.10.2026, 17:05</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Zuhra Mamatova</div><div class="el-cell-sub">+998 97 562 81 30</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Marg'ilon sh.</div><div class="el-cell-sub">Farg'ona vil.</div></td>
+          <td><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Elektr choynak, 1,7 l <span class="el-muted">· 1 ta</span></span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num el-strong">310 000 so'm</td>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title">№10198</div><div class="el-cell-sub">03.10.2026, 10:30</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Ulug'bek Sobirov</div><div class="el-cell-sub">+998 91 207 66 14</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Yunusobod tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Qishki shapka <span class="el-muted">· 2 ta</span></span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num el-strong">184 000 so'm</td>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title">№10187</div><div class="el-cell-sub">02.10.2026, 16:48</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Feruza Qosimova</div><div class="el-cell-sub">+998 94 380 12 57</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Andijon sh.</div><div class="el-cell-sub">Andijon vil.</div></td>
+          <td><div class="el-small" style="display: flex; flex-direction: column; gap: 2px"><span style="white-space: nowrap">Bolalar kurtkasi, 110 sm <span class="el-muted">· 1 ta</span></span><span style="white-space: nowrap">Qishki shapka <span class="el-muted">· 1 ta</span></span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num el-strong">590 000 so'm</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="el-list el-show-mobile" style="flex-direction: column; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border)">
+    <li class="el-list-item" style="align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Malika Yusupova</span><span class="el-strong" style="white-space: nowrap">96 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10235 · Sergeli tumani · <span style="white-space: nowrap">Kecha, 18:04</span></span>
+        <span class="el-small">Bolalar kurtkasi, 110 sm · 1 ta</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-tone-neutral">Uygacha</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Dilfuza Hasanova</span><span class="el-strong" style="white-space: nowrap">245 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10219 · Chilonzor tumani · <span style="white-space: nowrap">06.10.2026, 15:20</span></span>
+        <span class="el-small">Ayollar sumkasi, jigarrang · 1 ta</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-tone-neutral">Markazgacha</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Kamron Islomov</span><span class="el-strong" style="white-space: nowrap">420 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10212 · Samarqand sh. · <span style="white-space: nowrap">05.10.2026, 11:42</span></span>
+        <span class="el-small">Bluetooth kolonka · 1 ta, Termos, 0,5 l · 2 ta</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-tone-neutral">Uygacha</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Zuhra Mamatova</span><span class="el-strong" style="white-space: nowrap">310 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10204 · Marg'ilon sh. · <span style="white-space: nowrap">04.10.2026, 17:05</span></span>
+        <span class="el-small">Elektr choynak, 1,7 l · 1 ta</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-tone-neutral">Uygacha</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Ulug'bek Sobirov</span><span class="el-strong" style="white-space: nowrap">184 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10198 · Yunusobod tumani · <span style="white-space: nowrap">03.10.2026, 10:30</span></span>
+        <span class="el-small">Qishki shapka · 2 ta</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-tone-neutral">Markazgacha</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Feruza Qosimova</span><span class="el-strong" style="white-space: nowrap">590 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10187 · Andijon sh. · <span style="white-space: nowrap">02.10.2026, 16:48</span></span>
+        <span class="el-small">Bolalar kurtkasi, 110 sm · 1 ta, Qishki shapka · 1 ta</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="el-badge el-tone-neutral">Uygacha</span></span>
+      </div>
+    </li>
+  </ul>
+</section>
+  

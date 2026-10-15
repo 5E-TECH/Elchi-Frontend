@@ -203,7 +203,7 @@
   "spendError": "Ошибка при сохранении расхода",
   "closeShiftSuccess": "Смена успешно закрыта",
   "closeShiftError": "Ошибка при закрытии смены",
-  "currency": "UZS",
+  "currency": "сум",
   "mainCashboxReport": "Отчет по основной кассе"
   ,"marketCashboxLabel": "Касса маркета"
   ,"courierCashboxLabel": "Касса курьера"
@@ -306,4 +306,6 @@
   ,"financialEntrySubmit": "Сохранить"
   ,"financialEntryCreated": "Запись добавлена"
   ,"financialEntryFailed": "Не удалось сохранить запись"
+  ,"paymentConfirmTitle": "Подтвердить платёж?"
+  ,"paymentConfirmMessage": "{{amount}} сум — {{action}}: {{target}} ({{method}}). После подтверждения деньги будут переведены, отменить нельзя."
 }

@@ -40,6 +40,14 @@ const writeDenied = () => {
   }
 };
 
+const clearDenied = () => {
+  try {
+    window.localStorage.removeItem(PUSH_DENIED_STORAGE_KEY);
+  } catch {
+    // localStorage bloklangan — belgi baribir o'qilmaydi.
+  }
+};
+
 export const PUSH_PUBLIC_KEY_QUERY = ["push", "public-key"] as const;
 export const PUSH_SUBSCRIPTION_QUERY = ["push", "subscription"] as const;
 
@@ -74,8 +82,34 @@ export const usePushSubscription = () => {
     meta: { silentError: true },
   });
 
+  /**
+   * Belgi — brauzer holatining KESHI, uning ustidan hukm EMAS.
+   *
+   * ⚠️ Ilgari belgi hech qachon tozalanmasdi: foydalanuvchi brauzer
+   * sozlamasidan ruxsatni QO'LDA qaytarsa ham tugma "bloklangan" holatda
+   * qolib, push'ni umuman yoqib bo'lmasdi. Endi brauzer `granted` desa belgi
+   * o'chadi. Sozlamadan qaytgan foydalanuvchi uchun tab qayta ko'ringanda
+   * holat yangidan o'qiladi (sahifani yangilash shart emas).
+   */
   useEffect(() => {
-    if (supported && Notification.permission === "denied") writeDenied();
+    if (!supported) return;
+    const sync = () => {
+      const current = Notification.permission;
+      setPermission(current);
+      if (current === "denied") {
+        writeDenied();
+        setDenied(true);
+      } else if (current === "granted") {
+        clearDenied();
+        setDenied(false);
+      }
+    };
+    sync();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [supported]);
 
   const refreshSubscription = useCallback(
@@ -85,7 +119,8 @@ export const usePushSubscription = () => {
 
   let status: PushStatus;
   if (!supported) status = "unsupported";
-  else if (permission === "denied" || denied) status = "denied";
+  // Brauzer `granted` desa eski belgi hisobga olinmaydi (yuqoridagi izoh).
+  else if (permission === "denied" || (denied && permission !== "granted")) status = "denied";
   else if (publicKey.isLoading || subscription.isLoading) status = "loading";
   else if (!subscription.data?.registered) status = "unsupported";
   else if (!publicKey.data?.enabled) status = "unavailable";

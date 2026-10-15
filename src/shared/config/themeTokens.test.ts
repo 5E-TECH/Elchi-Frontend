@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CHART_PALETTE, LEGACY_MAIN, SEMANTIC_TOKENS, TEXT_MUTED } from "./themeTokens";
 
 /**
  * MUTED MATN TOKENI — DARK REJIM QO'RIQCHISI.
@@ -107,9 +108,10 @@ describe("--color-text-muted dark rejimda", () => {
       const background = resolveVar(readVar(dark, surface), dark, light)!;
       expect(contrast(darkValue, background), surface).toBeGreaterThanOrEqual(4.5);
     }
-    // Ilgari dark'da och-mavzu qiymati qolardi — xuddi o'sha yuzada ~1:1.
+    // Och-mavzu qiymati dark fonda qolsa o'qib bo'lmasdi (dizayn v2 qiymati bilan ~2.6:1,
+    // eski palitrada ~1:1) — shuning uchun dark blok tokenni O'ZI qayta aniqlaydi.
     const oldValue = resolveVar(readVar(light, "--color-text-muted"), light)!;
-    expect(contrast(oldValue, resolveVar(readVar(dark, "--color-dark-bg-py"), dark, light)!)).toBeLessThan(2);
+    expect(contrast(oldValue, resolveVar(readVar(dark, "--color-dark-bg-py"), dark, light)!)).toBeLessThan(3);
   });
 });
 
@@ -189,4 +191,73 @@ describe("--color-text-muted class'larida dark: jufti", () => {
     }
     expect(missing).toEqual([]);
   });
+});
+
+/**
+ * DIZAYN v2 — `index.css` ↔ `themeTokens.ts` BITTA MANBA.
+ * antd (`AntdThemeProvider`) JS nusxadan o'qiydi, Tailwind esa CSS'dan —
+ * ikkalasi ajralib ketsa antd kartasi bir rangda, sahifa boshqasida chiziladi
+ * (aynan shu "ikki brend" holati dizayn auditida topilgan edi).
+ */
+describe("dizayn v2 tokenlari: CSS va JS bir xil", () => {
+  const light = readBlock(indexCss, "@theme");
+  const dark = readBlock(indexCss, ".dark");
+  const norm = (v?: string) => v?.replace(/\s+/g, "").toLowerCase();
+
+  for (const theme of ["light", "dark"] as const) {
+    it(`⭐ ${theme}: har bir semantik token index.css dagi qiymat bilan teng`, () => {
+      const block = theme === "light" ? light : dark;
+      const fallback = theme === "light" ? [light] : [dark, light];
+      for (const [name, value] of Object.entries(SEMANTIC_TOKENS[theme])) {
+        const css = resolveVar(readVar(block, `--color-${name}`) ?? readVar(light, `--color-${name}`), ...fallback);
+        expect(norm(css), `--color-${name} (${theme})`).toBe(norm(value));
+      }
+      const muted = resolveVar(readVar(block, "--color-text-muted"), ...fallback);
+      expect(norm(muted)).toBe(norm(TEXT_MUTED[theme]));
+      const main = resolveVar(readVar(block, "--color-main") ?? readVar(light, "--color-main"), ...fallback);
+      expect(norm(main)).toBe(norm(LEGACY_MAIN[theme]));
+      CHART_PALETTE[theme].forEach((hex, i) => {
+        expect(norm(resolveVar(readVar(block, `--color-chart-${i + 1}`), ...fallback)), `chart-${i + 1}`).toBe(norm(hex));
+      });
+    });
+  }
+});
+
+describe("dizayn v2: asosiy juftliklar WCAG kontrastida", () => {
+  const T = SEMANTIC_TOKENS;
+  const cases: Array<[string, string, string, number]> = [
+    // [nom, matn, fon, minimal nisbat]
+    ["light text / bg", T.light.text, T.light.bg, 7],
+    ["light text / surface", T.light.text, T.light.surface, 7],
+    ["light muted / surface", TEXT_MUTED.light, T.light.surface, 4.5],
+    ["light muted / bg", TEXT_MUTED.light, T.light.bg, 4.5],
+    ["light action-fg / surface", T.light["action-fg"], T.light.surface, 4.5],
+    ["light on-solid / action", T.light["on-solid"], T.light.action, 4.5],
+    ["light oq / main", "#ffffff", LEGACY_MAIN.light, 4.5],
+    ["light oq / success", "#ffffff", T.light.success, 4.5],
+    ["light oq / danger", "#ffffff", T.light.danger, 4.5],
+    ["light oq / warning", "#ffffff", T.light.warning, 4.5],
+    ["light oq / info", "#ffffff", T.light.info, 4.5],
+    ["dark text / bg", T.dark.text, T.dark.bg, 7],
+    ["dark text / surface", T.dark.text, T.dark.surface, 7],
+    ["dark muted / surface", TEXT_MUTED.dark, T.dark.surface, 4.5],
+    ["dark muted / raised", TEXT_MUTED.dark, T.dark.raised, 4.5],
+    ["dark action-fg / surface", T.dark["action-fg"], T.dark.surface, 4.5],
+    ["dark on-solid / action", T.dark["on-solid"], T.dark.action, 4.5],
+    ["dark success-fg / surface", T.dark["success-fg"], T.dark.surface, 4.5],
+    ["dark danger-fg / surface", T.dark["danger-fg"], T.dark.surface, 4.5],
+    ["dark warning-fg / surface", T.dark["warning-fg"], T.dark.surface, 4.5],
+    ["dark info-fg / surface", T.dark["info-fg"], T.dark.surface, 4.5],
+    // Eski `main` dark'da asosan oq yozuvli FON (AA) va ba'zan yuzadagi matn (UI 3:1, eski binafshada 3.0 edi).
+    ["dark oq / main", "#ffffff", LEGACY_MAIN.dark, 4.5],
+    ["dark main / surface", LEGACY_MAIN.dark, T.dark.surface, 3.5],
+    // Doim navy orollar (xato sahifasi, skaner) ustidagi urg'u.
+    ["nav-accent / navy (light)", T.light["nav-accent"], T.light.nav, 4.5],
+    ["dark warning-fg / raised", T.dark["warning-fg"], T.dark.raised, 4.5],
+  ];
+  for (const [name, fg, bg, min] of cases) {
+    it(`${name} >= ${min}:1`, () => {
+      expect(contrast(fg, bg)).toBeGreaterThanOrEqual(min);
+    });
+  }
 });

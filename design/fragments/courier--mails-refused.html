@@ -1,0 +1,116 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Pochta</h1>
+    <p class="el-sub el-hide-mobile">Sizga biriktirilgan pochtalar: qabul qilish, rad etilganlar va tarix</p>
+  </div>
+</div>
+
+<nav class="el-tabs el-hide-mobile" role="tablist" aria-label="Pochta turlari">
+  <a class="el-tab" href="@mails-today" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted)">Bugungi pochtalar <span class="el-tab-count" style="background: var(--surface); border: 1px solid var(--border)">4</span></a>
+  <a class="el-tab" href="@mails-refused" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Rad etilgan pochtalar <span class="el-tab-count">3</span></a>
+  <a class="el-tab" href="@mails-old" role="tab" aria-selected="false" style="text-decoration: none; color: var(--text-muted)">Eski pochtalar</a>
+</nav>
+<nav class="el-tabs el-show-mobile" role="tablist" aria-label="Pochta turlari" style="gap: 0">
+  <a class="el-tab" href="@mails-today" role="tab" aria-selected="false" title="Bugungi pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Bugungi <span class="el-tab-count" style="background: var(--surface); border: 1px solid var(--border)">4</span></a>
+  <a class="el-tab" href="@mails-refused" role="tab" aria-selected="true" title="Rad etilgan pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text)">Rad etilgan <span class="el-tab-count">3</span></a>
+  <a class="el-tab" href="@mails-old" role="tab" aria-selected="false" title="Eski pochtalar" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Eski</a>
+</nav>
+
+<div class="el-alert el-tone-info" role="note">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+  <div class="el-alert-body el-small">Bekor qilingan buyurtmalaringiz pochtalari. Ularni filial qabul qiladi — siz faqat ko'rishingiz mumkin.</div>
+</div>
+
+<div class="el-grid el-hide-mobile" style="grid-template-columns: repeat(3, minmax(0, 1fr))">
+  <div class="el-stat">
+    <div class="el-stat-top"><span class="el-stat-label">Rad etilgan pochtalar</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg></span></div>
+    <div class="el-stat-value">3<span class="el-stat-unit">ta</span></div>
+  </div>
+  <div class="el-stat">
+    <div class="el-stat-top"><span class="el-stat-label">Buyurtmalar</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span></div>
+    <div class="el-stat-value">11<span class="el-stat-unit">ta</span></div>
+  </div>
+  <div class="el-stat">
+    <div class="el-stat-top"><span class="el-stat-label">Jami summa</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span></div>
+    <div class="el-stat-value">2 352 000<span class="el-stat-unit">so'm</span></div>
+  </div>
+</div>
+
+<div class="el-show-mobile">
+  <p class="el-small el-muted"><span style="white-space: nowrap"><span class="el-strong">3</span> ta pochta</span> · <span style="white-space: nowrap"><span class="el-strong">11</span> ta buyurtma</span> · <span style="white-space: nowrap">jami <span class="el-strong">2 352 000 so'm</span></span></p>
+</div>
+
+<section class="el-card" aria-label="Rad etilgan pochtalar">
+  <div class="el-card-head el-hide-mobile">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2">Rad etilgan pochtalar</h2>
+      <p class="el-small el-muted">Faqat ko'rish uchun — qabulni filial bajaradi</p>
+    </div>
+  </div>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table" aria-label="Rad etilgan pochtalar">
+      <thead>
+        <tr>
+          <th aria-sort="descending"><button class="el-th-sort" type="button" aria-pressed="true" title="Sana bo'yicha saralash">Pochta<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button></th>
+          <th>Viloyat</th>
+          <th>Holat</th>
+          <th class="el-num"><button class="el-th-sort" type="button" aria-pressed="false" title="Buyurtmalar soni bo'yicha saralash">Buyurtmalar<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th class="el-num"><button class="el-th-sort" type="button" aria-pressed="false" title="Summa bo'yicha saralash">Summa<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-refused" style="text-decoration: none; color: var(--text); white-space: nowrap">№2476</a><div class="el-cell-sub">Kecha, 18:20</div></td>
+          <td style="white-space: nowrap">Toshkent viloyati</td>
+          <td><span class="el-badge el-badge-dot el-tone-danger">Rad etilgan</span></td>
+          <td class="el-num">5 ta</td>
+          <td class="el-num el-strong">1 418 000 so'm</td>
+          <td style="text-align: right; width: 64px"><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-refused" aria-label="Pochta №2476ni ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-refused" style="text-decoration: none; color: var(--text); white-space: nowrap">№2459</a><div class="el-cell-sub">06.10.2026, 17:45</div></td>
+          <td style="white-space: nowrap">Toshkent sh.</td>
+          <td><span class="el-badge el-badge-dot el-tone-danger">Rad etilgan</span></td>
+          <td class="el-num">2 ta</td>
+          <td class="el-num el-strong">310 000 so'm</td>
+          <td style="text-align: right; width: 64px"><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-refused" aria-label="Pochta №2459ni ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@mails-detail-refused" style="text-decoration: none; color: var(--text); white-space: nowrap">№2441</a><div class="el-cell-sub">04.10.2026, 16:10</div></td>
+          <td style="white-space: nowrap">Toshkent viloyati</td>
+          <td><span class="el-badge el-badge-dot el-tone-danger">Rad etilgan</span></td>
+          <td class="el-num">4 ta</td>
+          <td class="el-num el-strong">624 000 so'm</td>
+          <td style="text-align: right; width: 64px"><a class="el-iconbtn el-iconbtn-sm" href="@mails-detail-refused" aria-label="Pochta №2441ni ochish" style="vertical-align: middle; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <a class="el-list-item" href="@mails-detail-refused" aria-label="Rad etilgan pochta №2476, Toshkent viloyati, Kecha, 18:20, 5 ta buyurtma, 1 418 000 so'm — ochish" style="text-decoration: none; color: var(--text); gap: 6px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-cell-title">Kecha, 18:20</span><span class="el-strong" style="white-space: nowrap">1 418 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Pochta №2476 · Toshkent viloyati · <span style="white-space: nowrap">5 ta buyurtma</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-danger">Rad etilgan</span></span>
+      </span>
+      <span class="el-subtle" style="display: inline-flex; margin-right: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@mails-detail-refused" aria-label="Rad etilgan pochta №2459, Toshkent sh., 06.10.2026, 17:45, 2 ta buyurtma, 310 000 so'm — ochish" style="text-decoration: none; color: var(--text); gap: 6px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-cell-title">06.10.2026, 17:45</span><span class="el-strong" style="white-space: nowrap">310 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Pochta №2459 · Toshkent sh. · <span style="white-space: nowrap">2 ta buyurtma</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-danger">Rad etilgan</span></span>
+      </span>
+      <span class="el-subtle" style="display: inline-flex; margin-right: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="el-list-item" href="@mails-detail-refused" aria-label="Rad etilgan pochta №2441, Toshkent viloyati, 04.10.2026, 16:10, 4 ta buyurtma, 624 000 so'm — ochish" style="text-decoration: none; color: var(--text); gap: 6px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-cell-title">04.10.2026, 16:10</span><span class="el-strong" style="white-space: nowrap">624 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">Pochta №2441 · Toshkent viloyati · <span style="white-space: nowrap">4 ta buyurtma</span></span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px"><span class="el-badge el-badge-dot el-tone-danger">Rad etilgan</span></span>
+      </span>
+      <span class="el-subtle" style="display: inline-flex; margin-right: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+  </div>
+</section>

@@ -49,13 +49,21 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#202954" />
+    <meta name="theme-color" content="#1f2853" />
+
+    <!-- ═══════════════════ Shrift: Manrope (dizayn v2) ═══════════════════ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap"
+    />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Elchi" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="Elchi Pochta" />
-    <meta name="msapplication-TileColor" content="#202954" />
+    <meta name="msapplication-TileColor" content="#1f2853" />
     <meta name="msapplication-TileImage" content="/icon-192.png" />
 
     <!-- ═══════════════════ Structured Data (JSON-LD) ═══════════════════ -->
@@ -84,11 +92,13 @@
       (() => {
         let savedTheme;
         try {
-          savedTheme = localStorage.getItem("theme");
+          // Dizayn v2: faqat "theme-version" = 2 bilan yozilgan tanlov hurmat qilinadi
+          // (preferencesStorage.ts — eski avtomatik "dark" sukutni e'tiborsiz qoldiradi).
+          savedTheme = localStorage.getItem("theme-version") === "2" ? localStorage.getItem("theme") : null;
         } catch {
-          // Dark remains the default when storage is unavailable.
+          // Dizayn v2: sukut — LIGHT; dark faqat aniq tanlanganda.
         }
-        document.documentElement.classList.add(savedTheme === "light" ? "light" : "dark");
+        document.documentElement.classList.add(savedTheme === "dark" ? "dark" : "light");
       })();
     </script>
   </head>

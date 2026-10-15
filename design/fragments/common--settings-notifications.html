@@ -1,0 +1,121 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Sozlamalar</h1>
+    <p class="el-sub">Faqat sizning hisobingiz uchun · o'zgarishlar avtomatik saqlanadi</p>
+  </div>
+  <div class="el-actions">
+    <p class="el-small el-muted" role="status" style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--success-fg)"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span class="el-strong">Saqlandi</span></p>
+  </div>
+</div>
+
+<div class="el-tabs el-show-tablet el-hide-mobile" role="tablist" aria-label="Sozlamalar bo'limlari" style="margin: 0 -16px; padding: 0 16px">
+    <a class="el-tab" href="@settings-appearance" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Ko'rinish</a>
+    <a class="el-tab" href="@settings-dashboard" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Bosh sahifa</a>
+    <a class="el-tab" href="@settings-interface" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Interfeys</a>
+    <a class="el-tab" href="@settings-scanner" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Skaner</a>
+    <a class="el-tab" href="@settings-notifications" role="tab" aria-selected="true" style="text-decoration: none">Bildirishnomalar</a>
+</div>
+
+<!-- Telefon: faol bo'lim ko'rinib turishi uchun qator oxiridan boshlanadi (row-reverse + order); DOM va o'qish tartibi tabiiy -->
+<div class="el-tabs el-show-mobile" role="tablist" aria-label="Sozlamalar bo'limlari" style="margin: 0 -16px; padding: 0 16px; flex-direction: row-reverse">
+    <a class="el-tab" href="@settings-appearance" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted); order: 5">Ko'rinish</a>
+    <a class="el-tab" href="@settings-dashboard" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted); order: 4">Bosh sahifa</a>
+    <a class="el-tab" href="@settings-interface" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted); order: 3">Interfeys</a>
+    <a class="el-tab" href="@settings-scanner" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted); order: 2">Skaner</a>
+    <a class="el-tab" href="@settings-notifications" role="tab" aria-selected="true" style="text-decoration: none; order: 1">Bildirishnomalar</a>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+  <div class="el-hide-tablet" style="flex: 0 0 272px; position: sticky; top: 24px">
+  <div class="el-card" role="tablist" aria-orientation="vertical" aria-label="Sozlamalar bo'limlari" style="display: flex; flex-direction: column; gap: 4px; padding: 8px">
+    <a class="el-btn el-btn-ghost" href="@settings-appearance" role="tab" id="tab-korinish" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 11.994 2z"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Ko'rinish</span><span class="el-xs el-muted" style="font-weight: 500">Mavzu va til</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-dashboard" role="tab" id="tab-bosh-sahifa" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Bosh sahifa</span><span class="el-xs el-muted" style="font-weight: 500">Ko'rsatiladigan bloklar</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-interface" role="tab" id="tab-interfeys" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Interfeys</span><span class="el-xs el-muted" style="font-weight: 500">Yon panel holati</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-scanner" role="tab" id="tab-skaner" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Skaner</span><span class="el-xs el-muted" style="font-weight: 500">Kamera, ovoz va tebranish</span></span></a>
+    <a class="el-btn" href="@settings-notifications" role="tab" id="tab-bildirish" aria-selected="true" aria-controls="panel-bildirish" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal; background: var(--action-soft); color: var(--action-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span>Bildirishnomalar</span><span class="el-xs el-muted" style="font-weight: 500">Shu qurilmaga xabarlar</span></span></a>
+  </div>
+  </div>
+
+  <div style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+    <section class="el-card" id="panel-bildirish" role="tabpanel" aria-labelledby="tab-bildirish">
+      <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h2 class="el-h2" id="push-t">Qurilma bildirishnomalari</h2>
+        <p class="el-small el-muted">Yangi buyurtma yoki muhim hodisa bo'lganda shu qurilmaga xabar keladi — ilova yopiq bo'lsa ham.</p>
+      </div>
+      <label style="display: flex; align-items: center; gap: 16px; padding: 16px; border-radius:12px; background: var(--sunken); cursor: pointer">
+        <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+          <span class="el-h3">Shu qurilmaga bildirishnomalar</span>
+          <span class="el-small el-muted" id="push-on-h">Har bir qurilma (telefon, kompyuter) alohida yoqiladi</span>
+        </span>
+        <button class="el-switch" type="button" role="switch" aria-checked="true" aria-label="Shu qurilmaga bildirishnomalar" aria-describedby="push-on-h"></button>
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+          <span class="el-h3">Brauzer ruxsati</span>
+          <span class="el-badge el-badge-dot el-tone-success">Ruxsat berilgan</span>
+        </div>
+        <span class="el-small el-muted">Bu brauzer Elchi saytiga bildirishnoma ko'rsatishga ruxsat bergan.</span>
+      </div>
+      </div>
+      <div class="el-card-foot" style="flex-wrap: wrap">
+        <span class="el-small el-muted">Barcha xabarlar bildirishnomalar qutisida ham saqlanadi.</span>
+        <a class="el-btn el-btn-link" href="@inbox" style="margin-left: -4px">Qutini ochish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 8px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <p class="el-overline">Boshqa holatlar</p>
+        <p class="el-small el-muted">Brauzer ruxsatiga qarab yuqoridagi blok shunday ko'rinadi.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 16px; align-items: stretch">
+      <section class="el-card el-card-pad" aria-label="Holat: ruxsat so'ralmagan" style="display: flex; flex-direction: column; gap: 16px">
+      <label style="display: flex; align-items: center; gap: 16px; padding: 16px; border-radius:12px; background: var(--sunken); cursor: pointer">
+        <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742"/><path d="m2 2 20 20"/><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+          <span class="el-h3">Shu qurilmaga bildirishnomalar</span>
+          <span class="el-small el-muted" id="push-ask-h">Hozir o'chiq</span>
+        </span>
+        <button class="el-switch" type="button" role="switch" aria-checked="false" aria-label="Shu qurilmaga bildirishnomalar" aria-describedby="push-ask-h"></button>
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+          <span class="el-h3">Brauzer ruxsati</span>
+          <span class="el-badge el-badge-dot el-tone-neutral">So'ralmagan</span>
+        </div>
+        <span class="el-small el-muted">Yoqsangiz, avval qisqa tushuntirish chiqadi, so'ng brauzer ruxsat so'raydi — «Ruxsat berish»ni bosing.</span>
+      </div>
+      </section>
+      <section class="el-card el-card-pad" aria-label="Holat: brauzerda bloklangan" style="display: flex; flex-direction: column; gap: 16px">
+      <label style="display: flex; align-items: center; gap: 16px; padding: 16px; border-radius:12px; background: var(--sunken); cursor: not-allowed">
+        <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742"/><path d="m2 2 20 20"/><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+          <span class="el-h3">Shu qurilmaga bildirishnomalar</span>
+          <span class="el-small el-muted" id="push-block-h">Brauzer ruxsat bermaguncha yoqib bo'lmaydi</span>
+        </span>
+        <button class="el-switch" type="button" role="switch" aria-checked="false" aria-label="Shu qurilmaga bildirishnomalar" aria-describedby="push-block-h" disabled></button>
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+          <span class="el-h3">Brauzer ruxsati</span>
+          <span class="el-badge el-badge-dot el-tone-warning">Brauzerda bloklangan</span>
+        </div>
+        <span class="el-small el-muted">Brauzer sozlamalarida shu sayt uchun o'chirilgan — pastdagi qadamlar bilan yoqing.</span>
+      </div>
+      </section>
+      </div>
+      <div class="el-alert el-tone-warning" role="note" aria-labelledby="blocked-howto-t"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><div class="el-alert-body">
+        <div class="el-alert-title" id="blocked-howto-t" style="color: var(--warning-fg)">Brauzerda bloklangan bo'lsa, qanday yoqiladi</div>
+        <ol class="el-small" style="margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px">
+          <li>Manzil satridagi qulf belgisini bosing.</li>
+          <li>«Bildirishnomalar» bandida «Ruxsat berish»ni tanlang.</li>
+          <li>Sahifani yangilang va shu yerda yoqing.</li>
+        </ol>
+      </div></div>
+    </div>
+  </div>
+
+</div>
+  

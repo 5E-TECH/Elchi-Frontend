@@ -270,7 +270,7 @@
   ,"deliveryCenter": "To center"
   ,"region": "Region"
   ,"no": "No"
-  ,"currencyAmountSuffix": "so'm"
+  ,"currencyAmountSuffix": "UZS"
   ,"selectReceiveSourceDescription": "Select a branch manager or an HQ courier"
   ,"hqCourierLabel": "HQ courier"
   ,"branchCourierNotReceivable": "This courier belongs to a branch — the branch manager receives the cash"
@@ -306,4 +306,6 @@
   ,"financialEntrySubmit": "Save"
   ,"financialEntryCreated": "Entry added"
   ,"financialEntryFailed": "Could not save the entry"
+  ,"paymentConfirmTitle": "Confirm the payment?"
+  ,"paymentConfirmMessage": "{{amount}} UZS — {{action}}: {{target}} ({{method}}). Once confirmed the money is transferred and cannot be undone."
 }

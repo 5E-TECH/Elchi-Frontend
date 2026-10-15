@@ -1,0 +1,146 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">SMS</h1>
+    <p class="el-sub">Kampaniyalar, shablonlar, xarajat va provayder sozlamalari</p>
+  </div>
+</div>
+
+<div class="el-tabs" role="tablist" aria-label="SMS bo'limlari">
+  <a class="el-tab" href="@notifications-sms-campaign" role="tab" aria-selected="false" tabindex="-1" style="padding: 0 clamp(8px, (100cqw - 767.5px) * 999, 12px); text-decoration: none; color: var(--text-muted)">Kampaniya</a>
+  <a class="el-tab" href="@notifications-sms-templates" role="tab" aria-selected="false" tabindex="-1" style="padding: 0 clamp(8px, (100cqw - 767.5px) * 999, 12px); text-decoration: none; color: var(--text-muted)">Shablonlar</a>
+  <a class="el-tab" href="@notifications-sms-report" role="tab" aria-selected="false" tabindex="-1" style="padding: 0 clamp(8px, (100cqw - 767.5px) * 999, 12px); text-decoration: none; color: var(--text-muted)">Xarajat</a>
+  <a class="el-tab" href="@notifications-sms-settings" role="tab" aria-selected="true" style="padding: 0 clamp(8px, (100cqw - 767.5px) * 999, 12px); text-decoration: none; color: var(--text)">Sozlamalar</a>
+</div>
+
+<div class="el-grid" style="gap: 24px; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr))">
+  <section class="el-card" aria-labelledby="sms-status-title" style="display: flex; flex-direction: column">
+    <div class="el-card-head">
+      <h2 class="el-h2" id="sms-status-title">Holat</h2>
+      <span class="el-badge el-badge-dot el-tone-success">SMS yoqilgan</span>
+    </div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <dl class="el-kv" style="margin: 0; align-items: center">
+        <dt>Provayder</dt>
+        <dd>Eskiz</dd>
+        <dt>Asosiy akkaunt</dt>
+        <dd><span class="el-badge el-badge-dot el-tone-success">Sozlangan</span></dd>
+        <dt style="display: flex; flex-direction: column">OTP akkaunti<span class="el-xs el-subtle">alohida alfa-nom</span></dt>
+        <dd><span class="el-badge el-badge-dot el-tone-warning">Sozlanmagan</span></dd>
+        <dt>Bugun</dt>
+        <dd style="display: flex; flex-direction: column; gap: 6px"><span>1 284 / 5 000 ta</span><span class="el-progress" role="img" aria-label="Kunlik chegaraning 26 foizi ishlatilgan" style="display: block; max-width: 240px"><span style="width: 26%"></span></span></dd>
+        <dt>Reklama taqiqi</dt>
+        <dd>18:00–09:00</dd>
+        <dt>Tarif (1 bo'lak)</dt>
+        <dd style="display: flex; flex-direction: column; gap: 2px"><span>Xizmat xabari — 115 so'm</span><span>Reklama — 160 so'm</span></dd>
+      </dl>
+      <div class="el-alert el-tone-warning" role="status" id="sms-secret-alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><div class="el-alert-body"><span class="el-alert-title">SMS_CREDENTIAL_SECRET sozlanmagan</span> — akkaunt saqlab bo'lmaydi.</div></div>
+    </div>
+  </section>
+  <section class="el-card" aria-labelledby="sms-consent-title" style="display: flex; flex-direction: column">
+    <div class="el-card-head" style="flex-direction: column; align-items: flex-start; gap: 2px">
+      <h2 class="el-h2" id="sms-consent-title">Reklama roziligi</h2>
+      <p class="el-small el-muted">Mijoz yozma/elektron rozilik bergandagina reklama yuboriladi.</p>
+    </div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <div class="el-field">
+        <label class="el-label" for="c-phone">Telefon <span class="el-req">*</span></label>
+        <input class="el-input" id="c-phone" type="tel" inputmode="tel" value="+998 90 123 45 67" placeholder="+998 90 123 45 67">
+      </div>
+      <div class="el-field">
+        <label class="el-label" id="c-source-l">Manba</label>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="c-source-l c-source-v"><span id="c-source-v">Operator</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button class="el-btn el-btn-secondary" type="button" style="flex: 1 1 auto">Rozilikni qayd etish</button>
+        <button class="el-btn el-btn-danger-soft" type="button" style="flex: 1 1 auto">Rozilikni bekor qilish</button>
+      </div>
+      <div class="el-alert el-tone-success" role="status"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><div class="el-alert-body"><span class="el-alert-title">Saqlandi</span></div></div>
+    </div>
+  </section>
+</div>
+
+<section class="el-card" aria-labelledby="sms-acc-title" style="overflow: hidden">
+  <div class="el-card-head" style="flex-direction: column; align-items: flex-start; gap: 2px">
+    <h2 class="el-h2" id="sms-acc-title">Provayder akkauntlari</h2>
+    <p class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Login va parol bazada shifrlangan holda saqlanadi, qayta ko'rsatilmaydi.</p>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Provayder</th>
+          <th>Profil</th>
+          <th>Login (email)</th>
+          <th>Alfa-nom</th>
+          <th>Holat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="el-cell-title">Eskiz</td>
+          <td><span class="el-badge el-tone-neutral">Asosiy</span></td>
+          <td>sms@elchipochta.uz</td>
+          <td class="el-strong">ELCHI</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+        </tr>
+        <tr>
+          <td class="el-cell-title">Play Mobile</td>
+          <td><span class="el-badge el-tone-neutral">Asosiy</span></td>
+          <td>playmobile@elchipochta.uz</td>
+          <td class="el-strong">ELCHIPOCHTA</td>
+          <td><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <div class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Eskiz · Asosiy</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+        <span class="el-cell-sub" style="white-space: normal; overflow-wrap: anywhere">sms@elchipochta.uz · ELCHI</span>
+      </span>
+    </div>
+    <div class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Play Mobile · Asosiy</span><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></span>
+        <span class="el-cell-sub" style="white-space: normal; overflow-wrap: anywhere">playmobile@elchipochta.uz · ELCHIPOCHTA</span>
+      </span>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-top: 1px solid var(--border)">
+    <h3 class="el-h3">Akkauntni qo'shish yoki yangilash</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px">
+      <div class="el-field" style="flex: 1 1 180px">
+        <label class="el-label" id="a-prov-l">Provayder</label>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="a-prov-l a-prov-v"><span id="a-prov-v">Eskiz</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="el-field" style="flex: 1 1 180px">
+        <label class="el-label" id="a-prof-l">Profil</label>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="a-prof-l a-prof-v"><span id="a-prof-v">Asosiy</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="el-field" style="flex: 1 1 180px">
+        <label class="el-label" for="a-login">Login (email) <span class="el-req">*</span></label>
+        <input class="el-input" id="a-login" type="email" autocomplete="off" placeholder="sms@elchipochta.uz">
+      </div>
+      <div class="el-field" style="flex: 1 1 180px">
+        <label class="el-label" for="a-pass">Parol <span class="el-req">*</span></label>
+        <div style="position: relative; display: flex; align-items: center">
+          <input class="el-input" id="a-pass" type="password" autocomplete="new-password" style="padding-right: 44px">
+          <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Parolni ko'rsatish" style="position: absolute; right: 4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+      </div>
+      <div class="el-field" style="flex: 1 1 180px">
+        <label class="el-label" for="a-sender">Alfa-nom <span class="el-req">*</span></label>
+        <input class="el-input" id="a-sender" type="text" placeholder="ELCHI">
+      </div>
+    </div>
+  </div>
+  <div class="el-card-foot" style="flex-wrap: wrap">
+    <span class="el-small el-muted" id="sms-save-hint" style="flex: 1 1 260px; min-width: 0">Saqlash uchun serverda SMS_CREDENTIAL_SECRET sozlanishi va barcha * maydonlar to'ldirilishi kerak.</span>
+    <button class="el-btn el-btn-primary" type="button" disabled aria-describedby="sms-save-hint sms-secret-alert" style="margin-left: auto; min-width: clamp(0px, (767.5px - 100cqw) * 999, 100%)">Akkauntni saqlash</button>
+  </div>
+</section>
+  

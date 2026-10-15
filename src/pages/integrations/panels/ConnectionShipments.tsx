@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { Alert, Button, Card, Table, Tag, Tooltip, message } from "antd";
+import { Alert, Button, Card, Grid, Table, Tag, Tooltip, message, theme } from "antd";
 import { AlertTriangle, CheckCircle2, Clock, GitCompareArrows, Link2, RefreshCw, Send, Truck } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import {
@@ -65,6 +65,20 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
   const statusLabel = useStatusLabel();
   const role = useSelector((state: RootState) => state.role.role);
   const canSeePhone = PHONE_ROLES.has(String(role ?? ""));
+  /*
+    Jadval sarlavhasi global temada ATAYLAB shaffof (AntdThemeProvider) —
+    lekin QOTIRILGAN ustun sarlavhasi shaffof bo'lsa, gorizontal skrollda
+    ostidan qo'shni sarlavha ko'rinadi ("Ama|rinish"). Shu ikki katakka
+    kartaning o'z foni beriladi.
+  */
+  const { token } = theme.useToken();
+  const fixedHeaderCell = () => ({ style: { background: token.colorBgContainer } });
+  /*
+    Telefonda (<576px) "Amal" — faqat ikonka: to'liq "Qayta jo'natish" matni
+    qotirilgan ustunga sig'may kesilardi va jadvalning skroll qismini yeb
+    qo'yardi. Ma'no `aria-label` va tooltip'da.
+  */
+  const compact = Grid.useBreakpoint().sm === false;
 
   const raw = connection.raw as { slug?: string };
   const slug = String(raw.slug ?? "");
@@ -164,7 +178,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
         rowKey={(r) => String(r.id)}
         size="small"
         // Yangi ustunlar bilan; "Amal" o'ngda qotirilgan — telefonda kesilmaydi.
-        scroll={{ x: 1380 }}
+        scroll={{ x: 1430 }}
         loading={list.isLoading}
         dataSource={rows}
         pagination={{
@@ -179,6 +193,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
             title: t("colOrder"),
             width: 110,
             fixed: "left" as const,
+            onHeaderCell: fixedHeaderCell,
             // Odam o'qiydigan raqam (uuid emas) va buyurtma kartasiga havola.
             render: (_: unknown, r) => (
               <Link
@@ -290,8 +305,9 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
           },
           {
             title: t("colAction"),
-            width: 120,
+            width: compact ? 72 : 170,
             fixed: "right" as const,
+            onHeaderCell: fixedHeaderCell,
             /*
               Qayta jo'natish FAQAT xato bor qatorda. Muvaffaqiyatli
               posilkani qayta jo'natish tashuvchida ikkinchi yozuv
@@ -299,14 +315,26 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
             */
             render: (_: unknown, r) =>
               r.last_error ? (
-                <Button
-                  size="small"
-                  icon={<Send className="h-3 w-3" />}
-                  loading={redispatch.isPending}
-                  onClick={() => void retry(String(r.order_id))}
-                >
-                  {t("shpRetry")}
-                </Button>
+                compact ? (
+                  <Tooltip title={t("shpRetry")}>
+                    <Button
+                      size="large"
+                      aria-label={t("shpRetry")}
+                      icon={<Send className="h-4 w-4" />}
+                      loading={redispatch.isPending}
+                      onClick={() => void retry(String(r.order_id))}
+                    />
+                  </Tooltip>
+                ) : (
+                  <Button
+                    size="small"
+                    icon={<Send className="h-3 w-3" />}
+                    loading={redispatch.isPending}
+                    onClick={() => void retry(String(r.order_id))}
+                  >
+                    {t("shpRetry")}
+                  </Button>
+                )
               ) : null,
           },
         ]}

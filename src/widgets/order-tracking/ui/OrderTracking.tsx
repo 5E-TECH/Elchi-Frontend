@@ -34,9 +34,14 @@ const isMobileViewport = () =>
   typeof window.matchMedia === "function" &&
   window.matchMedia("(max-width: 639px)").matches;
 
+/**
+ * Market ham o'z buyurtmasi tarixini ko'radi (Ho5qcDn4, TC9). Boshqa market
+ * buyurtmasini backend `GET /orders/:id/tracking` 403 bilan rad etadi — blok
+ * o'rnida xato izohi chiqadi, sahifa buzilmaydi.
+ */
 const canRoleViewTracking = (role: string | null | undefined) => {
   const normalizedRole = normalize(role).toLowerCase();
-  return ["admin", "superadmin", "branch", "manager", "registrator", "courier"].includes(normalizedRole);
+  return ["admin", "superadmin", "branch", "manager", "registrator", "courier", "market"].includes(normalizedRole);
 };
 
 export const OrderTracking = ({ orderId, currentStatus, access, context }: OrderTrackingProps) => {

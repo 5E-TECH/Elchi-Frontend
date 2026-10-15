@@ -11,9 +11,16 @@
     "lint:report": "eslint .",
     "preview": "npm run build && wrangler dev",
     "test": "vitest run",
+    "test:ci": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "design:build": "node design/tools/build.mjs",
+    "design:shot": "node design/tools/shoot.mjs",
+    "design:preview": "node design/tools/preview.mjs",
+    "design:screens": "node design/tools/screens.mjs",
+    "design:guard": "node scripts/design-guard.mjs",
+    "app:shot": "node design/tools/app-shot.mjs"
   },
   "dependencies": {
     "@highcharts/map-collection": "^2.3.2",

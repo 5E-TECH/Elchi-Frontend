@@ -33,6 +33,56 @@ const renderCancel = (props: Partial<Parameters<typeof CancelModal>[0]> = {}) =>
 
 const NOTICE = /market tasdig'idan o'tadi/;
 
+describe("SellModal — «Marketga to'langan summa» (uguUEhin)", () => {
+  const paidInput = () => screen.getByLabelText("Marketga to'langan summa");
+
+  it("to'liq sotishda kiritilgan summa `paidAmount` sifatida yuboriladi", async () => {
+    const user = userEvent.setup();
+    const onSell = vi.fn();
+    renderSell({ onSell, order: { ...order, to_be_paid: 120000 } as never });
+    expect(screen.getByText(/Mijozdan olingan puldan marketga o'zingiz bergan qism/)).toBeInTheDocument();
+    expect(screen.getByText(/120\D000 so'mdan oshmasin/)).toBeInTheDocument();
+
+    await user.type(paidInput(), "50000");
+    expect(paidInput()).toHaveValue("50 000");
+    await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
+    expect(onSell).toHaveBeenCalledWith("o-1", { comment: "", extraCost: 0, paidAmount: 50000 });
+  });
+
+  it("bo'sh yoki 0 — `paidAmount` umuman yuborilmaydi (eski xatti-harakat)", async () => {
+    const user = userEvent.setup();
+    const onSell = vi.fn();
+    renderSell({ onSell });
+    await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
+    expect(onSell).toHaveBeenCalledWith("o-1", { comment: "", extraCost: 0 });
+  });
+
+  it("chegara: to_be_paid − qo'shimcha xarajat; oshsa ogohlantiradi", async () => {
+    const user = userEvent.setup();
+    renderSell({ order: { ...order, to_be_paid: 120000 } as never });
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "20000");
+    expect(screen.getByText(/100\D000 so'mdan oshmasin/)).toBeInTheDocument();
+    await user.type(paidInput(), "150000");
+    expect(paidInput()).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent(/Marketga to'lov 100\D000 so'mdan oshmasligi kerak/);
+  });
+
+  it("hamkor (external_id) buyurtmasida maydon yo'q", () => {
+    renderSell({ order: { ...order, external_id: "BP-120" } as never });
+    expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();
+  });
+
+  it("qisman sotish rejimida maydon yo'q", async () => {
+    const user = userEvent.setup();
+    renderSell({
+      order: { ...order, items: [{ id: "i1", quantity: 2, product: { id: "24", name: "Krossovka", image_url: null } }] } as never,
+    });
+    expect(screen.getByLabelText("Marketga to'langan summa")).toBeInTheDocument();
+    await user.click(screen.getByRole("switch", { name: /Qisman sotish/ }));
+    expect(screen.queryByLabelText("Marketga to'langan summa")).toBeNull();
+  });
+});
+
 describe("SellModal extra cost approval", () => {
   afterEach(() => clearPendingExtraCostApproval("o-1"));
 
@@ -41,7 +91,7 @@ describe("SellModal extra cost approval", () => {
     renderSell();
 
     expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
-    await user.type(screen.getAllByPlaceholderText("0").at(-1)!, "5000");
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
 
     expect(screen.getByText(NOTICE)).toBeInTheDocument();
   });
@@ -92,8 +142,8 @@ describe("SellModal partial sell", () => {
     product_quantity: 3,
     items: [{ id: "1251136", quantity: 3, product_id: "8", product_name: "psarinorm" }],
   };
-  const partialToggle = () => screen.getByRole("button", { name: /Qisman sotish/ });
-  const sellButton = () => screen.getByRole("button", { name: /Sotish$|mahsulot sonini kamaytiring|summasini kiriting/ });
+  const partialToggle = () => screen.getByRole("switch", { name: /Qisman sotish/ });
+  const sellButton = () => screen.getByRole("button", { name: /^Sotish$/ });
 
   it("blocks partial sell for a single-unit order and says why", () => {
     renderSell({ order: singleUnitOrder });
@@ -206,7 +256,8 @@ describe("SellModal partial sell", () => {
     await user.type(screen.getAllByPlaceholderText("0")[0], "60000");
 
     expect(sellButton()).toBeDisabled();
-    expect(sellButton()).toHaveTextContent("Kamida bitta mahsulot sonini kamaytiring");
+    // Sabab «Sotish» yonida yoziladi.
+    expect(screen.getByText("Kamida bitta mahsulot sonini kamaytiring")).toBeInTheDocument();
 
     // Kamaytirib, keyin qaytarib oshirsa — yana bloklanadi.
     await user.click(screen.getByRole("button", { name: "Krossovka sonini kamaytirish" }));
@@ -223,7 +274,7 @@ describe("SellModal partial sell", () => {
     await user.click(screen.getByRole("button", { name: "Krossovka sonini kamaytirish" }));
 
     expect(sellButton()).toBeDisabled();
-    expect(sellButton()).toHaveTextContent("To'lov summasini kiriting");
+    expect(screen.getByText("To'lov summasini kiriting")).toBeInTheDocument();
   });
 
   it("sends a valid partial sell for a two-unit order (regression)", async () => {
@@ -293,6 +344,76 @@ describe("SellModal partial sell", () => {
   });
 });
 
+describe("CancelModal — sabab yopiq ro'yxatdan majburiy (GNWDKvmZ)", () => {
+  const submit = () => screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!;
+
+  it("«To'langan summa» maydoni yo'q (uguUEhin) — faqat xarajat, sabab, izoh, dalil", () => {
+    renderCancel();
+    expect(screen.queryByLabelText("To'langan summa")).toBeNull();
+    expect(screen.getAllByRole("spinbutton")).toHaveLength(1);
+  });
+
+  it("6 ta sabab; tanlanmaguncha «Bekor qilish» o'chiq", () => {
+    renderCancel();
+    const select = screen.getByLabelText(/^Sabab/);
+    expect(
+      Array.from((select as HTMLSelectElement).options)
+        .filter((option) => option.value)
+        .map((option) => option.textContent),
+    ).toEqual([
+      "Mijoz javob bermadi",
+      "Mijoz rad etdi",
+      "Manzil noto'g'ri",
+      "Mahsulot nuqsonli",
+      "Narx bo'yicha kelishmovchilik",
+      "Boshqa",
+    ]);
+    expect(submit()).toBeDisabled();
+  });
+
+  it("sabab tanlansa yoqiladi va so'rovga `reason` qo'shiladi", async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    renderCancel({ onCancel });
+    await user.selectOptions(screen.getByLabelText(/^Sabab/), "CUSTOMER_NO_ANSWER");
+    expect(submit()).toBeEnabled();
+    await user.click(submit());
+    expect(onCancel).toHaveBeenCalledWith("o-1", {
+      reason: "CUSTOMER_NO_ANSWER",
+      comment: "",
+      extraCost: 0,
+    });
+  });
+
+  it("«Boshqa» — izoh majburiy: bo'sh izohda o'chiq, yozilgach yuboriladi", async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    renderCancel({ onCancel });
+    await user.selectOptions(screen.getByLabelText(/^Sabab/), "OTHER");
+    expect(screen.getByText("«Boshqa» tanlanganda izoh majburiy")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Izoh/)).toBeRequired();
+    expect(submit()).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/^Izoh/), "   ");
+    expect(submit()).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/^Izoh/), "Mijoz boshqa shaharga ketgan");
+    expect(submit()).toBeEnabled();
+    await user.click(submit());
+    expect(onCancel).toHaveBeenCalledWith("o-1", expect.objectContaining({ reason: "OTHER", comment: "   Mijoz boshqa shaharga ketgan" }));
+  });
+
+  it("oyna qayta ochilganda sabab tozalanadi", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderCancel();
+    await user.selectOptions(screen.getByLabelText(/^Sabab/), "PRICE_DISPUTE");
+    rerender(<CancelModal order={order} open={false} onClose={vi.fn()} onCancel={vi.fn()} />);
+    rerender(<CancelModal order={order} open onClose={vi.fn()} onCancel={vi.fn()} />);
+    expect((screen.getByLabelText(/^Sabab/) as HTMLSelectElement).value).toBe("");
+    expect(submit()).toBeDisabled();
+  });
+});
+
 describe("CancelModal extra cost approval", () => {
   afterEach(() => clearPendingExtraCostApproval("o-1"));
 
@@ -315,5 +436,30 @@ describe("CancelModal extra cost approval", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Market tasdig'i kutilmoqda");
     expect(screen.queryByRole("button", { name: /Bekor qilish/ })).not.toBeInTheDocument();
     expect(screen.getByText("Yopish", { selector: "button" })).toBeInTheDocument();
+  });
+});
+
+/**
+ * DALIL MAJBURIYATI — market `expense_proof_conditions` dan OLDINDAN ko'rinadi.
+ *
+ * Detal sahifasi ilgari modalga `market: { name: "-" }` uzatardi va bu shart
+ * hech qachon yetib kelmasdi — foydalanuvchi faqat backend 400 bergandagina
+ * bilardi. Endi haqiqiy market uzatiladi; modal uni o'qishi shu yerda qulflangan.
+ */
+describe("SellModal — market dalil sharti", () => {
+  it("⭐ `sell_any` — majburiylik belgisi va izohi chiqadi, dalilsiz yuborib bo'lmaydi", () => {
+    renderSell({
+      order: { ...order, market: { name: "Zamon Market", expense_proof_conditions: ["sell_any"] } },
+    });
+
+    expect(screen.getAllByText("Sotishda rasm yoki video majburiy").length).toBeGreaterThan(0);
+    const label = screen.getByText("Rasm yoki video");
+    expect(label.parentElement?.textContent).toContain("*");
+    expect(screen.getByRole("button", { name: /^Sotish$/ })).toBeDisabled();
+  });
+
+  it("shart yo'q (`market: { name: \"-\" }` — eski holat) — majburiylik ko'rinmaydi", () => {
+    renderSell();
+    expect(screen.queryByText("Sotishda rasm yoki video majburiy")).not.toBeInTheDocument();
   });
 });

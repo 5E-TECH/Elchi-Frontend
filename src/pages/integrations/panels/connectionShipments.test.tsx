@@ -144,6 +144,6 @@ describe("Posilkalar jadvali (tokhPLMP)", () => {
     expect(container.querySelector(".ant-table-cell-fix-end")).not.toBeNull();
     expect(container.querySelector(".ant-table-cell-fix-start")).not.toBeNull();
     const table = container.querySelector(".ant-table-content table, .ant-table-body table") as HTMLElement;
-    expect(table.style.width || table.style.minWidth).toMatch(/1380px/);
+    expect(table.style.width || table.style.minWidth).toMatch(/1430px/);
   });
 });

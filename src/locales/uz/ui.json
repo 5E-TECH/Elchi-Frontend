@@ -1,0 +1,373 @@
+{
+  "common": {
+    "back": "Orqaga",
+    "loading": "Yuklanmoqda…",
+    "close": "Yopish",
+    "more": "Yana",
+    "empty": "Ma'lumot yo'q"
+  },
+  "card": {
+    "groups": {
+      "surfaces": {
+        "title": "Karta",
+        "meta": "sarlavha, izoh, amallar va pastki qism · sarlavhasiz oddiy karta"
+      },
+      "inset": {
+        "title": "Ichki karta",
+        "meta": "karta ichida — kulrang yuza, chegarasiz · ko'pi bilan 2 qavat"
+      },
+      "chart": {
+        "title": "Chiziqsiz sarlavha",
+        "meta": "grafik kartasi: sarlavha va tana bitta chekka ichida"
+      },
+      "stats": {
+        "title": "Ko'rsatkich kartalari",
+        "meta": "ikonka, o'zgarish (yaxshi / yomon), yuklanish, bosiladigan karta"
+      }
+    },
+    "demo": {
+      "address": {
+        "title": "Manzil",
+        "edit": "Tahrirlash",
+        "editLabel": "Manzilni tahrirlash",
+        "region": "Viloyat",
+        "regionValue": "Toshkent sh.",
+        "district": "Tuman",
+        "districtValue": "Chilonzor tumani",
+        "street": "Manzil",
+        "streetValue": "Lutfiy ko'chasi, 14-uy, 32-xonadon"
+      },
+      "payment": {
+        "title": "To'lov",
+        "total": "Jami",
+        "due": "To'lanishi kerak",
+        "paid": "To'langan"
+      },
+      "plain": "Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin",
+      "regions": {
+        "title": "Hududlar bo'yicha",
+        "description": "Viloyatlar kesimida buyurtma va sotuv · bugun",
+        "topOrders": "Eng ko'p buyurtma",
+        "topOrdersValue": "Toshkent sh.",
+        "topOrdersMeta": "{{orders}} ta · jamining {{percent}}",
+        "lowSales": "Eng past sotuv (10+ ta)",
+        "lowSalesValue": "Andijon",
+        "lowSalesMeta": "{{percent}} · {{sold}} / {{total}} ta",
+        "couriers": "Faol kuryerlar",
+        "couriersValue": "{{couriers}} ta",
+        "couriersMeta": "{{regions}} hududda",
+        "all": "Barcha {{regions}} hudud"
+      },
+      "status": {
+        "title": "Buyurtmalar holati",
+        "description": "Bugun qabul qilinganlar",
+        "list": "Ro'yxat",
+        "total": "Jami qabul qilingan"
+      },
+      "stats": {
+        "revenue": "Jami daromad",
+        "lostRevenue": "Yo'qotilgan daromad",
+        "profit": "Sof foyda",
+        "profitHint": "Market tarifi − kuryer tarifi",
+        "cancelled": "Bekor qilingan",
+        "vsYesterday": "kechaga nisbatan",
+        "pcs": "ta"
+      }
+    }
+  },
+  "format": {
+    "tableLabel": "Format namunalari",
+    "columns": {
+      "type": "Tur",
+      "rule": "Qoida",
+      "uz": "O'zbekcha",
+      "ru": "Ruscha",
+      "en": "Inglizcha"
+    },
+    "rows": {
+      "money": {
+        "title": "Pul",
+        "rule": "Minglik — bo'sh joy (inglizchada vergul); birlik: {{units}}"
+      },
+      "income": {
+        "title": "Kirim",
+        "rule": "Plyus belgisi, yashil"
+      },
+      "debt": {
+        "title": "Qarz, chiqim",
+        "rule": "Haqiqiy minus (−), qizil"
+      },
+      "compactThousand": {
+        "title": "Ixcham · ming",
+        "rule": "Faqat ko'rsatkich kartasi va grafik"
+      },
+      "compactMillion": {
+        "title": "Ixcham · million",
+        "rule": "Bitta kasr xonasi"
+      },
+      "compactBillion": {
+        "title": "Ixcham · milliard",
+        "rule": "Bitta kasr xonasi"
+      },
+      "percent": {
+        "title": "Foiz",
+        "rule": "Bitta kasr xonasi"
+      },
+      "phone": {
+        "title": "Telefon",
+        "rule": "+998 va 2-3-2-2 guruh"
+      },
+      "date": {
+        "title": "Sana",
+        "rule": "KK.OO.YYYY — hamma tilda"
+      },
+      "dateTime": {
+        "title": "Sana va vaqt",
+        "rule": "24 soatlik vaqt, vergul bilan"
+      },
+      "relative": {
+        "title": "Nisbiy sana",
+        "rule": "Jadval va ro'yxatlarda: bugun va kecha; eskisi — {{example}}"
+      }
+    }
+  },
+  "button": {
+    "groups": {
+      "variants": "Turlar va o'lchamlar",
+      "states": "Holatlar",
+      "icons": "Ikonka va matn",
+      "sizes": "O'lchamlar",
+      "block": "Telefon: to'liq kenglik",
+      "iconButtons": "Ikonka tugma",
+      "asLink": "Havola tugma ko'rinishida"
+    },
+    "variants": {
+      "primary": "Asosiy",
+      "secondary": "Ikkinchi darajali",
+      "ghost": "Shaffof",
+      "link": "Havola",
+      "success": "Muvaffaqiyat",
+      "danger": "Xavfli",
+      "dangerSoft": "Xavfli (yumshoq)"
+    },
+    "iconVariants": {
+      "ghost": "Ikonka tugma",
+      "secondary": "Ikonka tugma, chegarali",
+      "primary": "Asosiy",
+      "danger": "Xavfli"
+    },
+    "sizes": {
+      "sm": "Kichik",
+      "md": "O'rta",
+      "lg": "Katta",
+      "compact": "Ixcham"
+    },
+    "states": {
+      "default": "Oddiy",
+      "loading": "Yuklanmoqda",
+      "disabled": "O'chirilgan"
+    },
+    "notes": {
+      "primary": "Ekranda faqat bitta: sahifa sarlavhasining o'ng tomonida yoki oyna oxirida.",
+      "danger": "To'liq qizil — faqat tasdiqlash oynasi ichida. Jadval, menyu va pastki panelda — yumshoq qizil.",
+      "states": "Yuklanayotgan tugma rangini saqlaydi, spinner ikonka o'rnida, qayta bosilmaydi. O'chirilgan — 45% shaffof; nega o'chirilganini yonida yozing.",
+      "focus": "Fokus faqat klaviaturadan Tab bilan kelganda chiqadi: 2 px ko'k halqa, 2 px oraliqda.",
+      "loadingNoText": "Ikonka va yuklanish matni bo'lmasa, spinner markazda turadi — tugma kengligi o'zgarmaydi.",
+      "iconButton": "Har doim yozuvli nom (aria-label) va ustiga kelganda maslahat. Kompyuterda 40 px, telefonda 44 px.",
+      "block": "Pastki paneldagi yagona amal to'liq kenglikda; ikki amal bo'lsa, asosiy amal o'ngda va kengroq.",
+      "asLink": "Havola boshqa sahifaga olib borsa — <a>, joyida amal bajarsa — tugma.",
+      "compact": "Ixcham: ichki oraliq 12 px, ikonka 16 px, oraliq 6 px. Sahifa sarlavhasidagi juft amal telefonda bir qatorga sig'adi."
+    },
+    "samples": {
+      "save": "Saqlash",
+      "saving": "Saqlanmoqda…",
+      "exportExcel": "Excelga yuklash",
+      "exporting": "Yuklanmoqda…",
+      "showMore": "Yana ko'rsatish",
+      "loadingMore": "Yuklanmoqda…",
+      "resend": "Qayta yuborish",
+      "resending": "Yuborilmoqda…",
+      "sell": "Sotish",
+      "selling": "Sotilmoqda…",
+      "delete": "O'chirish",
+      "deleting": "O'chirilmoqda…",
+      "create": "Yaratish",
+      "creating": "Yaratilmoqda…",
+      "next": "Keyingi",
+      "print": "Chop etish",
+      "preparing": "Tayyorlanmoqda…",
+      "accept": "Qabul qilish",
+      "accepting": "Qabul qilinmoqda…",
+      "cancel": "Bekor qilish",
+      "finishDay": "Kunni yakunlash",
+      "back": "Orqaga",
+      "refresh": "Yangilash",
+      "printReceipt": "Chek chop etish",
+      "scan": "Skanerlash",
+      "apply": "Qo'llash",
+      "createOrder": "Buyurtma yaratish",
+      "refreshing": "Yangilanmoqda",
+      "preparingReceipt": "Chek tayyorlanmoqda"
+    }
+  },
+  "badge": {
+    "tones": {
+      "neutral": "Neytral",
+      "info": "Ma'lumot",
+      "success": "Muvaffaqiyat",
+      "warning": "Ogohlantirish",
+      "danger": "Xato"
+    },
+    "variants": {
+      "soft": "Yumshoq",
+      "outline": "Chegarali",
+      "solid": "To'liq rang"
+    },
+    "sizes": {
+      "md": "24 px",
+      "sm": "20 px"
+    },
+    "groups": {
+      "orderStatus": {
+        "title": "Buyurtma holati",
+        "meta": "11 ta · nuqtali"
+      },
+      "variants": {
+        "title": "Tonlar, ko'rinishlar va o'lchamlar",
+        "meta": "5 ton × 3 ko'rinish × 2 o'lcham"
+      },
+      "deliveryType": {
+        "title": "Yetkazish turi",
+        "meta": "rangsiz · nuqtasiz"
+      },
+      "userStatus": {
+        "title": "Foydalanuvchi holati",
+        "meta": "foydalanuvchi, filial, hamkor"
+      },
+      "payment": {
+        "title": "To'lov operatsiyasi",
+        "meta": "belgi rangsiz · rang faqat summada"
+      },
+      "normalize": {
+        "title": "API qiymatlari",
+        "meta": "turli yozilishlar bir holatga keladi; noma'lum holat — neytral"
+      }
+    },
+    "samples": {
+      "address": "Uygacha",
+      "center": "Markazgacha",
+      "active": "Faol",
+      "inactive": "Nofaol",
+      "income": "Kirim",
+      "expense": "Chiqim"
+    },
+    "solidNote": "To'liq rang: kunduzgi mavzuda to'q fon va oq matn, tungida ochiq fon va to'q matn — ikkala mavzuda kontrast kamida 4.5:1."
+  },
+  "pageHeader": {
+    "samples": {
+      "simple": "Faqat sarlavha",
+      "description": "Izoh va amallar (asosiy amal bitta)",
+      "back": "Orqaga havolasi bilan",
+      "meta": "Holat, nusxalash va amallar",
+      "long": "Uzun sarlavha — qatorga o'raladi, kesilmaydi"
+    },
+    "demo": {
+      "dashboardTitle": "Bosh sahifa",
+      "ordersTitle": "Buyurtmalar",
+      "cancelledTitle": "Bekor qilinganlar",
+      "ordersTotal": "Jami {{total}} ta buyurtma",
+      "exportExcel": "Excelga yuklash",
+      "createOrder": "Buyurtma yaratish",
+      "orderNumber": "№{{number}}",
+      "copyNumber": "Buyurtma raqamini nusxalash",
+      "createdToday": "Yaratilgan: Bugun, 14:15 · Baraka Shop",
+      "createdYesterday": "Yaratilgan: Kecha, 11:40 · Nur Elektronika",
+      "cancel": "Bekor qilish",
+      "sell": "Sotish",
+      "longTitle": "Chilonzor qabul punkti bo'yicha bekor qilingan va qaytarilgan buyurtmalarning haftalik hisoboti",
+      "longDescription": "01.10 – 08.10.2026 · 94 ta buyurtma"
+    }
+  },
+  "tabs": {
+    "scrollPrev": "Oldingi tablar",
+    "scrollNext": "Keyingi tablar",
+    "demo": {
+      "statusesTitle": "Holat bo'yicha · son bilan",
+      "statusesNote": "Sig'masa — aylantiriladi, chetida xiralashadi",
+      "statusesLabel": "Holat bo'yicha",
+      "all": "Barchasi",
+      "new": "Yangi",
+      "received": "Qabul qilindi",
+      "onTheRoad": "Yo'lda",
+      "waiting": "Kutilmoqda",
+      "sold": "Sotilgan",
+      "paid": "To'langan",
+      "cancelled": "Bekor qilingan",
+      "paidHint": "To'langan va qisman to'langan buyurtmalar",
+      "cancelledHint": "Bekor qilingan va bekor — jo'natilgan buyurtmalar",
+      "panel": "Jami {{total}} ta buyurtma",
+      "iconsTitle": "Ikonka bilan · o'chirilgan tab",
+      "connectionsLabel": "Ulanish turlari",
+      "partners": "Hamkorlar",
+      "external": "Tashqi tizimlar",
+      "marketplace": "Marketplace",
+      "linksTitle": "Havola tablar · har tab alohida sahifa",
+      "balanceLabel": "Balans bo'limlari",
+      "overview": "Umumiy ko'rinish",
+      "history": "Tarix",
+      "analysis": "Tahlil",
+      "fullWidthTitle": "To'liq enli",
+      "courierLabel": "Buyurtmalar turi",
+      "pending": "Kutilayotgan",
+      "segmentTitle": "Segment · darhol qo'llanadi",
+      "period": "Davr",
+      "today": "Bugun",
+      "thisWeek": "Bu hafta",
+      "thisMonth": "Bu oy",
+      "allTime": "Barchasi",
+      "sizeSm": "Kichik · 32 px",
+      "view": "Ko'rinish",
+      "viewLabel": "Moliyaviy tahlil ko'rinishi",
+      "chart": "Grafik",
+      "table": "Jadval",
+      "dayClose": "Kunni yakunlash",
+      "dayCloseLabel": "№10238 natijasi",
+      "closeSold": "Sotildi",
+      "closeCancel": "Bekor",
+      "closeTomorrow": "Ertaga"
+    }
+  },
+  "kit": {
+    "title": "Komponentlar to'plami",
+    "description": "Dizayn v2 primitivlari va formatlovchilari — kunduzgi va tungi mavzuda yonma-yon.",
+    "themeLight": "Kunduzgi",
+    "themeDark": "Tungi",
+    "placeholder": "Namuna hali qo'shilmagan.",
+    "sections": {
+      "buttons": {
+        "title": "Tugmalar",
+        "description": "Turlari, o'lchamlari, yuklanish holati va ikonkali tugma."
+      },
+      "badges": {
+        "title": "Holat belgilari",
+        "description": "Tonlar va buyurtma holatlari."
+      },
+      "cards": {
+        "title": "Kartalar",
+        "description": "Karta va ko'rsatkich kartasi."
+      },
+      "pageHeader": {
+        "title": "Sahifa sarlavhasi",
+        "description": "Sarlavha, izoh, orqaga havolasi va amallar."
+      },
+      "tabs": {
+        "title": "Tablar va segmentlar",
+        "description": "Tablar va segmentli tanlov."
+      },
+      "format": {
+        "title": "Formatlash",
+        "description": "Pul, telefon raqami va sana."
+      }
+    }
+  }
+}

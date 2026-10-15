@@ -125,13 +125,14 @@
     "turnOn": "Bildirishnomalarni yoqish",
     "turnOff": "Bildirishnomalarni o'chirish",
     "enabled": "Bildirishnomalar yoqildi — yangi xabarlar shu qurilmaga keladi.",
-    "disabled": "Bu qurilmaga bildirishnomalar endi kelmaydi.",
+    "disabled": "Bildirishnomalar o'chirildi — hisobingizdagi barcha qurilmalarga endi kelmaydi.",
     "enableFailed": "Bildirishnomalarni yoqib bo'lmadi. Keyinroq qayta urinib ko'ring.",
     "disableFailed": "Bildirishnomalarni o'chirib bo'lmadi. Qayta urinib ko'ring.",
     "blocked": "Bildirishnomalar brauzerda bloklangan. Yoqish uchun brauzer sozlamalaridan shu saytga ruxsat bering.",
     "explainTitle": "Bildirishnomalarni yoqasizmi?",
     "explainBody": "Yangi buyurtma yoki muhim hodisa bo'lganda telefoningizga (yoki kompyuteringizga) xabar keladi — ilova yopiq bo'lsa ham. Keyingi qadamda brauzer ruxsat so'raydi: «Ruxsat berish»ni bosing.",
     "explainConfirm": "Yoqish",
-    "explainCancel": "Hozir emas"
+    "explainCancel": "Hozir emas",
+    "toastOpen": "Ochish"
   }
 }

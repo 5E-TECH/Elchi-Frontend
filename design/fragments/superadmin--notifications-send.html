@@ -1,0 +1,122 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back" href="@notifications-inbox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Bildirishnomalar</a>
+    <h1 class="el-h1">Xabar yuborish</h1>
+    <p class="el-sub">Tizim ichidagi foydalanuvchilarga bildirishnoma</p>
+  </div>
+</div>
+
+<form id="ns-form" aria-label="Xabar yuborish formasi" style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+  <div style="flex: 1 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+  <section class="el-card" aria-labelledby="ns-who-title">
+    <div class="el-card-head"><h2 class="el-h2" id="ns-who-title">Kimga</h2></div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <div class="el-seg el-hide-mobile" role="group" aria-label="Qabul qiluvchilar turi" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr))">
+        <button type="button" aria-pressed="false" style="padding: 0 8px">Bitta odam</button>
+        <button type="button" aria-pressed="true" style="padding: 0 8px">Rol</button>
+        <button type="button" aria-pressed="false" style="padding: 0 8px">Tanlangan ro'yxat</button>
+        <button type="button" aria-pressed="false" style="padding: 0 8px">Hamma</button>
+      </div>
+      <div class="el-seg el-show-mobile" role="group" aria-label="Qabul qiluvchilar turi" style="width: 100%; flex-wrap: wrap">
+        <button type="button" aria-pressed="false" style="flex: 1 1 40%; height: 44px; padding: 0 8px">Bitta odam</button>
+        <button type="button" aria-pressed="true" style="flex: 1 1 40%; height: 44px; padding: 0 8px">Rol</button>
+        <button type="button" aria-pressed="false" style="flex: 1 1 40%; height: 44px; padding: 0 8px">Tanlangan ro'yxat</button>
+        <button type="button" aria-pressed="false" style="flex: 1 1 40%; height: 44px; padding: 0 8px">Hamma</button>
+      </div>
+      <fieldset style="border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+        <legend class="el-label" style="padding: 0; margin-bottom: 8px">Rollar <span class="el-req">*</span></legend>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 8px">
+          <label class="el-choice-card" style="align-items: center"><input class="el-check" type="checkbox">Admin</label>
+          <label class="el-choice-card" style="align-items: center"><input class="el-check" type="checkbox">Menejer</label>
+          <label class="el-choice-card" style="align-items: center"><input class="el-check" type="checkbox">Ro'yxatchi</label>
+          <label class="el-choice-card is-selected" style="align-items: center"><input class="el-check" type="checkbox" checked>Kuryer</label>
+          <label class="el-choice-card is-selected" style="align-items: center"><input class="el-check" type="checkbox" checked>Market</label>
+          <label class="el-choice-card" style="align-items: center"><input class="el-check" type="checkbox">Operator</label>
+          <label class="el-choice-card" style="align-items: center; background: var(--sunken); border-color: var(--border); color: var(--text-subtle); cursor: not-allowed"><input class="el-check" type="checkbox" disabled aria-describedby="ns-cust-hint">Mijoz</label>
+        </div>
+        <span class="el-hint" id="ns-cust-hint">Mijozlarga bu yerdan yuborib bo'lmaydi — tizim ularni rol bo'yicha topmaydi (0 ta qabul qiluvchi).</span>
+      </fieldset>
+      <div aria-live="polite" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius:10px; background: var(--sunken)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-muted)"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="el-small"><span class="el-strong">Taxminan 148 ta</span> qabul qiluvchi</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="el-card" aria-labelledby="ns-ch-title">
+    <div class="el-card-head"><h2 class="el-h2" id="ns-ch-title">Kanal</h2></div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(max(220px, 34%), 100%), 1fr)); gap: 8px">
+        <label class="el-choice-card" style="grid-column: 1 / -1; align-items: center; background: var(--sunken); border-color: var(--border); cursor: default"><input class="el-check" style="flex-shrink: 0" type="checkbox" checked disabled aria-describedby="ns-inapp-hint"><span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-strong">Ilova ichida</span><span class="el-xs el-muted" id="ns-inapp-hint">Doim yoqiq — xabar Bildirishnomalar qutisida saqlanadi</span></span></label>
+        <label class="el-choice-card is-selected" style="align-items: center"><input class="el-check" type="checkbox" checked>Darhol (ochiq ekranga)</label>
+        <label class="el-choice-card is-selected" style="align-items: center"><input class="el-check" type="checkbox" checked>Telegram</label>
+        <label class="el-choice-card is-selected" style="align-items: center"><input class="el-check" type="checkbox" checked>SMS</label>
+        <label class="el-choice-card" style="align-items: center"><input class="el-check" type="checkbox">Push</label>
+      </div>
+      <div class="el-alert el-tone-warning" role="note">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <div class="el-alert-body el-small">SMS pullik va faqat telefoni bor qabul qiluvchilarga ketadi. Qabul qiluvchilar SMS chegarasidan ko'p bo'lsa, server yuborishni rad etadi.</div>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="ns-tg">Telegram guruhi (market) <span class="el-req">*</span></label>
+        <button class="el-input el-select" type="button" id="ns-tg" aria-haspopup="listbox" aria-expanded="false"><span>Baraka Shop</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        <span class="el-hint">Telegram faqat tanlangan marketning ulangan guruhiga yuboriladi.</span>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+  <section class="el-card" aria-labelledby="ns-ct-title">
+    <div class="el-card-head"><h2 class="el-h2" id="ns-ct-title">Mazmun</h2></div>
+    <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+      <div class="el-field">
+        <label class="el-label" for="ns-title">Sarlavha <span class="el-req">*</span></label>
+        <input class="el-input" id="ns-title" type="text" value="Ertaga qabul punkti 10:00 dan ishlaydi" placeholder="Masalan: Ertaga ish vaqti o'zgaradi" maxlength="255" aria-describedby="ns-title-count">
+        <span class="el-xs el-subtle" id="ns-title-count" style="text-align: right">38 / 255</span>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="ns-body">Matn</label>
+        <textarea class="el-input el-textarea" id="ns-body" rows="4" maxlength="4096" placeholder="Xabar matni" style="height: 104px; flex: none">9-oktabr kuni Toshkent HQ qabul punkti 10:00 dan 19:00 gacha ishlaydi. Buyurtmalarni topshirish vaqtini shunga moslang.</textarea>
+        <span class="el-xs el-subtle" style="text-align: right">119 / 4096</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 16px">
+        <div class="el-field">
+          <label class="el-label" for="ns-cat">Kategoriya</label>
+          <button class="el-input el-select" type="button" id="ns-cat" aria-haspopup="listbox" aria-expanded="false"><span>Filial</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="ns-pri">Muhimlik</label>
+          <button class="el-input el-select" type="button" id="ns-pri" aria-haspopup="listbox" aria-expanded="false"><span>Yuqori</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="ns-link">Havola (ixtiyoriy)</label>
+        <input class="el-input" id="ns-link" type="text" placeholder="/orders" maxlength="512">
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="ns-gk">Guruh kaliti <span class="el-req">*</span></label>
+        <input class="el-input" id="ns-gk" type="text" value="xabar-20261008-141502" maxlength="255" aria-describedby="ns-gk-hint">
+        <span class="el-hint" id="ns-gk-hint">Qayta yuborilsa shu kalit bo'yicha dublikat yaratilmaydi, mavjud xabar yangilanadi.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="el-card" aria-labelledby="ns-pv-title">
+      <div class="el-card-head"><h2 class="el-h2" id="ns-pv-title">Oldindan ko'rish</h2></div>
+      <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 16px 16px 16px 12px; border-radius:12px; background: var(--sunken)">
+          <span aria-hidden="true" style="width: 8px; height: 8px; flex: none; margin-top: 14px; border-radius:999px; background: var(--info)"></span>
+          <span class="el-stat-icon" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></svg></span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span style="font-weight: 700">Ertaga qabul punkti 10:00 dan ishlaydi</span><span class="el-badge el-tone-warning">Yuqori</span></span>
+            <span class="el-small el-muted">9-oktabr kuni Toshkent HQ qabul punkti 10:00 dan 19:00 gacha ishlaydi. Buyurtmalarni topshirish vaqtini shunga moslang.</span>
+            <span class="el-xs el-subtle">Filial · hozir</span>
+          </div>
+        </div>
+        <button class="el-btn el-btn-primary el-btn-lg el-btn-block" type="submit" form="ns-form"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Yuborish</button>
+      </div>
+    </section>
+  </div>
+</form>
+  

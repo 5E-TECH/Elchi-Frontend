@@ -21,6 +21,9 @@ import {
   MessageSquare,
   Truck,
   RotateCcw,
+  Paperclip,
+  Undo2,
+  PackageCheck,
 } from "lucide-react";
 import {
   Card,
@@ -48,6 +51,15 @@ import { useUser } from "../../../entities/user/api/userApi";
 import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
 import UpdatePopup from "../../../shared/components/popupUpdate";
 import { OrderTracking } from "../../../widgets/order-tracking";
+import { ProofGallery, readProofFiles, ReturnRequestedBadge } from "../../../entities/order";
+import {
+  canInitiateReturn,
+  canMarkReturnedToMarket,
+  InitiateReturnModal,
+  MarkReturnedModal,
+} from "../../../features/order-return";
+import { OrderMeta, OrderParentBanner, readOrderMeta } from "../../../widgets/order-meta";
+import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 import type { RootState } from "../../../app/config/store";
 import SellModal from "../../orders/list/courier/list/SellModal";
@@ -60,17 +72,19 @@ import {
   buildOrderUpdatePayload,
   getAddressUpdateValidationError,
   getCustomerUpdateValidationError,
-  isActionableOrderStatus,
+  canRunCourierAction,
   isOrderReceivedOrLater,
   isOrderSentToBranch,
   normalizeOrderStatus,
   parseOrderTotalPrice,
   type EditableOrderSnapshot,
 } from "./newOrderUpdateRules";
+import type { CancelOrderPayload } from "../../../entities/orders/cancelReason";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { getOrderItemName } from "../../../shared/lib/orderItemName";
 import { isCourierHeldOrder } from "../../../entities/orders/custody";
+import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../entities/orders/sellPayment";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -306,6 +320,11 @@ const STATUS_CONFIG: Record<string, { labelKey: string; cls: string; ns?: "newOr
     ns: "orders",
     cls: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
   },
+  "returned to market": {
+    labelKey: "statusReturnedToMarket",
+    ns: "orders",
+    cls: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
+  },
   closed: {
     labelKey: "statusClosed",
     ns: "orders",
@@ -338,6 +357,11 @@ const NewOrderUpdate = () => {
   const { api: notificationApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
+  /** Pochta raqami havola bo'ladimi — `/mails` marshruti bilan AYNI qoida. */
+  const canOpenMails = useMemo(
+    () => getSidebarConfigForUser(role, user).some((item) => item.to === "/mails"),
+    [role, user],
+  );
   const branchType = getOrderPageBranchType(user);
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(resolveLocale(i18n.resolvedLanguage ?? i18n.language)),
@@ -400,6 +424,11 @@ const NewOrderUpdate = () => {
   // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
   const [isApprovalRequested, setIsApprovalRequested] = useState(false);
   const [isRollbackConfirmOpen, setIsRollbackConfirmOpen] = useState(false);
+  const [isInitiateReturnOpen, setIsInitiateReturnOpen] = useState(false);
+  const [isMarkReturnedOpen, setIsMarkReturnedOpen] = useState(false);
+  // Tarix (tracking) o'zi qayta so'ralmaydi — qaytarish amalidan keyin qayta mount.
+  const [trackingVersion, setTrackingVersion] = useState(0);
+  const refreshTracking = useCallback(() => setTrackingVersion((version) => version + 1), []);
 
   // ─── Data fetching ───────────────────────────────────────────────────────────
   const {
@@ -466,11 +495,14 @@ const NewOrderUpdate = () => {
     role === "manager" &&
     (branchType === "REGIONAL" || branchType === "HYBRID");
   const canUseCourierActions =
-    isRegionalManager && isActionableOrderStatus(order?.status ?? "");
+    isRegionalManager && canRunCourierAction(order);
   // fix3b LC-04: kuryer qo'lidagi buyurtmani menejer sotmaydi (backend 400
   // "Bu buyurtma kuryer qo'lida..."). Bekor qilish ochiq qoladi.
   const canManagerSellOrder = canUseCourierActions && !isCourierHeldOrder(order);
   const canRollbackSoldOrder = isRegionalManager && normalizedStatus === "sold";
+  // Marketga qaytarish: HQ boshlaydi, filial market QR bilan topshiradi.
+  const canStartReturn = canInitiateReturn(role, order);
+  const canHandOverReturn = canMarkReturnedToMarket(role, order);
 
   const regionName = order?.district?.region?.name ?? order?.region?.name ?? "—";
   const districtName = order?.district?.name ?? "—";
@@ -747,24 +779,34 @@ const NewOrderUpdate = () => {
   }, []);
 
   const handleSell = useCallback(
-    (id: string, payload: { comment: string; extraCost: number; proof?: File }) => {
+    (id: string, payload: SellOrderPayload) => {
       const actionOrder = order ?? { id };
       SellOrder.mutate(
         { orderId: id, data: payload },
         {
-          onSuccess: (response) =>
+          onSuccess: (response) => {
             resolveOrderActionResponse(response, {
               order: actionOrder,
               action: "sell",
               extraCost: payload.extraCost,
               onCompleted: closeSellModal,
               onApprovalRequested: () => setIsApprovalRequested(true),
-            }),
+            });
+            // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
+            const paymentStatus = getSellPaymentStatus(response);
+            if (paymentStatus) {
+              notificationApi.success({
+                message: t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }),
+                placement: "topRight",
+                duration: 4,
+              });
+            }
+          },
           onError: showActionError,
         },
       );
     },
-    [SellOrder, closeSellModal, order, showActionError],
+    [SellOrder, closeSellModal, notificationApi, order, showActionError, t],
   );
 
   const handlePartlySell = useCallback(
@@ -798,7 +840,7 @@ const NewOrderUpdate = () => {
   );
 
   const handleCancelOrder = useCallback(
-    (id: string, payload: { comment: string; extraCost: number; paidAmount: number; proof?: File }) => {
+    (id: string, payload: CancelOrderPayload) => {
       const actionOrder = order ?? { id };
       CancelOrder.mutate(
         { orderId: id, data: payload },
@@ -825,6 +867,32 @@ const NewOrderUpdate = () => {
     });
   }, [RollbackOrder, order, showActionError]);
 
+  /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy buyurtma id'si. */
+  const parentOrderId = useMemo(() => readOrderMeta(order)?.parentOrderId ?? null, [order]);
+
+  /** Kuryer biriktirgan dalillar — bo'sh bo'lsa karta umuman chiqmaydi. */
+  const proofKeys = useMemo(() => readProofFiles(order?.proof_files), [order]);
+
+  /**
+   * Buyurtmaning HAQIQIY marketi (`GET orders/:id` enriched javobida keladi).
+   *
+   * ⚠️ Ilgari bu yerda `{ name: "-" }` qattiq yozilgan edi — Sell/Cancel
+   * modali `expense_proof_conditions` ni hech qachon ko'rmasdi va dalil
+   * majburiyati (*) oldindan ko'rsatilmasdi: foydalanuvchi faqat backend
+   * 400 qaytarganda bilardi.
+   */
+  const orderMarket = useMemo(() => {
+    const raw = order?.market;
+    if (!raw || typeof raw !== "object") return null;
+    const market = raw as { name?: unknown; expense_proof_conditions?: unknown };
+    return {
+      name: typeof market.name === "string" && market.name.trim() ? market.name : "-",
+      expense_proof_conditions: Array.isArray(market.expense_proof_conditions)
+        ? market.expense_proof_conditions.filter((item): item is string => typeof item === "string")
+        : null,
+    };
+  }, [order]);
+
   const sellModalOrder = useMemo(() => {
     if (!order) return null;
     const orderFlags = order as OrderDetail & Record<string, unknown>;
@@ -835,10 +903,13 @@ const NewOrderUpdate = () => {
       total_price: order.total_price,
       where_deliver: order.where_deliver,
       product_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      market: { name: "-" },
+      market: orderMarket ?? { name: "-", expense_proof_conditions: null },
       customer: { name: order.customer.name, phone_number: order.customer.phone_number },
       district: { name: districtName },
       region: { name: regionName },
+      // «Marketga to'langan summa» chegarasi va hamkor buyurtmasini aniqlash (uguUEhin).
+      to_be_paid: order.to_be_paid,
+      external_id: (orderFlags.external_id ?? orderFlags.externalId ?? null) as string | number | null,
       sell_requires_media: Boolean(
         orderFlags.sell_requires_media ??
         orderFlags.sellRequiresMedia ??
@@ -866,7 +937,7 @@ const NewOrderUpdate = () => {
         },
       })),
     };
-  }, [order, districtName, regionName]);
+  }, [order, orderMarket, districtName, regionName]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -896,13 +967,14 @@ const NewOrderUpdate = () => {
                     ? t(statusCfg.labelKey, { ns: statusCfg.ns ?? "orders", defaultValue: order.status })
                     : order.status}
                 </span>
+                <ReturnRequestedBadge order={order} />
                 {canUseCourierActions && (
                   <>
                     {canManagerSellOrder && (
                       <button
                         type="button"
                         onClick={() => setIsSellModalOpen(true)}
-                        className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                        className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-on-solid transition-opacity hover:opacity-90"
                       >
                         {t("sell", { ns: "orders" })}
                       </button>
@@ -910,7 +982,7 @@ const NewOrderUpdate = () => {
                     <button
                       type="button"
                       onClick={() => setIsCancelModalOpen(true)}
-                      className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-primary transition-opacity hover:opacity-90"
+                      className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-on-solid transition-opacity hover:opacity-90"
                     >
                       {t("cancelOrderAction", { ns: "orders" })}
                     </button>
@@ -926,6 +998,28 @@ const NewOrderUpdate = () => {
                     {t("restoreOrder", { ns: "orders" })}
                   </button>
                 )}
+                {canStartReturn && (
+                  <button
+                    type="button"
+                    data-testid="initiate-return-button"
+                    onClick={() => setIsInitiateReturnOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                  >
+                    <Undo2 size={13} aria-hidden="true" />
+                    {t("returnInitiate", { ns: "orders" })}
+                  </button>
+                )}
+                {canHandOverReturn && (
+                  <button
+                    type="button"
+                    data-testid="mark-returned-button"
+                    onClick={() => setIsMarkReturnedOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                  >
+                    <PackageCheck size={13} aria-hidden="true" />
+                    {t("returnHandover", { ns: "orders" })}
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -933,6 +1027,13 @@ const NewOrderUpdate = () => {
       </div>
 
       {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
+
+      {/* Qisman sotuvdan qolgan qism — asosiy buyurtmaga havola. */}
+      {!isLoading && parentOrderId ? (
+        <div className="mb-4">
+          <OrderParentBanner parentOrderId={parentOrderId} />
+        </div>
+      ) : null}
 
       {/* Content */}
       {isLoading ? (
@@ -1036,6 +1137,9 @@ const NewOrderUpdate = () => {
 
           {/* ── RIGHT ── */}
           <div className="space-y-4">
+            {/* Buyurtma ma'lumotlari — Mijozdan YUQORIDA (tartib: Meta → Mijoz → Manzil). */}
+            <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} />
+
             {/* Customer */}
             <Card>
               <div className="space-y-4 p-3.5 sm:p-4 md:p-5">
@@ -1133,8 +1237,27 @@ const NewOrderUpdate = () => {
         </div>
       )}
 
+      {/*
+        DALILLAR — kuryer sotish / bekor qilishda biriktirgan rasm va videolar.
+        Nizoda ("mahsulot yetkazilmagan") admin dalilni shu yerda ko'radi;
+        ilgari faqat bazadan topilardi. Dalil yo'q bo'lsa karta chiqmaydi.
+      */}
+      {!isLoading && proofKeys.length > 0 ? (
+        <Card className="mb-4 lg:mb-5">
+          <div className="space-y-4 p-3.5 sm:p-4 md:p-5" data-testid="order-proof-card">
+            <SectionHead
+              icon={<Paperclip size={16} />}
+              title={t("proofTitle", { ns: "orders" })}
+              sub={t("proofSubtitle", { ns: "orders" })}
+            />
+            <ProofGallery keys={proofKeys} />
+          </div>
+        </Card>
+      ) : null}
+
       {orderId ? (
         <OrderTracking
+          key={trackingVersion}
           orderId={orderId}
           currentStatus={order?.status}
           access={trackingAccess}
@@ -1290,6 +1413,23 @@ const NewOrderUpdate = () => {
         awaitingApproval={isApprovalRequested}
       />
 
+      {/* Faqat ochilganda mount — yopiq oyna so'rov hook'larini yaratmaydi. */}
+      {isInitiateReturnOpen && order?.id ? (
+        <InitiateReturnModal
+          open
+          orderId={String(order.id)}
+          onClose={() => setIsInitiateReturnOpen(false)}
+          onDone={refreshTracking}
+        />
+      ) : null}
+      {isMarkReturnedOpen && order?.id ? (
+        <MarkReturnedModal
+          open
+          orderId={String(order.id)}
+          onClose={() => setIsMarkReturnedOpen(false)}
+          onDone={refreshTracking}
+        />
+      ) : null}
       <PopupConfirm
         isOpen={isRollbackConfirmOpen}
         onClose={() => setIsRollbackConfirmOpen(false)}

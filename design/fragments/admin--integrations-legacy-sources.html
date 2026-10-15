@@ -1,0 +1,214 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Integratsiyalar</a>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px">
+      <h1 class="el-h1">Tashqi manbalar</h1>
+      <span class="el-badge el-tone-neutral" title="Zaxira sahifa — yangi ulanishlar Integratsiyalar bo'limida">Eski sahifa</span>
+    </div>
+    <p class="el-sub">QR kod orqali tashqi buyurtmalarni qidirish uchun integratsiyani tanlang</p>
+  </div>
+  <div class="el-actions">
+    <div class="el-seg el-hide-mobile" role="group" aria-label="Ko'rinish">
+      <button type="button" aria-pressed="true" style="display: inline-flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>Jadval</button><button type="button" aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>Kartalar</button>
+    </div>
+    <a class="el-btn el-btn-secondary" href="@neworders-incoming-sources"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>Kiruvchi posilkalar</a>
+    <button class="el-iconbtn el-iconbtn-bordered" type="button" aria-label="Yangilash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+    <a class="el-btn el-btn-primary" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yangi integratsiya</a>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Integratsiyalar ro'yxati">
+  <div class="el-tabs" role="tablist" aria-label="Turi bo'yicha" style="padding: 0 12px">
+    <button class="el-tab" type="button" role="tab" aria-selected="true">Barchasi</button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false" title="Bizdan posilka oladi va yetkazadi. COD puli ular orqali qaytadi">Yetkazuvchilar</button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false" title="Bizga buyurtma beradi — marketplace, do'kon, CRM">Buyurtma manbalari</button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false" title="To'lov holatini tasdiqlaydi. Buyurtma yaratmaydi ham, olmaydi ham">To'lov tizimlari</button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false" title="Faqat o'qish uchun eksport — hisobot, jadval, BI">Ko'zgular</button>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 20px; align-items: center">
+    <label class="el-search" style="flex: 1000 1 500px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input class="el-input" type="search" placeholder="Integratsiya nomi bo'yicha qidirish" aria-label="Integratsiyalarni qidirish">
+    </label>
+    <div class="el-hide-mobile" style="display: flex; flex-wrap: wrap; gap: 12px; flex: 1 1 460px">
+      <button class="el-input el-select" type="button" style="flex: 1 1 160px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Holat bo'yicha: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="el-muted">Holat:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      <button class="el-input el-select" type="button" style="flex: 1 1 200px; width: auto" aria-label="Sana oralig'i tanlanmagan"><span style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg><span class="el-select-placeholder">Sana oralig'i</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+    <button class="el-btn el-btn-secondary el-show-mobile" type="button" style="flex: 1 0 auto" aria-expanded="false" aria-label="Filtrlar: holat va sana oralig'i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filtrlar</button>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile" style="border-top: 1px solid var(--border)">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Integratsiya</th>
+          <th class="el-hide-tablet">API manzili</th>
+          <th class="el-hide-tablet">Avtorizatsiya</th>
+          <th>Oxirgi sinxronlash</th>
+          <th>Holat</th>
+          <th style="width: 96px"><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); white-space: nowrap">Baraka Shop API</a><div class="el-cell-sub el-hide-tablet">baraka-shop-api</div><div><span class="el-cell-sub el-show-tablet">https://api.barakashop.uz/v1/orders</span></div></td>
+          <td class="el-hide-tablet"><span style="display: inline-flex; align-items: center; gap: 8px; max-width: 300px; min-width: 0"><span style="display: inline-flex; color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span class="el-small" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">https://api.barakashop.uz/v1/orders</span></span></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Login va parol</div><div class="el-cell-sub">elchi_sync</div></td>
+          <td style="white-space: nowrap">Bugun, 14:02</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td>
+            <div style="display: flex; justify-content: flex-end; gap: 4px">
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Baraka Shop API — tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Baraka Shop API — o'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); white-space: nowrap">Nur Elektronika CRM</a><div class="el-cell-sub el-hide-tablet">nur-elektronika-crm</div><div><span class="el-cell-sub el-show-tablet">https://crm.nur-elektronika.uz/api/orders</span></div></td>
+          <td class="el-hide-tablet"><span style="display: inline-flex; align-items: center; gap: 8px; max-width: 300px; min-width: 0"><span style="display: inline-flex; color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span class="el-small" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">https://crm.nur-elektronika.uz/api/orders</span></span></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Token</div></td>
+          <td style="white-space: nowrap">Bugun, 13:47</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td>
+            <div style="display: flex; justify-content: flex-end; gap: 4px">
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Nur Elektronika CRM — tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Nur Elektronika CRM — o'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); white-space: nowrap">Ipak Yo'li Savdo</a><div class="el-cell-sub el-hide-tablet">ipak-yoli-savdo</div><div><span class="el-cell-sub el-show-tablet">https://ipak-yoli-savdo.uz/api/elchi/orders</span></div></td>
+          <td class="el-hide-tablet"><span style="display: inline-flex; align-items: center; gap: 8px; max-width: 300px; min-width: 0"><span style="display: inline-flex; color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span class="el-small" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">https://ipak-yoli-savdo.uz/api/elchi/orders</span></span></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Token</div></td>
+          <td style="white-space: nowrap">Kecha, 18:20</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td>
+            <div style="display: flex; justify-content: flex-end; gap: 4px">
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Ipak Yo'li Savdo — tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Ipak Yo'li Savdo — o'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); white-space: nowrap">Samarqand Savdo</a><div class="el-cell-sub el-hide-tablet">samarqand-savdo</div><div><span class="el-cell-sub el-show-tablet">https://samarqand-savdo.uz/api/orders</span></div></td>
+          <td class="el-hide-tablet"><span style="display: inline-flex; align-items: center; gap: 8px; max-width: 300px; min-width: 0"><span style="display: inline-flex; color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span class="el-small" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">https://samarqand-savdo.uz/api/orders</span></span></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Login va parol</div><div class="el-cell-sub">elchi</div></td>
+          <td style="white-space: nowrap">06.10.2026, 16:40</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td>
+            <div style="display: flex; justify-content: flex-end; gap: 4px">
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Samarqand Savdo — tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Samarqand Savdo — o'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </td>
+        </tr>
+        <tr class="is-hover">
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); white-space: nowrap">Chilonzor Market sayti</a><div class="el-cell-sub el-hide-tablet">chilonzor-market</div><div><span class="el-cell-sub el-show-tablet">https://chilonzor-market.uz/orders/export</span></div></td>
+          <td class="el-hide-tablet"><span style="display: inline-flex; align-items: center; gap: 8px; max-width: 300px; min-width: 0"><span style="display: inline-flex; color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span class="el-small" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">https://chilonzor-market.uz/orders/export</span></span></td>
+          <td class="el-hide-tablet"><span class="el-muted" style="white-space: nowrap">Avtorizatsiyasiz</span></td>
+          <td style="white-space: nowrap"><span class="el-muted">Sinxronlanmagan</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></td>
+          <td>
+            <div style="display: flex; justify-content: flex-end; gap: 4px">
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Chilonzor Market sayti — tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Chilonzor Market sayti — o'chirish" aria-haspopup="dialog" aria-expanded="true" style="background: var(--danger-soft); color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                <div class="el-popover" role="alertdialog" aria-modal="false" aria-labelledby="del-title" aria-describedby="del-desc" style="position: absolute; bottom: 40px; right: 0; z-index: 10; width: 280px; text-align: left; white-space: normal">
+                  <div style="display: flex; gap: 12px; align-items: flex-start">
+                    <span class="el-stat-icon" style="background: var(--danger-soft); color: var(--danger-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+                    <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+                      <p class="el-h3" id="del-title">Integratsiyani o'chirish</p>
+                      <p class="el-small el-muted" id="del-desc">"Chilonzor Market sayti" integratsiyasi o'chiriladi. Davom etasizmi?</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; justify-content: flex-end; gap: 8px">
+                    <button class="el-btn el-btn-secondary el-btn-sm" type="button">Bekor qilish</button>
+                    <button class="el-btn el-btn-danger el-btn-sm" type="button">O'chirish</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); white-space: nowrap">Tez Kargo</a><div class="el-cell-sub el-hide-tablet">tez-kargo</div><div><span class="el-cell-sub el-show-tablet">https://api.tezkargo.uz/v2/parcels</span></div></td>
+          <td class="el-hide-tablet"><span style="display: inline-flex; align-items: center; gap: 8px; max-width: 300px; min-width: 0"><span style="display: inline-flex; color: var(--text-subtle)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><span class="el-small" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">https://api.tezkargo.uz/v2/parcels</span></span></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Token</div></td>
+          <td style="white-space: nowrap">02.10.2026, 11:05</td>
+          <td><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></td>
+          <td>
+            <div style="display: flex; justify-content: flex-end; gap: 4px">
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Tez Kargo — tahrirlash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+              <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Tez Kargo — o'chirish" style="color: var(--danger-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
+    <div class="el-list-item" style="align-items: flex-start; padding-right: 8px">
+      <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Baraka Shop API</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+        <span class="el-cell-sub" style="overflow: hidden; text-overflow: ellipsis">https://api.barakashop.uz/v1/orders</span>
+        <span class="el-cell-sub" style="white-space: normal">Login va parol · <span style="white-space: nowrap">Bugun, 14:02</span></span>
+      </a>
+      <button class="el-iconbtn" type="button" aria-label="Baraka Shop API amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    </div>
+    <div class="el-list-item" style="align-items: flex-start; padding-right: 8px">
+      <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Nur Elektronika CRM</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+        <span class="el-cell-sub" style="overflow: hidden; text-overflow: ellipsis">https://crm.nur-elektronika.uz/api/orders</span>
+        <span class="el-cell-sub" style="white-space: normal">Token · <span style="white-space: nowrap">Bugun, 13:47</span></span>
+      </a>
+      <button class="el-iconbtn" type="button" aria-label="Nur Elektronika CRM amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    </div>
+    <div class="el-list-item" style="align-items: flex-start; padding-right: 8px">
+      <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Ipak Yo'li Savdo</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+        <span class="el-cell-sub" style="overflow: hidden; text-overflow: ellipsis">https://ipak-yoli-savdo.uz/api/elchi/orders</span>
+        <span class="el-cell-sub" style="white-space: normal">Token · <span style="white-space: nowrap">Kecha, 18:20</span></span>
+      </a>
+      <button class="el-iconbtn" type="button" aria-label="Ipak Yo'li Savdo amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    </div>
+    <div class="el-list-item" style="align-items: flex-start; padding-right: 8px">
+      <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Samarqand Savdo</span><span class="el-badge el-badge-dot el-tone-success">Faol</span></span>
+        <span class="el-cell-sub" style="overflow: hidden; text-overflow: ellipsis">https://samarqand-savdo.uz/api/orders</span>
+        <span class="el-cell-sub" style="white-space: normal">Login va parol · <span style="white-space: nowrap">06.10.2026, 16:40</span></span>
+      </a>
+      <button class="el-iconbtn" type="button" aria-label="Samarqand Savdo amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    </div>
+    <div class="el-list-item" style="align-items: flex-start; padding-right: 8px">
+      <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Chilonzor Market sayti</span><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></span>
+        <span class="el-cell-sub" style="overflow: hidden; text-overflow: ellipsis">https://chilonzor-market.uz/orders/export</span>
+        <span class="el-cell-sub" style="white-space: normal">Avtorizatsiyasiz · Sinxronlanmagan</span>
+      </a>
+      <button class="el-iconbtn" type="button" aria-label="Chilonzor Market sayti amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    </div>
+    <div class="el-list-item" style="align-items: flex-start; padding-right: 8px">
+      <a href="#" style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Tez Kargo</span><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></span>
+        <span class="el-cell-sub" style="overflow: hidden; text-overflow: ellipsis">https://api.tezkargo.uz/v2/parcels</span>
+        <span class="el-cell-sub" style="white-space: normal">Token · <span style="white-space: nowrap">02.10.2026, 11:05</span></span>
+      </a>
+      <button class="el-iconbtn" type="button" aria-label="Tez Kargo amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    </div>
+  </div>
+
+  <div class="el-card-foot el-pagination">
+    <span>1–6 / 6 ta integratsiya</span>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <button class="el-input el-select el-btn-sm" type="button" style="width: auto; height: 32px; gap: 8px" aria-label="Sahifadagi qatorlar soni: 10 ta">10 ta<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      <nav class="el-pages" aria-label="Sahifalar">
+        <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="el-page" type="button" aria-current="page">1</button>
+        <button class="el-page" type="button" disabled aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</section>
+  

@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { tokenStorage } from "../../auth/tokenStorage";
+import {
+  NOTIFICATION_CATEGORIES,
+  type NotificationCategory,
+} from "../notification-inbox/model/types";
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
@@ -26,10 +30,28 @@ export const DASHBOARD_WIDGET_IDS = [
 ] as const;
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGET_IDS)[number];
 
+/**
+ * Bildirishnoma kanallari (push bundan tashqari — u `notifications.push` da).
+ *
+ * ⚠️ PUSH ALOHIDA KALIT EMAS. `notifications.push` allaqachon bor va
+ * `PushSync` qurilma obunasini AYNAN shunga qarab yoqadi/o'chiradi. Ikkinchi
+ * `channels.push` bayrog'i ochilsa bir ma'lumot ikki joyda saqlanib,
+ * ajralib ketardi — shu bois push kanali o'sha kalitning o'zi.
+ */
+export const NOTIFICATION_CHANNEL_IDS = ["in_app", "realtime", "telegram", "sms"] as const;
+export type NotificationChannelId = (typeof NOTIFICATION_CHANNEL_IDS)[number];
+
+/** "HH:mm", Toshkent vaqti (UTC+5). */
+export type ClockTime = string;
+
+const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 export interface AppSettings {
   appearance: {
     theme: ThemeMode;
     language: Language;
+    /** Dizayn v2: foydalanuvchi mavzuni Sozlamalar'da O'ZI tanlaganmi (aks holda sukut — light). */
+    themeChosen?: boolean;
   };
   dashboard: {
     widgets: Record<DashboardWidgetId, boolean>;
@@ -44,8 +66,24 @@ export interface AppSettings {
     };
   };
   notifications: {
-    /** Web push (telefon/brauzer) yoqilganmi — davC9QOX. */
+    /** Web push (telefon/brauzer) yoqilganmi — davC9QOX. Push KANALI ham shu. */
     push: boolean;
+    /** Qaysi kanal orqali olish (push — yuqoridagi `push`). */
+    channels: Record<NotificationChannelId, boolean>;
+    /**
+     * Ovozi o'chirilgan kategoriyalar. `marketing` shu yerda bo'lsa —
+     * reklama va aksiyalardan voz kechilgan (opt-out).
+     *
+     * ⚠️ `critical` ustuvorlikdagi xabarlar bu ro'yxatdan qat'i nazar
+     * o'chirilmaydi — ular kategoriya emas, ustuvorlik.
+     */
+    muted_categories: NotificationCategory[];
+    /** Sokin soatlar — Toshkent vaqti. `from > to` bo'lsa tun orqali o'tadi. */
+    quiet_hours: {
+      enabled: boolean;
+      from: ClockTime;
+      to: ClockTime;
+    };
   };
 }
 
@@ -58,11 +96,21 @@ export interface AppSettingsPatch {
   scanner?: {
     sounds?: Partial<AppSettings["scanner"]["sounds"]>;
   };
-  notifications?: Partial<AppSettings["notifications"]>;
+  notifications?: {
+    push?: boolean;
+    channels?: Partial<AppSettings["notifications"]["channels"]>;
+    /**
+     * Kategoriya bo'yicha: `true` — ovozini o'chirish, `false` — qaytarish.
+     * Butun ro'yxat emas — ketma-ket tez bosishlarda (navbatdagi mutatsiyalar)
+     * har biri ENG SO'NGGI holatga qo'llanadi va bir-birini o'chirmaydi.
+     */
+    mute?: Partial<Record<NotificationCategory, boolean>>;
+    quiet_hours?: Partial<AppSettings["notifications"]["quiet_hours"]>;
+  };
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  appearance: { theme: "dark", language: "uz" },
+  appearance: { theme: "light", language: "uz" },
   dashboard: {
     widgets: {
       stats: true,
@@ -79,7 +127,60 @@ export const DEFAULT_SETTINGS: AppSettings = {
       error: "classic",
     },
   },
-  notifications: { push: false },
+  notifications: {
+    push: false,
+    // Hozirgi xulq saqlanadi: hamma kanal va kategoriya yoqiq.
+    channels: { in_app: true, realtime: true, telegram: true, sms: true },
+    muted_categories: [],
+    quiet_hours: { enabled: false, from: "22:00", to: "08:00" },
+  },
+};
+
+const readBool = (value: unknown, fallback: boolean): boolean =>
+  typeof value === "boolean" ? value : fallback;
+
+const readClock = (value: unknown, fallback: ClockTime): ClockTime =>
+  typeof value === "string" && CLOCK_TIME.test(value) ? value : fallback;
+
+/** Faqat ma'lum kategoriyalar, takrorsiz, katalog tartibida. */
+const readCategories = (value: unknown): NotificationCategory[] => {
+  if (!Array.isArray(value)) return [...DEFAULT_SETTINGS.notifications.muted_categories];
+  return NOTIFICATION_CATEGORIES.filter((category) => value.includes(category));
+};
+
+const applyMute = (
+  current: NotificationCategory[],
+  mute: Partial<Record<NotificationCategory, boolean>> | undefined,
+): NotificationCategory[] => {
+  if (!mute) return current;
+  const next = new Set(current);
+  for (const [category, muted] of Object.entries(mute)) {
+    if (muted) next.add(category as NotificationCategory);
+    else next.delete(category as NotificationCategory);
+  }
+  return readCategories([...next]);
+};
+
+const mergeNotifications = (raw: unknown): AppSettings["notifications"] => {
+  const n = (raw ?? {}) as Partial<Record<keyof AppSettings["notifications"], unknown>>;
+  const d = DEFAULT_SETTINGS.notifications;
+  const channels = (n.channels ?? {}) as Partial<Record<NotificationChannelId, unknown>>;
+  const quiet = (n.quiet_hours ?? {}) as Partial<Record<"enabled" | "from" | "to", unknown>>;
+  return {
+    push: readBool(n.push, d.push),
+    channels: {
+      in_app: readBool(channels.in_app, d.channels.in_app),
+      realtime: readBool(channels.realtime, d.channels.realtime),
+      telegram: readBool(channels.telegram, d.channels.telegram),
+      sms: readBool(channels.sms, d.channels.sms),
+    },
+    muted_categories: readCategories(n.muted_categories),
+    quiet_hours: {
+      enabled: readBool(quiet.enabled, d.quiet_hours.enabled),
+      from: readClock(quiet.from, d.quiet_hours.from),
+      to: readClock(quiet.to, d.quiet_hours.to),
+    },
+  };
 };
 
 /** Backend'dan kelgan qisman/eski sozlamani default bilan chuqur birlashtirish. */
@@ -87,7 +188,14 @@ export const mergeSettings = (raw: unknown): AppSettings => {
   const s = (raw ?? {}) as Partial<AppSettings>;
   return {
     appearance: {
-      theme: s.appearance?.theme ?? DEFAULT_SETTINGS.appearance.theme,
+      // Dizayn v2: serverdagi mavzu faqat foydalanuvchi uni O'ZI tanlagan bo'lsa
+      // (`themeChosen`) hurmat qilinadi. Ilgari to'liq sozlama har yozuvda
+      // serverga ketardi va eski sukut "dark" ko'pchilikda saqlanib qolgan —
+      // u tanlov emas, shuning uchun bir marta light'ga qaytadi.
+      theme: s.appearance?.themeChosen === true
+        ? (s.appearance.theme ?? DEFAULT_SETTINGS.appearance.theme)
+        : DEFAULT_SETTINGS.appearance.theme,
+      ...(s.appearance?.themeChosen === true ? { themeChosen: true } : {}),
       language: s.appearance?.language ?? DEFAULT_SETTINGS.appearance.language,
     },
     dashboard: {
@@ -108,13 +216,11 @@ export const mergeSettings = (raw: unknown): AppSettings => {
       },
     },
     // ⚠️ mergeSettings OQ RO'YXAT: shu yerda sanalmagan kalit jimgina tashlanadi.
-    notifications: {
-      push: s.notifications?.push ?? DEFAULT_SETTINGS.notifications.push,
-    },
+    notifications: mergeNotifications(s.notifications),
   };
 };
 
-const applySettingsPatch = (
+export const applySettingsPatch = (
   current: AppSettings,
   patch: AppSettingsPatch,
 ): AppSettings => ({
@@ -126,7 +232,12 @@ const applySettingsPatch = (
   scanner: {
     sounds: { ...current.scanner.sounds, ...patch.scanner?.sounds },
   },
-  notifications: { ...current.notifications, ...patch.notifications },
+  notifications: {
+    push: patch.notifications?.push ?? current.notifications.push,
+    channels: { ...current.notifications.channels, ...patch.notifications?.channels },
+    muted_categories: applyMute(current.notifications.muted_categories, patch.notifications?.mute),
+    quiet_hours: { ...current.notifications.quiet_hours, ...patch.notifications?.quiet_hours },
+  },
 });
 
 const SETTINGS_KEY = ["app-settings"];

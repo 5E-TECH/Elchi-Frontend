@@ -121,7 +121,7 @@ const QuickDateRangeFilter = ({
           className={`rounded-lg border px-3 py-1.5 text-base md:text-xs font-semibold outline-none transition-all ${
             selectedYear
               ? "border-main bg-main text-white shadow-[0_8px_18px_rgba(87,106,219,0.24)]"
-              : "el-glass-control border-transparent text-maindark/70 hover:text-main dark:text-primary/70 dark:hover:text-primary"
+              : "el-glass-control text-maindark/70 hover:text-main dark:text-primary/70 dark:hover:text-primary"
           }`}
         >
           <option value="">{labels?.year ?? defaultLabels.year}</option>

@@ -3,6 +3,7 @@ import {
   connectionHealth,
   fmtMetric,
   metricsByUid,
+  normalizeIntegrationMetrics,
   type ConnectionMetrics,
   type IntegrationMetrics,
 } from "./metrics";
@@ -118,5 +119,72 @@ describe("fmtMetric", () => {
   it("qiymatga qo'shimcha belgi qo'shiladi", () => {
     expect(fmtMetric(98.5, "%")).toBe("98.5%");
     expect(fmtMetric(184, " ms")).toBe("184 ms");
+  });
+});
+
+/**
+ * KENGAYTIRILGAN METRIKA — posilka / webhook / COD bloklari.
+ *
+ * Eng xavfli nuqson — o'lchanmagan qiymatni `0` qilib ko'rsatish: "qarz 0",
+ * "0 ta yiqilgan" — operatorni "hammasi joyida" deb aldardi. Shu bois
+ * normalizator yo'q / buzuq qiymatni `null` qoldiradi.
+ */
+describe("normalizeIntegrationMetrics", () => {
+  const envelope = (connection: Record<string, unknown>) => ({
+    statusCode: 200,
+    data: { window_hours: 24, totals: { events: 1, failed: 0, queued: 0 }, connections: [{ ...m(), ...connection }] },
+  });
+
+  it("ESKI backend (bloklarsiz) — bloklar `null`, mavjud maydonlar o'zgarmaydi", () => {
+    const res = normalizeIntegrationMetrics(envelope({ events: 5, delivered: 4 }));
+    const [c] = res.connections;
+    expect(c.events).toBe(5);
+    expect(c.delivered).toBe(4);
+    expect(c.shipments).toBeNull();
+    expect(c.webhooks).toBeNull();
+    expect(c.cod).toBeNull();
+    expect(res.window_hours).toBe(24);
+  });
+
+  it("raqamlar o'qiladi; Postgres `numeric` satrlari songa aylanadi", () => {
+    const [c] = normalizeIntegrationMetrics(
+      envelope({
+        shipments: { total: 12, delivered: 9, failed: 2, mismatch: 1 },
+        webhooks: { success: 30, failed: "1", invalid_signature: 0 },
+        cod: { dispatched: "15000000.00", collected: "9000000", remitted: 4000000, debt: "5000000.00" },
+      }),
+    ).connections;
+    expect(c.shipments).toEqual({ total: 12, delivered: 9, failed: 2, mismatch: 1 });
+    expect(c.webhooks).toEqual({ success: 30, failed: 1, invalid_signature: 0 });
+    expect(c.cod).toEqual({ dispatched: 15_000_000, collected: 9_000_000, remitted: 4_000_000, debt: 5_000_000 });
+  });
+
+  it("⭐ yo'q / buzuq qiymat `null` — HECH QACHON 0", () => {
+    const [c] = normalizeIntegrationMetrics(
+      envelope({
+        shipments: { total: 3, delivered: null, failed: "abc" },
+        cod: { collected: "", debt: undefined },
+      }),
+    ).connections;
+    expect(c.shipments).toEqual({ total: 3, delivered: null, failed: null, mismatch: null });
+    expect(c.cod).toEqual({ dispatched: null, collected: null, remitted: null, debt: null });
+  });
+
+  it("⭐ `mismatch: null` (status xaritasi yo'q) saqlanadi — 0 ga aylanmaydi", () => {
+    const [c] = normalizeIntegrationMetrics(
+      envelope({ shipments: { total: 4, delivered: 4, failed: 0, mismatch: null } }),
+    ).connections;
+    expect(c.shipments?.mismatch).toBeNull();
+  });
+
+  it("blok o'rnida massiv yoki satr kelsa — blok `null`", () => {
+    const [c] = normalizeIntegrationMetrics(envelope({ shipments: [1, 2], webhooks: "x" })).connections;
+    expect(c.shipments).toBeNull();
+    expect(c.webhooks).toBeNull();
+  });
+
+  it("javob qobig'i buzuq bo'lsa — bo'sh ro'yxat, xato emas", () => {
+    expect(normalizeIntegrationMetrics(undefined).connections).toEqual([]);
+    expect(normalizeIntegrationMetrics({ data: { connections: "x" } }).connections).toEqual([]);
   });
 });

@@ -1,24 +1,36 @@
-import { memo, useEffect, useState } from "react";
-import {
-  X, MapPin, Phone, User, Info, Plus, Minus,
-  MessageSquare, CheckCircle, Camera,
-} from "lucide-react";
+// dizayn-v2: courier-orders-sell-dialog, courier-orders-sell-partial-dialog, courier-orders-sell-extra-cost-dialog, manager-orders-sell-dialog
+import { memo, useEffect, useId, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
+import { Camera, CircleCheck, Info, LoaderCircle, Minus, PackageCheck, Plus, TriangleAlert, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Popup from "../../../../../shared/ui/Popup";
 import { getOrderItemName } from "../../../../../shared/lib/orderItemName";
+import { useFocusTrap } from "../../../../../shared/lib/useFocusTrap";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../../../shared/lib/formatMoney";
 import {
   getActivePendingApproval,
   usePendingExtraCostApprovals,
 } from "../../../../../entities/orders/extraCostApproval";
 import {
-  ExtraCostApprovalNotice,
-  ExtraCostApprovalPendingBanner,
-  ExtraCostApprovalSentNote,
-} from "../../../../../entities/orders/ui/ExtraCostApproval";
+  ExtraCostNoticeAlert,
+  ExtraCostPendingAlert,
+  ExtraCostSentAlert,
+} from "../../../../../entities/orders/ui/ExtraCostApprovalAlerts";
 import {
   isProofRequiredByConditions,
   toKnownAmount,
 } from "../../../../../entities/orders/proofRequirement";
+import { getMarketPaidMax, type SellOrderPayload } from "../../../../../entities/orders/sellPayment";
+
+/**
+ * SOTISH / QISMAN SOTISH — kuryer, menejer va buyurtma tafsilotida bitta oyna.
+ *
+ * To'liq sotishda «Marketga to'langan summa» (uguUEhin): kuryer mijozdan
+ * olgan puldan marketga o'zi bergan qism. Faqat 0 dan katta bo'lsa
+ * yuboriladi; hamkor (`external_id`) buyurtmasida ko'rsatilmaydi.
+ *
+ * Maket: `courier-orders-sell-dialog` (+ `-partial-`, `-extra-cost-`).
+ * «Marketga to'langan summa» maketda yo'q — summa maydoni naqshida.
+ */
 
 type OrderItem = {
   id: string;
@@ -61,12 +73,10 @@ type Order = {
   items: OrderItem[];
   sell_requires_media?: boolean;
   cancel_requires_media?: boolean;
-};
-
-type SellPayload = {
-  comment: string;
-  extraCost: number;
-  proof?: File;
+  /** Marketga to'lanishi kerak bo'lgan summa — «Marketga to'langan summa» chegarasi uchun. */
+  to_be_paid?: number | string | null;
+  /** Hamkor (BeePost/API) buyurtmasi — marketga to'lov maydoni ko'rsatilmaydi. */
+  external_id?: string | number | null;
 };
 
 type PartlySellPayload = {
@@ -81,7 +91,7 @@ type SellModalProps = {
   order: Order | null;
   open: boolean;
   onClose: () => void;
-  onSell: (orderId: string, payload: SellPayload) => void;
+  onSell: (orderId: string, payload: SellOrderPayload) => void;
   onPartlySell: (orderId: string, payload: PartlySellPayload) => void;
   isLoading?: boolean;
   /** Yuborilgan amal market tasdig'iga tushdi — forma o'rniga holat ko'rsatiladi. */
@@ -94,15 +104,65 @@ type SellModalProps = {
   restrictExtraCostToCenter?: boolean;
 };
 
-const formatAmountInput = (value: string, locale: string) => {
-  if (!value) return "";
-
-  return Number(value).toLocaleString(locale);
-};
-
 const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
 const MAX_PROOF_SIZE_MB = 10;
 const MAX_PROOF_SIZE_BYTES = MAX_PROOF_SIZE_MB * 1024 * 1024;
+
+// CODE-MAP retseptlari (BTN, INPUT).
+const BTN =
+  "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-4 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action disabled:cursor-not-allowed disabled:opacity-45 max-md:min-h-11";
+const BTN_SECONDARY = `${BTN} border-border-strong bg-surface text-text hover:bg-sunken`;
+const BTN_SUCCESS = `${BTN} border-transparent bg-success text-on-solid hover:brightness-110`;
+const INPUT =
+  "h-10 w-full rounded-[10px] border border-border-strong bg-input px-3 text-base text-text placeholder:text-text-subtle hover:border-text-subtle focus:border-action focus:outline-none focus:ring-3 focus:ring-focus disabled:cursor-not-allowed disabled:bg-sunken disabled:text-text-subtle aria-[invalid=true]:border-danger max-md:min-h-11 md:text-sm";
+const LABEL = "text-[13px] font-semibold text-text";
+const ICON_BTN =
+  "inline-flex size-8 flex-none items-center justify-center rounded-lg border border-border-strong bg-surface text-text-muted transition-colors hover:bg-sunken hover:text-text focus-visible:outline-2 focus-visible:outline-action disabled:cursor-not-allowed disabled:opacity-45 max-md:size-11";
+
+const initials = (name?: string | null) =>
+  (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "—";
+
+/** Summa maydoni: raqamlar mingliklar bilan, o'ngda valyuta. */
+const AmountInput = ({
+  id,
+  value,
+  onChange,
+  currency,
+  language,
+  invalid,
+  required,
+  describedBy,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  currency: string;
+  language: string;
+  invalid?: boolean;
+  required?: boolean;
+  describedBy?: string;
+}) => (
+  <div className="relative flex items-center">
+    <input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      value={value ? formatNumberLocalized(value, { language }) : ""}
+      onChange={(event) => onChange(sanitizeAmountInput(event.target.value))}
+      placeholder="0"
+      aria-invalid={invalid || undefined}
+      aria-required={required || undefined}
+      aria-describedby={describedBy}
+      className={`${INPUT} pr-14`}
+    />
+    <span className="pointer-events-none absolute right-3 text-sm text-text-muted">{currency}</span>
+  </div>
+);
 
 const SellModal = ({
   order,
@@ -116,14 +176,16 @@ const SellModal = ({
 }: SellModalProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
   const approvals = usePendingExtraCostApprovals();
-  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
+  const ids = useId();
   const [isPartial, setIsPartial] = useState(false);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [totalPrice, setTotalPrice] = useState("");
   const [extraCost, setExtraCost] = useState("");
+  const [marketPaid, setMarketPaid] = useState("");
   const [note, setNote] = useState("");
   const [proof, setProof] = useState<File | null>(null);
   const [proofError, setProofError] = useState("");
+  const panelRef = useFocusTrap<HTMLDivElement>(open && Boolean(order), { onEscape: onClose, inertAppRoot: true });
 
   useEffect(() => {
     if (!open) return;
@@ -132,13 +194,18 @@ const SellModal = ({
     setItemQuantities({});
     setTotalPrice("");
     setExtraCost("");
+    setMarketPaid("");
     setNote("");
     setProof(null);
     setProofError("");
   }, [open, order?.id]);
 
-  if (!open || !order) return null;
+  if (!open || !order || typeof document === "undefined") return null;
 
+  const language = i18n.language;
+  const currency = t("currency");
+  const money = (value: number) => formatMoneyLocalized(value, { language });
+  const id = (suffix: string) => `${ids}-${suffix}`;
   const pendingApproval = getActivePendingApproval(approvals, order);
   const orderFlags = order as Order & Record<string, unknown>;
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
@@ -170,6 +237,13 @@ const SellModal = ({
     });
   const isProofMissing = sellRequiresMedia && !proof;
 
+  // Hamkor buyurtmasida marketga to'lov bu yerdan yozilmaydi.
+  const isPartnerOrder = order.external_id !== null && order.external_id !== undefined && order.external_id !== "";
+  const showMarketPaid = !isPartial && !isPartnerOrder;
+  const marketPaidAmount = showMarketPaid ? Number(marketPaid) || 0 : 0;
+  const marketPaidMax = getMarketPaidMax(order.to_be_paid, effectiveExtraCost);
+  const isMarketPaidAboveMax = marketPaidMax !== null && marketPaidAmount > marketPaidMax;
+
   const getItemQty = (item: OrderItem) =>
     itemQuantities[item.id] ?? item.quantity;
 
@@ -191,7 +265,7 @@ const SellModal = ({
   // `order_item_id` bilan har biri alohida topiladi.
   const catalogIds = orderItems
     .map(getCatalogProductId)
-    .filter((id): id is string => Boolean(id));
+    .filter((itemId): itemId is string => Boolean(itemId));
   const partialUnavailableReason =
     orderItems.length === 0
       ? t("partialSellUnavailableNoItems")
@@ -227,6 +301,8 @@ const SellModal = ({
         : isPartialPriceAboveTotal
           ? t("partialSellPriceExceedsTotal")
           : null;
+  // Pastdagi izoh — nega «Sotish» o'chiq (maketdagidek tugma yonida).
+  const blockReason = partialBlockReason ?? (isProofMissing ? t("sellMediaProofRequiredNotice") : null);
 
   const canDecreaseItem = (item: OrderItem) => {
     const currentQty = getItemQty(item);
@@ -248,7 +324,8 @@ const SellModal = ({
     setItemQuantities((prev) => ({ ...prev, [item.id]: clamped }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (event?: FormEvent) => {
+    event?.preventDefault();
     if (!order) return;
     if (sellRequiresMedia && !proof) {
       setProofError(t("mediaProofRequired"));
@@ -280,6 +357,7 @@ const SellModal = ({
       onSell(order.id, {
         comment: note,
         extraCost: effectiveExtraCost,
+        ...(marketPaidAmount > 0 ? { paidAmount: marketPaidAmount } : {}),
         ...(proof ? { proof } : {}),
       });
     }
@@ -299,288 +377,376 @@ const SellModal = ({
     setProof(file);
   };
 
-  return (
-    <Popup isShow={open} onClose={onClose}>
-      <div className="relative mx-3 flex max-h-[calc(100dvh-32px)] w-[calc(100vw-24px)] max-w-md flex-col overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-2xl dark:border-primarydark/60 dark:bg-maindark sm:mx-4 sm:max-h-[90vh]">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 pb-4 pt-5 dark:from-emerald-700 dark:to-emerald-600">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-white font-bold text-lg">
+  const deliverLabel =
+    deliveryType === "address" ? t("deliveryToHome") : deliveryType === "center" ? t("deliveryToCenter") : "";
+  const subtitle = [`№${order.id}`, order.market?.name, deliverLabel].filter(Boolean).join(" · ");
+
+  const extraCostField = (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      {isExtraCostBlocked ? (
+        <>
+          <span id={id("extra-label")} className={LABEL}>
+            {t("extraCost")}
+          </span>
+          <div
+            role="note"
+            aria-labelledby={id("extra-label")}
+            className="flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted"
+          >
+            <Info className="mt-0.5 size-4 flex-none" aria-hidden="true" />
+            <p>{t("extraCostHomeNotAllowed")}</p>
+          </div>
+        </>
+      ) : (
+        <>
+          <label className={LABEL} htmlFor={id("extra")}>
+            {t("extraCost")}
+          </label>
+          <AmountInput
+            id={id("extra")}
+            value={extraCost}
+            onChange={setExtraCost}
+            currency={currency}
+            language={language}
+            describedBy={Number(extraCost) > 0 ? id("extra-note") : undefined}
+          />
+          {Number(extraCost) > 0 ? <ExtraCostNoticeAlert id={id("extra-note")} /> : null}
+        </>
+      )}
+    </div>
+  );
+
+  const marketPaidField = showMarketPaid ? (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <label className={LABEL} htmlFor={id("market-paid")}>
+        {t("marketPaidAmount")}
+      </label>
+      <AmountInput
+        id={id("market-paid")}
+        value={marketPaid}
+        onChange={setMarketPaid}
+        currency={currency}
+        language={language}
+        invalid={isMarketPaidAboveMax}
+        describedBy={`${id("market-paid-hint")}${isMarketPaidAboveMax ? ` ${id("market-paid-error")}` : ""}`}
+      />
+      <span id={id("market-paid-hint")} className="text-xs text-text-muted">
+        {t("marketPaidAmountHint")}
+        {marketPaidMax !== null ? ` · ${t("amountMaxHint", { amount: money(marketPaidMax) })}` : ""}
+      </span>
+      {isMarketPaidAboveMax ? (
+        <span id={id("market-paid-error")} role="alert" className="text-xs font-semibold text-danger-fg">
+          {t("marketPaidAboveMax", { amount: money(marketPaidMax ?? 0) })}
+        </span>
+      ) : null}
+    </div>
+  ) : null;
+
+  const noteField = (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <label className={LABEL} htmlFor={id("note")}>
+        {t("note")} <span className="font-normal text-text-muted">({t("optional", { ns: "common" })})</span>
+      </label>
+      <textarea
+        id={id("note")}
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder={t("writeNote")}
+        rows={2}
+        className={`${INPUT} h-auto min-h-[72px] resize-y py-2.5`}
+      />
+    </div>
+  );
+
+  const proofField = (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <span id={id("proof-label")} className={LABEL}>
+        {t("mediaProof")}{" "}
+        {sellRequiresMedia ? (
+          <span className="text-danger-fg">*</span>
+        ) : (
+          <span className="font-normal text-text-muted">({t("optional", { ns: "common" })})</span>
+        )}
+      </span>
+      <label
+        className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed bg-sunken p-3 focus-within:outline-2 focus-within:outline-action ${
+          proofError ? "border-danger" : "border-border-strong"
+        }`}
+      >
+        <span
+          className={`inline-flex size-8 flex-none items-center justify-center rounded-full ${
+            proof ? "bg-success-soft text-success-fg" : "bg-surface text-text-muted"
+          }`}
+        >
+          {proof ? <CircleCheck className="size-4" aria-hidden="true" /> : <Camera className="size-4" aria-hidden="true" />}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-sm font-semibold text-text">{proof ? proof.name : t("mediaProofUpload")}</span>
+          <span className="text-xs text-text-muted">
+            {proof
+              ? `${formatNumberLocalized(proof.size / (1024 * 1024), { language, fractionDigits: 1 })} MB · ${t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}`
+              : t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}
+          </span>
+        </span>
+        <span aria-hidden="true" className={`${BTN_SECONDARY} h-8 px-3 text-[13px] max-md:min-h-11`}>
+          {proof ? t("mediaProofReplace") : t("mediaProofChoose")}
+        </span>
+        <input
+          type="file"
+          accept="image/*,video/*"
+          className="sr-only"
+          aria-labelledby={id("proof-label")}
+          aria-describedby={sellRequiresMedia || proofError ? id("proof-hint") : undefined}
+          aria-required={sellRequiresMedia || undefined}
+          onChange={(event) => handleProofChange(event.target.files?.[0])}
+        />
+      </label>
+      {proofError ? (
+        <span id={id("proof-hint")} className="text-xs font-semibold text-danger-fg">
+          {proofError}
+        </span>
+      ) : sellRequiresMedia ? (
+        <span id={id("proof-hint")} className="text-xs text-text-muted">
+          {t("sellMediaProofRequiredNotice")}
+        </span>
+      ) : null}
+    </div>
+  );
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-overlay p-6 max-md:items-end max-md:p-0">
+      <button
+        type="button"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+      />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={id("title")}
+        aria-describedby={id("desc")}
+        tabIndex={-1}
+        className={`relative flex max-h-[calc(100dvh-48px)] w-full flex-col gap-4 rounded-[20px] border border-border bg-raised p-6 shadow-xl outline-none max-md:max-h-[92dvh] max-md:max-w-full max-md:rounded-b-none max-md:px-4 max-md:pb-[calc(env(safe-area-inset-bottom)+24px)] max-md:pt-3 ${
+          isPartial ? "max-w-[780px]" : "max-w-[520px]"
+        }`}
+      >
+        <span aria-hidden="true" className="mx-auto -mb-1 h-1 w-10 flex-none rounded-full bg-border-strong md:hidden" />
+
+        {/* Sarlavha */}
+        <div className="flex items-center gap-3">
+          <span className="inline-flex size-10 flex-none items-center justify-center rounded-full bg-success-soft text-success-fg">
+            <PackageCheck className="size-5" aria-hidden="true" />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <h2 id={id("title")} className="text-lg font-semibold text-text">
               {isPartial ? t("partialSell") : t("sell")}
             </h2>
-            <button
-              onClick={onClose}
-              className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-              aria-label={t("close", { ns: "common" })}
-            >
-              <X size={14} className="text-white" />
-            </button>
+            <p id={id("desc")} className="truncate text-[13px] text-text-muted">
+              {subtitle}
+            </p>
           </div>
-
-          {/* Customer card */}
-          <div className="bg-white/20 rounded-xl p-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center shrink-0">
-              <User size={18} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-white font-semibold text-sm">{order.customer?.name}</p>
-              <p className="text-white/80 text-xs flex items-center gap-1">
-                <Phone size={11} />
-                {order.customer?.phone_number}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-white/70 text-xs">{t("sumLabel")}</p>
-              <p className="text-white font-bold text-base">
-                {Number(order.total_price).toLocaleString(locale)} {t("currency")}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-2 flex items-center gap-1 text-white/80 text-xs">
-            <MapPin size={12} />
-            <span>{order.district?.name}</span>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("close", { ns: "common" })}
+            className="-mr-2 -mt-1 inline-flex size-8 flex-none items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-sunken hover:text-text focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
+          >
+            <X className="size-5" aria-hidden="true" />
+          </button>
         </div>
 
-        {/* Body */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        {/* Tana */}
+        <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-0.5">
           {awaitingApproval ? (
-            <ExtraCostApprovalPendingBanner
+            <ExtraCostPendingAlert
               amount={pendingApproval?.amount ?? (Number(extraCost) || 0)}
               action={pendingApproval?.action}
             />
           ) : (
             <>
-              {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
+              {pendingApproval ? <ExtraCostSentAlert approval={pendingApproval} /> : null}
 
-              {/* Qisman sotish toggle */}
-              <button
-                type="button"
-                onClick={() => setIsPartial((p) => !p)}
-                disabled={!canSellPartially}
-                aria-pressed={isPartial}
-                className={`flex w-full items-center gap-3 p-3 rounded-xl border-2 text-left transition-all select-none disabled:cursor-not-allowed disabled:opacity-60 ${
-                  canSellPartially ? "cursor-pointer" : ""
-                } ${
-                  isPartial
-                    ? "border-orange-400 bg-orange-50 dark:border-orange-400/45 dark:bg-orange-400/10"
-                    : "border-orange-200 bg-orange-50 dark:border-orange-400/20 dark:bg-orange-400/10"
-                }`}
-              >
-                <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
-                  <Info size={15} className="text-orange-500" />
+              <div role="group" aria-label={t("customer")} className="flex items-center gap-3 rounded-xl bg-sunken px-4 py-3 text-sm">
+                <span className="inline-flex size-10 flex-none items-center justify-center rounded-full bg-brand text-[13px] font-bold text-surface">
+                  {initials(order.customer?.name)}
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate font-semibold text-text">{order.customer?.name ?? "—"}</span>
+                  <span className="flex flex-wrap gap-x-3 text-[13px] text-text-muted">
+                    {order.customer?.phone_number ? (
+                      <span className="whitespace-nowrap">{order.customer.phone_number}</span>
+                    ) : null}
+                    {order.district?.name ? <span className="whitespace-nowrap">{order.district.name}</span> : null}
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                    {t("partialSell")}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {partialUnavailableReason ?? t("sellSeparately")}
-                  </p>
+                <div className="flex flex-none flex-col gap-0.5 text-right">
+                  <span className="text-xs text-text-muted">{t("sumLabel")}</span>
+                  <span className="whitespace-nowrap font-semibold text-text">{money(Number(order.total_price) || 0)}</span>
                 </div>
-                <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    isPartial
-                      ? "bg-orange-500 border-orange-500"
-                      : "border-gray-300 dark:border-gray-600"
+              </div>
+
+              <form id={id("form")} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {/* Qisman sotish kaliti */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isPartial}
+                  aria-describedby={id("partial-desc")}
+                  disabled={!canSellPartially}
+                  onClick={() => setIsPartial((value) => !value)}
+                  className={`group flex min-h-12 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-action disabled:cursor-not-allowed ${
+                    isPartial ? "border-action bg-action-soft" : "border-border bg-transparent hover:bg-sunken"
                   }`}
                 >
-                  {isPartial && <div className="w-2 h-2 rounded-full bg-white" />}
-                </div>
-              </button>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className={`text-sm font-semibold ${canSellPartially ? "text-text" : "text-text-muted"}`}>
+                      {t("partialSell")}
+                    </span>
+                    <span id={id("partial-desc")} className="text-[13px] text-text-muted">
+                      {partialUnavailableReason ?? t("sellSeparately")}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="relative h-5 w-9 flex-none rounded-full bg-border-strong transition-colors duration-150 group-aria-checked:bg-action group-disabled:opacity-45"
+                  >
+                    <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 group-aria-checked:translate-x-4" />
+                  </span>
+                </button>
 
-              {/* Items — qisman rejimda */}
-              {isPartial && orderItems.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
-                    {t("products")}
-                  </p>
-                  <div className="space-y-2">
-                    {orderItems.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/80 p-3 dark:border-white/10 dark:bg-primarydark/35"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate text-gray-800 dark:text-gray-100">
-                            {getItemName(item, index)}
-                          </p>
-                          <p className="text-xs text-gray-400">{t("maxQuantity", { count: item.quantity })}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => setItemQty(item, getItemQty(item) - 1)}
-                            disabled={!canDecreaseItem(item)}
-                            aria-label={t("decreaseQuantity", { name: getItemName(item, index) })}
-                            className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            <Minus size={12} />
-                          </button>
-                          <span className="w-6 text-center text-sm font-bold">
-                            {getItemQty(item)}
-                          </span>
-                          <button
-                            onClick={() => setItemQty(item, getItemQty(item) + 1)}
-                            aria-label={t("increaseQuantity", { name: getItemName(item, index) })}
-                            className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center hover:bg-emerald-200 dark:hover:bg-emerald-500/25 transition-colors"
-                          >
-                            <Plus size={12} className="text-emerald-600 dark:text-emerald-200" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {isAtMinimumSelection && (
-                    <div className="mt-3 rounded-xl border border-error/20 bg-error/10 px-3 py-2">
-                      <p className="text-sm font-bold text-error">
-                        {t("minimumSelectionError")}
-                      </p>
+                {isPartial ? (
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] items-start gap-x-6 gap-y-4">
+                    {/* Mahsulotlar */}
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <span id={id("items-label")} className={LABEL}>
+                        {t("products")}
+                      </span>
+                      {orderItems.length > 0 ? (
+                        <ul aria-labelledby={id("items-label")} className="flex flex-col rounded-xl bg-sunken">
+                          {orderItems.map((item, index) => {
+                            const quantity = getItemQty(item);
+                            return (
+                              <li
+                                key={item.id}
+                                className="flex items-center gap-3 border-t border-border py-1.5 pl-4 pr-2 first:border-t-0"
+                              >
+                                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                  <span className="truncate text-sm font-semibold text-text">{getItemName(item, index)}</span>
+                                  <span className="text-xs text-text-muted">{t("maxQuantity", { count: item.quantity })}</span>
+                                </span>
+                                <span role="group" aria-label={getItemName(item, index)} className="inline-flex flex-none items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setItemQty(item, quantity - 1)}
+                                    disabled={!canDecreaseItem(item)}
+                                    aria-label={t("decreaseQuantity", { name: getItemName(item, index) })}
+                                    className={ICON_BTN}
+                                  >
+                                    <Minus className="size-4" aria-hidden="true" />
+                                  </button>
+                                  <span
+                                    aria-live="polite"
+                                    className={`min-w-7 text-center text-sm font-semibold ${quantity === 0 ? "text-text-subtle" : "text-text"}`}
+                                  >
+                                    {quantity}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setItemQty(item, quantity + 1)}
+                                    disabled={quantity >= item.quantity}
+                                    aria-label={t("increaseQuantity", { name: getItemName(item, index) })}
+                                    className={ICON_BTN}
+                                  >
+                                    <Plus className="size-4" aria-hidden="true" />
+                                  </button>
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : null}
+                      {isAtMinimumSelection ? (
+                        <p className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
+                          <TriangleAlert className="size-4 flex-none" aria-hidden="true" />
+                          <span>{t("minimumSelectionError")}</span>
+                        </p>
+                      ) : null}
                     </div>
-                  )}
-                </div>
-              )}
 
-              {/* totalPrice — faqat qisman rejimda */}
-              {isPartial && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                    {t("paymentAmount")} <span className="text-red-400">*</span>
-                  </p>
-                  <div className={`flex items-center gap-2 rounded-xl border bg-white/70 px-3 py-2 dark:bg-primarydark/35 ${
-                    isPartialPriceAboveTotal
-                      ? "border-error/60 dark:border-error/60"
-                      : "border-gray-200 dark:border-white/10"
-                  }`}>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={formatAmountInput(totalPrice, locale)}
-                      onChange={(e) =>
-                        setTotalPrice(sanitizeAmountInput(e.target.value))
-                      }
-                      placeholder="0"
-                      aria-invalid={isPartialPriceAboveTotal || undefined}
-                      className="flex-1 bg-transparent text-base md:text-sm text-gray-800 outline-none dark:text-gray-100"
-                    />
-                    <span className="text-sm text-gray-400">{t("currency")}</span>
+                    <div className="flex min-w-0 flex-col gap-4">
+                      <div className="flex min-w-0 flex-col gap-1.5">
+                        <label className={LABEL} htmlFor={id("total")}>
+                          {t("paymentAmount")} <span className="text-danger-fg">*</span>
+                        </label>
+                        <AmountInput
+                          id={id("total")}
+                          value={totalPrice}
+                          onChange={setTotalPrice}
+                          currency={currency}
+                          language={language}
+                          invalid={isPartialPriceAboveTotal}
+                          required
+                          describedBy={orderTotalAmount !== null ? id("total-hint") : undefined}
+                        />
+                        {isPartialPriceAboveTotal ? (
+                          <span role="alert" className="text-xs font-semibold text-danger-fg">
+                            {t("partialSellPriceExceedsTotal")}
+                          </span>
+                        ) : orderTotalAmount !== null ? (
+                          <span id={id("total-hint")} className="text-xs text-text-muted">
+                            {t("amountMaxHint", { amount: money(orderTotalAmount) })}
+                          </span>
+                        ) : null}
+                      </div>
+                      {extraCostField}
+                      {noteField}
+                      {proofField}
+                    </div>
                   </div>
-                  {isPartialPriceAboveTotal ? (
-                    <p role="alert" className="mt-1 text-xs font-semibold text-error">
-                      {t("partialSellPriceExceedsTotal")}
-                    </p>
-                  ) : null}
-                </div>
-              )}
-
-              {/* extraCost — kuryerning uyga yetkazish sotuvidan tashqari hammada */}
-              <div>
-                <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                  <Plus size={12} className="text-green-500" />
-                  {t("extraPayment")}
-                </p>
-                {isExtraCostBlocked ? (
-                  <p className="rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-xs font-medium text-gray-500 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-400">
-                    {t("extraCostHomeNotAllowed")}
-                  </p>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-primarydark/35">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={formatAmountInput(extraCost, locale)}
-                        onChange={(e) =>
-                          setExtraCost(sanitizeAmountInput(e.target.value))
-                        }
-                        placeholder="0"
-                        className="flex-1 bg-transparent text-base md:text-sm text-gray-800 outline-none dark:text-gray-100"
-                      />
-                      <span className="text-sm text-gray-400">{t("currency")}</span>
-                    </div>
-                    {Number(extraCost) > 0 ? <ExtraCostApprovalNotice /> : null}
+                    {extraCostField}
+                    {marketPaidField}
+                    {noteField}
+                    {proofField}
                   </>
                 )}
-              </div>
-
-              {/* Izoh */}
-              <div>
-                <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                  <MessageSquare size={12} className="text-purple-400" />
-                  {t("note")}{" "}
-                  <span className="normal-case font-normal text-gray-400">({t("optional", { ns: "common" })})</span>
-                </p>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder={t("writeNote")}
-                  rows={3}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-base md:text-sm text-gray-800 outline-none placeholder:text-gray-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-gray-100 dark:placeholder:text-white/35"
-                />
-              </div>
-
-              <div>
-                <p className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                  <Camera size={12} className="text-emerald-500" />
-                  {t("mediaProof")}
-                  {sellRequiresMedia ? <span className="text-red-400">*</span> : null}
-                </p>
-                {sellRequiresMedia ? (
-                  <p className="mb-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
-                    {t("sellMediaProofRequiredNotice")}
-                  </p>
-                ) : null}
-                <label className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-3 py-4 text-center transition-colors ${
-                  proofError
-                    ? "border-error/50 bg-error/10"
-                    : "border-gray-200 bg-white/70 hover:border-emerald-400 dark:border-white/10 dark:bg-primarydark/35"
-                }`}>
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={(event) => handleProofChange(event.target.files?.[0])}
-                  />
-                  <Camera size={20} className="text-emerald-500" />
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-100">
-                    {proof ? proof.name : t("mediaProofUpload")}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}
-                  </span>
-                </label>
-                {proofError ? <p className="mt-1 text-xs font-semibold text-error">{proofError}</p> : null}
-              </div>
+              </form>
             </>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="shrink-0 border-t border-gray-200 bg-primary px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-4 dark:border-white/10 dark:bg-maindark sm:pb-5">
-          {awaitingApproval ? (
+        {/* Pastki qism */}
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4 max-md:[&>button]:flex-1">
+          {!awaitingApproval && blockReason ? (
+            <p className="mr-auto min-w-0 text-[13px] text-text-muted max-md:w-full">{blockReason}</p>
+          ) : null}
+          <button type="button" onClick={onClose} className={BTN_SECONDARY}>
+            {awaitingApproval ? t("close", { ns: "common" }) : t("back", { ns: "common" })}
+          </button>
+          {awaitingApproval ? null : (
             <button
-              onClick={onClose}
-              className="flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white/70 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:bg-white/6 dark:text-white/80 dark:hover:bg-white/10"
-            >
-              {t("close", { ns: "common" })}
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
+              type="submit"
+              form={id("form")}
               disabled={isLoading || isProofMissing || Boolean(partialBlockReason)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:from-emerald-500 hover:to-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-busy={isLoading || undefined}
+              className={BTN_SUCCESS}
             >
-              <CheckCircle size={18} />
-              {isLoading
-                ? t("loading", { ns: "common" })
-                : isProofMissing
-                  ? t("sellMediaProofRequiredNotice")
-                  : partialBlockReason ?? t("sell")}
+              {isLoading ? (
+                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <PackageCheck className="size-4" aria-hidden="true" />
+              )}
+              {t("sell")}
             </button>
           )}
         </div>
       </div>
-    </Popup>
+    </div>,
+    document.body,
   );
 };
 

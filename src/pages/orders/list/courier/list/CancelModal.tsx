@@ -1,30 +1,48 @@
-import { memo, useState, useEffect } from "react";
-import { Camera, X, XCircle } from "lucide-react";
+// dizayn-v2: courier-orders-cancel-dialog, manager-orders-cancel-dialog
+import { memo, useEffect, useId, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
+import { ChevronDown, CircleCheck, CircleX, ImagePlus, LoaderCircle, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Order } from "./ordertable/pendingOrderTable";
-import Popup from "../../../../../shared/ui/Popup";
+import { useFocusTrap } from "../../../../../shared/lib/useFocusTrap";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../../../shared/lib/formatMoney";
 import {
   getActivePendingApproval,
   usePendingExtraCostApprovals,
 } from "../../../../../entities/orders/extraCostApproval";
 import {
-  ExtraCostApprovalNotice,
-  ExtraCostApprovalPendingBanner,
-  ExtraCostApprovalSentNote,
-} from "../../../../../entities/orders/ui/ExtraCostApproval";
+  ExtraCostNoticeAlert,
+  ExtraCostPendingAlert,
+  ExtraCostSentAlert,
+} from "../../../../../entities/orders/ui/ExtraCostApprovalAlerts";
 import {
   isProofRequiredByConditions,
   toKnownAmount,
 } from "../../../../../entities/orders/proofRequirement";
+import {
+  CANCEL_REASONS,
+  cancelReasonNeedsComment,
+  isCancelReasonComplete,
+  type CancelOrderPayload,
+  type CancelReason,
+} from "../../../../../entities/orders/cancelReason";
+
+/**
+ * BUYURTMANI BEKOR QILISH — kuryer, menejer va buyurtma tafsilotida bitta oyna.
+ *
+ * Sabab YOPIQ RO'YXATDAN majburiy (GNWDKvmZ): tanlanmaguncha «Bekor qilish»
+ * o'chiq; «Boshqa» bo'lsa izoh ham majburiy. Backend ham shuni tekshiradi
+ * (sababsiz — 400), lekin operator xatoni bosgandan keyin emas, oldin ko'radi.
+ *
+ * Maket: `courier-orders-cancel-dialog`. Sabab maydoni maketda yo'q — forma
+ * maydoni naqshida (`tizim-states-forms`). Telefonda pastki varaqa.
+ */
 
 type Props = {
   order: Order | null;
   open: boolean;
   onClose: () => void;
-  onCancel: (
-    orderId: string,
-    payload: { comment: string; extraCost: number; paidAmount: number; proof?: File }
-  ) => void;
+  onCancel: (orderId: string, payload: CancelOrderPayload) => void;
   isLoading?: boolean;
   /** Yuborilgan amal market tasdig'iga tushdi — forma o'rniga holat ko'rsatiladi. */
   awaitingApproval?: boolean;
@@ -33,27 +51,57 @@ type Props = {
 const MAX_PROOF_SIZE_MB = 10;
 const MAX_PROOF_SIZE_BYTES = MAX_PROOF_SIZE_MB * 1024 * 1024;
 
+const REASON_LABEL_KEYS: Record<CancelReason, string> = {
+  CUSTOMER_NO_ANSWER: "cancelReasons.CUSTOMER_NO_ANSWER",
+  CUSTOMER_REFUSED: "cancelReasons.CUSTOMER_REFUSED",
+  WRONG_ADDRESS: "cancelReasons.WRONG_ADDRESS",
+  DEFECTIVE_PRODUCT: "cancelReasons.DEFECTIVE_PRODUCT",
+  PRICE_DISPUTE: "cancelReasons.PRICE_DISPUTE",
+  OTHER: "cancelReasons.OTHER",
+};
+
+// CODE-MAP retseptlari (BTN, INPUT).
+const BTN =
+  "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-4 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action disabled:cursor-not-allowed disabled:opacity-45 max-md:min-h-11";
+const BTN_SECONDARY = `${BTN} border-border-strong bg-surface text-text hover:bg-sunken`;
+// To'liq `bg-danger` tungi mavzuda AA dan past (CODE-MAP 0.4) — `danger-soft`.
+const BTN_DANGER = `${BTN} border-transparent bg-danger-soft text-danger-fg hover:bg-danger hover:text-on-solid`;
+const INPUT =
+  "h-10 w-full rounded-[10px] border border-border-strong bg-input px-3 text-base text-text placeholder:text-text-subtle hover:border-text-subtle focus:border-action focus:outline-none focus:ring-3 focus:ring-focus disabled:cursor-not-allowed disabled:bg-sunken disabled:text-text-subtle aria-[invalid=true]:border-danger max-md:min-h-11 md:text-sm";
+const LABEL = "text-[13px] font-semibold text-text";
+
+const initials = (name?: string | null) =>
+  (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "—";
+
 const CancelModal = ({ order, open, onClose, onCancel, isLoading, awaitingApproval }: Props) => {
-  const { t } = useTranslation(["orders", "common"]);
+  const { t, i18n } = useTranslation(["orders", "common"]);
   const approvals = usePendingExtraCostApprovals();
-  const [comment, setComment]       = useState("");
-  const [extraCost, setExtraCost]   = useState(0);
-  const [paidAmount, setPaidAmount] = useState(0);
+  const ids = useId();
+  const [reason, setReason] = useState<CancelReason | "">("");
+  const [comment, setComment] = useState("");
+  const [extraCost, setExtraCost] = useState(0);
   const [proof, setProof] = useState<File | null>(null);
   const [proofError, setProofError] = useState("");
+  const panelRef = useFocusTrap<HTMLDivElement>(open && Boolean(order), { onEscape: onClose, inertAppRoot: true });
 
   useEffect(() => {
     if (open) {
+      setReason("");
       setComment("");
       setExtraCost(0);
-      setPaidAmount(0);
       setProof(null);
       setProofError("");
     }
   }, [open]);
 
-  if (!open || !order) return null;
+  if (!open || !order || typeof document === "undefined") return null;
 
+  const language = i18n.language;
   const pendingApproval = getActivePendingApproval(approvals, order);
   const orderFlags = order as Order & Record<string, unknown>;
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
@@ -75,13 +123,17 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading, awaitingApprov
       totalPrice: toKnownAmount(order.total_price),
     });
   const isProofMissing = cancelRequiresMedia && !proof;
+  const commentRequired = cancelReasonNeedsComment(reason);
+  const reasonReady = isCancelReasonComplete(reason, comment);
 
-  const handleSubmit = () => {
+  const handleSubmit = (event?: FormEvent) => {
+    event?.preventDefault();
+    if (!reasonReady || reason === "") return;
     if (cancelRequiresMedia && !proof) {
       setProofError(t("mediaProofRequired"));
       return;
     }
-    onCancel(order.id, { comment, extraCost, paidAmount, ...(proof ? { proof } : {}) });
+    onCancel(order.id, { reason, comment, extraCost, ...(proof ? { proof } : {}) });
   };
 
   const handleProofChange = (file?: File) => {
@@ -98,148 +150,252 @@ const CancelModal = ({ order, open, onClose, onCancel, isLoading, awaitingApprov
     setProof(file);
   };
 
-  return (
-    <Popup isShow={open} onClose={onClose}>
-      <div className="relative mx-3 w-[calc(100vw-24px)] max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-2xl dark:border-primarydark/60 dark:bg-maindark">
-        {/* Header */}
-        <div className="flex items-center justify-between bg-gradient-to-r from-rose-600 to-red-500 px-5 py-4 dark:from-rose-700 dark:to-red-600">
-          <div className="flex items-center gap-2">
-            <XCircle size={20} className="text-white" />
-            <h2 className="text-white font-bold text-base">
+  const deliverLabel =
+    order.where_deliver === "address" ? t("deliveryToHome") : order.where_deliver === "center" ? t("deliveryToCenter") : "";
+  const subtitle = [`№${order.id}`, order.market?.name, deliverLabel].filter(Boolean).join(" · ");
+  const id = (suffix: string) => `${ids}-${suffix}`;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-overlay p-6 max-md:items-end max-md:p-0">
+      <button
+        type="button"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+      />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={id("title")}
+        aria-describedby={id("desc")}
+        tabIndex={-1}
+        className="relative flex max-h-[calc(100dvh-48px)] w-full max-w-[540px] flex-col gap-4 rounded-[20px] border border-border bg-raised p-6 shadow-xl outline-none max-md:max-h-[92dvh] max-md:max-w-full max-md:rounded-b-none max-md:px-4 max-md:pb-6 max-md:pt-3"
+      >
+        <span aria-hidden="true" className="mx-auto -mb-1 h-1 w-10 flex-none rounded-full bg-border-strong md:hidden" />
+
+        {/* Sarlavha */}
+        <div className="flex items-center gap-3">
+          <span className="inline-flex size-10 flex-none items-center justify-center rounded-full bg-danger-soft text-danger-fg">
+            <CircleX className="size-5" aria-hidden="true" />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <h2 id={id("title")} className="text-lg font-semibold text-text">
               {t("cancelOrder")}
             </h2>
+            <p id={id("desc")} className="truncate text-[13px] text-text-muted">
+              {subtitle}
+            </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
             aria-label={t("close", { ns: "common" })}
+            className="-mr-2 -mt-1 inline-flex size-8 flex-none items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-sunken hover:text-text focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
           >
-            <X size={16} className="text-white" />
+            <X className="size-5" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-5 flex flex-col gap-4">
+        {/* Tana */}
+        <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-0.5">
           {awaitingApproval ? (
-            <ExtraCostApprovalPendingBanner amount={pendingApproval?.amount ?? extraCost} action={pendingApproval?.action} />
+            <ExtraCostPendingAlert amount={pendingApproval?.amount ?? extraCost} action={pendingApproval?.action} />
           ) : (
             <>
-              {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
+              {pendingApproval ? <ExtraCostSentAlert approval={pendingApproval} /> : null}
 
-              {/* Order info */}
-              <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-3 dark:border-rose-500/20 dark:bg-rose-500/10">
-                <span className="text-sm text-gray-600 dark:text-gray-400">{t("customer")}:</span>
-                <span className="text-sm font-semibold text-gray-800 dark:text-white">
-                  {order.customer?.name}
+              <div role="group" aria-label={t("customer")} className="flex items-center gap-3 rounded-xl bg-sunken px-4 py-3 text-sm">
+                <span className="inline-flex size-10 flex-none items-center justify-center rounded-full bg-brand text-[13px] font-bold text-surface">
+                  {initials(order.customer?.name)}
                 </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate font-semibold text-text">{order.customer?.name ?? "—"}</span>
+                  <span className="flex flex-wrap gap-x-3 text-[13px] text-text-muted">
+                    {order.customer?.phone_number ? (
+                      <span className="whitespace-nowrap">{order.customer.phone_number}</span>
+                    ) : null}
+                    {order.district?.name ? <span className="whitespace-nowrap">{order.district.name}</span> : null}
+                  </span>
+                </div>
+                <div className="flex flex-none flex-col gap-0.5 text-right">
+                  <span className="text-xs text-text-muted">{t("sumLabel")}</span>
+                  <span className="whitespace-nowrap font-semibold text-text">
+                    {formatMoneyLocalized(order.total_price, { language })}
+                  </span>
+                </div>
               </div>
 
-              {/* extraCost */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t("extraCost")}
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={extraCost}
-                  onChange={(e) => setExtraCost(Number(e.target.value))}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-base md:text-sm text-gray-800 outline-none transition-colors focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:focus:border-rose-400"
-                  placeholder="0"
-                />
-                {extraCost > 0 ? <ExtraCostApprovalNotice /> : null}
-              </div>
+              <form id={id("form")} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {/*
+                  «To'langan summa» YO'Q (uguUEhin): bekor qilingan buyurtmada
+                  to'lov bo'lmaydi — backend `paidAmount > 0` ni 400 bilan rad etadi.
+                */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <label className={LABEL} htmlFor={id("extra")}>
+                      {t("extraCost")}
+                    </label>
+                    <input
+                      id={id("extra")}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={extraCost}
+                      onChange={(e) => setExtraCost(Number(e.target.value))}
+                      aria-describedby={extraCost > 0 ? id("extra-note") : undefined}
+                      className={INPUT}
+                      placeholder="0"
+                    />
+                  </div>
+                  {extraCost > 0 ? <ExtraCostNoticeAlert id={id("extra-note")} /> : null}
+                </div>
 
-              {/* paidAmount */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t("paidAmount")}
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={paidAmount}
-                  onChange={(e) => setPaidAmount(Number(e.target.value))}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-base md:text-sm text-gray-800 outline-none transition-colors focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:focus:border-rose-400"
-                  placeholder="0"
-                />
-              </div>
+                {/* Sabab — yopiq ro'yxat, majburiy */}
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <label className={LABEL} htmlFor={id("reason")}>
+                    {t("cancelReasonLabel")} <span className="text-danger-fg">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      id={id("reason")}
+                      value={reason}
+                      required
+                      aria-required="true"
+                      aria-describedby={id("reason-hint")}
+                      onChange={(e) => setReason(e.target.value as CancelReason | "")}
+                      className={`${INPUT} cursor-pointer appearance-none pr-10 ${reason === "" ? "text-text-subtle" : ""}`}
+                    >
+                      <option value="" disabled>
+                        {t("cancelReasonPlaceholder")}
+                      </option>
+                      {CANCEL_REASONS.map((value) => (
+                        <option key={value} value={value} className="text-text">
+                          {t(REASON_LABEL_KEYS[value])}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-text-subtle"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <span id={id("reason-hint")} className="text-xs text-text-muted">
+                    {t("cancelReasonHint")}
+                  </span>
+                </div>
 
-              {/* comment */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t("note")}
-                </label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  rows={3}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-base md:text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-rose-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:placeholder:text-white/35 dark:focus:border-rose-400"
-                  placeholder={t("cancelReason")}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <Camera size={14} className="text-rose-500" />
-                  {t("mediaProof")}
-                  {cancelRequiresMedia ? <span className="text-error">*</span> : null}
-                </label>
-                {cancelRequiresMedia ? (
-                  <p className="text-xs font-semibold text-rose-600 dark:text-rose-300">
-                    {t("cancelMediaProofRequiredNotice")}
-                  </p>
-                ) : null}
-                <label className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-3 py-4 text-center transition-colors ${
-                  proofError
-                    ? "border-error/50 bg-error/10"
-                    : "border-gray-200 bg-gray-50 hover:border-rose-400 dark:border-white/10 dark:bg-primarydark/35"
-                }`}>
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={(event) => handleProofChange(event.target.files?.[0])}
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <label className={LABEL} htmlFor={id("note")}>
+                    {t("note")} {commentRequired ? <span className="text-danger-fg">*</span> : null}
+                  </label>
+                  <textarea
+                    id={id("note")}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={2}
+                    required={commentRequired}
+                    aria-required={commentRequired || undefined}
+                    aria-invalid={commentRequired && comment.trim() === "" ? true : undefined}
+                    aria-describedby={commentRequired ? id("note-hint") : undefined}
+                    className={`${INPUT} h-auto min-h-[72px] resize-y py-2.5`}
+                    placeholder={t("cancelReason")}
                   />
-                  <Camera size={20} className="text-rose-500" />
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-100">
-                    {proof ? proof.name : t("mediaProofUpload")}
+                  {commentRequired ? (
+                    <span id={id("note-hint")} className="text-xs font-semibold text-danger-fg">
+                      {t("cancelReasonOtherHint")}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <span id={id("proof-label")} className={LABEL}>
+                    {t("mediaProof")} {cancelRequiresMedia ? <span className="text-danger-fg">*</span> : null}
                   </span>
-                  <span className="text-xs text-gray-400">
-                    {t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}
-                  </span>
-                </label>
-                {proofError ? <p className="text-xs font-semibold text-error">{proofError}</p> : null}
-              </div>
+                  <label
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed bg-sunken p-3 focus-within:outline-2 focus-within:outline-action ${
+                      proofError ? "border-danger" : "border-border-strong"
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex size-8 flex-none items-center justify-center rounded-full ${
+                        proof ? "bg-success-soft text-success-fg" : "bg-surface text-text-muted"
+                      }`}
+                    >
+                      {proof ? (
+                        <CircleCheck className="size-4" aria-hidden="true" />
+                      ) : (
+                        <ImagePlus className="size-4" aria-hidden="true" />
+                      )}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate text-sm font-semibold text-text">{proof ? proof.name : t("mediaProofUpload")}</span>
+                      <span className="text-xs text-text-muted">
+                        {proof
+                          ? `${formatNumberLocalized(proof.size / (1024 * 1024), { language, fractionDigits: 1 })} MB · ${t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}`
+                          : t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}
+                      </span>
+                    </span>
+                    {proof ? (
+                      <span aria-hidden="true" className={`${BTN_SECONDARY} h-8 px-3 text-[13px] max-md:min-h-11`}>
+                        {t("mediaProofReplace")}
+                      </span>
+                    ) : null}
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      className="sr-only"
+                      aria-labelledby={id("proof-label")}
+                      aria-describedby={cancelRequiresMedia || proofError ? id("proof-hint") : undefined}
+                      aria-required={cancelRequiresMedia || undefined}
+                      onChange={(event) => handleProofChange(event.target.files?.[0])}
+                    />
+                  </label>
+                  {proofError ? (
+                    <span id={id("proof-hint")} className="text-xs font-semibold text-danger-fg">
+                      {proofError}
+                    </span>
+                  ) : cancelRequiresMedia ? (
+                    <span id={id("proof-hint")} className="text-xs text-text-muted">
+                      {t("cancelMediaProofRequiredNotice")}
+                    </span>
+                  ) : null}
+                </div>
+              </form>
             </>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center gap-3 border-t border-gray-200 px-5 py-4 dark:border-white/10">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-gray-200 bg-white/70 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/80 dark:hover:bg-white/10"
-          >
+        {/* Pastki qism */}
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4 max-md:[&>button]:flex-1">
+          {/* Nega «Bekor qilish» o'chiq — tugma yonida (uzun matn tugmaga sig'maydi). */}
+          {!awaitingApproval && isProofMissing ? (
+            <p className="mr-auto min-w-0 text-[13px] text-text-muted max-md:w-full">{t("cancelMediaProofRequiredNotice")}</p>
+          ) : null}
+          <button type="button" onClick={onClose} className={BTN_SECONDARY}>
             {awaitingApproval ? t("close", { ns: "common" }) : t("back", { ns: "common" })}
           </button>
           {awaitingApproval ? null : (
             <button
-              onClick={handleSubmit}
-              disabled={isLoading || isProofMissing}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/20 transition-colors hover:from-rose-500 hover:to-red-500 disabled:opacity-60"
+              type="submit"
+              form={id("form")}
+              disabled={isLoading || isProofMissing || !reasonReady}
+              aria-busy={isLoading || undefined}
+              className={BTN_DANGER}
             >
               {isLoading ? (
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
               ) : (
-                <XCircle size={15} />
+                <CircleX className="size-4" aria-hidden="true" />
               )}
-              {isProofMissing ? t("cancelMediaProofRequiredNotice") : t("cancelOrderAction")}
+              {t("cancelOrderAction")}
             </button>
           )}
         </div>
       </div>
-    </Popup>
+    </div>,
+    document.body,
   );
 };
 

@@ -1,0 +1,1044 @@
+{
+ "rules": [
+  "Bitta ma'no — bitta ikonka: har bir tushuncha uchun faqat shu katalogdagi kanonik ikonka olinadi; kartadagi «Ishlatilmaydi» qatoridagi eski nomlar yangi kodda olinmaydi.",
+  "Bitta ikonka — bitta ma'no: kanonik ikonkani boshqa tushuncha uchun olmang (House faqat Bosh sahifa, manzil uchun MapPin; Truck — kuryer va yetkazish).",
+  "Faqat lucide-react to'plami. Ant Design ikonkalari, emoji, rasmli yoki to'ldirilgan (fill) ikonkalar taqiqlanadi.",
+  "Chiziq qalinligi doim 2, uchlari va burchaklari yumaloq, viewBox 0 0 24 24; qalinlikni o'lchamga qarab o'zgartirmang.",
+  "Rang faqat currentColor: ikonka yonidagi matn rangini oladi. Alohida hex yoki palitra rangi berilmaydi.",
+  "Holat ikonkasi tonning matn rangini oladi: muvaffaqiyat — success-fg, ogohlantirish — warning-fg, xato va bekor — danger-fg, ma'lumot — info-fg. Qolgan ikonkalar neytral (text yoki text-muted).",
+  "Ko'k (action) rang faqat interaktiv elementdagi ikonkada: tugma, havola, tanlangan tab. Ko'rsatkich kartasidagi ikonka doim neytral.",
+  "Faqat ikonkadan iborat tugmaga aria-label majburiy («Amallar», «Yopish», «Tahrirlash»); bezak ikonkasi aria-hidden=\"true\" bilan.",
+  "Matnli tugmada bitta ikonka, matndan chapda. Ikonka ma'no qo'shmasa, qo'yilmaydi (oddiy «Saqlash» ikonkasiz).",
+  "O'lchamlar faqat 16, 18, 20, 22 va 24 px; istisno — badge va filtr chipi ichida 14 px.",
+  "Yuklanishda faqat LoaderCircle aylanadi; RefreshCw yoki boshqa ikonka aylantirilmaydi.",
+  "Buyurtma holati va yetkazish turi (Uygacha / Markazgacha) badge'lari ikonkasiz — rangli nuqta yoki neytral badge yetarli.",
+  "Telefonda bosiladigan ikonka maydoni kamida 44×44 px (katta ikonka-tugma)."
+ ],
+ "sizes": [
+  {
+   "px": 16,
+   "use": "Kichik tugma va kichik ikonka-tugma, jadval qatori va izoh matni yonidagi belgi"
+  },
+  {
+   "px": 18,
+   "use": "Oddiy tugma, kiritish va tanlash maydoni ichida, menyu bandi, ixcham ikonka-tugma"
+  },
+  {
+   "px": 20,
+   "use": "Standart: yon menyu, yuqori panel, ko'rsatkich kartasi ikonkasi, alert"
+  },
+  {
+   "px": 22,
+   "use": "Telefon: pastki menyu va 44 px dan katta tugmalar, ixcham bo'sh holat"
+  },
+  {
+   "px": 24,
+   "use": "Bo'sh holat, xato sahifalari va dialog sarlavhasidagi yirik ikonka"
+  }
+ ],
+ "groups": [
+  {
+   "title": "Navigatsiya",
+   "note": "Ilova qobig'i: bosh sahifa, menyu, orqaga va o'tish, ochiluvchi ro'yxat va sahifalash. Bo'lim ikonkalari o'z guruhida (masalan, Buyurtmalar — «Buyurtma va logistika»).",
+   "items": [
+    {
+     "concept": "Bosh sahifa",
+     "icon": "House",
+     "usage": "Yon menyu va pastki menyudagi «Bosh sahifa», xato sahifasidagi «Bosh sahifaga qaytish». Manzil va «Uygacha» uchun ishlatilmaydi.",
+     "replaces": [
+      "Home",
+      "LayoutDashboard"
+     ]
+    },
+    {
+     "concept": "Menyuni ochish",
+     "icon": "Menu",
+     "usage": "Planshet va telefonda yuqori paneldagi yon menyuni ochish tugmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Orqaga",
+     "icon": "ArrowLeft",
+     "usage": "Tafsilot sahifasidagi «← Buyurtmalar» havolasi, telefon yuqori panelidagi orqaga tugmasi, ulanish ustasining oldingi qadami",
+     "replaces": []
+    },
+    {
+     "concept": "O'tish",
+     "icon": "ArrowRight",
+     "usage": "«Barchasini ko'rish» havolasi, filial kartasidan filial sahifasiga, ustaning keyingi qadami, tumanni boshqa hududga ko'chirish",
+     "replaces": [
+      "MoveRight"
+     ]
+    },
+    {
+     "concept": "Ochiluvchi ro'yxat",
+     "icon": "ChevronDown",
+     "usage": "Tanlash maydoni, sana oralig'i tugmasi, foydalanuvchi menyusi, yig'ilgan bo'limni ochish",
+     "replaces": []
+    },
+    {
+     "concept": "Bo'limni yig'ish",
+     "icon": "ChevronUp",
+     "usage": "Ochilgan bo'lim yoki bildirishnomalar guruhini yig'ish",
+     "replaces": []
+    },
+    {
+     "concept": "Oldingi",
+     "icon": "ChevronLeft",
+     "usage": "Sahifalashda oldingi sahifa, kalendarda oldingi oy",
+     "replaces": []
+    },
+    {
+     "concept": "Keyingi",
+     "icon": "ChevronRight",
+     "usage": "Sahifalashda keyingi sahifa, kalendarda keyingi oy, ro'yxat qatoridan tafsilotga, Sozlamalar qatorlari",
+     "replaces": []
+    }
+   ]
+  },
+  {
+   "title": "Asosiy amallar",
+   "note": "Tugma va qator menyusidagi fe'llar. Bir amal butun ilovada bir xil ikonka bilan.",
+   "items": [
+    {
+     "concept": "Qo'shish, yaratish",
+     "icon": "Plus",
+     "usage": "«Buyurtma yaratish», «Filial qo'shish», «Mahsulot qo'shish» tugmalari, buyurtmaga mahsulot qatori qo'shish, miqdorni oshirish",
+     "replaces": [
+      "ListPlus"
+     ]
+    },
+    {
+     "concept": "Kamaytirish",
+     "icon": "Minus",
+     "usage": "Buyurtmadagi mahsulot miqdorini kamaytirish tugmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Tahrirlash",
+     "icon": "Pencil",
+     "usage": "Qator menyusidagi «Tahrirlash», karta sarlavhasidagi tahrirlash tugmasi, integratsiya turini o'zgartirish",
+     "replaces": [
+      "Edit",
+      "Edit2",
+      "PencilLine",
+      "SquarePen",
+      "Shuffle"
+     ]
+    },
+    {
+     "concept": "O'chirish",
+     "icon": "Trash2",
+     "usage": "Qator menyusidagi qizil «O'chirish» bandi, mahsulot qatorini olib tashlash; doim tasdiq dialogi bilan",
+     "replaces": []
+    },
+    {
+     "concept": "Saqlash",
+     "icon": "Save",
+     "usage": "Integratsiya va tashqi tizim sozlamalarini saqlash; oddiy formadagi «Saqlash» ikonkasiz",
+     "replaces": []
+    },
+    {
+     "concept": "Nusxa olish",
+     "icon": "Copy",
+     "usage": "Buyurtma raqami (№10241), API token va webhook manzilini nusxalash",
+     "replaces": []
+    },
+    {
+     "concept": "Yopish, olib tashlash",
+     "icon": "X",
+     "usage": "Dialog va panelni yopish, filtr chipini olib tashlash, qidiruv maydonini tozalash",
+     "replaces": []
+    },
+    {
+     "concept": "Tasdiqlash, tanlangan",
+     "icon": "Check",
+     "usage": "Ro'yxat va menyudagi tanlangan variant, bajarilgan qadam, «Qabul qilish» tugmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Yuborish",
+     "icon": "Send",
+     "usage": "«HQ'ga yuborish», bildirishnoma va SMS yuborish, AI buyurtmani tasdiqlab yuborish, hamkorga sinov so'rovi",
+     "replaces": [
+      "SendHorizontal"
+     ]
+    },
+    {
+     "concept": "Yuklab olish",
+     "icon": "Download",
+     "usage": "«Excelga yuklash» (Buyurtmalar, To'lovlar, Balans), PDF yorliqni yuklab olish",
+     "replaces": [
+      "FileSpreadsheet"
+     ]
+    },
+    {
+     "concept": "Yangilash",
+     "icon": "RefreshCw",
+     "usage": "Ro'yxatni yangilash, sinxronlashni qayta urinish, xato sahifasidagi «Qayta urinish»",
+     "replaces": [
+      "RefreshCcw",
+      "RotateCw"
+     ]
+    },
+    {
+     "concept": "Qidirish",
+     "icon": "Search",
+     "usage": "Yuqori paneldagi umumiy qidiruv, jadval ustidagi «Shu ro'yxatdan qidirish» maydoni",
+     "replaces": []
+    },
+    {
+     "concept": "Boshqa amallar",
+     "icon": "Ellipsis",
+     "usage": "Jadval qatori va kartadagi «…» menyu tugmasi (aria-label «Amallar»)",
+     "replaces": []
+    },
+    {
+     "concept": "Rasm qo'shish",
+     "icon": "ImagePlus",
+     "usage": "Mahsulot rasmini yuklash, AI buyurtma uchun skrinshot qo'shish, rasm yo'q o'rni",
+     "replaces": [
+      "Image"
+     ]
+    },
+    {
+     "concept": "Tashqi havola",
+     "icon": "ExternalLink",
+     "usage": "Yangi oynada ochiladigan havola: moliya tarixidagi manba operatsiya, hamkor tizimi sahifasi",
+     "replaces": []
+    }
+   ]
+  },
+  {
+   "title": "Holat va fikr-mulohaza",
+   "note": "Natija, ogohlantirish, bo'sh va xato holatlari. Rang tondan: muvaffaqiyat success-fg, ogohlantirish warning-fg, xato danger-fg, ma'lumot info-fg.",
+   "items": [
+    {
+     "concept": "Muvaffaqiyat",
+     "icon": "CircleCheck",
+     "usage": "Muvaffaqiyat xabari, «Skan qilindi», ulanish faol, bajarilgan qabul qadami",
+     "replaces": [
+      "CheckCircle",
+      "CheckCircle2",
+      "BadgeCheck",
+      "ClipboardCheck",
+      "SearchCheck"
+     ]
+    },
+    {
+     "concept": "Ogohlantirish",
+     "icon": "TriangleAlert",
+     "usage": "«Ro'yxat yangilanmadi» ogohlantirishi, yon menyudagi «Filial turi aniqlanmadi», «Ulanish hali ishlamaydi», tasdiq dialogidagi xavf",
+     "replaces": [
+      "AlertTriangle"
+     ]
+    },
+    {
+     "concept": "Xato, bekor",
+     "icon": "CircleX",
+     "usage": "Xato xabari, maydon xatosi, «Bekor qilingan» va «Rad etildi» natijasi, «Buyurtma topilmadi» skani",
+     "replaces": [
+      "XCircle",
+      "AlertCircle",
+      "Ban"
+     ]
+    },
+    {
+     "concept": "Ma'lumot",
+     "icon": "Info",
+     "usage": "Izohli alert, maydon yonidagi tushuntirish, qoida eslatmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Kutilmoqda, vaqt",
+     "icon": "Clock",
+     "usage": "«Kutilmoqda» holati, qo'shimcha xarajat tasdig'ini kutish, sessiya tugashiga qolgan vaqt",
+     "replaces": [
+      "Clock3"
+     ]
+    },
+    {
+     "concept": "Yuklanmoqda",
+     "icon": "LoaderCircle",
+     "usage": "Tugma ichidagi aylanuvchi yuklanish belgisi, sahifa va jadval yuklanishi",
+     "replaces": [
+      "Loader2"
+     ]
+    },
+    {
+     "concept": "Nofaol",
+     "icon": "CircleMinus",
+     "usage": "«Nofaol» foydalanuvchi holati, ulanish ustasida o'tkazib yuborilgan qadam; rang neytral",
+     "replaces": [
+      "MinusCircle"
+     ]
+    },
+    {
+     "concept": "Bajarilmagan qadam",
+     "icon": "Circle",
+     "usage": "Qabul ro'yxatida hali skan qilinmagan buyurtma, bosqichlar ro'yxatidagi navbatdagi qadam",
+     "replaces": []
+    },
+    {
+     "concept": "Hech narsa topilmadi",
+     "icon": "SearchX",
+     "usage": "Qidiruv yoki filtr natijasi bo'sh bo'lgandagi bo'sh holat",
+     "replaces": []
+    },
+    {
+     "concept": "Sahifa topilmadi",
+     "icon": "Compass",
+     "usage": "404 sahifasi: «Sahifa topilmadi»",
+     "replaces": []
+    },
+    {
+     "concept": "Server xatosi",
+     "icon": "ServerCrash",
+     "usage": "500 sahifasi va «Server bilan aloqa yo'q» holati",
+     "replaces": []
+    },
+    {
+     "concept": "Internet yo'q",
+     "icon": "WifiOff",
+     "usage": "Kuryer telefonidagi oflayn banner, kirish sahifasidagi aloqa xatosi",
+     "replaces": []
+    }
+   ]
+  },
+  {
+   "title": "Buyurtma va logistika",
+   "note": "Buyurtmaning yo'li: qabul, pochta, paket, yetkazish va qaytarish. Yon menyu bo'limlari shu ikonkalarni oladi.",
+   "items": [
+    {
+     "concept": "Buyurtma",
+     "icon": "ShoppingBag",
+     "usage": "Yon menyu «Buyurtmalar», buyurtmalar soni ko'rsatkichi, mijozning buyurtmalari, kuryerning «Barcha buyurtmalar» tabi",
+     "replaces": [
+      "ShoppingCart",
+      "ListOrdered",
+      "ClipboardList"
+     ]
+    },
+    {
+     "concept": "Qabul va yaratish",
+     "icon": "Inbox",
+     "usage": "Yon menyu «Qabul va yaratish», kiruvchi buyurtmalar navbati, tashqi tizimdan kelgan buyurtmalar",
+     "replaces": [
+      "Calendar1"
+     ]
+    },
+    {
+     "concept": "Pochta",
+     "icon": "Mail",
+     "usage": "Yon menyu «Pochta», filiallar orasidagi pochta qopi, pochta tafsiloti",
+     "replaces": [
+      "MailOpen"
+     ]
+    },
+    {
+     "concept": "Paket",
+     "icon": "Package",
+     "usage": "Yon menyu «Paketlar» (Filial paketlari), paket kartasi, paketdagi buyurtmalar soni",
+     "replaces": [
+      "Package2",
+      "PackageSearch",
+      "Box"
+     ]
+    },
+    {
+     "concept": "Sotilgan",
+     "icon": "PackageCheck",
+     "usage": "«Sotilgan» buyurtmalar ko'rsatkichi, holatlar diagrammasi sarlavhasi, kuryerning «Sotildi» natijasi",
+     "replaces": []
+    },
+    {
+     "concept": "Qaytarish",
+     "icon": "RotateCcw",
+     "usage": "Yon menyu «Qaytarishlar», bekor qilingan buyurtmani marketga qaytarish, qaytarish paketi",
+     "replaces": [
+      "PackageX"
+     ]
+    },
+    {
+     "concept": "Kuryer, yetkazish",
+     "icon": "Truck",
+     "usage": "Yon menyu «Biriktirish», kuryer roli, «Yo'lda» bosqichi, yetkazish haqi",
+     "replaces": []
+    },
+    {
+     "concept": "Tezkor amal",
+     "icon": "Zap",
+     "usage": "Menejer va kuryer menyusidagi «Tezkor amal», ommaviy bajarish tugmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Manzil",
+     "icon": "MapPin",
+     "usage": "Mijoz manzili, tuman va viloyat qatori, pochta yo'nalishi",
+     "replaces": []
+    },
+    {
+     "concept": "Hudud",
+     "icon": "Map",
+     "usage": "Yon menyu «Hududlar», hududlar xaritasi, tuman tanlash maydoni",
+     "replaces": [
+      "MapPinned"
+     ]
+    },
+    {
+     "concept": "Mahsulot",
+     "icon": "Tag",
+     "usage": "Yon menyu «Mahsulotlar», buyurtmadagi mahsulot qatori, mahsulotlar katalogi",
+     "replaces": [
+      "Apple",
+      "BookMarked"
+     ]
+    },
+    {
+     "concept": "AI yordamchi",
+     "icon": "Sparkles",
+     "usage": "AI bilan buyurtma yaratish, skandagi AI taklifi, filial tafsilotidagi AI xulosasi",
+     "replaces": []
+    }
+   ]
+  },
+  {
+   "title": "Moliya",
+   "note": "Kassa, to'lov va pul oqimi. Moliya ikonkalari neytral; kirim yashil va qarz qizil rangni faqat summa matni oladi.",
+   "items": [
+    {
+     "concept": "To'lovlar",
+     "icon": "CreditCard",
+     "usage": "Yon menyu «To'lovlar», karta orqali to'lov, manba turi filtri",
+     "replaces": [
+      "BadgeDollarSign"
+     ]
+    },
+    {
+     "concept": "Kassa, qoldiq",
+     "icon": "Wallet",
+     "usage": "Kuryer va market «Kassa» bo'limi, kassadagi qoldiq kartasi, filial va asosiy kassa",
+     "replaces": [
+      "Wallet2",
+      "Landmark"
+     ]
+    },
+    {
+     "concept": "Balans",
+     "icon": "Scale",
+     "usage": "Yon menyu «Balans», moliyaviy balans sahifasi, hisob-kitob solishtiruvi",
+     "replaces": []
+    },
+    {
+     "concept": "Summa, naqd pul",
+     "icon": "Banknote",
+     "usage": "Buyurtma summasi maydoni, naqd to'lov turi, daromad ko'rsatkichi, paket summasi",
+     "replaces": [
+      "WalletCards",
+      "CircleDollarSign"
+     ]
+    },
+    {
+     "concept": "Kirim",
+     "icon": "ArrowDownLeft",
+     "usage": "Operatsiyalar tarixidagi «Kirim» belgisi, «Pul qabul qilish» tugmasi; badge neytral, rangni summa oladi",
+     "replaces": []
+    },
+    {
+     "concept": "Chiqim",
+     "icon": "ArrowUpRight",
+     "usage": "Operatsiyalar tarixidagi «Chiqim» belgisi, «Marketga to'lov», kuryer maoshini to'lash, to'lovni qayd qilish",
+     "replaces": [
+      "ArrowDownRight",
+      "DollarSign",
+      "HandCoins"
+     ]
+    },
+    {
+     "concept": "O'tkazma",
+     "icon": "ArrowLeftRight",
+     "usage": "Kassalar orasida pul o'tkazish, «To'lov o'tkazmalari» tabi, kuryerni boshqa filialga o'tkazish",
+     "replaces": [
+      "Repeat2",
+      "ArrowRightLeft"
+     ]
+    },
+    {
+     "concept": "Operatsiya, chek",
+     "icon": "Receipt",
+     "usage": "Operatsiyalar tarixi qatori, operatsiya tafsiloti, qo'shimcha xarajat so'rovi",
+     "replaces": [
+      "ReceiptText"
+     ]
+    },
+    {
+     "concept": "Kassa smenasi",
+     "icon": "Timer",
+     "usage": "«Smenani ochish» va «Smenani yopish» tugmalari, smena tarixi",
+     "replaces": [
+      "LogIn"
+     ]
+    },
+    {
+     "concept": "Investor ulushi",
+     "icon": "PiggyBank",
+     "usage": "Ops vositalari «Investorlar» bo'limi, investor ulushi va to'lovlari",
+     "replaces": []
+    }
+   ]
+  },
+  {
+   "title": "Odamlar va tashkilot",
+   "note": "Foydalanuvchi, rol, filial va market. Rol ikonkasi faqat rol tanlash kartasi va rol belgisida; avatar — bosh harflar. Kuryer roli Truck, Market roli Store bilan.",
+   "items": [
+    {
+     "concept": "Foydalanuvchilar",
+     "icon": "Users",
+     "usage": "Yon menyu «Foydalanuvchilar», filial xodimlari, market operatorlari ro'yxati",
+     "replaces": [
+      "UsersRound"
+     ]
+    },
+    {
+     "concept": "Foydalanuvchi, mijoz",
+     "icon": "User",
+     "usage": "Mijoz ismi qatori, buyurtmadagi qabul qiluvchi, Sozlamalar «Profil» bo'limi",
+     "replaces": [
+      "UserRound"
+     ]
+    },
+    {
+     "concept": "Faol foydalanuvchi",
+     "icon": "UserCheck",
+     "usage": "Foydalanuvchilar sahifasidagi «Faol» ko'rsatkichi, «Faollashtirish» amali",
+     "replaces": []
+    },
+    {
+     "concept": "Xodim qo'shish",
+     "icon": "UserPlus",
+     "usage": "Filial tafsilotidagi «Xodim qo'shish», «Foydalanuvchi qo'shish» tugmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Nofaol qilish",
+     "icon": "UserX",
+     "usage": "Qator menyusidagi «Nofaol qilish» (tasdiq bilan), foydalanuvchi topilmadi holati",
+     "replaces": []
+    },
+    {
+     "concept": "Filial",
+     "icon": "Building2",
+     "usage": "Yon menyu «Filiallar», filiallar daraxti (HQ va bo'limlar), filial tanlash maydoni, «Markazgacha» punkti",
+     "replaces": [
+      "Building",
+      "GitBranch",
+      "Leaf",
+      "Warehouse"
+     ]
+    },
+    {
+     "concept": "Market",
+     "icon": "Store",
+     "usage": "Market nomi qatori, market kartasi, marketplace ulanishi; «Market» roli (kodda market va marketing — ikkalasi ham shu ikonka)",
+     "replaces": [
+      "Megaphone"
+     ]
+    },
+    {
+     "concept": "Hamkor",
+     "icon": "Handshake",
+     "usage": "Integratsiyalar «Hamkorlar» tabi, hamkor kartasi",
+     "replaces": []
+    },
+    {
+     "concept": "Superadmin",
+     "icon": "Crown",
+     "usage": "Rol tanlash kartasi va rol belgisi: Superadmin",
+     "replaces": []
+    },
+    {
+     "concept": "Admin",
+     "icon": "UserCog",
+     "usage": "Rol tanlash kartasi va rol belgisi: Admin",
+     "replaces": [
+      "Shield"
+     ]
+    },
+    {
+     "concept": "Menejer",
+     "icon": "Briefcase",
+     "usage": "Rol tanlash kartasi va rol belgisi: Menejer (filial rahbari)",
+     "replaces": [
+      "BriefcaseBusiness"
+     ]
+    },
+    {
+     "concept": "Ro'yxatchi",
+     "icon": "ClipboardPenLine",
+     "usage": "Rol tanlash kartasi va rol belgisi: Ro'yxatchi (registrator)",
+     "replaces": []
+    },
+    {
+     "concept": "Operator",
+     "icon": "Headset",
+     "usage": "Rol tanlash kartasi va rol belgisi: Operator; hududning aloqa operatori",
+     "replaces": [
+      "Headphones",
+      "HeadphonesIcon"
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Aloqa va bildirishnomalar",
+   "note": "Bildirishnoma, SMS, izoh va telefon. Bildirishnomalar qutisi yuqori paneldagi qo'ng'iroqchadan ochiladi.",
+   "items": [
+    {
+     "concept": "Bildirishnomalar",
+     "icon": "Bell",
+     "usage": "Yuqori paneldagi qo'ng'iroqcha (yangilar soni bilan), «Bildirishnomalar» bo'limi",
+     "replaces": []
+    },
+    {
+     "concept": "Bildirishnoma yo'q",
+     "icon": "BellOff",
+     "usage": "Bo'sh bildirishnomalar qutisi, push bildirishnoma o'chirilgan holati",
+     "replaces": []
+    },
+    {
+     "concept": "Push bildirishnoma",
+     "icon": "BellRing",
+     "usage": "Push bildirishnomani yoqish taklifi, yangi bildirishnoma yuborish sahifasi",
+     "replaces": []
+    },
+    {
+     "concept": "Barchasi o'qildi",
+     "icon": "CheckCheck",
+     "usage": "Bildirishnomalar qutisidagi «Barchasini o'qilgan deb belgilash»",
+     "replaces": []
+    },
+    {
+     "concept": "SMS",
+     "icon": "MessageSquareText",
+     "usage": "SMS sahifasi, SMS shablonlari, bildirishnoma turi «SMS»",
+     "replaces": []
+    },
+    {
+     "concept": "Izoh",
+     "icon": "MessageSquare",
+     "usage": "Buyurtma izohi, operatsiyaga izoh, kuryer uchun eslatma",
+     "replaces": []
+    },
+    {
+     "concept": "Telefon",
+     "icon": "Phone",
+     "usage": "Mijoz va market telefon raqami, telefonda «Qo'ng'iroq qilish» tugmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Yordam",
+     "icon": "CircleQuestionMark",
+     "usage": "Foydalanuvchi menyusidagi «Yordam», qo'llanmaga havola",
+     "replaces": [
+      "CircleHelp"
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Ma'lumot, filtr va saralash",
+   "note": "Jadval va ro'yxat asboblari: filtr, saralash, sana, ko'rinish, tanlash va tarix.",
+   "items": [
+    {
+     "concept": "Filtr",
+     "icon": "ListFilter",
+     "usage": "«Filtrlar» tugmasi (faol filtrlar soni bilan), filtr paneli, «Turi» filtri",
+     "replaces": [
+      "Filter",
+      "Funnel",
+      "SlidersHorizontal",
+      "Shapes"
+     ]
+    },
+    {
+     "concept": "Filtrlarni tozalash",
+     "icon": "ListX",
+     "usage": "«Filtrlarni tozalash» tugmasi, filtr bo'yicha natija yo'q holati",
+     "replaces": [
+      "FilterX",
+      "BrushCleaning"
+     ]
+    },
+    {
+     "concept": "Saralash",
+     "icon": "ArrowUpDown",
+     "usage": "Saralanadigan ustun sarlavhasi, hali saralanmagan",
+     "replaces": []
+    },
+    {
+     "concept": "O'sish tartibida",
+     "icon": "ArrowUp",
+     "usage": "Ustun o'sish tartibida saralangan (summa — kichikdan kattaga)",
+     "replaces": []
+    },
+    {
+     "concept": "Kamayish tartibida",
+     "icon": "ArrowDown",
+     "usage": "Ustun kamayish tartibida saralangan («Buyurtma» — yangilari tepada)",
+     "replaces": []
+    },
+    {
+     "concept": "Sana",
+     "icon": "Calendar",
+     "usage": "Sana oralig'i filtri (01.10 – 08.10.2026), sana maydoni, yaratilgan sana qatori",
+     "replaces": [
+      "CalendarDays",
+      "CalendarRange"
+     ]
+    },
+    {
+     "concept": "Ertaga",
+     "icon": "CalendarClock",
+     "usage": "«Kunni yakunlash»dagi «Ertaga» segmenti, yetkazishni boshqa kunga ko'chirish, bugungi operatsiyalar",
+     "replaces": []
+    },
+    {
+     "concept": "Tarix",
+     "icon": "History",
+     "usage": "«Operatsiyalar tarixi», buyurtma holatlari tarixi, integratsiya sinxron tarixi va hodisalar jurnali",
+     "replaces": [
+      "ArrowDownUp",
+      "FileClock"
+     ]
+    },
+    {
+     "concept": "Hujjat",
+     "icon": "FileText",
+     "usage": "Yorliq va hisobot hujjati, chop etish shabloni, paket varag'i",
+     "replaces": []
+    },
+    {
+     "concept": "Ro'yxat ko'rinishi",
+     "icon": "List",
+     "usage": "Ko'rinish almashtirgichida jadval yoki ro'yxat",
+     "replaces": []
+    },
+    {
+     "concept": "Kartalar ko'rinishi",
+     "icon": "LayoutGrid",
+     "usage": "Ko'rinish almashtirgichida kartalar",
+     "replaces": []
+    },
+    {
+     "concept": "Barchasini tanlash",
+     "icon": "ListChecks",
+     "usage": "«Barchasini tanlash» tugmasi (paketlar, qabul); qator katagi — haqiqiy belgilash katagi, ikonka emas",
+     "replaces": [
+      "CheckSquare",
+      "Square"
+     ]
+    },
+    {
+     "concept": "Sudrab tartiblash",
+     "icon": "GripVertical",
+     "usage": "Tumanlar va bosh sahifa bloklari tartibini sudrab o'zgartirish tutqichi",
+     "replaces": []
+    },
+    {
+     "concept": "Nomuvofiqlik",
+     "icon": "GitCompareArrows",
+     "usage": "Integratsiya jo'natmalaridagi «Mos kelmaydi» filtri, hisob-kitob solishtiruvi",
+     "replaces": []
+    }
+   ]
+  },
+  {
+   "title": "Skaner va qurilma",
+   "note": "Kuryer va qabul punkti qurilmalari: skaner, kamera, chiroq, printer va ovoz.",
+   "items": [
+    {
+     "concept": "Skanerlash",
+     "icon": "ScanLine",
+     "usage": "Yuqori paneldagi «Skanerlash» tugmasi, telefon skaner ekrani, ommaviy qabul skaneri",
+     "replaces": [
+      "ScanQrCode"
+     ]
+    },
+    {
+     "concept": "QR kod",
+     "icon": "QrCode",
+     "usage": "Buyurtma va paket QR yorlig'i, market QR kodi, QR kodni ko'rsatish",
+     "replaces": []
+    },
+    {
+     "concept": "Kodni qo'lda kiritish",
+     "icon": "Keyboard",
+     "usage": "Skaner ekranidagi «Kodni qo'lda kiritish» tugmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Kamera",
+     "icon": "Camera",
+     "usage": "Kamera bilan skanerlash, buyurtma yoki chek rasmini olish",
+     "replaces": []
+    },
+    {
+     "concept": "Kamera yo'q",
+     "icon": "CameraOff",
+     "usage": "Kamera ruxsati berilmagan yoki kamera topilmagan holat",
+     "replaces": []
+    },
+    {
+     "concept": "Chiroq yoqish",
+     "icon": "Flashlight",
+     "usage": "Skaner ekranidagi chiroq tugmasi (chiroq o'chiq paytda)",
+     "replaces": []
+    },
+    {
+     "concept": "Chiroq o'chirish",
+     "icon": "FlashlightOff",
+     "usage": "Chiroq yoniq paytda skaner ekranidagi tugma (bosilsa o'chadi)",
+     "replaces": []
+    },
+    {
+     "concept": "Chop etish",
+     "icon": "Printer",
+     "usage": "Yorliq, paket varag'i va chekni chop etish",
+     "replaces": []
+    },
+    {
+     "concept": "Skaner ovozi",
+     "icon": "Volume2",
+     "usage": "Sozlamalardagi «Skaner ovozlari» bo'limi",
+     "replaces": []
+    },
+    {
+     "concept": "Ovozni eshitish",
+     "icon": "Play",
+     "usage": "Skaner ovozini tanlashdagi «Eshitish» tugmasi",
+     "replaces": []
+    }
+   ]
+  },
+  {
+   "title": "Grafik va tahlil",
+   "note": "Bosh sahifa va Balans grafiklari, ko'rsatkich sarlavhalari. Ko'rsatkich ikonkasi neytral, o'sish va pasayish matn tonida.",
+   "items": [
+    {
+     "concept": "Ustunli grafik",
+     "icon": "ChartColumn",
+     "usage": "Bosh sahifadagi buyurtmalar grafigi, moliyaviy tahlil, pochta statistikasi",
+     "replaces": [
+      "BarChart2",
+      "BarChart3"
+     ]
+    },
+    {
+     "concept": "O'sish",
+     "icon": "TrendingUp",
+     "usage": "Ko'rsatkichning o'tgan davrga nisbatan o'sishi, balansdagi ijobiy ta'sir",
+     "replaces": []
+    },
+    {
+     "concept": "Pasayish",
+     "icon": "TrendingDown",
+     "usage": "Ko'rsatkichning pasayishi, balansdagi salbiy ta'sir",
+     "replaces": []
+    },
+    {
+     "concept": "Faollik",
+     "icon": "Activity",
+     "usage": "Ulanishning jonli holati, foydalanuvchi faolligi, filialning bugungi buyurtmalar oqimi",
+     "replaces": []
+    },
+    {
+     "concept": "Sotuv foizi",
+     "icon": "Gauge",
+     "usage": "Bosh sahifadagi sotuv foizi (yetkazish samaradorligi) ko'rsatkichi",
+     "replaces": []
+    },
+    {
+     "concept": "Reyting",
+     "icon": "Trophy",
+     "usage": "Eng yaxshi marketlar, kuryerlar va filiallar reytingi",
+     "replaces": []
+    },
+    {
+     "concept": "Jami, sof natija",
+     "icon": "Sigma",
+     "usage": "Balansdagi «Sof o'zgarish», jami qatori, eng katta operatsiyalar",
+     "replaces": [
+      "Bolt"
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Tizim va xavfsizlik",
+   "note": "Integratsiyalar, kalitlar, ruxsatlar, jurnal va ops vositalari.",
+   "items": [
+    {
+     "concept": "Integratsiyalar",
+     "icon": "Plug",
+     "usage": "Yon menyu «Integratsiyalar», ulanish kartasi, maxsus API ulanish",
+     "replaces": [
+      "Cable",
+      "PlugZap"
+     ]
+    },
+    {
+     "concept": "Tashqi tizim",
+     "icon": "Globe",
+     "usage": "Integratsiyalar «Tashqi tizimlar» tabi, tashqi buyurtma manbasi",
+     "replaces": [
+      "Globe2"
+     ]
+    },
+    {
+     "concept": "Webhook",
+     "icon": "Webhook",
+     "usage": "Webhook manzili, oxirgi hodisa, webhook jurnali",
+     "replaces": []
+    },
+    {
+     "concept": "Havola, API manzil",
+     "icon": "Link",
+     "usage": "API manzil maydoni, ulanish manzili",
+     "replaces": [
+      "Link2"
+     ]
+    },
+    {
+     "concept": "Ulanish yo'q",
+     "icon": "Unlink",
+     "usage": "Integratsiyalar bo'sh holati «Hali ulanish yo'q», ulanishni uzish",
+     "replaces": []
+    },
+    {
+     "concept": "API kalit, token",
+     "icon": "KeyRound",
+     "usage": "API kalit va token maydoni, kalitni yangilash, market Telegram tokeni, ops «Kirish» bo'limi",
+     "replaces": []
+    },
+    {
+     "concept": "Qulflangan, ruxsat yo'q",
+     "icon": "Lock",
+     "usage": "403 sahifasi, tahrirlab bo'lmaydigan maydon, parol maydoni",
+     "replaces": [
+      "LockKeyhole"
+     ]
+    },
+    {
+     "concept": "Xavfsizlik",
+     "icon": "ShieldCheck",
+     "usage": "Integratsiya «Xavfsizlik» tabi, foydalanuvchi ruxsatlari kartasi, kirish cheklovlari",
+     "replaces": []
+    },
+    {
+     "concept": "Xavfsizlik xatosi",
+     "icon": "ShieldAlert",
+     "usage": "Imzosi noto'g'ri yoki imzosiz so'rovlar filtri, ulanish tekshiruv ro'yxati",
+     "replaces": [
+      "ShieldOff"
+     ]
+    },
+    {
+     "concept": "Yoqish va o'chirish",
+     "icon": "Power",
+     "usage": "Ulanishni yoqish yoki o'chirish tugmasi, ulanish holati",
+     "replaces": [
+      "PowerOff"
+     ]
+    },
+    {
+     "concept": "Sinov rejimi",
+     "icon": "FlaskConical",
+     "usage": "Integratsiya sozlamalaridagi «Sinov rejimi» kartasi",
+     "replaces": []
+    },
+    {
+     "concept": "Server, tizim",
+     "icon": "Server",
+     "usage": "Ops «Tizim» bo'limi, CRM platformasi turi, server holati",
+     "replaces": [
+      "DatabaseZap"
+     ]
+    },
+    {
+     "concept": "Faoliyat jurnali",
+     "icon": "ScrollText",
+     "usage": "Yon menyu «Faoliyat jurnali», amallar jurnali sahifasi",
+     "replaces": []
+    },
+    {
+     "concept": "Ops vositalari",
+     "icon": "Wrench",
+     "usage": "Yon menyu «Ops vositalari» (faqat superadmin)",
+     "replaces": []
+    },
+    {
+     "concept": "Tizimdan chiqish",
+     "icon": "LogOut",
+     "usage": "Foydalanuvchi menyusidagi «Chiqish»",
+     "replaces": []
+    }
+   ]
+  },
+  {
+   "title": "Ko'rinish va sozlamalar",
+   "note": "Sozlamalar foydalanuvchi menyusidan ochiladi: mavzu, til, interfeys, maxfiy qiymatni ko'rsatish va yashirish.",
+   "items": [
+    {
+     "concept": "Sozlamalar",
+     "icon": "Settings",
+     "usage": "Foydalanuvchi menyusidagi «Sozlamalar», hudud sozlamalari tugmasi",
+     "replaces": []
+    },
+    {
+     "concept": "Ko'rinish",
+     "icon": "Palette",
+     "usage": "Sozlamalar «Ko'rinish» bo'limi (mavzu va til)",
+     "replaces": []
+    },
+    {
+     "concept": "Kunduzgi mavzu",
+     "icon": "Sun",
+     "usage": "Mavzu tanlash: «Kunduzgi»",
+     "replaces": []
+    },
+    {
+     "concept": "Tungi mavzu",
+     "icon": "Moon",
+     "usage": "Mavzu tanlash: «Tungi»",
+     "replaces": []
+    },
+    {
+     "concept": "Til",
+     "icon": "Languages",
+     "usage": "Sozlamalardagi «Til» tanlovi: o'zbekcha, ruscha, inglizcha",
+     "replaces": []
+    },
+    {
+     "concept": "Yon panel",
+     "icon": "PanelLeft",
+     "usage": "Yon menyuni yig'ish va yoyish tugmasi, Sozlamalar «Interfeys» bo'limi",
+     "replaces": []
+    },
+    {
+     "concept": "Ko'rsatish",
+     "icon": "Eye",
+     "usage": "Parol, token va kassa qoldig'ini ko'rsatish",
+     "replaces": []
+    },
+    {
+     "concept": "Yashirish",
+     "icon": "EyeOff",
+     "usage": "Parol, token va kassa qoldig'ini yashirish",
+     "replaces": [
+      "EyeClosed"
+     ]
+    }
+   ]
+  }
+ ]
+}

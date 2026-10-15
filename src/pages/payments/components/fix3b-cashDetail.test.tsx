@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
@@ -146,8 +146,13 @@ const setAmount = (amount: string) =>
   fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: amount } });
 const chooseMethod = (method: string) =>
   userEvent.setup().click(screen.getByRole("radio", { name: method }));
-const submit = (label: string) =>
-  userEvent.setup().click(screen.getByRole("button", { name: label }));
+/** Forma tugmasi → (5hBeDuyn) tasdiq oynasi ochilsa, undagi tasdiq tugmasi. */
+const submit = async (label: string) => {
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: label }));
+  const dialog = screen.queryByRole("dialog");
+  if (dialog) await user.click(within(dialog).getByRole("button", { name: label }));
+};
 const callsOf = (mock: { mutateAsync: ReturnType<typeof vi.fn> }) =>
   mock.mutateAsync.mock.calls.map(([arg]) => arg as PaymentArg);
 

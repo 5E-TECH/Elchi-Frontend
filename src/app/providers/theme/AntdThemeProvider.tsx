@@ -2,6 +2,7 @@ import { memo, useMemo, type ReactNode } from 'react';
 import { ConfigProvider, theme as antdTheme } from 'antd';
 import uzUZ from 'antd/locale/uz_UZ';
 import { useTheme } from './ThemeContext';
+import { LEGACY_MAIN, SEMANTIC_TOKENS, TEXT_MUTED } from '../../../shared/config/themeTokens';
 
 /**
  * ANTD MAVZUSINI ILOVA MAVZUSIGA BOG'LASH.
@@ -32,93 +33,107 @@ import { useTheme } from './ThemeContext';
  */
 
 /**
- * Urg'u rangi — `pages/integrations/ui.ts` dagi INDIGO bilan bir xil
- * (`indigo-500`). Aks holda antd tugmalari ko'k, sahifa chiplari esa
- * indigo bo'lib, bitta ekranda ikki xil "asosiy rang" paydo bo'lardi.
+ * DIZAYN v2: barcha rang/o'lcham `shared/config/themeTokens.ts` dan olinadi —
+ * u `index.css` dagi `@theme`/`.dark` bilan bir xil (test bilan qulflangan).
+ * Ilgari bu yerda alohida `#6366f1` (indigo) va binafsha yuzalar turardi,
+ * ya'ni antd va Tailwind ikki xil brendda chizilardi.
+ *
+ * ⚠️ `colorPrimary` — `LEGACY_MAIN`: antd asosiy tugmasi OQ yozuvli, dark'dagi
+ * `action` (#8ea6ff) esa oq yozuv bilan 2.2:1 beradi. `LEGACY_MAIN.dark`
+ * (#5574ee) oq yozuvni ham, qorong'i yuzadagi havolani ham o'qiladigan qiladi.
  */
-const ACCENT = '#6366f1';
+type Tokens = (typeof SEMANTIC_TOKENS)["light"];
+const STATUS = [
+  ["Success", "success"],
+  ["Warning", "warning"],
+  ["Info", "info"],
+  ["Error", "danger"],
+] as const;
 
-/**
- * QORONG'I YUZA — `pages/integrations/ui.ts` dagi `DARK_SURFACE_HEX` bilan
- * AYNI qiymat.
- *
- * ⚠️ NEGA SUKUTNI BOSIB O'TAMIZ. antd `darkAlgorithm` sukuti
- * `colorBgContainer: #141414` — deyarli qora NEYTRAL tus. Ilovaning
- * sahifa foni esa binafsha (`#2a2540`, `index.css`). Natijada bitta
- * ekranda antd kartalari begona qora to'rtburchak bo'lib turardi, Tailwind
- * kartalari esa (`#2A263D`) fondan kontrast **1.00** bilan butunlay
- * singib ketardi. Foydalanuvchi buni "bg qora rangga o'tmayapti" deb
- * ta'rifladi.
- *
- * `#3A3358` hisoblab tanlandi: fondan 1.25 (antd sukutidagi ajralish
- * darajasi), oq matn 11.70:1, `gray-400` 4.61:1 — hammasi AA.
- *
- * ⚠️ `colorBgLayout` ham beriladi: antd sukuti QOP-QORA (`#000000`) va
- * `Layout` ishlatilgan joyda sahifa ichida qora blok paydo bo'lardi.
- */
-const DARK_SURFACE = '#3A3358';
-const DARK_PAGE = '#2a2540';
+/** antd `colorXBg / colorXBorder / colorXText` — v2 `*-soft` va `*-fg` tokenlaridan. */
+const statusTokens = (t: Tokens, isDark: boolean) =>
+  Object.fromEntries(
+    STATUS.flatMap(([antd, key]) => [
+      [`color${antd}Bg`, t[`${key}-soft`]],
+      [`color${antd}Border`, isDark ? `color-mix(in srgb, ${t[`${key}-fg`]} 35%, transparent)` : `color-mix(in srgb, ${t[key]} 30%, white)`],
+      [`color${antd}Text`, t[`${key}-fg`]],
+      ...(isDark ? [[`color${antd}TextHover`, t[`${key}-fg`]], [`color${antd}TextActive`, t[`${key}-fg`]]] : []),
+    ]),
+  );
+
+const buildAntdTheme = (isDark: boolean) => {
+  const mode = isDark ? "dark" : "light";
+  const t = SEMANTIC_TOKENS[mode];
+  return {
+    algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+    token: {
+      colorPrimary: LEGACY_MAIN[mode],
+      colorInfo: t.info,
+      colorSuccess: t.success,
+      colorWarning: t.warning,
+      colorError: t.danger,
+      colorLink: t["action-fg"],
+      colorBgContainer: t.surface,
+      colorBgElevated: t.raised,
+      colorBgLayout: t.bg,
+      colorBorder: t["border-strong"],
+      colorBorderSecondary: t.border,
+      colorText: t.text,
+      colorTextSecondary: TEXT_MUTED[mode],
+      colorTextTertiary: t["text-subtle"],
+      /**
+       * Placeholder ham o'qiladigan bo'lsin: sukut (`white/25`) dark yuzada
+       * 2.15:1 edi (7L68tqsa). `text-subtle` ikkala mavzuda >= 4.5:1.
+       */
+      colorTextPlaceholder: isDark ? "rgba(232, 235, 247, 0.6)" : t["text-subtle"],
+      controlOutline: t.focus,
+      /**
+       * Holat ranglarining yumshoq fonlari/matnlari ham tokenlardan — aks holda
+       * antd ularni to'q urug'dan HISOBLAB xira jigarrang/yashil fon chiqaradi
+       * (Alert, Tag, Message). Matn — `*-fg` (dark'da yorqin, AA).
+       */
+      ...statusTokens(t, isDark),
+      /** Burchak 10px, boshqaruv balandligi 32 / 40 / 48 — docs/DESIGN_SYSTEM.md §5. */
+      borderRadius: 10,
+      controlHeight: 40,
+      controlHeightSM: 32,
+      controlHeightLG: 48,
+      fontFamily: "inherit",
+    },
+    components: {
+      /**
+       * Jadval sarlavhasi — `sunken` fon + `text-muted` yozuv (v2 jadval
+       * uslubi). Qator ustiga kelinganda `row-hover`.
+       */
+      Table: {
+        headerBg: t.sunken,
+        headerColor: TEXT_MUTED[mode],
+        headerSplitColor: "transparent",
+        rowHoverBg: t["row-hover"],
+        borderColor: t.border,
+      },
+      Card: { paddingLG: 16 },
+      /** controlHeight 40 kalendar kataklarini kattalashtirmasin (popup eni o'zgarmasin). */
+      DatePicker: { cellHeight: 28, cellWidth: 36 },
+      /**
+       * Faol tab `action-fg` — dark'da #8ea6ff (yuzada 7.4:1). antd'ning
+       * qoraytirilgan sukuti dark'da 2.38:1 edi (7L68tqsa).
+       */
+      Tabs: {
+        itemSelectedColor: t["action-fg"],
+        itemActiveColor: t["action-fg"],
+        itemHoverColor: t["action-hover"],
+        inkBarColor: t["action-fg"],
+      },
+    },
+  };
+};
 
 const AntdThemeProvider = ({ children }: { children: ReactNode }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const config = useMemo(
-    () => ({
-      algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      token: {
-        colorPrimary: ACCENT,
-        ...(isDark
-          ? {
-              colorBgContainer: DARK_SURFACE,
-              // Ko'tarilgan yuzalar (Modal, Dropdown, Select ro'yxati) —
-              // kartadan bir pog'ona ajralib turishi kerak.
-              colorBgElevated: '#423A63',
-              colorBgLayout: DARK_PAGE,
-              colorBorder: '#554c82',
-              colorBorderSecondary: '#4a4270',
-              /**
-               * Sukutdagi placeholder (`white/25`) yuzada 2.15:1 — o'qib
-               * bo'lmaydi (7L68tqsa kontrast o'lchovi). `white/60` ≈ 6:1.
-               */
-              colorTextPlaceholder: 'rgba(255, 255, 255, 0.6)',
-            }
-          : {}),
-        /**
-         * Burchaklar Tailwind `rounded-xl` (12px) bilan moslashtirildi —
-         * antd sukuti 6px va yonma-yon turgan kartalar bilan solishtirganda
-         * u "boshqa dizayndan" ko'rinardi.
-         */
-        borderRadius: 10,
-        fontFamily: 'inherit',
-      },
-      components: {
-        /**
-         * ⚠️ Jadval sarlavhasi ATAYLAB shaffof. Sahifadagi kartalar
-         * Tailwind yuzasida (`bg-white dark:bg-gray-800/50`), antd jadvali
-         * esa o'z fonini chizadi — ikkisi ustma-ust tushganda qorong'ida
-         * ikki xil kulrang chiziq paydo bo'lardi.
-         */
-        Table: { headerBg: 'transparent' },
-        Card: { paddingLG: 16 },
-        /**
-         * Dark'da faol tab sukutda `ACCENT` ning qoraytirilgan tusi —
-         * yuzada 2.38:1 (7L68tqsa). `indigo-300` bilan ≥ 4.5:1.
-         */
-        ...(isDark
-          ? {
-              Tabs: {
-                itemSelectedColor: '#a5b4fc',
-                itemActiveColor: '#a5b4fc',
-                itemHoverColor: '#c7d2fe',
-                inkBarColor: '#a5b4fc',
-              },
-            }
-          : {}),
-      },
-    }),
-    [isDark],
-  );
+  const config = useMemo(() => buildAntdTheme(isDark), [isDark]);
 
   /**
    * ⚠️ LOKAL HAM SHU YERDA. `locale` berilmasa antd INGLIZCHA matn

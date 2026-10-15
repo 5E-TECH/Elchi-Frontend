@@ -226,7 +226,6 @@ const CourierBulkPage = () => {
           data: {
             comment: t("bulkCancelComment"),
             extraCost: 0,
-            paidAmount: 0,
           },
         });
       } else {
@@ -309,7 +308,7 @@ const CourierBulkPage = () => {
               onClick={() => setScanMode("cancel")}
               className={`flex items-center justify-center gap-2 rounded-xl px-5 py-5 text-base font-bold transition ${
                 scanMode === "cancel"
-                  ? "bg-error text-white shadow-lg shadow-error/25"
+                  ? "bg-error text-on-solid shadow-lg shadow-error/25"
                   : controlIdleClass
               }`}
             >

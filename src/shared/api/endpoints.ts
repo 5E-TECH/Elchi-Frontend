@@ -134,6 +134,8 @@ export const API_ENDPOINTS = {
     RETURN_REQUESTS_APPROVE: "post/return-requests/approve", // POST
     RETURN_REQUESTS_REJECT: "post/return-requests/reject", // POST
     CANCEL: "post/cancel", // POST courier create canceled post
+    // Buyurtmani SHU pochtadan o'chirish (soft-delete), faqat superadmin va NEW pochta (yokjwjXG). 409 — sabab matnda.
+    DELETE_ORDERS: "post/delete", // POST { post_id, order_ids, reason }
     CANCEL_RECEIVE: (postId: string | number) => `post/cancel/receive/${postId}`, // POST receive canceled post (admin)
     CHECK: (id: string | number) => `post/check/${id}`, // POST check post order by qr token
     CHECK_CANCEL: (id: string | number) => `post/check/cancel/${id}`, // POST check canceled post order by qr token
@@ -269,6 +271,8 @@ export const API_ENDPOINTS = {
     RETRY: (id: string | number) => `integrations/${id}/retry`, // POST
     SYNC: (id: string | number) => `integrations/${id}/sync`, // POST
     SYNC_QUEUE: (id: string | number) => `integrations/${id}/sync/queue`, // POST
+    // Status solishtiruvini hoziroq yurgizish (fG48Xv5X): 409 — master o'chiq yoki boshqasi ishlayapti, 400 — status_query yo'q.
+    RECONCILE_NOW: (id: string | number) => `integrations/${id}/reconcile-now`, // POST
     SYNC_HISTORY_BY_ID: (id: string | number) => `integrations/${id}/sync-history`,
     SYNC_HISTORY: "integrations/sync/history",
     /**
@@ -367,6 +371,8 @@ export const API_ENDPOINTS = {
     PDF: "files/pdf", // POST generate PDF
     QR: "files/qr", // POST generate QR
     BY_KEY: (key: string) => `files/${key}`, // GET signed URL / DELETE
+    // GET faylning o'zi (JWT + egalik tekshiruvi) — maxfiy dalillar uchun; MinIO brauzerga ochiq emas.
+    CONTENT: (key: string) => `files/${key}/content`,
   },
 
   // ── Excel export (binary .xlsx — don't JSON-parse) — guide §10 ───────────

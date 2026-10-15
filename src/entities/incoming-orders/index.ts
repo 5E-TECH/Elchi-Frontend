@@ -21,6 +21,13 @@ export type IncomingOrder = {
   qr_code_token?: string | null;
   /** Hamkor tomonidagi buyurtma id'si (bizga `external_id` bo'lib keladi). */
   external_id?: string | null;
+  /**
+   * Qop (batch) ustidagi umumiy QR — hamkor bir qopdagi barcha posilkaga bir
+   * xil token yozadi. Bitta skan butun qopni belgilaydi (CbKnJLZO).
+   */
+  external_batch_token?: string | null;
+  /** Qopdagi posilkalar soni (hamkor aytgani). */
+  external_batch_size?: number | null;
   customer?: {
     name?: string | null;
     phone_number?: string | null;
@@ -242,3 +249,50 @@ export const useReceiveByScan = () => {
     },
   });
 };
+
+/** `GET /scan/:token` qop javobidan: qop a'zolari (id yoki QR token) va qop hajmi. */
+export type ExternalBatchScan = {
+  members: Array<{ id: string | null; token: string | null }>;
+  size: number | null;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+
+const asText = (value: unknown) => (typeof value === "string" || typeof value === "number" ? String(value).trim() : "");
+
+/**
+ * Qop tokenini server orqali aniqlash (ro'yxatda moslik topilmaganda zaxira yo'l).
+ * Javob `{ type: "batch" | "external_batch", data }` bo'lmasa — `null` (bu qop emas).
+ */
+export const parseExternalBatchScan = (body: unknown): ExternalBatchScan | null => {
+  const root = asRecord(body);
+  const typed = root && typeof root.type === "string" ? root : asRecord(root?.data);
+  const type = asText(typed?.type).toLowerCase();
+  if (type !== "batch" && type !== "external_batch") return null;
+
+  const rawPayload = asRecord(typed?.data);
+  const payload = asRecord(rawPayload?.data) ?? rawPayload;
+  const list = [payload?.orders, payload?.items, typed?.data].find(Array.isArray) as unknown[] | undefined;
+  const members = (list ?? [])
+    .map((item) => {
+      const record = asRecord(item);
+      if (!record) return { id: null, token: asText(item) || null };
+      return {
+        id: asText(record.id) || null,
+        token: asText(record.qr_code_token ?? record.token) || null,
+      };
+    })
+    .filter((member) => member.id || member.token);
+  const tokens = Array.isArray(payload?.tokens) ? payload.tokens.map(asText).filter(Boolean) : [];
+  for (const token of tokens) members.push({ id: null, token });
+
+  const size = Number(payload?.size ?? payload?.external_batch_size ?? payload?.count);
+  return { members, size: Number.isFinite(size) && size > 0 ? size : null };
+};
+
+export const fetchExternalBatchScan = async (token: string): Promise<ExternalBatchScan | null> => {
+  const response = await api.get(API_ENDPOINTS.SCAN.BY_TOKEN(encodeURIComponent(token)));
+  return parseExternalBatchScan(response.data);
+};
+

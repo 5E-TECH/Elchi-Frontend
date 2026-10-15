@@ -1,0 +1,68 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Sozlamalar</h1>
+    <p class="el-sub">Faqat sizning hisobingiz uchun · o'zgarishlar avtomatik saqlanadi</p>
+  </div>
+  <div class="el-actions">
+    <p class="el-small el-muted" role="status" style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--success-fg)"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><span class="el-strong">Saqlandi</span></p>
+  </div>
+</div>
+
+<div class="el-tabs el-show-tablet el-show-mobile" role="tablist" aria-label="Sozlamalar bo'limlari" style="margin: 0 -16px; padding: 0 16px">
+    <a class="el-tab" href="@settings-appearance" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Ko'rinish</a>
+    <a class="el-tab" href="@settings-dashboard" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Bosh sahifa</a>
+    <a class="el-tab" href="@settings-interface" role="tab" aria-selected="true" style="text-decoration: none">Interfeys</a>
+    <a class="el-tab" href="@settings-scanner" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Skaner</a>
+    <a class="el-tab" href="@settings-notifications" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Bildirishnomalar</a>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+  <div class="el-hide-tablet" style="flex: 0 0 272px; position: sticky; top: 24px">
+  <div class="el-card" role="tablist" aria-orientation="vertical" aria-label="Sozlamalar bo'limlari" style="display: flex; flex-direction: column; gap: 4px; padding: 8px">
+    <a class="el-btn el-btn-ghost" href="@settings-appearance" role="tab" id="tab-korinish" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 11.994 2z"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Ko'rinish</span><span class="el-xs el-muted" style="font-weight: 500">Mavzu va til</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-dashboard" role="tab" id="tab-bosh-sahifa" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Bosh sahifa</span><span class="el-xs el-muted" style="font-weight: 500">Ko'rsatiladigan bloklar</span></span></a>
+    <a class="el-btn" href="@settings-interface" role="tab" id="tab-interfeys" aria-selected="true" aria-controls="panel-interfeys" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal; background: var(--action-soft); color: var(--action-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span>Interfeys</span><span class="el-xs el-muted" style="font-weight: 500">Yon panel holati</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-scanner" role="tab" id="tab-skaner" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Skaner</span><span class="el-xs el-muted" style="font-weight: 500">Kamera, ovoz va tebranish</span></span></a>
+    <a class="el-btn el-btn-ghost" href="@settings-notifications" role="tab" id="tab-bildirish" aria-selected="false" tabindex="-1" style="height: auto; min-height: 56px; padding: 8px 12px; gap: 12px; justify-content: flex-start; text-align: left; white-space: normal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg><span style="display: flex; flex-direction: column; min-width: 0"><span style="color: var(--text)">Bildirishnomalar</span><span class="el-xs el-muted" style="font-weight: 500">Shu qurilmaga xabarlar</span></span></a>
+  </div>
+  </div>
+
+  <section class="el-card" id="panel-interfeys" role="tabpanel" aria-labelledby="tab-interfeys" style="flex: 1 1 440px; min-width: 0">
+    <fieldset class="el-card-pad" aria-labelledby="panel-t" aria-describedby="panel-h" style="border: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h2 class="el-h2" id="panel-t">Yon panel</h2>
+        <p class="el-small el-muted" id="panel-h">Ilova ochilganda yon menyu qanday ko'rinishda turadi. Keyin ham uni istalgan payt yig'ib yoki yoyib olasiz.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px">
+      <label class="el-input" style="height: auto; flex-direction: column; align-items: stretch; gap: 12px; padding: 12px; border-radius:12px; cursor: pointer; border-color: var(--action); background: var(--action-soft)">
+        <input class="el-sr" type="radio" name="yonpanel" value="open" checked>
+        <span aria-hidden="true" style="display: flex; gap: 6px; height: 104px; padding: 8px; border-radius:8px; background: var(--sunken)"><span style="width: 32%; flex: none; border-radius:6px; background: var(--sidebar); border: 1px solid var(--sidebar-line); display: flex; flex-direction: column; gap: 6px; padding: 8px"><span style="height: 6px; width: 70%; border-radius:999px; background: var(--sidebar-text)"></span><span style="height: 6px; width: 90%; border-radius:999px; background: var(--sidebar-active); margin-top: 4px"></span><span style="height: 6px; width: 76%; border-radius:999px; background: var(--sidebar-active)"></span><span style="height: 6px; width: 84%; border-radius:999px; background: var(--sidebar-active)"></span><span style="height: 6px; width: 64%; border-radius:999px; background: var(--sidebar-active)"></span></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px"><span style="height: 14px; border-radius:6px; background: var(--raised)"></span><span style="flex: 1; display: flex; gap: 6px"><span style="flex: 1; border-radius:6px; background: var(--raised)"></span><span style="flex: 1; border-radius:6px; background: var(--raised)"></span></span><span style="flex: 1; border-radius:6px; background: var(--raised)"></span></span></span>
+        <span style="display: flex; align-items: center; gap: 10px; min-height: 24px; padding: 0 4px">
+          <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--action); display: inline-flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius:999px; background: var(--action)"></span></span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span class="el-strong">Ochiq</span>
+            <span class="el-xs el-muted">Ikonkalar va bo'lim nomlari</span>
+          </span>
+        </span>
+      </label>
+      <label class="el-input" style="height: auto; flex-direction: column; align-items: stretch; gap: 12px; padding: 12px; border-radius:12px; cursor: pointer; background: var(--surface)">
+        <input class="el-sr" type="radio" name="yonpanel" value="collapsed">
+        <span aria-hidden="true" style="display: flex; gap: 6px; height: 104px; padding: 8px; border-radius:8px; background: var(--sunken)"><span style="width: 28px; flex: none; border-radius:6px; background: var(--sidebar); border: 1px solid var(--sidebar-line); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 0"><span style="width: 10px; height: 10px; border-radius:999px; background: var(--sidebar-text)"></span><span style="width: 10px; height: 10px; border-radius:999px; background: var(--sidebar-active)"></span><span style="width: 10px; height: 10px; border-radius:999px; background: var(--sidebar-active)"></span><span style="width: 10px; height: 10px; border-radius:999px; background: var(--sidebar-active)"></span><span style="width: 10px; height: 10px; border-radius:999px; background: var(--sidebar-active)"></span></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px"><span style="height: 14px; border-radius:6px; background: var(--raised)"></span><span style="flex: 1; display: flex; gap: 6px"><span style="flex: 1; border-radius:6px; background: var(--raised)"></span><span style="flex: 1; border-radius:6px; background: var(--raised)"></span></span><span style="flex: 1; border-radius:6px; background: var(--raised)"></span></span></span>
+        <span style="display: flex; align-items: center; gap: 10px; min-height: 24px; padding: 0 4px">
+          <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span class="el-strong">Yig'ilgan</span>
+            <span class="el-xs el-muted">Faqat ikonkalar — ish maydoni kengroq</span>
+          </span>
+        </span>
+      </label>
+      </div>
+    </fieldset>
+
+    <div class="el-card-foot">
+      <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Kompyuter ekranida amal qiladi. Telefonda menyu pastki panelda turadi.</span>
+    </div>
+  </section>
+
+</div>
+  

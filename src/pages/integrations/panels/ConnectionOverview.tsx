@@ -1,17 +1,25 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Card, Statistic, Tag, Tooltip } from "antd";
+import { Alert, Button, Card, Statistic, Tag, Tooltip, message } from "antd";
 import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
   Clock,
   Info,
+  PlugZap,
+  RefreshCw,
   ShieldAlert,
+  Truck,
+  Wallet,
   Webhook,
   XCircle,
 } from "lucide-react";
 import { CATEGORY_LABEL, ROLE_META } from "../../../entities/integrations";
+import { useIntegrationHealthcheck } from "../../../entities/integrations/healthcheck";
 import { fmtMetric, type ConnectionMetrics } from "../../../entities/integrations/metrics";
+import { money, toAmount, useReceivableBalance } from "../../../entities/integrations/settlement";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import type { Connection } from "../useConnections";
 import { MUTED } from "../ui";
 
@@ -217,21 +225,157 @@ const ChecklistItem = ({ check, onFix }: { check: Check; onFix?: (tab: string) =
   );
 };
 
+/**
+ * RAQAM PLITKASI — bosilsa raqamning manbai bo'lgan tabga o'tadi.
+ *
+ * ⚠️ Qiymat `null` bo'lsa "—" (o'lchanmagan), HECH QACHON `0`: `0` "hammasi
+ * joyida / qarz yo'q" degan yolg'on xabar bo'lardi (`fmtMetric` qoidasi).
+ */
+const MetricTile = ({
+  label,
+  value,
+  color,
+  tab,
+  tabLabel,
+  onOpen,
+}: {
+  label: string;
+  /** Tayyor matn (`fmtMetric` / `money` dan) yoki `null` — "—". */
+  value: string | null;
+  /** Rang faqat o'lchangan va e'tibor talab qiladigan qiymatga beriladi. */
+  color?: string;
+  tab: string;
+  tabLabel: string;
+  onOpen?: (tab: string) => void;
+}) => {
+  const { t } = useTranslation("integrations");
+  const body = (
+    <Statistic
+      title={label}
+      value={value ?? "—"}
+      valueStyle={{ fontSize: 20, ...(value !== null && color ? { color } : {}) }}
+    />
+  );
+  if (!onOpen) return body;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(tab)}
+      title={t("ovwOpenTab", { tab: tabLabel })}
+      aria-label={`${label}: ${value ?? "—"}. ${t("ovwOpenTab", { tab: tabLabel })}`}
+      className="cursor-pointer rounded-lg p-1.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40"
+    >
+      {body}
+    </button>
+  );
+};
+
+/** Blok sarlavhasi — OYNA (24 soat / butun vaqt) har doim yonida yoziladi. */
+const BlockTitle = ({ icon, title, window }: { icon: ReactNode; title: string; window: string }) => (
+  <span className="flex flex-wrap items-center gap-2">
+    {icon} {title}
+    <Tag className="m-0 font-normal">{window}</Tag>
+  </span>
+);
+
+/** Metrika so'rovining holati — "—" ning SABABI shunga qarab aytiladi. */
+export type MetricsState = "loading" | "error" | "ready";
+
+/**
+ * "—" nega turibdi — bir qatorda.
+ *
+ * ⚠️ Sabab so'rov holatiga bog'liq: yuklanayotganda hech narsa demaymiz
+ * (javob hali kelmagan), xatoda — "yuklab bo'lmadi", faqat javob KELGANDA
+ * va blok bo'lmasa — "server bermayapti". Aks holda yuklanish paytida ham
+ * "server bermayapti" degan yolg'on chiqardi.
+ */
+const MissingNote = ({ state, missing }: { state: MetricsState; missing: boolean }) => {
+  const { t } = useTranslation("integrations");
+  if (state === "error") {
+    return <p className="m-0 mt-2 text-xs text-red-600 dark:text-red-400">{t("ovwMetricsError")}</p>;
+  }
+  if (state === "ready" && missing) {
+    return <p className={`m-0 mt-2 text-xs ${MUTED}`}>{t("ovwNotMeasured")}</p>;
+  }
+  return null;
+};
+
+const count = (value: number | null | undefined) =>
+  value === null || value === undefined ? null : fmtMetric(value);
+const amount = (value: number | null | undefined) =>
+  value === null || value === undefined ? null : money(value);
+
+const RED = "#dc2626";
+const GREEN = "#16a34a";
+const ORANGE = "#ea580c";
+
 const ConnectionOverview = ({
   connection,
   metrics,
   onFix,
+  metricsState = "ready",
+  hiddenTabs,
+  onRefresh,
+  refreshing,
 }: {
   connection: Connection;
   metrics?: ConnectionMetrics;
-  /** Kamchilikni tuzatish uchun tabga o'tkazadi. */
+  /** Metrika so'rovi holati (yuklanmoqda / xato / tayyor). */
+  metricsState?: MetricsState;
+  /** Kamchilikni tuzatish / raqam manbaini ochish uchun tabga o'tkazadi. */
   onFix?: (tab: string) => void;
+  /** Shu ulanishda YO'Q tablar — ularning bloki ham, havolasi ham chiqmaydi. */
+  hiddenTabs?: ReadonlySet<string>;
+  /** "Yangilash" — ulanish va metrika keshini invalidatsiya qiladi. */
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) => {
   const { t } = useTranslation("integrations");
+  const healthcheck = useIntegrationHealthcheck();
   const checks = buildChecks(connection);
   const blocking = checks.filter((c) => !c.ok && !c.optional);
   const failed = metrics?.failed ?? 0;
   const queued = metrics?.queued ?? 0;
+
+  const isIntegration = connection.kind === "integration";
+  const hasTab = (tab: string) => !hiddenTabs?.has(tab);
+  const shipments = metrics?.shipments ?? null;
+  const webhooks = metrics?.webhooks ?? null;
+  const cod = metrics?.cod ?? null;
+  /**
+   * Kiruvchi webhook — faqat "biz ulanamiz" turida (tashuvchi bizga status
+   * yuboradi, imzoni BIZ tekshiramiz). Hamkorda webhookni biz YUBORAMIZ — ular
+   * yuqoridagi 24 soatlik hodisa raqamlarida allaqachon bor.
+   */
+  const showWebhooks = isIntegration && hasTab("log");
+  const showShipments = hasTab("shipments");
+  /** COD daftari faqat tashuvchi ulanishida yuritiladi (hamkorda — ularda). */
+  const showCod = isIntegration && hasTab("settlement");
+  /**
+   * ⚠️ YOPILMAGAN QARZ — Hisob-kitob tabidagi qoldiqning O'ZI: AYNI so'rov,
+   * AYNI kesh kaliti (`receivable-balance`). Metrika endpointidan alohida
+   * `cod.debt` olinsa, bir yorliq ostida ikki manba bo'lib, raqamlar
+   * ajralib qolishi mumkin edi.
+   */
+  const balance = useReceivableBalance(showCod ? connection.id : undefined);
+  const debt = balance.data ? toAmount(balance.data.outstanding_amount) : null;
+
+  /**
+   * "Aloqani sinash" — Ish rejimi tabidagi AYNI amal (nomi ham bir xil:
+   * terminologiya testi boshqa nomni taqiqlaydi). Faqat "biz ulanamiz"
+   * turida bor: hamkorda tashqi API yo'q.
+   */
+  const ping = async () => {
+    const label = t("ctlPingBtn");
+    try {
+      const res = await healthcheck.mutateAsync(connection.id);
+      // ⚠️ Backend yiqilganda HTTP xato BERMAYDI — natija `ok` bo'yicha o'qiladi.
+      if (!res.ok) throw new Error(res.message ?? `HTTP ${res.status ?? "—"}`);
+      message.success(t("ctlDone", { label }));
+    } catch (error) {
+      message.error(getBackendErrorMessage(error) || t("ctlFailed", { label }));
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -240,18 +384,6 @@ const ConnectionOverview = ({
         showIcon
         message={
           blocking.length === 0 ? t("ovwReady") : t("ovwMissing", { count: blocking.length })
-        }
-        action={
-          /*
-            Eng muhim kamchilikka BIR BOSISHDA o'tish. Checklistdagi qator
-            ham bosiladi, lekin banner tepada turadi va odam birinchi shuni
-            ko'radi.
-          */
-          blocking.length > 0 && blocking[0].fixTab && onFix ? (
-            <Button size="small" type="primary" onClick={() => onFix(blocking[0].fixTab!)}>
-              {t("fixDefault")}
-            </Button>
-          ) : undefined
         }
         description={
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -267,11 +399,50 @@ const ConnectionOverview = ({
             </Tooltip>
             {failed > 0 && <Tag color="red">{t("eventsFailed", { count: failed })}</Tag>}
             {queued > 0 && <Tag color="orange">{t("ovwQueuedTag", { count: queued })}</Tag>}
+            {/*
+              AMALLAR — sarlavha OSTIDAGI qatorda, `action` o'rnida EMAS: antd
+              `action` ni matn bilan bir qatorga qo'yadi va telefonda uchta
+              tugma sarlavhani deyarli 0 kenglikka siqib qo'yardi.
+            */}
+            <div className="flex w-full flex-wrap items-center gap-2 pt-1" data-testid="ovw-actions">
+              {/*
+                Eng muhim kamchilikka BIR BOSISHDA o'tish. Checklistdagi qator
+                ham bosiladi, lekin banner tepada turadi va odam birinchi shuni
+                ko'radi.
+              */}
+              {blocking.length > 0 && blocking[0].fixTab && onFix ? (
+                <Button size="small" type="primary" onClick={() => onFix(blocking[0].fixTab!)}>
+                  {t("fixDefault")}
+                </Button>
+              ) : null}
+              {isIntegration ? (
+                <Tooltip title={t("ctlPingTip")}>
+                  <Button
+                    size="small"
+                    icon={<PlugZap className="h-3.5 w-3.5" />}
+                    loading={healthcheck.isPending}
+                    onClick={() => void ping()}
+                  >
+                    {t("ctlPingBtn")}
+                  </Button>
+                </Tooltip>
+              ) : null}
+              {onRefresh ? (
+                <Button
+                  size="small"
+                  icon={<RefreshCw className="h-3.5 w-3.5" />}
+                  loading={refreshing}
+                  onClick={onRefresh}
+                >
+                  {t("refresh")}
+                </Button>
+              ) : null}
+            </div>
           </div>
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid items-start gap-4 md:grid-cols-2">
         <Card
           title={
             <span className="flex items-center gap-2">
@@ -284,6 +455,7 @@ const ConnectionOverview = ({
           ))}
         </Card>
 
+        <div className="space-y-4">
         <Card
           title={
             <span className="flex items-center gap-2">
@@ -358,6 +530,174 @@ const ConnectionOverview = ({
             </>
           )}
         </Card>
+
+        {/* ═══════ POSILKALAR (24 soat) ═══════ */}
+        {showShipments && (
+          <Card
+            data-testid="ovw-shipments"
+            title={
+              <BlockTitle
+                icon={<Truck className="h-4 w-4" />}
+                title={t("ovwShipmentsTitle")}
+                window={t("ovwWindow24h")}
+              />
+            }
+          >
+            {/* `@container` — ustun soni KARTA kengligiga qarab (ekranga emas). */}
+            <div className="@container">
+            <div className="grid grid-cols-2 gap-2">
+              <MetricTile
+                label={t("ovwShpTotal")}
+                value={count(shipments?.total)}
+                tab="shipments"
+                tabLabel={t("tabShipments")}
+                onOpen={onFix}
+              />
+              <MetricTile
+                label={t("filterDelivered")}
+                value={count(shipments?.delivered)}
+                color={GREEN}
+                tab="shipments"
+                tabLabel={t("tabShipments")}
+                onOpen={onFix}
+              />
+              <MetricTile
+                label={t("filterFailed")}
+                value={count(shipments?.failed)}
+                color={(shipments?.failed ?? 0) > 0 ? RED : undefined}
+                tab="shipments"
+                tabLabel={t("tabShipments")}
+                onOpen={onFix}
+              />
+              {/*
+                ⚠️ Status xaritasi yo'q ulanishda (`mismatch: null`) BU RAQAM
+                CHIQMAYDI: xaritasiz har qator nomuvofiq bo'lib ko'rinardi.
+              */}
+              {shipments?.mismatch !== null && shipments?.mismatch !== undefined && (
+                <MetricTile
+                  label={t("filterMismatch")}
+                  value={count(shipments.mismatch)}
+                  color={shipments.mismatch > 0 ? ORANGE : undefined}
+                  tab="shipments"
+                  tabLabel={t("tabShipments")}
+                  onOpen={onFix}
+                />
+              )}
+            </div>
+            </div>
+            <MissingNote state={metricsState} missing={!shipments} />
+          </Card>
+        )}
+
+        {/* ═══════ KIRUVCHI WEBHOOKLAR (24 soat) ═══════ */}
+        {showWebhooks && (
+          <Card
+            data-testid="ovw-webhooks"
+            title={
+              <BlockTitle
+                icon={<Webhook className="h-4 w-4" />}
+                title={t("ovwWebhooksTitle")}
+                window={t("ovwWindow24h")}
+              />
+            }
+          >
+            <div className="@container">
+            <div className="grid grid-cols-2 gap-2 @xs:grid-cols-3">
+              <MetricTile
+                label={t("filterApplied")}
+                value={count(webhooks?.success)}
+                color={GREEN}
+                tab="log"
+                tabLabel={t("tabEvents")}
+                onOpen={onFix}
+              />
+              <MetricTile
+                label={t("filterRejected")}
+                value={count(webhooks?.failed)}
+                color={(webhooks?.failed ?? 0) > 0 ? RED : undefined}
+                tab="log"
+                tabLabel={t("tabEvents")}
+                onOpen={onFix}
+              />
+              {/* Imzo xato — sekret ikki tomonda mos emas degani. */}
+              {(!webhooks || webhooks.invalid_signature !== null) && (
+                <MetricTile
+                  label={t("filterInvalidSignature")}
+                  value={count(webhooks?.invalid_signature)}
+                  color={(webhooks?.invalid_signature ?? 0) > 0 ? RED : undefined}
+                  tab="log"
+                  tabLabel={t("tabEvents")}
+                  onOpen={onFix}
+                />
+              )}
+            </div>
+            </div>
+            <MissingNote state={metricsState} missing={!webhooks} />
+          </Card>
+        )}
+
+        {/*
+          ═══════ COD (BUTUN VAQT) ═══════
+          ⚠️ OYNA BOSHQA: yuqoridagi raqamlar 24 soatlik, bu esa butun vaqt —
+          qarz davr bilan kesilmaydi. Sarlavhadagi yorliq va izoh shuni aytadi,
+          aks holda "24 soatda 0 hodisa" yonidagi "qarz 5 mln" chalg'itardi.
+          Manba — hisob-kitob daftari (`provider_receivable` /
+          `provider_remittance`), Hisob-kitob tabi bilan AYNI raqam.
+        */}
+        {showCod && (
+          <Card
+            data-testid="ovw-cod"
+            title={
+              <BlockTitle
+                icon={<Wallet className="h-4 w-4" />}
+                title={t("ovwCodTitle")}
+                window={t("ovwWindowAllTime")}
+              />
+            }
+          >
+            {/* Summa uzun ("15 000 000 so'm") — tor kartada bitta ustun, kesilmaydi. */}
+            <div className="@container">
+            <div className="grid grid-cols-1 gap-2 @sm:grid-cols-2">
+              <MetricTile
+                label={t("ovwCodDispatched")}
+                value={amount(cod?.dispatched)}
+                tab="settlement"
+                tabLabel={t("tabSettlement")}
+                onOpen={onFix}
+              />
+              <MetricTile
+                label={t("ovwCodCollected")}
+                value={amount(cod?.collected)}
+                tab="settlement"
+                tabLabel={t("tabSettlement")}
+                onOpen={onFix}
+              />
+              <MetricTile
+                label={t("ovwCodRemitted")}
+                value={amount(cod?.remitted)}
+                color={GREEN}
+                tab="settlement"
+                tabLabel={t("tabSettlement")}
+                onOpen={onFix}
+              />
+              <MetricTile
+                label={t("ovwCodDebt")}
+                value={amount(debt)}
+                color={(debt ?? 0) > 0 ? ORANGE : undefined}
+                tab="settlement"
+                tabLabel={t("tabSettlement")}
+                onOpen={onFix}
+              />
+            </div>
+            </div>
+            <MissingNote state={metricsState} missing={!cod} />
+            {balance.isError && (
+              <p className="m-0 mt-2 text-xs text-red-600 dark:text-red-400">{t("ovwBalanceError")}</p>
+            )}
+            <p className={`m-0 mt-2 text-xs ${MUTED}`}>{t("ovwCodNote")}</p>
+          </Card>
+        )}
+        </div>
       </div>
     </div>
   );

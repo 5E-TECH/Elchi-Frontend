@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { AxiosError, type AxiosResponse } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 
@@ -116,7 +117,7 @@ describe("HistoryTab — Excel va qo'lda yozuv (GtAoqHlk)", () => {
 
     fireEvent.change(within(dialog).getByLabelText("Summa"), { target: { value: "50 000" } });
     fireEvent.change(within(dialog).getByLabelText("Izoh"), { target: { value: "  Ofis ijarasi  " } });
-    expect(within(dialog).getByText("Balansga ta'siri: -50 000 UZS")).toBeInTheDocument();
+    expect(within(dialog).getByText("Balansga ta'siri: -50 000 so'm")).toBeInTheDocument(); // dizayn v2: uz "so'm"
     fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
 
     expect(mocks.mutate).toHaveBeenCalledTimes(1);
@@ -155,7 +156,12 @@ describe("HistoryTab — Excel va qo'lda yozuv (GtAoqHlk)", () => {
 
   it("server xatosi oynada ko'rinadi, oyna yopilmaydi", () => {
     mocks.mutate.mockImplementation((_vars: unknown, options: { onError: (e: unknown) => void }) =>
-      options.onError({ response: { data: { message: "property foo should not exist" } } }),
+      options.onError(
+        new AxiosError("Request failed with status code 400", "ERR_BAD_REQUEST", undefined, undefined, {
+          status: 400,
+          data: { message: "property foo should not exist" },
+        } as AxiosResponse),
+      ),
     );
     open();
     fireEvent.click(screen.getByRole("button", { name: "Yozuv qo'shish" }));
@@ -165,5 +171,25 @@ describe("HistoryTab — Excel va qo'lda yozuv (GtAoqHlk)", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
 
     expect(within(screen.getByRole("dialog")).getByRole("alert")).toHaveTextContent("property foo should not exist");
+  });
+
+  it("tarmoq xatosi: oynada xom \"Network Error\" emas, \"Tarmoq xatosi\"; qayta urinish o'sha kalit bilan", () => {
+    mocks.mutate.mockImplementationOnce((_vars: unknown, options: { onError: (e: unknown) => void }) =>
+      options.onError(new AxiosError("Network Error", "ERR_NETWORK")),
+    );
+    open();
+    fireEvent.click(screen.getByRole("button", { name: "Yozuv qo'shish" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Summa"), { target: { value: "1000" } });
+    fireEvent.change(within(dialog).getByLabelText("Izoh"), { target: { value: "Ijara" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+
+    const alert = within(screen.getByRole("dialog")).getByRole("alert");
+    expect(alert).toHaveTextContent("Tarmoq xatosi");
+    expect(alert).not.toHaveTextContent("Network Error");
+
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Saqlash" }));
+    const [first, second] = mocks.mutate.mock.calls.map((call) => call[0] as { idempotencyKey: string });
+    expect(second.idempotencyKey).toBe(first.idempotencyKey);
   });
 });

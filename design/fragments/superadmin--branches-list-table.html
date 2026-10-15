@@ -1,0 +1,540 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Filiallar</h1>
+    <p class="el-sub">Jami 16 ta filial</p>
+  </div>
+  <div class="el-actions">
+    <div class="el-seg el-hide-mobile" role="group" aria-label="Ko'rinish">
+      <button type="button" aria-pressed="false">Daraxt</button><button type="button" aria-pressed="true">Jadval</button><button type="button" aria-pressed="false">Kartalar</button>
+    </div>
+    <a class="el-btn el-btn-primary" href="@branches-create-dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Yangi filial</a>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Filiallar ro'yxati">
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border)">
+    <label class="el-search" style="flex: 6 1 320px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input class="el-input" type="search" placeholder="Filial nomi yoki manzil bo'yicha qidirish" aria-label="Filiallarni qidirish">
+    </label>
+    <button class="el-input el-select" type="button" style="flex: 1 1 200px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Holat bo'yicha: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="el-muted">Holat:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="el-seg el-show-mobile" role="group" aria-label="Ko'rinish" style="width: 100%">
+      <button type="button" aria-pressed="false" style="flex: 1; height: 44px">Daraxt</button><button type="button" aria-pressed="true" style="flex: 1; height: 44px">Jadval</button><button type="button" aria-pressed="false" style="flex: 1; height: 44px">Kartalar</button>
+    </div>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th><button class="el-th-sort" type="button" aria-pressed="false">Nomi<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th class="el-hide-tablet">Turi</th>
+          <th><button class="el-th-sort" type="button" aria-pressed="false">Hudud<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th class="el-num"><button class="el-th-sort" type="button" aria-pressed="false">Xodimlar<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th>Holat</th>
+          <th class="el-hide-tablet"><button class="el-th-sort" type="button" aria-pressed="false">Sana<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th style="width: 64px"><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Toshkent HQ</a><div class="el-cell-sub">TSH-HQ <span class="el-show-tablet">· HQ</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">HQ</span></td>
+          <td><div><span style="white-space: nowrap">Toshkent sh.,</span> <span style="white-space: nowrap">Yunusobod tumani</span></div><div class="el-cell-sub">Bog'ishamol ko'chasi, 12</div></td>
+          <td class="el-num">24 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">10.01.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Toshkent HQ amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Chilonzor qabul punkti</a><div class="el-cell-sub">TSH-CHL <span class="el-show-tablet">· Qabul punkti</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Qabul punkti</span></td>
+          <td><div><span style="white-space: nowrap">Toshkent sh.,</span> <span style="white-space: nowrap">Chilonzor tumani</span></div><div class="el-cell-sub">Bunyodkor shoh ko'chasi, 21</div></td>
+          <td class="el-num">6 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">11.01.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Chilonzor qabul punkti amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Andijon filiali</a><div class="el-cell-sub">AND-01 <span class="el-show-tablet">· Viloyat</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Viloyat</span></td>
+          <td><div><span style="white-space: nowrap">Andijon viloyati,</span> <span style="white-space: nowrap">Andijon sh.</span></div><div class="el-cell-sub">Navoiy shoh ko'chasi, 45</div></td>
+          <td class="el-num">9 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">14.02.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Andijon filiali amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Buxoro filiali</a><div class="el-cell-sub">BXR-01 <span class="el-show-tablet">· Viloyat</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Viloyat</span></td>
+          <td><div><span style="white-space: nowrap">Buxoro viloyati,</span> <span style="white-space: nowrap">Buxoro sh.</span></div><div class="el-cell-sub">Alpomish ko'chasi, 18</div></td>
+          <td class="el-num">7 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">20.02.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Buxoro filiali amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Farg'ona filiali</a><div class="el-cell-sub">FRG-01 <span class="el-show-tablet">· Viloyat</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Viloyat</span></td>
+          <td><div><span style="white-space: nowrap">Farg'ona viloyati,</span> <span style="white-space: nowrap">Farg'ona sh.</span></div><div class="el-cell-sub">Al-Farg'oniy ko'chasi, 30</div></td>
+          <td class="el-num">8 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">02.03.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Farg'ona filiali amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Samarqand filiali</a><div class="el-cell-sub">SMQ-01 <span class="el-show-tablet">· Viloyat</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Viloyat</span></td>
+          <td><div><span style="white-space: nowrap">Samarqand viloyati,</span> <span style="white-space: nowrap">Samarqand sh.</span></div><div class="el-cell-sub">Registon ko'chasi, 9</div></td>
+          <td class="el-num">11 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">05.03.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Samarqand filiali amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Sergeli qabul punkti</a><div class="el-cell-sub">TSH-SRG <span class="el-show-tablet">· Qabul punkti</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Qabul punkti</span></td>
+          <td><div><span style="white-space: nowrap">Toshkent sh.,</span> <span style="white-space: nowrap">Sergeli tumani</span></div><div class="el-cell-sub">Yangi Sergeli ko'chasi, 2</div></td>
+          <td class="el-num">4 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">18.04.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Sergeli qabul punkti amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Asaka qabul punkti</a><div class="el-cell-sub">AND-ASK <span class="el-show-tablet">· Qabul punkti</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Qabul punkti</span></td>
+          <td><div><span style="white-space: nowrap">Andijon viloyati,</span> <span style="white-space: nowrap">Asaka tumani</span></div><div class="el-cell-sub">Bobur ko'chasi, 7</div></td>
+          <td class="el-num">3 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">03.06.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Asaka qabul punkti amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Kattaqo'rg'on qabul punkti</a><div class="el-cell-sub">SMQ-KTQ <span class="el-show-tablet">· Qabul punkti</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Qabul punkti</span></td>
+          <td><div><span style="white-space: nowrap">Samarqand viloyati,</span> <span style="white-space: nowrap">Kattaqo'rg'on sh.</span></div><div class="el-cell-sub">Ibn Sino ko'chasi, 5</div></td>
+          <td class="el-num">2 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">21.06.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Kattaqo'rg'on qabul punkti amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Urgut filiali</a><div class="el-cell-sub">SMQ-URG <span class="el-show-tablet">· Aralash</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Aralash</span></td>
+          <td><div><span style="white-space: nowrap">Samarqand viloyati,</span> <span style="white-space: nowrap">Urgut tumani</span></div><div class="el-cell-sub">Bozor ko'chasi, 14</div></td>
+          <td class="el-num">5 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">09.07.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Urgut filiali amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Xonobod qabul punkti</a><div class="el-cell-sub">AND-XNB <span class="el-show-tablet">· Qabul punkti</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Qabul punkti</span></td>
+          <td><div><span style="white-space: nowrap">Andijon viloyati,</span> <span style="white-space: nowrap">Xonobod sh.</span></div><div class="el-cell-sub">Mustaqillik ko'chasi, 3</div></td>
+          <td class="el-num"><span class="el-subtle">0 ta</span></td>
+          <td><span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">28.07.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="true" style="background: var(--sunken); color: var(--text)" aria-label="Xonobod qabul punkti amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                <div class="el-popover" role="alertdialog" aria-modal="false" aria-labelledby="del-title" aria-describedby="del-desc" style="position: absolute; bottom: 36px; right: 0; z-index: 10; width: 300px; text-align: left; white-space: normal">
+                  <div style="display: flex; gap: 12px; align-items: flex-start">
+                    <span class="el-stat-icon" style="background: var(--danger-soft); color: var(--danger-fg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+                    <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+                      <p class="el-h3" id="del-title">Filialni o'chirmoqchimisiz?</p>
+                      <p class="el-small el-muted" id="del-desc">Xonobod qabul punkti filiallar ro'yxatidan o'chiriladi.</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; justify-content: flex-end; gap: 8px">
+                    <button class="el-btn el-btn-secondary el-btn-sm" type="button">Bekor qilish</button>
+                    <button class="el-btn el-btn-danger el-btn-sm" type="button">O'chirish</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a class="el-cell-title" href="@branches-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">Namangan filiali</a><div class="el-cell-sub">NMG-01 <span class="el-show-tablet">· Viloyat</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Viloyat</span></td>
+          <td><div><span style="white-space: nowrap">Namangan viloyati,</span> <span style="white-space: nowrap">Namangan sh.</span></div><div class="el-cell-sub">Uychi ko'chasi, 11</div></td>
+          <td class="el-num">6 ta</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Faol</span></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">12.08.2025</td>
+          <td>
+            <div style="display: flex; justify-content: flex-end">
+              <div style="position: relative">
+                <button class="el-iconbtn el-iconbtn-sm" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Namangan filiali amallari"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">TSH-HQ · HQ</span>
+          <span class="el-h3">Toshkent HQ</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Bog'ishamol ko'chasi, 12</div>
+          <div class="el-cell-sub" style="white-space: normal">Toshkent sh., Yunusobod tumani</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>24 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Toshkent HQ amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">TSH-CHL · Qabul punkti</span>
+          <span class="el-h3">Chilonzor qabul punkti</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Bunyodkor shoh ko'chasi, 21</div>
+          <div class="el-cell-sub" style="white-space: normal">Toshkent sh., Chilonzor tumani</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>6 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Chilonzor qabul punkti amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">AND-01 · Viloyat</span>
+          <span class="el-h3">Andijon filiali</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Navoiy shoh ko'chasi, 45</div>
+          <div class="el-cell-sub" style="white-space: normal">Andijon viloyati, Andijon sh.</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>9 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Andijon filiali amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">BXR-01 · Viloyat</span>
+          <span class="el-h3">Buxoro filiali</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Alpomish ko'chasi, 18</div>
+          <div class="el-cell-sub" style="white-space: normal">Buxoro viloyati, Buxoro sh.</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>7 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Buxoro filiali amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">FRG-01 · Viloyat</span>
+          <span class="el-h3">Farg'ona filiali</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Al-Farg'oniy ko'chasi, 30</div>
+          <div class="el-cell-sub" style="white-space: normal">Farg'ona viloyati, Farg'ona sh.</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>8 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Farg'ona filiali amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">SMQ-01 · Viloyat</span>
+          <span class="el-h3">Samarqand filiali</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Registon ko'chasi, 9</div>
+          <div class="el-cell-sub" style="white-space: normal">Samarqand viloyati, Samarqand sh.</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>11 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Samarqand filiali amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">TSH-SRG · Qabul punkti</span>
+          <span class="el-h3">Sergeli qabul punkti</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Yangi Sergeli ko'chasi, 2</div>
+          <div class="el-cell-sub" style="white-space: normal">Toshkent sh., Sergeli tumani</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>4 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Sergeli qabul punkti amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">AND-ASK · Qabul punkti</span>
+          <span class="el-h3">Asaka qabul punkti</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Bobur ko'chasi, 7</div>
+          <div class="el-cell-sub" style="white-space: normal">Andijon viloyati, Asaka tumani</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>3 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Asaka qabul punkti amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">SMQ-KTQ · Qabul punkti</span>
+          <span class="el-h3">Kattaqo'rg'on qabul punkti</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Ibn Sino ko'chasi, 5</div>
+          <div class="el-cell-sub" style="white-space: normal">Samarqand viloyati, Kattaqo'rg'on sh.</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>2 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Kattaqo'rg'on qabul punkti amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">SMQ-URG · Aralash</span>
+          <span class="el-h3">Urgut filiali</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Bozor ko'chasi, 14</div>
+          <div class="el-cell-sub" style="white-space: normal">Samarqand viloyati, Urgut tumani</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>5 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Urgut filiali amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">AND-XNB · Qabul punkti</span>
+          <span class="el-h3">Xonobod qabul punkti</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-neutral">Nofaol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Mustaqillik ko'chasi, 3</div>
+          <div class="el-cell-sub" style="white-space: normal">Andijon viloyati, Xonobod sh.</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>0 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Xonobod qabul punkti amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+    <div class="el-list-item" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+        <a href="@branches-detail" style="min-width: 0; display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--text)">
+          <span class="el-overline">NMG-01 · Viloyat</span>
+          <span class="el-h3">Namangan filiali</span>
+        </a>
+        <span class="el-badge el-badge-dot el-tone-success">Faol</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span class="el-subtle" style="display: inline-flex; margin-top: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div style="min-width: 0">
+          <div class="el-small el-strong">Uychi ko'chasi, 11</div>
+          <div class="el-cell-sub" style="white-space: normal">Namangan viloyati, Namangan sh.</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>6 ta xodim</span>
+        <span style="display: flex; gap: 4px">
+          <button class="el-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Namangan filiali amallari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <a class="el-btn el-btn-secondary el-btn-sm" href="@branches-detail">Batafsil<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="el-card-foot el-pagination">
+    <span>1–12 / 16 ta filial</span>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <button class="el-input el-select el-btn-sm" type="button" style="width: auto; height: 32px; gap: 8px" aria-label="Sahifadagi qatorlar soni: 12 ta">12 ta<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      <nav class="el-pages" aria-label="Sahifalar">
+        <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="el-page" type="button" aria-current="page">1</button>
+        <button class="el-page" type="button">2</button>
+        <button class="el-page" type="button" aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</section>
+  

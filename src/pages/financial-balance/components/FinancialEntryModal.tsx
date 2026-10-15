@@ -3,7 +3,7 @@ import { Loader2, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { getActionErrorMessage } from "../../../shared/lib/actionError";
 import Popup from "../../../shared/ui/Popup";
 import { formatFinancialAmount } from "../lib/financialBalance";
 import {
@@ -85,7 +85,10 @@ const FinancialEntryModal = ({ open, onClose }: FinancialEntryModalProps) => {
           reset();
           onClose();
         },
-        onError: (error) => setServerError(getBackendErrorMessage(error) ?? t("financialEntryFailed")),
+        // Javob kelmagan (tarmoq) — xom "Network Error" emas, tarjima qilingan matn.
+        // Qayta "Saqlash" xavfsiz: o'sha `Idempotency-Key` bilan bir marta yoziladi.
+        onError: (error) =>
+          setServerError(getActionErrorMessage(error, t("financialEntryFailed")) ?? t("networkError", { ns: "common" })),
       },
     );
   };

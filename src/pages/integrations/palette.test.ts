@@ -1,3 +1,4 @@
+import { SEMANTIC_TOKENS } from "../../shared/config/themeTokens";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -140,8 +141,9 @@ describe("⭐ QORONG'I YUZA — bitta rang, uch joyda bir xil", () => {
     return (raw ?? "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
   };
 
-  const SURFACE = "#3A3358";
-  const PAGE = "#2a2540";
+  // Dizayn v2: yuza va sahifa foni themeTokens.ts dan (index.css bilan bir xil — themeTokens.test.ts).
+  const SURFACE = SEMANTIC_TOKENS.dark.surface;
+  const PAGE = SEMANTIC_TOKENS.dark.bg;
 
   const lin = (c: number) => {
     const v = c / 255;
@@ -169,8 +171,9 @@ describe("⭐ QORONG'I YUZA — bitta rang, uch joyda bir xil", () => {
     expect(code.length).toBeGreaterThan(100);
     // Sinf satrida interpolyatsiya bo'lmasligi kerak.
     expect(code).not.toMatch(/dark:bg-\[\$\{/);
-    // Literal yozuv esa bo'lishi kerak.
-    expect(code).toContain("dark:bg-[#3A3358]");
+    // Statik token sinfi bo'lishi kerak (dizayn v2: `dark:bg-surface`), eski binafsha literal emas.
+    expect(code).toContain("dark:bg-surface");
+    expect(code).not.toContain("#3A3358");
   });
 
   it("eski, fonga singib ketgan rang QAYTMAYDI", () => {
@@ -182,8 +185,10 @@ describe("⭐ QORONG'I YUZA — bitta rang, uch joyda bir xil", () => {
   });
 
   it("⭐ yuza fondan AJRALADI", () => {
-    // 1.00 = ajralmaydi. antd sukuti 1.26 beradi; biz ham shu darajada.
-    expect(contrast(SURFACE, PAGE)).toBeGreaterThan(1.2);
+    // 1.00 = ajralmaydi. Dizayn v2'da yuza fondan bir pog'ona yuqori va
+    // `dark:border-border` chegarasi bilan ajraladi (kanvas tasdiqlagan juftlik).
+    expect(contrast(SURFACE, PAGE)).toBeGreaterThan(1.05);
+    expect(uiCode()).toContain("dark:border-border");
   });
 
   it("⭐ yuza ustidagi matnlar AA dan o'tadi", () => {
@@ -195,10 +200,10 @@ describe("⭐ QORONG'I YUZA — bitta rang, uch joyda bir xil", () => {
 
   it("⭐ `gray-500` bu yuzada ISHLATILMAYDI", () => {
     /**
-     * `gray-500` yangi yuzada 2.42:1 — AA katta matn chegarasidan (3.0)
-     * ham past. `FAINT` ilgari qorong'ida aynan shuni ishlatardi.
+     * `gray-500` qorong'i yuzada AA matn chegarasidan (4.5) past (v2 yuzasida
+     * ~3.6:1, eski binafsha yuzada 2.42:1). `FAINT` ilgari aynan shuni ishlatardi.
      */
-    expect(contrast("#6b7280", SURFACE)).toBeLessThan(3);
+    expect(contrast("#6b7280", SURFACE)).toBeLessThan(4.5);
 
     expect(uiCode()).not.toContain("dark:text-gray-500");
   });

@@ -138,7 +138,7 @@ describe("NewOrderUpdate — menejer kuryerdagi buyurtmani sotmaydi (fix3b LC-04
   });
 
   it("kuryer qo'lidagi WAITING buyurtmada 'Sotish' yo'q, 'Bekor qilish' bor", () => {
-    Object.assign(orderState, { status: "waiting", holder_type: "COURIER", holder_courier_id: "289", courier_id: "289" });
+    Object.assign(orderState, { status: "waiting", post_id: "90", holder_type: "COURIER", holder_courier_id: "289", courier_id: "289" });
     renderAs("manager", "REGIONAL");
 
     expect(screen.queryByRole("button", { name: "Sotish" })).not.toBeInTheDocument();
@@ -146,7 +146,7 @@ describe("NewOrderUpdate — menejer kuryerdagi buyurtmani sotmaydi (fix3b LC-04
   });
 
   it("filialda turgan WAITING buyurtmada 'Sotish' avvalgidek", () => {
-    Object.assign(orderState, { status: "waiting", holder_type: "BRANCH", holder_courier_id: null, courier_id: null });
+    Object.assign(orderState, { status: "waiting", post_id: "90", holder_type: "BRANCH", holder_courier_id: null, courier_id: null });
     renderAs("manager", "REGIONAL");
 
     expect(screen.getByRole("button", { name: "Sotish" })).toBeInTheDocument();

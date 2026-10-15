@@ -124,6 +124,8 @@
   "incomingScanAdded": "добавлен в список",
   "incomingScanDuplicate": "уже отсканирован",
   "incomingScanNotFound": "Этот QR не найден в списке — посылка от другого партнёра или уже принята?",
+  "incomingBatchMarked": "Мешок: отмечено {{count}} из {{size}} посылок",
+  "incomingBatchAlready": "Мешок: {{count}} из {{size}} посылок уже отмечены",
   "incomingScanListNotReady": "Список ещё не загружен — посылку не удалось проверить. Обновите список и отсканируйте снова.",
   "incomingReceive": "ПРИНЯТЬ",
   "incomingReceiving": "Приём...",
