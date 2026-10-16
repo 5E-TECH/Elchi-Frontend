@@ -1,9 +1,9 @@
-import { memo, useId, useState, type Ref } from "react";
-import { AlertTriangle, Loader2, SendHorizontal } from "lucide-react";
+// dizayn-v2: superadmin-neworders-create-ai-preview, superadmin-neworders-create-ai-confirm-dialog, admin-neworders-create-ai, admin-neworders-create-ai-confirm-dialog, manager-new-orders-create-ai, manager-new-orders-create-ai-confirm-dialog, registrator-new-orders-create-ai, registrator-new-orders-create-ai-confirm-dialog, market-new-orders-create-ai-preview, market-new-orders-create-ai-confirm-dialog
+import { memo, useState, type Ref } from "react";
+import { Send, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Popup from "../../../../../shared/ui/Popup";
-import { formatPrice } from "../../model/orderCreateForm";
-import { getActionButtonClassName } from "../formFieldStyles";
+import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
+import { Button, Card, Dialog } from "../../../../../shared/ui/primitives";
 import type { AiDraftOrder } from "./evalPreview";
 
 /**
@@ -20,22 +20,28 @@ type AiConfirmBarProps = {
   /** Keyingi to'ldirilmagan kartaga o'tish (10-30 karta orasida yo'qolmaslik uchun). */
   onJumpToUnready: () => void;
   /** Panel elementi — klaviatura ochilganda maydon shu panel ustida turishi uchun. */
-  barRef?: Ref<HTMLDivElement>;
+  barRef?: Ref<HTMLElement>;
 };
 
 /**
+ * «YARATISHNI TASDIQLASH» PANELI (maket `*-create-ai-preview`): pastga yopishgan karta — «N ta tayyor ·
+ * M ta to'ldirilmagan», «To'ldirilmagan (M)» (keyingi to'ldirilmagan kartaga) va asosiy «Tayyorlarini
+ * yaratish — N ta». Panel `<main>` ichida: u pastki menyu USTIDA tugaydi (shell), shuning uchun faqat
+ * kichik oraliq bilan `bottom-*`; telefonda tugmalar joy yetmasa ikki qatorga o'tib, to'liq enli bo'ladi.
+ * Ko'p buyurtmada (> 5) tasdiq oynasi (maket `*-create-ai-confirm-dialog`): ism, summa, tuman.
+ *
  * ⚠️ "Hammasini yaratish" tugmasi ATAYLAB YO'Q: faqat `ready` kartalar
  * yaratiladi, to'ldirilmaganlari so'rovga umuman qo'shilmaydi.
  */
 const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm, onJumpToUnready, barRef }: AiConfirmBarProps) => {
-  const { t } = useTranslation(["orders", "common"]);
+  const { t, i18n } = useTranslation(["orders", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [dialogOpen, setDialogOpen] = useState(false);
-  const dialogTitleId = useId();
   const readyCount = readyOrders.length;
-  const disabled = readyCount === 0 || pending;
+  const disabled = readyCount === 0;
 
   const handleClick = () => {
-    if (disabled) return;
+    if (disabled || pending) return;
     if (readyCount > CONFIRM_DIALOG_THRESHOLD) {
       setDialogOpen(true);
       return;
@@ -45,86 +51,95 @@ const AiConfirmBar = ({ readyOrders, notReadyCount, pending, onConfirm, onJumpTo
 
   return (
     <>
-      <div
+      <Card
+        as="div"
+        padding="none"
         ref={barRef}
+        role="region"
+        aria-label={t("aiConfirmRegionLabel")}
         data-testid="ai-confirm-bar"
-        className="sticky bottom-0 z-20 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary p-3 shadow-lg dark:border-primarydark dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:p-4"
+        className="sticky bottom-4 z-10 shadow-xl max-md:bottom-2"
       >
-        <p className="text-sm font-semibold text-maindark dark:text-primary">
-          {t("aiReadySummary", { ready: readyCount, notReady: notReadyCount })}
-        </p>
-        <div className="flex gap-2">
-          {/* Telefonda ixcham (⚠ N) — asosiy "Tayyorlarini yaratish" matni kesilmasin. */}
-          {notReadyCount > 0 && (
-            <button
-              type="button"
-              onClick={onJumpToUnready}
-              aria-label={t("aiJumpToUnready", { count: notReadyCount })}
-              title={t("aiJumpToUnready", { count: notReadyCount })}
-              className={`${getActionButtonClassName({ variant: "secondary" })} min-h-12 shrink-0 px-3 text-amber-700 dark:text-amber-300`}
-            >
-              <AlertTriangle size={16} className="shrink-0" />
-              <span className="sm:hidden">{notReadyCount}</span>
-              <span className="hidden sm:inline">{t("aiJumpToUnready", { count: notReadyCount })}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleClick}
-            disabled={disabled}
-            className={`${getActionButtonClassName({ variant: "primary", disabled })} min-h-12 min-w-0 flex-1 sm:flex-none`}
-          >
-            {pending ? <Loader2 size={16} className="shrink-0 animate-spin" /> : <SendHorizontal size={16} className="shrink-0" />}
-            <span className="truncate">{pending ? t("aiCreating") : t("aiCreateReady", { count: readyCount })}</span>
-          </button>
-        </div>
-      </div>
-
-      <Popup isShow={dialogOpen} onClose={() => setDialogOpen(false)} labelledBy={dialogTitleId}>
-        <div
-          className="flex max-h-[85vh] w-[calc(100vw-32px)] max-w-lg flex-col gap-4 rounded-2xl bg-primary p-5 shadow-xl dark:bg-maindark"
-        >
-          <h3 id={dialogTitleId} className="text-base font-bold text-maindark dark:text-primary">
-            {t("aiConfirmDialogTitle", { count: readyCount })}
-          </h3>
-          <ul className="flex flex-col gap-1.5 overflow-y-auto text-sm" data-testid="ai-confirm-list">
-            {readyOrders.map((order, index) => (
-              <li
-                key={`${order.phone_number}-${index}`}
-                className="flex flex-wrap gap-x-2 rounded-lg bg-gray-50 px-3 py-2 text-maindark dark:bg-primarydark dark:text-primary"
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <p role="status" className="min-w-0 text-sm font-semibold">
+            <span className="text-success-fg">{t("aiReadyCount", { count: readyCount })}</span>
+            {notReadyCount > 0 ? (
+              <>
+                <span className="text-text-muted"> · </span>
+                <span className="text-warning-fg">{t("aiNotReadyCount", { count: notReadyCount })}</span>
+              </>
+            ) : null}
+          </p>
+          <div className="flex flex-[0_1_auto] flex-wrap gap-2 max-md:flex-auto">
+            {notReadyCount > 0 ? (
+              <Button
+                variant="secondary"
+                leftIcon={TriangleAlert}
+                onClick={onJumpToUnready}
+                title={t("aiJumpToUnreadyHint")}
+                className="flex-[1_0_auto]"
               >
-                <span className="font-semibold">{order.customer_name}</span>
-                <span className="text-gray-400">—</span>
-                <span>{order.district_name ?? "—"}</span>
-                <span className="text-gray-400">—</span>
-                <span className="font-mono">
-                  {formatPrice(String(order.total_price ?? 0))} {t("currency")}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={() => setDialogOpen(false)}
-              className={getActionButtonClassName({ variant: "secondary" })}
+                {t("aiJumpToUnready", { count: notReadyCount })}
+              </Button>
+            ) : null}
+            <Button
+              leftIcon={Send}
+              onClick={handleClick}
+              disabled={disabled}
+              loading={pending}
+              loadingText={t("aiCreating")}
+              className="flex-[1_0_auto]"
             >
+              {t("aiCreateReady", { count: readyCount })}
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        size="lg"
+        icon={TriangleAlert}
+        iconTone="warning"
+        title={t("aiConfirmDialogTitle", { count: readyCount })}
+        description={t("aiConfirmDialogDescription")}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDialogOpen(false)}>
               {t("cancel", { ns: "common" })}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              leftIcon={Send}
               onClick={() => {
                 setDialogOpen(false);
                 onConfirm();
               }}
-              className={getActionButtonClassName({ variant: "primary" })}
             >
-              <SendHorizontal size={16} />
               {t("aiConfirmDialogSubmit")}
-            </button>
-          </div>
-        </div>
-      </Popup>
+            </Button>
+          </>
+        }
+      >
+        <ul
+          aria-label={t("aiConfirmListLabel")}
+          data-testid="ai-confirm-list"
+          className="flex max-h-[420px] flex-col overflow-auto rounded-xl bg-sunken p-1 text-sm"
+        >
+          {readyOrders.map((order, index) => (
+            <li
+              key={`${order.phone_number}-${index}`}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 border-t border-border px-3 py-2.5 first:border-t-0"
+            >
+              <span className="min-w-0 truncate font-semibold text-text">{order.customer_name}</span>
+              <span className="whitespace-nowrap text-right font-semibold text-text tabular-nums">
+                {formatMoneyLocalized(order.total_price ?? 0, { language })}
+              </span>
+              <span className="col-span-full text-[13px] text-text-muted">{order.district_name ?? "—"}</span>
+            </li>
+          ))}
+        </ul>
+      </Dialog>
     </>
   );
 };

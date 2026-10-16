@@ -53,10 +53,10 @@ const renderCard = (preview: AiPreviewOrder) => {
 };
 
 /**
- * Kartadagi tanlov maydonlari — v2 `Select searchable` (yorliq bilan nomlangan combobox):
- * «Viloyat *», «Tuman *», «Katalogdagi mahsulot».
+ * Kartadagi tanlov maydonlari — v2 `Field` + `Select searchable` (yorliq bilan nomlangan combobox; majburiy
+ * belgisi `*` ekran o'quvchidan yashirin): «Viloyat», «Tuman», «Katalogdagi mahsulot».
  */
-const FIELD = { region: "Viloyat *", district: "Tuman *", item: "Katalogdagi mahsulot" } as const;
+const FIELD = { region: "Viloyat", district: "Tuman", item: "Katalogdagi mahsulot" } as const;
 const selectField = (name: (typeof FIELD)[keyof typeof FIELD]) => screen.getAllByRole("combobox", { name })[0];
 
 const openSelect = async (name: (typeof FIELD)[keyof typeof FIELD]) => {
@@ -65,7 +65,16 @@ const openSelect = async (name: (typeof FIELD)[keyof typeof FIELD]) => {
   fireEvent.click(selectField(name));
 };
 
-/** Ochiq ro'yxatdagi variantlar (o'chirilgan sarlavhalar ham). */
+/** Matn maydoni yorlig'i bo'yicha (`Field` — `label htmlFor`). */
+const textbox = (name: string) => screen.getByRole("textbox", { name }) as HTMLInputElement;
+
+/** Ochiq ro'yxat guruhidagi variantlar («AI takliflari», «Barcha tumanlar» …). */
+const groupOptions = (name: string) =>
+  within(screen.getByRole("group", { name }))
+    .getAllByRole("option")
+    .map((option) => option.textContent);
+
+/** Ochiq ro'yxatdagi variantlar (ko'rinish tartibida). */
 const openOptions = () =>
   screen.queryAllByRole("option").map((option) => ({
     label: option.textContent,
@@ -85,8 +94,9 @@ describe("AiPreviewCard", () => {
     const { card } = renderCard(aiPreview());
 
     expect(card()).toHaveAttribute("data-ready", "true");
-    expect(within(card()).getByText("Tayyor")).toBeInTheDocument();
-    expect(card().className).toContain("border-l-[var(--color-success)]");
+    // Holat badge'i — yashil ton + matn (faqat rang bilan emas).
+    expect(within(card()).getByText("Tayyor")).toHaveClass("text-success-fg");
+    expect(within(card()).getByRole("heading", { name: "Aliyev Vali" })).toBeInTheDocument();
   });
 
   it("AI tumanni topmagan kartada tuman bo'sh, sariq belgi va \"Tuman tanlang\" izohi bor", () => {
@@ -94,7 +104,8 @@ describe("AiPreviewCard", () => {
 
     expect(card()).toHaveAttribute("data-ready", "false");
     expect(within(screen.getByTestId("ai-issues")).getByText("Tuman tanlang")).toBeInTheDocument();
-    expect(card().className).toContain("border-l-amber-400");
+    expect(screen.getByRole("list", { name: "Kamchiliklar" })).toBe(screen.getByTestId("ai-issues"));
+    expect(within(card()).getByText("To'ldirilmagan: 1 ta")).toHaveClass("text-warning-fg");
   });
 
   it("viloyat+tuman AI tomonidan birga to'ldirilganda tuman JIMGINA tozalanmaydi", async () => {
@@ -131,13 +142,14 @@ describe("AiPreviewCard", () => {
 
     await openSelect(FIELD.district);
 
-    await waitFor(() => expect(openOptions().length).toBeGreaterThan(2));
+    await waitFor(() => expect(openOptions().length).toBe(2));
+    // Taklif ENG TEPADA, alohida «AI takliflari» guruhida; qolgani «Barcha tumanlar» guruhida.
     expect(openOptions()).toEqual([
-      { label: "AI takliflari", disabled: true },
       { label: "Yunusobod • 1726266", disabled: false },
-      { label: "Barcha tumanlar", disabled: true },
       { label: "Chilonzor • 1726269", disabled: false },
     ]);
+    expect(groupOptions("AI takliflari")).toEqual(["Yunusobod • 1726266"]);
+    expect(groupOptions("Barcha tumanlar")).toEqual(["Chilonzor • 1726269"]);
   });
 
   it("boshqa viloyatdagi taklif tanlansa viloyat ham unga moslanadi", async () => {
@@ -187,7 +199,7 @@ describe("AiPreviewCard", () => {
     const { changes } = renderCard(aiPreview({ total_price: 0 }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Narx to'g'ri, tasdiqlayman" }));
 
-    fireEvent.change(screen.getByLabelText("Umumiy summa"), { target: { value: "5 000" } });
+    fireEvent.change(textbox("Umumiy summa"), { target: { value: "5 000" } });
 
     expect(changes.at(-1)).toMatchObject({ total_price: 5000, price_confirmed: false });
   });
@@ -212,7 +224,9 @@ describe("AiPreviewCard", () => {
 
     // 1-variant: katalogdan tanlash — AI takliflari tepada.
     await openSelect(FIELD.item);
-    expect(openOptions()[0]).toEqual({ label: "AI takliflari", disabled: true });
+    expect(openOptions()[0]).toEqual({ label: "Avto changyutgich", disabled: false });
+    expect(groupOptions("AI takliflari")).toEqual(["Avto changyutgich"]);
+    expect(groupOptions("Barcha mahsulotlar")).toEqual(["Telefon ushlagich"]);
     fireEvent.click(screen.getByRole("option", { name: "Avto changyutgich" }));
 
     expect(changes.at(-1)?.items[0]).toMatchObject({ product_id: "502", allow_free_text: false });
@@ -233,7 +247,7 @@ describe("AiPreviewCard", () => {
 
   it("telefonni qo'lda tuzatganda karetka saqlanadi (keepPhoneCaretAfterChange)", () => {
     const { changes } = renderCard(aiPreview({ phone_number: "90 123 45 678" }));
-    const input = screen.getByLabelText("Telefon") as HTMLInputElement;
+    const input = textbox("Telefon");
 
     expect(input.value).toBe("");
     expect(screen.getByText("AI o'qigan raqam: 90 123 45 678")).toBeInTheDocument();
@@ -244,59 +258,71 @@ describe("AiPreviewCard", () => {
     expect(mocks.keepCaret).toHaveBeenCalledWith(input, "90 123 45 67");
   });
   describe("telefon 390px (JzQIec06)", () => {
-    it("TAYYOR karta telefonda YIG'ILGAN: bitta qator \"Ism · tuman · narx\", bosilganda ochiladi", () => {
-      renderCard(aiPreview({ customer_name: "Aliyev Vali", district_name: "Chilonzor", total_price: 150000 }));
+    it("TAYYOR karta telefonda YIG'ILGAN: ism sarlavhada, bitta qator \"tuman · summa\", bosilganda ochiladi", () => {
+      const { card } = renderCard(aiPreview({ customer_name: "Aliyev Vali", district_name: "Chilonzor", total_price: 150000 }));
 
+      expect(within(card()).getByRole("heading", { name: "Aliyev Vali" })).toBeInTheDocument();
       const toggle = screen.getByTestId("ai-card-toggle");
-      expect(toggle).toHaveTextContent(/^Aliyev Vali\s*·\s*Chilonzor\s*·\s*150 000 so'm$/);
+      expect(toggle).toHaveTextContent(/^Kartani ochish:\s*Chilonzor\s*·\s*150 000 so'm$/);
       expect(toggle).toHaveAttribute("aria-expanded", "false");
-      // `hidden` faqat telefonda: `sm:flex` ish stolida har doim ko'rsatadi.
-      expect(screen.getByTestId("ai-card-body")).toHaveClass("hidden", "sm:flex");
-      expect(toggle).toHaveClass("sm:hidden");
+      expect(toggle).toHaveAttribute("aria-controls", screen.getByTestId("ai-card-body").id);
+      // Yig'ish faqat telefonda (< 768): tugma `hidden max-md:flex`, tana `max-md:hidden` — ish stolida doim ochiq.
+      expect(toggle).toHaveClass("hidden", "max-md:flex");
+      expect(screen.getByTestId("ai-card-body")).toHaveClass("max-md:hidden");
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
 
       fireEvent.click(toggle);
       expect(toggle).toHaveAttribute("aria-expanded", "true");
-      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
+      expect(toggle).toHaveTextContent(/^Kartani yig'ish:/);
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("max-md:hidden");
     });
 
-    it("TAYYOR BO'LMAGAN karta avtomatik ochiq va yig'ib bo'lmaydi", () => {
+    it("TAYYOR BO'LMAGAN karta avtomatik ochiq va yig'ib bo'lmaydi (yig'ish tugmasi yo'q)", () => {
       renderCard(aiPreview({ district_id: null, district_name: null }));
 
-      const toggle = screen.getByTestId("ai-card-toggle");
-      expect(toggle).toHaveAttribute("aria-expanded", "true");
-      expect(toggle).toBeDisabled();
-      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
+      expect(screen.queryByTestId("ai-card-toggle")).not.toBeInTheDocument();
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("max-md:hidden");
     });
 
     it("tahrirda karta tayyor bo'lsa O'ZI YOPILMAYDI; tayyor karta tayyor emasga o'tsa o'zi ochiladi", () => {
       const { card } = renderCard(aiPreview({ total_price: null }));
-      const price = within(card()).getByLabelText("Umumiy summa") as HTMLInputElement;
+      const price = within(card()).getByRole("textbox", { name: "Umumiy summa" }) as HTMLInputElement;
 
       fireEvent.change(price, { target: { value: "150000" } });
       expect(card()).toHaveAttribute("data-ready", "true");
-      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("max-md:hidden");
+      expect(screen.getByTestId("ai-card-toggle")).toHaveAttribute("aria-expanded", "true");
 
       fireEvent.click(screen.getByTestId("ai-card-toggle"));
-      expect(screen.getByTestId("ai-card-body")).toHaveClass("hidden");
+      expect(screen.getByTestId("ai-card-body")).toHaveClass("max-md:hidden");
 
       fireEvent.change(price, { target: { value: "" } });
       expect(card()).toHaveAttribute("data-ready", "false");
-      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("hidden");
+      expect(screen.getByTestId("ai-card-body")).not.toHaveClass("max-md:hidden");
+      expect(screen.queryByTestId("ai-card-toggle")).not.toBeInTheDocument();
     });
 
-    it("telefonda bosiladigan elementlar 44px (h-11/min-h-11), ish stolida zich", () => {
+    it("telefonda bosiladigan elementlar 44px (`max-md:size-11` / `max-md:min-h-11`), ish stolida zich", () => {
       const { card } = renderCard(aiPreview());
-      for (const name of ["+", "-", "Mahsulotni olib tashlash", "Bu buyurtmani tashlab yuborish"]) {
-        const button = within(card()).getAllByRole("button", { name })[0];
-        expect(button.className, name).toMatch(/(^|\s)(h-11|min-h-11)(\s|$)/);
+      for (const name of [
+        "telefon ushlagich sonini oshirish",
+        "telefon ushlagich sonini kamaytirish",
+        "Mahsulotni olib tashlash: telefon ushlagich",
+        "Bu buyurtmani tashlab yuborish",
+        "Bu kartani yaratish",
+      ]) {
+        const button = within(card()).getByRole("button", { name });
+        expect(button.className, name).toMatch(/(^|\s)max-md:(size-11|min-h-11)(\s|$)/);
       }
-      expect(within(card()).getByRole("button", { name: "Bu kartani yaratish" }).className).toMatch(/min-h-11/);
+      // Son guruhi nomlangan, bir dona bo'lsa «−» o'chiq.
+      const quantity = within(card()).getByRole("group", { name: "telefon ushlagich soni" });
+      expect(within(quantity).getByRole("button", { name: "telefon ushlagich sonini kamaytirish" })).toBeDisabled();
     });
 
-    it("maydonlar 1 / 2 / 3 ustun (telefon / sm / xl)", () => {
+    it("maydonlar moslashuvchan to'rda: 220px dan tor joyda bitta ustun (telefon), kengda 2–3 ta", () => {
       const { card } = renderCard(aiPreview());
-      const grid = within(card()).getByLabelText("Ism").closest(".grid") as HTMLElement;
-      expect(grid).toHaveClass("grid-cols-1", "sm:grid-cols-2", "xl:grid-cols-3");
+      const grid = within(card()).getByRole("textbox", { name: "Mijoz ismi" }).closest(".grid") as HTMLElement;
+      expect(grid).toHaveClass("grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))]");
     });
   });
 });

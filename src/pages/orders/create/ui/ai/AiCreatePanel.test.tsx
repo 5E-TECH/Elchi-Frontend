@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => ({ post: vi.fn(), get: vi.fn() }));
 
 vi.mock("../../../../../shared/api/api", () => ({ api: { post: mocks.post, get: mocks.get } }));
 
+import { FormProvider, useForm } from "react-hook-form";
 import type { AiConfirmRequest, AiPreviewOrder } from "../../../../../entities/ai-order";
+import { ORDER_CREATE_DEFAULT_VALUES, type OrderCreateFormValues } from "../../model/orderCreateForm";
 import AiCreatePanel from "./AiCreatePanel";
 
 /**
@@ -38,7 +40,7 @@ const renderPanel = () =>
   });
 
 const parse = async (expectedCards: number) => {
-  fireEvent.change(screen.getByLabelText("Buyurtma matni"), { target: { value: "buyurtmalar matni" } });
+  fireEvent.change(screen.getByRole("textbox", { name: "Buyurtma matni" }), { target: { value: "buyurtmalar matni" } });
   fireEvent.click(screen.getByRole("button", { name: /Tahlil qilish|Qayta tahlil qil/ }));
   if (expectedCards > 0) {
     await waitFor(() => expect(screen.getAllByTestId("ai-preview-card")).toHaveLength(expectedCards));
@@ -80,13 +82,13 @@ describe("AiCreatePanel", () => {
 
     const bar = screen.getByTestId("ai-confirm-bar");
     expect(bar).toHaveTextContent("2 ta tayyor · 1 ta to'ldirilmagan");
-    expect(within(bar).getByRole("button", { name: "Tayyorlarini yaratish (2)" })).toBeEnabled();
+    expect(within(bar).getByRole("button", { name: "Tayyorlarini yaratish — 2 ta" })).toBeEnabled();
 
     // Bitta tayyor kartani tashlab yuborish — N darhol kamayadi.
     fireEvent.click(within(screen.getAllByTestId("ai-preview-card")[0]).getByRole("button", { name: "Bu buyurtmani tashlab yuborish" }));
-    expect(within(bar).getByRole("button", { name: "Tayyorlarini yaratish (1)" })).toBeInTheDocument();
+    expect(within(bar).getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" })).toBeInTheDocument();
 
-    fireEvent.click(within(bar).getByRole("button", { name: "Tayyorlarini yaratish (1)" }));
+    fireEvent.click(within(bar).getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
 
     await waitFor(() => expect(confirmCalls()).toHaveLength(1));
     expect(confirmCalls()[0].orders.map((o) => o.customer.name)).toEqual(["Mijoz 2"]);
@@ -97,7 +99,7 @@ describe("AiCreatePanel", () => {
     renderPanel();
     await parse(1);
 
-    expect(screen.getByRole("button", { name: "Tayyorlarini yaratish (0)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Tayyorlarini yaratish — 0 ta" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: /Hammasini/ })).not.toBeInTheDocument();
   });
 
@@ -106,12 +108,17 @@ describe("AiCreatePanel", () => {
     renderPanel();
     await parse(6);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (6)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 6 ta" }));
 
-    expect(screen.getByText("6 ta buyurtma yaratiladi. Tuman va narxlarni tekshirdingizmi?")).toBeInTheDocument();
-    const list = screen.getByTestId("ai-confirm-list");
-    expect(within(list).getAllByRole("listitem")).toHaveLength(6);
-    expect(list).toHaveTextContent("Mijoz 1—Chilonzor—101 000");
+    const dialog = await screen.findByRole("dialog", { name: "6 ta buyurtma yaratiladi" });
+    expect(dialog).toHaveAccessibleDescription("Tuman va narxlarni tekshirdingizmi?");
+    const list = within(dialog).getByRole("list", { name: "Yaratiladigan buyurtmalar" });
+    const rows = within(list).getAllByRole("listitem");
+    expect(rows).toHaveLength(6);
+    // Har qatorda ism, summa va tuman.
+    expect(within(rows[0]).getByText("Mijoz 1")).toBeInTheDocument();
+    expect(within(rows[0]).getByText("101 000 so'm")).toBeInTheDocument();
+    expect(within(rows[0]).getByText("Chilonzor")).toBeInTheDocument();
     expect(confirmCalls()).toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Ha, yaratish" }));
@@ -131,15 +138,20 @@ describe("AiCreatePanel", () => {
     renderPanel();
     await parse(10);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (10)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 10 ta" }));
     fireEvent.click(screen.getByRole("button", { name: "Ha, yaratish" }));
 
-    expect(await screen.findByText("7 ta yaratildi · 3 ta xato")).toBeInTheDocument();
-    expect(within(screen.getByTestId("ai-created-list")).getAllByRole("listitem")).toHaveLength(7);
+    const summary = await screen.findByText("7 ta yaratildi · 3 ta xato");
+    // Xato bor — natija xabari sariq (`warning`), `role="status"`.
+    expect(summary.closest("[data-tone]")).toHaveAttribute("data-tone", "warning");
+    expect(summary.closest("[data-tone]")).toHaveAttribute("role", "status");
+    const createdRows = within(screen.getByTestId("ai-created-list")).getAllByRole("listitem");
+    expect(createdRows).toHaveLength(7);
+    expect(createdRows[0]).toHaveTextContent(/^Mijoz 1 · \+998 90 100 00 01Chilonzor · 101 000 so'm · №900$/);
     const remaining = screen.getAllByTestId("ai-preview-card");
     expect(remaining).toHaveLength(3);
     remaining.forEach((card) => expect(within(card).getByText("tuman topilmadi")).toBeInTheDocument());
-    expect(remaining.map((card) => (within(card).getByLabelText("Ism") as HTMLInputElement).value)).toEqual([
+    expect(remaining.map((card) => (within(card).getByRole("textbox", { name: "Mijoz ismi" }) as HTMLInputElement).value)).toEqual([
       "Mijoz 2",
       "Mijoz 5",
       "Mijoz 9",
@@ -154,7 +166,7 @@ describe("AiCreatePanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Bu kartani yaratish" }));
     expect(await screen.findByText("telefon noto'g'ri")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Ism"), { target: { value: "Aliyev Vali" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Mijoz ismi" }), { target: { value: "Aliyev Vali" } });
     expect(screen.queryByText("telefon noto'g'ri")).not.toBeInTheDocument();
     confirmResponse = allResultsOk;
     fireEvent.click(screen.getByRole("button", { name: "Bu kartani yaratish" }));
@@ -168,15 +180,17 @@ describe("AiCreatePanel", () => {
     parseOrders = [order(1), order(2)];
     renderPanel();
     await parse(2);
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (2)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 2 ta" }));
     await waitFor(() => expect(screen.queryAllByTestId("ai-preview-card")).toHaveLength(0));
+    // Xatosiz — natija xabari yashil (`success`).
+    expect(screen.getByText("2 ta yaratildi · 0 ta xato").closest("[data-tone]")).toHaveAttribute("data-tone", "success");
 
     parseOrders = [order(1), order(2), order(3)];
     await reparse();
 
     expect(await screen.findByText("2 ta allaqachon yaratilgan buyurtma o'tkazib yuborildi.")).toBeInTheDocument();
     expect(screen.getAllByTestId("ai-preview-card")).toHaveLength(1);
-    expect((screen.getByLabelText("Ism") as HTMLInputElement).value).toBe("Mijoz 3");
+    expect((screen.getByRole("textbox", { name: "Mijoz ismi" }) as HTMLInputElement).value).toBe("Mijoz 3");
   });
 
   it("so'rov davomida tugma disabled — ikki marta bosish ikkita POST yubormaydi", async () => {
@@ -190,11 +204,13 @@ describe("AiCreatePanel", () => {
     renderPanel();
     await parse(1);
 
-    const button = screen.getByRole("button", { name: "Tayyorlarini yaratish (1)" });
+    const button = screen.getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" });
     fireEvent.click(button);
     fireEvent.click(button);
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Yaratilmoqda..." })).toBeDisabled());
+    // Yuklanish holati (`Button loading`): `aria-disabled` + `aria-busy`, bosish bloklangan.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Yaratilmoqda..." })).toHaveAttribute("aria-disabled", "true"));
+    expect(screen.getByRole("button", { name: "Yaratilmoqda..." })).toHaveAttribute("aria-busy", "true");
     fireEvent.click(screen.getByRole("button", { name: "Yaratilmoqda..." }));
     expect(confirmCalls()).toHaveLength(1);
     resolveConfirm({ data: { data: { results: [{ index: 0, ok: true, order_id: "900" }] } } });
@@ -224,7 +240,7 @@ describe("AiCreatePanel", () => {
     renderPanel();
     await parse(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (1)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
 
     await waitFor(() => expect(confirmCalls()).toHaveLength(1));
     const request = confirmCalls()[0];
@@ -245,7 +261,7 @@ describe("AiCreatePanel", () => {
     renderPanel();
     await parse(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (1)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
 
     expect(await screen.findByText(/Natija noma'lum/)).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -260,7 +276,7 @@ describe("AiCreatePanel", () => {
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
     await parse(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (1)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
 
     await waitFor(() =>
       expect(invalidate.mock.calls.map(([filters]) => filters?.queryKey)).toEqual(
@@ -300,7 +316,7 @@ describe("AiCreatePanel", () => {
     parseOrders = [order(1)];
     renderPanel();
     await parse(1);
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (1)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
     await waitFor(() => expect(screen.queryAllByTestId("ai-preview-card")).toHaveLength(0));
 
     const unload = new Event("beforeunload", { cancelable: true });
@@ -329,7 +345,7 @@ describe("AiCreatePanel", () => {
     renderPanel();
     await parse(2);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (2)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 2 ta" }));
 
     await waitFor(() => expect(confirmCalls()).toHaveLength(1));
     expect(confirmCalls()[0].orders.map((o) => o.draft_id)).toEqual([
@@ -348,7 +364,7 @@ describe("AiCreatePanel", () => {
     renderPanel();
     await parse(2);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish (2)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 2 ta" }));
 
     const [first, second] = await waitFor(() => {
       const cards = screen.getAllByTestId("ai-preview-card");
@@ -357,6 +373,26 @@ describe("AiCreatePanel", () => {
     });
     expect(within(first).queryByText("server matni")).not.toBeInTheDocument();
     expect(within(second).getByText(/Mijoz tumani buyurtma tumani bilan bir xil emas/)).toBeInTheDocument();
+  });
+
+  it("xodim market tanlamagan bo'lsa: ko'rsatma va market tanlash maydoni, AI kirish paneli yo'q", () => {
+    // Market maydoni sahifaning umumiy formasida — panel uni shu yerdan o'qiydi.
+    const Harness = () => {
+      const methods = useForm<OrderCreateFormValues>({ defaultValues: ORDER_CREATE_DEFAULT_VALUES });
+      return (
+        <FormProvider {...methods}>
+          <AiCreatePanel active isMarketRole={false} market={null} onSwitchToManual={vi.fn()} onChangeMarket={vi.fn()} />
+        </FormProvider>
+      );
+    };
+    renderWithProviders(<Harness />, {
+      preloadedState: { role: { id: "1", role: "admin", region: null, name: "Admin" } } as never,
+    });
+
+    const hint = screen.getByText("Avval marketni tanlang — AI buyurtmalarni shu market nomidan yaratadi.");
+    expect(hint.closest("[data-tone]")).toHaveAttribute("data-tone", "info");
+    expect(screen.getByRole("button", { name: /Market tanlash/ })).toHaveAttribute("aria-haspopup", "dialog");
+    expect(screen.queryByRole("textbox", { name: "Buyurtma matni" })).not.toBeInTheDocument();
   });
 
   describe("telefon 390px (JzQIec06)", () => {

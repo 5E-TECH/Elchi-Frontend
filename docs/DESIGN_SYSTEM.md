@@ -377,7 +377,19 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   qaytarish — `/orders` dagi v2 oynalar, marketga qaytarish oynalari. Sahifa `pages/new_orders/components/new_orderUpdate.tsx`
   (konteyner) + `detail/` (kartalar, ruxsat `orderDetailAccess.ts`, javob tozalash `orderDetailModel.ts`). Ayni komponent
   `/new-orders/:marketId/edit/:orderId` da ham — u route'ning o'z maketlari (`*-neworders-market-order-edit`,
-  `market-new-orders-edit`) hali ko'chirilmagan, tafsilot ko'rinishi chiqadi. Yaratish — keyingi PR.
+  `market-new-orders-edit`) hali ko'chirilmagan, tafsilot ko'rinishi chiqadi.
+- **Ko'chirilgan:** `/new-orders/create` — buyurtma yaratish, barcha rollar (`*-create-manual*`, `*-create-step1|step2`,
+  `*-create-market-picker*`, `*-create-ai*`): sarlavha `PageHeader` («← Qabul va yaratish», «Yangi buyurtma», holatga
+  qarab izoh, o'ngda «Qo'lda | AI bilan» — `SegmentedControl`), ~ 924 px dan keng ekranda ikki ustun (asosiy + yon),
+  telefonda yopishqoq panel yo'q. Qo'lda: «Qadamlar» kartasi (`OrderStepper`; «O'zgartirish» / «Oldingi» 1-qadamga
+  qaytaradi, market va forma saqlanadi, boshqa market tanlansa katalog mahsulotlari tushib qoladi, «maxsus» qoladi),
+  «Market tanlang» (`Step1Market`) + market tanlash oynasi (`MarketPicker.tsx`: qidiruv, `listbox`, klaviatura,
+  skelet, «Market topilmadi»; ro'yxat faqat oyna ochiqligida so'raladi), 2-qadam — mijoz, manzil, mahsulotlar
+  (katalog + «maxsus»), yetkazish va izoh (`Step2Combined`), yon ustunda «Buyurtma xulosasi» (`Step2Summary`) va
+  bugungi «Yangi buyurtmalar» (`TodayOrdersCard`). Market rolida 1-qadam yo'q; planshetda yon kartalar yonma-yon.
+  AI bilan: matn/rasm paneli (`AiInputPanel`), tahlil kartalari (`AiPreviewCard`), tasdiq paneli va 5 tadan ortiq
+  buyurtmada tasdiq oynasi (`AiConfirmBar`), «Yaratildi (N)» (`AiCreatedList`), chiqib ketish himoyasi — `useConfirm()`.
+  Ogohlantirishlar — umumiy `ui/CreateAlert.tsx` (`.el-alert`). v1 `ui/formFieldStyles.tsx` o'chirildi.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

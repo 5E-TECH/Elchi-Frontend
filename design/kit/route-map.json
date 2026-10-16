@@ -311,7 +311,11 @@
         "src/pages/orders/create/ui/CreateModeTabs.tsx",
         "src/pages/orders/create/ui/OrderStepper.tsx",
         "src/pages/orders/create/ui/Step1Market.tsx",
+        "src/pages/orders/create/ui/MarketPicker.tsx",
         "src/pages/orders/create/ui/Step2Combined.tsx",
+        "src/pages/orders/create/ui/Step2Summary.tsx",
+        "src/pages/orders/create/ui/TodayOrdersCard.tsx",
+        "src/pages/orders/create/ui/CreateAlert.tsx",
         "src/pages/orders/create/ui/ai/AiCreatePanel.tsx",
         "src/pages/orders/create/ui/ai/AiInputPanel.tsx",
         "src/pages/orders/create/ui/ai/AiPreviewCard.tsx",
@@ -326,7 +330,7 @@
         "registrator": ["new-orders-create-step1", "new-orders-create-market-picker-dialog", "new-orders-create-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog"],
         "market": ["new-orders-create-manual", "new-orders-create-ai-input", "new-orders-create-ai-preview", "new-orders-create-ai-confirm-dialog"]
       },
-      "note": "Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — Step1Market.tsx ichida; AI tasdiqlash oynasi — AiConfirmBar.tsx."
+      "note": "Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — MarketPicker.tsx (Step1Market.tsx ochadi); 2-qadam o'ng ustuni — Step2Summary.tsx + TodayOrdersCard.tsx; AI tasdiqlash oynasi — AiConfirmBar.tsx. «Oldingi» / «O'zgartirish» 1-qadamga qaytaradi (market va forma saqlanadi)."
     },
     {
       "path": "/new-orders/incoming",
@@ -1365,11 +1369,11 @@
     "registrator-orders-detail-edit-order-dialog": "src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx",
     "registrator-orders-detail-edit-address-dialog": "src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx",
     "superadmin-neworders-create-manual-step1": "src/pages/orders/create/ui/Step1Market.tsx",
-    "superadmin-neworders-create-market-picker-dialog": "src/pages/orders/create/ui/Step1Market.tsx",
-    "admin-neworders-create-market-picker": "src/pages/orders/create/ui/Step1Market.tsx",
+    "superadmin-neworders-create-market-picker-dialog": "src/pages/orders/create/ui/MarketPicker.tsx",
+    "admin-neworders-create-market-picker": "src/pages/orders/create/ui/MarketPicker.tsx",
     "manager-new-orders-create-manual-step1": "src/pages/orders/create/ui/Step1Market.tsx",
     "registrator-new-orders-create-step1": "src/pages/orders/create/ui/Step1Market.tsx",
-    "registrator-new-orders-create-market-picker-dialog": "src/pages/orders/create/ui/Step1Market.tsx",
+    "registrator-new-orders-create-market-picker-dialog": "src/pages/orders/create/ui/MarketPicker.tsx",
     "superadmin-neworders-create-manual-step2": "src/pages/orders/create/ui/Step2Combined.tsx",
     "manager-new-orders-create-manual-step2": "src/pages/orders/create/ui/Step2Combined.tsx",
     "registrator-new-orders-create-step2": "src/pages/orders/create/ui/Step2Combined.tsx",

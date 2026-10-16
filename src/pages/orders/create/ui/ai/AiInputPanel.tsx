@@ -1,21 +1,36 @@
-import { memo, useEffect, useRef, useState, type ChangeEvent } from "react";
+// dizayn-v2: superadmin-neworders-create-ai-input, market-new-orders-create-ai-input, superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-preview
+import { memo, useEffect, useId, useRef, useState, type ChangeEvent } from "react";
 import type { AxiosError } from "axios";
-import { Camera, ImagePlus, Loader2, PencilLine, Sparkles, Store, X } from "lucide-react";
+import {
+  Camera,
+  CircleX,
+  Clock,
+  FileText,
+  Gauge,
+  ImagePlus,
+  Lock,
+  Pencil,
+  Power,
+  ServerCrash,
+  Sparkles,
+  Store,
+  TriangleAlert,
+  WifiOff,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAiParse, type AiPreviewOrder } from "../../../../../entities/ai-order";
+import { cx } from "../../../../../shared/lib/cx";
 import {
   PrepareImageError,
   prepareImage,
   type PrepareImageErrorCode,
   type PreparedImage,
 } from "../../../../../shared/lib/downscaleImage";
-import {
-  FormFieldError,
-  FormStateNote,
-  getActionButtonClassName,
-  getFieldClassName,
-  orderInputClassName,
-} from "../formFieldStyles";
+import { formatNumberLocalized } from "../../../../../shared/lib/formatMoney";
+import { Button, Card, IconButton, Spinner, TextInput } from "../../../../../shared/ui/primitives";
+import { CreateAlert } from "../CreateAlert";
 import { parseFailureView, parseHttpErrorView, type AiErrorView } from "./aiErrorText";
 
 /** Backend DTO bilan bir xil: matn ko'pi bilan 4000 belgi. */
@@ -35,6 +50,23 @@ const IMAGE_ERROR_KEYS: Record<PrepareImageErrorCode, string> = {
   heic_unsupported: "aiImageHeic",
 };
 
+/**
+ * Xato sarlavhasi → ikonka (maket `market-new-orders-create-ai-input` «Panelning boshqa holatlari»).
+ * Ro'yxatda yo'q sarlavha — tonning sukut ikonkasi (`CreateAlert`).
+ */
+const FAILURE_ICONS: Record<string, LucideIcon> = {
+  aiDisabledTitle: Power,
+  aiCapTitle: Gauge,
+  aiInsufficientTitle: Gauge,
+  aiRefusedTitle: TriangleAlert,
+  aiHttpForbiddenTitle: Lock,
+  aiNoMarketTitle: Store,
+  aiNotFoundTitle: CircleX,
+  aiTruncatedTitle: FileText,
+  aiNetworkTitle: WifiOff,
+  aiHttpServerTitle: ServerCrash,
+};
+
 type PanelImage = PreparedImage & { id: string };
 
 type AiInputPanelProps = {
@@ -46,22 +78,36 @@ type AiInputPanelProps = {
   onSelectMarket?: () => void;
 };
 
+/** Maydon ostidagi qizil matn (`.el-error-text`). */
+const ErrorText = ({ children }: { children: string }) => (
+  <p className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
+    <CircleX size={16} aria-hidden="true" className="mt-px shrink-0" />
+    <span className="min-w-0 [overflow-wrap:anywhere]">{children}</span>
+  </p>
+);
+
 /**
- * AI KIRISH PANELI — matn va/yoki buyurtma varag'i surati, tahlil,
- * yuklanish holati va bekor qilish.
+ * AI KIRISH PANELI (maket `*-create-ai-input`) — karta «Buyurtma matni»: matn maydoni + hisoblagich,
+ * buyurtma varag'i suratlari (≥ 768 — «Surat qo'shish (N/3)», telefonda «Surat olish» / «Galereyadan»),
+ * eskizlar, pastda «Tahlil qilish». Holatlar karta ichida: suratlar tayyorlanmoqda, matn chegaradan oshdi,
+ * tahlil (spinner + «Bekor qilish»), juda ko'p so'rov (sanoq), AI ishlatib bo'lmadi (sariq) yoki shu urinish
+ * bajarilmadi (qizil). Tahlildan keyin karta «Kiritilgan matn» ko'rinishiga yig'iladi.
  *
  * ⚠️ AVTOMATIK QAYTA URINISH YO'Q: har tahlil pul sarflaydi, qayta so'rovni
  * faqat operator o'zi bosadi. Barcha tugmalar `type="button"` — panel
  * qo'lda yaratish `<form>` i ichida turadi.
  */
 const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: AiInputPanelProps) => {
-  const { t } = useTranslation("orders");
+  const { t, i18n } = useTranslation("orders");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const parse = useAiParse();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const nextImageId = useRef(0);
+  const textareaId = useId();
+  const counterId = useId();
 
   const [text, setText] = useState("");
   const [overLimit, setOverLimit] = useState(false);
@@ -80,6 +126,8 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
   const isEmpty = !text.trim() && images.length === 0;
   const canParse = !isEmpty && !isParsing && !progress && throttleLeft === 0;
   const imagesLocked = isParsing || Boolean(progress) || images.length >= AI_MAX_IMAGES;
+  const counterDanger = text.length >= AI_MAX_TEXT || overLimit;
+  const number = (value: number) => formatNumberLocalized(value, { language });
 
   useEffect(() => {
     if (throttleUntil <= Date.now()) return;
@@ -195,59 +243,94 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
 
   if (collapsed) {
     return (
-      <div
-        data-testid="ai-input-collapsed"
-        className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary p-3 dark:border-primarydark dark:bg-primarydark/30 sm:flex-row sm:items-center sm:justify-between sm:p-4"
-      >
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-maindark dark:text-primary">
-            {text.trim() || t("aiImagesOnly")}
-          </p>
-          <p className="text-xs text-gray-400">{t("aiInputSummary", { chars: text.length, images: images.length })}</p>
+      <Card as="section" padding="md" aria-label={t("aiInputCollapsedLabel")} data-testid="ai-input-collapsed">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <span
+            aria-hidden="true"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted"
+          >
+            <Sparkles size={18} />
+          </span>
+          <div className="flex min-w-0 flex-[999_1_240px] flex-col gap-0.5">
+            <span className="truncate text-sm font-semibold text-text">{text.trim() || t("aiImagesOnly")}</span>
+            <span className="text-[13px] text-text-muted">
+              {t("aiInputSummary", { chars: number(text.length), images: images.length })}
+            </span>
+          </div>
+          <Button variant="secondary" leftIcon={Pencil} onClick={() => setCollapsed(false)} className="max-md:w-full">
+            {t("aiEditInput")}
+          </Button>
         </div>
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          className={`${getActionButtonClassName({ variant: "secondary" })} min-h-11 w-full sm:min-h-10 sm:w-auto`}
-        >
-          <PencilLine size={16} />
-          {t("aiEditInput")}
-        </button>
-      </div>
+      </Card>
     );
   }
 
+  const parseLabel =
+    throttleLeft > 0
+      ? t("aiThrottleWait", { seconds: throttleLeft })
+      : failure?.action === "retry"
+        ? t(failure.actionLabel)
+        : t("aiParseButton");
+
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary p-3 dark:border-primarydark dark:bg-primarydark/30 sm:gap-4 sm:p-5">
+    <Card
+      title={<label htmlFor={textareaId}>{t("aiTextLabel")}</label>}
+      description={t("aiTextHint")}
+      bodyClassName="flex flex-col gap-5"
+      footer={
+        isParsing ? (
+          <div className="flex w-full flex-wrap items-center justify-between gap-3">
+            <span role="status" className="inline-flex items-center gap-2 text-[13px] font-semibold text-action-fg">
+              <Spinner size="sm" />
+              {t("aiParsing")}
+            </span>
+            <Button variant="secondary" leftIcon={X} onClick={cancelParse}>
+              {t("aiCancel")}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex w-full flex-wrap justify-end">
+            <Button leftIcon={Sparkles} onClick={runParse} disabled={!canParse} className="max-md:w-full">
+              {parseLabel}
+            </Button>
+          </div>
+        )
+      }
+    >
       <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="ai-order-text"
-          className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-        >
-          {t("aiTextLabel")}
-        </label>
-        <textarea
+        <TextInput
+          multiline
           ref={textareaRef}
-          id="ai-order-text"
-          rows={8}
+          id={textareaId}
+          rows={6}
           value={text}
           onChange={handleTextChange}
           readOnly={isParsing}
+          invalid={overLimit}
           placeholder={t("aiTextPlaceholder")}
-          className={getFieldClassName(`${orderInputClassName} resize-y`, overLimit)}
+          aria-describedby={counterId}
+          className="leading-[1.6]"
         />
-        <div className="flex items-center justify-between gap-2 text-xs">
-          <span className={overLimit ? "text-error" : "text-gray-400"}>{overLimit ? t("aiTextTooLong") : ""}</span>
+        <div className="flex items-start justify-between gap-3">
+          {overLimit ? (
+            <span className="min-w-0 text-xs font-semibold text-danger-fg">{t("aiTextTooLong")}</span>
+          ) : (
+            <span />
+          )}
           <span
+            id={counterId}
             data-testid="ai-text-counter"
-            className={`font-mono ${text.length >= AI_MAX_TEXT || overLimit ? "font-bold text-error" : "text-gray-400"}`}
+            className={cx(
+              "whitespace-nowrap text-xs tabular-nums",
+              counterDanger ? "font-semibold text-danger-fg" : "text-text-muted",
+            )}
           >
-            {text.length} / {AI_MAX_TEXT}
+            {number(text.length)} / {number(AI_MAX_TEXT)}
           </span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {/* Galereya: bir nechta surat. Kamera: telefonda to'g'ridan orqa kamera. */}
         <input
           ref={fileInputRef}
@@ -267,142 +350,120 @@ const AiInputPanel = ({ marketId, onParsed, onSwitchToManual, onSelectMarket }: 
           data-testid="ai-camera-input"
           onChange={(event) => void handleFiles(event.target.files)}
         />
-        {/* Telefonda ikki alohida tugma ("Surat olish" / "Galereyadan"), ish stolida bitta. */}
-        <div className="grid grid-cols-2 gap-2 sm:hidden">
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
-            disabled={imagesLocked}
-            className={`${getActionButtonClassName({ variant: "secondary", disabled: imagesLocked })} min-h-11 px-3`}
-          >
-            <Camera size={16} />
-            {t("aiTakePhoto")}
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={imagesLocked}
-            className={`${getActionButtonClassName({ variant: "secondary", disabled: imagesLocked })} min-h-11 px-3`}
-          >
-            <ImagePlus size={16} />
-            {t("aiFromGallery")}
-          </button>
-        </div>
-        {images.length > 0 && (
-          <p className="text-xs text-gray-400 sm:hidden">{t("aiImageCount", { count: images.length, max: AI_MAX_IMAGES })}</p>
-        )}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={imagesLocked}
-          className={`${getActionButtonClassName({
-            variant: "secondary",
-            disabled: imagesLocked,
-          })} hidden sm:flex sm:w-auto sm:self-start`}
-        >
-          <ImagePlus size={16} />
-          {t("aiAddImage", { count: images.length, max: AI_MAX_IMAGES })}
-        </button>
 
-        {progress && (
-          <FormStateNote state="loading" message={t("aiImagePreparing", progress)} />
-        )}
-        {tooManyImages && <FormFieldError message={t("aiTooManyImages", { max: AI_MAX_IMAGES })} />}
+        {/* ≥ 768 — bitta «Surat qo'shish (N/3)»; telefonda ikki tugma: «Surat olish» va «Galereyadan». */}
+        <div className="flex flex-wrap items-center gap-3 max-md:hidden">
+          <Button variant="secondary" leftIcon={ImagePlus} onClick={() => fileInputRef.current?.click()} disabled={imagesLocked}>
+            {t("aiAddImage", { count: images.length, max: AI_MAX_IMAGES })}
+          </Button>
+        </div>
+        <div className="hidden flex-col gap-2 max-md:flex">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="secondary"
+              leftIcon={Camera}
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={imagesLocked}
+              className="min-w-0 px-3"
+            >
+              {t("aiTakePhoto")}
+            </Button>
+            <Button
+              variant="secondary"
+              leftIcon={ImagePlus}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={imagesLocked}
+              className="min-w-0 px-3"
+            >
+              {t("aiFromGallery")}
+            </Button>
+          </div>
+          {images.length > 0 ? (
+            <span className="text-[13px] text-text-muted">
+              {t("aiImageCount", { count: images.length, max: AI_MAX_IMAGES })}
+            </span>
+          ) : null}
+        </div>
+
+        {progress ? (
+          <div role="status" className="flex flex-col gap-2">
+            <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-text-muted">
+              <Spinner size="sm" />
+              {t("aiImagePreparing", progress)}
+            </span>
+            <span aria-hidden="true" className="block h-2 overflow-hidden rounded-full bg-sunken">
+              <span
+                className="block h-full rounded-full bg-action"
+                style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+              />
+            </span>
+          </div>
+        ) : null}
+        {tooManyImages ? <ErrorText>{t("aiTooManyImages", { max: AI_MAX_IMAGES })}</ErrorText> : null}
         {fileErrors.map((message) => (
-          <FormFieldError key={message} message={message} />
+          <ErrorText key={message}>{message}</ErrorText>
         ))}
 
-        {images.length > 0 && (
-          <div className="grid grid-cols-3 gap-2" data-testid="ai-image-grid">
+        {images.length > 0 ? (
+          <div role="list" aria-label={t("aiImagesLabel")} data-testid="ai-image-grid" className="flex flex-wrap gap-3">
             {images.map((image) => (
-              <div
-                key={image.id}
-                className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-primarydark"
-              >
-                <img src={image.preview} alt={image.name} className="aspect-square w-full object-cover" />
-                <span className="absolute bottom-1 left-1 rounded-md bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-white">
-                  {Math.round(image.bytes / 1024)} KB
-                </span>
-                {/* Bosish maydoni 44px, ko'rinadigan doira kichik — eskizni to'smaydi. */}
-                <button
-                  type="button"
-                  aria-label={t("aiRemoveImage")}
-                  onClick={() => removeImage(image.id)}
-                  disabled={isParsing}
-                  className="group absolute right-0 top-0 flex h-11 w-11 items-start justify-end p-1"
-                >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white group-hover:bg-black/80">
-                    <X size={14} />
+              <div key={image.id} role="listitem">
+                <div className="relative size-28 overflow-hidden rounded-xl border border-border bg-sunken">
+                  <img src={image.preview} alt={image.name} className="size-full object-cover" />
+                  <span className="absolute bottom-1.5 left-1.5 inline-flex h-6 items-center rounded-md bg-surface px-2 text-xs font-semibold leading-none text-text-muted ring-1 ring-inset ring-border">
+                    {number(Math.round(image.bytes / 1024))} KB
                   </span>
-                </button>
+                  <IconButton
+                    variant="secondary"
+                    size="sm"
+                    icon={X}
+                    label={t("aiRemoveImage", { name: image.name })}
+                    onClick={() => removeImage(image.id)}
+                    disabled={isParsing}
+                    className="absolute right-1 top-1"
+                  />
+                </div>
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
-      {failure && (
-        <div
+      {failure ? (
+        <CreateAlert
+          tone={failure.tone === "block" ? "warning" : "danger"}
           role="alert"
+          icon={FAILURE_ICONS[failure.title]}
+          title={t(failure.title)}
           data-testid={failure.tone === "block" ? "ai-block" : "ai-error"}
-          className={`flex flex-col gap-2 rounded-xl border p-3 text-sm ${
-            failure.tone === "block"
-              ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
-              : "border-red-200 bg-red-50 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
-          }`}
+          action={
+            // «Qayta urinib ko'ring» — asosiy tugmaning o'zi (pastda), bu yerda takrorlanmaydi.
+            failure.action !== "retry" ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={failure.action === "selectMarket" ? Store : Pencil}
+                onClick={() => runFailureAction(failure)}
+              >
+                {t(failure.actionLabel)}
+              </Button>
+            ) : undefined
+          }
         >
-          <p className="font-semibold">{t(failure.title)}</p>
-          <p className="text-xs">{t(failure.description)}</p>
-          {failure.detail && <p className="break-words text-xs opacity-80">{failure.detail}</p>}
-          {/* "Qayta urinish" asosiy tugmada — bu yerda takrorlanmaydi. */}
-          {failure.action !== "retry" && (
-            <button
-              type="button"
-              onClick={() => runFailureAction(failure)}
-              className={`${getActionButtonClassName({
-                variant: failure.tone === "block" ? "primary" : "secondary",
-              })} min-h-11 w-full sm:min-h-10 sm:w-auto sm:self-start`}
-            >
-              {failure.action === "selectMarket" ? <Store size={16} /> : <PencilLine size={16} />}
-              {t(failure.actionLabel)}
-            </button>
-          )}
-        </div>
-      )}
+          {t(failure.description)}
+          {failure.detail ? (
+            <span className="mt-0.5 block text-text-muted [overflow-wrap:anywhere]">{failure.detail}</span>
+          ) : null}
+        </CreateAlert>
+      ) : null}
 
-      {throttled && throttleLeft > 0 && <FormFieldError message={t("aiThrottled")} />}
-
-      {isParsing ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm font-semibold text-main" role="status">
-            <Loader2 size={18} className="animate-spin" />
-            {t("aiParsing")}
-          </div>
-          <button
-            type="button"
-            onClick={cancelParse}
-            className={`${getActionButtonClassName({ variant: "secondary" })} min-h-11 w-full sm:min-h-10 sm:w-auto`}
-          >
-            <X size={16} />
-            {t("aiCancel")}
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={runParse}
-          disabled={!canParse}
-          className={`${getActionButtonClassName({ variant: "primary", disabled: !canParse })} min-h-11 w-full sm:min-h-10 sm:w-auto sm:self-end`}
-        >
-          <Sparkles size={16} />
-          {throttleLeft > 0
-            ? t("aiThrottleWait", { seconds: throttleLeft })
-            : failure?.action === "retry"
-              ? t(failure.actionLabel)
-              : t("aiParseButton")}
-        </button>
-      )}
-    </div>
+      {throttled && throttleLeft > 0 ? (
+        <p role="alert" className="flex items-center gap-2 text-[13px] font-semibold text-danger-fg">
+          <Clock size={16} aria-hidden="true" className="shrink-0" />
+          {t("aiThrottled")}
+        </p>
+      ) : null}
+    </Card>
   );
 };
 

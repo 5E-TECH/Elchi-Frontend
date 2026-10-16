@@ -71,10 +71,12 @@ describe("Qabul va yaratish — Buyurtma yaratish tugmasi", () => {
     expect(screen.getAllByText("Buyurtma yaratish")).toHaveLength(1);
   });
 
-  it("forma ochiq bo'lsa tugma va tablar yashirin (forma o'z 'Orqaga'si bilan)", () => {
+  it("forma ochiq bo'lsa sarlavha, tugma va tablar yashirin — yaratish sahifasi o'z sarlavhasini chizadi (dizayn v2)", () => {
     renderPage("/new-orders/create", "admin");
 
-    expect(screen.getByText("Qabul va yaratish")).toBeInTheDocument();
+    // Eski «Qabul va yaratish» sarlavhasi takrorlanmaydi: sahifaning o'zida «← Qabul va yaratish» havolasi bor.
+    expect(screen.queryByText("Qabul va yaratish")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Buyurtma yaratish" })).not.toBeInTheDocument();
     expect(screen.queryByText("Marketlar")).not.toBeInTheDocument();
   });

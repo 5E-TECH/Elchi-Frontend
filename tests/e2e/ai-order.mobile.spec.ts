@@ -85,11 +85,10 @@ const openAiMode = async (page: Page) => {
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
 
   await page.goto("/new-orders/create");
-  const tabs = page.getByTestId("create-mode-tabs");
-  await tabs.getByRole("button", { name: "Qo'lda" }).click();
-  await tabs.getByRole("tab", { name: "AI bilan" }).click();
+  // «Yaratish usuli» — sarlavhadagi segment (dizayn v2: `radiogroup`).
+  await page.getByTestId("create-mode-tabs").getByRole("radio", { name: "AI bilan" }).click();
 
-  await page.getByLabel("Buyurtma matni").fill("12 ta buyurtma matni");
+  await page.getByRole("textbox", { name: "Buyurtma matni" }).fill("12 ta buyurtma matni");
   await page.getByRole("button", { name: "Tahlil qilish" }).click();
   await expect(page.getByTestId("ai-preview-card")).toHaveCount(12);
 };
@@ -115,9 +114,9 @@ test.describe("AI buyurtma — 390px", () => {
       const ready = (await card.getAttribute("data-ready")) === "true";
       await expect(card.getByTestId("ai-card-body"), `#${i + 1}`).toBeVisible({ visible: !ready });
     }
-    // Uzun ism qisqaradi, lekin tuman va narx xulosada TO'LIQ ko'rinadi.
+    // Ism karta sarlavhasida (uzun bo'lsa o'raladi, kesilmaydi); xulosa qatorida tuman va narx TO'LIQ ko'rinadi.
+    await expect(cards.first().getByRole("heading", { level: 2 })).toHaveText("Mijoz 1 Abdurahmonov Abdulazizxon");
     const summary = cards.first().getByTestId("ai-card-toggle");
-    await expect(summary).toContainText("Mijoz 1");
     const price = summary.getByText("150 000 so'm", { exact: true });
     await expect(price).toBeVisible();
     const [priceBox, summaryBox] = [await price.boundingBox(), await summary.boundingBox()];
@@ -125,7 +124,7 @@ test.describe("AI buyurtma — 390px", () => {
     await expect(summary.getByText("Chilonzor", { exact: true })).toBeVisible();
 
     // Asosiy tugma matni kesilmaydi ("Tayyo..." emas).
-    const createLabel = page.getByTestId("ai-confirm-bar").getByText("Tayyorlarini yaratish (9)");
+    const createLabel = page.getByTestId("ai-confirm-bar").getByText("Tayyorlarini yaratish — 9 ta");
     expect(await createLabel.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 
     // Tayyor kartani ochish — kenglik baribir oshmaydi.
@@ -242,6 +241,9 @@ test.describe("AI buyurtma — 390px", () => {
   });
 
   test("klaviatura ochilganda tahrirlanayotgan maydon yakuniy panel ustida ko'rinadi", async ({ page }) => {
+    // Har maydon uchun klaviatura ochish/yopish sikli: yolg'iz ~20 s, to'liq to'plamda (4 worker) 30 s dan oshadi.
+    // Faqat vaqt byudjeti — tekshiruvlar o'zgarmagan.
+    test.setTimeout(60_000);
     const leaked = await mockApi(page);
     await openAiMode(page);
 
@@ -299,7 +301,7 @@ test.describe("AI buyurtma — 390px", () => {
     }
 
     // Yozilgan matn shu ko'rinib turgan maydonda.
-    const comment = page.locator("textarea[id$='-comment']:visible").last();
+    const comment = page.locator("input[id$='-comment']:visible").last();
     await comment.focus();
     await page.keyboard.type("eshik oldida");
     await expect(comment).toHaveValue(/eshik oldida$/);
