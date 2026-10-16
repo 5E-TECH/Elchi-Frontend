@@ -50,6 +50,15 @@ Tailwind'da token nomi bilan ishlatiladi: `bg-surface`, `text-text-muted`, `bord
 | `brand` | `#1f2853` | `#c9d2f5` | logotip, brend urg'usi |
 | `nav` | `#1f2853` | `#0a0e1b` | yon menyu foni (2-bosqich) |
 | `nav-accent` | `#8ea6ff` | `#8ea6ff` | **navy/to'q fon ustidagi** urg'u: faol menyu, skaner ramkasi, xato sahifasi ikonkasi (oq yuzada ishlatilmaydi) |
+| `nav-text` | `rgba(255,255,255,.80)` | `rgba(232,235,247,.78)` | yon menyu bandi matni va ikonkasi (faqat `nav` ustida; AA: 9.5 / 10.0) |
+| `nav-muted` | `rgba(255,255,255,.52)` | `rgba(232,235,247,.48)` | yon menyu guruh sarlavhasi (12px/600, katta harf; 4.9 / 4.4) |
+| `nav-hover` | `rgba(255,255,255,.08)` | `rgba(232,235,247,.06)` | yon menyu bandi hover foni |
+| `nav-active` | `rgba(255,255,255,.14)` | `rgba(142,166,255,.16)` | yon menyu faol bandi foni (`aria-current="page"`) |
+| `nav-line` | `rgba(255,255,255,.10)` | `rgba(232,235,247,.08)` | yon menyu ichidagi chiziq (logotip ostida) |
+| `nav-count` | `rgba(255,255,255,.14)` | xuddi shu | yon menyu son pilyulasi foni |
+| `on-nav` | `#ffffff` | `#ffffff` | `nav` ustidagi hover/faol band matni, son pilyulasi matni (faol band ustida 9.1 / 14.9) |
+| `avatar` | `#1f2853` | `#2b3768` | foydalanuvchi avatari (bosh harflar doirasi, maket `.el-avatar`; tunda `brand` emas — och doira bo'lib qolardi) |
+| `on-avatar` | `#ffffff` | `#e8ebf7` | avatar ustidagi bosh harflar |
 | `action` | `#2b50d8` | `#8ea6ff` | asosiy tugma foni, faol holat — **ko'k faqat interaktiv narsa** |
 | `action-hover` | `#2443b8` | `#a9bbff` | hover |
 | `action-fg` | `#2b50d8` | `#8ea6ff` | havola, faol tab matni |
@@ -69,8 +78,10 @@ Tailwind'da token nomi bilan ishlatiladi: `bg-surface`, `text-text-muted`, `bord
   + `on-solid` matn. Tungi mavzuda asosiy holat rangi maketdagidek ochiq (`*-fg` bilan bir xil) va matn to'q —
   ikkala mavzuda AA (1-bosqichda maketga moslashtirildi; ilgari tungi qiymat to'qroq edi).
 - Tungi mavzuda `action` fon ustidagi matn — `on-solid` (to'q). Oq matn faqat eski `main` ustida (alias, quyida).
-- Navy (`nav`) fon ustidagi matn uchun hali token yo'q (`on-solid` tungida to'q bo'lib qoladi). 2-bosqich (shell)
-  `on-nav` tokenini ega roziligi bilan qo'shadi; ungacha navy fonli yangi joy yaratilmaydi.
+- Navy (`nav`) fon ustidagi matn — faqat `nav-text` / `on-nav` / `nav-muted` (`on-solid` tungida to'q bo'lib qoladi,
+  `text-*` esa yorug' yuza uchun). Bu tokenlar 2-bosqichda maketdagi `--sidebar-*` dan olindi; `nav-*` yarim shaffof,
+  shuning uchun faqat `nav` foni ustida ishlatiladi (kontrast `themeTokens.test.ts` da aralashtirib o'lchanadi).
+  Eski `sidebar` nomi — **sahifa foni** aliasi (`bg`), yon menyu emas.
 - Yangi kodda **hex, `rgb()`, Tailwind rang oilalari (`bg-blue-500`, `text-gray-400` …) yozilmaydi** — faqat tokenlar.
   `dark:` juftlari ham kerak emas: tokenlar mavzuga o'zi moslashadi.
 
@@ -152,6 +163,16 @@ Breakpointlar: **≥ 1024** sidebar · **768–1023** menyu tugmasi + suriluvchi
 darajali ustunlari yashiriladi · **< 768** pastki menyu (5 band, yorliq bir qatorda, ≤ 70px; skaner rollarida
 markazda «Skaner»), jadval → kartalar, filtrlar «Filtrlar» tugmasi orqasida, dialog → pastdan chiquvchi oyna,
 asosiy amal pastda to'liq enli. Telefon kamerasi bilan skanerlash — to'liq ekran.
+
+**Shell** (`widgets/layout/dashboardLayout.tsx`, maket `.el-app`/`.el-content`): sahifa bitta kanvasda (`bg`),
+kontent karta emas — `max-w-[1440px]`, undan keng ekranda markazda, chekkalar ≥ 1024: 24 · 32 · 48 px, < 1024: 16 · 16 · 88 px. Yon menyu 248px
+(≥ 1024), yuqori panel 64px, telefonda pastki menyu 64px + safe-area (kontent uning ostida qolmaydi). Skroll — faqat
+shell'ning `<main>` ida: bo'lim (yo'l) almashsa tepaga, faqat `?search` (tab, filtr) o'zgarsa joyida, «Orqaga» —
+oldingi joyi. Bo'limlar orasida o'tishda butun ekranli yuklovchi yo'q: 150 ms dan keyin tepada 3px `action` chiziq
+(`RouteProgress`), menyuda bosilgan band darhol tanlangan. Sahifa ichida yon menyu, pastki menyu yoki sahifa darajasidagi o'z skroll
+konteyneri yasalmaydi. Sahifa `[data-shell-slot=content]` ichida chiziladi: o'ziga tashqi karta (`bg-surface` o'rami),
+tashqi chekka (`p-*` / `px-*`), `h-screen` yoki pastki menyu uchun joy qo'shmaydi — bular shell'da; sahifa ildizi
+faqat bo'limlar oralig'i (`flex flex-col gap-6 max-md:gap-4`).
 
 **Telefonda filtrlar:** ≤ 2 ta filtr — qatorda, ustma-ust (`max-md:min-h-11`; namuna `manager-returns-list`);
 ≥ 3 ta — «Filtrlar» tugmasi (soni bilan) + pastdan chiquvchi oyna, «Tozalash» va «Natijalarni ko'rsatish (N)»
@@ -273,6 +294,21 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
 - **v1 o'rnini bosuvchilar** (yangi kodda v1 importi qo'riqchining `v1-helper` qoidasida): `shared/components/button`
   → `Button`, `shared/ui/StatusBadge` va `pages/orders/list/OrderStatusBadge` → `StatusBadge` / `OrderStatusBadge`,
   `shared/config/statusColorMap` → `statusRegistry` + `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized`.
+
+**2-bosqich — tayyor (shell).** Fayllar `// dizayn-v2: shell` belgili, qo'riqchida 0; klasslar `design/CODE-MAP.md` §2.10.
+
+- **Kanvas** — `widgets/layout/dashboardLayout.tsx`: bitta `bg` kanvas, yagona skroll `<main>`, kontent sloti
+  `[data-shell-slot=content]` (karta emas, `max-w-[1440px]`, chekkalar §6). Skaner `widgets/layout/scanLayout.tsx`.
+- **Navigatsiya** — `widgets/Sidebar`: yon menyu 248 / yig'ilgan 72 (guruhlar Ish · Moliya · Ma'lumotnoma · Tizim,
+  holati server sozlamasida), planshetda surma menyu, telefonda pastki varaqa (`MobileMenu`), pastki menyu
+  (`BottomNav`, `roles.json` → `bottomNav`). Bandlar, ruxsat va **ikonkalar** yagona manbadan — `menuConfig.tsx`
+  (kanonik, `design/icon-registry.json`); ko'rinish (guruh, qisqa yorliq) `model/navSections.ts`.
+- **Yuqori panel** — `widgets/header`: global qidiruv (Ctrl K; < 1024 qidiruv ekrani), «Skanerlash»,
+  qo'ng'iroqcha (so'nggi 5 bildirishnoma), profil menyusi (Profil, Sozlamalar, Tezkor tugmalar, Mavzu, Til,
+  «Chiqish»). Ikonka tugmalar bir o'lchamda (40, telefonda 44).
+- **Holat** — bo'lim almashsa skroll tepaga (`model/useShellScroll.ts`), bo'lim yuklanish chizig'i
+  (`ui/RouteProgress.tsx` + `shared/lib/navigationPending.ts`).
+- **Tokenlar** — `nav-*`, `on-nav`, `avatar`, `on-avatar` (§2).
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

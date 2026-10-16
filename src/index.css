@@ -69,6 +69,17 @@
   --color-nav: #1f2853;
   /* Doim navy bo'lgan "orollar" (xato sahifasi, skaner oynasi, yon menyu) ustidagi urg'u — ikkala mavzuda bir xil */
   --color-nav-accent: #8ea6ff;
+  /* Yon menyu (navy) ustidagi matn va holatlar — maketdagi --sidebar-* (helmet.html). Faqat `nav` foni ustida. */
+  --color-nav-text: rgba(255, 255, 255, 0.8);
+  --color-nav-muted: rgba(255, 255, 255, 0.52);
+  --color-nav-hover: rgba(255, 255, 255, 0.08);
+  --color-nav-active: rgba(255, 255, 255, 0.14);
+  --color-nav-line: rgba(255, 255, 255, 0.1);
+  --color-nav-count: rgba(255, 255, 255, 0.14);
+  --color-on-nav: #ffffff;
+  /* Foydalanuvchi avatari (bosh harflar doirasi, maket `.el-avatar`): kunduzi navy, tunda to'q ko'k (`.el.dark .el-avatar`). */
+  --color-avatar: #1f2853;
+  --color-on-avatar: #ffffff;
   --color-action: #2b50d8;
   --color-action-hover: #2443b8;
   --color-action-fg: #2b50d8;
@@ -408,6 +419,13 @@ select:-webkit-autofill:focus {
   --color-text-subtle: #7a83a3;
   --color-brand: #c9d2f5;
   --color-nav: #0a0e1b;
+  --color-nav-text: rgba(232, 235, 247, 0.78);
+  --color-nav-muted: rgba(232, 235, 247, 0.48);
+  --color-nav-hover: rgba(232, 235, 247, 0.06);
+  --color-nav-active: rgba(142, 166, 255, 0.16);
+  --color-nav-line: rgba(232, 235, 247, 0.08);
+  --color-avatar: #2b3768;
+  --color-on-avatar: #e8ebf7;
   --color-action: #8ea6ff;
   --color-action-hover: #a9bbff;
   --color-action-fg: #8ea6ff;

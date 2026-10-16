@@ -1,28 +1,32 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
-import { vi } from "vitest";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import i18n, { i18nReady } from "../../../i18n";
 import { renderWithProviders } from "../../../test/test-utils";
-import { ThemeProvider } from "../../../app/providers/theme/ThemeContext";
+import type { User } from "../../../entities/user/model/types";
+import designRoles from "../../../../design/kit/roles.json";
+import type { BranchType } from "../model/menuConfig";
 import MobileMenu from "./MobileMenu";
 
-const roleState = (role: string) =>
-  ({ role: { id: `${role}-1`, role, region: null, name: role } }) as never;
+/**
+ * SURILUVCHI MENYU (< 1024) — maket `courier-dashboard-mobile-menu`: planshetda chapdan navy panel,
+ * telefonda pastki varaqa. Bandlar, guruhlar va yorliqlar yon menyu bilan bir xil (roles.json).
+ */
 
-const LocationProbe = () => <span data-testid="path">{useLocation().pathname}</span>;
+const pending = vi.hoisted(() => ({ path: null as string | null }));
+vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../shared/lib/navigationPending")>()),
+  useNavPathname: () => {
+    const { pathname } = useLocation();
+    return pending.path ?? pathname;
+  },
+}));
 
-const renderMenu = (ui: ReactNode, role = "admin") =>
-  renderWithProviders(
-    <ThemeProvider>
-      {ui}
-      <LocationProbe />
-    </ThemeProvider>,
-    { route: "/orders", preloadedState: roleState(role) },
-  );
-
+const logoutSpy = vi.hoisted(() => vi.fn());
 vi.mock("../../../shared/lib/useLogout", () => ({
-  useLogout: () => ({ logout: vi.fn() }),
+  useLogout: () => ({ logout: logoutSpy }),
 }));
 
 const unread = vi.hoisted(() => ({ count: 0 }));
@@ -31,26 +35,129 @@ vi.mock("../../../entities/notification-inbox/api/inboxApi", async (importOrigin
   getInboxUnreadCount: vi.fn(async () => unread.count),
 }));
 
-describe("MobileMenu keyboard access", () => {
-  it("is a modal dialog and takes focus when it opens", () => {
+type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
+type DesignMenuItem = { key: string; label: string; group?: string };
+const ROLES = designRoles.roles as unknown as Record<
+  DesignRole,
+  { grouped: boolean; menu: DesignMenuItem[] }
+>;
+
+const DEFAULT_BRANCH: Partial<Record<DesignRole, BranchType>> = {
+  manager: "HYBRID",
+  registrator: "HQ",
+  courier: "REGIONAL",
+};
+
+const stateOf = (
+  role: string,
+  branchType: BranchType | null,
+  extra: Record<string, unknown> = {},
+) =>
+  ({
+    role: { id: `${role}-1`, role, region: null, name: role },
+    user: {
+      user: {
+        id: "1",
+        role,
+        name: role,
+        ...(branchType ? { branch_type: branchType, branch: { id: "1", type: branchType } } : {}),
+        ...extra,
+      } as unknown as User,
+      isAuthenticated: true,
+      accessToken: null,
+      loading: false,
+      isAppInitializing: false,
+      error: null,
+    },
+  }) as never;
+
+const LocationProbe = () => {
+  const { pathname, search } = useLocation();
+  return <span data-testid="path">{`${pathname}${search}`}</span>;
+};
+
+const renderMenu = (
+  ui: ReactNode,
+  role: DesignRole | string = "admin",
+  {
+    branchType = DEFAULT_BRANCH[role as DesignRole] ?? null,
+    route = "/orders",
+    user = {},
+  }: { branchType?: BranchType | null; route?: string; user?: Record<string, unknown> } = {},
+) =>
+  renderWithProviders(
+    <>
+      {ui}
+      <LocationProbe />
+    </>,
+    { route, preloadedState: stateOf(role, branchType, user) },
+  );
+
+/** Telefon (< 768) — `matchMedia("(max-width: 767px)")` mos keladi. */
+const asPhone = () => {
+  vi.spyOn(window, "matchMedia").mockImplementation(
+    (query: string) =>
+      ({
+        matches: query.includes("max-width: 767px"),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }) as unknown as MediaQueryList,
+  );
+};
+
+const sectionsNav = () => screen.getByRole("navigation", { name: "Asosiy bo'limlar" });
+
+beforeAll(async () => {
+  await i18nReady;
+  await i18n.changeLanguage("uz");
+});
+
+afterEach(() => {
+  pending.path = null;
+  unread.count = 0;
+  logoutSpy.mockReset();
+  vi.restoreAllMocks();
+});
+
+describe("MobileMenu — klaviatura va dialog", () => {
+  it("modal dialog «Menyu», ochilganda fokus ichida", () => {
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
 
-    const dialog = screen.getByRole("dialog", { name: "Menu" });
+    const dialog = screen.getByRole("dialog", { name: "Menyu" });
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(dialog.contains(document.activeElement)).toBe(true);
   });
 
-  it("calls onClose on Escape", async () => {
+  it("yopiq bo'lsa hech narsa chizilmaydi", () => {
+    renderMenu(<MobileMenu isOpen={false} onClose={vi.fn()} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("Escape — onClose", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     renderMenu(<MobileMenu isOpen onClose={onClose} />);
 
     await user.keyboard("{Escape}");
-
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps Tab inside the menu", async () => {
+  it("fon (overlay) bosilsa yopiladi; «Menyuni yopish» tugmasi ham", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderMenu(<MobileMenu isOpen onClose={onClose} />);
+
+    await user.click(screen.getByRole("dialog").querySelector(".bg-overlay") as HTMLElement);
+    await user.click(screen.getByRole("button", { name: "Menyuni yopish" }));
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  it("Tab menyu ichida aylanadi", async () => {
     const user = userEvent.setup();
     renderMenu(
       <>
@@ -60,69 +167,280 @@ describe("MobileMenu keyboard access", () => {
     );
     const dialog = screen.getByRole("dialog");
 
-    for (let i = 0; i < 10; i += 1) {
+    for (let i = 0; i < 30; i += 1) {
       await user.tab();
       expect(dialog.contains(document.activeElement)).toBe(true);
     }
   });
+
+  it("yopilganda fokus ochgan tugmaga qaytadi", async () => {
+    const user = userEvent.setup();
+    const Harness = () => {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Menyuni ochish
+          </button>
+          <MobileMenu isOpen={open} onClose={() => setOpen(false)} />
+        </>
+      );
+    };
+    renderMenu(<Harness />);
+
+    const opener = screen.getByRole("button", { name: "Menyuni ochish" });
+    await user.click(opener);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
+  });
 });
 
-describe("MobileMenu notifications", () => {
-  afterEach(() => {
-    unread.count = 0;
+describe("MobileMenu — planshet paneli (768–1023)", () => {
+  const roles = Object.keys(ROLES) as DesignRole[];
+
+  it.each(roles)("%s: bandlar, yorliqlar va guruhlar yon menyudagidek", (role) => {
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
+    const design = ROLES[role];
+
+    expect(screen.getByRole("dialog").querySelector('[data-mobile-menu="drawer"]')).not.toBeNull();
+    expect(
+      within(sectionsNav())
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(design.menu.map((item) => item.label));
+    const groups = design.grouped
+      ? [...new Set(design.menu.map((item) => item.group).filter(Boolean))]
+      : [];
+    for (const group of groups) {
+      expect(within(sectionsNav()).getByRole("list", { name: group })).toBeInTheDocument();
+    }
   });
 
-  it("opens the personal inbox, not the Telegram group settings", async () => {
+  it("faol band — joriy bo'lim (ichki sahifada ota bo'lim)", () => {
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "superadmin", { route: "/orders/42" });
+
+    const current = within(sectionsNav())
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page");
+    expect(current.map((link) => link.textContent)).toEqual(["Buyurtmalar"]);
+  });
+
+  it("band bosilsa o'tadi va menyu yopiladi (joriy band bosilsa ham)", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     renderMenu(<MobileMenu isOpen onClose={onClose} />, "courier");
 
-    await user.click(screen.getByRole("button", { name: "Bildirishnomalar" }));
+    await user.click(screen.getByRole("link", { name: "Kassa" }));
+    expect(screen.getByTestId("path")).toHaveTextContent("/cash-box");
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("foydalanuvchi bloki: ism, rol · filial, profilga havola; «Chiqish»", async () => {
+    const user = userEvent.setup();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "courier", {
+      user: {
+        name: "Jasur Tursunov",
+        branch: { id: "1", type: "REGIONAL", name: "Chilonzor filiali" },
+      },
+    });
+
+    const profile = screen.getByRole("link", { name: "Profilni ochish: Jasur Tursunov" });
+    expect(profile).toHaveAttribute("href", "/profile");
+    expect(profile).toHaveTextContent("JT");
+    expect(profile).toHaveTextContent("Kuryer · Chilonzor filiali");
+
+    await user.click(screen.getByRole("button", { name: "Chiqish" }));
+    expect(logoutSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("qidiruv buyurtmalar ro'yxatiga o'tadi va menyuni yopadi", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderMenu(<MobileMenu isOpen onClose={onClose} />, "admin", { route: "/" });
+
+    await user.type(screen.getByRole("searchbox", { name: "Qidiruv" }), "  Dilnoza {Enter}");
+    expect(screen.getByTestId("path")).toHaveTextContent("/orders?search=Dilnoza");
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("menejerga filial turi biriktirilmagan — ogohlantirish", () => {
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "manager", { branchType: null });
+    expect(screen.getByRole("status")).toHaveTextContent("Filial turi aniqlanmadi");
+  });
+});
+
+describe("MobileMenu — telefon varaqasi (< 768)", () => {
+  it("sarlavha, foydalanuvchi kartasi, bo'lim kataklari, shaxsiy qatorlar va «Chiqish»", async () => {
+    asPhone();
+    const user = userEvent.setup();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "courier", {
+      route: "/",
+      user: { name: "Jasur Tursunov" },
+    });
+
+    const dialog = screen.getByRole("dialog", { name: "Menyu" });
+    expect(dialog.querySelector('[data-mobile-menu="sheet"]')).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Menyu" })).toBeVisible();
+    expect(
+      within(sectionsNav())
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(ROLES.courier.menu.map((item) => item.label));
+    expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      screen.getByRole("link", { name: "Profilni ochish: Jasur Tursunov" }),
+    ).toBeInTheDocument();
+
+    const personal = screen.getByRole("navigation", { name: "Shaxsiy bo'limlar" });
+    expect(
+      within(personal)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/inbox", "/settings"]);
+
+    await user.click(screen.getByRole("button", { name: "Chiqish" }));
+    expect(logoutSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("uzun menyu (superadmin) kataklari guruh sarlavhalari bilan", () => {
+    asPhone();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "superadmin");
+
+    for (const group of ["Ish", "Moliya", "Ma'lumotnoma", "Tizim"]) {
+      expect(within(sectionsNav()).getByRole("list", { name: group })).toBeInTheDocument();
+    }
+  });
+
+  it("katakda qisqa yorliq (roles.json → short): «Qabul», marketda «Yaratish»; to'liq nom — aria-label", () => {
+    asPhone();
+    const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "admin");
+    const intake = within(sectionsNav()).getByRole("link", { name: "Qabul va yaratish" });
+    expect(intake).toHaveTextContent(/^Qabul$/);
+    expect(intake).toHaveAttribute("title", "Qabul va yaratish");
+    view.unmount();
+
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "market");
+    expect(
+      within(sectionsNav()).getByRole("link", { name: "Qabul va yaratish" }),
+    ).toHaveTextContent(/^Yaratish$/);
+  });
+
+  it("ru: 375px katakka sig'maydigan nomlar qisqa shaklda; ekran o'quvchi nomi ko'ringan so'zdan boshlanadi", async () => {
+    asPhone();
+    await i18n.changeLanguage("ru");
+    try {
+      const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "superadmin");
+      const ruSections = () => screen.getByRole("navigation", { name: "Основные разделы" });
+      const nav = ruSections();
+      // To'liq nom qisqasini o'z ichiga oladi — nom to'liq.
+      expect(within(nav).getByRole("link", { name: "Журнал активности" })).toHaveTextContent(
+        /^Журнал$/,
+      );
+      expect(within(nav).getByRole("link", { name: "Ops-инструменты" })).toHaveTextContent(
+        /^Инструменты$/,
+      );
+      view.unmount();
+
+      // Maket `short.ru` («Закрыть день») to'liq nomda yo'q — nom ko'ringan so'z + to'liq nom.
+      const courier = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "courier");
+      const quick = within(ruSections()).getByRole("link", {
+        name: "Закрыть день (Быстрое действие)",
+      });
+      expect(quick).toHaveTextContent(/^Закрыть день$/);
+      expect(quick).toHaveAttribute("title", "Быстрое действие");
+      courier.unmount();
+
+      renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "market");
+      expect(
+        within(ruSections()).getByRole("link", { name: "Создать (Приём и создание)" }),
+      ).toHaveTextContent(/^Создать$/);
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
+  });
+});
+
+describe("MobileMenu — bildirishnomalar", () => {
+  it("shaxsiy bildirishnomalar qutisiga olib boradi (Telegram guruhlariga emas)", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderMenu(<MobileMenu isOpen onClose={onClose} />, "courier");
+
+    await user.click(screen.getByRole("link", { name: "Bildirishnomalar" }));
 
     expect(screen.getByTestId("path")).toHaveTextContent("/inbox");
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("shows no badge or dot when nothing is unread", async () => {
+  it("o'qilmagan yo'q — son ham, nuqta ham yo'q", async () => {
     unread.count = 0;
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Bildirishnomalar" })).toBeInTheDocument());
-    expect(screen.queryByTestId("menu-unread-badge")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bildirishnomalar" }).querySelector(".bg-red-500, .bg-red-600")).toBeNull();
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Bildirishnomalar" })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("link", { name: "Bildirishnomalar" }).textContent).toBe(
+      "Bildirishnomalar",
+    );
   });
 
-  it("shows the real unread count from the API and follows it when it changes", async () => {
+  it("API'dagi haqiqiy son, o'zgarsa yangilanadi", async () => {
     unread.count = 3;
     const { queryClient } = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
 
-    expect(await screen.findByTestId("menu-unread-badge")).toHaveTextContent(/^3$/);
-    expect(screen.getByRole("button", { name: "Bildirishnomalar (3)" })).toBeInTheDocument();
+    const link = await screen.findByRole("link", { name: "Bildirishnomalar, 3 ta yangi" });
+    expect(link).toHaveTextContent(/3$/);
 
     unread.count = 7;
     await queryClient.invalidateQueries();
-    await waitFor(() => expect(screen.getByTestId("menu-unread-badge")).toHaveTextContent(/^7$/));
+    expect(
+      await screen.findByRole("link", { name: "Bildirishnomalar, 7 ta yangi" }),
+    ).toHaveTextContent(/7$/);
   });
 
-  it("caps a large unread count at 99+", async () => {
+  it("katta son «99+»", async () => {
     unread.count = 150;
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
 
-    expect(await screen.findByTestId("menu-unread-badge")).toHaveTextContent("99+");
+    expect(
+      await screen.findByRole("link", { name: "Bildirishnomalar, 150 ta yangi" }),
+    ).toHaveTextContent(/99\+$/);
   });
 
-  it("keeps the Telegram group settings entry for the superadmin only", async () => {
-    const user = userEvent.setup();
-    const { unmount } = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "superadmin");
+  it("telefonda son qizil belgi (`menu-unread-badge`)", async () => {
+    asPhone();
+    unread.count = 4;
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: /Telegram guruhlari/ }));
-    expect(screen.getByTestId("path")).toHaveTextContent("/notifications");
-    unmount();
+    expect(await screen.findByTestId("menu-unread-badge")).toHaveTextContent(/^4$/);
+  });
 
-    for (const role of ["admin", "market", "courier", "registrator"]) {
-      const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
-      expect(screen.queryByRole("button", { name: /Telegram guruhlari/ })).not.toBeInTheDocument();
-      view.unmount();
+  it("Telegram guruhlari (`/notifications`) faqat superadmin menyusida; u yerda quti «Bildirishnomalar qutisi»", () => {
+    const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "superadmin");
+    expect(within(sectionsNav()).getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute(
+      "href",
+      "/notifications",
+    );
+    expect(screen.getByRole("link", { name: "Bildirishnomalar qutisi" })).toHaveAttribute(
+      "href",
+      "/inbox",
+    );
+    view.unmount();
+
+    for (const role of ["admin", "manager", "market", "courier", "registrator"]) {
+      const roleView = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
+      expect(
+        screen
+          .getAllByRole("link")
+          .filter((link) => link.getAttribute("href") === "/notifications"),
+      ).toHaveLength(0);
+      roleView.unmount();
     }
   });
 });

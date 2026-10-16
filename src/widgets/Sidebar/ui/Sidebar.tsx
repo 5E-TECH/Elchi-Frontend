@@ -1,199 +1,287 @@
-import { memo, useMemo, useState } from "react";
-import SidebarLink from "./SidebarItem";
+// dizayn-v2: shell
+import { memo, useCallback, useId, useMemo, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
-import {
-  getSidebarGroupsForUser,
-  hasUnknownBranchType,
-  normalizeSidebarRole,
-  type SidebarGroupId,
-} from "../model/menuConfig";
-import { toggleSidebar } from "../model/sidebarSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, ChevronRight, PanelLeft, TriangleAlert } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
-import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
-import LogoIcon from "../../../shared/assets/logo qora.png";
-import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
-import LogoIcondark from "../../../shared/assets/logo oq.png";
-import { useTheme } from "../../../app/providers/theme/ThemeContext";
+import { SETTINGS_KEY, useUpdateSettings } from "../../../entities/settings";
+import { cx } from "../../../shared/lib/cx";
+import LogoWhite from "../../../shared/assets/brand/elchi-logo-white.png";
+import MarkWhite from "../../../shared/assets/brand/elchi-mark-white.png";
+import { setSidebar } from "../model/sidebarSlice";
+import { useNavPathname } from "../model/shellNav";
+import { getActiveNavTo, useNavSections, type NavSectionId } from "../model/navSections";
+import SidebarItem from "./SidebarItem";
+import { NAV_ROW, NAV_ROW_COLLAPSED, NAV_ROW_IDLE } from "./navClasses";
+
+/**
+ * YON MENYU (≥ 1024) — maket `.el-sidebar` / `.el-brand` / `.el-nav` / `.el-nav-group` (design/kit/helmet.html),
+ * holatlar va yig'ilgan ko'rinish — taxta `tizim-states-navigation` (01 · Yon menyu).
+ *
+ * - Kengaytirilgan 248px, yig'ilgan 72px (`state.sidebar.isOpen`, brauzerda va serverda saqlanadi). Fon `nav`
+ *   (ikkala mavzuda navy), logotip oq, 32px, 64px qatorda, ostida `nav-line` chiziq.
+ * - Bandlar `useNavSections()` dan (rol + filial turi — `menuConfig.tsx`; guruh, yorliq, ikonka — maketdagidek).
+ *   Uzun menyu (superadmin, admin, menejer) guruhlarga bo'lingan: sarlavha 12px/600 katta harf `nav-muted`,
+ *   bosilsa guruh yig'iladi (holati shu brauzerda eslab qolinadi). Yig'ilgan menyuda sarlavha o'rnida
+ *   ingichka chiziq, barcha bandlar ko'rinadi, nom — maslahatda.
+ * - Faol band — `getActiveNavTo(items, useNavPathname())`: ichki sahifada ota bo'lim (maketdagi ota bandi
+ *   bo'lgan alohida manzillar ham — Ops eski sahifalari), bosilgan band sahifa yuklanguncha ham darhol tanlangan.
+ * - Menejerga filial turi biriktirilmagan bo'lsa — ogohlantirish (menyuning bir qismi yashirin).
+ * - Pastda «Yashirish» / «Menyuni kengaytirish». Holat serverdagi sozlamaga ham yoziladi (Sozlamalar sahifasidagi
+ *   «Yon menyu» bilan bir xil qoida): faqat brauzerga yozilsa `SettingsSync` keyingi kirishda va har mavzu/til
+ *   almashganda serverdagi eski qiymatni qaytarib qo'yardi.
+ *
+ * Balandlik shell slot'idan (`h-full`), menyu uzun bo'lsa faqat bandlar ro'yxati aylanadi.
+ */
+
+const COLLAPSED_GROUPS_KEY = "sidebar:collapsedGroups";
+
+const readCollapsedGroups = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return new Set(
+      Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [],
+    );
+  } catch {
+    // Buzilgan yoki yopiq localStorage menyuni yiqitmasligi kerak.
+    return new Set();
+  }
+};
+
+const writeCollapsedGroups = (groups: Set<string>) => {
+  try {
+    localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify([...groups]));
+  } catch {
+    // Saqlab bo'lmasa ham holat shu sessiyada ishlayveradi.
+  }
+};
+
+type Hint = { label: string; top: number; left: number };
 
 const Sidebar = () => {
   const { t } = useTranslation(["sidebar"]);
   const dispatch = useDispatch();
-  // Faqat kerakli field — butun sidebar object emas (re-render kamayadi)
   const isOpen = useSelector((state: RootState) => state.sidebar.isOpen);
-  const { theme } = useTheme();
-  const isDarkMode = theme === "dark";
+  const collapsed = !isOpen;
+  const { sections, items, branchTypeMissing } = useNavSections();
+  const pathname = useNavPathname();
+  const activeTo = useMemo(() => getActiveNavTo(items, pathname), [items, pathname]);
+  const navId = useId();
 
-  // ─── User role'ni Redux dan oling ────────────────────────────────────────
-  const role = useSelector((state: RootState) => state.role.role);
-  const user = useSelector((state: RootState) => state.user.user);
-  const userRole = normalizeSidebarRole(role, user);
-
-  // ─── Rolga mos navigation guruhlarini olish ──────────────────────────────
-  // Guruhlar va tarjimalar alohida memoized — role/user o'zgarmasa qayta
-  // hisoblanmaydi, t() esa faqat til o'zgarganda ishga tushadi.
-  const groups = useMemo(
-    () => getSidebarGroupsForUser(userRole, user),
-    [userRole, user],
-  );
-
-  const translatedGroups = useMemo(
-    () =>
-      groups.map((group) => ({
-        ...group,
-        items: group.items.map((item) => ({ ...item, label: t(item.label) })),
-      })),
-    [groups, t],
-  );
-
-  /**
-   * Yig'ilgan guruhlar — brauzerda saqlanadi.
-   *
-   * Operator "Tizim" guruhini bir marta yopsa, u har kirganda qayta ochilib
-   * turmasligi kerak. Saqlash localStorage'da: server holati emas, shaxsiy
-   * ko'rinish.
-   */
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem("sidebar:collapsedGroups");
-      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-    } catch {
-      // Buzilgan/yopiq localStorage sidebarni yiqitmasligi kerak.
-      return new Set();
-    }
-  });
-
-  const toggleGroup = (groupId: SidebarGroupId) => {
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(readCollapsedGroups);
+  const toggleGroup = (groupId: NavSectionId) => {
+    setCollapsedGroups((previous) => {
+      const next = new Set(previous);
       if (next.has(groupId)) next.delete(groupId);
       else next.add(groupId);
-      try {
-        localStorage.setItem(
-          "sidebar:collapsedGroups",
-          JSON.stringify([...next]),
-        );
-      } catch {
-        // Saqlab bo'lmasa ham holat shu sessiyada ishlayveradi.
-      }
+      writeCollapsedGroups(next);
       return next;
     });
   };
 
   /**
-   * Menejerning filial turi aniqlanmagan.
-   *
-   * Bunday holatda menyu bazaviy uch bandga tushadi va u bilan birga pochta,
-   * kassa, xodimlar sahifalari yopiladi. Avval bu JIMGINA sodir bo'lardi —
-   * foydalanuvchi "bandlar yo'qoldi" deb o'ylardi. Endi sabab ochiq aytiladi.
+   * Yig'ilgan menyudagi nom maslahati (maket `.el-tooltip`). `fixed` — bandlar ro'yxati aylanadi
+   * (`overflow-y-auto`) va absolyut maslahat uning chetida kesilib qolardi. Nom `aria-label` da,
+   * maslahat faqat ko'rish uchun (`aria-hidden`). Escape, skroll va kengaytirish uni yopadi.
    */
-  const branchTypeMissing = hasUnknownBranchType(userRole, user);
+  const [hint, setHint] = useState<Hint | null>(null);
+  const onHint = useCallback((target: HTMLElement | null, label: string) => {
+    if (!target) {
+      setHint(null);
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    setHint({ label, top: rect.top + rect.height / 2, left: rect.right + 10 });
+  }, []);
+  const hideHintOnEscape = (event: KeyboardEvent) => {
+    if (event.key === "Escape") setHint(null);
+  };
 
-  // ─── Logo rasmlarini tanlash ──────────────────────────────────────────────
-  const currentLogoText = isDarkMode ? LogoTextdark : LogoText;
-  const currentLogoIcon = isDarkMode ? LogoIcondark : LogoIcon;
+  const toggleLabel = collapsed ? t("expand") : t("collapse");
 
+  const queryClient = useQueryClient();
+  const updateSettings = useUpdateSettings();
+  const toggleCollapsed = () => {
+    setHint(null);
+    const nextOpen = collapsed;
+    dispatch(setSidebar(nextOpen));
+    // Sozlamalar hali yuklanmagan bo'lsa serverga yozilmaydi: `useUpdateSettings` to'liq obyektni yuboradi va
+    // keshsiz u sukut qiymatlar bilan foydalanuvchining mavzu/tilini ustidan yozib yuborardi.
+    if (queryClient.getQueryData(SETTINGS_KEY)) {
+      updateSettings.mutate({ interface: { sidebarOpen: nextOpen } });
+    }
+  };
 
   return (
     <aside
-      className={`sticky left-0 top-0 z-50 hidden h-screen flex-col bg-sidebar text-maindark transition-all duration-300 ease-in-out lg:flex dark:bg-maindark dark:text-primary ${!isOpen ? "w-20" : "w-72"
-        }`}
+      aria-label={t("mainMenu")}
+      onKeyDown={hideHintOnEscape}
+      className={cx(
+        "flex h-full shrink-0 flex-col bg-nav pb-4 text-nav-text",
+        "transition-[width] duration-200 ease-out motion-reduce:transition-none",
+        collapsed ? "w-[72px] px-3" : "w-[248px] px-3",
+      )}
     >
-      {/* Header with Logo */}
-      <div className="flex h-18 shrink-0 items-center justify-start overflow-hidden bg-sidebar pl-4 dark:bg-maindark">
-        <div
-          className={`transition-all duration-300 flex items-center justify-start ${!isOpen ? "w-full px-2" : "w-full px-4"
-            }`}
-        >
+      <div
+        className={cx(
+          "mb-1 flex h-16 shrink-0 items-center border-b border-nav-line",
+          collapsed ? "justify-center" : "px-2",
+        )}
+      >
+        {collapsed ? (
           <img
-            src={isOpen ? currentLogoText : currentLogoIcon}
-            alt="Elchi Logo"
-            className={`object-contain transition-all duration-300 ${!isOpen ? "h-10 w-10" : "h-auto w-40"
-              }`}
+            src={MarkWhite}
+            alt="Elchi Pochta"
+            width={35}
+            height={32}
+            className="block h-8 w-auto"
           />
-        </div>
+        ) : (
+          <img
+            src={LogoWhite}
+            alt="Elchi Pochta"
+            width={96}
+            height={32}
+            className="block h-8 w-auto"
+          />
+        )}
       </div>
 
-      {/* Navigation */}
-      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto bg-sidebar px-3 py-3 custom-scrollbar dark:bg-maindark">
-        {branchTypeMissing && (
+      {branchTypeMissing ? (
+        collapsed ? (
           <div
-            className="mb-2 flex items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-500/12 px-3 py-2.5 text-amber-700 dark:text-amber-200"
-            title={t("branchTypeMissingHint")}
-          >
-            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-            {isOpen && (
-              <span className="text-xs font-semibold leading-snug">
-                {t("branchTypeMissing")}
-              </span>
+            role="status"
+            title={`${t("branchTypeMissing")}. ${t("branchTypeMissingHint")}`}
+            className={cx(
+              NAV_ROW_COLLAPSED,
+              "mt-1 mb-1 rounded-[10px] bg-warning-soft text-warning-fg",
             )}
+          >
+            <TriangleAlert aria-hidden="true" size={18} />
+            <span className="sr-only">
+              {t("branchTypeMissing")}. {t("branchTypeMissingHint")}
+            </span>
           </div>
+        ) : (
+          <div
+            role="status"
+            className="mt-1 mb-1 flex shrink-0 items-start gap-2 rounded-[10px] bg-warning-soft px-3 py-2.5 text-[13px] leading-snug text-warning-fg"
+          >
+            <TriangleAlert aria-hidden="true" size={16} className="mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <div className="font-semibold">{t("branchTypeMissing")}</div>
+              {t("branchTypeMissingHint")}
+            </div>
+          </div>
+        )
+      ) : null}
+
+      <nav
+        id={navId}
+        aria-label={t("sections")}
+        onScroll={() => setHint(null)}
+        className={cx(
+          // `-mx-3 px-3 py-1`: fokus halqasi (2 + 2px) aylanuvchi ro'yxat chetida kesilmasin; logotip ostidagi
+          // 8px oraliq = `mb-1` + `pt-1`.
+          "-mx-3 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-3 py-1",
+          "[scrollbar-color:var(--color-nav-line)_transparent] [scrollbar-width:thin]",
         )}
-        {translatedGroups.map((group, index) => {
-          // Bitta bandli guruhda sarlavha KO'RSATILMAYDI (pastda) — demak uni
-          // yig'ib ham bo'lmaydi; band DOIM ko'rinsin (aks holda avval yig'ilgan
-          // guruh bandi sarlavhasiz yashirinib qolardi). Faqat >1 bandli guruh
-          // yig'iladi.
-          const groupable = Boolean(group.id) && group.items.length > 1;
-          const collapsed = groupable
-            ? collapsedGroups.has(group.id as SidebarGroupId)
-            : false;
+      >
+        {sections.map((section, index) => {
+          const groupId = section.id;
+          const listId = `${navId}-${groupId ?? `top-${index}`}`;
+          // Yig'ilgan menyuda barcha bandlar ko'rinadi (taxta qoidasi 5); guruh holati faqat kengida.
+          const groupClosed = !collapsed && groupId !== null && collapsedGroups.has(groupId);
 
           return (
-            <div key={group.id ?? `ungrouped-${index}`} className="space-y-1">
-              {groupable &&
-                (isOpen ? (
+            <div key={groupId ?? `top-${index}`} className="flex flex-col gap-0.5">
+              {groupId !== null ? (
+                collapsed ? (
+                  <div
+                    aria-hidden="true"
+                    className="mx-auto my-[7px] h-px w-8 shrink-0 bg-nav-line"
+                  />
+                ) : (
                   <button
                     type="button"
-                    onClick={() => toggleGroup(group.id as SidebarGroupId)}
-                    className="mt-3 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-maindark/45 transition hover:text-main dark:text-primary/60"
+                    aria-expanded={!groupClosed}
+                    aria-controls={listId}
+                    onClick={() => toggleGroup(groupId)}
+                    className={cx(
+                      "flex w-full shrink-0 items-center justify-between gap-2 rounded-[10px] px-3 pt-4 pb-1.5 text-left",
+                      "text-xs leading-[18px] font-semibold uppercase tracking-[.06em] text-nav-muted",
+                      "transition-[color] duration-150 hover:text-nav-text motion-reduce:transition-none",
+                      "focus-visible:outline-nav-text!",
+                    )}
                   >
-                    <span>{t(`group_${group.id}`)}</span>
-                    <ChevronDown
-                      size={14}
-                      className={`transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`}
-                    />
+                    <span className="truncate">{t(`group_${groupId}`)}</span>
+                    {groupClosed ? (
+                      <ChevronRight aria-hidden="true" size={16} className="shrink-0" />
+                    ) : (
+                      <ChevronDown aria-hidden="true" size={16} className="shrink-0" />
+                    )}
                   </button>
-                ) : (
-                  /* Yig'ilgan sidebarda sarlavha o'rniga nozik ajratgich —
-                     matn sig'maydi, lekin guruh chegarasi ko'rinib turishi kerak. */
-                  <div className="mx-auto my-2 h-px w-8 bg-maindark/10 dark:bg-primary/10" />
-                ))}
+                )
+              ) : null}
 
-              {!collapsed &&
-                group.items.map((link) => (
-                  <SidebarLink
-                    key={link.to}
-                    to={link.to}
-                    icon={<link.icon />}
-                    label={link.label}
-                    end={link.end}
-                    isOpen={isOpen}
-                  />
+              {/* Yig'ilgan guruh ro'yxati DOM'da qoladi (`hidden`) — `aria-controls` doim mavjud elementga ishora qiladi. */}
+              <ul
+                id={listId}
+                role="list"
+                hidden={groupClosed}
+                className="m-0 flex list-none flex-col gap-0.5 p-0"
+              >
+                {section.items.map((item) => (
+                  <li key={item.to} className="flex flex-col">
+                    <SidebarItem
+                      to={item.to}
+                      icon={item.icon}
+                      label={t(item.labelKey)}
+                      active={item.to === activeTo}
+                      collapsed={collapsed}
+                      onHint={onHint}
+                    />
+                  </li>
                 ))}
+              </ul>
             </div>
           );
         })}
       </nav>
 
-      {/* Footer — Toggle */}
-      <div className="shrink-0 border-t border-black/5 bg-primary/5 p-3 dark:border-white/5 dark:bg-maindark/50">
+      <div className="mt-2 shrink-0 border-t border-nav-line pt-3">
         <button
-          onClick={() => dispatch(toggleSidebar())}
-          aria-label={isOpen ? t("collapse") : t("expand")}
-          className={`flex shrink-0 items-center justify-center rounded-lg p-2 text-maindark transition-all duration-300 hover:bg-main/10 dark:text-primary ${isOpen ? "w-full" : "mx-auto"}`}
-        >
-          {isOpen ? (
-            <>
-              <ChevronLeft size={20} />
-              <span className="ml-2 text-sm font-medium">{t("collapse")}</span>
-            </>
-          ) : (
-            <ChevronRight size={20} />
+          type="button"
+          onClick={toggleCollapsed}
+          onPointerEnter={(event) => collapsed && onHint(event.currentTarget, toggleLabel)}
+          onPointerLeave={() => setHint(null)}
+          onFocus={(event) => collapsed && onHint(event.currentTarget, toggleLabel)}
+          onBlur={() => setHint(null)}
+          aria-label={collapsed ? toggleLabel : undefined}
+          aria-expanded={!collapsed}
+          aria-controls={navId}
+          className={cx(
+            NAV_ROW,
+            NAV_ROW_IDLE,
+            collapsed ? NAV_ROW_COLLAPSED : "h-10 w-full px-3 text-left",
           )}
+        >
+          <PanelLeft aria-hidden="true" size={20} className="shrink-0" />
+          {collapsed ? null : <span className="truncate">{toggleLabel}</span>}
         </button>
       </div>
+
+      {hint ? (
+        <span
+          aria-hidden="true"
+          style={{ top: hint.top, left: hint.left }}
+          className="pointer-events-none fixed z-50 max-w-[240px] -translate-y-1/2 whitespace-nowrap rounded-lg bg-text px-2.5 py-1.5 text-xs font-semibold leading-[1.4] text-bg shadow-xl"
+        >
+          {hint.label}
+        </span>
+      ) : null}
     </aside>
   );
 };

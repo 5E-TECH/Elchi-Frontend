@@ -1,185 +1,142 @@
-import { memo, useEffect, useRef, useState } from "react";
-import {
-  Bell,
-  CircleHelp,
-  LogOut,
-  Menu,
-  Search,
-  Settings,
-  X,
-} from "lucide-react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+// dizayn-v2: shell
+import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
+import { Menu, ScanLine, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { useTheme } from "../../../app/providers/theme/ThemeContext";
-import { useLogout } from "../../../shared/lib/useLogout";
-import LogoText from "../../../shared/assets/logo yozuvlik qora.png";
-import LogoTextdark from "../../../shared/assets/logo yozuvlik oq.png";
 import { useNavigate } from "react-router-dom";
-import { GlobalSearchInput } from "../../../features/search";
-import { useGlobalSearch } from "../../../features/search/api/useGlobalSearch";
 import type { RootState } from "../../../app/config/store";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
-import { useUnreadCount } from "../../../entities/notification-inbox";
-import Popup from "../../../shared/ui/Popup";
-import HeaderSearchPopup from "./HeaderSearchPopup";
-import ScannerActionButton from "../../../shared/components/ScannerActionButton";
-import { getRoleAvatarConfig } from "../model/roleAvatar";
+import { useLogout } from "../../../shared/lib/useLogout";
+import { Button, IconButton } from "../../../shared/ui/primitives";
+import { useMobileMenu } from "../../Sidebar/model/shellNav";
+import { useHeaderSearch } from "../model/useHeaderSearch";
+import { DESKTOP_QUERY, matchesMedia, useMediaQuery } from "../model/useMediaQuery";
+import {
+  TOPBAR_BRANCH_ROLES,
+  getInitials,
+  joinRoleAndBranch,
+  readBranchName,
+  readDisplayName,
+} from "../model/userIdentity";
+import HeaderSearch from "./HeaderSearch";
+import NotificationsMenu from "./NotificationsMenu";
+import SearchScreen from "./SearchScreen";
+import ShortcutsDialog from "./ShortcutsDialog";
+import UserMenu from "./UserMenu";
+
+/**
+ * YUQORI PANEL (maket `.el-topbar`, `design/tools/build.mjs` → `topbar()`; taxta `tizim-states-navigation` →
+ * 02 «Yuqori panel» va 06 «Telefon navigatsiyasi»). Shell slotida (`data-shell-slot="topbar"`) — o'zi
+ * `sticky/fixed` emas, 64px, `surface` fon, pastda chiziq; chekkalar 32px (< 1024 da 16px).
+ *
+ *   ≥ 1024:  [qidiruv 420px] ……… [Skanerlash] [qo'ng'iroqcha] [avatar · ism · rol ▾]
+ *   768–1023: [menyu] ……… [Skanerlash] [qidiruv] [qo'ng'iroqcha] [avatar ▾]
+ *   < 768:   [menyu] ……… [qidiruv] [qo'ng'iroqcha] [avatar ▾]   — har biri 44px
+ *
+ * Profil, sozlamalar, tezkor tugmalar, mavzu, til va «Chiqish» — profil menyusida (`UserMenu`).
+ * Planshet/telefondagi qidiruv tugmasi maketda yo'q (u yerda qidiruv sahifa tepasida) — sahifalar 4-bosqichda
+ * ko'chguncha global qidiruvga yagona yo'l, shuning uchun saqlangan.
+ *
+ * Klaviatura: Ctrl/⌘ + K — qidiruv, `?` — tezkor tugmalar, G → O — buyurtmalar, G → B — paketlar (menejer).
+ */
 
 interface HeaderProps {
+  /** Shell (dashboardLayout) beradi; bo'lmasa — `useMobileMenu().open`. */
   onMenuClick?: () => void;
 }
 
-interface HeaderSearchValues {
-  search: string;
-}
+const GO_SHORTCUT_WINDOW_MS = 900;
 
-/**
- * O'qilmaganlar belgisi: 0 bo'lsa umuman chiqmaydi, 99 dan ko'p — "99+".
- * `red-600`: oq 10px matn uchun 4.8:1 (`red-500` da 3.8:1 — yetarli emas edi).
- */
-const UnreadBadge = ({ count, className = "" }: { count: number; className?: string }) =>
-  count > 0 ? (
-    <span
-      data-testid="unread-badge"
-      className={`absolute flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-[var(--color-card-surface-strong)] bg-red-600 px-1 text-[10px] font-bold leading-none text-white ${className}`}
-    >
-      {count > 99 ? "99+" : count}
-    </span>
-  ) : null;
+const isEditableTarget = (target: EventTarget | null) => {
+  const element = target as HTMLElement | null;
+  if (!element || !element.tagName) return false;
+  return (
+    element.tagName === "INPUT" ||
+    element.tagName === "TEXTAREA" ||
+    element.tagName === "SELECT" ||
+    element.isContentEditable
+  );
+};
 
 const Header = ({ onMenuClick }: HeaderProps) => {
-  const { logout } = useLogout();
-  const { theme } = useTheme();
-  const { t } = useTranslation("common");
+  const { t } = useTranslation("ui");
   const { t: tUsers } = useTranslation("users");
+  const navigate = useNavigate();
+  const { logout } = useLogout();
+  const mobileMenu = useMobileMenu();
   const profile = useSelector((state: RootState) => state.user.user);
   const roleState = useSelector((state: RootState) => state.role);
-  const { data: unreadCount = 0 } = useUnreadCount(Boolean(roleState.role));
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [searchLimit, setSearchLimit] = useState(10);
-  const mobileSearchContainerRef = useRef<HTMLDivElement | null>(null);
-  const desktopSearchContainerRef = useRef<HTMLDivElement | null>(null);
-  const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
-  const desktopSearchInputRef = useRef<HTMLInputElement | null>(null);
-  const goShortcutRef = useRef<number>(0);
-  const { control, setValue } = useForm<HeaderSearchValues>({
-    defaultValues: { search: "" },
-  });
-  const searchValue = useWatch({ control, name: "search" }) ?? "";
-  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const navigate = useNavigate();
-  const {
-    data: searchData,
-    isFetching: isSearchLoading,
-  } = useGlobalSearch(
-    {
-      q: debouncedSearch,
-      page: 1,
-      limit: searchLimit,
-    },
-    debouncedSearch.trim().length > 0,
-  );
-  const searchItems = searchData?.items ?? [];
-  const totalSearchItems = searchData?.meta.total ?? 0;
-  const hasMoreSearch = searchItems.length < totalSearchItems;
+  const searchId = useId();
+  const search = useHeaderSearch(searchId);
+  const desktopInputRef = useRef<HTMLInputElement>(null);
+  const isDesktop = useMediaQuery(DESKTOP_QUERY);
+  const [searchScreenOpen, setSearchScreenOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const goShortcutRef = useRef(0);
 
-  const profileRecord = profile as typeof profile & {
-    fullName?: string;
-    full_name?: string;
-  };
-  const profileFullName =
-    profileRecord?.fullName ||
-    profileRecord?.full_name ||
-    profileRecord?.name ||
-    roleState.name ||
-    t("profile");
-  const profileRole = tUsers(getUserRoleLabelKey(profileRecord?.role || roleState.role));
-  const roleAvatar = getRoleAvatarConfig(profileRecord?.role || roleState.role);
-  const RoleAvatarIcon = roleAvatar.icon;
+  const role = (profile as { role?: string } | null)?.role || roleState.role;
+  const name = readDisplayName(profile, roleState.name) ?? t("header.profile.profile");
+  const roleLabel = tUsers(getUserRoleLabelKey(role));
+  const branchName = readBranchName(profile);
+  const menuRoleLine = joinRoleAndBranch(roleLabel, branchName);
+  const roleLine = TOPBAR_BRANCH_ROLES.has(String(role ?? "").toLowerCase()) ? menuRoleLine : roleLabel;
   const canOpenBatchesShortcut = roleState.role === "manager";
 
+  const openSearchScreen = useCallback(() => setSearchScreenOpen(true), []);
+  const { setOpen: setSearchOpen, close: closeSearch } = search;
+  const closeSearchScreen = useCallback(() => {
+    setSearchScreenOpen(false);
+    closeSearch();
+  }, [closeSearch]);
+
+  // Qidiruv ekrani faqat < 1024 da: ekran kengaysa yopiladi (desktopda maydon panelning o'zida).
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const inDesktop = desktopSearchContainerRef.current?.contains(event.target as Node);
-      const inMobile = mobileSearchContainerRef.current?.contains(event.target as Node);
-      if (!inDesktop && !inMobile) {
-        setIsSearchFocused(false);
-      }
+    if (typeof window.matchMedia !== "function") return undefined;
+    const query = window.matchMedia(DESKTOP_QUERY);
+    const onChange = () => {
+      if (query.matches) closeSearchScreen();
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    query.addEventListener?.("change", onChange);
+    return () => query.removeEventListener?.("change", onChange);
+  }, [closeSearchScreen]);
 
   useEffect(() => {
-    const isEditableTarget = (target: EventTarget | null) => {
-      const element = target as HTMLElement | null;
-      if (!element) return false;
-      return (
-        element.tagName === "INPUT" ||
-        element.tagName === "TEXTAREA" ||
-        element.tagName === "SELECT" ||
-        element.isContentEditable
-      );
-    };
-
-    const focusSearch = () => {
-      if (window.matchMedia("(min-width: 768px)").matches) {
-        desktopSearchInputRef.current?.focus();
-        setIsSearchFocused(true);
-        return;
-      }
-
-      setIsSearchOpen(true);
-      window.setTimeout(() => {
-        mobileSearchInputRef.current?.focus();
-        setIsSearchFocused(true);
-      }, 0);
-    };
-
-    const handleShortcutKeyDown = (event: KeyboardEvent) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
 
       if ((event.ctrlKey || event.metaKey) && key === "k") {
         event.preventDefault();
-        focusSearch();
+        if (matchesMedia(DESKTOP_QUERY)) {
+          desktopInputRef.current?.focus();
+          setSearchOpen(true);
+        } else {
+          setSearchScreenOpen(true);
+        }
         return;
       }
 
-      if (event.key === "Escape") {
-        setIsShortcutsOpen(false);
-        setIsSearchFocused(false);
-        setIsSearchOpen(false);
-        return;
-      }
-
-      if (isEditableTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey) {
+      if (event.defaultPrevented || isEditableTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey) {
         return;
       }
 
       const now = Date.now();
-      if (key === "?") {
+      if (event.key === "?") {
         event.preventDefault();
-        setIsShortcutsOpen(true);
+        setShortcutsOpen(true);
         return;
       }
-
       if (key === "g") {
         goShortcutRef.current = now;
         return;
       }
-
-      if (goShortcutRef.current && now - goShortcutRef.current <= 900) {
+      if (goShortcutRef.current && now - goShortcutRef.current <= GO_SHORTCUT_WINDOW_MS) {
         if (key === "o") {
           event.preventDefault();
           goShortcutRef.current = 0;
           navigate("/orders");
           return;
         }
-
         if (key === "b" && canOpenBatchesShortcut) {
           event.preventDefault();
           goShortcutRef.current = 0;
@@ -187,304 +144,75 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           return;
         }
       }
-
-      if (goShortcutRef.current && now - goShortcutRef.current > 900) {
+      if (goShortcutRef.current && now - goShortcutRef.current > GO_SHORTCUT_WINDOW_MS) {
         goShortcutRef.current = 0;
       }
     };
 
-    window.addEventListener("keydown", handleShortcutKeyDown);
-    return () => window.removeEventListener("keydown", handleShortcutKeyDown);
-  }, [canOpenBatchesShortcut, navigate]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchValue.trim());
-    }, 450);
-
-    return () => window.clearTimeout(timer);
-  }, [searchValue]);
-
-  const handleSelectSearchItem = (item: (typeof searchItems)[number]) => {
-    const sourceId = item.sourceId ?? String(item.raw.sourceId ?? "");
-    const type = item.type ?? "";
-    const source = item.source ?? "";
-
-    if (
-      source === "identity"
-      || ["manager", "courier", "admin", "registrator", "market", "operator", "user"].includes(type)
-    ) {
-      if (sourceId) navigate(`/all-users/${sourceId}`);
-      setIsSearchFocused(false);
-      return;
-    }
-
-    if (source === "orders" || type === "order") {
-      const orderId = sourceId || String(item.raw.order_id ?? item.raw.id ?? "");
-      if (orderId) navigate(`/orders/edit/${orderId}`);
-      setIsSearchFocused(false);
-      return;
-    }
-
-    setIsSearchFocused(false);
-  };
-
-  const handleLoadMoreSearch = () => {
-    if (!hasMoreSearch || isSearchLoading) return;
-    setSearchLimit((prev) => {
-      const maxLimit = totalSearchItems > 0 ? totalSearchItems : prev + 10;
-      if (prev >= maxLimit) return prev;
-      return Math.min(prev + 10, maxLimit);
-    });
-  };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canOpenBatchesShortcut, navigate, setSearchOpen]);
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-[4.25rem] items-center justify-between gap-2 bg-sidebar px-3 py-2 transition-colors duration-300 sm:min-h-[4.5rem] md:h-auto md:px-4 md:py-3 lg:px-6 dark:bg-maindark">
-      {/* Mobile Search Overlay */}
-      {isSearchOpen && (
-        <div className="absolute inset-0 z-50 bg-sidebar px-4 flex items-center animate-fade-in dark:bg-maindark lg:hidden">
-          <div ref={mobileSearchContainerRef} className="relative w-full">
-            <Controller
-              control={control}
-              name="search"
-              render={({ field }) => (
-                <GlobalSearchInput
-                  ref={mobileSearchInputRef}
-                  name={field.name}
-                  value={field.value}
-                  onBlur={field.onBlur}
-                  autoFocus
-                  placeholder={t("searchPlaceholder")}
-                  aria-label={t("globalSearchAria")}
-                  className="w-full"
-                  inputClassName="border border-main/10 bg-white py-2 text-maindark placeholder:text-maindark/45 shadow-lg shadow-main/10 dark:border-white/10 dark:bg-[var(--color-card-surface-strong)] dark:text-primary dark:placeholder:text-primary/45"
-                  iconClassName="text-maindark/50 group-focus-within:text-main dark:text-primary/45"
-                  clearButtonClassName="text-maindark/45 hover:text-maindark dark:text-primary/45 dark:hover:text-primary"
-                  onFocus={() => setIsSearchFocused(true)}
-                  onValueChange={(nextValue) => {
-                    setSearchLimit(10);
-                    field.onChange(nextValue);
-                    setValue("search", nextValue, { shouldDirty: true });
-                  }}
-                />
-              )}
-            />
-            <HeaderSearchPopup
-              open={isSearchFocused && searchValue.trim().length > 0}
-              loading={isSearchLoading && searchItems.length === 0}
-              loadingMore={isSearchLoading && searchItems.length > 0}
-              items={searchItems}
-              query={searchValue}
-              onSelect={handleSelectSearchItem}
-              hasMore={hasMoreSearch}
-              onLoadMore={handleLoadMoreSearch}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(false)}
-            aria-label={t("closeSearch")}
-            className="ml-3 p-2 rounded-xl text-maindark dark:text-primary hover:bg-main/10 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-      )}
-
-      {/* Mobile Logo */}
-      <div
-        className={`lg:hidden ${isSearchOpen ? "hidden" : "block animate-fade-in"}`}
-      >
-        <img
-          src={theme === "dark" ? LogoTextdark : LogoText}
-          alt="Logo"
-          className="h-12 w-auto max-w-[42vw] object-contain sm:h-14"
-          onDoubleClick={() => setIsSearchOpen(true)}
-        />
-      </div>
-
-      {/* Search Bar - Desktop Only */}
-      <Controller
-        control={control}
-        name="search"
-        render={({ field }) => (
-          <div ref={desktopSearchContainerRef} className="relative hidden min-w-0 lg:flex lg:flex-1 lg:items-center lg:max-w-[520px]">
-            <GlobalSearchInput
-              ref={desktopSearchInputRef}
-              name={field.name}
-              value={field.value}
-              onBlur={field.onBlur}
-              placeholder={t("searchPlaceholder")}
-              aria-label={t("globalSearchAria")}
-              className="w-full"
-              inputClassName="border border-main/10 bg-white py-2 text-maindark placeholder:text-maindark/45 dark:border-white/10 dark:bg-[var(--color-card-surface-strong)] dark:text-primary dark:placeholder:text-primary/45"
-              iconClassName="text-maindark/50 group-focus-within:text-main dark:text-primary/45"
-              clearButtonClassName="text-maindark/45 hover:text-maindark dark:text-primary/45 dark:hover:text-primary"
-              onFocus={() => setIsSearchFocused(true)}
-              onValueChange={(nextValue) => {
-                setSearchLimit(10);
-                field.onChange(nextValue);
-                setValue("search", nextValue, { shouldDirty: true });
-              }}
-            />
-            <HeaderSearchPopup
-              open={isSearchFocused && searchValue.trim().length > 0}
-              loading={isSearchLoading && searchItems.length === 0}
-              loadingMore={isSearchLoading && searchItems.length > 0}
-              items={searchItems}
-              query={searchValue}
-              onSelect={handleSelectSearchItem}
-              hasMore={hasMoreSearch}
-              onLoadMore={handleLoadMoreSearch}
-            />
-          </div>
-        )}
+    <header
+      aria-label={t("header.label")}
+      className="flex h-16 items-center gap-3 border-b border-border bg-surface px-8 max-lg:px-4"
+    >
+      <IconButton
+        label={t("header.openMenu")}
+        icon={Menu}
+        aria-haspopup="dialog"
+        aria-expanded={mobileMenu.isOpen}
+        onClick={onMenuClick ?? mobileMenu.open}
+        className="lg:hidden"
       />
 
-      {/* Right Actions */}
-      <div
-        className={`flex items-center gap-2 md:gap-3 shrink-0 ${isSearchOpen ? "hidden md:flex" : "flex"}`}
-      >
-        <button
-          type="button"
-          onClick={() => setIsShortcutsOpen(true)}
-          className="el-glass-control group relative hidden h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition-all duration-300 hover:border-[var(--color-border-strong)] hover:bg-main/10 dark:text-primary md:flex lg:h-11 lg:w-11"
-          aria-label={t("keyboardShortcuts")}
-          title={t("keyboardShortcuts")}
-        >
-          <CircleHelp className="h-5 w-5" />
-        </button>
+      {isDesktop ? (
+        <HeaderSearch search={search} listId={`${searchId}-list`} inputRef={desktopInputRef} />
+      ) : null}
 
-        <ScannerActionButton
-          onClick={() => navigate("/scan")}
-          label={t("scannerTitle")}
-          className="hidden lg:inline-flex"
+      <div aria-hidden="true" className="min-w-0 flex-1" />
+
+      {/* Market skanerlamaydi (maket: persona.scan=false; ega qarori 2026-10-16). */}
+      {String(role ?? "").toLowerCase() !== "market" ? (
+        <Button variant="secondary" leftIcon={ScanLine} onClick={() => navigate("/scan")} className="max-md:hidden">
+          {t("header.scan")}
+        </Button>
+      ) : null}
+
+      {!isDesktop ? (
+        <IconButton
+          label={t("header.search.open")}
+          icon={Search}
+          aria-haspopup="dialog"
+          aria-expanded={searchScreenOpen}
+          onClick={openSearchScreen}
+          className="lg:hidden"
         />
+      ) : null}
 
-        <button
-          type="button"
-          onClick={() => setIsSearchOpen(true)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
-          aria-label={t("openSearch")}
-        >
-          <Search className="w-5.5 h-5.5" />
-        </button>
+      <NotificationsMenu enabled={Boolean(roleState.role)} />
 
-        {/* Bildirishnomalar — telefonda (lg dan tor) hamburger yonida. Desktopdagi
-            tugma o'z joyida qoladi (pastda), ikkalasidan faqat bittasi ko'rinadi. */}
-        <button
-          type="button"
-          onClick={() => navigate("/inbox")}
-          className="relative flex h-10 w-10 items-center justify-center rounded-xl text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
-          aria-label={unreadCount > 0 ? `${t("notifications")} (${unreadCount})` : t("notifications")}
-        >
-          <Bell className="w-5.5 h-5.5" />
-          <UnreadBadge count={unreadCount} className="right-1 top-1" />
-        </button>
+      <UserMenu
+        name={name}
+        roleLine={roleLine}
+        menuRoleLine={menuRoleLine}
+        initials={getInitials(name)}
+        onOpenShortcuts={() => setShortcutsOpen(true)}
+        onLogout={() => void logout()}
+      />
 
-        {/* Mobile Hamburger */}
-        <button
-          type="button"
-          onClick={onMenuClick}
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-maindark transition-colors hover:bg-main/10 dark:text-primary lg:hidden"
-          aria-label={t("openMenu")}
-        >
-          <Menu className="w-7 h-7" />
-        </button>
-
-        {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-1.5 lg:gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => navigate("/settings")}
-            className="rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 dark:text-primary"
-            aria-label={t("settings")}
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/inbox")}
-            className="relative hidden rounded-xl p-2 text-maindark transition-colors hover:bg-main/10 lg:inline-flex dark:text-primary"
-            aria-label={unreadCount > 0 ? `${t("notifications")} (${unreadCount})` : t("notifications")}
-          >
-            <Bell className="w-5 h-5" />
-            <UnreadBadge count={unreadCount} className="-right-0.5 -top-0.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={logout}
-            className="p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 group"
-            title={t("logout")}
-            aria-label={t("logout")}
-          >
-            <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          </button>
-
-          <div className="flex cursor-pointer items-center gap-2 border-l border-[var(--color-border-soft)] pl-2 transition-opacity hover:opacity-90 lg:gap-3 lg:pl-3">
-            <div className="text-right hidden xl:block text-maindark dark:text-primary">
-              <h4 className="max-w-36 truncate text-sm font-bold">{profileFullName}</h4>
-              <p className="text-xs">{profileRole}</p>
-            </div>
-            <div
-              onClick={() => navigate("profile")}
-              role="button"
-              tabIndex={0}
-              aria-label={t("profile")}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  navigate("profile");
-                }
-              }}
-              className={`flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-transform hover:scale-105 lg:h-10 lg:w-10 ${roleAvatar.className}`}
-            >
-              <RoleAvatarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
-            </div>
-          </div>
-        </div>
-      </div>
-      <Popup isShow={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} labelledBy="keyboard-shortcuts-title">
-        <div
-          className="w-[92vw] max-w-md rounded-3xl border border-[color:var(--color-border-soft)] bg-primary p-5 shadow-2xl dark:bg-primarydark"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 id="keyboard-shortcuts-title" className="m-0 text-xl font-black text-maindark dark:text-white">
-                {t("keyboardShortcuts")}
-              </h2>
-              <p className="m-0 mt-1 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("keyboardShortcutsHint")}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsShortcutsOpen(false)}
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl text-maindark transition hover:bg-main/10 dark:text-white"
-              aria-label={t("close")}
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="mt-5 space-y-3">
-            {[
-              { keys: "Ctrl + K", description: t("shortcutSearch") },
-              { keys: "G → O", description: t("shortcutOrders") },
-              ...(canOpenBatchesShortcut ? [{ keys: "G → B", description: t("shortcutBatches") }] : []),
-              { keys: "Esc", description: t("shortcutEscape") },
-            ].map((shortcut) => (
-              <div key={shortcut.keys} className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-3 dark:bg-white/[0.04]">
-                <span className="text-sm font-bold text-maindark dark:text-white">{shortcut.description}</span>
-                <kbd className="rounded-xl border border-[color:var(--color-border-soft)] bg-maindark px-3 py-1.5 text-xs font-black text-white dark:bg-white dark:text-maindark">
-                  {shortcut.keys}
-                </kbd>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Popup>
+      <SearchScreen
+        open={searchScreenOpen && !isDesktop}
+        search={search}
+        listId={`${searchId}-screen-list`}
+        onClose={closeSearchScreen}
+      />
+      <ShortcutsDialog
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+        showBatches={canOpenBatchesShortcut}
+      />
     </header>
   );
 };

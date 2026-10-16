@@ -1107,7 +1107,7 @@ const Orders = () => {
       </div>
 
       {canSendCancelledToHq && selectedCancelledIds.size > 0 ? (
-        <div className="fixed bottom-22 left-3 right-3 z-50 sm:bottom-6 sm:left-auto sm:right-6">
+        <div className="fixed bottom-[calc(var(--shell-bottomnav-h)+1rem)] left-3 right-3 z-50 md:bottom-6 sm:left-auto sm:right-6">
           <button
             type="button"
             onClick={handleSendCancelledToHq}

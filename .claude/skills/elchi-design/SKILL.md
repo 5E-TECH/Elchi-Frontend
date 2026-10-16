@@ -99,6 +99,14 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
   `npm run design:screens` ni yuring (`design/SCREENS.md` qayta yoziladi; `-- --check` xarita to'liqligini tekshiradi,
   `npm test` ham shuni tekshiradi). Menyu bandi (`menuConfig.tsx`) faqat maketdagi menyu (`design/kit/roles.json`)
   bilan birga o'zgaradi.
+- **Shell tayyor (2-bosqich)** — sahifa uni qayta chizmaydi: `widgets/layout/dashboardLayout.tsx` (kanvas, yagona
+  skroll, `RouteProgress`), `widgets/Sidebar` (`Sidebar`, `MobileMenu`, `BottomNav`; bandlar, ruxsat va ikonkalar —
+  `model/menuConfig.tsx`, ko'rinish — `model/navSections.ts`), `widgets/header` (`Header`, `HeaderSearch` /
+  `SearchScreen`, `NotificationsMenu`, `UserMenu`, `ShortcutsDialog`). Sahifa `[data-shell-slot=content]` ichida
+  chiziladi: o'ziga tashqi karta, tashqi `p-*`/`px-*` chekka, `h-screen`/o'z skroll konteyneri, pastki menyu yoki
+  uning joyi qo'shilmaydi (kanvas, `max-w-[1440px]`, chekkalar va telefonda pastki menyu joyi shell'da). Ildiz —
+  `flex flex-col gap-6 max-md:gap-4`. Sahifadagi pastga yopishgan panel (`fixed bottom-*`) telefonda
+  `bottom-[calc(var(--shell-bottomnav-h)+…)]` bilan pastki menyu ustida turadi. Klasslar — CODE-MAP §2.10.
 - Sahifa PR'ida tegilmaydiganlar: tokenlar (`src/index.css`, `themeTokens.ts`), shell (`widgets/layout`,
   `widgets/Sidebar`, `widgets/header`), `design/` maket fayllari (`fragments/`, `kit/` — `route-map.json` dan
   tashqari, `assets/`).
@@ -130,7 +138,8 @@ belgisini qo'riqchidan o'tish uchun ishlatmang. Ular faqat asosli istisno uchun,
 ## 6. Ilovada ko'ring
 
 `npm run dev`, sahifani kerakli rol bilan oching (o'z test akkauntingiz; parol kodga yoki chatga yozilmaydi).
-Akkauntsiz tez ko'rish: `npm run app:shot -- <route> [--device phone] [--theme dark] [--role manager]` →
+Akkauntsiz tez ko'rish: `npm run app:shot -- <route> [--device phone] [--theme dark] [--role manager]
+[--branch-type HQ|REGIONAL|HYBRID|PICKUP|none] [--lang ru] [--width 375] [--split 1200] [--wait <css-selektor>]` →
 `design/shots/app/*.png` + JSON hisobot (toshish, 44px nishonlar, mayda matn, konsol xatolari); PNG'larni Read qiling.
 Tekshiring:
 

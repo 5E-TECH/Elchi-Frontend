@@ -6,6 +6,87 @@
     "more": "More",
     "empty": "No data"
   },
+  "shell": {
+    "pageLoading": "Loading page",
+    "bottomNav": {
+      "label": "Main sections",
+      "home": "Home",
+      "orders": "Orders",
+      "intake": "Intake",
+      "create": "Create",
+      "dispatch": "Assign",
+      "quickAction": "Close day",
+      "products": "Products",
+      "payments": "Payments",
+      "scanner": "Scan",
+      "menu": "Menu"
+    }
+  },
+  "header": {
+    "label": "Top bar",
+    "openMenu": "Open menu",
+    "scan": "Scan",
+    "search": {
+      "label": "Global search",
+      "placeholder": "Name, phone or order number",
+      "open": "Open search",
+      "clear": "Clear search",
+      "close": "Close",
+      "results": "Search results",
+      "groups": {
+        "orders": "Orders",
+        "users": "Users",
+        "other": "Other results"
+      },
+      "count": "{{count}}",
+      "loading": "Searching…",
+      "loadingMore": "Loading more…",
+      "empty": "No results",
+      "emptyHint": "Check the order number, name or phone.",
+      "error": "Search failed. Please try again shortly.",
+      "recent": "Recent searches",
+      "clearRecent": "Clear",
+      "hintSelect": "select",
+      "hintOpen": "open",
+      "hintClose": "close",
+      "orderTitle": "Order №{{id}}"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "label": "Notifications",
+      "labelUnread": "Notifications, {{count}} new",
+      "labelMany": "Notifications, more than 99 new",
+      "list": "Recent notifications",
+      "unread": "Unread:",
+      "viewAll": "View all",
+      "close": "Close notifications",
+      "empty": "No new notifications",
+      "emptyHint": "New messages will appear here.",
+      "error": "Couldn't load notifications."
+    },
+    "profile": {
+      "menu": "Profile menu",
+      "profile": "Profile",
+      "settings": "Settings",
+      "shortcuts": "Keyboard shortcuts",
+      "theme": "Theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "language": "Language",
+      "logout": "Log out"
+    },
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "close": "Close",
+      "search": "Go to search",
+      "orders": "Go to orders",
+      "batches": "Go to batches",
+      "escape": "Close the open window",
+      "tab": "Next item · with focus ring",
+      "list": "List of shortcuts",
+      "then": "then"
+    }
+  },
   "card": {
     "groups": {
       "surfaces": {

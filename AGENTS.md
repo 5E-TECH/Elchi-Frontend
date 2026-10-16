@@ -14,10 +14,15 @@ repoda turadi (`design/`).
 |---|---|---|
 | 0 | tokenlar, kunduzgi/tungi mavzu, Manrope, valyuta i18n, maketlar repoda, dizayn qo'riqchisi | **tayyor** |
 | 1 | primitivlar (`src/shared/ui/primitives`): `Button`, `IconButton`, `Spinner`, `Badge`, `StatusBadge` (+ `OrderStatusBadge`/`statusRegistry` — `src/entities/order`), `Card`, `StatCard`, `PageHeader`, `Tabs`, `SegmentedControl`; formatlovchilar `formatPhone`, `formatDateTime*`, `formatSigned*`; namuna sahifasi `/ops/ui-kit` | **tayyor** |
-| 2 | shell: yon menyu, topbar, pastki menyu | navbatda |
+| 2 | shell (`widgets/layout`, `widgets/Sidebar`, `widgets/header`, `// dizayn-v2: shell`): bitta kanvas (kontent karta emas, `max-w-[1440px]`, chekkalar 24·32·48 / < 1024 16·16·88), `nav-*` va `avatar` tokenlari, yon menyu 248/72 (guruhlar) + planshet surma menyu + telefon varaqasi, topbar + profil menyusi (mavzu, til, «Chiqish») + qo'ng'iroqcha + global qidiruv (Ctrl K, < 1024 qidiruv ekrani), pastki menyu (`roles.json` → `bottomNav`), bo'lim almashsa skroll tepaga, bo'lim yuklanish chizig'i (`RouteProgress`); ikonkalar yagona manba — `menuConfig.tsx` | **tayyor** |
 | 3 | forma, dialog, bo'sh/yuklanish/xato holatlari: `Dialog`/`ConfirmDialog`, `Field`/`TextInput`/`Select`/`DateRange`, `QueryBoundary` | navbatda |
 | 4 | sahifalar migratsiyasi (har sahifa alohida PR) | navbatda |
 | 5 | qo'shimcha qo'riqchilar (ESLint, vizual snapshotlar) | navbatda |
+
+**Sahifa shell ichida chiziladi** (4-bosqichdan boshlab har sahifa): u `[data-shell-slot=content]` ichida turadi —
+kanvas foni, `max-w-[1440px]`, chekkalar va telefonda pastki menyu joyi shell'da. Sahifa o'ziga tashqi karta
+(`bg-surface` o'rami), tashqi `p-*`/`px-*` chekka, `h-screen`/o'z skroll konteyneri, yon menyu yoki pastki menyu
+yasamaydi; sahifa ildizi faqat bo'limlar oralig'ini beradi (`flex flex-col gap-6 max-md:gap-4`).
 
 Ilovada hozir ikki xil sahifa bor:
 - **v2 ga ko'chirilgan** sahifalar. Faylning birinchi qatorida `// dizayn-v2: <ekran>` belgisi turadi.

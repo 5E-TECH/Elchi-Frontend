@@ -73,14 +73,35 @@ bilan ochiladi (rol `--role`, sukut `superadmin`).
 npm run app:shot -- /ops/ui-kit                                  # 6 ta PNG → design/shots/app/
 npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone --theme dark
 npm run app:shot -- /orders --role manager --lang ru --split 1200
+npm run app:shot -- / /orders --role manager --branch-type REGIONAL  # menejer menyusi filial turiga bog'liq
+npm run app:shot -- /orders --device phone --width 375             # 375 telefon; --device desktop --width 1024 — chegara
 ```
 
-- Natija: `design/shots/app/<route>--<desktop|tablet|phone>-<light|dark>.png` (rol yoki til sukutdan farq qilsa,
-  nomga qo'shiladi). Qobiq balandligi oynaga teng, shuning uchun skript oynani `<main>` kontenti to'liq tushadigan
+Bayroqlar (bir nechta route bitta buyruqda): `--device desktop|tablet|phone` (sukut — uchalasi: 1440 / 768 / 390) ·
+`--theme light|dark` (sukut — ikkalasi) · `--role superadmin|admin|manager|registrator|market|courier` (sukut
+`superadmin`) · `--branch-type …` · `--lang uz|ru|en` (sukut `uz`) · `--width <px>` · `--split <px>` (uzun sahifa
+bo'laklarga: `-1.png`, `-2.png` …) · `--wait <css-selektor>` (shu element chiqquncha kutadi; sukut — `<main>` ichida
+kontent).
+
+- `--width <px>` — tanlangan qurilma oynasining kengligi (320…3840). Balandlik va sensorli rejim `--device` dan qoladi
+  (`phone` — 844, sensorli; `tablet` — 1024; `desktop` — 900). Qobiq chegaralarini (375 / 1024) tekshirish uchun.
+  Fayl nomiga `-w<px>` qo'shiladi: `orders--phone-w375-light.png`.
+
+- `--branch-type HQ|REGIONAL|HYBRID|PICKUP|none` — soxta profildagi filial turi (`menuConfig.tsx` →
+  `getUserBranchType` o'qiydigan `branch.type` / `branch_type`). Menejer menyusi va guardlari (`MANAGER_CAPABILITIES`),
+  registratorning «Kuryerga berish» bandi shundan. Sukut: `manager` → `HYBRID` (maketdagi to'liq menyu,
+  `design/kit/roles.json`), `registrator` → `HQ` (persona «Toshkent HQ»), `courier` → `REGIONAL`; boshqa rollarda
+  filial yo'q. `none` — filial turi aniqlanmagan holat (menejerda ogohlantirish va bazaviy menyu). Har rol shu bilan
+  o'zining haqiqiy menyusini chizadi.
+
+- Natija: `design/shots/app/<route>--<desktop|tablet|phone>-<light|dark>.png` (rol, filial turi yoki til sukutdan
+  farq qilsa, nomga qo'shiladi: `orders-manager-regional--phone-light.png`). Bo'lim yuklanish chizig'i
+  (`[data-route-progress]`) so'ngach suratga olinadi. Qobiq balandligi oynaga teng, shuning uchun skript oynani `<main>` kontenti to'liq tushadigan
   qilib cho'zadi.
 - JSON hisobot: `finalPath` (`/403` yoki `/login` — guard o'tkazmadi), `overflowX` / `contentOverflowX` (0 bo'lsin),
   telefonda `smallTargets` / `smallTargetsInMain` (44px dan kichik bosiladigan elementlar, namunasi bilan),
-  `tinyText` / `tinyTextInMain` (12px dan kichik matn), `consoleErrors`.
+  `tinyText` / `tinyTextInMain` (12px dan kichik matn), `consoleErrors`. Qobiqda (`<main>` tashqarisida) topilsa
+  qo'shimcha `smallTargetsShellSample` / `tinyTextShellSample` namunalari chiqadi — qobiq uchun ular bo'lmasligi kerak.
 - Ma'lumot bo'sh — sahifa bo'sh holatida chiziladi. To'ldirilgan holatni rol akkaunti bilan `npm run dev` da tekshiring.
 - `/ops/ui-kit` (faqat superadmin, menyuda yo'q) — 1-bosqich primitivlari (`src/shared/ui/primitives`) namunasi,
   kunduzgi va tungi yonma-yon; `?section=buttons|badges|cards|page-header|tabs|format` bitta bo'lim,
